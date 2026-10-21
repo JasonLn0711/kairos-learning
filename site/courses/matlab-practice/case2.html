@@ -1,0 +1,450 @@
+<!doctype html><html lang="zh-Hant-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="三個 MATLAB 合成教學案例，從資料到報告的完整實作。"><title>案例 2 完整教學｜Kairos 學習筆記</title><link rel="stylesheet" href="../../style.css"><script src="../../app.js" defer></script></head><body><a class="skip" href="#content">跳到教學內容</a><header><div class="brand"><a href="../../index.html">Kairos 學習筆記</a><span class="edition">課程 / MATLAB 實作</span></div><nav aria-label="案例導覽"><a href="index.html" >開始練習</a><a href="case1.html" >01 感測分類</a><a href="case2.html" aria-current="page">02 影像量測</a><a href="case3.html" >03 圖形分類</a><a href="resources.html" >提示詞與下載</a></nav></header><div class="layout"><aside><details open><summary>這一頁的目錄</summary><nav aria-label="章節目錄"><a class="level-h2" href="#section-0">先看全程｜從一張圖片到紅色輪廓與面積報告</a><a class="level-h3" href="#section-1">這個案例要完成什麼？</a><a class="level-h3" href="#section-2">從頭到尾，依序做這 8 件事</a><a class="level-h3" href="#section-3">做完時，你手上應該有什麼？</a><a class="level-h2" href="#section-4">一、逐段解說（段內逐行）</a><a class="level-h3" href="#section-5">第 1 段：輸出路徑與安全根目錄（第 1–6 行）</a><a class="level-h3" href="#section-6">第 2 段：比例、門檻與紙面背景（第 7–16 行）</a><a class="level-h3" href="#section-7">第 3 段：建立目標與干擾色塊，再寫入、讀回影像（第 17–25 行）</a><a class="level-h3" href="#section-8">第 4 段：RGB 門檻分割與空結果防護（第 26–32 行）</a><a class="level-h3" href="#section-9">第 5 段：元件、面積、遮罩與紅色輪廓輸出（第 33–42 行）</a><a class="level-h3" href="#section-10">第 6 段：量測摘要與 JSON（第 43–55 行）</a><a class="level-h3" href="#section-11">第 7 段：遮罩塗色函式（第 57–63 行）</a><a class="level-h3" href="#section-12">第 8 段：最大連通元件初始化（第 65–81 行）</a><a class="level-h3" href="#section-13">第 9 段：四方向廣度搜尋（第 82–102 行）</a><a class="level-h3" href="#section-14">第 10 段：更新最大元件（第 103–108 行）</a><a class="level-h3" href="#section-15">第 11 段：輪廓像素抽取（第 110–123 行）</a><a class="level-h3" href="#section-16">第 12 段：安全輸出路徑（第 125–147 行）</a><a class="level-h3" href="#section-17">第 13 段：JSON 寫入（第 149–156 行）</a><a class="level-h2" href="#section-18">二、可直接貼給 GPT／Claude 的逐段解說提示詞</a><a class="level-h2" href="#section-19">三、行號與分段更新規則</a><a class="level-h2" href="#section-20">整理自己的報告</a><a class="level-h3" href="#section-21">案例二 PDF 報告範本：紙面色塊分割與面積</a><a class="level-h3" href="#section-22">一、執行結果</a><a class="level-h3" href="#section-23">二、處理程序</a><a class="level-h3" href="#section-24">三、程式碼</a></nav></details></aside><main id="content"><div class="eyebrow">一步一步，把方法做出來</div><h1 id="_1">案例二逐段教學：紙面色塊分割與面積</h1>
+<h2 id="section-0">先看全程｜從一張圖片到紅色輪廓與面積報告</h2>
+<h3 id="section-1">這個案例要完成什麼？</h3>
+<p>我們用一張合成紙面圖片，找出紅色色塊、畫出它的紅色外輪廓，再算出占了多少面積。整個流程是：讀圖 → 找出目標區域 → 核對選取結果 → 畫輪廓 → 換算面積 → 整理圖片、做法與程式。這一題練習的是影像處理。</p>
+<p>本案例是「助教實作方式」。正式題二使用老師指定的影像與目標，要求紅色外輪廓、每像素 1 mm × 1 mm 的面積計算，以及包含「執行結果、處理程序、程式碼」的 PDF。合成紙面讓大家先學會同一套工作流程；換成正式影像時，分割方法與參數要依目標特性重新判斷。</p>
+<h3 id="section-2">從頭到尾，依序做這 8 件事</h3>
+<ol>
+<li><strong>先開啟程式，確認結果存放位置。</strong> 進入教材的 <code>matlab_edition</code>，開啟 <code>case2_image_measure_matlab.m</code>，依後面的段落與四階段提示詞練習。完整參考版可輸入 <code>s = case2_image_measure_matlab;</code>，結果放在 <code>matlab_artifacts/case2</code>。重跑會更新同名範例輸出。</li>
+<li><strong>先看原圖，說清楚要選哪一塊。</strong> 打開 <code>synthetic_paper_blocks.png</code>，確認紅色目標、藍色干擾塊與背景的位置。程式讀回的尺寸是 240×320×3，代表高、寬與三個色彩通道。先記下目標的外觀，後面才有依據檢查選取結果。</li>
+<li><strong>把目標選出來，得到一張遮罩。</strong> 本例用紅色通道至少 170、紅色相對優勢至少 55 的條件選出候選像素，再保留最大的四方向連通區域。遮罩可想成一張標記紙：選中的位置記為真，其餘位置記為假。正式影像的亮度與顏色條件不同，需先觀察影像，再選擇合適方法。</li>
+<li><strong>把遮罩和原圖放在一起看。</strong> 打開 <code>segmentation_mask.png</code>，確認選中的區域對準紅色色塊，藍色干擾塊留在背景。檢查邊緣是否合理、區域是否完整；若需要調整，回到門檻與連通區域這一步，再重新檢查。</li>
+<li><strong>畫出紅色外輪廓，留下可讀的結果圖。</strong> 打開 <code>contour_overlay.png</code>，核對紅線是否沿著目標邊界。本例目標是實心區域；遇到有孔洞的區域，要另區分外輪廓與內部孔洞邊界。輪廓圖用來呈現位置，面積則從整個選取區域計算。</li>
+<li><strong>先數區域像素，再換算面積。</strong> 到 <code>measurement.json</code> 查看 <code>pixelArea</code>、<code>pixelSizeMm</code> 與 <code>areaSquareMm</code>。計算方式是「區域像素數 × 每像素邊長的平方」。本例尺度為 1 mm／像素，實測區域 25,204 像素，面積為 25,204 mm²；609 是輪廓線像素數，另列作為邊界檢查資訊。自己的報告以自己的影像與輸出為依據。</li>
+<li><strong>保存每一步的證據。</strong> 保留原圖、遮罩、紅色輪廓圖、<code>measurement.json</code> 與 <code>.m</code>。在處理程序中寫清楚讀圖、門檻、區域選取、輪廓與面積公式，讓讀者能由原圖一路核對到最後數字。可執行 <code>run_matlab_tests</code> 檢查教材參考版，再針對自己的影像檢查選取品質。</li>
+<li><strong>組成題目指定的三部分 PDF。</strong> 用 <code>CASE2_REPORT_TEMPLATE.md</code> 整理「執行結果、處理程序、程式碼」。結果放原圖、紅色輪廓圖、面積與單位；程序交代每一步及參數；程式碼保留完整可讀內容。開啟 PDF 核對圖中文字、紅線與公式，再依課程指定方式交件。正式作業使用老師指定影像與尺度。</li>
+</ol>
+<h3 id="section-3">做完時，你手上應該有什麼？</h3>
+<ul>
+<li>練習過程：一支 <code>.m</code>、原圖、遮罩、紅色輪廓疊圖與 <code>measurement.json</code>。</li>
+<li>報告證據：目標選取理由、處理步驟、紅色外輪廓、區域像素數、面積公式與單位。</li>
+<li>正式交件：以正式影像完成處理，整理為「執行結果、處理程序、程式碼」三部分 PDF。</li>
+</ul>
+<p>接著逐段讀程式，對照每一段如何產生圖片、選出目標，並把量測結果保存下來。</p>
+<h2 id="section-4">一、逐段解說（段內逐行）</h2>
+<p>來源程式：<code>case2_image_measure_matlab.m</code>｜共 156 個實體行、151 個非空行｜SHA-256：<code>182b99d306c25f47d05331170e23b872057fbf425195bd72ba57a0b59b15ba0c</code></p>
+<p>這支程式會建立虛構紙面影像，以 RGB 門檻找出目標區域，從原始分割元件計算像素面積，再以 1 mm × 1 mm/像素換算，最後畫出純紅色外輪廓。</p>
+<p>以下依實際工作流程分成 13 段。每段先保留一個完整原始碼區塊，再在同一段內逐行說明；「第 N 行」直接對應來源檔實體行號。每個非空行恰好說明一次；段內原始行保留，函式間空白以段落區隔。</p>
+<h3 id="section-5">第 1 段：輸出路徑與安全根目錄（第 1–6 行）</h3>
+<p>本段目的：完成「輸出路徑與安全根目錄」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">function summary = case2_image_measure_matlab(outputDir) % 定義案例二主函式並回傳量測摘要。
+projectRoot = fileparts(mfilename('fullpath')); % 以本程式位置作為明確專案根目錄。
+if nargin &lt; 1 % 呼叫者省略輸出資料夾時套用預設值。
+    outputDir = fullfile(projectRoot,'matlab_artifacts','case2'); % 使用教材內固定的預設輸出位置。
+end % 結束預設輸出條件。
+outputDir = ensureSafeOutput(projectRoot,outputDir); % 驗證並建立安全輸出資料夾。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 1 行</strong>：定義案例二主函式並回傳量測摘要。 <code>function</code> 宣告 <code>case2_image_measure_matlab</code>；等號左側列回傳值，小括號內依順序列出呼叫者要傳入的資料。 這行的資料是：<code>outputDir</code>：字元路徑，案例二輸出資料夾；<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 2 行</strong>：以本程式位置作為明確專案根目錄。 <code>=</code> 是指定運算：先算右側 <code>fileparts(mfilename('fullpath'))</code>，再把結果存進左側 <code>projectRoot</code>。 行尾 <code>;</code> 會結束敘述，並讓 MATLAB Command Window 保持簡潔。 <code>mfilename('fullpath')</code> 回傳目前函式檔的完整路徑與檔名；外層 <code>fileparts</code> 取出資料夾部分，因此後續相對路徑都以教材檔所在位置為基準。 這行的資料是：<code>projectRoot</code>：字元路徑，本 <code>.m</code> 檔所在資料夾。</p>
+<p><strong>第 3 行</strong>：呼叫者省略輸出資料夾時套用預設值。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>nargin</code> 是這次呼叫實際收到的輸入數。直接輸入函式名稱時為 0，<code>0 &lt; 1</code> 成立並進入預設路徑分支；傳入一個輸出路徑時為 1，條件為 false，MATLAB 直接跳到配對的 <code>end</code>。</p>
+<p><strong>第 4 行</strong>：使用教材內固定的預設輸出位置。 <code>fullfile</code> 依作業系統規則組合資料夾與檔名，避免手動拼接斜線。 這行的資料是：<code>outputDir</code>：字元路徑，案例二輸出資料夾；<code>projectRoot</code>：字元路徑，本 <code>.m</code> 檔所在資料夾。 小例子：例如 <code>fullfile(root,'images','a.png')</code> 會組成目前作業系統可用的完整路徑。</p>
+<p><strong>第 5 行</strong>：結束預設輸出條件。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 6 行</strong>：驗證並建立安全輸出資料夾。 這行的資料是：<code>outputDir</code>：字元路徑，案例二輸出資料夾；<code>projectRoot</code>：字元路徑，本 <code>.m</code> 檔所在資料夾。</p>
+<p>段落銜接：完成「輸出路徑與安全根目錄」後，下一段進入「比例、門檻與紙面背景」。</p>
+<h3 id="section-6">第 2 段：比例、門檻與紙面背景（第 7–16 行）</h3>
+<p>本段目的：完成「比例、門檻與紙面背景」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">pixelSizeMm = 1.0; % 依正式題目邏輯設定每個像素邊長代表一毫米。
+redThreshold = 170; % 設定紅色通道分割門檻。
+dominanceMargin = 55; % 設定紅色高於其他通道的最小差距。
+imageHeight = 240; % 設定合成紙面影像高度。
+imageWidth = 320; % 設定合成紙面影像寬度。
+paperImage = zeros(imageHeight,imageWidth,3,'uint8'); % 建立三通道空白影像陣列。
+paperImage(:,:,1) = 242; % 設定米白背景的紅色通道。
+paperImage(:,:,2) = 239; % 設定米白背景的綠色通道。
+paperImage(:,:,3) = 229; % 設定米白背景的藍色通道。
+[xGrid,yGrid] = meshgrid(1:imageWidth,1:imageHeight); % 建立每個像素的水平與垂直座標。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 7 行</strong>：依正式題目邏輯設定每個像素邊長代表一毫米。 這行的資料是：<code>pixelSizeMm</code>：純量 double，每個像素邊長 1 mm。 小例子：一個像素代表 1 mm × 1 mm，所以 250 個元件像素會換算成 250 mm²。</p>
+<p><strong>第 8 行</strong>：設定紅色通道分割門檻。</p>
+<p><strong>第 9 行</strong>：設定紅色高於其他通道的最小差距。</p>
+<p><strong>第 10 行</strong>：設定合成紙面影像高度。</p>
+<p><strong>第 11 行</strong>：設定合成紙面影像寬度。</p>
+<p><strong>第 12 行</strong>：建立三通道空白影像陣列。 <code>zeros(m,n)</code> 先配置 m×n 的全零陣列，之後再逐格填入結果。 這行的資料是：<code>paperImage</code>：240×320×3 uint8，合成 RGB 影像。 小例子：例如 <code>zeros(2,3)</code> 會得到 2 列、3 欄的全零矩陣。</p>
+<p><strong>第 13 行</strong>：設定米白背景的紅色通道。 索引中的 <code>:</code> 代表該維度全部元素；例如 <code>X(:,2)</code> 會取全部資料列的第 2 欄。 這行的資料是：<code>paperImage</code>：240×320×3 uint8，合成 RGB 影像。 小例子：例如 <code>A(:,2)</code> 代表取 A 的全部資料列與第 2 欄。</p>
+<p><strong>第 14 行</strong>：設定米白背景的綠色通道。 索引中的 <code>:</code> 代表該維度全部元素；例如 <code>X(:,2)</code> 會取全部資料列的第 2 欄。 這行的資料是：<code>paperImage</code>：240×320×3 uint8，合成 RGB 影像。 小例子：例如 <code>A(:,2)</code> 代表取 A 的全部資料列與第 2 欄。</p>
+<p><strong>第 15 行</strong>：設定米白背景的藍色通道。 索引中的 <code>:</code> 代表該維度全部元素；例如 <code>X(:,2)</code> 會取全部資料列的第 2 欄。 這行的資料是：<code>paperImage</code>：240×320×3 uint8，合成 RGB 影像。 小例子：例如 <code>A(:,2)</code> 代表取 A 的全部資料列與第 2 欄。</p>
+<p><strong>第 16 行</strong>：建立每個像素的水平與垂直座標。 <code>meshgrid(x,y)</code> 將水平座標 x 與垂直座標 y 展開成同尺寸矩陣；每個 <code>(row,column)</code> 因此都有可交給幾何公式的 X、Y 值。 <code>meshgrid</code> 把水平與垂直座標展開成整張影像大小的座標矩陣。 這行的資料是：<code>xGrid</code>：240×320 double，水平座標矩陣；<code>yGrid</code>：240×320 double，垂直座標矩陣。</p>
+<p>段落銜接：完成「比例、門檻與紙面背景」後，下一段進入「建立目標與干擾色塊，再寫入、讀回影像」。</p>
+<h3 id="section-7">第 3 段：建立目標與干擾色塊，再寫入、讀回影像（第 17–25 行）</h3>
+<p>本段目的：完成「建立目標與干擾色塊，再寫入、讀回影像」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">polygonX = [68 241 267 207 83]; % 定義不規則紅色色塊水平頂點。
+polygonY = [55 48 174 204 181]; % 定義不規則紅色色塊垂直頂點。
+targetMask = inpolygon(xGrid,yGrid,polygonX,polygonY); % 以 base MATLAB 判斷多邊形內像素。
+paperImage = paintMask(paperImage,targetMask,[205 125 115]); % 將目標區域塗成柔和紅色以凸顯外框。
+blueMask = xGrid &gt;= 15 &amp; xGrid &lt;= 52 &amp; yGrid &gt;= 18 &amp; yGrid &lt;= 42; % 建立藍色干擾矩形遮罩。
+paperImage = paintMask(paperImage,blueMask,[45 100 190]); % 將干擾區域塗成藍色。
+sourcePath = fullfile(outputDir,'synthetic_paper_blocks.png'); % 指定合成紙面影像檔名。
+imwrite(paperImage,sourcePath); % 使用 base MATLAB 寫出 PNG 影像。
+loadedImage = imread(sourcePath); % 從檔案實際讀回合成影像。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 17 行</strong>：定義不規則紅色色塊水平頂點。</p>
+<p><strong>第 18 行</strong>：定義不規則紅色色塊垂直頂點。</p>
+<p><strong>第 19 行</strong>：以 base MATLAB 判斷多邊形內像素。 <code>inpolygon</code> 對每個座標判斷是否位於頂點所定義的多邊形內或邊界上，回傳與座標網格同尺寸的 logical 遮罩。 <code>inpolygon</code> 判斷每個座標是否落在多邊形內，輸出 logical 遮罩。 這行的資料是：<code>xGrid</code>：240×320 double，水平座標矩陣；<code>yGrid</code>：240×320 double，垂直座標矩陣；<code>targetMask</code>：240×320 logical，目標多邊形遮罩。</p>
+<p><strong>第 20 行</strong>：將目標區域塗成柔和紅色以凸顯外框。 這行的資料是：<code>paperImage</code>：240×320×3 uint8，合成 RGB 影像；<code>targetMask</code>：240×320 logical，目標多邊形遮罩。</p>
+<p><strong>第 21 行</strong>：建立藍色干擾矩形遮罩。 這行的資料是：<code>xGrid</code>：240×320 double，水平座標矩陣；<code>yGrid</code>：240×320 double，垂直座標矩陣；<code>blueMask</code>：240×320 logical，藍色干擾塊遮罩。</p>
+<p><strong>第 22 行</strong>：將干擾區域塗成藍色。 這行的資料是：<code>paperImage</code>：240×320×3 uint8，合成 RGB 影像；<code>blueMask</code>：240×320 logical，藍色干擾塊遮罩。</p>
+<p><strong>第 23 行</strong>：指定合成紙面影像檔名。 <code>fullfile</code> 依作業系統規則組合資料夾與檔名，避免手動拼接斜線。 這行的資料是：<code>outputDir</code>：字元路徑，案例二輸出資料夾。 小例子：例如 <code>fullfile(root,'images','a.png')</code> 會組成目前作業系統可用的完整路徑。</p>
+<p><strong>第 24 行</strong>：使用 base MATLAB 寫出 PNG 影像。 <code>imwrite</code> 把目前像素陣列編碼成 PNG 並寫到指定路徑；後續讀回或測試會以這個檔案為準。 <code>imwrite</code> 把像素陣列寫成影像檔。 這行的資料是：<code>paperImage</code>：240×320×3 uint8，合成 RGB 影像。</p>
+<p><strong>第 25 行</strong>：從檔案實際讀回合成影像。 <code>imread</code> 從 PNG 解碼實際像素；RGB 圖通常得到 H×W×3 uint8，第三維依序是紅、綠、藍。 <code>imread</code> 從影像檔解碼像素陣列。 這行的資料是：<code>loadedImage</code>：240×320×3 uint8，從 PNG 讀回的影像。</p>
+<p>段落銜接：完成「建立目標與干擾色塊，再寫入、讀回影像」後，下一段進入「RGB 門檻分割與空結果防護」。</p>
+<h3 id="section-8">第 4 段：RGB 門檻分割與空結果防護（第 26–32 行）</h3>
+<p>本段目的：完成「RGB 門檻分割與空結果防護」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">red = double(loadedImage(:,:,1)); % 取出紅色通道並轉成 double。
+green = double(loadedImage(:,:,2)); % 取出綠色通道並轉成 double。
+blue = double(loadedImage(:,:,3)); % 取出藍色通道並轉成 double。
+mask = red &gt;= redThreshold &amp; red - max(green,blue) &gt;= dominanceMargin; % 同時套用紅色門檻與優勢差距。
+if ~any(mask,'all') % 檢查目前門檻的目標像素數是否為零。
+    error('Tutorial:EmptySegmentation','分割結果為空：請檢查紅色色塊與門檻設定。'); % 回報可辨識的空分割錯誤。
+end % 結束空分割檢查。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 26 行</strong>：取出紅色通道並轉成 double。 索引中的 <code>:</code> 代表該維度全部元素；例如 <code>X(:,2)</code> 會取全部資料列的第 2 欄。 這行的資料是：<code>loadedImage</code>：240×320×3 uint8，從 PNG 讀回的影像；<code>red</code>：240×320 double，紅色通道。 小例子：例如 <code>A(:,2)</code> 代表取 A 的全部資料列與第 2 欄。</p>
+<p><strong>第 27 行</strong>：取出綠色通道並轉成 double。 索引中的 <code>:</code> 代表該維度全部元素；例如 <code>X(:,2)</code> 會取全部資料列的第 2 欄。 這行的資料是：<code>loadedImage</code>：240×320×3 uint8，從 PNG 讀回的影像；<code>green</code>：240×320 double，綠色通道。 小例子：例如 <code>A(:,2)</code> 代表取 A 的全部資料列與第 2 欄。</p>
+<p><strong>第 28 行</strong>：取出藍色通道並轉成 double。 索引中的 <code>:</code> 代表該維度全部元素；例如 <code>X(:,2)</code> 會取全部資料列的第 2 欄。 這行的資料是：<code>loadedImage</code>：240×320×3 uint8，從 PNG 讀回的影像；<code>blue</code>：240×320 double，藍色通道。 小例子：例如 <code>A(:,2)</code> 代表取 A 的全部資料列與第 2 欄。</p>
+<p><strong>第 29 行</strong>：同時套用紅色門檻與優勢差距。 這行的資料是：<code>red</code>：240×320 double，紅色通道；<code>green</code>：240×320 double，綠色通道；<code>blue</code>：240×320 double，藍色通道；<code>mask</code>：240×320 logical，門檻分割結果。</p>
+<p><strong>第 30 行</strong>：檢查目前門檻的目標像素數是否為零。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>~</code> 在邏輯式中代表反轉；在多重回傳值左側則代表略過該回傳值。 <code>any</code> 檢查指定範圍是否至少有一個 true。 這行的資料是：<code>mask</code>：240×320 logical，門檻分割結果。</p>
+<p><strong>第 31 行</strong>：回報可辨識的空分割錯誤。 <code>error</code> 以固定識別碼與訊息停止流程，方便使用者回報精確原因。</p>
+<p><strong>第 32 行</strong>：結束空分割檢查。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p>段落銜接：完成「RGB 門檻分割與空結果防護」後，下一段進入「元件、面積、遮罩與紅色輪廓輸出」。</p>
+<h3 id="section-9">第 5 段：元件、面積、遮罩與紅色輪廓輸出（第 33–42 行）</h3>
+<p>本段目的：完成「元件、面積、遮罩與紅色輪廓輸出」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">component = largestComponent(mask); % 以四方向連通搜尋取得最大元件。
+contour = contourPixels(component); % 找出至少一側接觸背景的輪廓像素。
+pixelArea = nnz(component); % 以整個分割元件像素數計算面積。
+contourPixelCount = nnz(contour); % 另記錄輪廓線像素數供比較。
+areaSquareMm = pixelArea .* pixelSizeMm .^ 2; % 依像素邊長平方換算平方毫米。
+maskImage = uint8(component) .* 255; % 將邏輯元件轉成黑底白色遮罩。
+imwrite(maskImage,fullfile(outputDir,'segmentation_mask.png')); % 保存分割遮罩。
+overlay = loadedImage; % 複製來源影像避免修改原始檔。
+overlay = paintMask(overlay,contour,[255 0 0]); % 以純紅色標示外輪廓。
+imwrite(overlay,fullfile(outputDir,'contour_overlay.png')); % 保存輪廓疊圖。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 33 行</strong>：以四方向連通搜尋取得最大元件。 這行的資料是：<code>mask</code>：240×320 logical，門檻分割結果；<code>component</code>：240×320 logical，最大連通元件。</p>
+<p><strong>第 34 行</strong>：找出至少一側接觸背景的輪廓像素。 這行的資料是：<code>component</code>：240×320 logical，最大連通元件；<code>contour</code>：240×320 logical，元件邊界像素。</p>
+<p><strong>第 35 行</strong>：以整個分割元件像素數計算面積。 <code>nnz</code> 計算非零或 <code>true</code> 元素數量。 這行的資料是：<code>component</code>：240×320 logical，最大連通元件；<code>pixelArea</code>：純量整數，原始元件像素數。 小例子：例如遮罩中有 12 個 <code>true</code>，<code>nnz(mask)</code> 就回傳 12。</p>
+<p><strong>第 36 行</strong>：另記錄輪廓線像素數供比較。 <code>nnz</code> 計算非零或 <code>true</code> 元素數量。 這行的資料是：<code>contour</code>：240×320 logical，元件邊界像素；<code>contourPixelCount</code>：純量整數，邊界像素數。 小例子：例如遮罩中有 12 個 <code>true</code>，<code>nnz(mask)</code> 就回傳 12。</p>
+<p><strong>第 37 行</strong>：依像素邊長平方換算平方毫米。 <code>.*</code> 代表對應位置逐元素相乘，兩側陣列尺寸要能相容。 <code>.^</code> 代表每個元素各自做次方運算。 這行的資料是：<code>pixelSizeMm</code>：純量 double，每個像素邊長 1 mm；<code>pixelArea</code>：純量整數，原始元件像素數；<code>areaSquareMm</code>：純量 double，換算後平方毫米面積。 小例子：例如 <code>[2 4] .* [3 5]</code> 會得到 <code>[6 20]</code>，每個位置各自相乘。</p>
+<p><strong>第 38 行</strong>：將邏輯元件轉成黑底白色遮罩。 <code>.*</code> 代表對應位置逐元素相乘，兩側陣列尺寸要能相容。 這行的資料是：<code>component</code>：240×320 logical，最大連通元件。 小例子：例如 <code>[2 4] .* [3 5]</code> 會得到 <code>[6 20]</code>，每個位置各自相乘。</p>
+<p><strong>第 39 行</strong>：保存分割遮罩。 <code>imwrite</code> 把目前像素陣列編碼成 PNG 並寫到指定路徑；後續讀回或測試會以這個檔案為準。 <code>fullfile</code> 依作業系統規則組合資料夾與檔名，避免手動拼接斜線。 <code>imwrite</code> 把像素陣列寫成影像檔。 這行的資料是：<code>outputDir</code>：字元路徑，案例二輸出資料夾。 小例子：例如 <code>fullfile(root,'images','a.png')</code> 會組成目前作業系統可用的完整路徑。</p>
+<p><strong>第 40 行</strong>：複製來源影像避免修改原始檔。 這行的資料是：<code>loadedImage</code>：240×320×3 uint8，從 PNG 讀回的影像；<code>overlay</code>：240×320×3 uint8，純紅色輪廓疊圖。</p>
+<p><strong>第 41 行</strong>：以純紅色標示外輪廓。 這行的資料是：<code>contour</code>：240×320 logical，元件邊界像素；<code>overlay</code>：240×320×3 uint8，純紅色輪廓疊圖。</p>
+<p><strong>第 42 行</strong>：保存輪廓疊圖。 <code>imwrite</code> 把目前像素陣列編碼成 PNG 並寫到指定路徑；後續讀回或測試會以這個檔案為準。 <code>fullfile</code> 依作業系統規則組合資料夾與檔名，避免手動拼接斜線。 <code>imwrite</code> 把像素陣列寫成影像檔。 這行的資料是：<code>outputDir</code>：字元路徑，案例二輸出資料夾；<code>overlay</code>：240×320×3 uint8，純紅色輪廓疊圖。 小例子：例如 <code>fullfile(root,'images','a.png')</code> 會組成目前作業系統可用的完整路徑。</p>
+<p>段落銜接：完成「元件、面積、遮罩與紅色輪廓輸出」後，下一段進入「量測摘要與 JSON」。</p>
+<h3 id="section-10">第 6 段：量測摘要與 JSON（第 43–55 行）</h3>
+<p>本段目的：完成「量測摘要與 JSON」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">summary = struct; % 建立可稽核的量測摘要結構。
+summary.outputDir = outputDir; % 保存實際輸出資料夾供階段暫測與檔案檢查。
+summary.pixelSizeMm = pixelSizeMm; % 記錄明確像素比例。
+summary.conversionFormula = 'areaSquareMm = pixelArea * pixelSizeMm^2'; % 記錄換算公式。
+summary.redThreshold = redThreshold; % 記錄紅色通道門檻。
+summary.dominanceMargin = dominanceMargin; % 記錄紅色優勢差距。
+summary.pixelArea = pixelArea; % 記錄整個元件的像素面積。
+summary.contourPixelCount = contourPixelCount; % 記錄輪廓線像素數。
+summary.areaSquareMm = areaSquareMm; % 記錄換算後平方毫米面積。
+summary.areaNote = '面積使用整個分割元件像素；輪廓線像素另列供檢查。'; % 保存面積解讀說明。
+writeJson(fullfile(outputDir,'measurement.json'),summary); % 將量測摘要寫成 JSON。
+fprintf('案例二完成：元件像素面積 %d，輪廓像素 %d，換算面積 %.3f 平方毫米。\n',pixelArea,contourPixelCount,areaSquareMm); % 顯示實際量測摘要。
+end % 結束案例二主函式。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 43 行</strong>：建立可稽核的量測摘要結構。 這行的資料是：<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 44 行</strong>：保存實際輸出資料夾供階段暫測與檔案檢查。 這行的資料是：<code>outputDir</code>：字元路徑，案例二輸出資料夾；<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 45 行</strong>：記錄明確像素比例。 這行的資料是：<code>pixelSizeMm</code>：純量 double，每個像素邊長 1 mm；<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 46 行</strong>：記錄換算公式。 這行的資料是：<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 47 行</strong>：記錄紅色通道門檻。 這行的資料是：<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 48 行</strong>：記錄紅色優勢差距。 這行的資料是：<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 49 行</strong>：記錄整個元件的像素面積。 這行的資料是：<code>pixelArea</code>：純量整數，原始元件像素數；<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 50 行</strong>：記錄輪廓線像素數。 這行的資料是：<code>contourPixelCount</code>：純量整數，邊界像素數；<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 51 行</strong>：記錄換算後平方毫米面積。 這行的資料是：<code>areaSquareMm</code>：純量 double，換算後平方毫米面積；<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 52 行</strong>：保存面積解讀說明。 這行的資料是：<code>summary</code>：struct，保存門檻、比例與量測結果。</p>
+<p><strong>第 53 行</strong>：將量測摘要寫成 JSON。 <code>fullfile</code> 依作業系統規則組合資料夾與檔名，避免手動拼接斜線。 這行的資料是：<code>outputDir</code>：字元路徑，案例二輸出資料夾；<code>summary</code>：struct，保存門檻、比例與量測結果。 小例子：例如 <code>fullfile(root,'images','a.png')</code> 會組成目前作業系統可用的完整路徑。</p>
+<p><strong>第 54 行</strong>：顯示實際量測摘要。 <code>fprintf</code> 依格式字串輸出文字；<code>%d</code>、<code>%.3f</code> 等位置會由後續變數填入。 這行的資料是：<code>pixelArea</code>：純量整數，原始元件像素數；<code>contourPixelCount</code>：純量整數，邊界像素數；<code>areaSquareMm</code>：純量 double，換算後平方毫米面積。</p>
+<p><strong>第 55 行</strong>：結束案例二主函式。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p>段落銜接：完成「量測摘要與 JSON」後，下一段進入「遮罩塗色函式」。</p>
+<h3 id="section-11">第 7 段：遮罩塗色函式（第 57–63 行）</h3>
+<p>本段目的：完成「遮罩塗色函式」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">function image = paintMask(image,mask,color) % 定義依遮罩塗上指定 RGB 顏色的函式。
+for channel = 1:3 % 逐一處理紅綠藍三個通道。
+    plane = image(:,:,channel); % 取出目前色彩通道。
+    plane(mask) = uint8(color(channel)); % 將遮罩內像素改成指定通道值。
+    image(:,:,channel) = plane; % 將修改後通道放回影像。
+end % 結束三通道繪製迴圈。
+end % 結束遮罩塗色函式。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 57 行</strong>：定義依遮罩塗上指定 RGB 顏色的函式。 <code>function</code> 宣告 <code>paintMask</code>；等號左側列回傳值，小括號內依順序列出呼叫者要傳入的資料。 這行的資料是：<code>image</code>：H×W×3 uint8，輸入與輸出的 RGB 影像；<code>mask</code>：H×W logical，要上色的位置；<code>color</code>：1×3 數值列向量，指定 RGB 顏色。</p>
+<p><strong>第 58 行</strong>：逐一處理紅綠藍三個通道。 <code>for</code> 建立迴圈；迴圈變數會依序取用右側序列中的每個值。 這行的資料是：<code>channel</code>：純量整數，目前處理第 1、2 或 3 通道。</p>
+<p><strong>第 59 行</strong>：取出目前色彩通道。 索引中的 <code>:</code> 代表該維度全部元素；例如 <code>X(:,2)</code> 會取全部資料列的第 2 欄。 這行的資料是：<code>image</code>：H×W×3 uint8，輸入與輸出的 RGB 影像；<code>channel</code>：純量整數，目前處理第 1、2 或 3 通道；<code>plane</code>：H×W uint8，目前取出的單一色彩通道。 小例子：例如 <code>A(:,2)</code> 代表取 A 的全部資料列與第 2 欄。</p>
+<p><strong>第 60 行</strong>：將遮罩內像素改成指定通道值。 這行的資料是：<code>mask</code>：H×W logical，要上色的位置；<code>color</code>：1×3 數值列向量，指定 RGB 顏色；<code>channel</code>：純量整數，目前處理第 1、2 或 3 通道；<code>plane</code>：H×W uint8，目前取出的單一色彩通道。</p>
+<p><strong>第 61 行</strong>：將修改後通道放回影像。 索引中的 <code>:</code> 代表該維度全部元素；例如 <code>X(:,2)</code> 會取全部資料列的第 2 欄。 這行的資料是：<code>image</code>：H×W×3 uint8，輸入與輸出的 RGB 影像；<code>channel</code>：純量整數，目前處理第 1、2 或 3 通道；<code>plane</code>：H×W uint8，目前取出的單一色彩通道。 小例子：例如 <code>A(:,2)</code> 代表取 A 的全部資料列與第 2 欄。</p>
+<p><strong>第 62 行</strong>：結束三通道繪製迴圈。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 63 行</strong>：結束遮罩塗色函式。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p>段落銜接：完成「遮罩塗色函式」後，下一段進入「最大連通元件初始化」。</p>
+<h3 id="section-12">第 8 段：最大連通元件初始化（第 65–81 行）</h3>
+<p>本段目的：完成「最大連通元件初始化」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">function largest = largestComponent(mask) % 定義以 base MATLAB 自行實作的最大連通元件函式。
+[height,width] = size(mask); % 取得遮罩高度與寬度。
+visited = false(height,width); % 建立已拜訪像素紀錄。
+largest = false(height,width); % 建立目前最大元件遮罩。
+targetList = find(mask); % 取得所有目標像素線性索引。
+for targetPosition = 1:numel(targetList) % 逐一查看待分組的目標像素。
+    startIndex = targetList(targetPosition); % 取得目前候選起點索引。
+    if visited(startIndex) % 檢查起點是否已屬於先前元件。
+        continue % 跳過已拜訪像素。
+    end % 結束已拜訪判斷。
+    queue = zeros(nnz(mask),1); % 配置最多容納所有目標像素的佇列。
+    componentIndex = zeros(nnz(mask),1); % 配置目前元件索引儲存空間。
+    queueHead = 1; % 將佇列讀取位置設為第一格。
+    queueTail = 1; % 將佇列寫入位置設為第一格。
+    componentCount = 0; % 將目前元件像素數歸零。
+    queue(queueTail) = startIndex; % 將起點放入佇列。
+    visited(startIndex) = true; % 將起點標為已拜訪。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 65 行</strong>：定義以 base MATLAB 自行實作的最大連通元件函式。 <code>function</code> 宣告 <code>largestComponent</code>；等號左側列回傳值，小括號內依順序列出呼叫者要傳入的資料。 這行的資料是：<code>mask</code>：H×W logical，全部候選前景；<code>largest</code>：H×W logical，目前找到的最大元件。</p>
+<p><strong>第 66 行</strong>：取得遮罩高度與寬度。 這行的資料是：<code>mask</code>：H×W logical，全部候選前景。</p>
+<p><strong>第 67 行</strong>：建立已拜訪像素紀錄。 <code>false(m,n)</code> 建立 m×n logical 陣列，所有初始值都是 <code>false</code>。 這行的資料是：<code>visited</code>：H×W logical，記錄已加入搜尋的像素。</p>
+<p><strong>第 68 行</strong>：建立目前最大元件遮罩。 <code>false(m,n)</code> 建立 m×n logical 陣列，所有初始值都是 <code>false</code>。 這行的資料是：<code>largest</code>：H×W logical，目前找到的最大元件。</p>
+<p><strong>第 69 行</strong>：取得所有目標像素線性索引。 <code>find</code> 回傳條件為 <code>true</code> 的索引位置。 這行的資料是：<code>mask</code>：H×W logical，全部候選前景；<code>targetList</code>：K×1 double，全部前景的線性索引。</p>
+<p><strong>第 70 行</strong>：逐一查看待分組的目標像素。 <code>for</code> 建立迴圈；迴圈變數會依序取用右側序列中的每個值。 <code>numel</code> 回傳陣列的元素總數，不受列向量或欄向量方向影響。 這行的資料是：<code>targetList</code>：K×1 double，全部前景的線性索引。</p>
+<p><strong>第 71 行</strong>：取得目前候選起點索引。 這行的資料是：<code>targetList</code>：K×1 double，全部前景的線性索引。</p>
+<p><strong>第 72 行</strong>：檢查起點是否已屬於先前元件。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 這行的資料是：<code>visited</code>：H×W logical，記錄已加入搜尋的像素。</p>
+<p><strong>第 73 行</strong>：跳過已拜訪像素。 <code>continue</code> 直接進到迴圈下一輪，略過本輪後面的敘述。</p>
+<p><strong>第 74 行</strong>：結束已拜訪判斷。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 75 行</strong>：配置最多容納所有目標像素的佇列。 <code>zeros(m,n)</code> 先配置 m×n 的全零陣列，之後再逐格填入結果。 <code>nnz</code> 計算非零或 <code>true</code> 元素數量。 這行的資料是：<code>mask</code>：H×W logical，全部候選前景；<code>queue</code>：K×1 double，廣度搜尋待處理索引。 小例子：例如 <code>zeros(2,3)</code> 會得到 2 列、3 欄的全零矩陣。</p>
+<p><strong>第 76 行</strong>：配置目前元件索引儲存空間。 <code>zeros(m,n)</code> 先配置 m×n 的全零陣列，之後再逐格填入結果。 <code>nnz</code> 計算非零或 <code>true</code> 元素數量。 這行的資料是：<code>mask</code>：H×W logical，全部候選前景；<code>componentIndex</code>：K×1 double，目前元件索引暫存。 小例子：例如 <code>zeros(2,3)</code> 會得到 2 列、3 欄的全零矩陣。</p>
+<p><strong>第 77 行</strong>：將佇列讀取位置設為第一格。</p>
+<p><strong>第 78 行</strong>：將佇列寫入位置設為第一格。</p>
+<p><strong>第 79 行</strong>：將目前元件像素數歸零。 這行的資料是：<code>componentCount</code>：純量整數，目前元件像素數。</p>
+<p><strong>第 80 行</strong>：將起點放入佇列。 這行的資料是：<code>queue</code>：K×1 double，廣度搜尋待處理索引。</p>
+<p><strong>第 81 行</strong>：將起點標為已拜訪。 這行的資料是：<code>visited</code>：H×W logical，記錄已加入搜尋的像素。</p>
+<p>段落銜接：完成「最大連通元件初始化」後，下一段進入「四方向廣度搜尋」。</p>
+<h3 id="section-13">第 9 段：四方向廣度搜尋（第 82–102 行）</h3>
+<p>本段目的：完成「四方向廣度搜尋」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">    while queueHead &lt;= queueTail % 持續處理佇列內待搜尋像素。
+        currentIndex = queue(queueHead); % 取出目前像素索引。
+        queueHead = queueHead + 1; % 將讀取位置移到下一格。
+        componentCount = componentCount + 1; % 增加目前元件像素數。
+        componentIndex(componentCount) = currentIndex; % 保存目前元件像素索引。
+        [row,column] = ind2sub([height width],currentIndex); % 將線性索引轉成列與欄。
+        neighbors = [row - 1 column;row + 1 column;row column - 1;row column + 1]; % 列出上下左右鄰居。
+        for neighborPosition = 1:4 % 逐一檢查四個相鄰位置。
+            neighborRow = neighbors(neighborPosition,1); % 取得相鄰位置列座標。
+            neighborColumn = neighbors(neighborPosition,2); % 取得相鄰位置欄座標。
+            inside = neighborRow &gt;= 1 &amp;&amp; neighborRow &lt;= height &amp;&amp; neighborColumn &gt;= 1 &amp;&amp; neighborColumn &lt;= width; % 檢查鄰居是否在影像範圍。
+            if inside % 只處理影像範圍內的鄰居。
+                neighborIndex = sub2ind([height width],neighborRow,neighborColumn); % 將鄰居座標轉成線性索引。
+                if mask(neighborIndex) &amp;&amp; ~visited(neighborIndex) % 檢查鄰居是待拜訪目標像素。
+                    queueTail = queueTail + 1; % 將佇列寫入位置往後移。
+                    queue(queueTail) = neighborIndex; % 把相鄰目標像素加入佇列。
+                    visited(neighborIndex) = true; % 立即標記避免重複加入。
+                end % 結束相鄰像素加入條件。
+            end % 結束影像範圍條件。
+        end % 結束四方向鄰居迴圈。
+    end % 結束目前連通元件搜尋。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 82 行</strong>：持續處理佇列內待搜尋像素。 <code>while</code> 會持續重複區塊內容，直到條件轉為 <code>false</code>。</p>
+<p><strong>第 83 行</strong>：取出目前像素索引。 這行的資料是：<code>queue</code>：K×1 double，廣度搜尋待處理索引。</p>
+<p><strong>第 84 行</strong>：將讀取位置移到下一格。</p>
+<p><strong>第 85 行</strong>：增加目前元件像素數。 這行的資料是：<code>componentCount</code>：純量整數，目前元件像素數。</p>
+<p><strong>第 86 行</strong>：保存目前元件像素索引。 這行的資料是：<code>componentIndex</code>：K×1 double，目前元件索引暫存；<code>componentCount</code>：純量整數，目前元件像素數。</p>
+<p><strong>第 87 行</strong>：將線性索引轉成列與欄。 <code>ind2sub([height width],currentIndex)</code> 把欄優先的線性索引還原成列、欄座標，供上下左右鄰居檢查。 這行的資料是：<code>row</code>：純量整數，目前像素列座標；<code>column</code>：純量整數，目前像素欄座標。</p>
+<p><strong>第 88 行</strong>：列出上下左右鄰居。 這行的資料是：<code>neighbors</code>：4×2 double，上下左右鄰居的列欄座標；<code>row</code>：純量整數，目前像素列座標；<code>column</code>：純量整數，目前像素欄座標。</p>
+<p><strong>第 89 行</strong>：逐一檢查四個相鄰位置。 <code>for</code> 建立迴圈；迴圈變數會依序取用右側序列中的每個值。</p>
+<p><strong>第 90 行</strong>：取得相鄰位置列座標。 這行的資料是：<code>neighbors</code>：4×2 double，上下左右鄰居的列欄座標。</p>
+<p><strong>第 91 行</strong>：取得相鄰位置欄座標。 這行的資料是：<code>neighbors</code>：4×2 double，上下左右鄰居的列欄座標。</p>
+<p><strong>第 92 行</strong>：檢查鄰居是否在影像範圍。</p>
+<p><strong>第 93 行</strong>：只處理影像範圍內的鄰居。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。</p>
+<p><strong>第 94 行</strong>：將鄰居座標轉成線性索引。 <code>sub2ind([height width],row,column)</code> 把列、欄座標轉回單一線性索引，方便存入佇列或 logical 陣列。</p>
+<p><strong>第 95 行</strong>：檢查鄰居是待拜訪目標像素。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>~</code> 在邏輯式中代表反轉；在多重回傳值左側則代表略過該回傳值。 這行的資料是：<code>mask</code>：H×W logical，全部候選前景；<code>visited</code>：H×W logical，記錄已加入搜尋的像素。</p>
+<p><strong>第 96 行</strong>：將佇列寫入位置往後移。</p>
+<p><strong>第 97 行</strong>：把相鄰目標像素加入佇列。 這行的資料是：<code>queue</code>：K×1 double，廣度搜尋待處理索引。</p>
+<p><strong>第 98 行</strong>：立即標記避免重複加入。 這行的資料是：<code>visited</code>：H×W logical，記錄已加入搜尋的像素。</p>
+<p><strong>第 99 行</strong>：結束相鄰像素加入條件。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 100 行</strong>：結束影像範圍條件。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 101 行</strong>：結束四方向鄰居迴圈。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 102 行</strong>：結束目前連通元件搜尋。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p>段落銜接：完成「四方向廣度搜尋」後，下一段進入「更新最大元件」。</p>
+<h3 id="section-14">第 10 段：更新最大元件（第 103–108 行）</h3>
+<p>本段目的：完成「更新最大元件」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">    if componentCount &gt; nnz(largest) % 比較目前元件與已知最大元件。
+        largest(:) = false; % 清除先前最大元件遮罩。
+        largest(componentIndex(1:componentCount)) = true; % 將目前較大元件設為新結果。
+    end % 結束最大元件更新條件。
+end % 結束所有目標像素搜尋迴圈。
+end % 結束最大連通元件函式。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 103 行</strong>：比較目前元件與已知最大元件。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>nnz</code> 計算非零或 <code>true</code> 元素數量。 這行的資料是：<code>largest</code>：H×W logical，目前找到的最大元件；<code>componentCount</code>：純量整數，目前元件像素數。 小例子：例如遮罩中有 12 個 <code>true</code>，<code>nnz(mask)</code> 就回傳 12。</p>
+<p><strong>第 104 行</strong>：清除先前最大元件遮罩。 這行的資料是：<code>largest</code>：H×W logical，目前找到的最大元件。</p>
+<p><strong>第 105 行</strong>：將目前較大元件設為新結果。 這行的資料是：<code>largest</code>：H×W logical，目前找到的最大元件；<code>componentIndex</code>：K×1 double，目前元件索引暫存；<code>componentCount</code>：純量整數，目前元件像素數。</p>
+<p><strong>第 106 行</strong>：結束最大元件更新條件。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 107 行</strong>：結束所有目標像素搜尋迴圈。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 108 行</strong>：結束最大連通元件函式。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p>段落銜接：完成「更新最大元件」後，下一段進入「輪廓像素抽取」。</p>
+<h3 id="section-15">第 11 段：輪廓像素抽取（第 110–123 行）</h3>
+<p>本段目的：完成「輪廓像素抽取」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">function contour = contourPixels(component) % 定義四方向輪廓像素抽取函式。
+[height,width] = size(component); % 取得元件遮罩尺寸。
+contour = false(height,width); % 建立全假的輪廓遮罩。
+[rows,columns] = find(component); % 取得所有元件像素座標。
+for index = 1:numel(rows) % 逐一查看每個元件像素。
+    row = rows(index); % 取得目前像素列座標。
+    column = columns(index); % 取得目前像素欄座標。
+    isBoundary = row == 1 || row == height || column == 1 || column == width; % 檢查是否接觸影像外框。
+    if ~isBoundary % 只在影像內部像素檢查四個鄰居。
+        isBoundary = ~component(row - 1,column) || ~component(row + 1,column) || ~component(row,column - 1) || ~component(row,column + 1); % 檢查至少一側是否為背景。
+    end % 結束鄰居輪廓判斷。
+    contour(row,column) = isBoundary; % 保存目前像素是否屬於輪廓。
+end % 結束元件像素迴圈。
+end % 結束輪廓抽取函式。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 110 行</strong>：定義四方向輪廓像素抽取函式。 <code>function</code> 宣告 <code>contourPixels</code>；等號左側列回傳值，小括號內依順序列出呼叫者要傳入的資料。 這行的資料是：<code>component</code>：H×W logical，單一實心元件遮罩；<code>contour</code>：H×W logical，至少一側接觸背景的邊界像素。</p>
+<p><strong>第 111 行</strong>：取得元件遮罩尺寸。 這行的資料是：<code>component</code>：H×W logical，單一實心元件遮罩。</p>
+<p><strong>第 112 行</strong>：建立全假的輪廓遮罩。 <code>false(m,n)</code> 建立 m×n logical 陣列，所有初始值都是 <code>false</code>。 這行的資料是：<code>contour</code>：H×W logical，至少一側接觸背景的邊界像素。</p>
+<p><strong>第 113 行</strong>：取得所有元件像素座標。 <code>find</code> 回傳條件為 <code>true</code> 的索引位置。 這行的資料是：<code>component</code>：H×W logical，單一實心元件遮罩；<code>rows</code>：K×1 double，全部元件像素列座標；<code>columns</code>：K×1 double，全部元件像素欄座標。</p>
+<p><strong>第 114 行</strong>：逐一查看每個元件像素。 <code>for</code> 建立迴圈；迴圈變數會依序取用右側序列中的每個值。 <code>numel</code> 回傳陣列的元素總數，不受列向量或欄向量方向影響。 這行的資料是：<code>rows</code>：K×1 double，全部元件像素列座標。</p>
+<p><strong>第 115 行</strong>：取得目前像素列座標。 這行的資料是：<code>rows</code>：K×1 double，全部元件像素列座標。</p>
+<p><strong>第 116 行</strong>：取得目前像素欄座標。 這行的資料是：<code>columns</code>：K×1 double，全部元件像素欄座標。</p>
+<p><strong>第 117 行</strong>：檢查是否接觸影像外框。 這行的資料是：<code>isBoundary</code>：logical 純量，目前像素是否為邊界。</p>
+<p><strong>第 118 行</strong>：只在影像內部像素檢查四個鄰居。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>~</code> 在邏輯式中代表反轉；在多重回傳值左側則代表略過該回傳值。 這行的資料是：<code>isBoundary</code>：logical 純量，目前像素是否為邊界。</p>
+<p><strong>第 119 行</strong>：檢查至少一側是否為背景。 <code>~</code> 在邏輯式中代表反轉；在多重回傳值左側則代表略過該回傳值。 目前資料是實心多邊形，因此這個四鄰域規則標出外輪廓；若元件內含孔洞，孔洞旁也接觸背景，會同時形成內邊界，報告時要另外區分。 這行的資料是：<code>component</code>：H×W logical，單一實心元件遮罩；<code>isBoundary</code>：logical 純量，目前像素是否為邊界。</p>
+<p><strong>第 120 行</strong>：結束鄰居輪廓判斷。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 121 行</strong>：保存目前像素是否屬於輪廓。 這行的資料是：<code>contour</code>：H×W logical，至少一側接觸背景的邊界像素；<code>isBoundary</code>：logical 純量，目前像素是否為邊界。</p>
+<p><strong>第 122 行</strong>：結束元件像素迴圈。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 123 行</strong>：結束輪廓抽取函式。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p>段落銜接：完成「輪廓像素抽取」後，下一段進入「安全輸出路徑」。</p>
+<h3 id="section-16">第 12 段：安全輸出路徑（第 125–147 行）</h3>
+<p>本段目的：完成「安全輸出路徑」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">function outputDir = ensureSafeOutput(projectRoot,rawPath) % 定義限制輸出範圍的安全函式。
+if ~usejava('jvm') % 檢查安全路徑正規化所需的 JVM 必要條件。
+    error('Tutorial:JVMRequired','本教材的安全路徑檢查需要啟用 MATLAB JVM。'); % 以固定識別碼清楚回報 JVM 必要條件。
+end % 結束 JVM 前置條件檢查。
+rawFile = java.io.File(char(rawPath)); % 建立候選路徑物件以判斷路徑型態。
+if ~rawFile.isAbsolute() % 處理呼叫者提供的相對輸出路徑。
+    rawPath = fullfile(projectRoot,char(rawPath)); % 將相對路徑固定接在本程式專案根目錄下。
+end % 結束相對路徑正規化條件。
+rootPath = char(java.io.File(projectRoot).getCanonicalPath()); % 取得專案根目錄標準路徑。
+candidatePath = char(java.io.File(char(rawPath)).getCanonicalPath()); % 取得候選輸出標準路徑。
+if ispc % 判斷是否為 Windows 路徑環境。
+    isInside = startsWith(lower([candidatePath filesep]),lower([rootPath filesep])); % 統一轉成小寫後檢查路徑範圍。
+else % 處理 macOS、Linux 與 MATLAB Online。
+    isInside = startsWith([candidatePath filesep],[rootPath filesep]); % 區分大小寫檢查路徑範圍。
+end % 結束作業系統判斷。
+if ~isInside % 檢查候選位置的教材專案範圍。
+    error('Tutorial:UnsafeOutput','安全限制：輸出資料夾必須位於 MATLAB 教材專案內。'); % 回報固定識別碼錯誤。
+end % 結束安全範圍檢查。
+if ~isfolder(candidatePath) % 檢查輸出資料夾是否需要建立。
+    mkdir(candidatePath); % 建立資料夾並保留現有內容。
+end % 結束資料夾建立條件。
+outputDir = candidatePath; % 回傳安全標準路徑。
+end % 結束安全輸出函式。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 125 行</strong>：定義限制輸出範圍的安全函式。 <code>function</code> 宣告 <code>ensureSafeOutput</code>；等號左側列回傳值，小括號內依順序列出呼叫者要傳入的資料。 這行的資料是：<code>projectRoot</code>：字元路徑，允許輸出的專案根目錄；<code>rawPath</code>：呼叫者提供的原始路徑；<code>outputDir</code>：字元路徑，驗證後的輸出位置。</p>
+<p><strong>第 126 行</strong>：檢查安全路徑正規化所需的 JVM 必要條件。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>~</code> 在邏輯式中代表反轉；在多重回傳值左側則代表略過該回傳值。</p>
+<p><strong>第 127 行</strong>：以固定識別碼清楚回報 JVM 必要條件。 <code>error</code> 以固定識別碼與訊息停止流程，方便使用者回報精確原因。</p>
+<p><strong>第 128 行</strong>：結束 JVM 前置條件檢查。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 129 行</strong>：建立候選路徑物件以判斷路徑型態。 <code>char</code> 把 string 或字元輸入統一成 Java 可接收的字元向量；<code>java.io.File</code> 建立路徑物件，下一行用 <code>isAbsolute()</code> 判斷它是否為絕對路徑。 <code>char</code> 將 string 純量轉成字元向量，供 Java 或舊式 MATLAB 介面使用。 這行的資料是：<code>rawPath</code>：呼叫者提供的原始路徑；<code>rawFile</code>：Java File 物件，用來判斷絕對或相對路徑。</p>
+<p><strong>第 130 行</strong>：處理呼叫者提供的相對輸出路徑。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>~</code> 在邏輯式中代表反轉；在多重回傳值左側則代表略過該回傳值。 這行的資料是：<code>rawFile</code>：Java File 物件，用來判斷絕對或相對路徑。</p>
+<p><strong>第 131 行</strong>：將相對路徑固定接在本程式專案根目錄下。 <code>fullfile</code> 依作業系統規則組合資料夾與檔名，避免手動拼接斜線。 <code>char</code> 將 string 純量轉成字元向量，供 Java 或舊式 MATLAB 介面使用。 這行的資料是：<code>projectRoot</code>：字元路徑，允許輸出的專案根目錄；<code>rawPath</code>：呼叫者提供的原始路徑。 小例子：例如 <code>fullfile(root,'images','a.png')</code> 會組成目前作業系統可用的完整路徑。</p>
+<p><strong>第 132 行</strong>：結束相對路徑正規化條件。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 133 行</strong>：取得專案根目錄標準路徑。 Java <code>getCanonicalPath()</code> 會整理 <code>.</code>、<code>..</code> 與可解析的符號連結，再轉回 MATLAB char；安全範圍比較使用這個標準化結果。 <code>char</code> 將 string 純量轉成字元向量，供 Java 或舊式 MATLAB 介面使用。 這行的資料是：<code>projectRoot</code>：字元路徑，允許輸出的專案根目錄；<code>rootPath</code>：字元路徑，canonical 專案根目錄。</p>
+<p><strong>第 134 行</strong>：取得候選輸出標準路徑。 Java <code>getCanonicalPath()</code> 會整理 <code>.</code>、<code>..</code> 與可解析的符號連結，再轉回 MATLAB char；安全範圍比較使用這個標準化結果。 <code>char</code> 將 string 純量轉成字元向量，供 Java 或舊式 MATLAB 介面使用。 這行的資料是：<code>rawPath</code>：呼叫者提供的原始路徑；<code>candidatePath</code>：字元路徑，canonical 候選輸出位置。</p>
+<p><strong>第 135 行</strong>：判斷是否為 Windows 路徑環境。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。</p>
+<p><strong>第 136 行</strong>：統一轉成小寫後檢查路徑範圍。 兩側都補上 <code>filesep</code> 再比前綴，可讓 <code>/project/out</code> 通過，同時避免把 <code>/project2</code> 誤認成 <code>/project</code> 內部；Windows 分支另先轉小寫。 <code>startsWith</code> 檢查第一段文字是否以第二段文字開頭。 這行的資料是：<code>rootPath</code>：字元路徑，canonical 專案根目錄；<code>candidatePath</code>：字元路徑，canonical 候選輸出位置；<code>isInside</code>：logical 純量，候選路徑是否位於專案內。</p>
+<p><strong>第 137 行</strong>：處理 macOS、Linux 與 MATLAB Online。 <code>else</code> 接住前面條件之外的情況，讓流程仍有明確處理方式。</p>
+<p><strong>第 138 行</strong>：區分大小寫檢查路徑範圍。 兩側都補上 <code>filesep</code> 再比前綴，可讓 <code>/project/out</code> 通過，同時避免把 <code>/project2</code> 誤認成 <code>/project</code> 內部；Windows 分支另先轉小寫。 <code>startsWith</code> 檢查第一段文字是否以第二段文字開頭。 這行的資料是：<code>rootPath</code>：字元路徑，canonical 專案根目錄；<code>candidatePath</code>：字元路徑，canonical 候選輸出位置；<code>isInside</code>：logical 純量，候選路徑是否位於專案內。</p>
+<p><strong>第 139 行</strong>：結束作業系統判斷。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 140 行</strong>：檢查候選位置的教材專案範圍。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>~</code> 在邏輯式中代表反轉；在多重回傳值左側則代表略過該回傳值。 這行的資料是：<code>isInside</code>：logical 純量，候選路徑是否位於專案內。</p>
+<p><strong>第 141 行</strong>：回報固定識別碼錯誤。 <code>error</code> 以固定識別碼與訊息停止流程，方便使用者回報精確原因。</p>
+<p><strong>第 142 行</strong>：結束安全範圍檢查。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 143 行</strong>：檢查輸出資料夾是否需要建立。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。 <code>~</code> 在邏輯式中代表反轉；在多重回傳值左側則代表略過該回傳值。 <code>isfolder</code> 檢查指定路徑是否指向現有資料夾。 這行的資料是：<code>candidatePath</code>：字元路徑，canonical 候選輸出位置。</p>
+<p><strong>第 144 行</strong>：建立資料夾並保留現有內容。 <code>mkdir</code> 建立指定資料夾；既有檔案保持原狀，程式只會覆寫自己使用的同名教材輸出。 這行的資料是：<code>candidatePath</code>：字元路徑，canonical 候選輸出位置。</p>
+<p><strong>第 145 行</strong>：結束資料夾建立條件。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 146 行</strong>：回傳安全標準路徑。 這行的資料是：<code>candidatePath</code>：字元路徑，canonical 候選輸出位置；<code>outputDir</code>：字元路徑，驗證後的輸出位置。</p>
+<p><strong>第 147 行</strong>：結束安全輸出函式。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p>段落銜接：完成「安全輸出路徑」後，下一段進入「JSON 寫入」。</p>
+<h3 id="section-17">第 13 段：JSON 寫入（第 149–156 行）</h3>
+<p>本段目的：完成「JSON 寫入」，讓這組程式成為前後相接的一個工作單位。</p>
+<pre tabindex="0"><code class="language-matlab">function writeJson(path,data) % 定義 JSON 寫入函式。
+fileID = fopen(path,'w','n','UTF-8'); % 以 UTF-8 開啟輸出檔。
+if fileID &lt; 0 % 檢查摘要檔開啟狀態。
+    error('Tutorial:FileWrite','摘要檔寫入受阻：%s',path); % 回報包含路徑的寫檔錯誤。
+end % 結束開檔檢查。
+cleaner = onCleanup(@() fclose(fileID)); % 確保函式結束時關閉檔案。
+fprintf(fileID,'%s',jsonencode(data,'PrettyPrint',true)); % 將結構編碼並寫成易讀 JSON。
+end % 結束 JSON 寫入函式。
+</code></pre>
+<p>段內逐行說明：</p>
+<p><strong>第 149 行</strong>：定義 JSON 寫入函式。 <code>function</code> 宣告 <code>這個函式</code>；等號左側列回傳值，小括號內依順序列出呼叫者要傳入的資料。</p>
+<p><strong>第 150 行</strong>：以 UTF-8 開啟輸出檔。 <code>'w'</code> 以寫入模式開檔並覆寫同名教材輸出，<code>'n'</code> 使用原生位元組順序，<code>'UTF-8'</code> 指定文字編碼；回傳負值代表開檔受阻。</p>
+<p><strong>第 151 行</strong>：檢查摘要檔開啟狀態。 <code>if</code> 先計算後面的邏輯條件；結果為 <code>true</code> 時執行下一行到配對的 <code>end</code>。</p>
+<p><strong>第 152 行</strong>：回報包含路徑的寫檔錯誤。 <code>error</code> 以固定識別碼與訊息停止流程，方便使用者回報精確原因。</p>
+<p><strong>第 153 行</strong>：結束開檔檢查。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<p><strong>第 154 行</strong>：確保函式結束時關閉檔案。 <code>@()</code> 建立零輸入匿名函式，內容是 <code>fclose(fileID)</code>；<code>onCleanup</code> 物件離開函式作用域時會呼叫它，即使後續發生錯誤也會嘗試關檔。</p>
+<p><strong>第 155 行</strong>：將結構編碼並寫成易讀 JSON。 <code>jsonencode</code> 把 struct 轉成 JSON；名稱值參數 <code>'PrettyPrint',true</code> 加入縮排與換行，外層 <code>fprintf(fileID,'%s',...)</code> 將整段文字寫入已開啟檔案。 <code>fprintf</code> 依格式字串輸出文字；<code>%d</code>、<code>%.3f</code> 等位置會由後續變數填入。 <code>jsonencode</code> 把 struct 轉成 JSON 文字，便於跨工具閱讀。</p>
+<p><strong>第 156 行</strong>：結束 JSON 寫入函式。 <code>end</code> 關閉縮排所對應的最近一層函式、條件或迴圈，下一行回到上一層流程。</p>
+<h2 id="section-18">二、可直接貼給 GPT／Claude 的逐段解說提示詞</h2>
+<pre tabindex="0"><code class="language-text">請閱讀我貼上的完整 MATLAB 檔 `case2_image_measure_matlab.m`，為零資訊背景同學撰寫台灣慣用、口語但精簡的繁體中文逐段教材，並在每一段內逐行解說。
+
+請遵守以下格式：
+1. 依資料準備、主要運算、評估、輸出與各個區域函式的實際控制流程分段；分段依邏輯決定，避免固定每幾行切一段。
+2. 每段先寫一句目的，再貼出該段完整原始程式碼與行號範圍；延續運算式與它相接的控制流程放在同一段。
+3. 每段的程式區塊只貼一次，接著依「第 N 行」用段落逐行說明；空白行計入行號，每個非空行恰好說明一次。
+4. 每行說明要涵蓋實際工作、重要符號與參數、變數型態與尺寸、輸入與輸出，以及它在整體流程中的目的。
+5. 遇到索引、矩陣、logical、table、cell、struct、函式、if、for、while、end、...、.*、./、.^、~、冒號與大括號時，提供小型數值例子。
+6. 延續行、end、欄名、註解與錯誤處理都要解說；各段之間只在有助理解時加入一句銜接。
+7. 只描述程式真正做的事；執行結果由 MATLAB 實際輸出確認，並保留資料洩漏、合成資料外推、比例設定與模型估計的限制。
+8. 解說完成後，加上如何執行、如何檢查輸出，以及如何填寫 `CASE2_REPORT_TEMPLATE.md`。
+
+請先回報分段數、總行數、非空行數與第一行函式名稱，再開始逐段解說；完成後再次核對每個非空行只出現一次。
+</code></pre>
+<h2 id="section-19">三、行號與分段更新規則</h2>
+<p>程式碼有任何改動時，請重新從最終 <code>.m</code> 讀取實體行號、依新控制流程檢查分段、重算 SHA-256，再完整重建本文件。這樣每段程式碼與段內第 N 行都會持續對應可執行來源。</p>
+<h2 id="section-20">整理自己的報告</h2>
+<h3 id="section-21">案例二 PDF 報告範本：紙面色塊分割與面積</h3>
+<blockquote>
+<p>老師要求的 PDF 內容為「執行結果、處理程序、程式碼」。這份範本、獨立 <code>.m</code>、PNG、JSON 與自動化檢核屬助教實作方式。請以本人 MATLAB 實際輸出完成內容。</p>
+</blockquote>
+<h3 id="section-22">一、執行結果</h3>
+<p>請放入下列實際輸出：</p>
+<ol>
+<li><code>synthetic_paper_blocks.png</code> 原圖。</li>
+<li><code>segmentation_mask.png</code> 分割遮罩。</li>
+<li><code>contour_overlay.png</code> 純紅色外輪廓疊圖。</li>
+<li>MATLAB Command Window 的像素面積與平方毫米面積。</li>
+</ol>
+<pre tabindex="0"><code class="language-text">Pixel Area：
+Contour Pixel Count：
+Pixel Size：1 mm × 1 mm
+Area：
+</code></pre>
+<h3 id="section-23">二、處理程序</h3>
+<ol>
+<li>建立虛構紙面影像與干擾色塊。</li>
+<li>讀回 PNG 並分離 RGB 通道。</li>
+<li>套用紅色門檻與色彩優勢門檻。</li>
+<li>找出最大四方向連通元件。</li>
+<li>從原始元件的全部像素計算面積。</li>
+<li>抽取外輪廓並在疊圖標成 RGB <code>[255 0 0]</code>。</li>
+<li>依 1 mm × 1 mm/像素換算平方毫米。</li>
+</ol>
+<p>換算式：</p>
+<pre tabindex="0"><code class="language-text">面積（mm²）＝原始分割元件像素數 × 1 mm × 1 mm
+</code></pre>
+<h3 id="section-24">三、程式碼</h3>
+<p>請整理本人實際執行版本的程式碼。可直接貼上程式碼；若採截圖呈現，請確保文字清楚。內容至少涵蓋：</p>
+<ol>
+<li>RGB 門檻分割。</li>
+<li>最大連通元件。</li>
+<li><code>pixelArea = nnz(component)</code>。</li>
+<li>紅色外輪廓。</li>
+<li>1 mm 比例換算與輸出。</li>
+</ol><nav class="pager" aria-label="上一步下一步"><a href="case1.html">← 上一步：01 感測分類</a><a href="case3.html">下一步：03 圖形分類 →</a></nav></main></div><footer>合成資料練習 · 助教實作方式<br>正式作業請依老師題目與課務公告完成。<a href="resources.html">教材與使用說明</a></footer></body></html>
