@@ -22,6 +22,8 @@ python3 -m http.server 8765 --directory site
 
 main 更新後由 GitHub Actions 檢查教材 ZIP 校驗碼並發布 `site/` 至 GitHub Pages。此 repo 與個人網站獨立。
 
-預定正式網域為 `learn.cs-kairos.com`；網域啟用以 DNS 與 HTTPS 實測為準。不要修改既有個人站、console 或 api 的設定。
+正式網域設定為 https://learn.cs-kairos.com/ ，以 Cloudflare DNS only CNAME 連到 GitHub Pages；HTTPS 由 GitHub 自動管理。不要修改既有個人站、console 或 api 的設定。
+
+頁面使用相對連結，可同時支援 project path 與自訂網域根目錄，不需改寫 base path。GitHub Actions 發布使用 repo 的 Pages custom domain 設定，不需要 CNAME 檔。
 
 公開內容禁止包含私人對話、學生回饋、電子郵件、帳密、內部檔案路徑與原始驗證紀錄。
