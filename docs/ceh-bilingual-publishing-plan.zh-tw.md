@@ -169,3 +169,13 @@ M01 的公開系列不重設 M04 閱讀位置；每週 CEH＋CEHP 240 分鐘與�
 需要修正的閱讀問題。部署證據留在本 repo；Planning 只同步狀態與下一步。
 
 [README](../README.md) · [主站架構](https://github.com/JasonLn0711/JasonLn0711.github.io/blob/main/docs/cs-kairos-domain-plan.zh-tw.md) · [Google 多語頁面](https://developers.google.com/search/docs/specialty/international/localized-versions)
+
+## Git 文件發布回執 — 2026-10-23
+
+本計畫與 README 由 `0bd05ea` 推送至 `origin/main`；重新 fetch 確認本機與遠端
+同為 `0bd05eafefed60b5ecc50049dc913d2def368dec`，divergence `0 0`。沒有衝突或歷史覆寫。
+`python3 scripts/validate_site.py` 通過，六份下載的 SHA-256 檢查通過；本次未修改 `site/`。
+
+[Publish learning notes run 39816152276](https://github.com/JasonLn0711/kairos-learning/actions/runs/39816152276)
+已觸發，00:44（Asia/Taipei）查核仍 queued；這是既有 MATLAB 站的文件提交所觸發的流程，
+不代表新增 CEH 課程已上線。下一步仍是一篇 M01 完整雙語稿與靜態範本。
