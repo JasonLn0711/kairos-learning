@@ -1,0 +1,2 @@
+<svelte:head><title>找不到頁面 · Page not found | CS Kairos Learn</title><meta name="robots" content="noindex" /></svelte:head>
+<main class="error"><p class="eyebrow">CS KAIROS · LEARN</p><h1>這一頁暫時找不到。</h1><p>This learning page was not found. The course catalog can help you continue.</p><a href="/" data-sveltekit-reload>課程首頁</a> · <a href="/en/" data-sveltekit-reload>English catalog</a> · <a href="/courses/matlab-practice/index.html" data-sveltekit-reload>MATLAB</a></main>
