@@ -58,3 +58,11 @@ test('review checks the current answer key instead of trusting stored correctnes
 test('M04 port-open example preserves the approved answer B in both languages',()=>{
   assert.equal(q.answer,1); assert.match(q.text.zh.options[1],/服務與實際回應/); assert.match(q.text.en.options[1],/service and actual response/);
 });
+
+test('search reaches worked examples, exercise checks and answer explanations',()=>{
+  const lesson=lessons.find(l=>l.id==='ceh-m04-enumeration')!;
+  for(const lang of ['zh','en'] as const) {
+    for(const query of [lesson.text[lang].example.conclusion,lesson.text[lang].lab.check,lesson.questions[0].text[lang].rationales[1]])
+      assert.ok(search(searchEntries,query,lang).some(e=>e.id===lesson.id));
+  }
+});
