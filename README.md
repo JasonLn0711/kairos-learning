@@ -14,7 +14,7 @@ python3 -m http.server 8765 --directory site
 
 ## 第一套課程
 
-`/courses/matlab-practice/` 包含三案各 8 步全程教學、43 段逐段教學、523 個非空程式行的解說、提示詞、起始骨架及報告範本。
+`/courses/matlab-practice/` 包含三案各 8 步全程教學、三案小任務、43 段逐段教學、523 個非空程式行的解說、提示詞、起始骨架及報告範本。
 
 下載分為清理後的 MATLAB 教材包與獨立的 153 張 Python 合成參考圖庫。感測 CSV 由 MATLAB 案例一執行後產生；參考圖庫不是本次 MATLAB 的執行結果。
 
@@ -27,3 +27,9 @@ main 更新後由 GitHub Actions 檢查教材 ZIP 校驗碼並發布 `site/` 至
 頁面使用相對連結，可同時支援 project path 與自訂網域根目錄，不需改寫 base path。GitHub Actions 發布使用 repo 的 Pages custom domain 設定，不需要 CNAME 檔。
 
 公開內容禁止包含私人對話、學生回饋、電子郵件、帳密、內部檔案路徑與原始驗證紀錄。
+
+## 教材 1.8（2026-10-22）
+
+三案先做小量資料範例，再進入八步流程與逐段解說（段內逐行）。網站提供各案獨立下載及完整包；舊 1.7 ZIP 保留既有連結。發布前執行 `python3 scripts/validate_site.py` 與下載校驗碼檢查，並檢查手機、桌面排版及互動。
+
+修改下載來源後，執行 `python3 scripts/package_release.py` 重建 ZIP 與 SHA-256。PDF 範本由 `python3 scripts/build_report_pdfs.py` 產生（需要 ReportLab），再重建下載包。

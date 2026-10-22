@@ -1,5 +1,7 @@
 # 科技犯罪偵查特論：三個替代合成案例 MATLAB 教材包
 
+教材 1.8 · 2026-10-22
+
 這份教材給零資訊背景同學練習資料流程、影像處理與簡單分類。三個案例使用虛構設備感測、紙面色塊與幾何圖形，定位為正式作業前的練習素材；同學可依課程要求選擇合適方法完成作業。
 
 助教實作方式：助教整理完整程式、依流程逐段且段內逐行的台灣繁體中文說明、分階段提示詞與檢核入口；同學須在自己的 MATLAB 環境執行程式、保存真實輸出並說明限制。
@@ -29,6 +31,12 @@
 - 程式使用 string、table、`readtable(...,'Delimiter',',','TextType','string','VariableNamingRule','preserve')` 與 `jsonencode(...,'PrettyPrint',true)`；較舊版本可能需要調整。
 
 參考版已在 MATLAB R2026b Linux 批次模式通過檢核；Desktop 與 Online 請在自己的環境確認。參考結果不代替自己的實際執行。
+
+## 小任務與完整流程
+
+先讀 CASE1_QUICKSTART.md、CASE2_QUICKSTART.md 或 CASE3_QUICKSTART.md；短程式為 case1_quickstart.m、case2_quickstart.m、case3_quickstart.m。短例子顯示在 Command Window，變數留在 Workspace。案例三另附 case3_distance_demo.m 說明距離。理解後再開啟完整主函式。
+
+獨立案例包包含本案程式、流程、逐段解說（段內逐行）與範本。run_matlab_tests 需要三案完整包；完整包保留原本四支主要 .m 與檢核程式，並新增上述四支短例子。
 
 ## MATLAB Desktop
 
@@ -121,3 +129,5 @@ Train Set 與 Test Set 分開產生。標籤集中寫在 manifest；檔名與資
 三個案例都使用合成資料，只用來練習分析流程，不用來判定真實人員、設備或證物。若要處理真實案件資料，還需要合法授權、資料治理、偏誤與錯誤成本評估、證據保全、可重現紀錄及領域專家審查。
 
 各 `.m` 檔將主要函式放在最前面，局部函式接在後方。局部函式的 MATLAB 規則可參考 [MathWorks：Add Functions to Scripts](https://www.mathworks.com/help/matlab/matlab_prog/local-functions-in-scripts.html)。
+
+教材 1.8 的主程式與 1.7 相同；歷史參考執行數字保留作為對照。本次驗證狀態見公開版本說明 RELEASE_NOTES.md。
