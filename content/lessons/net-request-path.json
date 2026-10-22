@@ -1,0 +1,269 @@
+{
+  "id": "net-request-path",
+  "course": "networking",
+  "module": "intro",
+  "slug": "dns-tcp-tls-http",
+  "revision": 1,
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "sourceIds": [
+    "http",
+    "dns",
+    "tls"
+  ],
+  "terms": [
+    "dns",
+    "tls",
+    "http",
+    "evidence"
+  ],
+  "prerequisites": [],
+  "related": [
+    "ceh-m03-port-states",
+    "ceh-m08-visibility"
+  ],
+  "text": {
+    "zh": {
+      "title": "一個網頁請求的旅程：DNS、TCP、TLS 與 HTTP",
+      "summary": "從新建立的 HTTPS 連線出發，分清名稱解析、傳輸、加密與應用回應。每一層成功，都只證明自己的工作。",
+      "objectives": [
+        "描述使用 TCP 的 HTTPS 請求中各層的責任。",
+        "從合成錯誤紀錄選擇下一個檢查點。",
+        "解釋 HTTP/3 與快取使流程不同的地方。"
+      ],
+      "sections": [
+        {
+          "id": "map",
+          "heading": "先限定這張路線圖的情境",
+          "paragraphs": [
+            "本圖描述使用 HTTP/1.1 或 HTTP/2、需要新連線的 HTTPS 情境。瀏覽器可能已快取 DNS 或重用連線；HTTP/3 使用 QUIC 而不是 TCP。因此這是理解責任的模型，不是每次點連結都必定重做的固定步驟。",
+            "URL 中的主機名稱幫助尋找目的地，路徑則識別該服務上的資源。https://docs.example.test/guide/ 中，docs.example.test 是主機，/guide/ 是路徑。它們解決不同問題。"
+          ],
+          "sourceIds": [
+            "http"
+          ]
+        },
+        {
+          "id": "layers",
+          "heading": "四層各自提供什麼",
+          "paragraphs": [
+            "DNS 取得名稱對應的資源紀錄；TCP 在這個情境建立可靠的位元組傳輸；TLS 協商保護通訊並驗證適當的對端身分；HTTP 表達方法、路徑、狀態與內容。名稱解析成功不代表 TCP 一定可達，TCP 成功也不代表網站授權已通過。",
+            "每一層都可能有自己的失敗。名稱不存在、連線逾時、憑證不符與 HTTP 404 是不同證據；把它們都叫「網路壞掉」會讓下一步變得模糊。"
+          ],
+          "sourceIds": [
+            "dns",
+            "tls",
+            "http"
+          ]
+        },
+        {
+          "id": "diagnosis",
+          "heading": "先看最接近的失敗證據",
+          "paragraphs": [
+            "若已收到 HTTP 404，代表至少有某個 HTTP 服務回應該次請求；下一步先核對主機、路徑與路由配置。這不保證回應來自你預期的來源，尤其有代理或快取時，仍要核對脈絡。",
+            "若瀏覽器出現憑證安全警告，應核對身分、時間與設定並交由負責人處理，不靠略過警告完成測試。排錯的目標是找到可驗證原因，並保留安全界線。"
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "例子：有 404，就先看路徑",
+        "scenario": "合成紀錄依序是 DNS resolved、TCP connected、TLS verified、GET /guied/ → 404。預期網址其實是 /guide/。",
+        "reasoning": "既然已有 HTTP 回應，先核對拼字與路由比重新假設 DNS 完全失敗更直接。修改後仍需真正取得正確回應，不能只因路徑看起來對就宣稱已修復。",
+        "conclusion": "先修正可觀察的路徑錯字，再驗證狀態與內容。"
+      },
+      "lab": {
+        "title": "離線練習：三筆錯誤的下一步",
+        "environment": "只使用合成文字紀錄，不發出網路請求或修改 DNS。",
+        "steps": [
+          "列出 A: name not found、B: certificate mismatch、C: HTTP 404。",
+          "每列寫最相關的層與一個下一步。",
+          "為 C 補上一句不能直接推論的事情，例如「整個網域不存在」。"
+        ],
+        "expected": "A 核對名稱與 DNS；B 核對憑證身分與設定，不略過警告；C 核對主機、路徑與路由。",
+        "check": "若改用 HTTP/3，哪個傳輸協定名稱需要更新？",
+        "cleanup": "保存分層筆記，沒有網路設定需要回復。"
+      }
+    },
+    "en": {
+      "title": "A web request’s journey: DNS, TCP, TLS and HTTP",
+      "summary": "Follow a newly established HTTPS connection and separate name resolution, transport, encryption and application response. Success at one layer establishes only that layer’s work.",
+      "objectives": [
+        "Describe each layer in an HTTPS request using TCP.",
+        "Choose the next diagnostic check from synthetic error records.",
+        "Explain why HTTP/3 and caching can change the sequence."
+      ],
+      "sections": [
+        {
+          "id": "map",
+          "heading": "Define the scope of the map",
+          "paragraphs": [
+            "This map describes HTTPS using HTTP/1.1 or HTTP/2 when a new connection is required. Browsers may cache DNS or reuse connections; HTTP/3 uses QUIC instead of TCP. The map explains responsibilities rather than a fixed sequence repeated on every click.",
+            "A URL’s hostname helps locate a destination, while its path identifies a resource on that service. In https://docs.example.test/guide/, docs.example.test is the host and /guide/ is the path. They answer different questions."
+          ],
+          "sourceIds": [
+            "http"
+          ]
+        },
+        {
+          "id": "layers",
+          "heading": "What the four layers provide",
+          "paragraphs": [
+            "DNS obtains resource records for a name. TCP provides reliable byte transport in this scenario. TLS negotiates protected communication and verifies appropriate peer identity. HTTP expresses methods, paths, status and content. DNS success does not guarantee TCP reachability, and TCP success does not establish application authorization.",
+            "Each layer has its own failures. A nonexistent name, connection timeout, certificate mismatch and HTTP 404 are different evidence. Calling all of them “the network is broken” makes the next step ambiguous."
+          ],
+          "sourceIds": [
+            "dns",
+            "tls",
+            "http"
+          ]
+        },
+        {
+          "id": "diagnosis",
+          "heading": "Start with the nearest failure evidence",
+          "paragraphs": [
+            "Receiving HTTP 404 means an HTTP service responded to that request. First check the host, path and routing configuration. It does not guarantee the expected origin produced the response, particularly when proxies or caches are involved.",
+            "If the browser shows a certificate security warning, check identity, time and configuration with the responsible owner instead of bypassing the warning to finish a test. Diagnosis should establish a verifiable cause while preserving the security boundary."
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "Example: a 404 points first to the path",
+        "scenario": "A synthetic trace shows DNS resolved, TCP connected, TLS verified and GET /guied/ → 404. The intended path is /guide/.",
+        "reasoning": "An HTTP response makes spelling and routing a more direct next check than assuming complete DNS failure. After correcting it, obtain the expected response before claiming a fix.",
+        "conclusion": "Correct the observed path typo, then verify status and content."
+      },
+      "lab": {
+        "title": "Offline exercise: next checks for three errors",
+        "environment": "Use synthetic text traces without sending network requests or changing DNS.",
+        "steps": [
+          "List A: name not found, B: certificate mismatch and C: HTTP 404.",
+          "For each, name the relevant layer and one next check.",
+          "For C, add one unsupported conclusion, such as “the entire domain does not exist.”"
+        ],
+        "expected": "For A, check the name and DNS. For B, check certificate identity and configuration without bypassing warnings. For C, check host, path and routing.",
+        "check": "If the connection uses HTTP/3, which transport protocol label changes?",
+        "cleanup": "Save the layered notes; no network settings require restoration."
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "net-request-q1",
+      "concept": "http",
+      "revision": 1,
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "收到 HTTP 404，最直接的初步檢查是？",
+          "options": [
+            "宣稱 DNS 一定完全失敗",
+            "核對主機、路徑與路由",
+            "把所有防火牆關閉",
+            "證明整台伺服器不存在"
+          ],
+          "rationales": [
+            "已有 HTTP 回應，不能直接推導這個結論。",
+            "404 與請求資源的處理直接相關。",
+            "缺乏證據且會擴大風險。",
+            "有服務回應，不能說伺服器不存在。"
+          ]
+        },
+        "en": {
+          "prompt": "After HTTP 404, what is the most direct initial check?",
+          "options": [
+            "Declare complete DNS failure",
+            "Check host, path and routing",
+            "Disable every firewall",
+            "Conclude that the server does not exist"
+          ],
+          "rationales": [
+            "An HTTP response does not support that conclusion.",
+            "404 directly concerns handling of the requested resource.",
+            "This lacks evidence and increases risk.",
+            "A service responded; server absence is not established."
+          ]
+        }
+      }
+    },
+    {
+      "id": "net-request-q2",
+      "concept": "tls",
+      "revision": 1,
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "TLS 憑證警告時，合適動作是？",
+          "options": [
+            "直接略過",
+            "關閉所有驗證",
+            "停止並核對身分、時間與配置",
+            "把密碼改放網址"
+          ],
+          "rationales": [
+            "略過會失去原本保護界線。",
+            "停用驗證擴大了風險。",
+            "這保留安全界線並追查原因。",
+            "網址可能被記錄，不能解決身分問題。"
+          ]
+        },
+        "en": {
+          "prompt": "What is appropriate when TLS raises a certificate warning?",
+          "options": [
+            "Bypass it",
+            "Disable validation",
+            "Stop and check identity, time and configuration",
+            "Put the password in the URL"
+          ],
+          "rationales": [
+            "Bypassing removes the intended protection.",
+            "Disabling validation increases risk.",
+            "This preserves the boundary while investigating the cause.",
+            "URLs may be logged and do not resolve the identity issue."
+          ]
+        }
+      }
+    },
+    {
+      "id": "net-request-q3",
+      "concept": "http",
+      "revision": 1,
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "「所有 HTTPS 都必定先建立 TCP」是否準確？",
+          "options": [
+            "不準確，HTTP/3 使用 QUIC，連線也可能被重用",
+            "準確，沒有例外",
+            "不準確，HTTPS 不需要任何傳輸",
+            "準確，DNS 就是 TCP 連線"
+          ],
+          "rationales": [
+            "需保留協定版本與連線狀態條件。",
+            "忽略了 HTTP/3 與重用情境。",
+            "應用仍需要傳輸機制。",
+            "名稱解析與建立應用傳輸連線不同。"
+          ]
+        },
+        "en": {
+          "prompt": "Is “all HTTPS must first establish TCP” accurate?",
+          "options": [
+            "No; HTTP/3 uses QUIC, and connections can be reused",
+            "Yes, without exception",
+            "No; HTTPS needs no transport",
+            "Yes; DNS is a TCP connection"
+          ],
+          "rationales": [
+            "Protocol version and connection state matter.",
+            "This ignores HTTP/3 and reuse.",
+            "The application still needs a transport mechanism.",
+            "Name resolution differs from establishing application transport."
+          ]
+        }
+      }
+    }
+  ],
+  "order": 400
+}

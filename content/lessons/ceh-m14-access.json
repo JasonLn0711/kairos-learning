@@ -1,0 +1,201 @@
+{
+  "id": "ceh-m14-access",
+  "course": "ceh",
+  "module": "m14",
+  "slug": "object-level-authorization",
+  "revision": 1,
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "sourceIds": [
+    "authorization"
+  ],
+  "terms": [
+    "authorization",
+    "least-privilege"
+  ],
+  "prerequisites": [
+    "ceh-m06-privilege"
+  ],
+  "related": [
+    "ceh-m11-session",
+    "ceh-m15-sql"
+  ],
+  "text": {
+    "zh": {
+      "title": "物件授權：知道報告 ID，不代表可以讀取",
+      "summary": "每次請求都要核對使用者、物件與動作的關係。前端隱藏功能或使用難猜 ID，都不能單獨取代授權檢查。",
+      "objectives": [
+        "用物件所有權說明水平權限邊界。",
+        "寫出包含允許與拒絕的授權案例。"
+      ],
+      "sections": [
+        {
+          "id": "object",
+          "heading": "授權跟著物件走",
+          "paragraphs": [
+            "假設 /reports/42 回傳報告。伺服器不能只檢查「已登入」，還要確認該使用者能讀報告 42。相同角色的不同使用者，可能只有權讀自己的物件；這是常見的水平存取邊界。",
+            "若 ID 很難猜，只是降低猜中的機率。識別碼可能從合法分享、紀錄或其他頁面被知道。真正的控制應在可信邊界，對每次請求驗證身分、資源及動作。"
+          ],
+          "sourceIds": [
+            "authorization"
+          ]
+        },
+        {
+          "id": "test",
+          "heading": "驗證拒絕，也驗證合法分享",
+          "paragraphs": [
+            "建立兩名合成使用者與兩份合成報告。先驗證各自可讀自己的，再驗證不能讀對方的；若產品允許分享，另外列明分享關係、到期與撤銷。不要把所有存取都拒絕當成完整成功。",
+            "失敗時應回傳適當且一致的錯誤，避免暴露不必要的物件資訊。具體使用 403 或 404 取決於設計，但結果不能仍包含受保護的資料。"
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "例子：同樣是 student，資料仍分開",
+        "scenario": "虛構使用者 A 擁有報告 42，B 擁有報告 43。兩人都是 student。B 知道 42 的網址。",
+        "reasoning": "角色相同只能說明部分政策；還需要所有權或明確分享關係。若沒有分享，B 的讀取應被拒絕。",
+        "conclusion": "驗證規則可以是 owner==user 或有效分享授權，而非只看 role==student。"
+      },
+      "lab": {
+        "title": "離線練習：四個存取案例",
+        "environment": "只填表格，不操作任何真實帳號或網址。",
+        "steps": [
+          "列出 A→42、A→43、B→42、B→43。",
+          "先在無分享條件填允許與拒絕。",
+          "再加入 A 明確分享 42 給 B 的情境，指出哪一格改變。"
+        ],
+        "expected": "無分享時只有 A→42 與 B→43 允許；有效分享後 B→42 可以依政策改為允許。",
+        "check": "撤銷分享後，哪個案例必須重新變成拒絕？",
+        "cleanup": "保存矩陣；沒有帳號或分享權限需要回復。"
+      }
+    },
+    "en": {
+      "title": "Object authorization: knowing a report ID is not permission",
+      "summary": "Every request needs a check of the relationship between user, object and action. Hiding a control or using an unguessable ID does not independently replace authorization.",
+      "objectives": [
+        "Explain horizontal access boundaries using object ownership.",
+        "Write authorization cases that include allowance and denial."
+      ],
+      "sections": [
+        {
+          "id": "object",
+          "heading": "Authorization follows the object",
+          "paragraphs": [
+            "Suppose /reports/42 returns a report. The server must check more than logged-in status: it must verify that this user may read report 42. Different users with the same role may have access only to their own objects, creating a horizontal access boundary.",
+            "A hard-to-guess identifier merely lowers the chance of guessing it. IDs may become known through legitimate sharing, logs or another page. The actual control belongs at a trusted boundary and validates identity, resource and action on each request."
+          ],
+          "sourceIds": [
+            "authorization"
+          ]
+        },
+        {
+          "id": "test",
+          "heading": "Check denial and legitimate sharing",
+          "paragraphs": [
+            "Create two synthetic users and two reports. Verify each can read their own and cannot read the other’s. If sharing is supported, specify the relationship, expiry and revocation separately. Denying every access is not a complete success.",
+            "Failures should return appropriate, consistent errors without unnecessary object information. The choice of 403 or 404 depends on the design, but the response must not still contain the protected data."
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "Example: the same student role, different data",
+        "scenario": "Fictional user A owns report 42 and B owns report 43. Both have the student role, and B knows the URL for 42.",
+        "reasoning": "A shared role supplies only part of the policy. Ownership or an explicit sharing relationship is still required. Without sharing, B’s read should be denied.",
+        "conclusion": "The rule can require owner==user or valid sharing authorization, rather than merely role==student."
+      },
+      "lab": {
+        "title": "Offline exercise: four access cases",
+        "environment": "Fill a table without using real accounts or URLs.",
+        "steps": [
+          "List A→42, A→43, B→42 and B→43.",
+          "Fill allow and deny outcomes with no sharing.",
+          "Then add A explicitly sharing 42 with B and identify the changed cell."
+        ],
+        "expected": "Without sharing, only A→42 and B→43 are allowed. Valid sharing can allow B→42 according to policy.",
+        "check": "Which case must return to denial after sharing is revoked?",
+        "cleanup": "Save the matrix; no real accounts or sharing permissions need restoration."
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "ceh-m14-access-q1",
+      "concept": "authorization",
+      "revision": 1,
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "使用 UUID 當報告 ID，可以省略授權嗎？",
+          "options": [
+            "可以，沒人會知道 ID",
+            "不行，知道 ID 的人仍需通過權限檢查",
+            "可以，只要前端不顯示連結",
+            "不行，所以所有 UUID 都不安全"
+          ],
+          "rationales": [
+            "ID 可能透過其他途徑被知道。",
+            "識別與授權有不同責任。",
+            "前端隱藏不控制直接請求。",
+            "UUID 可以作識別碼，但不是授權替代品。"
+          ]
+        },
+        "en": {
+          "prompt": "Can UUID report IDs replace authorization?",
+          "options": [
+            "Yes; nobody can know the ID",
+            "No; a person knowing the ID still needs permission",
+            "Yes, if the UI hides the link",
+            "No, so all UUIDs are insecure"
+          ],
+          "rationales": [
+            "An ID can become known through other routes.",
+            "Identification and authorization have different roles.",
+            "Hiding a link does not control direct requests.",
+            "UUIDs can be useful identifiers, but not substitutes for authorization."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ceh-m14-access-q2",
+      "concept": "authorization",
+      "revision": 1,
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "同角色 B 要讀 A 的私人報告，沒有分享，應如何處理？",
+          "options": [
+            "拒絕，因缺少該物件的授權關係",
+            "允許，角色相同就夠",
+            "允許，只要網址正確",
+            "先回傳資料再顯示警告"
+          ],
+          "rationales": [
+            "這符合宣告的物件邊界。",
+            "相同角色不等於相同物件權限。",
+            "有效網址只識別資源。",
+            "回傳後已暴露資料，警告無法收回。"
+          ]
+        },
+        "en": {
+          "prompt": "User B has the same role as A and requests A’s private report without sharing. What should happen?",
+          "options": [
+            "Deny because the object relationship is not authorized",
+            "Allow because roles match",
+            "Allow because the URL is correct",
+            "Return the data, then display a warning"
+          ],
+          "rationales": [
+            "This follows the stated object boundary.",
+            "The same role does not imply the same object access.",
+            "A valid URL only identifies a resource.",
+            "The data is already disclosed; a warning cannot retract it."
+          ]
+        }
+      }
+    }
+  ],
+  "order": 140
+}

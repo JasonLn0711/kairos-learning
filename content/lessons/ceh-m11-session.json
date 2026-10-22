@@ -1,0 +1,205 @@
+{
+  "id": "ceh-m11-session",
+  "course": "ceh",
+  "module": "m11",
+  "slug": "session-token-lifecycle",
+  "revision": 1,
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "sourceIds": [
+    "session"
+  ],
+  "terms": [
+    "session",
+    "authorization"
+  ],
+  "prerequisites": [
+    "ceh-m06-privilege"
+  ],
+  "related": [
+    "ceh-m14-access",
+    "ceh-m09-verification"
+  ],
+  "text": {
+    "zh": {
+      "title": "Session Token：登入之後的權限憑證",
+      "summary": "網站常以工作階段識別碼延續登入狀態。保護它的傳輸、儲存與失效流程，和保護密碼一樣需要明確設計。",
+      "objectives": [
+        "說明 Session Token 為何可能代表使用者權限。",
+        "區分 Secure、HttpOnly 與伺服端失效的角色。"
+      ],
+      "sections": [
+        {
+          "id": "bearer",
+          "heading": "持有 Token 與重新輸入密碼不同",
+          "paragraphs": [
+            "登入後，伺服器可能把工作階段識別碼放進 Cookie。後續請求攜帶識別碼，伺服器依此查找身分與狀態。若系統把持有 Token 當成充分條件，取得有效 Token 的人可能不必重新輸入密碼就能使用該工作階段。",
+            "因此不要把真實 Token 放進公開截圖、網址或除錯紀錄。此單元只用虛構名稱描述生命週期，不展示或收集任何真實 Cookie。"
+          ],
+          "sourceIds": [
+            "session"
+          ]
+        },
+        {
+          "id": "lifecycle",
+          "heading": "每個保護處理不同風險",
+          "paragraphs": [
+            "Secure 限制 Cookie 在安全傳輸情境送出；HttpOnly 阻止一般頁面腳本透過 document.cookie 讀取它，但不能阻止所有 XSS 行為。SameSite 約束部分跨站送出情境，也不能取代所有請求授權與 CSRF 防護設計。",
+            "登入或權限變更後的識別碼更新、閒置與絕對期限、登出及撤銷都屬於生命週期。只刪除瀏覽器 Cookie，不能自動保證伺服端的舊識別碼已無效；需檢查舊 Token 是否仍被接受。"
+          ],
+          "sourceIds": [
+            "session"
+          ]
+        }
+      ],
+      "example": {
+        "title": "例子：登出後舊識別碼仍有效",
+        "scenario": "合成流程是登入取得 S1、登出刪除瀏覽器 Cookie，但伺服器仍保存 S1 為有效。",
+        "reasoning": "瀏覽器不再自動送出 S1，與伺服器拒絕 S1 是不同狀態。若 S1 曾被複製，單靠刪除 Cookie 無法完成撤銷。",
+        "conclusion": "登出驗收應包含舊工作階段不再被接受。"
+      },
+      "lab": {
+        "title": "紙上練習：畫出工作階段狀態",
+        "environment": "用紙筆與虛構識別碼 S1、S2；不讀取真實 Cookie。",
+        "steps": [
+          "畫出未登入、S1 有效、登出、S1 失效四個狀態。",
+          "加入權限變更後換成 S2 的分支。",
+          "指出哪個步驟需要伺服端證據。"
+        ],
+        "expected": "舊識別碼失效需要伺服器拒絕的證據；UI 回到登入畫面不夠。",
+        "check": "HttpOnly 是否能保證被注入的腳本無法代使用者送出任何請求？",
+        "cleanup": "保留狀態圖；沒有真實工作階段需要清除。"
+      }
+    },
+    "en": {
+      "title": "Session tokens: authority after login",
+      "summary": "Websites often maintain login state with a session identifier. Its transport, storage and invalidation need deliberate protection alongside the password.",
+      "objectives": [
+        "Explain why a session token can carry a user’s authority.",
+        "Distinguish Secure, HttpOnly and server-side invalidation."
+      ],
+      "sections": [
+        {
+          "id": "bearer",
+          "heading": "Possession of a token differs from entering a password",
+          "paragraphs": [
+            "After login, a server may place a session identifier in a cookie. Later requests carry it, allowing the server to recover identity and state. If possession is sufficient, someone holding a valid token may use that session without re-entering the password.",
+            "Do not place real tokens in public screenshots, URLs or debugging records. This unit uses fictional labels to describe the lifecycle and displays or collects no real cookies."
+          ],
+          "sourceIds": [
+            "session"
+          ]
+        },
+        {
+          "id": "lifecycle",
+          "heading": "Each protection addresses a different risk",
+          "paragraphs": [
+            "Secure restricts cookie transmission to secure contexts. HttpOnly prevents ordinary page scripts from reading it through document.cookie, but does not stop every XSS action. SameSite constrains some cross-site transmission and does not replace request authorization or a complete CSRF defense.",
+            "Identifier renewal after login or privilege changes, idle and absolute timeouts, logout and revocation belong to the lifecycle. Deleting a browser cookie does not automatically invalidate the old identifier on the server; verify that it is no longer accepted."
+          ],
+          "sourceIds": [
+            "session"
+          ]
+        }
+      ],
+      "example": {
+        "title": "Example: an old identifier survives logout",
+        "scenario": "A synthetic flow logs in with S1, then removes the browser cookie on logout while the server still considers S1 valid.",
+        "reasoning": "The browser no longer sending S1 differs from the server rejecting S1. If S1 was copied, deleting the cookie alone does not revoke that copy.",
+        "conclusion": "Logout acceptance should include rejection of the old session."
+      },
+      "lab": {
+        "title": "Tabletop exercise: draw session states",
+        "environment": "Use paper and fictional identifiers S1 and S2. Do not read real cookies.",
+        "steps": [
+          "Draw logged out, S1 active, logout requested and S1 invalid.",
+          "Add a branch renewing the identifier to S2 after a privilege change.",
+          "Mark the step that needs server-side evidence."
+        ],
+        "expected": "Invalidation needs evidence that the server rejects the old identifier; returning to a login screen is insufficient.",
+        "check": "Does HttpOnly guarantee that injected scripts cannot send any requests as the user?",
+        "cleanup": "Keep the state diagram. No real sessions need clearing."
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "ceh-m11-session-q1",
+      "concept": "session",
+      "revision": 1,
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "登出畫面出現，就能證明舊 Token 已失效嗎？",
+          "options": [
+            "能，畫面就是伺服端證據",
+            "不能，還需確認伺服器拒絕舊 Token",
+            "能，只要清除本機 Cookie",
+            "不能，Token 永遠無法失效"
+          ],
+          "rationales": [
+            "UI 狀態不能代替伺服端驗證。",
+            "有效性由伺服端的驗證流程決定。",
+            "本機清除不會自動撤銷其他副本。",
+            "系統可以設計失效與撤銷。"
+          ]
+        },
+        "en": {
+          "prompt": "Does seeing the logout screen prove the old token is invalid?",
+          "options": [
+            "Yes; the screen is server-side proof",
+            "No; verify that the server rejects the old token",
+            "Yes, if the local cookie is cleared",
+            "No; tokens can never expire"
+          ],
+          "rationales": [
+            "UI state does not replace server-side verification.",
+            "Validity depends on the server’s verification process.",
+            "Local deletion does not automatically revoke other copies.",
+            "Systems can implement expiration and revocation."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ceh-m11-session-q2",
+      "concept": "session",
+      "revision": 1,
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "HttpOnly 主要限制什麼？",
+          "options": [
+            "頁面腳本直接讀取該 Cookie",
+            "所有惡意腳本執行",
+            "所有跨站請求",
+            "伺服器讀取工作階段"
+          ],
+          "rationales": [
+            "這是 HttpOnly 的核心功能。",
+            "它不是完整的 XSS 防護。",
+            "跨站送出另涉及 SameSite 與 CSRF 控制。",
+            "伺服器仍需讀取 Cookie 處理工作階段。"
+          ]
+        },
+        "en": {
+          "prompt": "What does HttpOnly primarily restrict?",
+          "options": [
+            "Direct access to that cookie by page scripts",
+            "All malicious script execution",
+            "Every cross-site request",
+            "The server reading the session"
+          ],
+          "rationales": [
+            "This is the central purpose of HttpOnly.",
+            "It is not a complete XSS defense.",
+            "Cross-site transmission also involves SameSite and CSRF controls.",
+            "The server still reads the cookie to handle sessions."
+          ]
+        }
+      }
+    }
+  ],
+  "order": 110
+}

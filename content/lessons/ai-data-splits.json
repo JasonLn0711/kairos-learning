@@ -1,0 +1,261 @@
+{
+  "id": "ai-data-splits",
+  "course": "ai-ml",
+  "module": "intro",
+  "slug": "data-splits-and-leakage",
+  "revision": 1,
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "sourceIds": [
+    "ml"
+  ],
+  "terms": [
+    "data-leakage",
+    "generalization",
+    "evidence"
+  ],
+  "prerequisites": [],
+  "related": [
+    "ceh-m01-cia"
+  ],
+  "text": {
+    "zh": {
+      "title": "模型評估入門：訓練、驗證、測試與資料洩漏",
+      "summary": "模型表現取決於你怎麼定義問題與切分資料。從一個合成裝置資料例子，理解為什麼看過答案的測試不能代表新情境。",
+      "objectives": [
+        "說明特徵、目標與訓練／驗證／測試集的責任。",
+        "檢查群組交集並判斷切分是否符合部署問題。",
+        "區分成功執行程式與模型泛化證據。"
+      ],
+      "sections": [
+        {
+          "id": "task",
+          "heading": "先把預測問題寫清楚",
+          "paragraphs": [
+            "監督式機器學習用輸入特徵與已知目標學習預測規則。例如以一段合成感測值預測設備狀態，特徵是可在預測當下取得的資訊，目標是要預測的狀態。若把事後才知道的維修結論放進輸入，就改變了原本問題。",
+            "先聲明未來要面對的是同一設備的新時段，還是從未看過的設備。這個差異會影響切分單位、指標與可主張的泛化範圍；沒有一個比例能代替這個問題定義。"
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "split",
+          "heading": "三個資料集各自回答什麼",
+          "paragraphs": [
+            "訓練集用來擬合模型；驗證集支援開發選擇；測試集留給最後的評估。若反覆看測試分數再改模型，測試資訊已參與選擇，不能再把它當成完全獨立的最後驗證。",
+            "重複樣本或高度相關的同來源樣本可能跨越切分邊界。前處理若需要從資料估計參數，也應只在訓練部分擬合，再套用相同轉換。切分與前處理必須一起規劃。"
+          ],
+          "sourceIds": [
+            "ml"
+          ]
+        },
+        {
+          "id": "groups",
+          "heading": "用群組切分對齊你的問題",
+          "paragraphs": [
+            "若要評估未見設備，來自同一設備的資料應避免同時出現在訓練與測試。若問題是預測未來時段，時間順序也需保留。群組切分並非任何問題的唯一正解；它是針對特定泛化問題的設計。",
+            "以下六列資料只示範交集檢查，沒有訓練模型，也不足以估計真實效果。實際研究還要確認樣本數、代表性、標記品質與指標的不確定性。"
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "例子：三台設備，各有兩筆資料",
+        "scenario": "資料依序為 A1、A2、B1、B2、C1、C2。若把奇數位置放 train、偶數位置放 test，三台設備都同時出現在兩邊。",
+        "reasoning": "這個切分可能測到已知設備的新紀錄，但不能直接回答未見設備的問題。把 A 放 train、B 放 validation、C 放 test，能示範群組分離；只有一台測試設備仍不足以主張廣泛泛化。",
+        "conclusion": "先讓切分對準問題，再討論分數。"
+      },
+      "lab": {
+        "title": "離線練習：找出群組交集",
+        "environment": "只需 Python 3 與六個寫在程式中的合成 ID，不下載資料、不使用個資、不訓練模型。",
+        "steps": [
+          "閱讀程式，先預測 naive_overlap 與 grouped_overlap。",
+          "執行 python3 split_demo.py，核對兩行輸出。",
+          "寫明若部署對象改為「同設備的未來時段」，還需要哪個切分條件。"
+        ],
+        "expected": "naive_overlap=['A', 'B', 'C']；grouped_overlap=[]。第二行只證明本例群組無交集。",
+        "check": "為什麼無交集還不能證明模型準確？請指出本練習根本沒有執行哪個步驟。",
+        "cleanup": "程式不建立資料檔；保留輸出與自己的解釋即可。",
+        "code": "rows = [(device, sample) for device in \"ABC\" for sample in (1, 2)]\nnaive_train = {d for d, _ in rows[::2]}\nnaive_test = {d for d, _ in rows[1::2]}\ntrain, validation, test = {\"A\"}, {\"B\"}, {\"C\"}\nprint(\"naive_overlap=\" + repr(sorted(naive_train & naive_test)))\nprint(\"grouped_overlap=\" + repr(sorted((train & validation) | (train & test) | (validation & test))))",
+        "download": "/downloads/split_demo.py"
+      }
+    },
+    "en": {
+      "title": "Model evaluation foundations: training, validation, testing and leakage",
+      "summary": "Model performance depends on the question and the data split. A synthetic device example shows why a test exposed during development cannot represent a genuinely new situation.",
+      "objectives": [
+        "Explain features, targets and the roles of training, validation and test sets.",
+        "Check group overlap and assess whether a split matches the deployment question.",
+        "Distinguish successful code execution from evidence of model generalization."
+      ],
+      "sections": [
+        {
+          "id": "task",
+          "heading": "Define the prediction problem first",
+          "paragraphs": [
+            "Supervised machine learning learns a predictive rule from input features and known targets. For example, synthetic sensor readings can be inputs for predicting device state. Features must be available at prediction time; the target is the state to predict. Including a maintenance conclusion available only afterward changes the problem.",
+            "State whether deployment concerns new times on known devices or entirely unseen devices. This changes the split unit, metrics and the scope of generalization claims. No percentage split can replace that problem definition."
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "split",
+          "heading": "What each dataset is for",
+          "paragraphs": [
+            "Training data fits the model. Validation data supports development choices. Test data is reserved for final evaluation. Repeatedly changing the model in response to test scores makes test information part of selection, so it is no longer an entirely independent final check.",
+            "Duplicates or closely related samples from one source may cross split boundaries. Preprocessing that estimates parameters from data should fit them only on training data and apply the same transformation elsewhere. Plan splitting and preprocessing together."
+          ],
+          "sourceIds": [
+            "ml"
+          ]
+        },
+        {
+          "id": "groups",
+          "heading": "Align group splitting with the question",
+          "paragraphs": [
+            "For unseen-device evaluation, avoid placing data from the same device in both training and test sets. For future-time prediction, chronology also matters. Group splitting is not universally the only correct method; it is a design matched to a specific generalization question.",
+            "The six rows below demonstrate overlap checking only. They train no model and are insufficient to estimate real-world performance. Actual research still needs adequate sample size, representativeness, label quality and uncertainty in its metrics."
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "Example: three devices with two rows each",
+        "scenario": "Rows are A1, A2, B1, B2, C1 and C2. Putting alternating rows into train and test places all three devices on both sides.",
+        "reasoning": "That split may concern new records from known devices, but does not directly answer the unseen-device question. Assigning A to train, B to validation and C to test demonstrates group separation; one test device still does not establish broad generalization.",
+        "conclusion": "Match the split to the question before discussing scores."
+      },
+      "lab": {
+        "title": "Offline exercise: detect group overlap",
+        "environment": "Use Python 3 and six synthetic IDs defined in the program. No data downloads, personal data or model training are involved.",
+        "steps": [
+          "Read the code and predict naive_overlap and grouped_overlap.",
+          "Run python3 split_demo.py and check both output lines.",
+          "State the additional split condition needed if deployment changes to future times on the same device."
+        ],
+        "expected": "naive_overlap=['A', 'B', 'C']; grouped_overlap=[]. The second line establishes only that the example groups do not overlap.",
+        "check": "Why does no overlap not prove model accuracy? Identify the step this exercise never performed.",
+        "cleanup": "The program creates no data files. Keep the output and your explanation.",
+        "code": "rows = [(device, sample) for device in \"ABC\" for sample in (1, 2)]\nnaive_train = {d for d, _ in rows[::2]}\nnaive_test = {d for d, _ in rows[1::2]}\ntrain, validation, test = {\"A\"}, {\"B\"}, {\"C\"}\nprint(\"naive_overlap=\" + repr(sorted(naive_train & naive_test)))\nprint(\"grouped_overlap=\" + repr(sorted((train & validation) | (train & test) | (validation & test))))",
+        "download": "/downloads/split_demo.py"
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "ai-split-q1",
+      "concept": "data-leakage",
+      "revision": 1,
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "每次看 test 分數後都調參，最後的 test 還是獨立評估嗎？",
+          "options": [
+            "是，檔名叫 test 就夠",
+            "否，測試資訊已參與選擇",
+            "是，只要分數提高",
+            "否，所以任何評估都無用"
+          ],
+          "rationales": [
+            "角色由使用方式決定，不由檔名決定。",
+            "應用驗證集支援選擇，保留真正獨立的評估。",
+            "改善可能包含對測試集的適應。",
+            "適當設計仍能提供有界線的證據。"
+          ]
+        },
+        "en": {
+          "prompt": "After tuning repeatedly from test scores, is the final test still independent?",
+          "options": [
+            "Yes; its filename says test",
+            "No; test information has influenced selection",
+            "Yes, if scores improve",
+            "No, so all evaluation is useless"
+          ],
+          "rationales": [
+            "Its role follows use, not its filename.",
+            "Use validation for selection and retain a genuinely independent evaluation.",
+            "Improvement may include adaptation to the test set.",
+            "A suitable design still provides bounded evidence."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ai-split-q2",
+      "concept": "data-leakage",
+      "revision": 1,
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "要評估未見設備，哪個切分最符合問題？",
+          "options": [
+            "同設備資料隨意分散兩邊",
+            "把測試標記加入特徵",
+            "按設備群組分離並檢查交集",
+            "只在訓練資料算分"
+          ],
+          "rationales": [
+            "這可能測到已知設備。",
+            "引入了答案洩漏。",
+            "這對齊未見群組的評估目標。",
+            "訓練分數不代表未見設備。"
+          ]
+        },
+        "en": {
+          "prompt": "Which split best matches evaluation on unseen devices?",
+          "options": [
+            "Scatter each device across both sides",
+            "Add test labels to features",
+            "Separate by device group and check overlap",
+            "Score only training data"
+          ],
+          "rationales": [
+            "This may evaluate known devices instead.",
+            "This leaks the answers.",
+            "This aligns with the unseen-group objective.",
+            "Training scores do not represent unseen devices."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ai-split-q3",
+      "concept": "generalization",
+      "revision": 1,
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "split_demo.py 成功且無群組交集，證明什麼？",
+          "options": [
+            "這個切分檢查成功，尚無模型成效證據",
+            "模型已適合正式部署",
+            "所有資料偏差都已消失",
+            "測試準確率是 100%"
+          ],
+          "rationales": [
+            "程式沒有訓練或評估模型。",
+            "還缺模型、資料與部署驗證。",
+            "代表性與標記品質仍需確認。",
+            "本練習沒有產生準確率。"
+          ]
+        },
+        "en": {
+          "prompt": "What does a successful split_demo.py run with no group overlap establish?",
+          "options": [
+            "This split check worked; no model-performance evidence exists yet",
+            "A model is ready for production",
+            "All data bias is gone",
+            "Test accuracy is 100%"
+          ],
+          "rationales": [
+            "The program never trains or evaluates a model.",
+            "Model, data and deployment validation remain.",
+            "Representativeness and label quality still need checks.",
+            "This exercise produces no accuracy score."
+          ]
+        }
+      }
+    }
+  ],
+  "order": 300
+}

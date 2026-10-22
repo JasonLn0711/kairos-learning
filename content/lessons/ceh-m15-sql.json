@@ -1,0 +1,207 @@
+{
+  "id": "ceh-m15-sql",
+  "course": "ceh",
+  "module": "m15",
+  "slug": "parameterized-queries",
+  "revision": 1,
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "sourceIds": [
+    "sql",
+    "sqlite"
+  ],
+  "terms": [
+    "parameterization",
+    "authorization"
+  ],
+  "prerequisites": [
+    "ceh-m14-access"
+  ],
+  "related": [
+    "ceh-m13-hardening"
+  ],
+  "text": {
+    "zh": {
+      "title": "參數化查詢：讓資料保持為資料",
+      "summary": "SQL 注入發生在不可信輸入改變了查詢語法的邊界。固定查詢結構並綁定值，能把使用者文字留在資料的位置。",
+      "objectives": [
+        "解釋字串拼接與參數綁定的差別。",
+        "在記憶體 SQLite 範例驗證含引號的名稱。"
+      ],
+      "sections": [
+        {
+          "id": "boundary",
+          "heading": "查詢語法與輸入值要分開",
+          "paragraphs": [
+            "把輸入直接接進 SQL 字串，會讓資料中的引號或其他語法影響查詢解讀。參數化查詢先定義結構，再用資料庫介面的綁定機制傳入值；請依實際驅動程式的 placeholder 語法使用。",
+            "參數通常用於值，不能任意拿來代替資料表名、欄位名或排序方向。這些結構若真的需要動態變動，應從明確允許的固定選項映射，而不是直接接受任意字串。"
+          ],
+          "sourceIds": [
+            "sql"
+          ]
+        },
+        {
+          "id": "layers",
+          "heading": "參數化之外仍有其他邊界",
+          "paragraphs": [
+            "參數綁定不會替你判斷使用者是否有權看那筆資料，也不會自動選擇資料庫帳號權限。授權、最小權限與錯誤處理仍需各自設計。",
+            "本練習用 SQLite 記憶體資料庫與一筆虛構名稱，觀察一般含引號文字如何被正確處理。它驗證這條查詢的值綁定，不代表所有程式路徑都安全。"
+          ],
+          "sourceIds": [
+            "sqlite"
+          ]
+        }
+      ],
+      "example": {
+        "title": "例子：查詢 O’Neil 這個名字",
+        "scenario": "用字串拼接時，一個正常姓名中的 ASCII 單引號也可能破壞 SQL 結構。下方程式用 ? 綁定值。",
+        "reasoning": "SQL 結構維持 name = ?；姓名由 execute 的第二個參數傳入。資料庫會把整個姓名當成值來比對。",
+        "conclusion": "預期取得唯一一筆合成資料，不需要手動移除引號。"
+      },
+      "lab": {
+        "title": "離線練習：記憶體資料庫查詢",
+        "environment": "本機 Python 3 與 sqlite3 標準模組；不建立磁碟資料庫、不連線，也不使用真實個資。",
+        "steps": [
+          "閱讀下方程式，找出固定 SQL 與綁定值的位置。",
+          "在本機執行，核對輸出。",
+          "把查詢值改成不存在的名稱，預期空清單。"
+        ],
+        "expected": "第一次輸出 [(\"O'Neil\",)]；查詢不存在名稱時輸出 []。",
+        "check": "如果改用參數作資料表名稱，為什麼不是同一種綁定問題？",
+        "cleanup": "程式結束即關閉記憶體資料庫，不留下資料檔。",
+        "code": "import sqlite3\ncon = sqlite3.connect(\":memory:\")\ntry:\n    con.execute(\"CREATE TABLE people (name TEXT)\")\n    con.execute(\"INSERT INTO people VALUES (?)\", (\"O'Neil\",))\n    print(con.execute(\"SELECT name FROM people WHERE name = ?\", (\"O'Neil\",)).fetchall())\nfinally:\n    con.close()"
+      }
+    },
+    "en": {
+      "title": "Parameterized queries: keep data as data",
+      "summary": "SQL injection crosses the boundary where untrusted input changes query syntax. A fixed query structure with bound values keeps user text in the data position.",
+      "objectives": [
+        "Explain the difference between string concatenation and parameter binding.",
+        "Verify a name containing an apostrophe using in-memory SQLite."
+      ],
+      "sections": [
+        {
+          "id": "boundary",
+          "heading": "Separate query syntax from input values",
+          "paragraphs": [
+            "Concatenating input into SQL lets quotation marks and other syntax in the data affect parsing. A parameterized query defines the structure first, then passes values through the database interface’s binding mechanism. Use the placeholder syntax supported by the actual driver.",
+            "Parameters generally represent values, not arbitrary table names, column names or sort directions. If structure must vary, map from explicitly allowed fixed choices instead of accepting arbitrary strings."
+          ],
+          "sourceIds": [
+            "sql"
+          ]
+        },
+        {
+          "id": "layers",
+          "heading": "Other boundaries remain after parameterization",
+          "paragraphs": [
+            "Binding parameters does not determine whether a user may view a row or choose the database account’s privileges. Authorization, least privilege and error handling remain separate responsibilities.",
+            "The exercise uses an in-memory SQLite database and one fictional name to observe correct handling of ordinary text containing an apostrophe. It verifies value binding in this query, not every path in an application."
+          ],
+          "sourceIds": [
+            "sqlite"
+          ]
+        }
+      ],
+      "example": {
+        "title": "Example: looking up O’Neil",
+        "scenario": "With string concatenation, an ordinary ASCII apostrophe in a name can disrupt SQL structure. The program below binds the value using ?.",
+        "reasoning": "The SQL structure stays name = ?. The name is passed as the second argument to execute, so the database compares the entire name as a value.",
+        "conclusion": "Expect exactly one synthetic row without manually removing apostrophes."
+      },
+      "lab": {
+        "title": "Offline exercise: query an in-memory database",
+        "environment": "Use local Python 3 with its sqlite3 module. No disk database, networking or real personal data is used.",
+        "steps": [
+          "Read the program and locate fixed SQL and bound values.",
+          "Run it locally and check the output.",
+          "Change the lookup value to an absent name and expect an empty list."
+        ],
+        "expected": "The first output is [(\"O'Neil\",)]; an absent name produces [].",
+        "check": "Why is substituting a table name a different problem from binding a value?",
+        "cleanup": "The in-memory database closes when the program ends and leaves no data file.",
+        "code": "import sqlite3\ncon = sqlite3.connect(\":memory:\")\ntry:\n    con.execute(\"CREATE TABLE people (name TEXT)\")\n    con.execute(\"INSERT INTO people VALUES (?)\", (\"O'Neil\",))\n    print(con.execute(\"SELECT name FROM people WHERE name = ?\", (\"O'Neil\",)).fetchall())\nfinally:\n    con.close()"
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "ceh-m15-sql-q1",
+      "concept": "parameterization",
+      "revision": 1,
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "參數綁定的主要目的為何？",
+          "options": [
+            "讓所有使用者取得管理權",
+            "讓輸入值與查詢語法分開",
+            "自動完成物件授權",
+            "加密所有資料庫內容"
+          ],
+          "rationales": [
+            "這不是參數的用途。",
+            "固定結構與綁定值維持語法邊界。",
+            "授權需要另外設計。",
+            "參數化不是儲存加密。"
+          ]
+        },
+        "en": {
+          "prompt": "What is the main purpose of parameter binding?",
+          "options": [
+            "Give every user administrator access",
+            "Separate input values from query syntax",
+            "Automatically authorize objects",
+            "Encrypt the entire database"
+          ],
+          "rationales": [
+            "This is not the purpose of parameters.",
+            "Fixed structure and bound values preserve the syntax boundary.",
+            "Authorization needs separate design.",
+            "Parameterization is not storage encryption."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ceh-m15-sql-q2",
+      "concept": "parameterization",
+      "revision": 1,
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "使用者要選排序欄位，較適當作法是？",
+          "options": [
+            "把任意輸入接進 SQL",
+            "關閉所有驗證",
+            "從允許的選項映射到固定欄位名",
+            "假設值 placeholder 可代表任何 SQL 語法"
+          ],
+          "rationales": [
+            "任意結構輸入會重新跨越邊界。",
+            "仍需限制合法選項。",
+            "映射限定可形成的查詢結構。",
+            "值與識別碼不是可任意互換的類型。"
+          ]
+        },
+        "en": {
+          "prompt": "A user selects a sort column. What is appropriate?",
+          "options": [
+            "Concatenate arbitrary input into SQL",
+            "Disable all validation",
+            "Map allowed options to fixed column names",
+            "Assume a value placeholder can represent any SQL syntax"
+          ],
+          "rationales": [
+            "Arbitrary structural input crosses the boundary again.",
+            "Allowed choices still need constraints.",
+            "Mapping constrains the possible query structure.",
+            "Values and identifiers are not interchangeable."
+          ]
+        }
+      }
+    }
+  ],
+  "order": 150
+}
