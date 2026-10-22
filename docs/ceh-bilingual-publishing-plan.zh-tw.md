@@ -4,6 +4,12 @@
 內容模型、閱讀介面與課程頁面為 implementation pending。現在公開站仍只有既有 MATLAB
 課程；本文件不建立可點擊的空 CEH 頁面，也不標記任何個人學習完成。
 
+## 本輪實作更新
+
+以下初始方案保留決策沿革。本人後續明確要求完整 Phase 0–3，並確認 CEH M01–M20、保留 MATLAB、AI／ML 與網路基礎各一個完整雙語單元。現在已實作 23 個雙語主題、54 題、30 個詞彙與 Svelte 靜態產生器；M01 為兩篇。網址採 `/courses/ceh/v13/`，內容採單一 JSON 結構，搜尋與本機錯題已在本輪範圍內啟用。
+
+[架構決策](platform-architecture.md)、[內容規範](content-authoring.md)、[驗證及發布回執](releases/2026-10-23-phase-0-3.md)持有目前狀態。初稿中的「尚未實作」「先一篇」「搜尋 deferred」為較早快照；實際 Git、公開 URL 與真人驗收分別依回執確認。本輪授權發布不宣稱 Jason 已逐篇審閱或學習完成。
+
 ## FIRST PRINCIPLE
 
 - 稀缺資源：讀者理解、作者審稿時間、雙語一致性與可核對的技術來源。

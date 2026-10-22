@@ -1,45 +1,49 @@
-# Kairos 學習筆記
+# CS Kairos Learn
 
-可擴充的繁體中文教學網站。第一套課程：MATLAB 三個合成實作案例。
+研究與技術教育平台的課程入口：<https://learn.cs-kairos.com/>。個人研究、專案與文章由[主站](https://cs-kairos.com/)承接。
 
-## 預覽與編輯
+新課程採 **Svelte 5＋SvelteKit 2＋TypeScript＋adapter-static**，輸出純靜態 `build/`。既有 MATLAB HTML、程式、圖庫與 ZIP 保留在 `site/`，直接複製到相同公開路徑。
 
-`site/` 是完整靜態網站，無前端框架或 CDN 依賴。
+## 課程與閱讀工具
+
+- [CEH v13 核心概念](https://learn.cs-kairos.com/courses/ceh/v13/)：M01 兩篇；M02–M20 各一篇。每篇提供完整繁體中文、英文、來源、例子、安全練習與原創問答。課程模組與官方考試藍圖分開標示。
+- [MATLAB 三案](https://learn.cs-kairos.com/courses/matlab-practice/index.html)：原有繁體中文教材、24 步、43 段逐段教學與 523 個非空程式行解說，下載連結及六份 ZIP 校驗碼保留。
+- [AI／ML 基礎](https://learn.cs-kairos.com/courses/ai-ml/)：資料切分、評估與洩漏的雙語入門單元。
+- [網路基礎](https://learn.cs-kairos.com/courses/networking/)：DNS、TCP、TLS、HTTP 的雙語入門單元。
+- [詞彙表](https://learn.cs-kairos.com/glossary/)、[全文搜尋](https://learn.cs-kairos.com/search/)、[錯題複習](https://learn.cs-kairos.com/review/)共用內容來源。答案與信心值只儲存在本機瀏覽器，沒有帳號或答案上傳。
+
+首版共 23 個雙語主題、54 題與 30 個詞彙。這些教材支持核心概念學習；官方完整考試範圍、個人正式作答與 CEHP 實作驗收各有獨立證據。
+
+## 開發與檢查
+
+使用 Node.js 24；安裝以 lockfile 為準。
 
 ```sh
-python3 -m http.server 8765 --directory site
+npm ci
+npm run dev -- --host 127.0.0.1
+npm run validate:content
+npm test
+npm run check
+node scripts/check-publication-boundary.mjs
+python3 scripts/validate_site.py
+python3 scripts/validate_release.py
+npm audit --audit-level=high
 ```
 
-開啟 http://localhost:8765 。修改 `site/index.html` 課程入口、`site/style.css` 共用樣式與 `site/courses/<course-slug>/` 課程頁面。僅將已完成且可公開的課程加入首頁；CEH、資安與其他主題目前沒有上線課程。
+`check-publication-boundary.mjs` 會建置並檢查草稿／未來日期測試資料沒有進入任何公開文字資產，最後移除測試來源。一般建置使用 `npm run build`。檢查完成的靜態頁：
 
-## 第一套課程
+```sh
+python3 -m http.server 4179 --bind 127.0.0.1 --directory build
+```
 
-`/courses/matlab-practice/` 包含三案各 8 步全程教學、三案小任務、43 段逐段教學、523 個非空程式行的解說、提示詞、起始骨架及報告範本。
+公開部署以自訂網域根目錄為基準。舊 `site/index.html` 存於 [歷史首頁](docs/archive/learning-home-2026-10-22.html)，根目錄改由 Svelte 產生；MATLAB 的 `/index.html` 返回連結繼續有效。重新建置後應重新載入預覽，避免舊頁面引用已換版的雜湊資產。
 
-下載分為清理後的 MATLAB 教材包與獨立的 153 張 Python 合成參考圖庫。感測 CSV 由 MATLAB 案例一執行後產生；參考圖庫不是本次 MATLAB 的執行結果。
+## 編輯與發布
 
-## 發布
+[架構與所有權](docs/platform-architecture.md)說明 FIRST PRINCIPLE 分工；[內容指南](docs/content-authoring.md)定義雙語教材與題庫規範；[發布與回復](docs/publishing-security.md)保存 PR、預覽、部署及 rollback 步驟。[本輪驗證回執](docs/releases/2026-10-23-phase-0-3.md)區分本機驗證、正式發布與真人使用驗收。
 
-main 更新後由 GitHub Actions 檢查教材 ZIP 校驗碼並發布 `site/` 至 GitHub Pages。此 repo 與個人網站獨立。
+GitHub Actions 在 PR 驗證內容、程式、資產與實際靜態產物，提供可下載的預覽 artifact；main 通過相同檢查後把 `build/` 發布到 GitHub Pages。Cloudflare 保留既有 proxied `learn` CNAME；本 repo 不管理 API／console 的存取控制。
 
-正式網域設定為 https://learn.cs-kairos.com/ ，CNAME 連到 GitHub Pages。2026-10-23 在 Cloudflare 讀回的狀態為 **Proxied**，接續初始 DNS only 設定；GitHub 來源 HTTPS 與 Cloudflare 邊緣 TLS 分別核對。既有個人站、console、api 及其他應用維持各自設定責任。
+MATLAB 下載來源變更時，執行 `python3 scripts/package_release.py` 重建 ZIP 與 SHA-256。PDF 範本由 `python3 scripts/build_report_pdfs.py` 產生（需要 ReportLab），再重建下載包。Python 合成參考圖庫不視為 MATLAB 執行結果。
 
-頁面使用相對連結，可同時支援 project path 與自訂網域根目錄，不需改寫 base path。GitHub Actions 發布使用 repo 的 Pages custom domain 設定，不需要 CNAME 檔。
-
-公開內容禁止包含私人對話、學生回饋、電子郵件、帳密、內部檔案路徑與原始驗證紀錄。
-
-## 教材 1.8（2026-10-22）
-
-三案先做小量資料範例，再進入八步流程與逐段解說（段內逐行）。網站提供各案獨立下載及完整包；舊 1.7 ZIP 保留既有連結。發布前執行 `python3 scripts/validate_site.py` 與下載校驗碼檢查，並檢查手機、桌面排版及互動。
-
-修改下載來源後，執行 `python3 scripts/package_release.py` 重建 ZIP 與 SHA-256。PDF 範本由 `python3 scripts/build_report_pdfs.py` 產生（需要 ReportLab），再重建下載包。
-
-## CEH 雙語系列規劃（2026-10-23）
-
-[完整編輯與發布規劃](docs/ceh-bilingual-publishing-plan.zh-tw.md)承接主站＋learn 分工，
-CEH 每篇提供完整中英文、例子與 Q&A。先以一篇 M01 範例驗證流程；M01–M20
-保留為編輯地圖，課程頁與 SvelteKit 產生器尚未實作。既有 MATLAB 網址與下載保留。
-
-[主站網域規劃](https://github.com/JasonLn0711/JasonLn0711.github.io/blob/main/docs/cs-kairos-domain-plan.zh-tw.md)
-持有個人站部署；[CEH 學習橋接](https://github.com/JasonLn0711/ceh-cehp-certification-notes-2026/blob/main/docs/public-teaching-bridge-2026-10-23.md)
-區分公開教材、實際理解、正式練習與實作證據。文件 Git 發布與 CEH 課程上線分開驗收。
+[CEH 編輯決策沿革](docs/ceh-bilingual-publishing-plan.zh-tw.md) · [CEH 學習橋接](https://github.com/JasonLn0711/ceh-cehp-certification-notes-2026/blob/main/docs/public-teaching-bridge-2026-10-23.md) · [主站平台規範](https://github.com/JasonLn0711/JasonLn0711.github.io/blob/main/docs/cs-kairos-platform-architecture-v1.zh-tw.md)
