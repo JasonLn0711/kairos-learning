@@ -1,0 +1,239 @@
+{
+  "id": "ceh-m03-port-states",
+  "course": "ceh",
+  "module": "m03",
+  "slug": "port-states-and-observation",
+  "revision": 1,
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "sourceIds": [
+    "nmap"
+  ],
+  "terms": [
+    "port-state",
+    "evidence"
+  ],
+  "prerequisites": [
+    "ceh-m02-evidence"
+  ],
+  "related": [
+    "ceh-m04-enumeration",
+    "net-request-path"
+  ],
+  "text": {
+    "zh": {
+      "title": "連接埠狀態：open、closed 與 filtered 告訴你什麼？",
+      "summary": "掃描輸出是特定時間、位置與方法下的觀察。先解讀回應，再決定下一個有授權的確認步驟。",
+      "objectives": [
+        "用觀測條件解釋不同掃描結果。",
+        "避免把開埠直接當成弱點或入侵證據。"
+      ],
+      "sections": [
+        {
+          "id": "states",
+          "heading": "狀態描述探測看到的現象",
+          "paragraphs": [
+            "以 Nmap 的用語，open 表示該探測觀察到應用接受相關連線或資料；closed 表示目標可達但該埠沒有對應的監聽服務；filtered 表示封包過濾使工具無法確定是否開啟。請把狀態與探測協定一起讀。",
+            "open|filtered 這類複合狀態保留不確定性，不能自行刪去 filtered。工具顯示的狀態並非永遠固定的主機屬性；位置、時間、過濾規則與方法都會影響結果。"
+          ],
+          "sourceIds": [
+            "nmap"
+          ]
+        },
+        {
+          "id": "chain",
+          "heading": "把證據鏈分成四步",
+          "paragraphs": [
+            "第一步是網路可達；第二步是埠狀態；第三步是服務識別；第四步才是特定資源、設定或弱點的驗證。每一步需要自己的回應證據，後面的結論不能由前一步的標籤自動產生。",
+            "例如 443/tcp open 可以支持該次探測看到監聽者，但尚未驗證網站身分、TLS 設定或應用程式授權。記錄埠號、協定、時間、位置與方法，才能合理比較前後測。"
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "例子：內外網看到不同結果",
+        "scenario": "同一個合成主機在 10:00 從測試網段看到 445/tcp open，從外部測試網段則是 filtered。",
+        "reasoning": "這可以與路徑上的存取控制一致，但還需規則與封包證據確認原因。不能把兩筆直接當成工具壞掉，也不能說外部一定沒有服務。",
+        "conclusion": "保留兩個觀測位置；下一步核對已授權的控制規則。"
+      },
+      "lab": {
+        "title": "離線練習：替掃描摘要加上證據邊界",
+        "environment": "只讀本文合成輸出，不執行掃描。",
+        "steps": [
+          "建立三列：22/tcp closed、443/tcp open、53/udp open|filtered。",
+          "每列寫一個可支持的觀察與一個不可支持的結論。",
+          "為 443 加上時間、來源網段與方法欄位；不知道的欄位標為未知。"
+        ],
+        "expected": "53/udp 不能確定為 open；443 不能直接證明網站安全；22 closed 不代表整台主機不存在。",
+        "check": "能否解釋為什麼不能把三列直接加總為「三個弱點」？",
+        "cleanup": "保存文字摘要即可，沒有系統變更。"
+      }
+    },
+    "en": {
+      "title": "Port states: what do open, closed and filtered tell you?",
+      "summary": "A scan result is an observation made at a particular time, vantage point and with a particular method. Interpret the response before choosing an authorized follow-up.",
+      "objectives": [
+        "Explain differing results using observation conditions.",
+        "Avoid equating an open port with a vulnerability or compromise."
+      ],
+      "sections": [
+        {
+          "id": "states",
+          "heading": "States describe what the probe can observe",
+          "paragraphs": [
+            "In Nmap terminology, open indicates an application accepting the relevant connections or data. Closed indicates reachability without a corresponding listener. Filtered means packet filtering prevents a determination of whether the port is open. Read the state together with the probe protocol.",
+            "A combined state such as open|filtered preserves uncertainty; do not silently discard “filtered.” A tool’s state is not an immutable host property. Vantage point, time, filtering and method can affect the result."
+          ],
+          "sourceIds": [
+            "nmap"
+          ]
+        },
+        {
+          "id": "chain",
+          "heading": "Separate four steps in the evidence chain",
+          "paragraphs": [
+            "Separate network reachability, port state, service identification and verification of a particular resource, configuration or weakness. Each step requires its own response evidence. A later conclusion does not arise automatically from an earlier label.",
+            "For example, 443/tcp open supports the presence of a listener in that observation. It has not verified website identity, TLS configuration or application authorization. Record port, protocol, time, vantage and method before comparing runs."
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "Example: different internal and external views",
+        "scenario": "At 10:00, a synthetic host is observed as 445/tcp open from one test network and filtered from an external test network.",
+        "reasoning": "The results are compatible with path-based access controls, but rules and packet evidence are needed to confirm the cause. They do not by themselves indicate a broken tool or prove that the external view has no service.",
+        "conclusion": "Keep both vantage points and check the authorized control configuration."
+      },
+      "lab": {
+        "title": "Offline exercise: bound a scan summary",
+        "environment": "Read the synthetic output only; do not run a scan.",
+        "steps": [
+          "Create three rows: 22/tcp closed, 443/tcp open and 53/udp open|filtered.",
+          "Write one supported observation and one unsupported conclusion for each row.",
+          "Add time, source network and method fields to 443; mark missing values unknown."
+        ],
+        "expected": "53/udp is not definitely open; 443 does not establish a secure website; 22 closed does not mean the host is absent.",
+        "check": "Can you explain why the three rows cannot be counted as three vulnerabilities?",
+        "cleanup": "Save the text summary; no system state was changed."
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "ceh-m03-port-q1",
+      "concept": "port-state",
+      "revision": 1,
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "443/tcp open 直接支持哪個結論？",
+          "options": [
+            "網站沒有弱點",
+            "此探測看到接受連線的服務",
+            "已取得管理員權限",
+            "TLS 身分驗證已通過"
+          ],
+          "rationales": [
+            "安全性尚未驗證。",
+            "這符合此狀態的觀測意義。",
+            "開埠沒有提供權限證據。",
+            "埠狀態不是憑證驗證結果。"
+          ]
+        },
+        "en": {
+          "prompt": "What does 443/tcp open directly support?",
+          "options": [
+            "The website has no vulnerabilities",
+            "This probe observed a service accepting connections",
+            "Administrator access was obtained",
+            "TLS identity verification passed"
+          ],
+          "rationales": [
+            "Security has not been established.",
+            "This matches the state’s observational meaning.",
+            "An open port provides no evidence of privilege.",
+            "A port state is not a certificate-validation result."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ceh-m03-port-q2",
+      "concept": "port-state",
+      "revision": 1,
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "open|filtered 應如何記錄？",
+          "options": [
+            "只記 open",
+            "只記 closed",
+            "保留兩種可能及探測條件",
+            "改寫成遭入侵"
+          ],
+          "rationales": [
+            "刪掉 filtered 會把不確定性變成確定。",
+            "沒有支持 closed 的結果。",
+            "保留不確定性才符合工具輸出。",
+            "狀態不提供入侵證據。"
+          ]
+        },
+        "en": {
+          "prompt": "How should open|filtered be recorded?",
+          "options": [
+            "Record open only",
+            "Record closed only",
+            "Preserve both possibilities and probe conditions",
+            "Rewrite it as compromised"
+          ],
+          "rationales": [
+            "Dropping filtered falsely removes uncertainty.",
+            "The result does not support closed.",
+            "Preserving uncertainty matches the output.",
+            "The state is not compromise evidence."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ceh-m03-port-q3",
+      "concept": "evidence",
+      "revision": 1,
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "比較兩次掃描前，最需要一起保留的是？",
+          "options": [
+            "時間、來源位置、協定與方法",
+            "只有工具圖示",
+            "只記最大的埠號",
+            "把不同方法都視為完全相同"
+          ],
+          "rationales": [
+            "這些條件影響可見回應。",
+            "圖示無法重建探測。",
+            "埠號不能代表完整觀測條件。",
+            "方法差異可能影響狀態判讀。"
+          ]
+        },
+        "en": {
+          "prompt": "What should be retained when comparing scans?",
+          "options": [
+            "Time, vantage point, protocol and method",
+            "Only the tool icon",
+            "Only the highest port number",
+            "Treat every method as identical"
+          ],
+          "rationales": [
+            "These conditions affect observable responses.",
+            "An icon cannot reconstruct the probe.",
+            "A port number does not capture the observation conditions.",
+            "Different methods can change interpretation."
+          ]
+        }
+      }
+    }
+  ],
+  "order": 30
+}
