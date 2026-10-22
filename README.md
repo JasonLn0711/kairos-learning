@@ -22,7 +22,7 @@ python3 -m http.server 8765 --directory site
 
 main 更新後由 GitHub Actions 檢查教材 ZIP 校驗碼並發布 `site/` 至 GitHub Pages。此 repo 與個人網站獨立。
 
-正式網域設定為 https://learn.cs-kairos.com/ ，以 Cloudflare DNS only CNAME 連到 GitHub Pages；HTTPS 由 GitHub 自動管理。不要修改既有個人站、console 或 api 的設定。
+正式網域設定為 https://learn.cs-kairos.com/ ，CNAME 連到 GitHub Pages。2026-10-23 在 Cloudflare 讀回的狀態為 **Proxied**，接續初始 DNS only 設定；GitHub 來源 HTTPS 與 Cloudflare 邊緣 TLS 分別核對。既有個人站、console、api 及其他應用維持各自設定責任。
 
 頁面使用相對連結，可同時支援 project path 與自訂網域根目錄，不需改寫 base path。GitHub Actions 發布使用 repo 的 Pages custom domain 設定，不需要 CNAME 檔。
 
@@ -33,3 +33,13 @@ main 更新後由 GitHub Actions 檢查教材 ZIP 校驗碼並發布 `site/` 至
 三案先做小量資料範例，再進入八步流程與逐段解說（段內逐行）。網站提供各案獨立下載及完整包；舊 1.7 ZIP 保留既有連結。發布前執行 `python3 scripts/validate_site.py` 與下載校驗碼檢查，並檢查手機、桌面排版及互動。
 
 修改下載來源後，執行 `python3 scripts/package_release.py` 重建 ZIP 與 SHA-256。PDF 範本由 `python3 scripts/build_report_pdfs.py` 產生（需要 ReportLab），再重建下載包。
+
+## CEH 雙語系列規劃（2026-10-23）
+
+[完整編輯與發布規劃](docs/ceh-bilingual-publishing-plan.zh-tw.md)承接主站＋learn 分工，
+CEH 每篇提供完整中英文、例子與 Q&A。先以一篇 M01 範例驗證流程；M01–M20
+保留為編輯地圖，課程頁與 SvelteKit 產生器尚未實作。既有 MATLAB 網址與下載保留。
+
+[主站網域規劃](https://github.com/JasonLn0711/JasonLn0711.github.io/blob/main/docs/cs-kairos-domain-plan.zh-tw.md)
+持有個人站部署；[CEH 學習橋接](https://github.com/JasonLn0711/ceh-cehp-certification-notes-2026/blob/main/docs/public-teaching-bridge-2026-10-23.md)
+區分公開教材、實際理解、正式練習與實作證據。文件 Git 發布與 CEH 課程上線分開驗收。
