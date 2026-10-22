@@ -1,0 +1,206 @@
+{
+  "id": "ceh-m13-hardening",
+  "course": "ceh",
+  "module": "m13",
+  "slug": "web-server-exposure-and-hardening",
+  "revision": 1,
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "sourceIds": [
+    "testing",
+    "headers"
+  ],
+  "terms": [
+    "hardening",
+    "evidence"
+  ],
+  "prerequisites": [
+    "ceh-m01-cia"
+  ],
+  "related": [
+    "ceh-m14-access",
+    "ceh-m15-sql"
+  ],
+  "text": {
+    "zh": {
+      "title": "網頁伺服器加固：從公開面到可驗證設定",
+      "summary": "先盤點伺服器公開了哪些檔案、服務與管理入口，再處理更新、權限和瀏覽器防護。每項控制都有自己的驗證方式。",
+      "objectives": [
+        "分辨伺服器、部署產物與應用邏輯的責任。",
+        "解釋安全標頭的用途與界線。"
+      ],
+      "sections": [
+        {
+          "id": "surface",
+          "heading": "先縮小不必要的公開面",
+          "paragraphs": [
+            "網站伺服器的工作是交付應公開的內容。原始碼、備份、環境設定與管理工具若混進公開目錄，會擴大資料暴露。先定義部署產物清單，再檢查實際輸出，比只依賴檔名猜測更可靠。",
+            "更新與最小權限處理另一層問題：程式版本是否受支援、服務帳號是否只擁有必要檔案權限、管理介面是否有獨立存取控制。正常首頁顯示不能代替這些檢查。"
+          ],
+          "sourceIds": [
+            "testing"
+          ]
+        },
+        {
+          "id": "headers",
+          "heading": "標頭提供瀏覽器控制，不修補所有漏洞",
+          "paragraphs": [
+            "Content-Security-Policy 可限制瀏覽器載入的內容來源；X-Content-Type-Options: nosniff 限制型態猜測；frame-ancestors 控制誰可嵌入頁面。需要檢查實際回應與頁面功能，避免只加上設定卻沒有生效。",
+            "標頭不能替代應用授權、輸入處理或資料庫參數化。強的設定也可能擋掉合法功能，因此部署前後都應驗證文章、圖片、腳本與錯誤頁的必要行為。"
+          ],
+          "sourceIds": [
+            "headers"
+          ]
+        }
+      ],
+      "example": {
+        "title": "例子：公開目錄多了一份備份",
+        "scenario": "合成部署清單包含 index.html、app.css、photo.webp 與 database-backup.sql。只前三項在公開內容清單。",
+        "reasoning": "即使首頁回應帶有安全標頭，備份檔仍不應被發布。要從部署產物排除它，核對遠端不可取得，並依是否曾暴露評估後續處理。",
+        "conclusion": "公開產物驗證與安全標頭檢查是兩個必要但不同的項目。"
+      },
+      "lab": {
+        "title": "離線練習：檢查發布清單",
+        "environment": "使用本文四個虛構檔名，不讀取真實備份或秘密。",
+        "steps": [
+          "將每個檔案對照公開內容清單。",
+          "寫出發布前阻擋條件與發布後檢查。",
+          "補上正常頁面與不存在頁面的預期 HTTP 狀態。"
+        ],
+        "expected": "備份檔必須排除；正常公開頁預期 200，不存在頁預期 404。",
+        "check": "如果所有不存在的路徑都回傳 200 首頁，會如何影響錯誤辨識？",
+        "cleanup": "保存合成檢查清單即可。"
+      }
+    },
+    "en": {
+      "title": "Web server hardening: from exposure to verifiable configuration",
+      "summary": "Inventory exposed files, services and administration routes before addressing updates, permissions and browser protections. Each control needs its own verification.",
+      "objectives": [
+        "Distinguish server, deployment-artifact and application responsibilities.",
+        "Explain the purpose and limits of security headers."
+      ],
+      "sections": [
+        {
+          "id": "surface",
+          "heading": "Reduce unnecessary public exposure",
+          "paragraphs": [
+            "A web server should deliver intended public content. Source code, backups, environment configuration and administration tools in the public directory expand exposure. Define an artifact allowlist and inspect the actual output instead of relying only on filename assumptions.",
+            "Updates and least privilege address another layer: supported software, restricted service-account file permissions and independently controlled administration interfaces. A working homepage does not establish those properties."
+          ],
+          "sourceIds": [
+            "testing"
+          ]
+        },
+        {
+          "id": "headers",
+          "heading": "Headers guide browsers; they do not fix every weakness",
+          "paragraphs": [
+            "Content-Security-Policy can restrict browser content sources. X-Content-Type-Options: nosniff limits MIME sniffing. frame-ancestors controls who may embed a page. Check actual responses and page behavior rather than assuming a configuration entry took effect.",
+            "Headers do not replace application authorization, input handling or parameterized database access. Restrictive settings can also block legitimate features, so verify required article, image, script and error-page behavior around deployment."
+          ],
+          "sourceIds": [
+            "headers"
+          ]
+        }
+      ],
+      "example": {
+        "title": "Example: an unintended backup in the public directory",
+        "scenario": "A synthetic deployment includes index.html, app.css, photo.webp and database-backup.sql. Only the first three are on the public-content allowlist.",
+        "reasoning": "Security headers on the homepage do not make the backup safe to publish. Exclude it from deployment, verify it is unavailable remotely and assess follow-up based on any exposure.",
+        "conclusion": "Artifact validation and header checks are necessary but distinct."
+      },
+      "lab": {
+        "title": "Offline exercise: review a release manifest",
+        "environment": "Use the four fictional filenames without reading real backups or secrets.",
+        "steps": [
+          "Compare each file with the public-content allowlist.",
+          "Write a pre-release blocking condition and a post-release check.",
+          "Add expected HTTP states for a normal page and a nonexistent page."
+        ],
+        "expected": "Exclude the backup. Expect 200 for a normal public page and 404 for a missing page.",
+        "check": "How would returning the homepage with 200 for every missing path affect error identification?",
+        "cleanup": "Save the synthetic checklist."
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "ceh-m13-hardening-q1",
+      "concept": "hardening",
+      "revision": 1,
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "首頁有 CSP，就能放心公開資料庫備份嗎？",
+          "options": [
+            "能，CSP 會加密所有檔案",
+            "不能，公開產物必須另外審查",
+            "能，只要備份沒有連結",
+            "能，只要副檔名是 sql"
+          ],
+          "rationales": [
+            "CSP 不會加密公開檔案。",
+            "瀏覽器政策不替代資料公開範圍。",
+            "未連結不等於無法取得。",
+            "副檔名不構成存取控制。"
+          ]
+        },
+        "en": {
+          "prompt": "Does CSP on the homepage make a database backup safe to publish?",
+          "options": [
+            "Yes; CSP encrypts every file",
+            "No; deployment artifacts need separate review",
+            "Yes, if no link points to it",
+            "Yes, if its extension is sql"
+          ],
+          "rationales": [
+            "CSP does not encrypt public files.",
+            "Browser policy does not define which data may be public.",
+            "Unlinked does not mean inaccessible.",
+            "An extension is not access control."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ceh-m13-hardening-q2",
+      "concept": "hardening",
+      "revision": 1,
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "設定檔寫了 nosniff，還要做什麼？",
+          "options": [
+            "宣稱所有風險消失",
+            "移除所有驗證",
+            "檢查實際回應與必要功能",
+            "停止更新套件"
+          ],
+          "rationales": [
+            "單一標頭只處理特定風險。",
+            "設定仍需證明已生效。",
+            "這同時確認部署與功能。",
+            "更新處理不同問題，仍需維護。"
+          ]
+        },
+        "en": {
+          "prompt": "After adding nosniff to configuration, what remains?",
+          "options": [
+            "Declare all risks gone",
+            "Remove all verification",
+            "Check actual responses and required functionality",
+            "Stop updating dependencies"
+          ],
+          "rationales": [
+            "One header addresses a specific risk.",
+            "The configuration still needs evidence of effect.",
+            "This checks deployment and behavior.",
+            "Updates address different issues and remain necessary."
+          ]
+        }
+      }
+    }
+  ],
+  "order": 130
+}
