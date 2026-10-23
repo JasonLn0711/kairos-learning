@@ -1,6 +1,7 @@
 import { isPublic, localized, type Locale, type Bilingual, type SearchEntry } from './model.ts';
 export type ConceptEntry = { id: string; module: string; title: Bilingual };
-export type ConceptBlock = {kind:'table';caption:string;headers:string[];rows:string[][]} | {kind:'details'|'step';heading:string;paragraphs:string[];code?:string;id?:string};
+export type ConceptVisual = {kind:'flow'|'cards';caption:string;description:string;items:{title:string;body:string}[]};
+export type ConceptBlock = ConceptVisual | {kind:'table';caption:string;headers:string[];rows:string[][]} | {kind:'details'|'step';heading:string;paragraphs:string[];code?:string;id?:string};
 export type ConceptCheck = {id:string;answer:number;text:Bilingual<{prompt:string;options:string[];rationales:string[]}>};
 export type ConceptTeaching = {
   id: string; revision: number; date: string; status: 'draft' | 'published'; publishedOn: string;
@@ -32,7 +33,9 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
         if (!/^[a-z][a-z0-9-]*$/.test(s.id) || headings.has(s.id) || s.id.startsWith('qa-') || !nonempty(s.heading) || !s.paragraphs?.length || !s.paragraphs.every(nonempty)) fail(`${t.id}: invalid section ${s.id}`);
         headings.add(s.id);
         for(const block of s.blocks ?? []) {
-          if(block.kind === 'table') {
+          if(block.kind === 'flow' || block.kind === 'cards') {
+            if(!nonempty(block.caption) || !nonempty(block.description) || !block.items?.length || !block.items.every(item=>nonempty(item.title)&&nonempty(item.body))) fail(`${t.id}: invalid visual`);
+          } else if(block.kind === 'table') {
             if(!nonempty(block.caption) || !block.headers?.length || !block.headers.every(nonempty) || !block.rows?.length || !block.rows.every(row => row.length === block.headers.length && row.every(nonempty))) fail(`${t.id}: invalid table`);
           } else if(block.kind === 'step' || block.kind === 'details') {
             if(!nonempty(block.heading) || !block.paragraphs?.length || !block.paragraphs.every(nonempty) || (block.code !== undefined && !nonempty(block.code))) fail(`${t.id}: invalid content block`);
@@ -69,7 +72,7 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   };
   const searchEntries: SearchEntry[] = (['zh','en'] as Locale[]).flatMap(lang=>entries.flatMap(c=>{
     const t=published.get(c.id); if (!t) return [];
-    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>[q.text[lang].prompt,...q.text[lang].options,...q.text[lang].rationales]),...(t.qa??[]).flatMap(q=>[q.text[lang].question,...q.text[lang].answer])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
+    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>[q.text[lang].prompt,...q.text[lang].options,...q.text[lang].rationales]),...(t.qa??[]).flatMap(q=>[q.text[lang].question,...q.text[lang].answer])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
   }));
   return {list,get,searchEntries};
 }
