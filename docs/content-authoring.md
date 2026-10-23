@@ -40,8 +40,17 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
-`content/concepts.json` owns stable IDs such as `M04-01` and the 12-topic M04 editorial sequence. A missing lesson reference means pending, with no invented lesson URL. Other modules retain existing introductions and explicitly mark the dedicated concept route pending. M04's seven recognition/risk topics are optional; M05 follows the twelve core topics. Counts are editorial decisions, not a fixed official twelve-topic rule.
+`content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
-`content/m04-01.json` holds the actual supplied teaching and its English translation. The stable page is `/courses/ceh/v13/m04/concepts/m04-01/`. The Chinese teaching body preserves the complete supplied explanation, example, defense and one small check. Q&A remains pending until real questions arrive; only an anonymous teaching edition may be published. Keep private progress, original learner notes, message IDs and personal data outside this public repository. Delivery does not establish understanding.
+Teaching fields: `id`, positive `revision`, `date` (content revision date), `status` (`draft` or `published`), `publishedOn`, and `text.zh` / `text.en`, each with `summary` and `sections` (`id`, `heading`, `paragraphs`). Both languages use the same section IDs. Keep published IDs and URLs stable. M04-01's Chinese teaching body remains the complete supplied text.
 
-For subsequent concepts, add reviewed bilingual teaching, wire its stable route and search entry, verify pending concepts stay unlinked, and update adjacent navigation. Verify the rendered public page after the existing Pages workflow succeeds. Keep public content revision, deployment proof, delivery, notes, Q&A and learner understanding as distinct records. The current route does not schedule deliveries.
+Optional `qa` is an array of anonymous teaching questions: each has a stable `id` and `text.zh` / `text.en` with `question` and an `answer` array of paragraphs. Omit it or use `[]` to display pending. Actual learner wording stays in the private source archive; public Q&A excludes identifying information, secrets and nonpublic third-party material. No private source path, delivery ID or progress belongs in website content.
+
+Shortest update workflow:
+
+1. Preserve supplied teaching in the public CEH source archive; preserve original private notes/Q&A only in the adopted private archive. Record delivery separately from understanding.
+2. Add the registry entry if needed; create or edit its teaching JSON, both languages and optional anonymous Q&A. Increment revision for a content change. Keep draft/future content closed; use `published` only after review.
+3. Run `npm run validate:content`, `npm test`, `npm run check`, `node scripts/check-publication-boundary.mjs` and `npm run validate:release`. The boundary check renders an isolated second-concept fixture, removes it, tests draft/future exclusion, then rebuilds clean production output. Reserved fixture IDs M04-98 and M04-99 are never production curriculum.
+4. Check mobile/desktop, bilingual body and Q&A, previous/next links, search and missing IDs. Publish through the existing PR/Pages workflow; read back the exact public URL and record the deployment commit/run in private progress and the thin daily index.
+
+Routes, search and navigation resolve by concept ID. Pending neighbors link to their module-index anchor. Registry order determines adjacency across modules, so add later modules in the intended editorial sequence. Each module retains its own concept count; M04 has twelve core topics followed by M05, with seven optional recognition/risk topics.
