@@ -37,3 +37,11 @@ Add sources to `content/sources.json`; cite their IDs at lesson and section leve
 All lessons, module quizzes and wrong-answer review consume the same question object. Search text is generated from the published catalog. No copied answer bank, manual search index or parallel lesson list is needed. Future-dated content is excluded until a later authorized build; it is not an automatic publication schedule.
 
 [Architecture](platform-architecture.md) · [Decision history](ceh-bilingual-publishing-plan.zh-tw.md) · [Release evidence](releases/2026-10-23-phase-0-3.md)
+
+## One-concept reading route — October 23
+
+`content/concepts.json` owns stable IDs such as `M04-01` and the 12-topic M04 editorial sequence. A missing lesson reference means pending, with no invented lesson URL. Other modules retain existing introductions and explicitly mark the dedicated concept route pending. M04's seven recognition/risk topics are optional; M05 follows the twelve core topics. Counts are editorial decisions, not a fixed official twelve-topic rule.
+
+`content/m04-01.json` holds the actual supplied teaching and its English translation. The stable page is `/courses/ceh/v13/m04/concepts/m04-01/`. The Chinese teaching body preserves the complete supplied explanation, example, defense and one small check. Q&A remains pending until real questions arrive; only an anonymous teaching edition may be published. Keep private progress, original learner notes, message IDs and personal data outside this public repository. Delivery does not establish understanding.
+
+For subsequent concepts, add reviewed bilingual teaching, wire its stable route and search entry, verify pending concepts stay unlinked, and update adjacent navigation. Verify the rendered public page after the existing Pages workflow succeeds. Keep public content revision, deployment proof, delivery, notes, Q&A and learner understanding as distinct records. The current route does not schedule deliveries.
