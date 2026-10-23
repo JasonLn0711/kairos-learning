@@ -66,3 +66,14 @@ test('search reaches worked examples, exercise checks and answer explanations',(
       assert.ok(search(searchEntries,query,lang).some(e=>e.id===lesson.id));
   }
 });
+test('one-concept routes expose real teaching only, with private progress absent', () => {
+  const page = getPage('/courses/ceh/v13/m04/concepts/m04-01/');
+  assert.ok(page?.conceptTeaching);
+  assert.equal(page.concepts.length, 12);
+  assert.equal(page.concepts.filter(c => c.href).length, 1);
+  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-02/'), null);
+  assert.equal(page.conceptTeaching.text.zh.sections.length, 5);
+  assert.equal(page.conceptTeaching.text.en.sections.length, 5);
+  assert.ok(page.conceptTeaching.text.zh.sections.find(s => s.id === 'check')?.paragraphs[0].includes('Finance'));
+  assert.ok(!JSON.stringify(page).includes('Sentinel_'));
+});

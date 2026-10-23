@@ -5,6 +5,7 @@
   import Search from './Search.svelte';
   import Review from './Review.svelte';
   import Lab from './Lab.svelte';
+  import Concept from './Concept.svelte';
   let { data }: { data: Page } = $props();
   const lang = $derived(data.route.lang);
   const zh = $derived(lang === 'zh');
@@ -12,13 +13,13 @@
   const lesson = $derived(data.selected[0]);
   const text = $derived(lesson?.text[lang]);
   const courseTitle = $derived(data.route.courseId === 'ai-ml' ? (zh ? 'AI／ML 基礎' : 'AI & ML foundations') : (zh ? '資工網路基礎' : 'Computer networking foundations'));
-  const title = $derived(kind === 'home' ? (zh ? '把概念學清楚，再動手驗證。' : 'Understand the idea. Then test it.') : kind === 'lesson' ? text.title : kind === 'ceh' ? (zh ? 'CEH：從安全原理到判斷證據' : 'CEH: from security principles to evidence') : ['module','quiz','lab'].includes(kind) ? `${data.module?.id.toUpperCase()} · ${data.module?.title[lang]}${kind === 'quiz' ? ' · Q&A' : kind === 'lab' ? (zh ? ' · 安全練習' : ' · Safe practice') : ''}` : kind === 'course' ? courseTitle : kind === 'glossary' ? (zh ? '概念詞彙表' : 'Concept glossary') : kind === 'search' ? (zh ? '找到下一個想懂的概念' : 'Find the concept you need') : kind === 'review' ? (zh ? '回到還沒弄懂的地方' : 'Return to the ideas that need work') : (zh ? '內容與練習原則' : 'Content & practice principles'));
+  const title = $derived(kind === 'home' ? (zh ? '把概念學清楚，再動手驗證。' : 'Understand the idea. Then test it.') : kind === 'concept' ? `${data.route.conceptId} · ${data.concepts.find(c => c.id === data.route.conceptId)?.title[lang]}` : kind === 'lesson' ? text.title : kind === 'ceh' ? (zh ? 'CEH：從安全原理到判斷證據' : 'CEH: from security principles to evidence') : ['module','quiz','lab'].includes(kind) ? `${data.module?.id.toUpperCase()} · ${data.module?.title[lang]}${kind === 'quiz' ? ' · Q&A' : kind === 'lab' ? (zh ? ' · 安全練習' : ' · Safe practice') : ''}` : kind === 'course' ? courseTitle : kind === 'glossary' ? (zh ? '概念詞彙表' : 'Concept glossary') : kind === 'search' ? (zh ? '找到下一個想懂的概念' : 'Find the concept you need') : kind === 'review' ? (zh ? '回到還沒弄懂的地方' : 'Return to the ideas that need work') : (zh ? '內容與練習原則' : 'Content & practice principles'));
   const description = $derived(kind === 'lesson' ? text.summary : zh ? 'CS Kairos 的雙語技術教材：CEH、MATLAB、AI／ML 與網路基礎。以完整概念、實例、原創問答及安全練習建立理解。' : 'Bilingual technical learning at CS Kairos: CEH, MATLAB, AI/ML and networking. Learn through concepts, worked examples, original questions and safe practice.');
   const counterpart = $derived(zh ? `/en${data.route.path}` : data.route.path.replace(/^\/en/, '') || '/');
   const at = $derived(data.index.findIndex(l => l.id === lesson?.id));
   const related = $derived(data.index.filter(l => lesson?.related.includes(l.id)));
   const questions = $derived(data.selected.flatMap(l => l.questions));
-  const showRail = $derived(['lesson','module','quiz','lab'].includes(kind) && (data.module || lesson?.course === 'ceh'));
+  const showRail = $derived(['concept','lesson','module','quiz','lab'].includes(kind) && (data.module || lesson?.course === 'ceh'));
 </script>
 <svelte:head>
   <title>{title} | CS Kairos Learn</title><meta name="description" content={description} />
@@ -49,12 +50,20 @@
     {:else if kind === 'ceh'}
       <p class="lead">{zh ? '二十章的核心概念路線。每章都有完整雙語閱讀、原創 Q&A 與離線或紙上安全練習；M01 提供兩篇起步教材。' : 'A core-concept path across twenty modules. Each module includes complete bilingual reading, original Q&A and an offline or tabletop exercise. M01 begins with two lessons.'}</p>
       <div class="notice"><p>{zh ? '本系列是獨立製作的概念入門，不是 EC-Council 官方教材、考古題或完整考試準備保證。v13 表示課程章節參照；官方考試範圍另依 Exam Blueprint v5.0 核對。' : 'This independently written series introduces core concepts. It is not official EC-Council courseware, a collection of exam questions or a guarantee of exam readiness. v13 identifies the course-module reference; the exam scope is checked separately against Exam Blueprint v5.0.'}</p><a href="https://cert.eccouncil.org/wp-content/uploads/2024/04/CEH-Exam-Blueprint-v5.pdf">{zh ? '官方考試藍圖 PDF' : 'Official exam blueprint PDF'}</a> · <a href={localized('/standards/',lang)}>{zh ? '內容原則與版本' : 'Content principles & versions'}</a></div>
-      <ol class="module-list">{#each data.modules as m}<li><span class="eyebrow">{m.id.toUpperCase()}</span><div><h2><a href={modulePath(m.id,lang)}>{m.title[lang]}</a></h2><p>{m.focus[lang]}</p></div></li>{/each}</ol>
+      <p class="notice">{zh ? '一次學一個概念：各章逐步整理獨立概念頁，目前從 M04 開始。既有入門教材可繼續閱讀；每章概念數依內容安排。' : 'One concept at a time: dedicated concept pages are being organized, starting with M04. Existing introductory lessons remain available; concept counts vary by module.'}</p><ol class="module-list">{#each data.modules as m}<li><span class="eyebrow">{m.id.toUpperCase()}</span><div><h2><a href={modulePath(m.id,lang)}>{m.title[lang]}</a></h2><p>{m.focus[lang]}</p><p class="muted">{m.id === 'm04' ? (zh ? '一次學一個概念：12 核心目錄，首篇已整理' : 'One concept at a time: 12 core topics, first page available') : (zh ? '獨立概念路線待整理 · 既有入門教材可閱讀' : 'Dedicated concept route pending · introduction available')}</p></div></li>{/each}</ol>
     {:else if kind === 'module'}
-      <p class="lead">{data.module?.focus[lang]}</p><section><h2>{zh ? '概念地圖' : 'Concept map'}</h2><ol class="concept-map">{#each data.selected as l}<li><a href={data.index.find(i => i.id === l.id)?.href}>{l.text[lang].title}</a><p>{l.text[lang].summary}</p></li>{/each}<li><a href={modulePath(data.module!.id,lang)+'quiz/'}>Q&A · {zh ? '判斷與解析' : 'Decisions & explanations'}</a><p>{zh ? '說明正確答案，也檢查其他選項錯在哪裡。' : 'Explain the correct choice and why the alternatives fail.'}</p></li><li><a href={modulePath(data.module!.id,lang)+'labs/'}>{zh ? '安全練習與成果檢核' : 'Safe practice & evidence check'}</a><p>{zh ? '留下自己的判斷或程式輸出，再與預期結果比對。' : 'Record your own decision or output, then compare it with the expected result.'}</p></li></ol></section>
+      <p class="lead">{data.module?.focus[lang]}</p>
+      <section id="one-concept"><h2>{zh ? '一次學一個概念' : 'One concept at a time'}</h2>
+      {#if data.module?.id === 'm04'}<p>{zh ? '先讀以下 12 個核心概念，再接 M05。這是教學順序；各章概念數依官方範圍與教學整理決定。' : 'Read these 12 core topics before M05. This is an editorial sequence; each module has its own scope and concept count.'}</p>
+      <ol class="concept-map">{#each data.concepts as c}<li id={c.id.toLowerCase()}>{#if c.href}<a href={c.href}>{c.id} · {c.title[lang]}</a>{:else}<span>{c.id} · {c.title[lang]}</span><p class="muted">{zh ? '教材待整理' : 'Lesson pending'}</p>{/if}</li>{/each}</ol>
+      <details><summary>{zh ? '選讀：7 個辨識與風險主題' : 'Optional: 7 recognition and risk topics'}</summary><p>Telnet · TFTP · NTP · IPv6 · VoIP · IPsec · BGP</p><p>{zh ? '保留選讀，不影響接續 M05。' : 'Optional reading does not delay M05.'}</p></details>
+      {:else}<p class="muted">{zh ? '獨立概念路線待整理。以下既有教材可先閱讀。' : 'The dedicated concept route is pending. Existing lessons below remain available.'}</p>{/if}</section>
+      <section><h2>{zh ? '概念地圖' : 'Concept map'}</h2><ol class="concept-map">{#each data.selected as l}<li><a href={data.index.find(i => i.id === l.id)?.href}>{l.text[lang].title}</a><p>{l.text[lang].summary}</p></li>{/each}<li><a href={modulePath(data.module!.id,lang)+'quiz/'}>Q&A · {zh ? '判斷與解析' : 'Decisions & explanations'}</a><p>{zh ? '說明正確答案，也檢查其他選項錯在哪裡。' : 'Explain the correct choice and why the alternatives fail.'}</p></li><li><a href={modulePath(data.module!.id,lang)+'labs/'}>{zh ? '安全練習與成果檢核' : 'Safe practice & evidence check'}</a><p>{zh ? '留下自己的判斷或程式輸出，再與預期結果比對。' : 'Record your own decision or output, then compare it with the expected result.'}</p></li></ol></section>
       <p class="muted">{zh ? '建議依概念地圖閱讀；已熟悉先備概念時，可直接進入本章練習。每次進度由你決定，沒有每日篇數要求。' : 'Follow the concept map, or go directly to practice if you know the prerequisites. Choose your own pace; there is no daily article quota.'}</p>
     {:else if kind === 'course'}
       <p class="lead">{zh ? '先建立一個完整概念，再用小型練習檢查理解。' : 'Build one complete concept, then check your understanding with a small exercise.'}</p><ul class="reading-list">{#each data.selected as l}<li><a href={data.index.find(i => i.id === l.id)?.href}>{l.text[lang].title}</a><p>{l.text[lang].summary}</p></li>{/each}</ul>
+    {:else if kind === 'concept'}
+      <Concept {data} />
     {:else if kind === 'lesson'}
       <p class="lead">{text.summary}</p><p class="metadata">{zh ? '發布' : 'Published'} {lesson.publishedOn} · {zh ? '內容校對' : 'Content checked'} {lesson.reviewedOn} · v{lesson.revision}</p>
       <div class="notice"><strong>{zh ? '讀完後，你可以' : 'After this lesson, you can'}</strong><ul>{#each text.objectives as objective}<li>{objective}</li>{/each}</ul>{#if lesson.prerequisites.length}<p>{zh ? '先備閱讀：' : 'Prerequisites: '}{#each lesson.prerequisites as id,i}{#if i} · {/if}<a href={data.index.find(l=>l.id===id)?.href}>{data.index.find(l=>l.id===id)?.title}</a>{/each}</p>{/if}</div>

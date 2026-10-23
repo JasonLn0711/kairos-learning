@@ -47,3 +47,5 @@ GitHub Actions 在 PR 驗證內容、程式、資產與實際靜態產物，提�
 MATLAB 下載來源變更時，執行 `python3 scripts/package_release.py` 重建 ZIP 與 SHA-256。PDF 範本由 `python3 scripts/build_report_pdfs.py` 產生（需要 ReportLab），再重建下載包。Python 合成參考圖庫不視為 MATLAB 執行結果。
 
 [CEH 編輯決策沿革](docs/ceh-bilingual-publishing-plan.zh-tw.md) · [CEH 學習橋接](https://github.com/JasonLn0711/ceh-cehp-certification-notes-2026/blob/main/docs/public-teaching-bridge-2026-10-23.md) · [主站平台規範](https://github.com/JasonLn0711/JasonLn0711.github.io/blob/main/docs/cs-kairos-platform-architecture-v1.zh-tw.md)
+
+2026-10-23 新增[一次學一個概念：M04 目錄](https://learn.cs-kairos.com/courses/ceh/v13/m04/#one-concept)與 [M04-01 列舉原理](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-01/)。12 核心之後接 M05，另外 7 項選讀；各章獨立概念路線逐步整理。原有雙語入門教材持續提供。

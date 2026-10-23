@@ -10,8 +10,12 @@ export const lessons = allLessons.filter(l => isPublic(l, new Intl.DateTimeForma
 export const allTerms = JSON.parse(readFileSync(join(root, 'glossary.json'), 'utf8')) as Term[];
 export const terms = allTerms.map(t => ({...t, lessons: t.lessons.filter(id => lessons.some(l => l.id === id))})).filter(t => t.lessons.length);
 export const searchEntries: SearchEntry[] = lessons.flatMap(l => (['zh','en'] as Locale[]).map(lang => ({ id:l.id, lang, title:l.text[lang].title, summary:l.text[lang].summary, text:[...l.text[lang].objectives, ...l.text[lang].sections.flatMap(s => [s.heading,...s.paragraphs,s.code ?? '']), ...Object.values(l.text[lang].example), ...Object.values(l.text[lang].lab).flat(), ...l.questions.flatMap(q => [q.text[lang].prompt,...q.text[lang].options,...q.text[lang].rationales]), ...l.terms].join(' '), href:lessonPath(l,lang), label:l.course === 'ceh' ? `CEH ${l.module.toUpperCase()}` : l.course })));
-export type Kind = 'home' | 'ceh' | 'module' | 'lesson' | 'quiz' | 'lab' | 'course' | 'glossary' | 'search' | 'review' | 'standards';
-export type Route = { path: string; kind: Kind; lang: Locale; lessonId?: string; moduleId?: string; courseId?: string };
+export const conceptTeaching = JSON.parse(readFileSync(join(root, 'm04-01.json'), 'utf8')) as { id: string; revision: number; date: string; text: Record<Locale,{summary:string;sections:{id:string;heading:string;paragraphs:string[]}[]}> };
+export const concepts = JSON.parse(readFileSync(join(root, 'concepts.json'), 'utf8')) as { id: string; module: string; title: Record<Locale,string>; lessonId: string | null }[];
+export const conceptPath = (id: string, lang: Locale) => localized(`/courses/ceh/v13/${id.slice(0,3).toLowerCase()}/concepts/${id.toLowerCase()}/`,lang);
+for (const lang of ['zh','en'] as Locale[]) searchEntries.push({id:conceptTeaching.id,lang,title:`M04-01 · ${concepts[0].title[lang]}`,summary:conceptTeaching.text[lang].summary,text:conceptTeaching.text[lang].sections.flatMap(s => [s.heading,...s.paragraphs]).join(' '),href:conceptPath(conceptTeaching.id,lang),label:'CEH M04'});
+export type Kind = 'concept' | 'home' | 'ceh' | 'module' | 'lesson' | 'quiz' | 'lab' | 'course' | 'glossary' | 'search' | 'review' | 'standards';
+export type Route = { path: string; kind: Kind; lang: Locale; lessonId?: string; moduleId?: string; courseId?: string; conceptId?: string };
 export const routes: Route[] = (['zh','en'] as Locale[]).flatMap(lang => [
   {path:localized('/',lang),kind:'home',lang},
   ...['/courses/ceh/','/courses/ceh/v13/'].map(path => ({path:localized(path,lang),kind:'ceh' as Kind,lang})),
@@ -20,6 +24,7 @@ export const routes: Route[] = (['zh','en'] as Locale[]).flatMap(lang => [
     {path:modulePath(m.id,lang)+'quiz/',kind:'quiz' as Kind,lang,moduleId:m.id},
     {path:modulePath(m.id,lang)+'labs/',kind:'lab' as Kind,lang,moduleId:m.id}
   ]),
+  ...concepts.filter(c => lessons.some(l => l.id === c.lessonId)).map(c => ({path:conceptPath(c.id,lang),kind:'concept' as Kind,lang,lessonId:c.lessonId!,conceptId:c.id})),
   ...lessons.map(l => ({path:lessonPath(l,lang),kind:'lesson' as Kind,lang,lessonId:l.id})),
   ...['ai-ml','networking'].map(courseId=>({path:localized(`/courses/${courseId}/`,lang),kind:'course' as Kind,lang,courseId})),
   ...(['glossary','search','review','standards'] as const).map(kind => ({path:localized(`/${kind}/`,lang),kind,lang}))
@@ -31,6 +36,6 @@ export function getPage(path: string) {
   const selected = route.lessonId ? lessons.filter(l => l.id === route.lessonId) : route.moduleId ? lessons.filter(l => l.module === route.moduleId) : route.courseId ? lessons.filter(l => l.course === route.courseId) : [];
   const module = modules.find(m => m.id === route.moduleId || m.id === selected[0]?.module);
   const index = lessons.map(l => ({id:l.id, course:l.course, module:l.module, title:l.text[lang].title, summary:l.text[lang].summary, href:lessonPath(l,lang)}));
-  return { route, module, selected, index, modules, sources: sources.filter(s => selected.some(l => l.sourceIds.includes(s.id))), terms: ['glossary','lesson'].includes(route.kind) ? terms : [], questions: route.kind === 'review' ? lessons.flatMap(l => l.questions) : [] };
+  return { route, module, selected, index, modules, conceptTeaching: route.kind === 'concept' ? conceptTeaching : null, concepts: concepts.map(c => ({...c, href: lessons.some(l => l.id === c.lessonId) ? conceptPath(c.id,lang) : null})), sources: sources.filter(s => selected.some(l => l.sourceIds.includes(s.id))), terms: ['glossary','lesson'].includes(route.kind) ? terms : [], questions: route.kind === 'review' ? lessons.flatMap(l => l.questions) : [] };
 }
 export type Page = NonNullable<ReturnType<typeof getPage>>;
