@@ -28,7 +28,7 @@ test('draft, future, pending and nonexistent concepts have no public body or sea
     assert.equal(catalog.get(t.id,'zh'),null);assert.equal(catalog.list('zh')[1].href,null);
     assert.ok(!JSON.stringify(catalog.searchEntries).includes('SECOND_CONCEPT_FIXTURE'));
   }
-  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-02/'),null);
+  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-03/'),null);
   assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-99/'),null);
   assert.equal(createConceptCatalog(concepts,[first],'2026-10-23').get('M99-99','en'),null);
 });
@@ -64,3 +64,5 @@ test('visuals have searchable text and reject missing descriptions',()=>{
   if(block?.kind==='flow')block.description='';
   assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'),/invalid visual/);
 });
+
+test("published DNS uses its own body and adjacent concepts",()=>{const p=getPage("/courses/ceh/v13/m04/concepts/m04-02/")!;assert.equal(p.conceptTeaching?.id,"M04-02");assert.equal(p.conceptNavigation?.previous?.id,"M04-01");assert.equal(p.conceptNavigation?.next?.id,"M04-03");assert.deepEqual(p.conceptTeaching?.qa,[]);});
