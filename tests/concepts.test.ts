@@ -4,7 +4,7 @@ import { createConceptCatalog, type ConceptTeaching } from '../src/lib/concepts.
 import { concepts, allConceptTeachings, getPage } from '../src/lib/server/catalog.ts';
 const first=allConceptTeachings[0];
 function second(): ConceptTeaching {
-  const t=structuredClone(first);t.id='M04-02';
+  const t=structuredClone(first);t.id='M04-02';delete t.checks;
   for(const lang of ['zh','en'] as const) t.text[lang]={summary:`${lang} SECOND_CONCEPT_FIXTURE`,sections:[{id:'own-section',heading:`${lang} Own heading`,paragraphs:[`${lang} Own teaching`]}]};
   t.qa=[{id:'own-question',text:{zh:{question:'第二課測試問題',answer:['第二課測試答案']},en:{question:'Second fixture question',answer:['Second fixture answer']}}}];
   return t;
@@ -37,4 +37,22 @@ test('empty Q&A is optional; invalid translations, duplicates and reserved ancho
   const bad=second();bad.qa![0].text.en.answer=[];assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'),/Q&A/);
   assert.throws(()=>createConceptCatalog(concepts,[first,first],'2026-10-23'),/duplicate/);
   const anchor=second();anchor.text.zh.sections[0].id='discussion';assert.throws(()=>createConceptCatalog(concepts,[anchor],'2026-10-23'),/invalid section/);
+});
+test('M04 revision two keeps seven teaching sections and three tests distinct from empty discussion',()=>{
+  assert.equal(first.revision,2);assert.equal(first.text.zh.sections.length,7);
+  assert.deepEqual(first.text.zh.sections.map(s=>s.id),first.text.en.sections.map(s=>s.id));
+  assert.deepEqual(first.checks?.map(q=>q.answer),[1,2,1]);assert.deepEqual(first.qa,[]);
+  for(const lang of ['zh','en'] as const){
+    assert.deepEqual(first.text[lang].sections.filter(s=>s.blocks?.length).map(s=>s.blocks!.map(b=>b.kind)),first.text.zh.sections.filter(s=>s.blocks?.length).map(s=>s.blocks!.map(b=>b.kind)));
+    const codes=first.text[lang].sections.flatMap(s=>s.blocks??[]).map(b=>b.kind==='step' ? b.code??'' : '').join('\n');
+    assert.ok(codes.includes('get test.txt downloaded-test.txt'));assert.ok(!codes.includes("-c 'ls'"));
+    assert.ok(codes.includes('mktemp -d'));assert.ok(!codes.includes('%PASSWORD'));
+    const serialized=JSON.stringify(first.text[lang]);assert.ok(!/utm_|favicons|&#x20;/.test(serialized));
+  }
+});
+test('test explanations and table cells are searchable and incomplete test keys fail closed',()=>{
+  const catalog=createConceptCatalog(concepts,[first],'2026-10-23');
+  assert.ok(catalog.searchEntries.find(e=>e.lang==='en')!.text.includes('NTFS'));
+  assert.ok(catalog.searchEntries.find(e=>e.lang==='zh')!.text.includes(first.checks![1].text.zh.rationales[2]));
+  const bad=structuredClone(first);bad.checks![0].answer=5;assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'),/test identity/);
 });

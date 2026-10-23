@@ -1,108 +1,676 @@
 {
   "id": "M04-01",
-  "revision": 1,
+  "revision": 2,
   "date": "2026-10-23",
   "text": {
     "zh": {
-      "summary": "先掌握一句話：掃描幫你找到服務入口；列舉進一步問出具體資訊；看得到哪些資訊、能做哪些操作，要分開判讀。\n",
+      "summary": "把服務入口、可見資訊與操作權限分開記錄。用 SMB 合成案例、授權實驗步驟與三題檢核，建立可回查的列舉證據。",
       "sections": [
         {
           "id": "definition",
-          "heading": "列舉到底在做什麼？",
+          "heading": "一、列舉在資安流程中的位置",
           "paragraphs": [
-            "列舉（Enumeration），就是透過服務提供的查詢方式，把帳號、群組、共享資料夾等資訊具體列出來。",
-            "想像走進辦公大樓：先知道有哪些公司，再確認哪些櫃檯開放，接著詢問部門名單。拿到名單後，進辦公室、閱讀文件、修改文件，仍各有權限要求。",
-            "資安人員用列舉盤點資源，也檢查服務是否對某種身分透露過多資訊。能查到多少，取決於網路可達性、服務設定、查詢方式與使用身分。"
-          ]
+            "列舉（Enumeration）透過服務提供的查詢方式，具體列出帳號、群組、共享名稱等資訊。資安人員用它盤點資源，也檢查某種身分可見的資訊是否符合政策。",
+            "偵察蒐集背景，例如網域與系統用途；掃描觀察主機、埠與服務回應；列舉再查詢具名資源或屬性。這是理解問題的順序，工具可能涵蓋多項功能；有些查詢先登入，有些服務允許匿名查詢。",
+            "想像走進辦公大樓：先辨認公司，再看哪些櫃檯開放，接著詢問部門名單。拿到財務部名單、進入辦公室、閱讀文件與修改文件，各自對應不同操作與權限。",
+            "讀完本課，你可以區分掃描與列舉、解釋看得到 Finance 卻讀取遭拒的原因，並用證據矩陣設計授權實驗。這些判讀也連結到作業系統、網路、身分驗證與存取控制。"
+          ],
+          "blocks": []
         },
         {
           "id": "connections",
-          "heading": "把五個觀念接起來",
+          "heading": "二、從埠、服務與協定，到具體資源",
           "paragraphs": [
-            "• 偵察：蒐集背景，例如網域名稱與系統用途；方式可分主動與被動。\n• 掃描：確認主機或服務入口的回應。例如 TCP 445 開放，代表該次觀測有程式接受連線，實際服務仍需確認。\n• 列舉：向服務查詢具體內容，例如共享名稱、帳號或群組。\n• 身分驗證：確認「你是誰」，例如以測試帳號登入。\n• 存取授權：決定「這個身分可以做什麼」，例如列出名稱、讀取或寫入檔案。",
-            "[Nmap 埠狀態說明](https://nmap.org/book/man-port-scanning-basics.html)｜[Microsoft 驗證與授權](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)",
-            "這是理解問題的順序，實際工具可能同時涵蓋多項功能。開始前，還要取得測試許可，約定目標、帳號、時段與操作範圍；系統接受操作與擁有測試許可，是兩回事。"
+            "先認識四個名詞，再沿著「服務入口 → 協定回應 → 具體資源 → 指定操作」判讀。每一步保留當時的查詢身分、條件與原始回應。",
+            "第一層：TCP 445 顯示 open，表示該次掃描觀測到應用程式接受連線。埠號提供服務線索，接著用協定回應確認實際服務。Nmap 的 -sV 會送出探測以辨識服務／版本，結果仍要連同回應與辨識限制判讀。[埠狀態](https://nmap.org/book/man-port-scanning-basics.html) · [服務辨識](https://nmap.org/book/man-version-detection.html)",
+            "第二層：確認 SMB 後，透過支援的查詢取得共享資訊。Microsoft 的 NetShareEnum 是這類查詢的一個 API 範例；不同資訊層級回傳不同欄位，也有不同權限條件。",
+            "第三層：列出共享名稱之後，分別檢查目錄列出、指定檔案讀取、寫入或刪除等操作。每個結果對應當次身分、目標與操作。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "四個基礎名詞",
+              "headers": [
+                "名詞",
+                "意義",
+                "本課例子"
+              ],
+              "rows": [
+                [
+                  "Port（埠）",
+                  "搭配 IP 位址與傳輸協定，辨識通訊端點的編號",
+                  "TCP 445"
+                ],
+                [
+                  "Service（服務）",
+                  "提供特定功能的程式或功能",
+                  "SMB 檔案分享服務"
+                ],
+                [
+                  "Protocol（協定）",
+                  "用戶端與服務交換訊息的規則",
+                  "SMB"
+                ],
+                [
+                  "Resource（資源）",
+                  "服務管理的具體對象",
+                  "Public、Finance 共享"
+                ]
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "合成案例：每張證據卡各有範圍",
+              "paragraphs": [
+                "以下是教學情境，尚未在你的環境實測。假設 labuser 已完成驗證，查到 Public、Finance，之後在約定範圍讀取測試檔。",
+                "報告寫：「這次查詢取得 Finance 名稱；labuser 讀取 Finance/test.txt 時被拒絕。」其他檔案、建立、寫入與刪除權限各自留待授權驗證。"
+              ],
+              "code": "445/tcp open\nSMB protocol response confirmed\nShare names: Public, Finance\n\\\\fileserver\\Public\\test.txt  → Read successful\n\\\\fileserver\\Finance\\test.txt → ACCESS_DENIED",
+              "id": "example"
+            },
+            {
+              "kind": "details",
+              "heading": "延伸：NetShareEnum 資訊層級",
+              "paragraphs": [
+                "Level 0 回傳共享名稱；Level 1 再加資源類型與註解。較高層級可要求其他資訊，權限條件依呼叫情境與平台而定。",
+                "文件所說的「Level 0／1 無特殊群組資格要求」，描述的是群組資格；匿名查詢是否可行，仍由驗證與服務政策決定。[NetShareEnum 官方文件](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
+              ]
+            }
           ]
         },
         {
-          "id": "example",
-          "heading": "一個合成案例",
+          "id": "permissions",
+          "heading": "三、看得到 Finance，讀取卻遭拒？",
           "paragraphs": [
-            "在已授權的練習環境，我們觀察到：\n① 檔案伺服器的 TCP 445 開放。\n② 協定回應確認提供 SMB 檔案分享服務。\n③ 用測試帳號查詢，取得 Public、Finance 兩個共享名稱。\n④ 在約定範圍內讀取測試檔：Public 成功，Finance 回覆拒絕存取。",
-            "第三步就是列舉。Microsoft 的 NetShareEnum 提供查詢共享資源的功能，取得資訊的層級與權限條件也有區別。[官方文件](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)",
-            "報告要分開寫：「取得 Finance 名稱」與「該測試帳號讀取指定檔案遭拒」。讀取、寫入也要各自紀錄，寫入權限留待授權範圍內另行驗證。"
+            "身分驗證（Authentication）確認「你是誰」；存取授權（Authorization）決定「這個身分可以做什麼」。合法登入的員工可能看得到部門名稱，能讀取的文件則依工作需求授權。[Microsoft 驗證與授權](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)",
+            "在 Windows 的一般 SMB 網路檔案存取情境，共享權限與 NTFS 檔案系統權限都會影響結果。假設共享允許讀寫、NTFS 只允許讀取，該路徑的有效存取通常只有讀取。實際判斷要看使用者／群組、繼承、允許與拒絕規則及請求的操作。",
+            "ACCESS_DENIED 記下的是這次請求遭拒。診斷時先確認驗證狀態與協定回應，再對照 SMB 政策、共享權限、NTFS 權限及日誌，定位拒絕發生的層次。[SMB 存取遭拒的排查](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "權限判讀流程（假設已完成驗證）",
+              "paragraphs": [
+                "labuser 的指定檔案讀取請求 → 共享層允許該操作？→ NTFS 允許該檔案操作？→ 依有效權限與其他適用政策得到結果。這是教學用判讀圖，實際系統的檢查與協定流程依實作而定。"
+              ]
+            },
+            {
+              "kind": "details",
+              "heading": "延伸：ABE 控制的是共享內的顯示",
+              "paragraphs": [
+                "Access-Based Enumeration（ABE）可依權限篩選共享內檔案與資料夾的顯示。SMB 的 FolderEnumerationMode=AccessBased 對應這個行為。",
+                "ABE 不是把 Finance 從伺服器的共享名稱清單移除的開關。名稱顯示與實際存取是兩層；資源保護仍由存取控制執行。[Set-SmbShare：FolderEnumerationMode](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "practice",
+          "heading": "四、授權實驗室：掃描、列共享、列目錄與讀檔",
+          "paragraphs": [
+            "以下是可選的實驗步驟，適用 Ubuntu／Linux 用戶端與你控制或已取得測試許可的 SMB 實驗主機。開始前約定主機、測試帳號、時段與操作範圍，準備無個資的合成 test.txt，確認停止條件與可保存的證據。",
+            "192.0.2.10 是 RFC 5737 的文件示例位址，不是已建好的實驗機。所有指令執行前，請換成實際獲准的實驗主機位址。[RFC 5737](https://www.rfc-editor.org/rfc/rfc5737)",
+            "密碼只在程式提示時輸入，留在本機驗證流程。請保留去識別的觀察與原始回應，網站或報告不記錄密碼。以下範例不代表已執行掃描或取得存取權。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "A．觀察埠與服務",
+              "paragraphs": [
+                "-p 445 指定 TCP 445；-sV 嘗試服務與版本辨識。記下埠狀態、辨識結果與原始回應。"
+              ],
+              "code": "nmap -sV -p 445 192.0.2.10"
+            },
+            {
+              "kind": "step",
+              "heading": "B．列出共享名稱",
+              "paragraphs": [
+                "-L 查詢共享清單，-U 指定測試帳號，依程式提示輸入密碼。取得 Public、Finance 時，記錄「該身分的查詢回傳這些名稱」。"
+              ],
+              "code": "smbclient -L 192.0.2.10 -U labuser"
+            },
+            {
+              "kind": "step",
+              "heading": "C．先建立本機目錄並連線",
+              "paragraphs": [
+                "先建立新的本機專用暫存目錄並切入，避免下載覆寫既有檔案。連線後依提示輸入密碼，再於 smb: 提示字元操作。",
+                "ls 列出目前目錄；get 讀取伺服器上事先準備且獲准的 test.txt，下載為本機工作目錄的 downloaded-test.txt。使用全新目錄，下載前確認該名稱尚未存在。"
+              ],
+              "code": "lab_dir=$(mktemp -d) && cd \"$lab_dir\" && \\\n  smbclient //192.0.2.10/Public -U labuser"
+            },
+            {
+              "kind": "step",
+              "heading": "D．在 smb: 提示字元列目錄與讀檔",
+              "paragraphs": [
+                "以下是 smbclient 內部指令，請在登入後的 smb: 提示字元逐行輸入；它們與前面的 shell 指令分開。",
+                "ls 成功記為目錄列出成功；get 成功記為指定合成檔已下載。兩個結果各自保存。"
+              ],
+              "code": "ls\nget test.txt downloaded-test.txt\nquit"
+            },
+            {
+              "kind": "step",
+              "heading": "保存與結束",
+              "paragraphs": [
+                "分別記錄 ls 與 get 的結果、時間、身分、指定路徑及回應。若約定包含 Finance，可在同樣條件另行測試合成檔並記錄結果；寫入、建立與刪除留在各自授權範圍內驗證。",
+                "完成後登出，依實驗約定保留報告、清除本機合成下載檔與專用目錄。這次沒有要求修改伺服器檔案。"
+              ]
+            },
+            {
+              "kind": "details",
+              "heading": "工具選項：為什麼採互動模式",
+              "paragraphs": [
+                "Samba 手冊指出 -c 會隱含 -N（不提示密碼）。本課改用互動連線，再執行 ls、get 與 quit，讓密碼提示與每一步回應更容易核對。[smbclient 官方手冊](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "證據矩陣",
+              "headers": [
+                "觀察",
+                "已確認",
+                "後續獨立查核"
+              ],
+              "rows": [
+                [
+                  "TCP 445 open",
+                  "該次探測觀測到埠接受連線",
+                  "實際服務與資源權限"
+                ],
+                [
+                  "SMB 協定回應",
+                  "取得 SMB 協定互動證據",
+                  "可見共享及可用操作"
+                ],
+                [
+                  "列出 Finance",
+                  "此查詢身分看見共享名稱",
+                  "目錄列出、讀取及寫入"
+                ],
+                [
+                  "ls 成功",
+                  "指定目錄的列出操作成功",
+                  "指定檔案完整讀取"
+                ],
+                [
+                  "指定檔案 get 遭拒",
+                  "該次讀取／下載未成功",
+                  "拒絕層次、其他檔案與其他操作"
+                ]
+              ]
+            }
           ]
         },
         {
           "id": "defense",
-          "heading": "防護與證據怎麼看？",
+          "heading": "五、從資訊揭露到風險與防護",
           "paragraphs": [
-            "防護從三層著手：限制可連線的網路、只提供必要的查詢資訊、依工作需要設定讀寫權限，再用紀錄觀察異常查詢。",
-            "隱藏名稱只是降低資訊曝光，真正的資源保護仍靠存取控制。",
-            "證據記下時間、目標、使用身分、操作及原始回應。結果描述的是「這個身分，在這個條件下，完成了什麼」；換帳號或網路位置，結果可能不同。"
+            "列舉結果先與預期政策比對。合法員工能列出共享名稱，可能符合設計；外部未驗證身分取得敏感部門結構或員工清單，則值得檢查資訊揭露的範圍。",
+            "風險判斷一起看資訊敏感度、查詢身分、預期政策、暴露範圍與可利用條件。把「取得名稱」記成觀察，再用證據支持後續風險分級。",
+            "MITRE ATT&CK 將網路共享探索列為 [T1135 Network Share Discovery](https://attack.mitre.org/techniques/T1135/)，帳號探索列為 [T1087 Account Discovery](https://attack.mitre.org/techniques/T1087/)。這些分類幫助描述攻擊者行為；是否為合法盤點，仍要看授權與情境。",
+            "防護從三層著手：限制可連線網路、只提供必要查詢資訊、依工作需求設定每種操作的權限。配合適當日誌，觀察異常或大量查詢。調整後用已授權的不同角色重測，確認預期限制與正常業務都符合需求。"
+          ],
+          "blocks": [
+            {
+              "kind": "details",
+              "heading": "延伸：5140／5145 的稽核範圍",
+              "paragraphs": [
+                "先確認伺服器有啟用對應稽核政策，再判讀事件。5140（Audit File Share）提供工作階段首次共享存取嘗試的脈絡，適合搭配帳號、來源位址與共享資訊分析。逐檔讀取結果要查對應層次的證據。",
+                "5145（Audit Detailed File Share）記錄共享物件存取檢查；其失敗事件針對共享層拒絕。NTFS 層拒絕不會因此自動產生5145失敗事件，需另查檔案系統稽核及相關回應。",
+                "時間、目標、身分、操作與回應要一起保留，換帳號或網路位置後另記一組結果。[5140 官方文件](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5140) · [5145 官方文件](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5145)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "map",
+          "heading": "六、放回 M04 的跨協定知識地圖",
+          "paragraphs": [
+            "SMB 是列舉的一個案例。其他協定也可以用「向服務查詢 → 取得具體資訊 → 依身分、政策與回應判讀」的方式理解。先掌握這個模型，再逐項學習工具與協定差異。",
+            "[EC-Council CEH 課程](https://www.eccouncil.org/train-certify/certified-ethical-hacker-ceh/)與[考試藍圖 v5.0](https://cert.eccouncil.org/wp-content/uploads/2024/04/CEH-Exam-Blueprint-v5.pdf)可用來核對列舉範圍。本站 M04 的12核心是教學安排，各章概念數依內容整理。",
+            "下一個核心維持 M04-02 DNS 列舉。帳號、群組、權限與 Active Directory 的關係保留為相關延伸，之後連到 LDAP、權限提升與橫向移動的學習脈絡。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "常見查詢對象",
+              "headers": [
+                "服務／協定",
+                "典型資訊"
+              ],
+              "rows": [
+                [
+                  "SMB／NetBIOS",
+                  "共享資源、電腦名稱"
+                ],
+                [
+                  "LDAP／Active Directory",
+                  "帳號、群組、組織資訊"
+                ],
+                [
+                  "DNS",
+                  "網域、主機與DNS記錄"
+                ],
+                [
+                  "SNMP",
+                  "網路設備與管理資訊"
+                ],
+                [
+                  "NFS",
+                  "匯出的檔案系統資源"
+                ],
+                [
+                  "SMTP",
+                  "郵件服務資訊；特定設定下的收件者驗證"
+                ],
+                [
+                  "RPC",
+                  "介面、端點與可用遠端程序服務"
+                ]
+              ]
+            }
           ]
         },
         {
           "id": "check",
-          "heading": "小檢核",
+          "heading": "七、測驗：三題理解檢核",
           "paragraphs": [
-            "你列出了 Finance 的名稱，但開啟其中一個檔案時被拒絕。你會怎麼向同事說明：目前確認了什麼，以及還有哪些權限需要另外查核？",
-            "用兩三句自己的話回答就好，我會把你的回答與後續補充一起整理。"
-          ]
+            "先選答案、想好理由，再展開教材解析。這裡的題目與答案解析屬於教材測驗；展開解析不會送出答案，也不會更新個人理解狀態。",
+            "原本的小檢核仍可作為口頭解釋：列出了 Finance 名稱，但讀取其中指定檔案遭拒時，你會如何向同事說明已確認的結果，以及接著要查哪些權限？"
+          ],
+          "blocks": []
         }
       ]
     },
     "en": {
-      "summary": "Scanning finds service endpoints; enumeration obtains specific information. Interpret visibility and allowed operations separately.",
+      "summary": "Record service endpoints, visible information and operation permissions separately. Build traceable enumeration evidence with a synthetic SMB case, authorized lab steps and three checks.",
       "sections": [
         {
           "id": "definition",
-          "heading": "What does enumeration do?",
+          "heading": "1. Where enumeration fits",
           "paragraphs": [
-            "Enumeration uses service queries to list specific information such as accounts, groups and shares.",
-            "Imagine entering an office building: you identify companies, check open reception desks and ask for a department list. Entering an office, reading documents and editing them each require separate permissions.",
-            "Security staff enumerate resources and check whether a service reveals too much to a particular identity. Visibility depends on network reachability, service configuration, query method and identity."
-          ]
+            "Enumeration uses service queries to list specific information such as accounts, groups and share names. Security staff use it to inventory resources and check whether the information visible to an identity matches policy.",
+            "Reconnaissance gathers context such as domains and system purposes. Scanning observes hosts, ports and service responses. Enumeration queries named resources or attributes. This is an explanatory sequence: tools may combine activities, and a query may require sign-in or permit anonymous access.",
+            "Imagine an office building: identify the company, find open reception desks, then ask for a department list. Obtaining the finance department name, entering its office, reading documents and editing them are distinct operations with distinct permissions.",
+            "After this lesson, you can distinguish scanning from enumeration, explain why Finance can be visible while a file read is denied, and design an authorized exercise using an evidence matrix. These judgments connect operating systems, networking, authentication and access control."
+          ],
+          "blocks": []
         },
         {
           "id": "connections",
-          "heading": "Connect five ideas",
+          "heading": "2. From ports and protocols to resources",
           "paragraphs": [
-            "Reconnaissance gathers context, such as domain names and system purposes, using active or passive methods.\nScanning checks responses from hosts or service endpoints. An open TCP 445 means a program accepted connections in that observation; identify the actual service separately.\nEnumeration queries specifics such as shares, accounts or groups.\nAuthentication establishes who you are, for example by signing in with a test account.\nAuthorization determines what that identity may do, such as listing names, reading files or writing files.",
-            "[Nmap port states](https://nmap.org/book/man-port-scanning-basics.html) · [Microsoft authentication and authorization](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)",
-            "This order helps explain the questions; tools may combine several functions. Before testing, obtain permission and agree on targets, accounts, times and operations. A system accepting an operation is separate from permission to test it."
+            "Learn four terms, then follow “service endpoint → protocol response → named resource → specific operation.” Preserve the identity, conditions and original response at each step.",
+            "Layer one: TCP 445 reported open means an application accepted connections in that scan observation. The port number is a service clue; confirm the actual protocol through its response. Nmap -sV sends probes to identify services and versions; interpret its result together with the response and identification limits. [Port states](https://nmap.org/book/man-port-scanning-basics.html) · [Service detection](https://nmap.org/book/man-version-detection.html)",
+            "Layer two: after identifying SMB, query the share information the service exposes. Microsoft NetShareEnum is one API example. Information levels return different fields and have different permission requirements.",
+            "Layer three: after listing share names, assess directory listing, a specific file read, writing or deletion separately. Each result applies to that identity, target and operation."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Four foundational terms",
+              "headers": [
+                "Term",
+                "Meaning",
+                "Example"
+              ],
+              "rows": [
+                [
+                  "Port",
+                  "A number that identifies a communication endpoint together with an IP address and transport protocol",
+                  "TCP 445"
+                ],
+                [
+                  "Service",
+                  "A program or capability providing a function",
+                  "SMB file sharing"
+                ],
+                [
+                  "Protocol",
+                  "Rules for exchanging messages between client and service",
+                  "SMB"
+                ],
+                [
+                  "Resource",
+                  "A specific object managed by a service",
+                  "Public and Finance shares"
+                ]
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Synthetic example: each evidence card has a scope",
+              "paragraphs": [
+                "This is an illustrative scenario, not a measurement from your environment. Assume labuser authenticated, obtained Public and Finance, then attempted to read agreed test files.",
+                "Report: “This query returned the Finance name; labuser was denied reading Finance/test.txt.” Other files and create, write and delete operations require their own authorized checks."
+              ],
+              "code": "445/tcp open\nSMB protocol response confirmed\nShare names: Public, Finance\n\\\\fileserver\\Public\\test.txt  → Read successful\n\\\\fileserver\\Finance\\test.txt → ACCESS_DENIED",
+              "id": "example"
+            },
+            {
+              "kind": "details",
+              "heading": "Further detail: NetShareEnum information levels",
+              "paragraphs": [
+                "Level 0 returns share names. Level 1 adds resource type and a comment. Higher levels request other information, with permissions depending on calling context and platform.",
+                "“No special group membership required” for levels 0/1 concerns group membership. Whether an anonymous query succeeds still depends on authentication and service policy. [NetShareEnum documentation](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
+              ]
+            }
           ]
         },
         {
-          "id": "example",
-          "heading": "A synthetic example",
+          "id": "permissions",
+          "heading": "3. Finance is visible, but a read is denied",
           "paragraphs": [
-            "In an authorized practice environment:\n① TCP 445 is open on a file server.\n② A protocol response confirms SMB file sharing.\n③ A test account queries and receives the share names Public and Finance.\n④ Within the agreed scope, reading a test file succeeds on Public and is denied on Finance.",
-            "Step ③ is enumeration. Microsoft NetShareEnum queries shared resources; information levels and permission requirements vary. [Official documentation](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)",
-            "Report these separately: “obtained the Finance name” and “this test account was denied access to the specified file.” Record reading and writing separately. Verify writing only within authorized scope."
+            "Authentication establishes who you are; authorization determines what that identity may do. An employee may sign in and see department names while document access follows work requirements. [Microsoft authentication and authorization](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)",
+            "For ordinary Windows SMB network file access, both share permissions and NTFS permissions affect the result. If a share allows reading and writing but NTFS allows only reading, effective access through that path is normally read-only. Check users and groups, inheritance, allow/deny rules and the requested operation.",
+            "ACCESS_DENIED records a denied request. Diagnose it by checking authentication state and protocol responses, then SMB policy, share permissions, NTFS permissions and logs to locate the denial. [Troubleshooting denied SMB access](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Permission reasoning (authentication assumed complete)",
+              "paragraphs": [
+                "labuser requests a specific file read → does the share permit that operation? → does NTFS permit that operation on the file? → effective permissions and other applicable policies determine the result. This is a teaching model; actual checks and protocol ordering depend on implementation."
+              ]
+            },
+            {
+              "kind": "details",
+              "heading": "Further detail: ABE filters items inside a share",
+              "paragraphs": [
+                "Access-Based Enumeration (ABE) filters the visibility of files and folders inside a share according to access rights. SMB FolderEnumerationMode=AccessBased controls this behavior.",
+                "ABE is not a switch that removes Finance from the server’s share-name list. Visibility and access are separate layers; access controls enforce resource protection. [Set-SmbShare: FolderEnumerationMode](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "practice",
+          "heading": "4. Authorized lab: scan, list shares, list a directory, read a file",
+          "paragraphs": [
+            "These optional steps use an Ubuntu/Linux client and an SMB lab host you own or are permitted to test. Agree on host, account, time and operations, prepare a synthetic test.txt without personal data, and define stop conditions and allowable evidence.",
+            "192.0.2.10 is a documentation address reserved by RFC 5737, not a provisioned lab host. Replace it in every command with the actual authorized lab address before execution. [RFC 5737](https://www.rfc-editor.org/rfc/rfc5737)",
+            "Enter passwords only at the program prompt, within the local authentication flow. Retain de-identified observations and responses; keep passwords out of the website and report. These examples do not claim that a scan or access test has run."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "A. Observe port and service",
+              "paragraphs": [
+                "-p 445 selects TCP 445; -sV attempts service/version detection. Record the port state, identification and original response."
+              ],
+              "code": "nmap -sV -p 445 192.0.2.10"
+            },
+            {
+              "kind": "step",
+              "heading": "B. List share names",
+              "paragraphs": [
+                "-L queries shares and -U selects the test account. Enter the password when prompted. If Public and Finance are returned, record that those names were returned to that identity."
+              ],
+              "code": "smbclient -L 192.0.2.10 -U labuser"
+            },
+            {
+              "kind": "step",
+              "heading": "C. Create a local directory and connect",
+              "paragraphs": [
+                "Create and enter a new dedicated local temporary directory to avoid overwriting existing files. Connect, enter the password at the prompt, then issue commands at the smb: prompt.",
+                "ls lists the current directory. get reads the prepared, authorized test.txt and saves it as downloaded-test.txt in the local working directory. Use a fresh directory and check that the local filename does not already exist."
+              ],
+              "code": "lab_dir=$(mktemp -d) && cd \"$lab_dir\" && \\\n  smbclient //192.0.2.10/Public -U labuser"
+            },
+            {
+              "kind": "step",
+              "heading": "D. List and read at the smb: prompt",
+              "paragraphs": [
+                "Enter these smbclient commands separately at the smb: prompt after sign-in. Keep them separate from the shell commands above.",
+                "A successful ls establishes directory listing; a successful get establishes downloading the specified synthetic file. Record each result separately."
+              ],
+              "code": "ls\nget test.txt downloaded-test.txt\nquit"
+            },
+            {
+              "kind": "step",
+              "heading": "Record and finish",
+              "paragraphs": [
+                "Record ls and get separately with time, identity, exact path and response. If the scope includes Finance, test its synthetic file under the same conditions and record the result. Assess writing, creation and deletion only within their separately authorized scope.",
+                "Disconnect, retain the agreed report, and remove the local synthetic download and dedicated directory according to the lab agreement. This exercise does not request changes to server files."
+              ]
+            },
+            {
+              "kind": "details",
+              "heading": "Tool option: why use interactive mode?",
+              "paragraphs": [
+                "The Samba manual states that -c implies -N (no password prompt). This lesson uses an interactive connection followed by ls, get and quit so that the prompt and each response are clear. [Official smbclient manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Evidence matrix",
+              "headers": [
+                "Observation",
+                "Established",
+                "Separate follow-up"
+              ],
+              "rows": [
+                [
+                  "TCP 445 open",
+                  "This probe observed a port accepting connections",
+                  "Actual service and resource permissions"
+                ],
+                [
+                  "SMB protocol response",
+                  "Evidence of SMB protocol interaction",
+                  "Visible shares and available operations"
+                ],
+                [
+                  "Finance listed",
+                  "The querying identity can see the share name",
+                  "Directory listing, reading and writing"
+                ],
+                [
+                  "ls succeeds",
+                  "Listing the specified directory succeeded",
+                  "Reading a complete specified file"
+                ],
+                [
+                  "A specific get is denied",
+                  "That read/download did not succeed",
+                  "Denial layer, other files and other operations"
+                ]
+              ]
+            }
           ]
         },
         {
           "id": "defense",
-          "heading": "Defense and evidence",
+          "heading": "5. Information exposure, risk and defense",
           "paragraphs": [
-            "Use three layers: restrict network reachability, expose only necessary query information, and set read/write permissions according to work needs. Monitor logs for unusual queries.",
-            "Hiding names reduces exposure; resource protection still relies on access controls.",
-            "Record time, target, identity, operation and the original response. A result describes what this identity achieved under these conditions. A different account or network location may see a different result."
+            "Compare enumeration results with intended policy. An employee listing share names may be expected behavior; an unauthenticated external identity obtaining sensitive departmental or employee information warrants an exposure review.",
+            "Assess information sensitivity, identity, intended policy, exposure and exploitation conditions together. Record “obtained a name” as an observation, then support any risk rating with additional evidence.",
+            "MITRE ATT&CK labels network share discovery as [T1135](https://attack.mitre.org/techniques/T1135/) and account discovery as [T1087](https://attack.mitre.org/techniques/T1087/). These categories describe adversary behavior; authorization and context distinguish legitimate inventory activity.",
+            "Use three defensive layers: restrict network reachability, expose only necessary query information and grant each operation according to work needs. Monitor appropriate logs for unusual or high-volume queries. Retest authorized roles after a change to check both expected restrictions and legitimate work."
+          ],
+          "blocks": [
+            {
+              "kind": "details",
+              "heading": "Further detail: audit scope of 5140 and 5145",
+              "paragraphs": [
+                "Confirm the corresponding server audit policies are enabled before interpreting events. Event 5140 (Audit File Share) provides context for the first share-access attempt in a session, including identity, source and share information. Use the appropriate layer of evidence for per-file read results.",
+                "Event 5145 (Audit Detailed File Share) records share-object access checks; its failure events concern denial at the share layer. An NTFS denial does not automatically generate a 5145 failure event; examine filesystem auditing and related responses separately.",
+                "Preserve time, target, identity, operation and response together. Record a new result when changing identity or network location. [5140 documentation](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5140) · [5145 documentation](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5145)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "map",
+          "heading": "6. The cross-protocol M04 map",
+          "paragraphs": [
+            "SMB is one enumeration example. Apply the same model to other protocols: query a service, obtain specific information, and interpret it using identity, policy and responses. Learn this model first, then study protocol and tool differences.",
+            "Use the [EC-Council CEH course](https://www.eccouncil.org/train-certify/certified-ethical-hacker-ceh/) and [Exam Blueprint v5.0](https://cert.eccouncil.org/wp-content/uploads/2024/04/CEH-Exam-Blueprint-v5.pdf) to check enumeration scope. This site’s twelve M04 core topics are an editorial teaching sequence; concept counts vary by module.",
+            "The next core topic remains M04-02 DNS enumeration. Accounts, groups, permissions and Active Directory are related further reading, connecting later to LDAP, privilege escalation and lateral movement."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Common query targets",
+              "headers": [
+                "Service/protocol",
+                "Typical information"
+              ],
+              "rows": [
+                [
+                  "SMB / NetBIOS",
+                  "Shares and computer names"
+                ],
+                [
+                  "LDAP / Active Directory",
+                  "Accounts, groups and organizational information"
+                ],
+                [
+                  "DNS",
+                  "Domains, hosts and DNS records"
+                ],
+                [
+                  "SNMP",
+                  "Network-device and management information"
+                ],
+                [
+                  "NFS",
+                  "Exported filesystem resources"
+                ],
+                [
+                  "SMTP",
+                  "Mail-service information; recipient verification under specific configurations"
+                ],
+                [
+                  "RPC",
+                  "Interfaces, endpoints and available remote procedure services"
+                ]
+              ]
+            }
           ]
         },
         {
           "id": "check",
-          "heading": "One small check",
+          "heading": "7. Test: three understanding checks",
           "paragraphs": [
-            "You listed the Finance name, but opening a file inside it was denied. How would you tell a colleague what has been confirmed and which permissions still need separate verification?",
-            "Explain in two or three sentences in your own words. Your answer and follow-up can then be organized together."
-          ]
+            "Choose an answer and form a reason before opening the teaching explanation. These questions and answer explanations are a test section. Opening an explanation submits no answer and does not update personal understanding status.",
+            "The original small check remains useful as a verbal explanation: after listing Finance but being denied a specific file read, how would you explain the confirmed result and the permissions that still need checking?"
+          ],
+          "blocks": []
         }
       ]
     }
   },
   "status": "published",
   "publishedOn": "2026-10-23",
-  "qa": []
+  "qa": [],
+  "checks": [
+    {
+      "id": "Q1",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "使用 smbclient 成功列出 Finance 共享名稱，但還沒開啟任何檔案。最準確的結論是什麼？",
+          "options": [
+            "已取得 Finance 讀取權限",
+            "已確認 Finance 共享名稱在此次查詢中可見",
+            "已確認 Finance 存在高風險漏洞",
+            "已取得 Finance 管理員權限"
+          ],
+          "rationales": [
+            "A：讀取指定檔案是另一項操作，需保留實際讀取結果。",
+            "B：正確。證據支持這次查詢看見共享名稱。",
+            "C：風險分級還需核對政策、敏感度與可利用條件。",
+            "D：管理權限需要其他明確證據。"
+          ]
+        },
+        "en": {
+          "prompt": "smbclient listed Finance successfully, but no file has been opened. What is the most accurate conclusion?",
+          "options": [
+            "Read access to Finance has been obtained",
+            "The Finance share name was visible in this query",
+            "A high-risk vulnerability in Finance has been confirmed",
+            "Administrator access to Finance has been obtained"
+          ],
+          "rationales": [
+            "A: Reading a specific file is a separate operation requiring an observed result.",
+            "B: Correct. The evidence establishes visibility of the share name in this query.",
+            "C: Risk classification requires policy, sensitivity and exploitation context.",
+            "D: Administrative access requires separate evidence."
+          ]
+        }
+      }
+    },
+    {
+      "id": "Q2",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "labuser 讀取 Finance/test.txt 時得到 ACCESS_DENIED。下列哪種推論最不合理？",
+          "options": [
+            "這次指定檔案讀取未成功",
+            "需要檢查有效權限與拒絕原因",
+            "labuser 一定不能對 Finance 做任何操作",
+            "其他使用者可能得到不同結果"
+          ],
+          "rationales": [
+            "A：這是本次回應直接支持的觀察。",
+            "B：核對身分、政策、共享／NTFS權限與日誌，有助定位拒絕。",
+            "C：答案。把單一讀取遭拒擴大成所有操作都不可行，超出這次證據範圍。",
+            "D：不同身分可能適用不同權限，需另行觀察。"
+          ]
+        },
+        "en": {
+          "prompt": "labuser receives ACCESS_DENIED when reading Finance/test.txt. Which inference is least reasonable?",
+          "options": [
+            "This particular file read did not succeed",
+            "Effective permissions and the cause of denial should be checked",
+            "labuser certainly cannot perform any operation on Finance",
+            "Other users may receive different results"
+          ],
+          "rationales": [
+            "A: This observation is directly supported by the response.",
+            "B: Identity, policy, share/NTFS permissions and logs help locate the denial.",
+            "C: Correct choice. Generalizing a denied read to every operation exceeds the evidence.",
+            "D: Different identities may have different permissions; observe them separately."
+          ]
+        }
+      }
+    },
+    {
+      "id": "Q3",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "同一台伺服器、同一個共享資源，以兩種不同帳號查詢得到不同結果，最值得優先研究的是什麼？",
+          "options": [
+            "CPU 時脈",
+            "身分與授權政策",
+            "螢幕解析度",
+            "硬碟轉速"
+          ],
+          "rationales": [
+            "A：CPU時脈不是本案例優先比較的權限條件。",
+            "B：正確。先核對帳號、群組、授權政策與其他查詢條件是否一致。",
+            "C：螢幕解析度與服務端授權判斷無直接關係。",
+            "D：硬碟轉速通常影響效能，這裡優先研究身分與政策。"
+          ]
+        },
+        "en": {
+          "prompt": "Two accounts query the same share on the same server and receive different results. What should be investigated first?",
+          "options": [
+            "CPU clock speed",
+            "Identity and authorization policy",
+            "Screen resolution",
+            "Disk rotation speed"
+          ],
+          "rationales": [
+            "A: CPU speed is not the priority permission variable in this case.",
+            "B: Correct. Compare accounts, groups, authorization policy and other query conditions.",
+            "C: Screen resolution has no direct role in server-side authorization.",
+            "D: Disk speed normally concerns performance; identity and policy are the first focus here."
+          ]
+        }
+      }
+    }
+  ]
 }

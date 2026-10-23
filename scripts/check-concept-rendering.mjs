@@ -8,7 +8,7 @@ const registry=JSON.parse(originalRegistry);
 if(registry.some(c=>c.id==='M04-98')) throw new Error('Reserved fixture ID already exists');
 if(existsSync(path)) throw new Error('Reserved fixture file already exists.');
 const fixture=JSON.parse(readFileSync('content/concepts/m04-01.json','utf8'));
-fixture.id='M04-98';fixture.publishedOn='2026-01-01';
+fixture.id='M04-98';delete fixture.checks;fixture.publishedOn='2026-01-01';
 for(const lang of ['zh','en']) fixture.text[lang]={summary:`${lang} CONCEPT_SECOND_FIXTURE`,sections:[{id:'fixture-section',heading:`${lang} OWN_HEADING`,paragraphs:[`${lang} OWN_TEACHING`]}]};
 fixture.qa=[{id:'fixture',text:{zh:{question:'ZH_FIXTURE_QUESTION',answer:['ZH_FIXTURE_ANSWER']},en:{question:'EN_FIXTURE_QUESTION',answer:['EN_FIXTURE_ANSWER']}}}];
 console.error('Rendering an isolated second-concept fixture and checking bilingual Q&A/navigation.');

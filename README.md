@@ -6,7 +6,7 @@
 
 ## 課程與閱讀工具
 
-- [CEH v13 核心概念](https://learn.cs-kairos.com/courses/ceh/v13/)：M01 兩篇；M02–M20 各一篇。每篇提供完整繁體中文、英文、來源、例子、安全練習與原創問答。課程模組與官方考試藍圖分開標示。
+- [CEH v13 核心概念](https://learn.cs-kairos.com/courses/ceh/v13/)：M01 兩篇；M02–M20 各一篇。每篇提供完整繁體中文、英文、來源、例子、安全練習與原創測驗。課程模組與官方考試藍圖分開標示。
 - [MATLAB 三案](https://learn.cs-kairos.com/courses/matlab-practice/index.html)：原有繁體中文教材、24 步、43 段逐段教學與 523 個非空程式行解說，下載連結及六份 ZIP 校驗碼保留。
 - [AI／ML 基礎](https://learn.cs-kairos.com/courses/ai-ml/)：資料切分、評估與洩漏的雙語入門單元。
 - [網路基礎](https://learn.cs-kairos.com/courses/networking/)：DNS、TCP、TLS、HTTP 的雙語入門單元。
