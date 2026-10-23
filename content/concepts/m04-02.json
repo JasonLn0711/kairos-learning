@@ -1,0 +1,444 @@
+{
+  "id": "M04-02",
+  "revision": 1,
+  "date": "2026-10-23",
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "DNS 像網路聯絡簿：查名稱、找位址，也查看郵件與名稱伺服器的設定。把查到的設定和服務實際運作分開，就能寫出清楚的盤點紀錄。",
+      "sections": [
+        {
+          "id": "story",
+          "heading": "一、找到網站地址，接著確認什麼？",
+          "paragraphs": [
+            "想像你要找一家店。聯絡簿寫著地址，能幫你找到位置；店有沒有營業，還要另外確認。DNS 也很像：它回答名稱對應的資料，網站能否開啟、誰能登入，則要各自查核。",
+            "下面是自建實驗室的合成資料，沒有執行真實查詢。example.test 是示範名稱，192.0.2.10 是文件用位址；練習時換成你獲准的實驗資料。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "先讀三筆設定",
+              "paragraphs": [
+                "A 告訴你 www 的 IPv4 位址；CNAME 表示 shop 是指向 www 的別名；MX 指定收信主機 mail，10 是優先順序，數字較小的優先。",
+                "這些結果可以列入 DNS 資產盤點。要確認網頁或郵件真的可用，再做獲准的服務測試；管理權限也另行確認。"
+              ],
+              "code": "www.example.test.   A       192.0.2.10\nshop.example.test.  CNAME   www.example.test.\nexample.test.       MX      10 mail.example.test."
+            }
+          ]
+        },
+        {
+          "id": "roles",
+          "heading": "二、誰替你查？誰管理正式資料？",
+          "paragraphs": [
+            "DNS 列舉就是查詢不同類型的記錄，把名稱、位址與伺服器線索整理出來。查詢的對象與時間要一起記下，才能比較結果。",
+            "遞迴解析器像代查人員：替你找答案，也把結果暫存為快取。權威伺服器則管理某個區域的正式資料。區域（zone）是一份由同一組權威管理的 DNS 資料範圍，可能只是網域的一部分。",
+            "傳統 DNS 使用 UDP 或 TCP 53；TCP 也支援一般查詢。這裡描述傳統傳輸，實際環境也可能採其他 DNS 傳輸方式。[DNS 概念](https://www.rfc-editor.org/rfc/rfc1034) · [訊息與記錄](https://www.rfc-editor.org/rfc/rfc1035)"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "一次查詢，留下四個重點",
+              "description": "這是判讀順序；回應可能來自快取，也可能需要繼續查詢。",
+              "items": [
+                {
+                  "title": "選對象",
+                  "body": "記下要問哪台 DNS、查詢名稱和類型。"
+                },
+                {
+                  "title": "看回應",
+                  "body": "先看狀態，再看 Answer 與 Authority 區段。"
+                },
+                {
+                  "title": "記設定",
+                  "body": "保存回傳的位址、別名或其他欄位。"
+                },
+                {
+                  "title": "分開驗證",
+                  "body": "網站連線、郵件投遞及登入權限各自測試。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "records",
+          "heading": "三、聯絡簿裡有哪些欄位？",
+          "paragraphs": [
+            "同一個名稱可以有不同類型的記錄。先選你要回答的問題，再選記錄類型。A 和 AAAA 分別查 IPv4 與 IPv6 位址。[AAAA 規格](https://www.rfc-editor.org/rfc/rfc3596)"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "常用 DNS 記錄",
+              "headers": [
+                "類型",
+                "用來查什麼"
+              ],
+              "rows": [
+                [
+                  "A／AAAA",
+                  "名稱對應的 IPv4／IPv6 位址。"
+                ],
+                [
+                  "CNAME",
+                  "別名指向哪個名稱；沿著別名繼續查。"
+                ],
+                [
+                  "MX",
+                  "網域的收信主機與優先順序，內容是主機名稱。"
+                ],
+                [
+                  "NS",
+                  "區域的權威名稱伺服器。"
+                ],
+                [
+                  "TXT",
+                  "文字資料，例如網域驗證與郵件政策。"
+                ],
+                [
+                  "SOA",
+                  "區域管理資訊，例如序號及同步時間設定。"
+                ],
+                [
+                  "PTR",
+                  "反向查 IP 對應的名稱，再與正向記錄交叉核對。"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "responses",
+          "heading": "四、答案是空的，要怎麼讀？",
+          "paragraphs": [
+            "查不到資料時，先看完整回應，再寫結論。NOERROR 表示 DNS 回應沒有回報該類錯誤；答案區空白時，仍要查看 Authority（權威資訊）與別名，確認是沒有這種資料，還是請你轉問其他伺服器。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "回應與後續確認",
+              "headers": [
+                "回應",
+                "這次可以怎麼記"
+              ],
+              "rows": [
+                [
+                  "NXDOMAIN",
+                  "回應指出名稱不存在。若經過 CNAME，要核對指的是哪個名稱。"
+                ],
+                [
+                  "NODATA",
+                  "名稱存在，所問類型沒有資料；它是回應的判讀結果，不是獨立錯誤碼。"
+                ],
+                [
+                  "SERVFAIL",
+                  "伺服器處理解析時發生問題，保留回應再找原因。"
+                ],
+                [
+                  "Timeout",
+                  "等待期間沒有收到回覆；連線、伺服器或其他原因待查。"
+                ]
+              ]
+            },
+            {
+              "kind": "details",
+              "heading": "選讀：NOERROR＋空 Answer，也可能是轉介",
+              "paragraphs": [
+                "NODATA 常見表現是 NOERROR 且沒有所問類型的答案。Authority 中的 SOA 與其他內容可協助判讀。若回應是 referral（轉介），Authority 可能列出下一組 NS，要繼續詢問才能取得答案。",
+                "因此要一起看狀態、Answer、Authority、別名鏈及查詢對象。某些情況需再查一次才能確定。[RFC 2308](https://datatracker.ietf.org/doc/html/rfc2308)"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "同一名稱，為什麼查到不同答案？",
+              "paragraphs": [
+                "TTL 是記錄可被快取的時間。快取尚未更新、TTL 剩餘時間、內外網提供不同資料，或你詢問不同 DNS，都可能讓結果不同。",
+                "每筆保存時間、伺服器、名稱、類型與完整回應；換網路或伺服器時另記一筆。這樣能比較條件，而不是只留下最後一個 IP。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "practice",
+          "heading": "五、在自己的實驗環境查一筆",
+          "paragraphs": [
+            "網頁補充：以下是可選的練習指令，與上方合成結果分開。準備安裝 dig 的電腦，以及獲准查詢的 DNS 實驗伺服器與 example.test 區域。先約定目標、記錄類型、時段、查詢量與停止條件。",
+            "192.0.2.53 只是示範 DNS 位址，請替換成獲准的主機。這裡沒有執行指令，也不預填你的查詢結果。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "在本機終端機，一次查一種類型",
+              "paragraphs": [
+                "@ 後面指定詢問的伺服器；名稱後面指定 A 或 AAAA。每一行執行完先保存完整回應，再繼續。"
+              ],
+              "code": "dig @192.0.2.53 www.example.test A\ndig @192.0.2.53 www.example.test AAAA"
+            },
+            {
+              "kind": "step",
+              "heading": "看完回應，再填觀察",
+              "paragraphs": [
+                "先找 status，再看 QUESTION 是否問對名稱與類型；查看 ANSWER、AUTHORITY、SERVER、查詢時間和 TTL。這裡保留完整輸出，比只看短答案更方便辨別轉介與無資料。",
+                "如果 A 回傳位址，而 AAAA 經完整判讀為 NODATA，可以記「這台 DNS 在這次查詢提供 IPv4 位址，沒有提供該名稱的 AAAA 資料」。要知道網站是否可用，再於授權範圍測試對應的網頁服務。",
+                "完成後保留去識別的紀錄；本練習只查詢，不需要修改 DNS 設定。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "defense",
+          "heading": "六、一筆查詢與整區複製，分別管理",
+          "paragraphs": [
+            "AXFR 是區域傳送，用來把一個區域的完整資料同步給另一台 DNS。它像複製一份區域聯絡簿；已委派出去的下層區域，其完整資料由另一份區域管理。[AXFR](https://www.rfc-editor.org/rfc/rfc5936)",
+            "一般記錄查詢與 AXFR 測試分別確認許可。本課保留區域傳送概念，不執行第三方探測。防護時限制接收區域傳送的對象、使用適當驗證，也限制誰能使用遞迴與快取查詢。"
+          ],
+          "blocks": [
+            {
+              "kind": "details",
+              "heading": "選讀：BIND 的設定檢查方向",
+              "paragraphs": [
+                "可檢查 allow-transfer、allow-recursion、allow-query-cache 等設定，並依部署需求使用 TSIG 等驗證機制。要看實際版本、套用層級與設定內容，再判斷有效政策；這裡不假設所有版本有相同預設值。[ISC BIND 參考](https://bind9.readthedocs.io/en/stable/reference.html)"
+              ]
+            },
+            {
+              "kind": "details",
+              "heading": "選讀：快取線索與 DNSSEC",
+              "paragraphs": [
+                "Cache Snooping 是從快取回應推測哪些名稱曾被查過。共用快取、預先載入等因素都會影響結果，對某個人的行為判斷需要其他證據。",
+                "DNSSEC 用簽章支援資料來源驗證與完整性檢查；查詢內容的保密由其他機制處理。使用 NSEC 的簽署區域也可能透露名稱間的線索。公開記錄與資源存取權限仍分別管理。[DNSSEC](https://www.rfc-editor.org/rfc/rfc4033)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "check",
+          "heading": "七、小檢核：用一句話說清楚",
+          "paragraphs": [
+            "同一台 DNS 回覆 www.example.test 的 A 是 192.0.2.10，查 AAAA 則得到 NODATA。請用一兩句話說明：目前確認了什麼？要知道網站能否開啟，還要查什麼？",
+            "這是一題待回答的教材檢核；網站不會自動送出答案或更新理解狀態。下一個核心是 M04-03 FTP 列舉。"
+          ],
+          "blocks": []
+        }
+      ]
+    },
+    "en": {
+      "summary": "DNS works like a network address book. It tells you about names, addresses, and mail or name servers. Keep those settings separate from tests of whether a service actually works.",
+      "sections": [
+        {
+          "id": "story",
+          "heading": "1. You found the address. What should you check next?",
+          "paragraphs": [
+            "An address book can tell you where a store is. Checking whether it is open takes another step. DNS works much the same way: it returns data about a name. Website availability and sign-in permissions need their own checks.",
+            "The example below is made-up lab data, not a query we ran. example.test is an example name and 192.0.2.10 is a documentation address. Use your authorized lab data when practicing."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Read three settings first",
+              "paragraphs": [
+                "A gives the IPv4 address for www. CNAME makes shop an alias for www. MX names mail as a mail server; 10 is its preference value, with lower numbers preferred.",
+                "Record these as DNS settings. Test web access, mail delivery, and administrative rights separately within the agreed boundaries."
+              ],
+              "code": "www.example.test.   A       192.0.2.10\nshop.example.test.  CNAME   www.example.test.\nexample.test.       MX      10 mail.example.test."
+            }
+          ]
+        },
+        {
+          "id": "roles",
+          "heading": "2. Who looks up the answer? Who maintains it?",
+          "paragraphs": [
+            "DNS enumeration means querying different record types and organizing the names, addresses, and server clues you receive. Record who you asked and when so you can compare results.",
+            "A recursive resolver looks up answers for you and may cache them. An authoritative server maintains the official data for a zone. A zone is a portion of DNS data managed by a set of authoritative servers; it may cover only part of a domain.",
+            "Traditional DNS uses UDP or TCP port 53. TCP also carries ordinary queries. Other DNS transports may be used in a particular environment. [DNS concepts](https://www.rfc-editor.org/rfc/rfc1034) · [Messages and records](https://www.rfc-editor.org/rfc/rfc1035)"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Four things to keep with a lookup",
+              "description": "This is a guide to reading a response. An answer may come from cache, or you may need another query.",
+              "items": [
+                {
+                  "title": "Choose the target",
+                  "body": "Record the DNS server, name, and record type."
+                },
+                {
+                  "title": "Read the response",
+                  "body": "Check the status, then the Answer and Authority sections."
+                },
+                {
+                  "title": "Record the setting",
+                  "body": "Save the returned address, alias, or other fields."
+                },
+                {
+                  "title": "Test services separately",
+                  "body": "Check web access, mail delivery, and sign-in rights separately."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "records",
+          "heading": "3. Which field answers your question?",
+          "paragraphs": [
+            "A name can have several record types. Choose the type that answers your question. A asks for IPv4 addresses; AAAA asks for IPv6 addresses. [AAAA specification](https://www.rfc-editor.org/rfc/rfc3596)"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Common DNS record types",
+              "headers": [
+                "Type",
+                "What it tells you"
+              ],
+              "rows": [
+                [
+                  "A / AAAA",
+                  "IPv4 / IPv6 addresses for a name."
+                ],
+                [
+                  "CNAME",
+                  "An alias pointing to another name; follow that name to continue."
+                ],
+                [
+                  "MX",
+                  "Mail server hostnames and preference values, rather than personal mailboxes."
+                ],
+                [
+                  "NS",
+                  "Authoritative name servers for a zone."
+                ],
+                [
+                  "TXT",
+                  "Text such as domain verification data or mail policy."
+                ],
+                [
+                  "SOA",
+                  "Zone management data, including a serial number and synchronization timers."
+                ],
+                [
+                  "PTR",
+                  "A name for a reverse IP lookup; cross-check it with forward records."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "responses",
+          "heading": "4. What does an empty answer mean?",
+          "paragraphs": [
+            "Read the whole response before deciding what is missing. NOERROR is a response status. An empty Answer section still requires a look at Authority and any aliases: the response may mean that the requested data is absent, or it may point you to another server."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Responses and useful notes",
+              "headers": [
+                "Response",
+                "What to record"
+              ],
+              "rows": [
+                [
+                  "NXDOMAIN",
+                  "The response says a name does not exist. With a CNAME chain, check which name it refers to."
+                ],
+                [
+                  "NODATA",
+                  "The name exists, but the requested type has no data. This is a response interpretation, not a separate error code."
+                ],
+                [
+                  "SERVFAIL",
+                  "The server had a problem completing resolution. Save the response and investigate."
+                ],
+                [
+                  "Timeout",
+                  "No response arrived within the wait period. The cause still needs investigation."
+                ]
+              ]
+            },
+            {
+              "kind": "details",
+              "heading": "Optional: an empty NOERROR answer may be a referral",
+              "paragraphs": [
+                "NODATA often appears as NOERROR without an answer of the requested type. An SOA in Authority and the rest of the response help you identify it. A referral may instead list NS records for servers to ask next.",
+                "Check the status, Answer, Authority, alias chain, and server together. Sometimes another query is needed to tell which situation applies. [RFC 2308](https://datatracker.ietf.org/doc/html/rfc2308)"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Why can the same name return different answers?",
+              "paragraphs": [
+                "TTL sets how long a record may be cached. Cached data, remaining TTL, different internal and external views, and the server you ask can all affect the result.",
+                "Save the time, server, name, type, and full response. Use a new record when you change networks or servers so that the conditions stay clear."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "practice",
+          "heading": "5. Try one lookup in your own lab",
+          "paragraphs": [
+            "Website supplement: these optional commands are separate from the made-up output above. Use a computer with dig and an authorized DNS lab server hosting your test zone. Agree on the target, record types, time, query volume, and stop conditions first.",
+            "192.0.2.53 is only an example DNS address. Replace it with your authorized host. These commands have not been run here, and your results are left for you to record."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "In your local terminal, ask for one type at a time",
+              "paragraphs": [
+                "The value after @ selects the server. A or AAAA selects the record type. Save the full response after each command before continuing."
+              ],
+              "code": "dig @192.0.2.53 www.example.test A\ndig @192.0.2.53 www.example.test AAAA"
+            },
+            {
+              "kind": "step",
+              "heading": "Read the response, then write your observation",
+              "paragraphs": [
+                "Find status and check that QUESTION contains the intended name and type. Review ANSWER, AUTHORITY, SERVER, query time, and TTL. Full output helps distinguish referrals from missing data.",
+                "If A returns an address and a complete reading of the AAAA response shows NODATA, record: “This server returned an IPv4 address and no AAAA data for this name in these queries.” To check website availability, test the corresponding web service within your authorization.",
+                "Keep a de-identified record when you finish. This exercise queries DNS; it requires no DNS configuration changes."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "defense",
+          "heading": "6. Manage a lookup and a zone copy separately",
+          "paragraphs": [
+            "AXFR transfers the complete contents of one zone to another DNS server. Think of copying one zone’s address book. The full data of a delegated child zone is managed separately. [AXFR](https://www.rfc-editor.org/rfc/rfc5936)",
+            "Confirm authorization separately for ordinary queries and AXFR tests. This lesson explains transfers without probing third parties. Restrict transfer recipients, use appropriate authentication, and limit access to recursion and cached answers."
+          ],
+          "blocks": [
+            {
+              "kind": "details",
+              "heading": "Optional: settings to review in BIND",
+              "paragraphs": [
+                "Review allow-transfer, allow-recursion, and allow-query-cache, and use authentication such as TSIG where appropriate. Check the installed version, configuration level, and effective settings. This lesson assumes no common default across all versions. [ISC BIND reference](https://bind9.readthedocs.io/en/stable/reference.html)"
+              ]
+            },
+            {
+              "kind": "details",
+              "heading": "Optional: cache clues and DNSSEC",
+              "paragraphs": [
+                "Cache snooping uses cached responses to infer which names may have been queried. Shared caches and preloading affect those clues; attributing activity to a person requires other evidence.",
+                "DNSSEC uses signatures to support origin authentication and integrity checks. Keeping query contents private is a separate job. Signed zones using NSEC may also reveal relationships between names. Manage public records and access to resources separately. [DNSSEC](https://www.rfc-editor.org/rfc/rfc4033)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "check",
+          "heading": "7. One small check",
+          "paragraphs": [
+            "The same DNS server returns 192.0.2.10 for www.example.test A and NODATA for AAAA. In one or two sentences, what have you confirmed? What would you check to find out whether the website opens?",
+            "This teaching check is awaiting your response. The page neither submits an answer nor changes your understanding status. The next core concept is M04-03 FTP enumeration."
+          ],
+          "blocks": []
+        }
+      ]
+    }
+  }
+}
