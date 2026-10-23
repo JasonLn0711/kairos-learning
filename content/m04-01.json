@@ -1,0 +1,105 @@
+{
+  "id": "M04-01",
+  "revision": 1,
+  "date": "2026-10-23",
+  "text": {
+    "zh": {
+      "summary": "先掌握一句話：掃描幫你找到服務入口；列舉進一步問出具體資訊；看得到哪些資訊、能做哪些操作，要分開判讀。\n",
+      "sections": [
+        {
+          "id": "definition",
+          "heading": "列舉到底在做什麼？",
+          "paragraphs": [
+            "列舉（Enumeration），就是透過服務提供的查詢方式，把帳號、群組、共享資料夾等資訊具體列出來。",
+            "想像走進辦公大樓：先知道有哪些公司，再確認哪些櫃檯開放，接著詢問部門名單。拿到名單後，進辦公室、閱讀文件、修改文件，仍各有權限要求。",
+            "資安人員用列舉盤點資源，也檢查服務是否對某種身分透露過多資訊。能查到多少，取決於網路可達性、服務設定、查詢方式與使用身分。"
+          ]
+        },
+        {
+          "id": "connections",
+          "heading": "把五個觀念接起來",
+          "paragraphs": [
+            "• 偵察：蒐集背景，例如網域名稱與系統用途；方式可分主動與被動。\n• 掃描：確認主機或服務入口的回應。例如 TCP 445 開放，代表該次觀測有程式接受連線，實際服務仍需確認。\n• 列舉：向服務查詢具體內容，例如共享名稱、帳號或群組。\n• 身分驗證：確認「你是誰」，例如以測試帳號登入。\n• 存取授權：決定「這個身分可以做什麼」，例如列出名稱、讀取或寫入檔案。",
+            "[Nmap 埠狀態說明](https://nmap.org/book/man-port-scanning-basics.html)｜[Microsoft 驗證與授權](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)",
+            "這是理解問題的順序，實際工具可能同時涵蓋多項功能。開始前，還要取得測試許可，約定目標、帳號、時段與操作範圍；系統接受操作與擁有測試許可，是兩回事。"
+          ]
+        },
+        {
+          "id": "example",
+          "heading": "一個合成案例",
+          "paragraphs": [
+            "在已授權的練習環境，我們觀察到：\n① 檔案伺服器的 TCP 445 開放。\n② 協定回應確認提供 SMB 檔案分享服務。\n③ 用測試帳號查詢，取得 Public、Finance 兩個共享名稱。\n④ 在約定範圍內讀取測試檔：Public 成功，Finance 回覆拒絕存取。",
+            "第三步就是列舉。Microsoft 的 NetShareEnum 提供查詢共享資源的功能，取得資訊的層級與權限條件也有區別。[官方文件](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)",
+            "報告要分開寫：「取得 Finance 名稱」與「該測試帳號讀取指定檔案遭拒」。讀取、寫入也要各自紀錄，寫入權限留待授權範圍內另行驗證。"
+          ]
+        },
+        {
+          "id": "defense",
+          "heading": "防護與證據怎麼看？",
+          "paragraphs": [
+            "防護從三層著手：限制可連線的網路、只提供必要的查詢資訊、依工作需要設定讀寫權限，再用紀錄觀察異常查詢。",
+            "隱藏名稱只是降低資訊曝光，真正的資源保護仍靠存取控制。",
+            "證據記下時間、目標、使用身分、操作及原始回應。結果描述的是「這個身分，在這個條件下，完成了什麼」；換帳號或網路位置，結果可能不同。"
+          ]
+        },
+        {
+          "id": "check",
+          "heading": "小檢核",
+          "paragraphs": [
+            "你列出了 Finance 的名稱，但開啟其中一個檔案時被拒絕。你會怎麼向同事說明：目前確認了什麼，以及還有哪些權限需要另外查核？",
+            "用兩三句自己的話回答就好，我會把你的回答與後續補充一起整理。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Scanning finds service endpoints; enumeration obtains specific information. Interpret visibility and allowed operations separately.",
+      "sections": [
+        {
+          "id": "definition",
+          "heading": "What does enumeration do?",
+          "paragraphs": [
+            "Enumeration uses service queries to list specific information such as accounts, groups and shares.",
+            "Imagine entering an office building: you identify companies, check open reception desks and ask for a department list. Entering an office, reading documents and editing them each require separate permissions.",
+            "Security staff enumerate resources and check whether a service reveals too much to a particular identity. Visibility depends on network reachability, service configuration, query method and identity."
+          ]
+        },
+        {
+          "id": "connections",
+          "heading": "Connect five ideas",
+          "paragraphs": [
+            "Reconnaissance gathers context, such as domain names and system purposes, using active or passive methods.\nScanning checks responses from hosts or service endpoints. An open TCP 445 means a program accepted connections in that observation; identify the actual service separately.\nEnumeration queries specifics such as shares, accounts or groups.\nAuthentication establishes who you are, for example by signing in with a test account.\nAuthorization determines what that identity may do, such as listing names, reading files or writing files.",
+            "[Nmap port states](https://nmap.org/book/man-port-scanning-basics.html) · [Microsoft authentication and authorization](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)",
+            "This order helps explain the questions; tools may combine several functions. Before testing, obtain permission and agree on targets, accounts, times and operations. A system accepting an operation is separate from permission to test it."
+          ]
+        },
+        {
+          "id": "example",
+          "heading": "A synthetic example",
+          "paragraphs": [
+            "In an authorized practice environment:\n① TCP 445 is open on a file server.\n② A protocol response confirms SMB file sharing.\n③ A test account queries and receives the share names Public and Finance.\n④ Within the agreed scope, reading a test file succeeds on Public and is denied on Finance.",
+            "Step ③ is enumeration. Microsoft NetShareEnum queries shared resources; information levels and permission requirements vary. [Official documentation](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)",
+            "Report these separately: “obtained the Finance name” and “this test account was denied access to the specified file.” Record reading and writing separately. Verify writing only within authorized scope."
+          ]
+        },
+        {
+          "id": "defense",
+          "heading": "Defense and evidence",
+          "paragraphs": [
+            "Use three layers: restrict network reachability, expose only necessary query information, and set read/write permissions according to work needs. Monitor logs for unusual queries.",
+            "Hiding names reduces exposure; resource protection still relies on access controls.",
+            "Record time, target, identity, operation and the original response. A result describes what this identity achieved under these conditions. A different account or network location may see a different result."
+          ]
+        },
+        {
+          "id": "check",
+          "heading": "One small check",
+          "paragraphs": [
+            "You listed the Finance name, but opening a file inside it was denied. How would you tell a colleague what has been confirmed and which permissions still need separate verification?",
+            "Explain in two or three sentences in your own words. Your answer and follow-up can then be organized together."
+          ]
+        }
+      ]
+    }
+  }
+}
