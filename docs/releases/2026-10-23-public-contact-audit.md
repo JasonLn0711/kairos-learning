@@ -2,7 +2,7 @@
 
 The adopted public contact address is `contact@cs-kairos.com`.
 
-The tracked teaching-site content, metadata, links, downloadable ZIP members and extracted PDF text were checked for the retired public address, including HTML/URL-encoded forms and the old local-part used in `[AT]` variants. No occurrences were found; no teaching content or preserved downloads required replacement. The site links to the personal site's contact surface.
+The tracked teaching-site content, metadata, links, downloadable ZIP members and extracted PDF text were checked for the retired public address, including HTML/URL-encoded forms and the old local-part used in `[AT]` variants. No occurrences were found; no teaching content or preserved downloads required replacement. The site links to the personal site, whose shared footer provides the public contact address.
 
 This audit preserves CEH v3 release `7ea590b09a59259d54ede9872b259707728d213d`. The only change in this commit is this release record.
 
