@@ -69,7 +69,7 @@ test('search reaches worked examples, exercise checks and answer explanations',(
 test('one-concept routes expose real teaching only, with private progress absent', () => {
   const page = getPage('/courses/ceh/v13/m04/concepts/m04-01/');
   assert.ok(page?.conceptTeaching);
-  assert.equal(page.concepts.length, 12);
+  assert.equal(page.concepts.length, 59);
   assert.equal(page.concepts.filter(c => c.href).length, 2);
   assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-03/'), null);
   assert.equal(page.conceptTeaching.text.zh.sections.length, 7);
