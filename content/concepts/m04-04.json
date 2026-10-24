@@ -1,0 +1,256 @@
+{
+  "id": "M04-04",
+  "revision": 1,
+  "date": "2026-10-24",
+  "status": "published",
+  "publishedOn": "2026-10-24",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "先記住一句：SMB 的共享名稱是檔案分享入口；看得到入口、能列出內容、能讀檔、能修改，要分開確認。",
+      "sections": [
+        {
+          "id": "purpose",
+          "heading": "SMB 是什麼？",
+          "paragraphs": [
+            "SMB（Server Message Block）是網路檔案分享協定，讓電腦存取另一台伺服器上的檔案。Windows 常用它；Linux 的 Samba 與許多 NAS 也能提供 SMB 服務。",
+            "例如合成路徑 \\\\fileserver\\Training\\readme.txt：\n- fileserver 是伺服器名稱。\n- Training 是共享名稱，也就是管理者開放的分享入口。\n- readme.txt 是入口下的檔案。",
+            "SMB 列舉就是查詢共享名稱、類型與註解；在允許的條件下，也能查看共享內的目錄與檔案資訊。\n[Microsoft SMB 概覽](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "connections",
+          "heading": "從連線到讀檔，經過哪些確認？",
+          "paragraphs": [
+            "先分成四件事：\n- 找到服務：直接透過 TCP 傳輸的 SMB 常用 445 埠。埠有回應是入口線索，再由協定回應確認服務。\n- 協商通訊方式：雙方協商支援的 SMB 版本與能力。\n- 確認使用身分：建立工作階段，依設定完成身分驗證。\n- 檢查操作權限：連到指定共享，再依每次請求判斷能否列目錄、讀檔或修改。",
+            "「誰在操作」與「允許做什麼」是兩個問題。匿名、Guest 與具名帳號也不是同一種身分，紀錄時要分清楚。\n[SMB over TCP](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/direct-hosting-of-smb-over-tcpip)"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "網頁補充：從服務到指定操作",
+              "description": "這是查核順序；每個階段保留自己的證據。",
+              "items": [
+                {
+                  "title": "服務入口",
+                  "body": "確認TCP連線及SMB協定回應。"
+                },
+                {
+                  "title": "協商",
+                  "body": "確認雙方採用的版本與能力。"
+                },
+                {
+                  "title": "身分",
+                  "body": "記下實際工作階段使用身分。"
+                },
+                {
+                  "title": "指定操作",
+                  "body": "以共享、完整路徑與操作判斷結果。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tools",
+          "heading": "工具查到的資訊，要怎麼讀？",
+          "paragraphs": [
+            "Windows 可透過相關管理介面查共享；Samba 的 smbclient 則能查詢共享、連線及操作檔案。",
+            "例如 smbclient 的 -L 用來查伺服器提供的服務；連進某個共享後，列目錄與下載是另外的操作。取得哪些資訊，仍取決於查詢方式、身分與伺服器設定。\n[Samba 官方手冊](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)",
+            "Microsoft 的 NetShareEnum 也能查共享資訊：Level 0 回傳名稱，Level 1 再包含類型與註解。這些層級描述「查哪些欄位」，不代表匿名一定能查詢。\n[NetShareEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "example",
+          "heading": "用一個合成案例串起來",
+          "paragraphs": [
+            "以下是假想的授權實驗室紀錄，沒有執行真實查詢。使用同一個測試帳號 labuser，目標與操作已事先約定：\n- 查共享清單：取得 Training 與 Finance 名稱。\n- 列出 Training 目錄：看見 readme.txt。\n- 讀取 Training\\readme.txt：成功取得合成測試內容。\n- 讀取約定的 Finance\\test.txt：收到 ACCESS_DENIED。\n- 修改、上傳與刪除：本次未測試。",
+            "可以這樣記：labuser 查到了兩個共享名稱，並讀取 Training 的指定測試檔。Finance\\test.txt 的這次讀取請求遭拒；原因與其他操作權限另行查核。",
+            "單一檔案的拒絕回應，只能先描述這次請求，不能直接推論整個共享都不能讀，或所有人都沒有權限。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "網頁補充：各項操作分開判讀",
+              "description": "同一labuser、同一伺服器的合成例子；各卡不是逐級包含的權限。",
+              "items": [
+                {
+                  "title": "查共享名稱",
+                  "body": "Training與Finance名稱可見。"
+                },
+                {
+                  "title": "讀測試檔",
+                  "body": "Training\\readme.txt讀取成功。"
+                },
+                {
+                  "title": "讀另一測試檔",
+                  "body": "Finance\\test.txt回覆ACCESS_DENIED。"
+                },
+                {
+                  "title": "修改／上傳／刪除",
+                  "body": "本例未測試，依授權範圍另查。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "permissions",
+          "heading": "共享權限與檔案權限，怎麼一起看？",
+          "paragraphs": [
+            "在使用 NTFS 的 Windows 檔案伺服器上，透過網路存取檔案時，要一起檢查：\n- 共享權限：分享入口允許哪些網路存取。\n- NTFS 權限：檔案系統對特定資料夾或檔案的存取規則。",
+            "例如共享入口允許讀取，但指定檔案的有效權限未允許該帳號讀取，這次讀檔仍會受限。群組成員、繼承與拒絕規則也要一起核對。",
+            "ACCESS_DENIED 的原因也可能涉及身分驗證或 SMB 安全政策。先確認失敗發生在哪一步，再查完整回應、身分與日誌。\n[Microsoft 存取拒絕排查](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)",
+            "ABE（Access-Based Enumeration，依存取權限列舉）可依權限調整共享內檔案與資料夾的顯示。它處理可見性；實際讀寫仍由存取控制判定。\n[共享內的列舉設定](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "defense",
+          "heading": "防護與證據怎麼做？",
+          "paragraphs": [
+            "限制哪些網路與身分需要使用 SMB，依工作需求設定共享及檔案權限，維護受支援版本與更新，並定期查核異常登入和檔案操作。",
+            "傳輸保護也要分清楚：\n- SMB Signing（簽署）：協助驗證訊息完整性，偵測傳輸途中遭竄改。\n- SMB Encryption（加密）：保護傳輸內容的機密性。",
+            "實際是否使用、是否強制，取決於版本、協商結果與有效政策。使用加密連線後，檔案存取仍要通過權限檢查。\n[SMB 簽署](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing-overview)｜[SMB 加密與安全](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)",
+            "證據記下時間、目標、身分、共享與完整路徑、操作、協定／保護條件及原始回應。練習只使用授權環境與合成檔案。"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "check",
+          "heading": "小檢核",
+          "paragraphs": [
+            "你能列出 Finance 共享名稱，但讀取其中約定的 test.txt 時收到 ACCESS_DENIED。請用兩三句話說明：目前確認了什麼？接下來要核對哪些條件，才能說清楚拒絕原因與修改權限？",
+            "這是待回答的教材檢核；網站不會自動送出答案或更新理解。Q&A待實際問題與討論。下一個核心是M04-05 NetBIOS列舉。"
+          ],
+          "blocks": []
+        }
+      ]
+    },
+    "en": {
+      "summary": "An SMB share name is an entry point for file sharing. Check visibility, directory listings, reads, and modifications separately.",
+      "sections": [
+        {
+          "id": "purpose",
+          "heading": "What is SMB?",
+          "paragraphs": [
+            "SMB (Server Message Block) is a network file-sharing protocol. It lets a computer access files on another server. Windows commonly uses it; Samba on Linux and many NAS devices also provide SMB services.",
+            "Take the made-up path \\\\fileserver\\Training\\readme.txt:\n• fileserver is the server name.\n• Training is the share name—the entry point the administrator exposes.\n• readme.txt is a file beneath that entry point.",
+            "SMB enumeration includes querying share names, types, and comments. Where access permits, it can also reveal directory and file information within a share. [Microsoft SMB overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "connections",
+          "heading": "What happens between connecting and reading a file?",
+          "paragraphs": [
+            "Separate four checks:\n• Find the service: SMB directly over TCP commonly uses port 445. A responding port is an entry-point clue; confirm the service from its protocol response.\n• Agree on communication: the client and server negotiate supported SMB versions and capabilities.\n• Establish the identity: create a session and authenticate as required by the configuration.\n• Check the action: connect to the specified share, then evaluate each request to list, read, or modify.",
+            "“Who is acting?” and “What are they allowed to do?” are separate questions. Anonymous, Guest, and named accounts are different identities; record which one was actually used. [SMB over TCP](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/direct-hosting-of-smb-over-tcpip)"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Website supplement: from service to a specific action",
+              "description": "A guide to the checks. Keep evidence for each stage.",
+              "items": [
+                {
+                  "title": "Service",
+                  "body": "Confirm the TCP connection and SMB response."
+                },
+                {
+                  "title": "Negotiation",
+                  "body": "Record the version and capabilities actually used."
+                },
+                {
+                  "title": "Identity",
+                  "body": "Record the identity used by the session."
+                },
+                {
+                  "title": "Specific action",
+                  "body": "Identify the share, full path, action, and result."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tools",
+          "heading": "How do you read what a tool returns?",
+          "paragraphs": [
+            "Windows provides management interfaces for querying shares. Samba’s smbclient can query shares, connect, and perform file operations.",
+            "For example, smbclient -L lists services offered by a server. Listing a directory or downloading a file after connecting to a share is a separate action. The information returned depends on the query, identity, and server settings. [Samba manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)",
+            "Microsoft’s NetShareEnum also retrieves share information. Level 0 returns names; Level 1 adds types and comments. These levels specify fields to return, not a guarantee of anonymous access. [NetShareEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "example",
+          "heading": "Connect the ideas with a made-up example",
+          "paragraphs": [
+            "This is a synthetic authorized-lab record, not a query we ran. The same test account, labuser, is used throughout, and the target and actions have been agreed on:\n• Query shares: receive Training and Finance.\n• List Training: see readme.txt.\n• Read Training\\readme.txt: receive the synthetic test content.\n• Read the agreed Finance\\test.txt: receive ACCESS_DENIED.\n• Modify, upload, and delete: not tested.",
+            "A useful record says: “labuser obtained two share names and read the specified Training test file. The request to read Finance\\test.txt was denied. The cause and permissions for other actions need separate checks.”",
+            "A refusal for one file describes that request. It does not establish that the whole share is unreadable or that every user lacks access."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Website supplement: separate results for each action",
+              "description": "A synthetic example with the same labuser and server. These are separate actions, not permission levels.",
+              "items": [
+                {
+                  "title": "List share names",
+                  "body": "Training and Finance names are visible."
+                },
+                {
+                  "title": "Read a test file",
+                  "body": "Training\\readme.txt is read successfully."
+                },
+                {
+                  "title": "Read another test file",
+                  "body": "Finance\\test.txt returns ACCESS_DENIED."
+                },
+                {
+                  "title": "Modify / upload / delete",
+                  "body": "Untested here; check separately within authorization."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "permissions",
+          "heading": "How do share and file permissions work together?",
+          "paragraphs": [
+            "On a Windows file server using NTFS, network file access requires checking both:\n• Share permissions: access allowed through the network share.\n• NTFS permissions: file-system rules for the particular folder or file.",
+            "For example, a share may allow reading while the file’s effective permissions do not allow that account to read it. The read remains restricted. Check group membership, inheritance, and deny rules as well.",
+            "ACCESS_DENIED can also involve authentication or SMB security policy. Identify the step that failed, then inspect the full reply, identity, and logs. [Microsoft access-denied troubleshooting](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)",
+            "ABE (Access-Based Enumeration) can change which files and folders appear inside a share based on permissions. It controls visibility; access controls still govern reading and writing. [Enumeration settings inside a share](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "defense",
+          "heading": "How do you protect the service and record evidence?",
+          "paragraphs": [
+            "Limit SMB to the networks and identities that need it. Set share and file permissions according to work requirements, maintain supported versions and updates, and review unusual sign-ins and file actions.",
+            "Keep transport protections distinct:\n• SMB signing helps verify message integrity and detect tampering in transit.\n• SMB encryption protects the confidentiality of traffic.",
+            "Whether protection is used or required depends on the version, negotiation, and effective policy. Encrypted connections still require file-access permission checks. [SMB signing](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing-overview) · [SMB encryption and security](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)",
+            "Record the time, target, identity, share and full path, action, protocol and protection conditions, and raw reply. Practice only in authorized environments with synthetic files."
+          ],
+          "blocks": []
+        },
+        {
+          "id": "check",
+          "heading": "One small check",
+          "paragraphs": [
+            "You can list the Finance share name, but reading the agreed test.txt returns ACCESS_DENIED. In two or three sentences, what have you confirmed? What should you check next to explain the refusal and determine modification permissions?",
+            "This teaching check awaits your answer. The page does not submit answers or update understanding. Q&A awaits actual questions and discussion. Next is M04-05 NetBIOS enumeration."
+          ],
+          "blocks": []
+        }
+      ]
+    }
+  }
+}
