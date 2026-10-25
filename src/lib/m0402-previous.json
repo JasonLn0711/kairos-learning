@@ -1,0 +1,487 @@
+[
+  {
+    "id": "story",
+    "heading": "一、找到網站地址，接著確認什麼？",
+    "paragraphs": [
+      "想像你要找一家店。聯絡簿寫著地址，能幫你找到位置；店有沒有營業，還要另外確認。DNS 也很像：它回答名稱對應的資料，網站能否開啟、誰能登入，則要各自查核。",
+      "下面是自建實驗室的合成資料，沒有執行真實查詢。example.test 是示範名稱，192.0.2.10 是文件用位址；練習時換成你獲准的實驗資料。",
+      "網域名稱是方便人閱讀的名稱，例如 www.example.test；IP 位址則用於網路通訊。DNS 是分散式查詢系統：資料由不同管理者分工維護，查詢時再找出相關記錄。",
+      "讀完後，試著說明查詢經過誰、選對記錄類型、讀懂完整回應，並把 DNS 設定與網站測試分開記錄。"
+    ],
+    "blocks": [
+      {
+        "kind": "step",
+        "heading": "先讀三筆設定",
+        "paragraphs": [
+          "A 告訴你 www 的 IPv4 位址；CNAME 表示 shop 是指向 www 的別名；MX 指定收信主機 mail，10 是優先順序，數字較小的優先。",
+          "這些結果可以列入 DNS 資產盤點。要確認網頁或郵件真的可用，再做獲准的服務測試；管理權限也另行確認。"
+        ],
+        "code": "www.example.test.   A       192.0.2.10\nshop.example.test.  CNAME   www.example.test.\nexample.test.       MX      10 mail.example.test."
+      }
+    ]
+  },
+  {
+    "id": "roles",
+    "heading": "二、誰替你查？誰管理正式資料？",
+    "paragraphs": [
+      "DNS 列舉就是查詢不同類型的記錄，把名稱、位址與伺服器線索整理出來。查詢的對象與時間要一起記下，才能比較結果。",
+      "遞迴解析器像代查人員：替你找答案，也把結果暫存為快取。權威伺服器則管理某個區域的正式資料。區域（zone）是一份由同一組權威管理的 DNS 資料範圍，可能只是網域的一部分。",
+      "傳統 DNS 使用 UDP 或 TCP 53；TCP 也支援一般查詢。這裡描述傳統傳輸，實際環境也可能採其他 DNS 傳輸方式。[DNS 概念](https://www.rfc-editor.org/rfc/rfc1034) · [訊息與記錄](https://www.rfc-editor.org/rfc/rfc1035)",
+      "根伺服器協助找到 .com、.org、.tw 等頂級網域的管理方向；它不是所有網站 IP 的總表。遞迴與權威是角色，實際伺服器可依設定提供不同功能。"
+    ],
+    "blocks": [
+      {
+        "kind": "flow",
+        "caption": "解析器如何找到答案？",
+        "description": "一般公開 DNS 的簡化流程；有適用快取或轉送設定時，路徑會縮短或改變。example.test 是自建實驗區域，需由實驗解析器設定提供，不會沿公開根查到本課資料。",
+        "items": [
+          {
+            "title": "你的電腦",
+            "body": "把名稱與想查的類型交給遞迴解析器。"
+          },
+          {
+            "title": "遞迴解析器",
+            "body": "先檢查適用快取；需要時再向其他伺服器詢問。"
+          },
+          {
+            "title": "根與頂級網域（TLD）",
+            "body": "根提供頂級網域方向；TLD 再提供相關委派資訊。"
+          },
+          {
+            "title": "權威伺服器",
+            "body": "回答自己管理的區域資料；解析器整理回覆，並依規則快取。"
+          }
+        ]
+      },
+      {
+        "kind": "flow",
+        "caption": "一次查詢，留下四個重點",
+        "description": "這是判讀順序；回應可能來自快取，也可能需要繼續查詢。",
+        "items": [
+          {
+            "title": "選對象",
+            "body": "記下要問哪台 DNS、查詢名稱和類型。"
+          },
+          {
+            "title": "看回應",
+            "body": "先看狀態，再看 Answer 與 Authority 區段。"
+          },
+          {
+            "title": "記設定",
+            "body": "保存回傳的位址、別名或其他欄位。"
+          },
+          {
+            "title": "分開驗證",
+            "body": "網站連線、郵件投遞及登入權限各自測試。"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "records",
+    "heading": "三、聯絡簿裡有哪些欄位？",
+    "paragraphs": [
+      "同一個名稱可以有不同類型的記錄。先選你要回答的問題，再選記錄類型。A 和 AAAA 分別查 IPv4 與 IPv6 位址。[AAAA 規格](https://www.rfc-editor.org/rfc/rfc3596)",
+      "列舉從已知名稱、資產清單及獲准來源開始；一次記錄查詢只回答指定問題，完整盤點還要核對其他名稱與管理紀錄。"
+    ],
+    "blocks": [
+      {
+        "kind": "table",
+        "caption": "常用 DNS 記錄",
+        "headers": [
+          "類型",
+          "用來查什麼"
+        ],
+        "rows": [
+          [
+            "A／AAAA",
+            "名稱對應的 IPv4／IPv6 位址。"
+          ],
+          [
+            "CNAME",
+            "別名指向哪個名稱；沿著別名繼續查。"
+          ],
+          [
+            "MX",
+            "網域的收信主機與優先順序，內容是主機名稱。"
+          ],
+          [
+            "NS",
+            "區域的權威名稱伺服器。"
+          ],
+          [
+            "TXT",
+            "文字資料，例如網域驗證與郵件政策。"
+          ],
+          [
+            "SOA",
+            "區域管理資訊，例如序號及同步時間設定。"
+          ],
+          [
+            "PTR",
+            "反向查 IP 對應的名稱，再與正向記錄交叉核對。"
+          ]
+        ]
+      },
+      {
+        "kind": "step",
+        "heading": "把記錄接成一個例子",
+        "paragraphs": [
+          "一個名稱可有多個 A／AAAA，也可能指向 CDN 或反向代理。這是 DNS 指向的端點，後端主機還要查資產紀錄。",
+          "shop 的 CNAME 讓解析繼續找 www；它是名稱別名，與改變瀏覽器網址的 HTTP 重新導向不同。MX 的 10 是收信主機的優先順序，較小數字優先；收信帳號另由郵件系統管理。"
+        ],
+        "code": "www.example.test.   A      192.0.2.10\nwww.example.test.   AAAA   2001:db8::10\nshop.example.test.  CNAME  www.example.test.\nexample.test.       MX     10 mail.example.test."
+      },
+      {
+        "kind": "details",
+        "heading": "選讀：區域、SOA 與反向查詢",
+        "paragraphs": [
+          "例如 dept.example.test 可以委派給另一組管理者，形成獨立區域。父區域保留必要的委派資訊，子區域完整資料由子區域管理。",
+          "SOA 包含主要名稱伺服器、DNS 格式的聯絡信箱、serial 序號與 refresh／retry 等同步參數。TXT 可放網域驗證或 SPF 郵件政策。",
+          "PTR 是反向 DNS 中的名稱指標；再查該名稱的 A／AAAA 才能核對正反向是否一致。這種一致性是設定線索，身分驗證另有流程。IPv6 範例 2001:db8::10 使用文件保留範圍。[IPv6 文件位址](https://www.rfc-editor.org/rfc/rfc3849)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "responses",
+    "heading": "四、答案是空的，要怎麼讀？",
+    "paragraphs": [
+      "查不到資料時，先看完整回應，再寫結論。NOERROR 表示 DNS 回應沒有回報該類錯誤；答案區空白時，仍要查看 Authority（權威資訊）與別名，確認是沒有這種資料，還是請你轉問其他伺服器。",
+      "SERVFAIL 的可能原因包含權威伺服器問題、解析路徑異常或 DNSSEC 驗證失敗。可在授權範圍比較解析器、查管理日誌與設定；Timeout 則先記「等待期間未收到回覆」，再定位網路與伺服器。"
+    ],
+    "blocks": [
+      {
+        "kind": "table",
+        "caption": "回應與後續確認",
+        "headers": [
+          "回應",
+          "這次可以怎麼記"
+        ],
+        "rows": [
+          [
+            "NOERROR",
+            "回應碼表示沒有 DNS 處理錯誤；再讀內容判斷答案、轉介或無資料。"
+          ],
+          [
+            "NXDOMAIN",
+            "回應指出名稱不存在。若經過 CNAME，要核對指的是哪個名稱。"
+          ],
+          [
+            "NODATA",
+            "一般 NODATA 表示所問類型沒有資料、名稱存在；先確認完整回應，進階 DNSSEC 情況見下方選讀。"
+          ],
+          [
+            "SERVFAIL",
+            "伺服器處理解析時發生問題，保留回應再找原因。"
+          ],
+          [
+            "Timeout",
+            "等待期間沒有收到回覆；連線、伺服器或其他原因待查。"
+          ]
+        ]
+      },
+      {
+        "kind": "details",
+        "heading": "選讀：NOERROR＋空 Answer，也可能是轉介",
+        "paragraphs": [
+          "NODATA 常見表現是 NOERROR 且沒有所問類型的答案。Authority 中的 SOA 與其他內容可協助判讀。若回應是 referral（轉介），Authority 可能列出下一組 NS，要繼續詢問才能取得答案。",
+          "因此要一起看狀態、Answer、Authority、別名鏈及查詢對象。某些情況需再查一次才能確定。[RFC 2308](https://datatracker.ietf.org/doc/html/rfc2308)"
+        ]
+      },
+      {
+        "kind": "step",
+        "heading": "同一名稱，為什麼查到不同答案？",
+        "paragraphs": [
+          "TTL 是回應記錄允許快取的時間，單位秒；快取回覆通常呈現剩餘時間，權威回覆則通常是設定值。快取尚未更新、內外網分流（Split-Horizon）、CDN／地理位置策略或不同 DNS，都可能讓答案不同。TTL 描述快取，不是網站可用時間。",
+          "每筆保存時間、伺服器、名稱、類型與完整回應；換網路或伺服器時另記一筆。這樣能比較條件，而不是只留下最後一個 IP。"
+        ]
+      },
+      {
+        "kind": "details",
+        "heading": "選讀：新版 DNSSEC 的特殊否定回應",
+        "paragraphs": [
+          "Compact Denial of Existence 可用較小的否定證明減少名稱線索。部分不存在的名稱會以類似 NODATA 的 NOERROR 回覆，並在 NSEC／NSEC3 的類型位圖帶 NXNAME。此時要看 DNSSEC 證明及解析器處理，不能只由空答案推定名稱存在。",
+          "本課 A 已回覆位址、AAAA 無資料的合成案例，仍可依兩筆完整回應判讀。這個例外提醒我們：保留原始回應，將進階線索交給支援該機制的工具核對。[RFC 9824](https://www.rfc-editor.org/info/rfc9824/)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "practice",
+    "heading": "五、在自己的實驗環境查一筆",
+    "paragraphs": [
+      "網頁補充：以下是可選的練習指令，與上方合成結果分開。準備安裝 dig 的電腦，以及獲准查詢的 DNS 實驗伺服器與 example.test 區域。先約定目標、記錄類型、時段、查詢量與停止條件。",
+      "192.0.2.53 只是示範 DNS 位址，請替換成獲准的主機。這裡沒有執行指令，也不預填你的查詢結果。"
+    ],
+    "blocks": [
+      {
+        "kind": "step",
+        "heading": "準備：先確認工具",
+        "paragraphs": [
+          "在 Linux 終端機輸入下方指令，看到版本資訊即可開始。工具尚未安裝時，依自己的作業系統套件管理流程安裝；受管理的電腦先交由管理者處理。",
+          "所有範例 IP 與 .test 名稱都要替換為已設定、獲准查詢的實驗資料；這裡沒有建立 DNS 實驗機，也沒有執行查詢。[IPv4 文件位址](https://www.rfc-editor.org/rfc/rfc5737) · [保留示範名稱](https://datatracker.ietf.org/doc/html/rfc2606)"
+        ],
+        "code": "dig -v"
+      },
+      {
+        "kind": "step",
+        "heading": "在本機終端機，一次查一種類型",
+        "paragraphs": [
+          "@ 後面指定詢問的伺服器；名稱後面指定 A 或 AAAA。每一行執行完先保存完整回應，再繼續。"
+        ],
+        "code": "dig @192.0.2.53 www.example.test A\ndig @192.0.2.53 www.example.test AAAA"
+      },
+      {
+        "kind": "step",
+        "heading": "先讀一份合成輸出",
+        "paragraphs": [
+          "以下是教學節錄，省略部分標頭，並非實測回應。QUESTION 是問題；ANSWER 是回傳資料；SERVER 是這次詢問的伺服器。實際練習請保存完整輸出。"
+        ],
+        "code": ";; ->>HEADER<<- opcode: QUERY, status: NOERROR\n;; QUESTION SECTION:\n;www.example.test. IN A\n;; ANSWER SECTION:\nwww.example.test. 300 IN A 192.0.2.10\n;; SERVER: 192.0.2.53#53"
+      },
+      {
+        "kind": "table",
+        "caption": "一行答案怎麼讀",
+        "headers": [
+          "欄位",
+          "例子與意義"
+        ],
+        "rows": [
+          [
+            "NAME",
+            "www.example.test.：記錄名稱，結尾的點表示完整名稱。"
+          ],
+          [
+            "TTL",
+            "300：本回應允許快取的秒數。"
+          ],
+          [
+            "CLASS",
+            "IN：Internet 類別。"
+          ],
+          [
+            "TYPE",
+            "A：IPv4 位址記錄。"
+          ],
+          [
+            "DATA",
+            "192.0.2.10：合成範例位址。"
+          ]
+        ]
+      },
+      {
+        "kind": "step",
+        "heading": "看完回應，再填觀察",
+        "paragraphs": [
+          "先找 status，再看 QUESTION 是否問對名稱與類型；查看 ANSWER、AUTHORITY、SERVER、查詢時間和 TTL。這裡保留完整輸出，比只看短答案更方便辨別轉介與無資料。",
+          "如果 A 回傳位址，而 AAAA 經完整判讀為 NODATA，可以記「這台 DNS 在這次查詢提供 IPv4 位址，沒有提供該名稱的 AAAA 資料」。要知道網站是否可用，再於授權範圍測試對應的網頁服務。",
+          "完成後保留去識別的紀錄；本練習只查詢，不需要修改 DNS 設定。"
+        ]
+      },
+      {
+        "kind": "step",
+        "heading": "換一個問題，再換記錄類型",
+        "paragraphs": [
+          "逐行執行並判讀；NS／MX／TXT／SOA 查區域名稱，CNAME 查別名，-x 用 IP 做反向查詢。答案沒有出現時，回到完整回應判讀流程。",
+          "省略 @ 時，dig 使用本機設定的 DNS 伺服器；保留 @ 可以明確選擇實驗伺服器。+noall +answer 只保留答案區，適合看已確認的資料；調查錯誤時用原本完整輸出。[ISC dig 手冊](https://bind9.readthedocs.io/en/stable/manpages.html#dig-dns-lookup-utility)"
+        ],
+        "code": "dig @192.0.2.53 shop.example.test CNAME\ndig @192.0.2.53 example.test NS\ndig @192.0.2.53 example.test MX\ndig @192.0.2.53 example.test TXT\ndig @192.0.2.53 example.test SOA\ndig @192.0.2.53 -x 192.0.2.10"
+      },
+      {
+        "kind": "step",
+        "heading": "Windows：指定同一台實驗 DNS",
+        "paragraphs": [
+          "在 PowerShell 使用 Resolve-DnsName，或在命令提示字元／PowerShell 使用 nslookup。下方是兩種替代工具，不要求全部重做；-Server 或最後一個位址指定 DNS 伺服器。工具輸出格式不同，仍記同樣的查詢條件。[Microsoft 文件](https://learn.microsoft.com/en-us/powershell/module/dnsclient/resolve-dnsname)"
+        ],
+        "code": "Resolve-DnsName -Name www.example.test -Type A -Server 192.0.2.53 -DnsOnly\nnslookup -type=A www.example.test 192.0.2.53\nnslookup -type=MX example.test 192.0.2.53"
+      }
+    ]
+  },
+  {
+    "id": "defense",
+    "heading": "六、一筆查詢與整區複製，分別管理",
+    "paragraphs": [
+      "AXFR 是區域傳送，用來把一個區域的完整資料同步給另一台 DNS。它像複製一份區域聯絡簿；已委派出去的下層區域，其完整資料由另一份區域管理。[AXFR](https://www.rfc-editor.org/rfc/rfc5936)",
+      "一般記錄查詢與 AXFR 測試分別確認許可。本課保留區域傳送概念，不執行第三方探測。防護時限制接收區域傳送的對象、使用適當驗證，也限制誰能使用遞迴與快取查詢。",
+      "AXFR 是正常管理功能，通常以 TCP 傳送一個區域的資料。若接收對象限制過寬，dev、backup 等內部名稱可能一次曝光；名稱線索、實際可連線性與漏洞仍分別查核。"
+    ],
+    "blocks": [
+      {
+        "kind": "details",
+        "heading": "選讀：BIND 的設定檢查方向",
+        "paragraphs": [
+          "可檢查 allow-transfer、allow-recursion、allow-query-cache 等設定，並依部署需求使用 TSIG 等驗證機制。要看實際版本、套用層級與設定內容，再判斷有效政策；這裡不假設所有版本有相同預設值。[ISC BIND 參考](https://bind9.readthedocs.io/en/stable/reference.html)"
+        ]
+      },
+      {
+        "kind": "details",
+        "heading": "選讀：快取線索與 DNSSEC",
+        "paragraphs": [
+          "Cache Snooping 是從快取回應推測哪些名稱曾被查過。共用快取、預先載入等因素都會影響結果，對某個人的行為判斷需要其他證據。",
+          "DNSSEC 用簽章支援資料來源驗證與完整性檢查；查詢內容的保密由其他機制處理。使用 NSEC 的簽署區域也可能透露名稱間的線索。公開記錄與資源存取權限仍分別管理。[DNSSEC](https://www.rfc-editor.org/rfc/rfc4033)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "security",
+    "heading": "七、資料可信與傳輸保密，各解決什麼？",
+    "paragraphs": [
+      "DNSSEC 讓驗證端以簽章檢查資料來源與完整性。DoH／DoT 保護 DNS 通訊通道；HTTPS 保護 HTTP 通訊。先看你想保護的是哪一段。"
+    ],
+    "blocks": [
+      {
+        "kind": "table",
+        "caption": "不同安全機制的工作",
+        "headers": [
+          "機制",
+          "用途與常見傳輸"
+        ],
+        "rows": [
+          [
+            "DNSSEC",
+            "驗證 DNS 資料來源與完整性；資料加密由其他機制處理。"
+          ],
+          [
+            "DoH",
+            "透過 HTTPS 傳送 DNS；常用 443，保護所連線的 DNS 端點間通訊。"
+          ],
+          [
+            "DoT",
+            "透過 TLS 傳送 DNS；預設 TCP 853，保護該段傳輸。"
+          ],
+          [
+            "HTTPS",
+            "保護瀏覽器與網站／代理之間的 HTTP 通訊；網站權限另由服務判定。"
+          ]
+        ]
+      },
+      {
+        "kind": "details",
+        "heading": "選讀：名稱線索與保密邊界",
+        "paragraphs": [
+          "傳統 NSEC 提供相鄰名稱與類型線索，可能被用來推知區域名稱（Zone Walking）。實際揭露程度取決於簽署方式；Compact Denial 等方法可減少線索，不宜推定所有 DNSSEC 區域都能列出完整清單。[NSEC](https://datatracker.ietf.org/doc/html/rfc4034) · [Compact Denial](https://www.rfc-editor.org/info/rfc9824/)",
+          "DoH／DoT 保護連到 DNS 端點的傳輸；端點仍處理查詢，後續連線與網站權限各有自己的保護方式。[DoH](https://datatracker.ietf.org/doc/html/rfc8484) · [DoT](https://datatracker.ietf.org/doc/html/rfc7858)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "layers",
+    "heading": "八、把觀察放回正確的階段",
+    "paragraphs": [
+      "查到位址後，下一步依問題決定。以下是排查順序；工具可能跨越多個階段，DNS 快取或代理也會改變實際路徑。"
+    ],
+    "blocks": [
+      {
+        "kind": "flow",
+        "caption": "從名稱到存取",
+        "description": "各階段保留自己的結果，查詢成功只完成名稱解析這一步。",
+        "items": [
+          {
+            "title": "DNS",
+            "body": "名稱對應哪些記錄？用 dig／nslookup。"
+          },
+          {
+            "title": "網路",
+            "body": "能否連到指定 IP 與埠？在授權範圍檢查連線。"
+          },
+          {
+            "title": "TLS",
+            "body": "能否完成 TLS 協商與憑證驗證？"
+          },
+          {
+            "title": "HTTP",
+            "body": "特定請求回覆什麼狀態與內容？"
+          },
+          {
+            "title": "存取控制",
+            "body": "指定身分對指定資源能做什麼？"
+          }
+        ]
+      },
+      {
+        "kind": "step",
+        "heading": "選做：比較 DNS 查詢與網頁請求",
+        "paragraphs": [
+          "第一行只查 DNS；第二行在本機終端機以 HTTPS 發送 HEAD 請求，涉及名稱解析、連線、TLS 與 HTTP。前提是實驗網站已設定、憑證受信任、本機解析能找到它，且網頁測試也在授權範圍。",
+          "curl 使用自己的解析流程；它不會繼承上一行 dig 指定的 @ 伺服器。網站可能限制 HEAD；回覆只代表這次請求。保留錯誤與狀態，依失敗階段查原因，維持憑證驗證。[curl 手冊](https://curl.se/docs/manpage.html)"
+        ],
+        "code": "dig @192.0.2.53 www.example.test A\ncurl -I https://www.example.test"
+      },
+      {
+        "kind": "table",
+        "caption": "一筆可追溯的紀錄",
+        "headers": [
+          "欄位",
+          "記錄內容"
+        ],
+        "rows": [
+          [
+            "條件",
+            "時間與時區、網路位置、工具版本、DNS 伺服器、名稱與類型。"
+          ],
+          [
+            "觀察",
+            "完整回應、狀態碼、各區段與 TTL；合成教材和實測分開。"
+          ],
+          [
+            "結論",
+            "本次回應支持的設定結論，以及尚待服務測試的問題。"
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "priorities",
+    "heading": "九、依需要分段閱讀",
+    "paragraphs": [
+      "先完成一次查詢與判讀，再按需要展開管理及安全細節。P0／P1／P2 是本課教學安排；原補充資料的 25–35 分鐘是閱讀估計，可按可用時間續讀，不增加每日配額。"
+    ],
+    "blocks": [
+      {
+        "kind": "table",
+        "caption": "本課優先順序（非官方考試比重）",
+        "headers": [
+          "順序",
+          "內容"
+        ],
+        "rows": [
+          [
+            "P0",
+            "解析分工、A／AAAA／CNAME／MX／NS、查詢工具、回應判讀。"
+          ],
+          [
+            "P1",
+            "Zone／AXFR、TTL／SOA／PTR／TXT、證據與防護。"
+          ],
+          [
+            "P2",
+            "DNSSEC、NSEC、Cache Snooping 與傳輸保護。"
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "check",
+    "heading": "十、教材測驗：先想，再展開解析",
+    "paragraphs": [
+      "情境題 Q5（延續原小檢核）：同一台 DNS 回覆 www.example.test 的 A 是 192.0.2.10，查 AAAA 經完整判讀為一般 NODATA。請用一兩句話說明：目前確認了什麼？要知道網站能否開啟，還要查什麼？",
+      "以下四題選擇題與上方情境題都屬教材測驗。展開的是教材解析；網站不會送出答案或更新理解狀態。Q&A 等收到實際問題與討論再整理。下一個核心仍是 M04-03 FTP 列舉。"
+    ],
+    "blocks": [
+      {
+        "kind": "details",
+        "heading": "展開 Q5 教材解析",
+        "paragraphs": [
+          "可以記錄：這台 DNS 在這次查詢提供該名稱的 IPv4 位址，AAAA 查詢沒有對應資料。網站是否可用，接著在授權環境核對連線、TLS 與實際 HTTP 請求；登入與操作權限再各自查核。",
+          "這是參考解析，不是學員已提交的回答。"
+        ]
+      }
+    ]
+  }
+]

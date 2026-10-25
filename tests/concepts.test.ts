@@ -77,6 +77,21 @@ test('semantic content versions preserve legacy revisions and sort numerically',
   const t=structuredClone(first);t.contentVersion=v;
   assert.throws(()=>createConceptCatalog(concepts,[t],'2026-10-25'),/content version/);
  }
- assert.ok(allConceptTeachings.filter(t=>t.id!=='M04-01').every(t=>t.contentVersion===undefined));
+ assert.ok(allConceptTeachings.filter(t=>!['M04-01','M04-02'].includes(t.id)).every(t=>t.contentVersion===undefined));
  assert.ok(createConceptCatalog(concepts,[first],'2026-10-25').searchEntries.every(e=>e.text.includes('v2.0.1')));
+});
+
+test('DNS source edition keeps eleven sections, five questions and searchable diagram evidence',()=>{
+ const dns=allConceptTeachings.find(t=>t.id==='M04-02')!;
+ assert.equal(dns.contentVersion,'1.1.0');assert.equal(dns.revision,3);
+ const blocks=dns.text.zh.sourceBody!;
+ assert.equal(blocks.filter(b=>b.kind==='heading').length,11);
+ assert.equal(blocks.filter(b=>'text' in b&&/^Q[1-5]\./.test(b.text)).length,5);
+ assert.equal(blocks.filter(b=>b.kind==='dnsDiagram').length,4);
+ assert.equal(dns.checks?.length,4);
+ const catalog=createConceptCatalog(concepts,[dns],'2026-10-25');
+ assert.ok(catalog.searchEntries.every(e=>e.text.includes('Recursive Resolver')));
+ const bad=structuredClone(dns);
+ bad.text.zh.sourceBody!.push({kind:'dnsDiagram',id:'unknown'} as never);
+ assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-25'),/invalid DNS diagram/);
 });
