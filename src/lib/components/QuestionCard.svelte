@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { Question, Locale } from '$lib/model';
   import { readProgress, recordAnswer, STORAGE_KEY, type Attempt } from '$lib/progress';
-  let { question, lang, onanswered = () => {} }: { question: Question; lang: Locale; onanswered?: () => void } = $props();
+  let { question, lang, directReading = false, onanswered = () => {} }: { question: Question; lang: Locale; directReading?: boolean; onanswered?: () => void } = $props();
   let choice = $state<number | undefined>();
   let confidence = $state<Attempt['confidence'] | ''>('');
   let submitted = $state(false);
@@ -44,5 +44,5 @@
     <p class="result"><strong>{choice === question.answer ? (lang === 'zh' ? '判斷正確。' : 'Correct.') : (lang === 'zh' ? '再看一次判斷依據。' : 'Review the evidence.')}</strong> {lang === 'zh' ? '正確答案' : 'Correct answer'}: {String.fromCharCode(65+question.answer)}</p>
     <ol type="A" class="rationales">{#each t.rationales as rationale}<li>{rationale}</li>{/each}</ol><p class="muted small">{notice}</p>
   {/if}</div>
-  <noscript><details><summary>{lang === 'zh' ? 'JavaScript 未啟用：查看答案與解析' : 'JavaScript is off: read the answer and explanation'}</summary><p>{String.fromCharCode(65+question.answer)}</p><ol type="A">{#each t.rationales as reason}<li>{reason}</li>{/each}</ol></details></noscript>
+  <noscript>{#if directReading}<section><h4>{lang === 'zh' ? 'JavaScript 未啟用：查看答案與解析' : 'JavaScript is off: read the answer and explanation'}</h4><p>{String.fromCharCode(65+question.answer)}</p><ol type="A">{#each t.rationales as reason}<li>{reason}</li>{/each}</ol></section>{:else}<details><summary>{lang === 'zh' ? 'JavaScript 未啟用：查看答案與解析' : 'JavaScript is off: read the answer and explanation'}</summary><p>{String.fromCharCode(65+question.answer)}</p><ol type="A">{#each t.rationales as reason}<li>{reason}</li>{/each}</ol></details>{/if}</noscript>
 </section>
