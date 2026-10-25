@@ -16,11 +16,11 @@ Previous production: `3d7993f37b5aa8d40abdaf4f2fa0945d7ab86d77`, successful [Pag
 
 | SVG | Bytes |
 | --- | ---: |
-| [m04-02-axfr-en.svg](https://learn.cs-kairos.com/images/ceh/m04-02-axfr-en.svg) | 1592 |
+| [m04-02-axfr-en.svg](https://learn.cs-kairos.com/images/ceh/m04-02-axfr-en.svg) | 1591 |
 | [m04-02-axfr-zh.svg](https://learn.cs-kairos.com/images/ceh/m04-02-axfr-zh.svg) | 1497 |
-| [m04-02-cname-en.svg](https://learn.cs-kairos.com/images/ceh/m04-02-cname-en.svg) | 1532 |
+| [m04-02-cname-en.svg](https://learn.cs-kairos.com/images/ceh/m04-02-cname-en.svg) | 1531 |
 | [m04-02-cname-zh.svg](https://learn.cs-kairos.com/images/ceh/m04-02-cname-zh.svg) | 1447 |
-| [m04-02-lookup-en.svg](https://learn.cs-kairos.com/images/ceh/m04-02-lookup-en.svg) | 1662 |
+| [m04-02-lookup-en.svg](https://learn.cs-kairos.com/images/ceh/m04-02-lookup-en.svg) | 1661 |
 | [m04-02-lookup-zh.svg](https://learn.cs-kairos.com/images/ceh/m04-02-lookup-zh.svg) | 1602 |
-| [m04-02-resolution-en.svg](https://learn.cs-kairos.com/images/ceh/m04-02-resolution-en.svg) | 2783 |
-| [m04-02-resolution-zh.svg](https://learn.cs-kairos.com/images/ceh/m04-02-resolution-zh.svg) | 2713 |
+| [m04-02-resolution-en.svg](https://learn.cs-kairos.com/images/ceh/m04-02-resolution-en.svg) | 2779 |
+| [m04-02-resolution-zh.svg](https://learn.cs-kairos.com/images/ceh/m04-02-resolution-zh.svg) | 2712 |

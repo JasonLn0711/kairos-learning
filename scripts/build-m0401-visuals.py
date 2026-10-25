@@ -6,7 +6,11 @@ def wrap(s,limit):
  out=[];line='';n=0
  for c in s:
   k=2 if unicodedata.east_asian_width(c) in 'WF' else 1
-  if n+k>limit:out.append(line);line='';n=0
+  if n+k>limit:
+   split=line.rfind(' ')
+   if split>len(line)//3:out.append(line[:split]);line=line[split+1:]
+   else:out.append(line);line=''
+   n=sum(2 if unicodedata.east_asian_width(x) in 'WF' else 1 for x in line)
   line+=c;n+=k
  if line:out.append(line)
  return out

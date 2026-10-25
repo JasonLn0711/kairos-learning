@@ -8,7 +8,11 @@ def wrap(text,limit=62):
   line='';width=0
   for char in paragraph:
    n=2 if unicodedata.east_asian_width(char) in 'WF' else 1
-   if width+n>limit:out.append(line);line='';width=0
+   if width+n>limit:
+    split=line.rfind(' ')
+    if split>len(line)//3:out.append(line[:split]);line=line[split+1:]
+    else:out.append(line);line=''
+    width=sum(2 if unicodedata.east_asian_width(x) in 'WF' else 1 for x in line)
    line+=char;width+=n
   if line:out.append(line)
  return out
