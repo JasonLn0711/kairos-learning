@@ -39,7 +39,7 @@ test('empty Q&A is optional; invalid translations, duplicates and reserved ancho
   const anchor=second();anchor.text.zh.sections[0].id='discussion';assert.throws(()=>createConceptCatalog(concepts,[anchor],'2026-10-23'),/invalid section/);
 });
 test('verbatim Chinese source replaces old sections and quizzes while English stays intact',()=>{
-  assert.equal(first.revision,9);assert.equal(first.text.zh.sections.length,0);
+  assert.equal(first.revision,10);assert.equal(first.text.zh.sections.length,0);
   assert.equal(first.text.en.sections.length,7);assert.equal(first.text.zh.sourceBody?.length,81);
   assert.ok(first.checks?.every(q=>!q.text.zh && q.text.en));assert.deepEqual(first.qa?.map(q=>q.id),['smb-basics','smb-kafka']);
   const codes=first.text.zh.sourceBody!.flatMap(b=>b.kind==='code'?[b.text]:[]).join('\n');
@@ -66,8 +66,8 @@ test('visuals have searchable text and reject missing descriptions',()=>{
 test("published DNS uses its own body and adjacent concepts",()=>{const p=getPage("/courses/ceh/v13/m04/concepts/m04-02/")!;assert.equal(p.conceptTeaching?.id,"M04-02");assert.equal(p.conceptNavigation?.previous?.id,"M04-01");assert.equal(p.conceptNavigation?.next?.id,"M04-03");assert.deepEqual(p.conceptTeaching?.qa,[]);});
 
 test('semantic content versions preserve legacy revisions and sort numerically',()=>{
- assert.equal(first.revision,9);assert.equal(first.contentVersion,'2.0.1');
- assert.equal(conceptVersionLabel(first),'v2.0.1');
+ assert.equal(first.revision,10);assert.equal(first.contentVersion,'2.0.2');
+ assert.equal(conceptVersionLabel(first),'v2.0.2');
  assert.equal(conceptVersionLabel({revision:7}),'v7');
  assert.equal(compareContentVersions('2.10.0','2.9.99'),1);
  assert.equal(compareContentVersions('2.0.10','2.0.9'),1);
@@ -78,7 +78,7 @@ test('semantic content versions preserve legacy revisions and sort numerically',
   assert.throws(()=>createConceptCatalog(concepts,[t],'2026-10-25'),/content version/);
  }
  assert.ok(allConceptTeachings.filter(t=>!['M04-01','M04-02'].includes(t.id)).every(t=>t.contentVersion===undefined));
- assert.ok(createConceptCatalog(concepts,[first],'2026-10-25').searchEntries.every(e=>e.text.includes('v2.0.1')));
+ assert.ok(createConceptCatalog(concepts,[first],'2026-10-25').searchEntries.every(e=>e.text.includes('v2.0.2')));
 });
 
 test('DNS source edition keeps eleven sections, five questions and searchable diagram evidence',()=>{
