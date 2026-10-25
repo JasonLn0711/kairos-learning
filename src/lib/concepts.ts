@@ -4,7 +4,7 @@ export type ConceptEntry = { id: string; module: string; title: Bilingual };
 export type ConceptVisual = {kind:'flow'|'cards';caption:string;description:string;items:{title:string;body:string}[]};
 export type ConceptBlock = ConceptVisual | {kind:'table';caption:string;headers:string[];rows:string[][]} | {kind:'details'|'step';heading:string;paragraphs:string[];code?:string;id?:string};
 export type ConceptCheck = {id:string;answer:number;text:Partial<Bilingual<{prompt:string;options:string[];rationales:string[]}>>};
-export type SourceBlock = {kind:'accessDiagram';src:string;texts:string[]} | {kind:'paragraph'|'heading'|'code';text:string;id?:string} | {kind:'list';items:string[]} | {kind:'table';headers:string[];rows:string[][]};
+export type SourceBlock = {kind:'visual';visual:ConceptVisual;src:string;downloadLabel:string} | {kind:'accessDiagram';src:string;texts:string[]} | {kind:'paragraph'|'heading'|'code';text:string;id?:string} | {kind:'list';items:string[]} | {kind:'table';headers:string[];rows:string[][]};
 export type ConceptTeaching = {
   id: string; revision: number; date: string; status: 'draft' | 'published'; publishedOn: string;
   text: Bilingual<{summary: string; sourceBody?: SourceBlock[]; sections: {id: string; heading: string; paragraphs: string[];blocks?:ConceptBlock[]}[]}>;
@@ -34,7 +34,8 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
       if(text.sourceBody) {
         if(text.sections.length || !text.sourceBody.length) fail(`${t.id}: mixed source body`);
         for(const block of text.sourceBody) {
-          if(block.kind==='accessDiagram') { if(block.src!=='/images/ceh/m04-01-access-results.svg' || block.texts?.length!==8 || !block.texts.every(nonempty)) fail(`${t.id}: invalid access diagram`); }
+          if(block.kind==='visual') {const v=block.visual;if(!/^\/images\/ceh\/[a-z0-9-]+\.svg$/.test(block.src)||!nonempty(block.downloadLabel)||!['flow','cards'].includes(v.kind)||!nonempty(v.caption)||!nonempty(v.description)||!v.items?.length||!v.items.every(i=>nonempty(i.title)&&nonempty(i.body))) fail(`${t.id}: invalid source visual`);}
+          else if(block.kind==='accessDiagram') { if(block.src!=='/images/ceh/m04-01-access-results.svg' || block.texts?.length!==8 || !block.texts.every(nonempty)) fail(`${t.id}: invalid access diagram`); }
           else if(block.kind==='table') { if(!block.headers?.length || !block.headers.every(nonempty) || !block.rows?.length || !block.rows.every(row=>row.length===block.headers.length&&row.every(nonempty))) fail(`${t.id}: invalid source table`); }
           else if(block.kind==='list') { if(!block.items?.length||!block.items.every(nonempty)) fail(`${t.id}: invalid source list`); }
           else if(['paragraph','heading','code'].includes(block.kind)) {
@@ -92,7 +93,7 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   };
   const searchEntries: SearchEntry[] = (['zh','en'] as Locale[]).flatMap(lang=>entries.flatMap(c=>{
     const t=published.get(c.id); if (!t) return [];
-    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...(t.text[lang].sourceBody??[]).flatMap(b=>b.kind==='accessDiagram'?b.texts:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text]),...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>{const text=q.text[lang];return text?[text.prompt,...text.options,...text.rationales]:[];}),...(t.qa??[]).flatMap(q=>[q.text[lang].question,q.text[lang].originalQuestion??'',...q.text[lang].answer,...(q.text[lang].editorial??[]),...(q.text[lang].explanation??[])])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
+    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...(t.text[lang].sourceBody??[]).flatMap(b=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='accessDiagram'?b.texts:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text]),...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>{const text=q.text[lang];return text?[text.prompt,...text.options,...text.rationales]:[];}),...(t.qa??[]).flatMap(q=>[q.text[lang].question,q.text[lang].originalQuestion??'',...q.text[lang].answer,...(q.text[lang].editorial??[]),...(q.text[lang].explanation??[])])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
   }));
   return {list,get,searchEntries};
 }

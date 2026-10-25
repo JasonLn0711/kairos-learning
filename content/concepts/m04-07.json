@@ -1,0 +1,422 @@
+{
+  "id": "M04-07",
+  "revision": 1,
+  "date": "2026-10-25",
+  "status": "published",
+  "publishedOn": "2026-10-25",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "先記住一句：帳號與群組資料告訴我們系統如何辨識身分；能否登入、讀檔或執行管理操作，要各自確認。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "heading",
+          "id": "purpose",
+          "text": "使用者列舉在做什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像公司的員工名冊：你查到某人的名字、員工編號與部門，接著還要看門禁規則，才知道他能進哪些房間。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Unix/Linux 使用者列舉，就是在授權範圍內查詢帳號、使用者編號、群組與相關設定，協助盤點身分及檢查資訊揭露。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "帳號也可能供服務程式使用，不一定對應一位真人。本課以已獲准使用的 Linux 練習主機為例；不同 Unix 系統的工具與欄位可能有差異，這項概念也沒有單一固定的網路埠。"
+        },
+        {
+          "kind": "heading",
+          "id": "identity",
+          "text": "先認識帳號、UID 與 GID"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "使用者名稱：人容易辨識的帳號名稱，例如 labuser。",
+            "UID（User ID）：系統辨識使用者的數字編號。",
+            "GID（Group ID）：系統辨識群組的數字編號。",
+            "主要群組與附加群組：帳號有主要群組，也可能加入其他群組，供權限規則使用。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "查到群組成員資格，是判讀權限的線索；實際操作還要對照資源設定，以及執行該操作的程式當時使用的身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Linux 身分與群組](https://man7.org/linux/man-pages/man7/credentials.7.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "accounts",
+          "text": "帳號資料存在哪裡？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 的 /etc/passwd 常保存本機帳號資料。每列有七個以冒號分隔的欄位："
+        },
+        {
+          "kind": "code",
+          "text": "名稱:密碼欄位:UID:主要GID:說明:家目錄:登入程式"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如以下合成資料："
+        },
+        {
+          "kind": "code",
+          "text": "labuser:x:1001:1001:Training User:/home/labuser:/bin/bash"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這列提供 labuser 的身分編號、主要群組編號、說明、家目錄與登入程式設定。1001 是本例編號，不是所有系統的固定值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見的 x 表示密碼資訊另外存放於 shadow 資料中，不是密碼本身。/etc/shadow 包含敏感的密碼及期限資訊，應限制讀取；本課不需要取得或公開它。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "/etc/passwd 通常可供一般使用者讀取，讓工具對照名稱與編號；是否有風險，要看透露哪些資訊及其使用情境。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[帳號欄位](https://man7.org/linux/man-pages/man5/passwd.5.html)｜[shadow 說明](https://man7.org/linux/man-pages/man5/shadow.5.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "用一個合成案例串起來"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是假想的授權 Linux 實驗室資料，沒有執行真實查詢。管理者已指定測試帳號 labuser 與可查核的檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在主機終端機輸入："
+        },
+        {
+          "kind": "code",
+          "text": "getent passwd labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設取得剛才那列帳號資料。getent 會依系統設定查詢帳號來源；來源可能是本機檔案，也可能包含集中式目錄服務。因此，它與只查看 /etc/passwd 的範圍可能不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再查看指定帳號的身分與群組："
+        },
+        {
+          "kind": "code",
+          "text": "id labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設回覆："
+        },
+        {
+          "kind": "code",
+          "text": "uid=1001(labuser) gid=1001(labuser) groups=1001(labuser),3000(project)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這次查詢顯示 labuser 的 UID、主要 GID，以及列出的群組成員資格。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著在約定條件下，使用測試工作階段讀取 /srv/training/report.txt，卻收到 Permission denied。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以記成：查到 labuser 的帳號資料與 project 群組資格；指定工作階段對 report.txt 的這次讀取遭拒。接著核對工作階段身分、路徑與權限設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有一個實用差別：id labuser 查指定帳號的資訊；不加帳號的 id 顯示目前執行環境的使用者與群組資訊。帳號資料剛更新時，既有工作階段不一定已套用新的群組。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[getent 手冊](https://man7.org/linux/man-pages/man1/getent.1.html)｜[GNU id 手冊](https://man7.org/linux/man-pages/man1/id.1.html)"
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "cards",
+            "caption": "網頁補充：把三份證據分開記",
+            "description": "以下對照同一個合成案例；帳號資料、工作階段與指定操作各有觀察範圍。",
+            "items": [
+              {
+                "title": "帳號查詢",
+                "body": "labuser：UID 1001，包含 project 群組。"
+              },
+              {
+                "title": "工作階段",
+                "body": "另外核對當時執行程式的使用者與群組。"
+              },
+              {
+                "title": "指定讀取",
+                "body": "report.txt：本次 Permission denied，原因待核對。"
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-07-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖解"
+        },
+        {
+          "kind": "heading",
+          "id": "interpretation",
+          "text": "查詢與權限怎麼一起判讀？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "讀取檔案時，除了檔案本身的讀取權限，也要檢查路徑上資料夾的搜尋／通過權限；ACL（存取控制清單）等額外規則也可能影響結果。單看 project 這個群組名稱，還不足以替某個檔案下結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "帳號資料中的登入程式是設定線索；實際登入還涉及驗證方式、帳號狀態與服務政策。管理操作則另看適用的授權規則。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若查不到某帳號，先保存查詢方式、回覆與當時的資料來源設定。有些來源支援指定帳號查詢，卻不支援完整名單列舉；快取、連線及來源設定也需要查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[路徑與權限](https://man7.org/linux/man-pages/man7/path_resolution.7.html)｜[ACL](https://man7.org/linux/man-pages/man5/acl.5.html)｜[帳號來源設定 NSS](https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "防護與證據怎麼做？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "定期盤點仍需要的使用者與服務帳號，依工作需求配置群組及資源權限；保護 shadow 等敏感資料，讓目錄查詢與登入服務只提供必要資訊，並保留適當的驗證與權限變更紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "證據至少記下時間、主機、查詢身分、指令、帳號來源條件與完整回應。涉及讀檔時，再記工作階段身分、完整路徑、操作及結果；公開教材使用合成名稱，不放真實帳號清單或敏感資料。"
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "小檢核："
+        },
+        {
+          "kind": "paragraph",
+          "text": "id labuser 顯示它屬於 project 群組，但測試工作階段讀取 /srv/training/report.txt 時收到 Permission denied。請用兩三句話說明：目前確認了什麼？接下來應核對哪些身分與權限條件？"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Remember this: account and group records show how a system identifies users. Login, file access, and administrative actions each need their own evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "heading",
+          "id": "purpose",
+          "text": "What is user enumeration?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of a company directory. Finding someone's name, employee number, and department helps identify the person. Access rules determine which rooms that person may enter."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Unix/Linux user enumeration means querying accounts, user IDs, groups, and related settings within an authorized scope. It helps inventory identities and examine information disclosure."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An account may belong to a service rather than a person. This lesson uses a Linux practice host you are authorized to access. Other Unix systems may have different tools and fields. This concept has no single fixed network port."
+        },
+        {
+          "kind": "heading",
+          "id": "identity",
+          "text": "Accounts, UIDs, and GIDs"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Username: a human-readable account name, such as labuser.",
+            "UID (user ID): the number the system uses to identify a user.",
+            "GID (group ID): the number the system uses to identify a group.",
+            "Primary and supplementary groups: an account has a primary group and may belong to additional groups used by permission rules."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Group membership is evidence to consider when checking access. The result also depends on the resource's settings and the identity held by the process performing the operation at that time."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Linux user and group credentials](https://man7.org/linux/man-pages/man7/credentials.7.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "accounts",
+          "text": "Where are account records stored?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "On Linux, /etc/passwd commonly stores local account records. Each line has seven colon-separated fields:"
+        },
+        {
+          "kind": "code",
+          "text": "name:password-field:UID:primary-GID:comment:home-directory:login-program"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here is a synthetic record:"
+        },
+        {
+          "kind": "code",
+          "text": "labuser:x:1001:1001:Training User:/home/labuser:/bin/bash"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This record gives labuser's user ID, primary group ID, comment, home directory, and configured login program. The number 1001 belongs to this example; it is not a universal value."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A common x value means password information is stored separately in shadow data. It is not the password itself. /etc/shadow holds sensitive password and aging information and should have restricted access. This lesson does not require retrieving or publishing it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ordinary users can usually read /etc/passwd so tools can map IDs to names. Assess disclosure risk based on the information exposed and its context."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Account fields](https://man7.org/linux/man-pages/man5/passwd.5.html) | [Shadow records](https://man7.org/linux/man-pages/man5/shadow.5.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "A synthetic example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following is a hypothetical authorized Linux lab scenario. No queries were run. The administrator has designated the test account labuser and the files that may be checked."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In the host's terminal, enter:"
+        },
+        {
+          "kind": "code",
+          "text": "getent passwd labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the command returns the account record shown above. getent queries the account sources selected by the system's configuration. These may include local files and a centralized directory. Its coverage may therefore differ from reading /etc/passwd alone."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, query the specified account's identity and groups:"
+        },
+        {
+          "kind": "code",
+          "text": "id labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the response is:"
+        },
+        {
+          "kind": "code",
+          "text": "uid=1001(labuser) gid=1001(labuser) groups=1001(labuser),3000(project)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lookup reports labuser's UID, primary GID, and the listed group memberships."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The agreed test session then attempts to read /srv/training/report.txt and receives Permission denied."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record it this way: the account lookup returned labuser and membership in project; this test session's attempt to read report.txt was denied. Next, check the session identity, path, and permission settings."
+        },
+        {
+          "kind": "paragraph",
+          "text": "There is a useful distinction: id labuser queries the named account, while id without an account reports the user and group information of its current execution context. An existing session may not yet reflect a recent group-membership change."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[getent manual](https://man7.org/linux/man-pages/man1/getent.1.html) | [GNU id manual](https://man7.org/linux/man-pages/man1/id.1.html)"
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "cards",
+            "caption": "Web supplement: keep three kinds of evidence separate",
+            "description": "The same synthetic scenario has account, session, and operation evidence. Each describes its own conditions.",
+            "items": [
+              {
+                "title": "Account lookup",
+                "body": "labuser: UID 1001, including membership in project."
+              },
+              {
+                "title": "Execution context",
+                "body": "Check the user and groups held by the process at that time."
+              },
+              {
+                "title": "Specified read",
+                "body": "report.txt: this request returned Permission denied; check the cause."
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-07-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram"
+        },
+        {
+          "kind": "heading",
+          "id": "interpretation",
+          "text": "Connect lookup results to permission checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reading a file requires checking both the file's read permission and search/traversal permission on directories along the path. Additional rules such as ACLs (access control lists) may affect the result. A group named project is not enough to establish access to a particular file."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The configured login program is a setting to investigate. Actual login also depends on the authentication method, account status, and service policy. Administrative actions require their own applicable authorization rules."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If a lookup returns no account, preserve the query method, response, and account-source settings at that time. Some sources support individual account lookups but not complete enumeration. Cache state, connectivity, and source configuration also need checking."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Paths and permissions](https://man7.org/linux/man-pages/man7/path_resolution.7.html) | [ACLs](https://man7.org/linux/man-pages/man5/acl.5.html) | [NSS account sources](https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "Defenses and evidence"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Review which human and service accounts are still needed. Assign groups and resource access according to their work, protect sensitive data such as shadow records, limit information exposed by directory and login services, and retain appropriate authentication and permission-change logs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record the time, host, querying identity, command, account-source conditions, and complete response. For a file operation, also record the session identity, full path, action, and result. Public teaching examples use synthetic names rather than real account lists or sensitive data."
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "Quick check:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "id labuser reports membership in project, but the test session receives Permission denied when reading /srv/training/report.txt. In two or three sentences, explain what has been established and which identity and permission conditions you would check next."
+        }
+      ]
+    }
+  }
+}
