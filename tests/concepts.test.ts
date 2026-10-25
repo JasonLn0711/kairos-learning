@@ -39,9 +39,9 @@ test('empty Q&A is optional; invalid translations, duplicates and reserved ancho
   const anchor=second();anchor.text.zh.sections[0].id='discussion';assert.throws(()=>createConceptCatalog(concepts,[anchor],'2026-10-23'),/invalid section/);
 });
 test('verbatim Chinese source replaces old sections and quizzes while English stays intact',()=>{
-  assert.equal(first.revision,6);assert.equal(first.text.zh.sections.length,0);
+  assert.equal(first.revision,7);assert.equal(first.text.zh.sections.length,0);
   assert.equal(first.text.en.sections.length,7);assert.equal(first.text.zh.sourceBody?.length,81);
-  assert.ok(first.checks?.every(q=>!q.text.zh && q.text.en));assert.deepEqual(first.qa,[]);
+  assert.ok(first.checks?.every(q=>!q.text.zh && q.text.en));assert.deepEqual(first.qa?.map(q=>q.id),['smb-basics','smb-kafka']);
   const codes=first.text.zh.sourceBody!.flatMap(b=>b.kind==='code'?[b.text]:[]).join('\n');
   assert.ok(codes.includes('Test-NetConnection 192.168.56.10 -Port 445'));
   assert.ok(!JSON.stringify(first.text.zh.sourceBody).includes('favicons'));
