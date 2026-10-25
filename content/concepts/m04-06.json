@@ -1,0 +1,259 @@
+{
+  "id": "M04-06",
+  "revision": 1,
+  "date": "2026-10-25",
+  "status": "published",
+  "publishedOn": "2026-10-25",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "先記住一句：SMTP 回覆告訴我們郵件服務在某一步接受或拒絕了什麼；帳號存在、郵件送達與轉寄權限，要分開確認。",
+      "sections": [
+        {
+          "id": "purpose",
+          "heading": "SMTP 是做什麼的？",
+          "paragraphs": [
+            "SMTP（Simple Mail Transfer Protocol，簡易郵件傳輸協定）負責提交與傳送電子郵件。",
+            "想像郵局收件櫃檯：先確認窗口有開，再詢問服務、交代收件地址，最後才交付信件。窗口接受某一步，與收件人實際收到信，是不同階段。",
+            "SMTP 列舉就是整理服務招呼、支援功能與命令回覆，用來盤點郵件系統及檢查資訊揭露。[SMTP 規格](https://www.rfc-editor.org/rfc/rfc5321)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "ports",
+          "heading": "25、587、465，分別在哪裡用？",
+          "paragraphs": [
+            "- TCP 25：郵件伺服器之間傳送郵件的標準入口。\n- TCP 587：郵件用戶端提交郵件的標準入口。\n- TCP 465：透過隱含 TLS 提交郵件；連線開始就進行 TLS 協商。",
+            "「提交」像把信交給自己的郵局；「伺服器間傳送」像郵局接力運送。實際服務與政策，要看協定回應和管理設定。[郵件提交](https://www.rfc-editor.org/rfc/rfc6409)｜[提交服務與 TLS](https://www.rfc-editor.org/rfc/rfc8314)"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "網頁補充：三種服務入口",
+              "description": "依用途辨識，再查實際回應與設定。",
+              "items": [
+                {
+                  "title": "TCP 25",
+                  "body": "郵件伺服器之間傳送郵件。"
+                },
+                {
+                  "title": "TCP 587",
+                  "body": "用戶端提交郵件；傳輸保護另查。"
+                },
+                {
+                  "title": "TCP 465",
+                  "body": "隱含TLS提交；連線開始就協商TLS。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "commands",
+          "heading": "哪些命令與回覆值得認識？",
+          "paragraphs": [
+            "先掌握各命令在問什麼：",
+            "- EHLO：介紹用戶端，取得伺服器宣告的延伸功能；HELO 是較基本的招呼方式。\n- VRFY：請伺服器查證使用者或郵件地址資訊。\n- EXPN：請伺服器展開郵件清單。\n- RCPT TO：在郵件交易中提出收件地址，屬投遞流程的一部分。\n- QUIT：結束連線。",
+            "VRFY、EXPN 的資訊可能因政策受到限制。RCPT TO 的回覆則要放回當次交易條件判讀。",
+            "例如 252 表示無法完成地址查證，但表示願意接受郵件並嘗試投遞；地址是否有效仍待核對。550 可能涉及地址不存在、存取限制或政策拒絕，要保留完整文字。",
+            "同樣是 250，也要記下它回覆哪個命令：接受收件地址，與收完郵件內容後承擔投遞責任，是不同階段；最後是否送達，另查投遞紀錄。[命令與回覆判讀](https://www.rfc-editor.org/rfc/rfc5321)",
+            "若回覆還附有 5.1.1、5.7.1 這類加強狀態碼，可協助區分地址問題與政策問題。仍要一起看命令、完整回覆及伺服器日誌。[加強狀態碼](https://www.rfc-editor.org/rfc/rfc3463)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "protection",
+          "heading": "STARTTLS 與 AUTH，各自處理什麼？",
+          "paragraphs": [
+            "STARTTLS 用來把既有 SMTP 連線升級成 TLS。看到伺服器宣告 STARTTLS，代表它提供這項能力；實際傳輸保護要確認協商成功、憑證驗證與有效設定。",
+            "TLS 建立後，應重新送 EHLO，取得當時的功能清單，因為清單可能改變。[STARTTLS 規格](https://www.rfc-editor.org/rfc/rfc3207)",
+            "AUTH 用來進行身分驗證。伺服器列出 AUTH 方法，是能力宣告；完成驗證並收到成功回覆，才是這次驗證成功的證據。該身分能寄往哪些目的地，仍由授權政策決定。[SMTP 身分驗證](https://www.rfc-editor.org/rfc/rfc4954)",
+            "TLS 保護連線，AUTH 確認身分，郵件轉送政策決定允許的用途，三者一起看。"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "example",
+          "heading": "用一個合成案例串起來",
+          "paragraphs": [
+            "以下是假想的授權實驗室紀錄，沒有連線、查詢或寄信。伺服器與測試名稱都已事先約定：",
+            "- 建立連線：收到 220 招呼。\n- 送出 EHLO：回覆功能清單，其中有 STARTTLS。\n- 在約定範圍查證合成名稱 labuser：VRFY 回覆 252。\n- 結束連線；本例未進行身分驗證、收件地址測試或郵件提交。",
+            "可以記成：",
+            "SMTP 服務回覆招呼，並宣告 STARTTLS。對 labuser 的查證回覆為 252，地址有效性待核對。本例保留功能宣告與查證回覆；TLS 協商、登入、投遞及轉送能力另行驗證。",
+            "這份紀錄的成果是整理服務能力與查證回覆；後續可以依驗證目的補上對應證據。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "網頁補充：合成案例的觀察順序",
+              "description": "這是教材情境的順序，不是學習完成狀態。",
+              "items": [
+                {
+                  "title": "220招呼",
+                  "body": "記錄服務回應。"
+                },
+                {
+                  "title": "EHLO功能",
+                  "body": "記錄STARTTLS能力宣告。"
+                },
+                {
+                  "title": "VRFY 252",
+                  "body": "保留查證回覆，地址有效性待核對。"
+                },
+                {
+                  "title": "結束與整理",
+                  "body": "TLS協商、登入與投遞留待各自驗證。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "defense",
+          "heading": "防護與證據怎麼做？",
+          "paragraphs": [
+            "防護先從服務用途出發：",
+            "- 將 VRFY、EXPN 的可用範圍與回覆資訊，限制在需要的管理情境。\n- 設定明確的收件網域與轉送政策，避免成為 Open Relay（開放轉送），讓未獲授權的外部來源利用伺服器替外部目的地送信。\n- 對提交服務落實身分驗證與 TLS，妥善保護帳密。\n- 觀察大量地址查詢、驗證失敗與異常郵件交易，搭配限制及日誌調查。[SMTP 反濫用建議](https://www.rfc-editor.org/rfc/rfc2505)｜[提交服務的傳輸保護](https://www.rfc-editor.org/rfc/rfc8314)",
+            "每次保存時間、來源位置、目標與埠、TLS／驗證狀態、命令階段及完整回覆。驗證送達或轉送能力時，另外約定受控的寄件端、收件端與投遞證據。",
+            "公開教材使用合成地址；私人帳密、郵件內容與真實收件人資料留在受保護紀錄。"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "check",
+          "heading": "小檢核",
+          "paragraphs": [
+            "伺服器在 EHLO 回覆中列出 STARTTLS，對 VRFY labuser 回覆 252。同事說：「這代表 labuser 存在，而且我們已經用加密連線成功寄信。」",
+            "請用兩三句話說明：目前確認了什麼？加密連線、地址有效性與郵件送達，各還需要什麼證據？",
+            "這是待回答的小檢核。網站不會自動送出答案或更新理解；Q&A待實際問題與討論。下一核心為M04-07 Unix/Linux使用者列舉。"
+          ],
+          "blocks": []
+        }
+      ]
+    },
+    "en": {
+      "summary": "SMTP replies describe acceptance or refusal at a particular step. Check account existence, message delivery, and relay permission separately.",
+      "sections": [
+        {
+          "id": "purpose",
+          "heading": "What does SMTP do?",
+          "paragraphs": [
+            "SMTP (Simple Mail Transfer Protocol) submits and transfers email.",
+            "Think of a post-office counter: check that it is open, ask about services, provide a destination, and then hand over the letter. Acceptance at one step and arrival at the recipient are different stages.",
+            "SMTP enumeration collects greetings, advertised features, and command replies to inventory mail systems and review information exposure. [SMTP specification](https://www.rfc-editor.org/rfc/rfc5321)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "ports",
+          "heading": "Where do ports 25, 587, and 465 fit?",
+          "paragraphs": [
+            "• TCP 25: the standard port for transferring mail between servers.\n• TCP 587: the standard port for a mail client to submit a message.\n• TCP 465: message submission using implicit TLS; TLS negotiation begins as the connection starts.",
+            "Submission is like handing a letter to your own post office. Server-to-server transfer is the delivery network passing it along. Check protocol replies and administrative settings to identify the actual service and policy. [Message submission](https://www.rfc-editor.org/rfc/rfc6409) · [Submission and TLS](https://www.rfc-editor.org/rfc/rfc8314)"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Website supplement: three service entry points",
+              "description": "Identify the purpose, then check actual replies and configuration.",
+              "items": [
+                {
+                  "title": "TCP 25",
+                  "body": "Transfers messages between mail servers."
+                },
+                {
+                  "title": "TCP 587",
+                  "body": "Client submission; verify transport protection separately."
+                },
+                {
+                  "title": "TCP 465",
+                  "body": "Implicit TLS submission; TLS negotiation starts immediately."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "commands",
+          "heading": "Which commands and replies matter?",
+          "paragraphs": [
+            "Start with what each command asks:\n• EHLO introduces the client and requests advertised extensions; HELO is the basic greeting.\n• VRFY asks the server to verify user or mail-address information.\n• EXPN asks it to expand a mailing list.\n• RCPT TO proposes a recipient in a mail transaction.\n• QUIT ends the connection.",
+            "Policy can restrict information from VRFY and EXPN. Interpret a RCPT TO reply in the context of that transaction.",
+            "A 252 reply says verification could not be completed but expresses willingness to accept a message and attempt delivery. Address validity still needs checking. A 550 reply may involve a missing address, an access restriction, or policy refusal; retain the full reply.",
+            "For 250, record the command it answers. Accepting a recipient and taking responsibility after receiving the complete message are different stages. Check delivery records for the eventual outcome. [Commands and replies](https://www.rfc-editor.org/rfc/rfc5321)",
+            "Enhanced codes such as 5.1.1 and 5.7.1 can help distinguish address problems from policy problems. Read them alongside the command, full reply, and server logs. [Enhanced status codes](https://www.rfc-editor.org/rfc/rfc3463)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "protection",
+          "heading": "What do STARTTLS and AUTH each do?",
+          "paragraphs": [
+            "STARTTLS upgrades an existing SMTP connection to TLS. An advertised STARTTLS capability tells you the server offers it. Verify successful negotiation, certificate validation, and effective settings to establish the protection actually used.",
+            "After TLS is established, send EHLO again to obtain the current feature list, which may have changed. [STARTTLS specification](https://www.rfc-editor.org/rfc/rfc3207)",
+            "AUTH performs authentication. Listing AUTH methods advertises capability; completing authentication and receiving a success reply provides evidence for that authentication attempt. Authorization policy still determines which destinations the identity may send to. [SMTP authentication](https://www.rfc-editor.org/rfc/rfc4954)",
+            "TLS protects the connection, AUTH verifies identity, and relay policy determines permitted use. Check each one."
+          ],
+          "blocks": []
+        },
+        {
+          "id": "example",
+          "heading": "Connect the ideas with a made-up example",
+          "paragraphs": [
+            "This is a synthetic authorized-lab record. No connection, query, or message was sent. The server and test names have been agreed on:",
+            "• Connect: receive a 220 greeting.\n• Send EHLO: receive a feature list including STARTTLS.\n• Verify the agreed synthetic name labuser: VRFY returns 252.\n• End the connection. Authentication, recipient testing, and message submission are untested in this example.",
+            "A useful record says:",
+            "“The SMTP service replied with a greeting and advertised STARTTLS. Verification of labuser returned 252; address validity needs checking. This record captures advertised capabilities and the verification reply. TLS negotiation, sign-in, delivery, and relay capability require separate evidence.”",
+            "The result is a record of service capabilities and verification replies. Add evidence for each further question you need to answer."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Website supplement: observations in the synthetic example",
+              "description": "These are stages in a teaching scenario, not learning completion.",
+              "items": [
+                {
+                  "title": "220 greeting",
+                  "body": "Record the service reply."
+                },
+                {
+                  "title": "EHLO features",
+                  "body": "Record the advertised STARTTLS capability."
+                },
+                {
+                  "title": "VRFY 252",
+                  "body": "Preserve the verification reply; check address validity separately."
+                },
+                {
+                  "title": "Finish and record",
+                  "body": "TLS negotiation, sign-in, and delivery await their own checks."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "defense",
+          "heading": "How do you protect the service and preserve evidence?",
+          "paragraphs": [
+            "Start with the service’s intended purpose:",
+            "• Limit VRFY and EXPN availability and disclosure to administrative situations that need them.\n• Define recipient domains and relay policy so unauthorized outside senders cannot use the server to relay to outside destinations—an open relay.\n• Require appropriate authentication and TLS for submission, and protect credentials.\n• Review high volumes of address queries, failed authentication, and unusual mail transactions alongside limits and logs. [SMTP abuse prevention](https://www.rfc-editor.org/rfc/rfc2505) · [Transport protection for submission](https://www.rfc-editor.org/rfc/rfc8314)",
+            "Record time, source location, target and port, TLS and authentication state, command stage, and the complete reply. To verify delivery or relaying, separately agree on controlled sending and receiving endpoints and delivery evidence.",
+            "Use synthetic addresses in public teaching. Keep credentials, message contents, and real recipient details in protected records."
+          ],
+          "blocks": []
+        },
+        {
+          "id": "check",
+          "heading": "One small check",
+          "paragraphs": [
+            "A server lists STARTTLS in its EHLO reply and returns 252 to VRFY labuser. A colleague says, “That proves labuser exists and we have already sent a message over an encrypted connection.”",
+            "In two or three sentences, what have you established? What evidence would establish connection encryption, address validity, and message delivery?",
+            "This check awaits your answer. The site does not submit answers or update understanding. Q&A awaits actual questions and discussion. Next is M04-07 Unix/Linux user enumeration."
+          ],
+          "blocks": []
+        }
+      ]
+    }
+  }
+}
