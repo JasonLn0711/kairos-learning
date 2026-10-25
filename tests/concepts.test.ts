@@ -77,7 +77,7 @@ test('semantic content versions preserve legacy revisions and sort numerically',
   const t=structuredClone(first);t.contentVersion=v;
   assert.throws(()=>createConceptCatalog(concepts,[t],'2026-10-25'),/content version/);
  }
- assert.ok(allConceptTeachings.filter(t=>!['M04-01','M04-02'].includes(t.id)).every(t=>t.contentVersion===undefined));
+ assert.ok(allConceptTeachings.filter(t=>!['M04-01','M04-02','M04-03'].includes(t.id)).every(t=>t.contentVersion===undefined));
  assert.ok(createConceptCatalog(concepts,[first],'2026-10-25').searchEntries.every(e=>e.text.includes('v2.0.2')));
 });
 

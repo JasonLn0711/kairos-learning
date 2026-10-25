@@ -1,0 +1,214 @@
+{
+  "zh": {
+    "summary": "先記住一句：FTP 能讓你查到服務與檔案線索；能登入、能列目錄、能下載、能上傳，要各自確認。",
+    "sections": [
+      {
+        "id": "purpose",
+        "heading": "FTP 是做什麼的？",
+        "paragraphs": [
+          "FTP（File Transfer Protocol，檔案傳輸協定）讓電腦向伺服器上傳、下載檔案。",
+          "想像一個文件領取櫃檯：先確認櫃檯有開，再出示身分、查看目錄，最後申請領取某份文件。這幾步各有條件。",
+          "FTP 列舉就是整理服務回應、登入方式，以及該身分能看到的目錄與檔案資訊。常用工具是 FTP 用戶端；它把你的操作轉成協定命令。"
+        ],
+        "blocks": []
+      },
+      {
+        "id": "connections",
+        "heading": "為什麼登入成功，列目錄卻可能卡住？",
+        "paragraphs": [
+          "FTP 通常使用兩種連線：\n- 控制連線：傳送登入、操作命令與回覆；伺服器常用 TCP 21。\n- 資料連線：傳送目錄清單或檔案內容，另外建立。",
+          "資料連線有兩種常見方式：\n- 主動模式：用戶端提供接收位置，由伺服器發起資料連線。\n- 被動模式：伺服器提供接收位置，由用戶端發起資料連線。",
+          "因此，登入成功但目錄沒有顯示時，可以先查資料連線、防火牆與模式設定，再核對權限。TCP 20 是傳統主動模式常見的伺服器資料埠，並非所有 FTP 資料傳輸都用它。被動模式使用另外協商的埠；EPSV 是延伸被動模式命令。\n[FTP 規格](https://www.rfc-editor.org/rfc/rfc959)｜[延伸模式](https://www.rfc-editor.org/rfc/rfc2428)"
+        ],
+        "blocks": [
+          {
+            "kind": "cards",
+            "caption": "網頁補充：控制與資料分工",
+            "description": "這是兩種連線的分工，不是權限高低。",
+            "items": [
+              {
+                "title": "控制連線",
+                "body": "用戶端 → 伺服器常用 TCP 21；交換命令與回覆。"
+              },
+              {
+                "title": "資料連線",
+                "body": "傳目錄或檔案；主動由伺服器發起，被動由用戶端發起。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "anonymous",
+        "heading": "匿名登入代表什麼？",
+        "paragraphs": [
+          "匿名 FTP 通常以 anonymous 這類身分，提供管理者指定的公開資料。",
+          "如果伺服器接受匿名登入，能確認的是「這次匿名登入獲准」。接著仍要分開檢查：\n- 能列出哪個目錄？\n- 能下載哪個檔案？\n- 能否上傳、覆寫或刪除？",
+          "公開下載可能是原本的服務用途。風險要對照預期政策，例如是否曝光內部檔案，或意外開放寫入。\n[FTP 安全考量](https://www.rfc-editor.org/rfc/rfc2577)"
+        ],
+        "blocks": []
+      },
+      {
+        "id": "example",
+        "heading": "用一個合成案例串起來",
+        "paragraphs": [
+          "以下是假想的授權實驗室紀錄，這裡沒有執行查詢。目標、測試身分、操作與檔案都已事先約定：\n- 連到 FTP 服務：收到 220 歡迎回應。\n- 使用測試身分登入：收到 230 登入成功。\n- 列出指定目錄：看見 readme.txt、report.txt。\n- 下載 readme.txt：傳輸完成，取得預先準備的測試內容。\n- 下載 report.txt：收到 550。\n- 上傳或刪除：本次未測試。",
+          "列出名稱，就是這裡的列舉結果。FTP 的 LIST 用於取得清單、RETR 用於下載、STOR 用於上傳；用戶端畫面上的指令名稱可能不同。",
+          "紀錄可以寫成：這個測試身分成功登入並列出兩個檔名；readme.txt 下載完成，report.txt 的下載請求收到 550。上傳與刪除權限留待另行驗證。",
+          "550 表示要求的檔案操作未完成，可能涉及檔案不存在或存取條件；配合完整回應、指定路徑與伺服器日誌定位。425 則提示資料連線無法開啟。歡迎訊息中的產品或版本文字也先當線索，再與管理端資料核對。\n[命令與回覆碼](https://www.rfc-editor.org/rfc/rfc959)"
+        ],
+        "blocks": [
+          {
+            "kind": "cards",
+            "caption": "網頁補充：同一身分，分開記每種操作",
+            "description": "沿用上方合成案例；尚未測試的操作保留待確認。",
+            "items": [
+              {
+                "title": "列目錄",
+                "body": "看見 readme.txt 與 report.txt。"
+              },
+              {
+                "title": "下載 readme.txt",
+                "body": "完成傳輸並核對測試內容。"
+              },
+              {
+                "title": "下載 report.txt",
+                "body": "收到550，原因由路徑、回應與日誌定位。"
+              },
+              {
+                "title": "上傳／刪除",
+                "body": "本例未測試，需在另行約定的範圍驗證。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "defense",
+        "heading": "防護與證據怎麼做？",
+        "paragraphs": [
+          "防護先從用途出發：只開放需要的身分與目錄，將讀取和寫入權限分開，限制不必要的匿名存取，並觀察登入失敗、檔案操作與異常傳輸。",
+          "傳統 FTP 的帳密與資料可能以明文傳輸。需要保護傳輸時，可採：\n- FTPS：FTP 加上 TLS；除了控制連線，也要確認資料連線的保護設定。\n- SFTP：透過 SSH 提供檔案傳輸，是另一種協定。",
+          "使用加密連線後，檔案權限仍依伺服器政策判定。\n[FTP over TLS](https://www.rfc-editor.org/rfc/rfc4217)｜[OpenSSH SFTP](https://man.openbsd.org/sftp.1)",
+          "每次記下時間、目標、使用身分、連線模式、指定路徑、操作與完整回應。練習使用授權環境及合成檔案；密碼另行妥善保管，公開紀錄只留去識別的證據。"
+        ],
+        "blocks": []
+      },
+      {
+        "id": "check",
+        "heading": "小檢核",
+        "paragraphs": [
+          "你成功登入 FTP，也列出了 report.txt，但下載時收到 550。請用兩三句話說明：目前確認了什麼？要判斷下載失敗原因與上傳權限，還需要哪些證據？",
+          "這是待回答的教材檢核；網站不會自動送出答案或更新理解狀態。下一個核心是 M04-04 SMB 列舉。"
+        ],
+        "blocks": []
+      }
+    ]
+  },
+  "en": {
+    "summary": "FTP reveals service and file clues. Check login, directory listings, downloads, and uploads separately.",
+    "sections": [
+      {
+        "id": "purpose",
+        "heading": "What does FTP do?",
+        "paragraphs": [
+          "FTP (File Transfer Protocol) lets a computer upload files to a server and download files from it.",
+          "Think of a document pickup desk. First check that the desk is open, then identify yourself, look at the catalog, and ask for a particular document. Each step has its own conditions.",
+          "FTP enumeration means collecting service replies, login options, and the directory and file information visible to a particular identity. An FTP client translates your actions into protocol commands."
+        ],
+        "blocks": []
+      },
+      {
+        "id": "connections",
+        "heading": "Why can login work while a directory listing stalls?",
+        "paragraphs": [
+          "FTP commonly uses two kinds of connections:\n• Control connection: carries login information, commands, and replies. The server commonly listens on TCP port 21.\n• Data connection: carries directory listings or file contents over a separate connection.",
+          "There are two common ways to establish the data connection:\n• Active mode: the client supplies a listening endpoint, and the server initiates the data connection.\n• Passive mode: the server supplies a listening endpoint, and the client initiates the data connection.",
+          "If login succeeds but a listing stalls, check the data connection, firewall, and mode settings, then check permissions. TCP port 20 is the traditional server data port in active mode; it is not used for every FTP transfer. Passive mode uses a separately negotiated port. EPSV is the extended passive-mode command. [FTP specification](https://www.rfc-editor.org/rfc/rfc959) · [Extended modes](https://www.rfc-editor.org/rfc/rfc2428)"
+        ],
+        "blocks": [
+          {
+            "kind": "cards",
+            "caption": "Website supplement: control and data connections",
+            "description": "These are connection roles, not permission levels.",
+            "items": [
+              {
+                "title": "Control connection",
+                "body": "Client → server, commonly TCP 21; exchanges commands and replies."
+              },
+              {
+                "title": "Data connection",
+                "body": "Carries listings or files; the server initiates active mode, the client initiates passive mode."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "anonymous",
+        "heading": "What does anonymous login tell you?",
+        "paragraphs": [
+          "Anonymous FTP commonly uses an identity such as anonymous to provide access to material the administrator has designated as public.",
+          "If the server accepts anonymous login, you have confirmed that this login was allowed. Check these actions separately:\n• Which directory can this identity list?\n• Which file can it download?\n• Can it upload, overwrite, or delete files?",
+          "Public downloads may be an intended feature. Compare access with the intended policy: are internal files exposed, or is writing allowed by mistake? [FTP security considerations](https://www.rfc-editor.org/rfc/rfc2577)"
+        ],
+        "blocks": []
+      },
+      {
+        "id": "example",
+        "heading": "Connect the ideas with a made-up example",
+        "paragraphs": [
+          "This is a synthetic authorized-lab scenario, not a query we ran. The target, test identity, actions, and files have all been agreed on in the scenario:\n• Connect to FTP: receive a 220 greeting.\n• Sign in with the test identity: receive 230, indicating successful login.\n• List the specified directory: see readme.txt and report.txt.\n• Download readme.txt: transfer completes and the expected synthetic test content is received.\n• Download report.txt: receive 550.\n• Upload or delete: not tested.",
+          "The names in the listing are the enumeration result here. FTP uses LIST for a listing, RETR for retrieval, and STOR for upload. The commands shown by your client may have different names.",
+          "A useful record would say: “The test identity logged in and listed two filenames. The readme.txt download completed; the request to download report.txt received 550. Upload and delete permissions await separate checks.”",
+          "550 means the requested file action was not taken; the file may be absent or access conditions may prevent the action. Use the full reply, exact path, and server logs to determine why. 425 indicates that the data connection could not be opened. Treat product and version text in a greeting as a clue and compare it with administrative records. [Commands and reply codes](https://www.rfc-editor.org/rfc/rfc959)"
+        ],
+        "blocks": [
+          {
+            "kind": "cards",
+            "caption": "Website supplement: separate results for the same identity",
+            "description": "Uses the synthetic example above. Untested actions remain open.",
+            "items": [
+              {
+                "title": "List directory",
+                "body": "Names readme.txt and report.txt are visible."
+              },
+              {
+                "title": "Download readme.txt",
+                "body": "Transfer completes and test content is checked."
+              },
+              {
+                "title": "Download report.txt",
+                "body": "550 received; use the path, reply, and logs to establish the cause."
+              },
+              {
+                "title": "Upload / delete",
+                "body": "Not tested here; verify within separately agreed boundaries."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "defense",
+        "heading": "How do you protect the service and record evidence?",
+        "paragraphs": [
+          "Start with the intended use. Allow only the identities and directories needed, separate read and write permissions, limit unnecessary anonymous access, and monitor login failures, file actions, and unusual transfers.",
+          "Traditional FTP can send credentials and data in cleartext. Options for protecting transfers include:\n• FTPS: FTP with TLS. Check protection for both the control connection and the data connection.\n• SFTP: file transfer over SSH, using a different protocol.",
+          "Encrypted transport still leaves file permissions to the server’s access policy. [FTP over TLS](https://www.rfc-editor.org/rfc/rfc4217) · [OpenSSH SFTP](https://man.openbsd.org/sftp.1)",
+          "Record the time, target, identity, connection mode, exact path, action, and full reply. Practice in an authorized environment with synthetic files. Keep passwords in appropriate protected storage and de-identify any evidence you publish."
+        ],
+        "blocks": []
+      },
+      {
+        "id": "check",
+        "heading": "One small check",
+        "paragraphs": [
+          "You successfully log in to FTP and see report.txt in a listing, but its download returns 550. In two or three sentences, what have you confirmed? What evidence would help explain the failed download and determine upload permissions?",
+          "This teaching check awaits your answer. The page does not submit answers or update understanding. The next core concept is M04-04 SMB enumeration."
+        ],
+        "blocks": []
+      }
+    ]
+  }
+}
