@@ -38,30 +38,27 @@ test('empty Q&A is optional; invalid translations, duplicates and reserved ancho
   assert.throws(()=>createConceptCatalog(concepts,[first,first],'2026-10-23'),/duplicate/);
   const anchor=second();anchor.text.zh.sections[0].id='discussion';assert.throws(()=>createConceptCatalog(concepts,[anchor],'2026-10-23'),/invalid section/);
 });
-test('M04 revision four keeps seven teaching sections and three tests distinct from empty discussion',()=>{
-  assert.equal(first.revision,4);assert.equal(first.text.zh.sections.length,7);
-  assert.deepEqual(first.text.zh.sections.map(s=>s.id),first.text.en.sections.map(s=>s.id));
-  assert.deepEqual(first.checks?.map(q=>q.answer),[1,2,1]);assert.deepEqual(first.qa,[]);
-  for(const lang of ['zh','en'] as const){
-    assert.deepEqual(first.text[lang].sections.filter(s=>s.blocks?.length).map(s=>s.blocks!.map(b=>b.kind)),first.text.zh.sections.filter(s=>s.blocks?.length).map(s=>s.blocks!.map(b=>b.kind)));
-    const codes=first.text[lang].sections.flatMap(s=>s.blocks??[]).map(b=>b.kind==='step' ? b.code??'' : '').join('\n');
-    if(lang==='en'){assert.ok(codes.includes('get test.txt downloaded-test.txt'));assert.ok(codes.includes('mktemp -d'));}
-    else{assert.ok(codes.includes('Test-NetConnection 192.168.56.10 -Port 445'));assert.ok(codes.includes("Get-Content '\\\\192.168.56.10\\Finance\\demo.txt'"));}
-    assert.ok(!codes.includes("-c 'ls'"));assert.ok(!codes.includes('%PASSWORD'));
-    const serialized=JSON.stringify(first.text[lang]);assert.ok(!/utm_|favicons|&#x20;/.test(serialized));
-  }
+test('verbatim Chinese source replaces old sections and quizzes while English stays intact',()=>{
+  assert.equal(first.revision,5);assert.equal(first.text.zh.sections.length,0);
+  assert.equal(first.text.en.sections.length,7);assert.equal(first.text.zh.sourceBody?.length,88);
+  assert.ok(first.checks?.every(q=>!q.text.zh && q.text.en));assert.deepEqual(first.qa,[]);
+  const codes=first.text.zh.sourceBody!.flatMap(b=>b.kind==='code'?[b.text]:[]).join('\n');
+  assert.ok(codes.includes('Test-NetConnection 192.168.56.10 -Port 445'));
+  assert.ok(!JSON.stringify(first.text.zh.sourceBody).includes('favicons'));
+  const bad=structuredClone(first);bad.text.zh.sourceBody=[];
+  assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'));
 });
 test('test explanations and table cells are searchable and incomplete test keys fail closed',()=>{
   const catalog=createConceptCatalog(concepts,[first],'2026-10-23');
   assert.ok(catalog.searchEntries.find(e=>e.lang==='en')!.text.includes('NTFS'));
-  assert.ok(catalog.searchEntries.find(e=>e.lang==='zh')!.text.includes(first.checks![1].text.zh.rationales[2]));
+  assert.ok(catalog.searchEntries.find(e=>e.lang==='zh')!.text.includes('主機名稱、DNS 記錄'));
   const bad=structuredClone(first);bad.checks![0].answer=5;assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'),/test identity/);
 });
 
 test('visuals have searchable text and reject missing descriptions',()=>{
-  const visual=first.text.zh.sections.flatMap(s=>s.blocks??[]).find(b=>b.kind==='flow')!;
+  const visual=first.text.en.sections.flatMap(s=>s.blocks??[]).find(b=>b.kind==='flow')!;
   assert.equal(visual.kind,'flow');
-  const bad=structuredClone(first);const block=bad.text.zh.sections.flatMap(s=>s.blocks??[]).find(b=>b.kind==='flow');
+  const bad=structuredClone(first);const block=bad.text.en.sections.flatMap(s=>s.blocks??[]).find(b=>b.kind==='flow');
   if(block?.kind==='flow')block.description='';
   assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'),/invalid visual/);
 });
