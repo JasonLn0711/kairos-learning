@@ -1,12 +1,14 @@
 <script lang="ts">
+  import M0401Visual from './M0401Visual.svelte';
   import type { SourceBlock } from '$lib/concepts';
   import ConceptBlocks from './ConceptBlocks.svelte';
   import AccessDiagram from './AccessDiagram.svelte';
   import InlineText from './InlineText.svelte';
-  let { blocks }: {blocks: SourceBlock[]} = $props();
+  let { blocks, conceptId='', lang='zh' }: {blocks: SourceBlock[];conceptId?:string;lang?:string} = $props();
+  const placements:Record<number,'questions'|'entry-evidence'|'permissions'|'protocols'>={8:'questions',23:'entry-evidence',47:'permissions',79:'protocols'};
 </script>
 <div class="source-body">
-  {#each blocks as block}
+  {#each blocks as block,i}
     {#if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
     {:else if block.kind === 'accessDiagram'}<AccessDiagram texts={block.texts} src={block.src} />
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
@@ -17,6 +19,7 @@
       <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable tables need keyboard access.) -->
       <div class="table-scroll" role="region" aria-label={block.headers.join('、')} tabindex="0"><table><thead><tr>{#each block.headers as header}<th scope="col">{header}</th>{/each}</tr></thead><tbody>{#each block.rows as row}<tr>{#each row as cell}<td><InlineText text={cell} /></td>{/each}</tr>{/each}</tbody></table></div>
     {/if}
+    {#if conceptId==='M04-01'&&lang==='zh'&&placements[i]}<M0401Visual id={placements[i]} {lang}/>{/if}
   {/each}
 </div>
 <style>
