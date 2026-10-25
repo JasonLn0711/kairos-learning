@@ -31,3 +31,5 @@ flowchart LR
 The next evidence gate is independent reader completion of a lesson and its exercise. Public deployment and automated checks establish their own layers. New accounts, an LMS backend, tracking, paid services, additional course units and a publication cadence require separate scope decisions. Existing personal CEH reading position and shared study capacity remain with their owners.
 
 [README](../README.md) · [Content guide](content-authoring.md) · [Publishing](publishing-security.md) · [Release evidence](releases/2026-10-23-phase-0-3.md)
+
+Teaching diagrams follow the adopted [responsive diagram standard](content-authoring.md#responsive-teaching-diagrams--adopted-october-25), using native lightweight components and inspectable SVG assets within this architecture.
