@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DigWalkthrough from './DigWalkthrough.svelte';
   import DnsDiagram from './DnsDiagram.svelte';
   import M0401Visual from './M0401Visual.svelte';
   import type { SourceBlock } from '$lib/concepts';
@@ -10,6 +11,7 @@
 </script>
 <div class="source-body">
   {#each blocks as block,i}
+    {#if conceptId==='M04-02' && lang==='zh' && block.kind==='paragraph' && block.text==='步驟三：依序查詢不同類型'}<DigWalkthrough {lang}/>{/if}
     {#if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
     {:else if block.kind === 'accessDiagram'}<AccessDiagram texts={block.texts} src={block.src} />
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
