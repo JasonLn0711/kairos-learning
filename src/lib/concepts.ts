@@ -1,3 +1,4 @@
+import { parseQA } from './qa-markdown.ts';
 import { isPublic, localized, type Locale, type Bilingual, type SearchEntry } from './model.ts';
 export type ConceptEntry = { id: string; module: string; title: Bilingual };
 export type ConceptVisual = {kind:'flow'|'cards';caption:string;description:string;items:{title:string;body:string}[]};
@@ -8,7 +9,7 @@ export type ConceptTeaching = {
   id: string; revision: number; date: string; status: 'draft' | 'published'; publishedOn: string;
   text: Bilingual<{summary: string; sourceBody?: SourceBlock[]; sections: {id: string; heading: string; paragraphs: string[];blocks?:ConceptBlock[]}[]}>;
   checks?: ConceptCheck[];
-  qa?: {id: string; text: Bilingual<{question: string; answer: string[]}>}[];
+  qa?: {id: string; format?: 'markdown'; text: Bilingual<{question: string; originalQuestion?:string; answer: string[]; explanation?: string[]; editorial?: string[]}>}[];
 };
 export const conceptPath = (id: string, lang: Locale) => localized(`/courses/ceh/v13/${id.slice(0,3).toLowerCase()}/concepts/${id.toLowerCase()}/`,lang);
 // One catalog controls routes, search, navigation and serialized public teaching.
@@ -72,9 +73,13 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
     const qaIds = new Set<string>();
     if (t.qa !== undefined && !Array.isArray(t.qa)) fail(`${t.id}: qa must be an array`);
     for (const q of t.qa ?? []) {
+      if(q.format && q.format!=='markdown') fail(`${t.id}: invalid Q&A format`);
       if (!/^[a-z0-9-]+$/.test(q.id) || qaIds.has(q.id)) fail(`${t.id}: invalid Q&A ID`);
       qaIds.add(q.id);
-      for (const lang of ['zh','en'] as const) if (!nonempty(q.text?.[lang]?.question) || !q.text[lang].answer?.length || !q.text[lang].answer.every(nonempty)) fail(`${t.id}: missing ${lang} Q&A`);
+      for (const lang of ['zh','en'] as const) {
+        if (!nonempty(q.text?.[lang]?.question) || !q.text[lang].answer?.length || !q.text[lang].answer.every(nonempty)) fail(`${t.id}: missing ${lang} Q&A`);
+        if(q.format==='markdown' && (parseQA(q.text[lang].answer.join('\n\n')).filter(b=>b.kind==='quiz').length!==1 || !q.text[lang].explanation?.length)) fail(`${t.id}: incomplete Q&A teaching test`);
+      }
     }
   }
   const published = new Map(teachings.filter(t=>isPublic(t,today)).map(t=>[t.id,t]));
@@ -87,7 +92,7 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   };
   const searchEntries: SearchEntry[] = (['zh','en'] as Locale[]).flatMap(lang=>entries.flatMap(c=>{
     const t=published.get(c.id); if (!t) return [];
-    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...(t.text[lang].sourceBody??[]).flatMap(b=>b.kind==='accessDiagram'?b.texts:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text]),...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>{const text=q.text[lang];return text?[text.prompt,...text.options,...text.rationales]:[];}),...(t.qa??[]).flatMap(q=>[q.text[lang].question,...q.text[lang].answer])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
+    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...(t.text[lang].sourceBody??[]).flatMap(b=>b.kind==='accessDiagram'?b.texts:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text]),...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>{const text=q.text[lang];return text?[text.prompt,...text.options,...text.rationales]:[];}),...(t.qa??[]).flatMap(q=>[q.text[lang].question,q.text[lang].originalQuestion??'',...q.text[lang].answer,...(q.text[lang].editorial??[]),...(q.text[lang].explanation??[])])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
   }));
   return {list,get,searchEntries};
 }
