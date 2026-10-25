@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Page } from '$lib/server/catalog';
+  import { conceptVersionLabel } from '$lib/concepts';
   import ConceptBlocks from './ConceptBlocks.svelte';
   import ConceptChecks from './ConceptChecks.svelte';
   import ConceptQA from './ConceptQA.svelte';
@@ -18,7 +19,7 @@
   });
 </script>
 <p class="lead">{text.summary}</p>
-<p class="metadata">{teaching.id} · v{teaching.revision} · {teaching.date} · {zh ? '公開教學版' : 'Public teaching edition'}</p>
+<p class="metadata">{teaching.id} · {conceptVersionLabel(teaching)} · {teaching.date} · {zh ? '公開教學版' : 'Public teaching edition'}</p>
 <nav class="toc" aria-label={zh ? '本文導覽' : 'On this page'}><ol>{#each toc as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{/each}<li><a href="#discussion">Q&A</a></li></ol></nav>
 <article class="prose" class:light-code={(zh && teaching.id === 'M04-01') || teaching.id === 'M04-07'}>{#if text.sourceBody}<SourceBody blocks={text.sourceBody} />{:else}{#each text.sections as section}<section><h2 id={section.id}>{section.heading}</h2>{#each section.paragraphs as p}<p style="white-space: pre-line">{#each parts(p) as part}{#if part.href}<a href={part.href}>{part.label}</a>{:else}{part.label}{/if}{/each}</p>{/each}{#if section.blocks}<ConceptBlocks blocks={section.blocks} />{/if}{#if section.id === 'check' && teaching.checks?.length}<ConceptChecks checks={teaching.checks} {lang} />{/if}</section>{/each}{/if}
 <section><h2 id="discussion">{zh ? '概念 Q&A' : 'Concept Q&A'}</h2>{#if teaching.qa?.length}<ConceptQA qa={teaching.qa} {lang} />{:else}<p>{zh ? '待補：收到相關問題後，會整理為匿名教學版。' : 'Pending: related questions will be edited into anonymous teaching notes when available.'}</p>{/if}</section></article>
