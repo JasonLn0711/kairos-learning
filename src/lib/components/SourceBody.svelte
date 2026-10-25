@@ -21,8 +21,8 @@
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>
     {:else if block.kind === 'paragraph'}<p><InlineText text={block.text} /></p>
-    {:else if block.kind === 'code'}{#if conceptId==='M04-03' && block.id?.startsWith('ftp-ascii')}<details class="ascii"><summary>{lang==='zh'?'展開文字示意（可選取複製）':'Open text schematic (selectable)'}</summary><!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontal ASCII scrolling.) -->
-<pre role="region" aria-label={lang==='zh'?'可捲動文字示意':'Scrollable text schematic'} tabindex="0"><code>{block.text}</code></pre></details>{:else}<pre><code>{block.text}</code></pre>{/if}
+    {:else if block.kind === 'code'}{#if conceptId==='M04-03' && block.id?.startsWith('ftp-ascii')}<div class="ascii"><!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontal ASCII scrolling.) -->
+<pre role="region" aria-label={lang==='zh'?'可捲動文字示意':'Scrollable text schematic'} tabindex="0"><code>{block.text}</code></pre></div>{:else}<pre><code>{block.text}</code></pre>{/if}
     {:else if block.kind === 'list'}<ul>{#each block.items as item}<li><InlineText text={item} /></li>{/each}</ul>
     {:else if block.kind === 'table'}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable tables need keyboard access.) -->
@@ -34,7 +34,7 @@
   {/each}
 </div>
 <style>
-  .ascii{margin:1rem 0;border:1px solid var(--line);border-radius:8px;padding:.7rem}.ascii summary{cursor:pointer;font-weight:600}.ascii summary:focus-visible{outline:3px solid #17664b}.ascii pre{max-width:100%;overflow:auto}
+  .ascii{margin:1rem 0;border:1px solid var(--line);border-radius:8px;padding:.7rem}.ascii pre{max-width:100%;overflow:auto}
   .source-body.ftp :global(p){white-space:pre-line}
   .table-scroll{max-width:100%;overflow-x:auto;margin:1.5rem 0}
   table{border-collapse:collapse;width:100%;font-size:.9rem;line-height:1.65}

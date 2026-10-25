@@ -23,16 +23,15 @@
 {/snippet}
 <figure data-ftp-diagram={id} aria-labelledby={'ftp-figure-'+id}>
   <figcaption><strong id={'ftp-figure-'+id}>{spec.title}</strong><p>{spec.caption}</p></figcaption>
-  <details open>
-    <summary>{lang==='zh'?'展開／收合圖解':'Expand / collapse diagram'}</summary>
+  <div class="diagram-body">
     {#if spec.panels}<div class="modes">{#each spec.panels as panel}<section><h4>{panel.title}</h4>{@render lane(panel.rows)}<p>{panel.note}</p></section>{/each}</div>
     {:else if spec.rows}{@render lane(spec.rows)}{/if}
-  </details>
+  </div>
   <a href={'/images/ceh/m04-03-'+id+'-'+lang+'.svg'} download>{lang==='zh'?'下載 SVG 圖解':'Download SVG diagram'} — {spec.title}</a>
 </figure>
 <style>
   figure{margin:1.5rem 0;padding:clamp(.7rem,3vw,1.4rem);background:#f7f5ef;border:1px solid #8c9e92;border-radius:14px;color:#303632;min-width:0;overflow-wrap:anywhere}
-  figcaption strong{font-size:1.1rem}p{line-height:1.7}summary{cursor:pointer;font-weight:650;padding:.5rem 0}summary:focus-visible{outline:3px solid #17664b;outline-offset:3px}
+  figcaption strong{font-size:1.1rem}p{line-height:1.7}
   .endpoints{display:flex;justify-content:space-between;padding:.6rem 1rem}.endpoints span{display:grid;text-align:center;font-weight:650;gap:.2rem}.endpoints svg{width:42px;height:34px;fill:none;stroke:#416b82;stroke-width:2}
   .sequence{list-style:none;padding:0;margin:0}.sequence li{padding:.6rem;margin:.4rem 0;border:1px solid #b2c0b7;border-radius:8px;background:#fff;text-align:center}
   .sequence .data-lane{background:#e8eef7;border-color:#8395b3}.channel{display:block;font-size:.78rem;color:#47574e}.sequence strong{display:block;font-size:.95rem;line-height:1.5}

@@ -7,8 +7,8 @@
 {@const text = check.text[lang]!}
 <section class="question"><h3 id={'test-'+check.id}>{check.id}．{text.prompt}</h3>
 <ol type="A">{#each text.options as option}<li>{option}</li>{/each}</ol>
-<details><summary>{lang==='zh'?'展開答案與教材解析':'Show answer and teaching explanation'}</summary>
+<section><h4>{lang==='zh'?'答案與教材解析':'Answer and teaching explanation'}</h4>
 <p><strong>{lang==='zh'?'答案':'Answer'}：{String.fromCharCode(65+check.answer)}</strong></p>
-{#each text.rationales as rationale}<p>{rationale}</p>{/each}</details></section>
+{#each text.rationales as rationale}<p>{rationale}</p>{/each}</section></section>
 {/each}
-<style>summary{cursor:pointer;font-weight:600;padding:.6rem 0}li{margin:.6rem 0}</style>
+<style>h4{font-weight:600;padding:.6rem 0}li{margin:.6rem 0}</style>

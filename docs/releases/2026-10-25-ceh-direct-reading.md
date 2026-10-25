@@ -1,0 +1,9 @@
+# CEH shared UI release — direct reading except actual Q&A
+
+The user's October 25 direction supersedes the earlier collapsible-diagram preference. CEH diagrams, ordinary teaching, source supplements, ASCII schematics, dig line explanations, concept-check answers, course map and optional topic list now render directly without a collapse control. Actual discussion Q&A retains its native disclosure, with no nested diagram disclosure. Interactive quizzes keep answer submission and post-answer feedback; this is assessment behavior, not a presentation toggle. Their CEH no-JavaScript fallback is directly visible; non-CEH behavior remains unchanged.
+
+This is a shared presentation release. No learning objectives, technical conclusions, source ordering, question/answer data, lesson metadata or SVG assets change. M04-01 remains v2.0.2/revision 10, M04-02 v1.2.0/revision 4, M04-03 v1.1.0/revision 2. Small UI instructions saying “expand” now say “read”; previous release receipts remain historical. The CEH-scoped authoring specification is updated.
+
+Validation: all 180 built CEH pages have only four actual discussion disclosures (two M04-01 Q&A entries in each language). This invariant is part of release validation. Full DNS and FTP original-source/rendered audits pass, terminal observation bytes and all concept JSON/SVG assets are unchanged. Tests, Svelte zero errors/warnings, build and static release checks pass. GX10 user's Brave checked all three lessons in both languages at 320/390/1280px (18 cases): no page overflow, missing anchors or non-Q&A hidden teaching. Enter/Space still toggles actual Q&A; nested figure toggles are absent. Download URLs and selectable code are preserved.
+
+The prior browser save-download action remains unconfirmed/pending; it was not retried. HTTP asset verification and production readback are recorded after deployment. Learning/QA states and unrelated site sections remain unchanged.
