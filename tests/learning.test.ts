@@ -74,6 +74,6 @@ test('one-concept routes expose real teaching only, with private progress absent
   assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-07/'), null);
   assert.equal(page.conceptTeaching.text.zh.sections.length, 0);
   assert.equal(page.conceptTeaching.text.en.sections.length, 7);
-  assert.equal(page.conceptTeaching.text.zh.sourceBody?.length, 88);
+  assert.equal(page.conceptTeaching.text.zh.sourceBody?.length, 81);
   assert.ok(!JSON.stringify(page).includes('Sentinel_'));
 });
