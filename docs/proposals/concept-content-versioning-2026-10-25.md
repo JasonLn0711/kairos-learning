@@ -1,6 +1,8 @@
-# Concept content versions — proposed, October 25, 2026
+# Concept content versions — approved baseline, October 25, 2026
 
-Status: **PROPOSED — awaiting user confirmation.** This document does not change any public version label, deployed content, prior receipt, delivery record or learning state. The current M04-01 label remains legacy `v8` (integer revision 8). The user has established one major evolution so far: the proposed major is **2**, not 8.
+Status: **APPROVED — option B selected October 25, 2026.** M04-01 migrates from legacy v8 to public content version **v2.0.0**, with its integer `revision: 8` retained. The baseline content is deployed commit `bf4dce8839e42040dd1bf00856eb57d2f05e8780`. Earlier labels, receipts and source files remain unchanged. No teaching text, diagrams, quizzes, language bodies, learning states or concept URLs change. Both language pages receive edition metadata only; this does not claim a new English rewrite.
+
+The alternative analysis below remains a historical explanation of the decision, not adopted retrospective labels. Future updates follow the major/minor/patch rules; other concepts retain their legacy labels until explicitly migrated.
 
 ## Meaning and release rules
 
@@ -48,16 +50,16 @@ Evidence includes the source snapshots plus the existing private revision-2 thro
 
 **B — establish a declared migration baseline now (recommended).** After approval, display current legacy v8 as **v2.0.0**, explicitly saying “semantic content versioning begins at the existing revision 8 snapshot; earlier labels were legacy revision numbers.” Preserve the v1–v8 change history without assigning historical semantic labels. Major 2 honors the one-major-change decision; minor/patch zero mark the new numbering baseline, not a claim that Q&A or diagrams were absent. Subsequent meaningful additions become 2.1.0, and wording-only corrections become 2.0.1.
 
-B avoids false historical precision and accommodates the user-directed v4/v5 implementation correction without claiming another major. A remains appropriate if the user wants and approves the detailed retrospective mapping. **No public relabeling occurs until the choice is confirmed.**
+B avoids false historical precision and accommodates the user-directed v4/v5 implementation correction without claiming another major. A remains appropriate if the user wants and approves the detailed retrospective mapping. **Option B is now confirmed; option A remains an unadopted alternative.**
 
-## Non-destructive implementation after approval
+## Non-destructive implementation
 
 Current code uses `ConceptTeaching.revision: number` in `src/lib/concepts.ts:9`, requires a positive integer at line 29, and prints `v{teaching.revision}` in `Concept.svelte:21`. Simply replacing the integer with `"2.0.0"` would fail validation. Other lesson/question revisions and persisted question attempts also use integer revision matching; leave them unchanged.
 
 1. Add optional `contentVersion?: string` to the concept type only. Validate canonical numeric `a.b.c` with positive major and nonnegative minor/patch, no leading zeros, no `v` inside the data string. A suitable pattern is `^[1-9]\\d*\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$` (use normal single backslashes in a regex literal). Keep integer `revision` and its existing validation.
-2. Scope the first migration to M04-01. Render `v{contentVersion}` when present and use existing `v{revision}` for unmigrated concepts. Do not assign versions to pending lessons or bulk-relabel other lessons. A new metadata publication may advance internal revision to 9 while the explicit migration mapping points back to the verified legacy-v8 content snapshot.
-3. Add a dated migration/change entry with selected strategy, legacy base revision/commit, semantic version, rationale, changed locales, implementation commit and deployment evidence. Preserve all old files. Keep proposed numbering out of public page metadata until approved.
+2. Scope the first migration to M04-01. Render `v{contentVersion}` when present and use existing `v{revision}` for unmigrated concepts. Do not assign versions to pending lessons or bulk-relabel other lessons. This metadata-only migration retains revision 8; contentVersion identifies the new naming scheme and the migration release commit identifies the metadata change.
+3. Add a dated migration/change entry with selected strategy, legacy base revision/commit, semantic version, rationale, changed locales, implementation commit and deployment evidence. Preserve all old files. The approved baseline is 2.0.0.
 4. Keep concept ID, URL, Q&A IDs, anchors, registry order, downloads and searchable teaching text stable. Add the display version to exports/search only where they already show edition metadata; do not use it as a route or learner-answer key.
 5. Validate valid/invalid semantic versions, legacy fallback, M04-01 display, unchanged other lessons and question-attempt parsing; check bilingual metadata, source-text fidelity, links, search and downloads. Run existing CI/release checks and production readback. Update the private publication evidence only after deployment; never infer understanding from a version change.
 
-This is a targeted schema addition and display change, not a data rewrite. The existing authoring guide remains the canonical workflow; this proposal becomes an adopted subsection or linked policy there only after confirmation.
+This is a targeted schema addition and display change, not a data rewrite. The existing authoring guide remains the canonical workflow and links this approved policy. No standalone concept downloads carry edition labels today; existing SVG downloads remain byte-identical. Search includes v2.0.0 for M04-01, while concept order stays registry-based rather than version-based.

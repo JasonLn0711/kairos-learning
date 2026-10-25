@@ -117,6 +117,6 @@ For a source-faithful concept, `text.<locale>.sourceBody` can replace the sectio
 
 The M04-01 Q&A examples place status cards and the SMB/Kafka architecture figures beside the matching source paragraphs. `QAIllustration.svelte` reflows text on mobile; its six inspectable SVG downloads are under `site/images/ceh/m04-01-qa-*`. Source labels remain searchable DOM text in their original order. The earlier combined SVG URLs remain available for existing links; the page presents the three requested figures once. Kafka data arrows branch from the broker to independent consumer groups; the caption separately identifies consumer fetch behavior.
 
-## Proposed content versioning
+## Content versioning — adopted October 25
 
-The [October 25 content-version proposal](proposals/concept-content-versioning-2026-10-25.md) evaluates `vMAJOR.MINOR.PATCH` and M04-01 legacy revisions. It is **proposed, awaiting confirmation**; current public labels and the integer revision schema remain unchanged.
+Follow the [approved semantic content-version policy and legacy history](proposals/concept-content-versioning-2026-10-25.md). M04-01 uses `contentVersion: "2.0.0"` as an explicit migration baseline from legacy v8, retaining integer `revision: 8`. Other concepts keep their existing labels. Content version, revision, Git commit, deployment date and shared UI release have distinct meanings. Diagrams that only clarify existing wording are patch changes; new teaching content is minor. Original history and learner states remain intact.
