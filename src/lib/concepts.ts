@@ -2,10 +2,11 @@ import { isPublic, localized, type Locale, type Bilingual, type SearchEntry } fr
 export type ConceptEntry = { id: string; module: string; title: Bilingual };
 export type ConceptVisual = {kind:'flow'|'cards';caption:string;description:string;items:{title:string;body:string}[]};
 export type ConceptBlock = ConceptVisual | {kind:'table';caption:string;headers:string[];rows:string[][]} | {kind:'details'|'step';heading:string;paragraphs:string[];code?:string;id?:string};
-export type ConceptCheck = {id:string;answer:number;text:Bilingual<{prompt:string;options:string[];rationales:string[]}>};
+export type ConceptCheck = {id:string;answer:number;text:Partial<Bilingual<{prompt:string;options:string[];rationales:string[]}>>};
+export type SourceBlock = {kind:'paragraph'|'heading'|'code';text:string;id?:string} | {kind:'list';items:string[]} | {kind:'table';headers:string[];rows:string[][]};
 export type ConceptTeaching = {
   id: string; revision: number; date: string; status: 'draft' | 'published'; publishedOn: string;
-  text: Bilingual<{summary: string; sections: {id: string; heading: string; paragraphs: string[];blocks?:ConceptBlock[]}[]}>;
+  text: Bilingual<{summary: string; sourceBody?: SourceBlock[]; sections: {id: string; heading: string; paragraphs: string[];blocks?:ConceptBlock[]}[]}>;
   checks?: ConceptCheck[];
   qa?: {id: string; text: Bilingual<{question: string; answer: string[]}>}[];
 };
@@ -27,8 +28,19 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
     if (!Number.isInteger(t.revision) || t.revision < 1 || !['draft','published'].includes(t.status) || !isPublic({status:'published',publishedOn:t.publishedOn},'9999-12-31') || !isPublic({status:'published',publishedOn:t.date},'9999-12-31')) fail(`${t.id}: invalid revision/status/date`);
     for (const lang of ['zh','en'] as const) {
       const text = t.text?.[lang];
-      if (!nonempty(text?.summary) || !text?.sections?.length) fail(`${t.id}: missing ${lang} teaching`);
+      if (!nonempty(text?.summary) || (!text?.sections?.length && !text?.sourceBody?.length)) fail(`${t.id}: missing ${lang} teaching`);
       const headings = new Set<string>(['discussion']);
+      if(text.sourceBody) {
+        if(text.sections.length || !text.sourceBody.length) fail(`${t.id}: mixed source body`);
+        for(const block of text.sourceBody) {
+          if(block.kind==='table') { if(!block.headers?.length || !block.headers.every(nonempty) || !block.rows?.length || !block.rows.every(row=>row.length===block.headers.length&&row.every(nonempty))) fail(`${t.id}: invalid source table`); }
+          else if(block.kind==='list') { if(!block.items?.length||!block.items.every(nonempty)) fail(`${t.id}: invalid source list`); }
+          else if(['paragraph','heading','code'].includes(block.kind)) {
+            if(!nonempty(block.text)) fail(`${t.id}: invalid source text`);
+            if(block.kind==='heading') {if(!block.id||!/^[a-z][a-z0-9-]*$/.test(block.id)||headings.has(block.id)||block.id.startsWith('qa-')) fail(`${t.id}: invalid source heading`);headings.add(block.id!);}
+          } else fail(`${t.id}: unknown source block`);
+        }
+      }
       for (const s of text.sections) {
         if (!/^[a-z][a-z0-9-]*$/.test(s.id) || headings.has(s.id) || s.id.startsWith('qa-') || !nonempty(s.heading) || !s.paragraphs?.length || !s.paragraphs.every(nonempty)) fail(`${t.id}: invalid section ${s.id}`);
         headings.add(s.id);
@@ -44,13 +56,15 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
         }
       }
     }
-    if (JSON.stringify(t.text.zh.sections.map(s=>s.id)) !== JSON.stringify(t.text.en.sections.map(s=>s.id))) fail(`${t.id}: bilingual section IDs differ`);
+    if (!t.text.zh.sourceBody && !t.text.en.sourceBody && JSON.stringify(t.text.zh.sections.map(s=>s.id)) !== JSON.stringify(t.text.en.sections.map(s=>s.id))) fail(`${t.id}: bilingual section IDs differ`);
     const checkIds=new Set<string>();
     for(const q of t.checks ?? []) {
       if(!/^[a-zA-Z0-9-]+$/.test(q.id) || checkIds.has(q.id) || !Number.isInteger(q.answer) || q.answer<0 || q.answer>3) fail(`${t.id}: invalid test identity/key`);
       checkIds.add(q.id);
+      if(!q.text?.zh && !q.text?.en) fail(`${t.id}: empty test translation`);
       for(const lang of ['zh','en'] as const) {
         const text=q.text?.[lang];
+        if(text===undefined) continue;
         if(!nonempty(text?.prompt) || text?.options?.length!==4 || text?.rationales?.length!==4 || !text.options.every(nonempty) || !text.rationales.every(nonempty)) fail(`${t.id}: incomplete ${lang} test explanation`);
       }
     }
@@ -72,7 +86,7 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   };
   const searchEntries: SearchEntry[] = (['zh','en'] as Locale[]).flatMap(lang=>entries.flatMap(c=>{
     const t=published.get(c.id); if (!t) return [];
-    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>[q.text[lang].prompt,...q.text[lang].options,...q.text[lang].rationales]),...(t.qa??[]).flatMap(q=>[q.text[lang].question,...q.text[lang].answer])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
+    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...(t.text[lang].sourceBody??[]).flatMap(b=>b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text]),...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>{const text=q.text[lang];return text?[text.prompt,...text.options,...text.rationales]:[];}),...(t.qa??[]).flatMap(q=>[q.text[lang].question,...q.text[lang].answer])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
   }));
   return {list,get,searchEntries};
 }
