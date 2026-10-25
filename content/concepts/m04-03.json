@@ -1,222 +1,2254 @@
 {
   "id": "M04-03",
-  "revision": 1,
-  "date": "2026-10-24",
+  "revision": 2,
+  "date": "2026-10-25",
   "status": "published",
   "publishedOn": "2026-10-24",
   "qa": [],
   "text": {
     "zh": {
       "summary": "先記住一句：FTP 能讓你查到服務與檔案線索；能登入、能列目錄、能下載、能上傳，要各自確認。",
-      "sections": [
+      "sections": [],
+      "sourceBody": [
         {
+          "kind": "paragraph",
+          "text": "CEH M04-03｜FTP 列舉（FTP Enumeration）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "從零開始學會 FTP 的運作原理、檔案權限與資安檢查"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本章最重要的觀念：成功連線、成功登入、看見檔案、下載檔案、修改檔案，是五件不同的事情。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "學習 FTP 列舉，不只是為了知道怎麼查詢檔案，而是要理解：當一個使用者連上伺服器時，伺服器會透露哪些資訊，以及允許這個使用者執行哪些操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個觀念未來也能應用在 SMB、SSH、HTTP API、資料庫與雲端儲存服務的安全檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本章以一條主線學習："
+        },
+        {
+          "kind": "code",
+          "text": "發現服務\n   ↓\n建立連線\n   ↓\n身分驗證\n   ↓\n列舉目錄與檔案\n   ↓\n確認讀取權限\n   ↓\n確認寫入權限\n   ↓\n評估安全風險",
+          "id": "ftp-ascii-1"
+        },
+        {
+          "kind": "heading",
           "id": "purpose",
-          "heading": "FTP 是做什麼的？",
-          "paragraphs": [
-            "FTP（File Transfer Protocol，檔案傳輸協定）讓電腦向伺服器上傳、下載檔案。",
-            "想像一個文件領取櫃檯：先確認櫃檯有開，再出示身分、查看目錄，最後申請領取某份文件。這幾步各有條件。",
-            "FTP 列舉就是整理服務回應、登入方式，以及該身分能看到的目錄與檔案資訊。常用工具是 FTP 用戶端；它把你的操作轉成協定命令。"
-          ],
-          "blocks": []
+          "text": "一、FTP 是什麼？為什麼需要它？"
         },
         {
+          "kind": "paragraph",
+          "id": "ftp-sub-3",
+          "text": "1. 從生活情境理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是一位公司的員工。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司有一台專門存放文件的電腦，裡面存放："
+        },
+        {
+          "kind": "code",
+          "text": "公司檔案伺服器\n│\n├── public/\n│   ├── announcement.txt\n│   └── manual.pdf\n│\n├── finance/\n│   ├── salary.xlsx\n│   └── budget.xlsx\n│\n└── engineering/\n    ├── source.zip\n    └── design.pdf",
+          "id": "ftp-ascii-2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你希望從自己的電腦下載 manual.pdf。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但問題是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的電腦與公司的檔案伺服器是兩台不同的電腦。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你要如何取得遠端檔案？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 FTP 可以解決的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 全名是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "File Transfer Protocol（檔案傳輸協定）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它定義電腦之間如何透過網路傳送檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "從伺服器下載文件。",
+            "將檔案上傳到伺服器。",
+            "查看遠端目錄。",
+            "在權限允許的情況下管理檔案。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 是一套網路通訊協定，而不是某個特定的軟體。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你使用的 FTP 用戶端是軟體，FTP 則是用戶端與伺服器共同遵守的通訊規則。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-4",
+          "text": "2. FTP 的基本架構"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 採用 Client–Server（用戶端－伺服器）架構。"
+        },
+        {
+          "kind": "code",
+          "text": "你的電腦                         遠端電腦\nFTP Client                      FTP Server\n    │                                │\n    │        建立 TCP 連線           │\n    ├───────────────────────────────►│\n    │                                │\n    │        傳送 FTP 命令           │\n    ├───────────────────────────────►│\n    │                                │\n    │        回覆執行結果            │\n    │◄───────────────────────────────┤\n    │                                │\n    │        傳送檔案資料            │\n    │◄──────────────────────────────►│",
+          "id": "ftp-ascii-3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡需要先理解兩個名詞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP（Transmission Control Protocol，傳輸控制協定）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 負責建立可靠的網路連線，確保資料能按照順序傳送，並處理遺失資料的重傳。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port（通訊埠）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 位址用來找到哪一台電腦；Port 則協助找到這台電腦上的哪個網路服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10:21\n     │       │\n     │       └── TCP Port 21\n     │\n     └── 伺服器 IP",
+          "id": "ftp-ascii-4"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳統 FTP 的控制服務通常使用 TCP 21。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，實際伺服器也可以設定使用其他通訊埠。"
+        },
+        {
+          "kind": "heading",
           "id": "connections",
-          "heading": "為什麼登入成功，列目錄卻可能卡住？",
-          "paragraphs": [
-            "FTP 通常使用兩種連線：\n- 控制連線：傳送登入、操作命令與回覆；伺服器常用 TCP 21。\n- 資料連線：傳送目錄清單或檔案內容，另外建立。",
-            "資料連線有兩種常見方式：\n- 主動模式：用戶端提供接收位置，由伺服器發起資料連線。\n- 被動模式：伺服器提供接收位置，由用戶端發起資料連線。",
-            "因此，登入成功但目錄沒有顯示時，可以先查資料連線、防火牆與模式設定，再核對權限。TCP 20 是傳統主動模式常見的伺服器資料埠，並非所有 FTP 資料傳輸都用它。被動模式使用另外協商的埠；EPSV 是延伸被動模式命令。\n[FTP 規格](https://www.rfc-editor.org/rfc/rfc959)｜[延伸模式](https://www.rfc-editor.org/rfc/rfc2428)"
-          ],
-          "blocks": [
-            {
-              "kind": "cards",
-              "caption": "網頁補充：控制與資料分工",
-              "description": "這是兩種連線的分工，不是權限高低。",
-              "items": [
-                {
-                  "title": "控制連線",
-                  "body": "用戶端 → 伺服器常用 TCP 21；交換命令與回覆。"
-                },
-                {
-                  "title": "資料連線",
-                  "body": "傳目錄或檔案；主動由伺服器發起，被動由用戶端發起。"
-                }
-              ]
-            }
+          "text": "二、FTP 最重要的技術特色：兩條連線"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本章第一個需要真正理解的技術重點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般初學者容易以為："
+        },
+        {
+          "kind": "paragraph",
+          "text": "我已經連到 FTP 伺服器，為什麼還不能下載？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "原因是 FTP 的設計比較特別。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它通常使用兩條不同的 TCP 連線。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-5",
+          "text": "1. 控制連線（Control Connection）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "負責傳送命令與回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Client                          Server\n  │                                │\n  │ -------- USER student -------> │\n  │                                │\n  │ <------- 331 Password -------- │\n  │                                │\n  │ -------- PASS ******** ------> │\n  │                                │\n  │ <------- 230 Logged in ------- │",
+          "id": "ftp-ascii-login"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這條連線通常連接到伺服器的 TCP 21。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把它想成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "向文件櫃檯提出申請的電話。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-6",
+          "text": "2. 資料連線（Data Connection）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "負責真正傳送資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Client                          Server\n  │                                │\n  │ ------ RETR manual.pdf ------> │\n  │                                │\n  │ <------ 150 Starting --------- │\n  │                                │\n  │ ◄======= PDF 資料 ============ │\n  │          （示意）              │\n  │                                │\n  │ <------ 226 Complete --------- │",
+          "id": "ftp-ascii-download"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡要注意：下載時，檔案資料實際上是從 Server 傳向 Client，因此資料方向應是："
+        },
+        {
+          "kind": "code",
+          "text": "Client ◄══════════════════ Server\n             PDF",
+          "id": "ftp-ascii-7"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上傳則相反。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 的控制命令與檔案資料分開傳送，這是其原始協定架構的重要特性。[RFC Editor](https://www.rfc-editor.org/info/rfc959/)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-7",
+          "text": "3. 為什麼要分開？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為系統需要區分："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "你現在要求伺服器做什麼？",
+            "真正需要傳送的檔案內容是什麼？"
           ]
         },
         {
-          "id": "anonymous",
-          "heading": "匿名登入代表什麼？",
-          "paragraphs": [
-            "匿名 FTP 通常以 anonymous 這類身分，提供管理者指定的公開資料。",
-            "如果伺服器接受匿名登入，能確認的是「這次匿名登入獲准」。接著仍要分開檢查：\n- 能列出哪個目錄？\n- 能下載哪個檔案？\n- 能否上傳、覆寫或刪除？",
-            "公開下載可能是原本的服務用途。風險要對照預期政策，例如是否曝光內部檔案，或意外開放寫入。\n[FTP 安全考量](https://www.rfc-editor.org/rfc/rfc2577)"
-          ],
-          "blocks": []
+          "kind": "paragraph",
+          "text": "控制連線相當於傳送工作指令。"
         },
         {
+          "kind": "paragraph",
+          "text": "資料連線則負責搬運資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，即使控制連線正常，資料連線仍可能失敗。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就產生常見問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "帳號登入成功，卻無法顯示遠端目錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為目錄清單本身通常也需要經過資料連線傳送。"
+        },
+        {
+          "kind": "heading",
+          "id": "modes",
+          "text": "三、Active Mode 與 Passive Mode 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 有兩種常見的資料連線建立模式："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Active Mode：主動模式。\n2. Passive Mode：被動模式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "差異不在於誰主動下載，而在於："
+        },
+        {
+          "kind": "paragraph",
+          "text": "由哪一方主動建立資料連線？"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-8",
+          "text": "1. Active Mode：主動模式"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先看連線方向："
+        },
+        {
+          "kind": "code",
+          "text": "         控制連線\nClient ───────────────► Server:21\n\n         資料連線\nClient ◄─────────────── Server",
+          "id": "ftp-ascii-8"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行流程："
+        },
+        {
+          "kind": "paragraph",
+          "text": "① Client 連接 Server 的 TCP 21。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "② Client 告訴 Server，自己準備在哪個通訊埠接收資料連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "③ Server 主動連回 Client 指定的通訊埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "④ 雙方開始傳送資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在傳統 FTP 主動模式中，伺服器資料連線常以 TCP 20 作為來源通訊埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要特別注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 20 不是所有 FTP 資料傳輸都必須使用的埠。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-9",
+          "text": "2. Passive Mode：被動模式"
+        },
+        {
+          "kind": "code",
+          "text": "         控制連線\nClient ───────────────► Server:21\n\n         資料連線\nClient ───────────────► Server:50001",
+          "id": "ftp-ascii-9"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 50001 只是示意。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際通訊埠由伺服器協商提供。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行流程："
+        },
+        {
+          "kind": "paragraph",
+          "text": "① Client 連接 Server 的 TCP 21。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "② Client 要求 Server 提供一個資料連線通訊埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "③ Server 告訴 Client："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請連接我提供的資料埠。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "④ Client 主動連接該資料埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "⑤ 開始傳送資料。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-10",
+          "text": "3. 為什麼被動模式通常比較容易成功？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先理解一個概念："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Firewall（防火牆）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防火牆可以根據規則允許或阻擋網路連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "很多公司的防火牆會限制外部電腦主動連進內部網路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主動模式需要伺服器建立一條通往用戶端的資料連線，因此可能被用戶端防火牆阻擋。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "被動模式則是由用戶端發起兩條連線，通常比較符合一般防火牆與 NAT 的運作方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，被動模式仍需要伺服器端允許指定的資料通訊埠連入。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "比較",
+            "Active Mode",
+            "Passive Mode"
+          ],
+          "rows": [
+            [
+              "控制連線",
+              "Client → Server",
+              "Client → Server"
+            ],
+            [
+              "資料連線由誰發起",
+              "Server",
+              "Client"
+            ],
+            [
+              "常用命令",
+              "PORT／EPRT",
+              "PASV／EPSV"
+            ],
+            [
+              "常見障礙",
+              "用戶端防火牆",
+              "伺服器資料埠未開放"
+            ],
+            [
+              "一般 NAT 環境",
+              "可能較不方便",
+              "通常較容易使用"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "EPSV（Extended Passive Mode）是延伸被動模式命令，能支援 IPv6 等情境，並減少某些 NAT 位址處理問題。[RFC Editor](https://www.rfc-editor.org/info/rfc2428/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請記住：登入成功不代表資料連線成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個差別對後續資安事件調查非常重要。"
+        },
+        {
+          "kind": "heading",
+          "id": "enumeration",
+          "text": "四、什麼是 FTP Enumeration（FTP 列舉）？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前面介紹的是 FTP 的基本運作方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來才真正進入 CEH M04。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-11",
+          "text": "1. Enumeration 的定義"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration 中文通常翻譯為「列舉」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在資安領域，列舉是指透過目標服務提供的查詢功能，取得更具體的資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "原本你只知道："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "經過服務掃描後："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10\n└── TCP 21：FTP Service",
+          "id": "ftp-ascii-11"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著進行授權的 FTP 列舉："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10\n└── FTP Service\n    │\n    ├── 服務回應資訊\n    │\n    ├── 支援的登入方式\n    │\n    ├── 可查詢的目錄\n    │\n    ├── 可見的檔案名稱\n    │\n    └── 各項操作的執行結果",
+          "id": "ftp-ascii-12"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些資訊可以協助安全人員確認伺服器的設定是否符合預期。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-12",
+          "text": "2. 不能把「看見」當成「有權限讀取」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本章最容易考錯的觀念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你連上伺服器後，看到了："
+        },
+        {
+          "kind": "code",
+          "text": "/public\n    readme.txt\n\n/reports\n    report.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你能不能下載 report.txt？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前不知道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為列出檔案名稱，不等於取得檔案內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們需要建立更精確的判斷架構。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "階段",
+            "要回答的問題",
+            "相關 FTP 命令"
+          ],
+          "rows": [
+            [
+              "① 連線",
+              "伺服器是否接受連線？",
+              "連接 FTP 服務"
+            ],
+            [
+              "② 登入",
+              "這個身分是否登入成功？",
+              "USER、PASS"
+            ],
+            [
+              "③ 列舉",
+              "可以看見哪些目錄與檔名？",
+              "PWD、CWD、LIST"
+            ],
+            [
+              "④ 讀取",
+              "可以下載哪些檔案？",
+              "RETR"
+            ],
+            [
+              "⑤ 寫入",
+              "可以上傳或修改嗎？",
+              "STOR、DELE 等"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "每個階段都應該分別蒐集證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尤其不能因為："
+        },
+        {
+          "kind": "code",
+          "text": "LIST 成功"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就推論："
+        },
+        {
+          "kind": "code",
+          "text": "RETR 一定成功"
+        },
+        {
+          "kind": "paragraph",
+          "text": "或者："
+        },
+        {
+          "kind": "code",
+          "text": "STOR 一定成功"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些是不同操作，伺服器可以設定不同權限。[IANA](https://www.iana.org/assignments/ftp-commands-extensions)"
+        },
+        {
+          "kind": "heading",
+          "id": "commands",
+          "text": "五、認識 FTP 命令"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 用戶端會將使用者的操作轉換為協定命令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下面是初學者最需要掌握的命令。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "FTP 命令",
+            "作用",
+            "簡單理解"
+          ],
+          "rows": [
+            [
+              "USER",
+              "提供使用者名稱",
+              "我是誰？"
+            ],
+            [
+              "PASS",
+              "提供密碼",
+              "驗證我的身分"
+            ],
+            [
+              "PWD",
+              "顯示目前工作目錄",
+              "我現在在哪裡？"
+            ],
+            [
+              "CWD",
+              "切換目錄",
+              "我要進另一個資料夾"
+            ],
+            [
+              "LIST",
+              "列出目錄內容",
+              "這裡有哪些檔案？"
+            ],
+            [
+              "RETR",
+              "下載檔案",
+              "我要取回文件"
+            ],
+            [
+              "STOR",
+              "上傳檔案",
+              "我要放入文件"
+            ],
+            [
+              "DELE",
+              "刪除檔案",
+              "我要移除文件"
+            ],
+            [
+              "PASV",
+              "要求被動模式",
+              "請提供資料連線位置"
+            ],
+            [
+              "EPSV",
+              "要求延伸被動模式",
+              "請提供資料連線通訊埠"
+            ],
+            [
+              "QUIT",
+              "結束 FTP 工作階段",
+              "我要登出"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "一個容易混淆的地方是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你在 FTP 用戶端看到的指令，可能跟真正的 FTP 協定命令不完全相同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "get readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是某些 FTP 用戶端提供的操作指令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能被轉換成："
+        },
+        {
+          "kind": "code",
+          "text": "RETR readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以："
+        },
+        {
+          "kind": "paragraph",
+          "text": "get 是某些用戶端的指令，RETR 才是 FTP 協定命令。"
+        },
+        {
+          "kind": "heading",
+          "id": "replies",
+          "text": "六、FTP 回應碼：如何知道操作成功或失敗？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 CEH 考試以及資安實務的重要部分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 伺服器通常使用三位數回應碼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以先理解第一個數字的意義。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "第一碼",
+            "意義",
+            "初學者理解"
+          ],
+          "rows": [
+            [
+              "1xx",
+              "初步正面回應",
+              "已接受要求，還沒全部完成"
+            ],
+            [
+              "2xx",
+              "成功完成",
+              "這個操作成功了"
+            ],
+            [
+              "3xx",
+              "需要更多資訊",
+              "還需要繼續操作"
+            ],
+            [
+              "4xx",
+              "暫時性失敗",
+              "操作未成功，可能是暫時問題"
+            ],
+            [
+              "5xx",
+              "永久性負面回應",
+              "此次要求遭拒絕或無法完成"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的「永久性」是 FTP 回應碼的分類，不代表問題永遠不能修復。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-13",
+          "text": "必學回應碼"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-14",
+          "text": "220：Service Ready"
+        },
+        {
+          "kind": "code",
+          "text": "220 FTP Server Ready"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思："
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器表示服務已準備好接受使用者。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能因此推論登入成功。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-15",
+          "text": "331：Password Required"
+        },
+        {
+          "kind": "code",
+          "text": "331 Password required"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思："
+        },
+        {
+          "kind": "paragraph",
+          "text": "需要提供密碼，才能繼續登入程序。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也不必然證明使用者名稱確實存在，因為伺服器可能刻意避免透露帳號資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-16",
+          "text": "230：Login Successful"
+        },
+        {
+          "kind": "code",
+          "text": "230 User logged in"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思："
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前使用的身分已經成功登入 FTP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但並不代表具有讀取、寫入或管理權限。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-17",
+          "text": "150：File Status Okay"
+        },
+        {
+          "kind": "code",
+          "text": "150 Opening data connection"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思："
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器正在準備開始資料傳輸。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意：150 並不代表檔案已經下載完成。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-18",
+          "text": "226：Transfer Complete"
+        },
+        {
+          "kind": "code",
+          "text": "226 Transfer complete"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思："
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器回報這次資料傳輸已成功完成。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果需要確認取得的檔案內容正確，還應比對檔案大小或雜湊值（Hash）。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-19",
+          "text": "425：Cannot Open Data Connection"
+        },
+        {
+          "kind": "code",
+          "text": "425 Can't open data connection"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思："
+        },
+        {
+          "kind": "paragraph",
+          "text": "無法建立資料連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "此時應該優先檢查："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Active／Passive 模式。",
+            "防火牆規則。",
+            "NAT 設定。",
+            "資料通訊埠是否可達。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-20",
+          "text": "550：Requested Action Not Taken"
+        },
+        {
+          "kind": "code",
+          "text": "550 File unavailable"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思："
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器無法完成要求的檔案操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能原因包括："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "指定檔案不存在。",
+            "指定路徑不正確。",
+            "使用者沒有適當的存取權限。",
+            "伺服器的其他檔案存取條件不符合。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此不能只因為出現 550，就直接認定："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個帳號沒有下載權限。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還需要更多資訊才能判斷原因。[RFC Editor](https://www.rfc-editor.org/info/rfc959/)"
+        },
+        {
+          "kind": "heading",
           "id": "example",
-          "heading": "用一個合成案例串起來",
-          "paragraphs": [
-            "以下是假想的授權實驗室紀錄，這裡沒有執行查詢。目標、測試身分、操作與檔案都已事先約定：\n- 連到 FTP 服務：收到 220 歡迎回應。\n- 使用測試身分登入：收到 230 登入成功。\n- 列出指定目錄：看見 readme.txt、report.txt。\n- 下載 readme.txt：傳輸完成，取得預先準備的測試內容。\n- 下載 report.txt：收到 550。\n- 上傳或刪除：本次未測試。",
-            "列出名稱，就是這裡的列舉結果。FTP 的 LIST 用於取得清單、RETR 用於下載、STOR 用於上傳；用戶端畫面上的指令名稱可能不同。",
-            "紀錄可以寫成：這個測試身分成功登入並列出兩個檔名；readme.txt 下載完成，report.txt 的下載請求收到 550。上傳與刪除權限留待另行驗證。",
-            "550 表示要求的檔案操作未完成，可能涉及檔案不存在或存取條件；配合完整回應、指定路徑與伺服器日誌定位。425 則提示資料連線無法開啟。歡迎訊息中的產品或版本文字也先當線索，再與管理端資料核對。\n[命令與回覆碼](https://www.rfc-editor.org/rfc/rfc959)"
+          "text": "七、實際案例：為什麼看得到檔案，卻下載不了？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在把前面知識整合起來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司有以下 FTP 伺服器："
+        },
+        {
+          "kind": "code",
+          "text": "FTP Server\n192.168.1.10\n\n目錄：\n/\n├── readme.txt\n└── report.txt",
+          "id": "ftp-ascii-26"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你使用已獲得授權的測試帳號："
+        },
+        {
+          "kind": "code",
+          "text": "Username: student\nPassword: ********"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是模擬的操作紀錄，不是真實查詢結果。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-21",
+          "text": "步驟一：建立連線"
+        },
+        {
+          "kind": "code",
+          "text": "Server:\n220 FTP Service Ready"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前可以確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器已回覆準備接受 FTP 使用者。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-22",
+          "text": "步驟二：登入"
+        },
+        {
+          "kind": "code",
+          "text": "Client:\nUSER student\n\nServer:\n331 Password required\n\nClient:\nPASS ********\n\nServer:\n230 Login successful"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前可以確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用 student 身分登入成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但還沒有任何讀取權限的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-23",
+          "text": "步驟三：列舉檔案"
+        },
+        {
+          "kind": "code",
+          "text": "Client:\nLIST\n\nServer:\n150 Opening data connection\n\nData:\nreadme.txt\nreport.txt\n\nServer:\n226 Transfer complete"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前可以確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用這個帳號成功取得包含兩個檔名的目錄清單。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-24",
+          "text": "步驟四：下載第一個檔案"
+        },
+        {
+          "kind": "code",
+          "text": "Client:\nRETR readme.txt\n\nServer:\n150 Opening data connection\n\nData:\nThis is a sample file.\n\nServer:\n226 Transfer complete"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在可以確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "readme.txt 下載請求成功，伺服器回報傳輸完成。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-25",
+          "text": "步驟五：下載第二個檔案"
+        },
+        {
+          "kind": "code",
+          "text": "Client:\nRETR report.txt\n\nServer:\n550 File unavailable"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題來了。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "剛剛明明看到了："
+        },
+        {
+          "kind": "code",
+          "text": "report.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼現在無法下載？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能有幾個解釋。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，帳號具有列舉權限，但沒有讀取該檔案的權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，檔案名稱可以列出，但檔案已經被移動或刪除。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，FTP 伺服器所使用的檔案系統存在其他存取限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四，指定檔案路徑與實際可讀取的路徑不一致。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以真正專業的調查人員，不會只記錄："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「下載失敗。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而會進一步記錄完整命令、路徑、身分、回應，以及相應的伺服器日誌。"
+        },
+        {
+          "kind": "heading",
+          "id": "lab",
+          "text": "八、自己建立一個 FTP 實驗室"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你使用 Ubuntu，可以透過 Python 建立一台只允許本機連線的 FTP 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個實驗的目的不是攻擊，而是親自觀察 FTP 的命令與回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們使用開源的 pyftpdlib。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它提供 Python FTP Server 功能，而且支援命令列操作。[pyftpdlib.readthedocs.io](https://pyftpdlib.readthedocs.io/en/latest/cli.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-26",
+          "text": "步驟一：建立測試檔案"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Ubuntu Terminal 執行："
+        },
+        {
+          "kind": "code",
+          "text": "mkdir -p ~/ftp-lab\n\necho \"This is my first FTP experiment.\" \\\n  > ~/ftp-lab/readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在建立了一個目錄："
+        },
+        {
+          "kind": "code",
+          "text": "~/ftp-lab/\n└── readme.txt",
+          "id": "ftp-ascii-35"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-27",
+          "text": "步驟二：安裝 FTP Server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "建立 Python 虛擬環境："
+        },
+        {
+          "kind": "code",
+          "text": "python3 -m venv ~/ftp-venv"
+        },
+        {
+          "kind": "paragraph",
+          "text": "安裝套件："
+        },
+        {
+          "kind": "code",
+          "text": "~/ftp-venv/bin/pip install pyftpdlib"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果系統沒有安裝 Python venv，Ubuntu 可以先安裝適合目前 Python 版本的 python3-venv 套件。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-28",
+          "text": "步驟三：啟動 FTP Server"
+        },
+        {
+          "kind": "code",
+          "text": "~/ftp-venv/bin/python -m pyftpdlib \\\n  -i 127.0.0.1 \\\n  -p 2121 \\\n  -d ~/ftp-lab \\\n  -u student \\\n  -P lab-only-123"
+        },
+        {
+          "kind": "paragraph",
+          "text": "參數說明："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "參數",
+            "意義"
           ],
-          "blocks": [
-            {
-              "kind": "cards",
-              "caption": "網頁補充：同一身分，分開記每種操作",
-              "description": "沿用上方合成案例；尚未測試的操作保留待確認。",
-              "items": [
-                {
-                  "title": "列目錄",
-                  "body": "看見 readme.txt 與 report.txt。"
-                },
-                {
-                  "title": "下載 readme.txt",
-                  "body": "完成傳輸並核對測試內容。"
-                },
-                {
-                  "title": "下載 report.txt",
-                  "body": "收到550，原因由路徑、回應與日誌定位。"
-                },
-                {
-                  "title": "上傳／刪除",
-                  "body": "本例未測試，需在另行約定的範圍驗證。"
-                }
-              ]
-            }
+          "rows": [
+            [
+              "-i 127.0.0.1",
+              "只接受本機連線"
+            ],
+            [
+              "-p 2121",
+              "使用 TCP 2121"
+            ],
+            [
+              "-d ~/ftp-lab",
+              "指定共享目錄"
+            ],
+            [
+              "-u student",
+              "建立測試帳號"
+            ],
+            [
+              "-P lab-only-123",
+              "設定一次性測試密碼"
+            ]
           ]
         },
         {
-          "id": "defense",
-          "heading": "防護與證據怎麼做？",
-          "paragraphs": [
-            "防護先從用途出發：只開放需要的身分與目錄，將讀取和寫入權限分開，限制不必要的匿名存取，並觀察登入失敗、檔案操作與異常傳輸。",
-            "傳統 FTP 的帳密與資料可能以明文傳輸。需要保護傳輸時，可採：\n- FTPS：FTP 加上 TLS；除了控制連線，也要確認資料連線的保護設定。\n- SFTP：透過 SSH 提供檔案傳輸，是另一種協定。",
-            "使用加密連線後，檔案權限仍依伺服器政策判定。\n[FTP over TLS](https://www.rfc-editor.org/rfc/rfc4217)｜[OpenSSH SFTP](https://man.openbsd.org/sftp.1)",
-            "每次記下時間、目標、使用身分、連線模式、指定路徑、操作與完整回應。練習使用授權環境及合成檔案；密碼另行妥善保管，公開紀錄只留去識別的證據。"
-          ],
-          "blocks": []
+          "kind": "paragraph",
+          "text": "這裡使用 2121，是為了避免需要以管理員權限監聽 TCP 21。"
         },
         {
-          "id": "check",
-          "heading": "小檢核",
-          "paragraphs": [
-            "你成功登入 FTP，也列出了 report.txt，但下載時收到 550。請用兩三句話說明：目前確認了什麼？要判斷下載失敗原因與上傳權限，還需要哪些證據？",
-            "這是待回答的教材檢核；網站不會自動送出答案或更新理解狀態。下一個核心是 M04-04 SMB 列舉。"
+          "kind": "paragraph",
+          "text": "而 127.0.0.1 是 Loopback Address（迴路位址），代表目前這台電腦本身。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "此實驗帳號預設只有讀取權限，沒有啟用 --write。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "提醒：這個密碼只適用於本機短暫實驗。不要用真實密碼，也不要把這套明文 FTP 設定直接公開到網際網路。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-29",
+          "text": "步驟四：使用 curl 列舉 FTP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "開啟另一個 Terminal。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行："
+        },
+        {
+          "kind": "code",
+          "text": "curl -v -u student \\\n  ftp://127.0.0.1:2121/"
+        },
+        {
+          "kind": "paragraph",
+          "text": "系統會要求輸入密碼："
+        },
+        {
+          "kind": "code",
+          "text": "lab-only-123"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "curl：網路資料傳輸工具。",
+            "-v：顯示較詳細的通訊過程。",
+            "-u student：使用 student 身分登入。",
+            "ftp://：指定 FTP 協定。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "網址最後的 / 表示要求列出該目錄內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你應該能夠看到："
+        },
+        {
+          "kind": "code",
+          "text": "readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際輸出格式可能因伺服器而不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "curl 在 FTP URL 結尾為斜線時，會將它當作目錄查詢。[Everything Curl](https://everything.curl.dev/ftp/dirlist.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-30",
+          "text": "步驟五：嘗試下載檔案"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行："
+        },
+        {
+          "kind": "code",
+          "text": "curl -v -u student \\\n  ftp://127.0.0.1:2121/readme.txt \\\n  -o /tmp/ftp-readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再檢查："
+        },
+        {
+          "kind": "code",
+          "text": "cat /tmp/ftp-readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "預期看到："
+        },
+        {
+          "kind": "code",
+          "text": "This is my first FTP experiment."
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表你已經完成一次實際的 FTP 檔案下載。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-31",
+          "text": "步驟六：測試寫入權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先建立一個測試檔案："
+        },
+        {
+          "kind": "code",
+          "text": "echo \"Upload test\" > /tmp/ftp-upload.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "嘗試上傳："
+        },
+        {
+          "kind": "code",
+          "text": "curl -v -u student \\\n  -T /tmp/ftp-upload.txt \\\n  ftp://127.0.0.1:2121/ftp-upload.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為剛才建立的是唯讀 FTP 伺服器，預期這次寫入請求會遭到拒絕。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以從詳細輸出觀察 FTP 回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個實驗的重要發現是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "相同帳號可以成功登入、列舉目錄、下載檔案，卻沒有上傳權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "完成後，回到執行 FTP Server 的 Terminal，按 Ctrl+C 結束服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實驗期間不應把包含密碼的完整通訊日誌公開分享。"
+        },
+        {
+          "kind": "heading",
+          "id": "anonymous",
+          "text": "九、匿名 FTP（Anonymous FTP）為什麼可能有安全風險？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 有一種特殊登入方式，稱為："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Anonymous FTP（匿名 FTP）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它允許使用者以公開身分存取管理者指定的檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Username: anonymous"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某些公開 FTP 服務的目的，本來就是提供不需要個人帳號的檔案下載。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以："
+        },
+        {
+          "kind": "paragraph",
+          "text": "允許匿名登入，本身不一定是安全漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正需要檢查的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "匿名使用者可以做哪些事情？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Anonymous FTP\n│\n├── 可以查看公開目錄        → 可能是正常設計\n│\n├── 可以下載公開文件        → 可能是正常設計\n│\n├── 可以下載內部機密檔案    → 可能是資訊洩漏\n│\n└── 可以任意上傳或修改檔案  → 可能產生重大風險",
+          "id": "ftp-ascii-48"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中最後一種情況尤其值得關注。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為如果匿名使用者能任意上傳檔案，伺服器就可能被拿來存放未經授權的內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是否能進一步造成程式執行等危害，還取決於其他系統設定，不能只憑上傳成功就推論。"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "十、FTP、FTPS、SFTP 有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最後要理解 FTP 的安全性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳統 FTP 的重要問題是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "帳號密碼與檔案資料可能以明文方式傳輸。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表如果攻擊者能夠取得相關網路封包，就可能讀到未加密的資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，現代系統若需要透過不受信任的網路傳送檔案，通常應使用加密傳輸機制。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "協定",
+            "核心技術",
+            "常見通訊埠",
+            "是否具有加密保護"
           ],
-          "blocks": []
+          "rows": [
+            [
+              "FTP",
+              "FTP",
+              "TCP 21",
+              "傳統 FTP 沒有"
+            ],
+            [
+              "FTPS",
+              "FTP + TLS",
+              "TCP 21 或 990",
+              "可以保護控制與資料連線"
+            ],
+            [
+              "SFTP",
+              "SSH File Transfer Protocol",
+              "TCP 22",
+              "透過 SSH 保護傳輸"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "特別注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTPS 與 SFTP 並不是同一種協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTPS 是在 FTP 上加入 TLS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SFTP 則是透過 SSH 提供檔案傳輸功能，使用不同的協定架構。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且 FTPS 不能只因為控制連線已使用 TLS，就認定資料連線也受到保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 FTPS 中，資料連線的保護需要另外確認，例如 PROT P 設定。[RFC Editor](https://www.rfc-editor.org/info/rfc4217/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，加密只能解決部分傳輸安全問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "加密不會自動修正錯誤的檔案權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "FTP + TLS 加密成功\n         ↓\n匿名使用者仍有寫入權限\n         ↓\n權限設定問題依然存在",
+          "id": "ftp-ascii-49"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，資安檢查必須同時關注："
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳輸保護、身分驗證與存取權限。"
+        },
+        {
+          "kind": "heading",
+          "id": "evidence",
+          "text": "十一、整合本章：資安工程師應該如何判斷？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把整個 FTP 列舉過程整理成一條證據鏈。"
+        },
+        {
+          "kind": "code",
+          "text": "FTP Enumeration\n│\n├── 1. Service Discovery\n│      └── 是否存在 FTP 服務？\n│\n├── 2. Authentication\n│      └── 哪個身分登入成功？\n│\n├── 3. Resource Enumeration\n│      └── 可以看見哪些檔案？\n│\n├── 4. Read Authorization\n│      └── 可以下載哪些檔案？\n│\n├── 5. Write Authorization\n│      └── 可以上傳或修改哪些檔案？\n│\n└── 6. Security Assessment\n       ├── 是否符合預期存取政策？\n       ├── 是否存在資訊暴露？\n       ├── 是否存在過度授權？\n       └── 傳輸是否受到適當保護？",
+          "id": "ftp-ascii-50"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡還有一個很重要的資安觀念："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication（身分驗證）與 Authorization（授權）是不同的事情。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication 回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你是誰？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authorization 回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你可以做什麼？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Authentication\n      │\n      ▼\n確認你是 student\n      │\n      ▼\nAuthorization\n      │\n      ├── 查看目錄：允許\n      │\n      ├── 下載 readme：允許\n      │\n      ├── 下載 report：拒絕\n      │\n      └── 上傳檔案：拒絕",
+          "id": "ftp-ascii-51"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這正是本章值得延伸理解的核心。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你將來要研究 Linux 檔案權限、Active Directory、API Authorization 或 Zero Trust，也會遇到相同的安全原理。"
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "十二、理解測驗（先自行作答）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下四題用來確認你是否真正理解本章。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-32",
+          "text": "Q1｜FTP 基本概念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 為什麼需要分別使用控制連線與資料連線？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 因為控制連線負責加密，資料連線負責解密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 因為控制連線傳送命令與回應，資料連線負責傳送目錄清單及檔案內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 因為控制連線只能使用 UDP，資料連線只能使用 TCP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. 因為所有 FTP 伺服器都必須使用 TCP 20 和 TCP 21。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-33",
+          "text": "Q2｜Active 與 Passive Mode"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某位員工可以登入 FTP Server，但執行 LIST 時，發生 425 Can't open data connection。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下列哪一項最適合作為優先檢查方向？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 檢查 FTP 的資料連線、連線模式與防火牆設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 直接認定使用者密碼錯誤。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 直接認定 FTP 伺服器遭到入侵。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. 直接認定使用者沒有刪除檔案的權限。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-34",
+          "text": "Q3｜權限與安全判斷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用者成功以匿名身分登入 FTP，並且能夠下載一份公開的軟體安裝說明書。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下列哪個判斷最正確？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 所有匿名 FTP 都是不安全的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 匿名登入成功代表可以下載伺服器上的所有檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 是否構成安全問題，需要比較實際開放的權限與預期的服務政策。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. 匿名使用者一定具有檔案上傳權限。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ftp-sub-35",
+          "text": "Q4｜整合情境題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這題是本章最重要的理解檢核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某公司 FTP 伺服器的紀錄如下："
+        },
+        {
+          "kind": "code",
+          "text": "220 FTP Server Ready\n\nUSER student\n331 Password required\n\nPASS ********\n230 Login successful\n\nLIST\n150 Opening data connection\n\nreadme.txt\nreport.txt\n\n226 Transfer complete\n\nRETR report.txt\n550 File unavailable"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請回答三個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 目前有哪些事情已經可以透過證據確認？\n2. 為什麼無法只根據 550，就判定 student 沒有下載權限？還需要取得哪些證據？\n3. 這段紀錄能不能證明 student 具有上傳權限？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請先回答 Q1～Q3 的選項，以及 Q4 的三個問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我會依照 CEH 考試的判斷邏輯逐題批改，並進一步說明這些 FTP 操作在 TCP/IP、Linux 檔案權限與網路封包中，實際上是如何運作的。"
         }
       ]
     },
     "en": {
       "summary": "FTP reveals service and file clues. Check login, directory listings, downloads, and uploads separately.",
-      "sections": [
+      "sections": [],
+      "sourceBody": [
         {
+          "kind": "paragraph",
+          "text": "English companion to the supplied twelve-section Chinese lesson. The Chinese edition preserves the complete original wording; this edition explains the same practice and evidence boundaries in English. Previous teaching remains below."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Connecting, logging in, seeing a filename, downloading it and modifying it are five separate observations. FTP enumeration asks what a service reveals and what the current identity may do. These distinctions also apply to SMB, SSH, APIs, databases and cloud storage."
+        },
+        {
+          "kind": "heading",
           "id": "purpose",
-          "heading": "What does FTP do?",
-          "paragraphs": [
-            "FTP (File Transfer Protocol) lets a computer upload files to a server and download files from it.",
-            "Think of a document pickup desk. First check that the desk is open, then identify yourself, look at the catalog, and ask for a particular document. Each step has its own conditions.",
-            "FTP enumeration means collecting service replies, login options, and the directory and file information visible to a particular identity. An FTP client translates your actions into protocol commands."
-          ],
-          "blocks": []
+          "text": "1. What FTP is and why it exists"
         },
         {
+          "kind": "paragraph",
+          "text": "File Transfer Protocol defines rules for transferring files between computers. An FTP client is software implementing those rules; FTP is the protocol. A company file server might contain public manuals, finance spreadsheets and engineering files. A remote client can list directories, download, upload or manage files only where the service permits the requested operation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP uses a client–server architecture. TCP provides ordered, reliable delivery and retransmission; an IP address identifies a network destination, while a port selects a service. Traditional FTP control usually uses TCP 21, but a server can listen on another port."
+        },
+        {
+          "kind": "heading",
           "id": "connections",
-          "heading": "Why can login work while a directory listing stalls?",
-          "paragraphs": [
-            "FTP commonly uses two kinds of connections:\n• Control connection: carries login information, commands, and replies. The server commonly listens on TCP port 21.\n• Data connection: carries directory listings or file contents over a separate connection.",
-            "There are two common ways to establish the data connection:\n• Active mode: the client supplies a listening endpoint, and the server initiates the data connection.\n• Passive mode: the server supplies a listening endpoint, and the client initiates the data connection.",
-            "If login succeeds but a listing stalls, check the data connection, firewall, and mode settings, then check permissions. TCP port 20 is the traditional server data port in active mode; it is not used for every FTP transfer. Passive mode uses a separately negotiated port. EPSV is the extended passive-mode command. [FTP specification](https://www.rfc-editor.org/rfc/rfc959) · [Extended modes](https://www.rfc-editor.org/rfc/rfc2428)"
+          "text": "2. Two separate connections"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The control connection carries commands and replies, including authentication. It is like the telephone used to request work from a filing desk."
+        },
+        {
+          "kind": "code",
+          "text": "Client                          Server\n  │ -------- USER student -------> │\n  │ <------- 331 Password -------- │\n  │ -------- PASS ******** ------> │\n  │ <------- 230 Logged in ------- │",
+          "id": "ftp-ascii-login"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A data connection carries directory listings or file bytes. RETR and the 150/226 replies remain on the control connection. Downloaded PDF bytes travel from Server to Client; uploads travel in the opposite direction."
+        },
+        {
+          "kind": "code",
+          "text": "Client                          Server\n  │ ------ RETR manual.pdf ------> │\n  │ <------ 150 Starting --------- │\n  │ <======= PDF data ============ │\n  │ <------ 226 Complete --------- │",
+          "id": "ftp-ascii-download"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Editorial correction: the source’s first RETR schematic points the PDF in the wrong direction, then explicitly corrects it. The published schematic follows that correction; the private source remains unchanged. A successful login does not guarantee a working data connection. A directory listing also normally needs the data connection. [RFC 959](https://www.rfc-editor.org/rfc/rfc959.html#section-2.3)"
+        },
+        {
+          "kind": "heading",
+          "id": "modes",
+          "text": "3. Active and passive modes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The difference is which endpoint initiates the data TCP connection, not who downloads. In both modes the client initiates the control connection to the server; the established channel carries commands and replies in both directions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Active: the client tells the server where it will accept the data connection, using PORT or EPRT. The server connects back. Traditional active FTP commonly uses server source port TCP 20, but TCP 20 is not required for every FTP data transfer."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passive: the client requests a listening data port using PASV or EPSV; the server supplies it and the client connects. Port 50001 in the diagram is an example, not a fixed or necessarily random port. EPSV supports IPv6 and avoids some address-handling problems. [RFC 2428](https://www.rfc-editor.org/rfc/rfc2428.html#section-3)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Client firewalls or NAT may block an active inbound connection. Passive often fits outbound-client policies more easily, but the server still needs reachable data ports. Downloads flow Server → Client in either mode; uploads reverse the byte direction. Login success is not data-connection success."
+        },
+        {
+          "kind": "heading",
+          "id": "enumeration",
+          "text": "4. What FTP enumeration establishes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Service discovery may identify TCP 21. Authorized enumeration then records replies, supported login methods, visible directories and names, and outcomes of particular operations. Seeing report.txt does not establish permission to read its contents."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Question",
+            "Operation",
+            "Evidence boundary"
           ],
-          "blocks": [
-            {
-              "kind": "cards",
-              "caption": "Website supplement: control and data connections",
-              "description": "These are connection roles, not permission levels.",
-              "items": [
-                {
-                  "title": "Control connection",
-                  "body": "Client → server, commonly TCP 21; exchanges commands and replies."
-                },
-                {
-                  "title": "Data connection",
-                  "body": "Carries listings or files; the server initiates active mode, the client initiates passive mode."
-                }
-              ]
-            }
+          "rows": [
+            [
+              "Does the service accept a connection?",
+              "Connect",
+              "Not login"
+            ],
+            [
+              "Does this identity log in?",
+              "USER / PASS",
+              "Not read or write permission"
+            ],
+            [
+              "Which names are visible?",
+              "PWD / CWD / LIST",
+              "Not file contents"
+            ],
+            [
+              "Can this file be downloaded?",
+              "RETR",
+              "Specific file and request"
+            ],
+            [
+              "Can files be uploaded or modified?",
+              "STOR / DELE etc.",
+              "Separate authorization"
+            ]
           ]
         },
         {
-          "id": "anonymous",
-          "heading": "What does anonymous login tell you?",
-          "paragraphs": [
-            "Anonymous FTP commonly uses an identity such as anonymous to provide access to material the administrator has designated as public.",
-            "If the server accepts anonymous login, you have confirmed that this login was allowed. Check these actions separately:\n• Which directory can this identity list?\n• Which file can it download?\n• Can it upload, overwrite, or delete files?",
-            "Public downloads may be an intended feature. Compare access with the intended policy: are internal files exposed, or is writing allowed by mistake? [FTP security considerations](https://www.rfc-editor.org/rfc/rfc2577)"
-          ],
-          "blocks": []
+          "kind": "paragraph",
+          "text": "LIST success does not imply RETR or STOR success. Collect evidence for each operation separately. [IANA FTP command registry](https://www.iana.org/assignments/ftp-commands-extensions)"
         },
         {
+          "kind": "heading",
+          "id": "commands",
+          "text": "5. FTP commands"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Command",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "USER",
+              "Supply username"
+            ],
+            [
+              "PASS",
+              "Supply password"
+            ],
+            [
+              "PWD",
+              "Show working directory"
+            ],
+            [
+              "CWD",
+              "Change directory"
+            ],
+            [
+              "LIST",
+              "List directory contents"
+            ],
+            [
+              "RETR",
+              "Retrieve a file"
+            ],
+            [
+              "STOR",
+              "Store a file"
+            ],
+            [
+              "DELE",
+              "Delete a file"
+            ],
+            [
+              "PASV",
+              "Request passive connection information"
+            ],
+            [
+              "EPSV",
+              "Request extended passive data port"
+            ],
+            [
+              "QUIT",
+              "End session"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A client command such as get readme.txt may be translated to the protocol command RETR readme.txt. Client interface commands and wire-protocol commands are not necessarily identical."
+        },
+        {
+          "kind": "heading",
+          "id": "replies",
+          "text": "6. Reading reply codes"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "First digit",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "1xx",
+              "Positive preliminary reply; work is not complete"
+            ],
+            [
+              "2xx",
+              "Positive completion"
+            ],
+            [
+              "3xx",
+              "More information or action is required"
+            ],
+            [
+              "4xx",
+              "Transient negative completion"
+            ],
+            [
+              "5xx",
+              "Permanent negative completion for this request; not necessarily unfixable forever"
+            ]
+          ]
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Reply",
+            "Interpretation"
+          ],
+          "rows": [
+            [
+              "220",
+              "Service ready; no proof of login"
+            ],
+            [
+              "331",
+              "Password needed; not necessarily proof the account exists"
+            ],
+            [
+              "230",
+              "Current identity logged in; no general file permissions established"
+            ],
+            [
+              "150",
+              "Preparing a data transfer; not completion"
+            ],
+            [
+              "226",
+              "Interpret with the matched operation and data; compare size/hash when checking file integrity"
+            ],
+            [
+              "425",
+              "Cannot open data connection: inspect mode, firewall, NAT and data-port reachability"
+            ],
+            [
+              "550",
+              "File unavailable: may be missing, wrong path, permissions or other access conditions"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A 550 reply alone cannot establish that the account lacks download permission. Record the full command, identity, path, replies and relevant server logs. [RFC 959 replies](https://www.rfc-editor.org/rfc/rfc959.html#section-4.2.1)"
+        },
+        {
+          "kind": "heading",
           "id": "example",
-          "heading": "Connect the ideas with a made-up example",
-          "paragraphs": [
-            "This is a synthetic authorized-lab scenario, not a query we ran. The target, test identity, actions, and files have all been agreed on in the scenario:\n• Connect to FTP: receive a 220 greeting.\n• Sign in with the test identity: receive 230, indicating successful login.\n• List the specified directory: see readme.txt and report.txt.\n• Download readme.txt: transfer completes and the expected synthetic test content is received.\n• Download report.txt: receive 550.\n• Upload or delete: not tested.",
-            "The names in the listing are the enumeration result here. FTP uses LIST for a listing, RETR for retrieval, and STOR for upload. The commands shown by your client may have different names.",
-            "A useful record would say: “The test identity logged in and listed two filenames. The readme.txt download completed; the request to download report.txt received 550. Upload and delete permissions await separate checks.”",
-            "550 means the requested file action was not taken; the file may be absent or access conditions may prevent the action. Use the full reply, exact path, and server logs to determine why. 425 indicates that the data connection could not be opened. Treat product and version text in a greeting as a clue and compare it with administrative records. [Commands and reply codes](https://www.rfc-editor.org/rfc/rfc959)"
+          "text": "7. Visible names but a failed download"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a simulated, authorized student account session, not an observed live query. The service says ready; USER/PASS receives 230; LIST transfers two names; RETR readme.txt transfers sample contents; RETR report.txt receives 550."
+        },
+        {
+          "kind": "code",
+          "text": "220 FTP Service Ready\nUSER student\n331 Password required\nPASS ********\n230 Login successful\n\nLIST\n150 Opening data connection\nreadme.txt\nreport.txt\n226 Transfer complete\n\nRETR readme.txt\n150 Opening data connection\nThis is a sample file.\n226 Transfer complete\n\nRETR report.txt\n550 File unavailable"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The evidence supports login, a listing with two names and a completed readme transfer in this sequence. The report failure could reflect permissions, a moved/deleted file, filesystem restrictions or a path mismatch. It provides no evidence of upload permission."
+        },
+        {
+          "kind": "heading",
+          "id": "lab",
+          "text": "8. A loopback-only FTP lab"
+        },
+        {
+          "kind": "paragraph",
+          "text": "On Ubuntu, pyftpdlib can demonstrate commands and replies locally. Use a disposable sample password, never a real password. Do not expose this plaintext setup to the Internet. The following commands are instructions for the learner, not actions performed during publication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 1 — create a sample file:"
+        },
+        {
+          "kind": "code",
+          "text": "mkdir -p ~/ftp-lab\n\necho \"This is my first FTP experiment.\" \\\n  > ~/ftp-lab/readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 2 — create a Python virtual environment and install the server package. If venv is unavailable, install the python3-venv package appropriate to the current Ubuntu Python version."
+        },
+        {
+          "kind": "code",
+          "text": "python3 -m venv ~/ftp-venv\n~/ftp-venv/bin/pip install pyftpdlib"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 3 — start a read-only named-user server bound to this computer. TCP 2121 avoids requiring administrator privileges for TCP 21. Loopback 127.0.0.1 refers to this computer itself."
+        },
+        {
+          "kind": "code",
+          "text": "~/ftp-venv/bin/python -m pyftpdlib \\\n  -i 127.0.0.1 \\\n  -p 2121 \\\n  -d ~/ftp-lab \\\n  -u student \\\n  -P lab-only-123"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Option",
+            "Meaning"
           ],
-          "blocks": [
-            {
-              "kind": "cards",
-              "caption": "Website supplement: separate results for the same identity",
-              "description": "Uses the synthetic example above. Untested actions remain open.",
-              "items": [
-                {
-                  "title": "List directory",
-                  "body": "Names readme.txt and report.txt are visible."
-                },
-                {
-                  "title": "Download readme.txt",
-                  "body": "Transfer completes and test content is checked."
-                },
-                {
-                  "title": "Download report.txt",
-                  "body": "550 received; use the path, reply, and logs to establish the cause."
-                },
-                {
-                  "title": "Upload / delete",
-                  "body": "Not tested here; verify within separately agreed boundaries."
-                }
-              ]
-            }
+          "rows": [
+            [
+              "-i 127.0.0.1",
+              "Bind to local loopback"
+            ],
+            [
+              "-p 2121",
+              "Listen on TCP 2121"
+            ],
+            [
+              "-d ~/ftp-lab",
+              "Shared directory"
+            ],
+            [
+              "-u student",
+              "Sample account"
+            ],
+            [
+              "-P lab-only-123",
+              "Disposable lab password"
+            ]
           ]
         },
         {
-          "id": "defense",
-          "heading": "How do you protect the service and record evidence?",
-          "paragraphs": [
-            "Start with the intended use. Allow only the identities and directories needed, separate read and write permissions, limit unnecessary anonymous access, and monitor login failures, file actions, and unusual transfers.",
-            "Traditional FTP can send credentials and data in cleartext. Options for protecting transfers include:\n• FTPS: FTP with TLS. Check protection for both the control connection and the data connection.\n• SFTP: file transfer over SSH, using a different protocol.",
-            "Encrypted transport still leaves file permissions to the server’s access policy. [FTP over TLS](https://www.rfc-editor.org/rfc/rfc4217) · [OpenSSH SFTP](https://man.openbsd.org/sftp.1)",
-            "Record the time, target, identity, connection mode, exact path, action, and full reply. Practice in an authorized environment with synthetic files. Keep passwords in appropriate protected storage and de-identify any evidence you publish."
-          ],
-          "blocks": []
+          "kind": "paragraph",
+          "text": "No --write option is present. The CLI defaults to read-only permissions, including for this named account. [pyftpdlib CLI](https://pyftpdlib.readthedocs.io/en/latest/cli.html)"
         },
         {
-          "id": "check",
-          "heading": "One small check",
-          "paragraphs": [
-            "You successfully log in to FTP and see report.txt in a listing, but its download returns 550. In two or three sentences, what have you confirmed? What evidence would help explain the failed download and determine upload permissions?",
-            "This teaching check awaits your answer. The page does not submit answers or update understanding. The next core concept is M04-04 SMB enumeration."
+          "kind": "paragraph",
+          "text": "Step 4 — open another terminal and list the directory. curl prompts for the sample password lab-only-123. -v shows verbose communication; -u selects the user; ftp:// selects the protocol. The returned listing format depends on the server, and should include readme.txt."
+        },
+        {
+          "kind": "code",
+          "text": "curl -v -u student \\\n  ftp://127.0.0.1:2121/"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 5 — retrieve the file, then inspect its contents:"
+        },
+        {
+          "kind": "code",
+          "text": "curl -v -u student \\\n  ftp://127.0.0.1:2121/readme.txt \\\n  -o /tmp/ftp-readme.txt\n\ncat /tmp/ftp-readme.txt"
+        },
+        {
+          "kind": "code",
+          "text": "This is my first FTP experiment."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 6 — test writing only in this local lab. The read-only server should refuse this upload; inspect the actual reply rather than inventing a result."
+        },
+        {
+          "kind": "code",
+          "text": "echo \"Upload test\" > /tmp/ftp-upload.txt\n\ncurl -v -u student \\\n  -T /tmp/ftp-upload.txt \\\n  ftp://127.0.0.1:2121/ftp-upload.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The same account can log in, list and download yet lack upload permission. When finished, return to the server terminal and press Ctrl+C. Do not publish verbose logs containing passwords."
+        },
+        {
+          "kind": "heading",
+          "id": "anonymous",
+          "text": "9. Anonymous FTP and policy"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Anonymous FTP lets a public identity access designated resources. Public listings or public manuals can be intentional service policy; anonymous login alone is not a vulnerability. Compare actual permissions with intended policy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Internal confidential downloads may expose information. Unrestricted anonymous uploads or modification can create serious risks, including storage of unauthorized material. Upload success alone does not prove code execution; that depends on other system settings."
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "10. FTP, FTPS and SFTP"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Protocol",
+            "Technology / common control port",
+            "Protection"
           ],
-          "blocks": []
+          "rows": [
+            [
+              "FTP",
+              "FTP / TCP 21",
+              "Traditional plaintext"
+            ],
+            [
+              "FTPS",
+              "FTP + TLS / TCP 21 or 990",
+              "Can protect control and data connections"
+            ],
+            [
+              "SFTP",
+              "SSH File Transfer Protocol / TCP 22",
+              "Transfer over SSH; a different protocol architecture"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Traditional FTP may expose credentials and bytes to an observer of the traffic. Prefer encrypted transfer across untrusted networks. FTPS and SFTP are different protocols. Control TLS alone does not establish data-channel protection: check the negotiated protection, such as PROT P, its successful reply and the protected data connection. [RFC 4217](https://www.rfc-editor.org/rfc/rfc4217.html#section-9)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Encryption does not repair incorrect file permissions. Review transport protection, authentication and authorization separately; anonymous write access can remain a policy problem even when TLS works."
+        },
+        {
+          "kind": "heading",
+          "id": "evidence",
+          "text": "11. Build an evidence-based assessment"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record service discovery, the authenticated identity, visible resources, per-file read outcomes, write outcomes and the final policy assessment. Ask whether access matches policy, whether information is exposed, whether privileges are excessive and whether transport is protected."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication asks “Who are you?” Authorization asks “What may you do?” An authenticated student may list a directory and read readme while being denied report and uploads. These distinctions also apply to Linux permissions, Active Directory, API authorization and Zero Trust."
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "12. Understanding check — answer first"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q1. Why does FTP use separate control and data connections?\nA. Control encrypts and data decrypts.\nB. Control carries commands/replies; data carries directory listings and file contents.\nC. Control only uses UDP and data only TCP.\nD. Every FTP server must use TCP 20 and 21."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q2. A user logs in but LIST returns 425 Can't open data connection. What should be checked first?\nA. Data connection, connection mode and firewall configuration.\nB. Conclude the password is wrong.\nC. Conclude the server was compromised.\nD. Conclude the user cannot delete files."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q3. An anonymous user downloads a public software installation manual. Which judgment is sound?\nA. All anonymous FTP is unsafe.\nB. Anonymous login permits downloading every file.\nC. Compare actual permissions with the intended service policy.\nD. Anonymous users always have upload permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q4. Integrated scenario:"
+        },
+        {
+          "kind": "code",
+          "text": "220 FTP Server Ready\n\nUSER student\n331 Password required\n\nPASS ********\n230 Login successful\n\nLIST\n150 Opening data connection\n\nreadme.txt\nreport.txt\n\n226 Transfer complete\n\nRETR report.txt\n550 File unavailable"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. What can the evidence confirm?\n2. Why can 550 alone not establish that student lacks download permission? What further evidence is needed?\n3. Does this record prove upload permission? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer Q1–Q3 and all three parts of Q4 before discussing the reasoning. The original lesson invites a conversational review connecting the answers to TCP/IP, Linux file permissions and packet-level behavior."
         }
       ]
     }
-  }
+  },
+  "contentVersion": "1.1.0"
 }
