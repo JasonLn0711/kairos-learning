@@ -83,7 +83,7 @@ test('semantic content versions preserve legacy revisions and sort numerically',
 
 test('DNS source edition keeps eleven sections, five questions and searchable diagram evidence',()=>{
  const dns=allConceptTeachings.find(t=>t.id==='M04-02')!;
- assert.equal(dns.contentVersion,'1.1.0');assert.equal(dns.revision,3);
+ assert.equal(dns.contentVersion,'1.2.0');assert.equal(dns.revision,4);
  const blocks=dns.text.zh.sourceBody!;
  assert.equal(blocks.filter(b=>b.kind==='heading').length,11);
  assert.equal(blocks.filter(b=>'text' in b&&/^Q[1-5]\./.test(b.text)).length,5);
@@ -91,6 +91,7 @@ test('DNS source edition keeps eleven sections, five questions and searchable di
  assert.equal(dns.checks?.length,4);
  const catalog=createConceptCatalog(concepts,[dns],'2026-10-25');
  assert.ok(catalog.searchEntries.every(e=>e.text.includes('Recursive Resolver')));
+ assert.ok(catalog.searchEntries.every(e=>e.text.includes('udp: 65494') && e.text.includes('11774')));
  const bad=structuredClone(dns);
  bad.text.zh.sourceBody!.push({kind:'dnsDiagram',id:'unknown'} as never);
  assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-25'),/invalid DNS diagram/);

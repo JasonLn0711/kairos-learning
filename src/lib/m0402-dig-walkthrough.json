@@ -1,0 +1,324 @@
+{
+  "raw": "❯ dig cs-kairos.com A\n\n; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> cs-kairos.com A\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11774\n;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 65494\n;; QUESTION SECTION:\n;cs-kairos.com.                 IN      A\n\n;; ANSWER SECTION:\ncs-kairos.com.          300     IN      A       104.21.61.207\ncs-kairos.com.          300     IN      A       172.67.214.140\n\n;; Query time: 150 msec\n;; SERVER: 127.0.0.53#53(127.0.0.53) (UDP)\n;; WHEN: Sun Oct 25 17:37:14 CST 2026\n;; MSG SIZE  rcvd: 74",
+  "rawSha256": "1f6c175170fc2a50660a36e672ef2f3d395c6d2a8a8dedb57407cce731885746",
+  "refs": {
+    "dig": {
+      "label": "ISC BIND 9.18.39 · dig",
+      "url": "https://bind9.readthedocs.io/en/v9.18.39/manpages.html#dig-dns-lookup-utility"
+    },
+    "header": {
+      "label": "RFC 1035 §4.1 · DNS message format",
+      "url": "https://www.rfc-editor.org/rfc/rfc1035.html#section-4.1"
+    },
+    "edns": {
+      "label": "RFC 6891 §6 · OPT / UDP payload",
+      "url": "https://datatracker.ietf.org/doc/html/rfc6891#section-6"
+    },
+    "ad": {
+      "label": "RFC 4035 §3.2.3 · AD bit",
+      "url": "https://www.rfc-editor.org/rfc/rfc4035.html#section-3.2.3"
+    },
+    "stub": {
+      "label": "systemd-resolved · local DNS stub",
+      "url": "https://www.freedesktop.org/software/systemd/man/systemd-resolved.service.html"
+    },
+    "status": {
+      "label": "resolvectl · status",
+      "url": "https://www.freedesktop.org/software/systemd/man/latest/resolvectl.html"
+    }
+  },
+  "zh": {
+    "title": "實例補充：逐行讀懂這份 dig 輸出",
+    "provenance": "使用者提供的觀察紀錄 · 原時間：Sun Oct 25 17:37:14 CST 2026。以下保留原始輸出；本頁未重新查詢此網域，現在的結果可能不同。",
+    "overview": "先看結論：本機 DNS 端點回傳 NOERROR 與兩筆 A 記錄。這確認當時取得兩個 IPv4 位址，尚未確認網站連線、TLS、HTTP 或登入權限。展開下列區塊，可對照每一行的意思。",
+    "rawLabel": "展開完整原始輸出（可選取複製）",
+    "followupTitle": "接著可以怎麼確認？（只讀練習）",
+    "followup": [
+      "resolvectl status：若系統已有此工具，可查看目前 DNS 與各網路介面的設定；這是現在的設定，不是原查詢上游路徑的歷史證明。",
+      "dig cs-kairos.com A：可重新取得一份有時間戳的觀察；比對完整回覆，不預期 IP、TTL 或耗時固定。這些是供讀者選擇執行的指令，本頁未代為執行。",
+      "想確認網站是否正常，接續第九節的連線、TLS／HTTPS、應用程式與存取控制分層檢查。無須為了理解這份輸出安裝套件、修改解析器或啟動安全測試。"
+    ],
+    "sections": [
+      {
+        "id": "command",
+        "code": "❯ dig cs-kairos.com A",
+        "refs": [
+          "dig"
+        ],
+        "title": "1. 指令：我正在問什麼？",
+        "paragraphs": [
+          "❯ 是 shell 提示符號，不屬於指令。要自己練習時，只輸入 dig cs-kairos.com A。這是終端機文字，不是 YAML 設定檔。",
+          "dig 是查詢工具；cs-kairos.com 是查詢名稱；A 指定 IPv4 位址記錄。未寫 @伺服器，dig 會依本機設定選擇查詢對象，實際對象看下方 SERVER。"
+        ]
+      },
+      {
+        "id": "client",
+        "code": "; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> cs-kairos.com A\n;; global options: +cmd\n;; Got answer:",
+        "refs": [
+          "dig"
+        ],
+        "title": "2. 開頭三行：工具版本與顯示選項",
+        "paragraphs": [
+          "DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu 是這次執行的用戶端版本與 Ubuntu 套件版本字串；無法由它得知遠端 DNS 伺服器使用哪套軟體。",
+          "+cmd 控制是否顯示開頭的版本與查詢選項註解，預設開啟；它不是「伺服器執行指令」功能。Got answer 表示 dig 收到回覆，仍須繼續閱讀狀態與答案。分號開頭是 dig 的輸出標記，不是要貼進終端機執行的命令。"
+        ]
+      },
+      {
+        "id": "header",
+        "code": ";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11774",
+        "refs": [
+          "header"
+        ],
+        "title": "3. HEADER：操作、狀態與交易識別",
+        "paragraphs": [
+          "opcode: QUERY 表示一般 DNS 查詢。status: NOERROR 表示這份回覆沒有回報 DNS 錯誤；仍要看答案，不能直接判定網站可連線或可登入。",
+          "id: 11774 是本次 DNS 交易的 16-bit 識別值，協助用戶端將回覆配對到查詢。它不是帳號、IP 或可單獨證明回覆可信的安全驗證。"
+        ]
+      },
+      {
+        "id": "flags",
+        "code": ";; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1",
+        "refs": [
+          "header",
+          "ad",
+          "edns"
+        ],
+        "title": "4. flags 與四個數字：這份回覆裝了什麼？",
+        "paragraphs": [
+          "qr：這是一份回覆。rd：查詢端要求遞迴解析，回覆保留此旗標。ra：回覆端表示可提供遞迴服務。rd 與 ra 無法證明這次實際查過 Root、TLD 或權威伺服器，也不能證明快取命中。",
+          "本行沒有 aa（權威答案）或 ad（Authenticated Data）旗標。這份回覆未宣告這兩種性質；缺少它們不等於網站不安全，也不能單憑此行判定網域未部署 DNSSEC。",
+          "QUERY: 1 是一個問題；ANSWER: 2 是兩筆答案記錄；AUTHORITY: 0 是本份訊息沒有 Authority 記錄，不是網域沒有權威伺服器。ADDITIONAL: 1 對應下方 OPT pseudo-RR，不是第三個網站 IP。"
+        ]
+      },
+      {
+        "id": "edns",
+        "code": ";; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 65494",
+        "refs": [
+          "edns"
+        ],
+        "title": "5. OPT：DNS 的擴充資訊",
+        "paragraphs": [
+          "OPT PSEUDOSECTION 顯示 EDNS 的控制資訊；OPT 是 pseudo-RR，不是一般網域資料記錄。version: 0 是 EDNS 擴充機制版本，與 IPv4／IPv6 或 DNSSEC 版本無關。",
+          "flags: 後方空白代表此處沒有列出 EDNS 旗標，例如沒有 do（DNSSEC OK）；這和上方的 qr、rd、ra 是不同欄位。 沒有 do 也不表示這個網域未簽署 DNSSEC。",
+          "udp: 65494 是此回覆 OPT 宣告的 UDP payload 容量，單位 bytes。回覆中的宣告屬於回覆端；這裡看到的是本機 DNS 端點的能力資訊，不能由它還原原查詢封包的宣告。它不是本次封包大小、MTU、連接埠，也不是建議網際網路一律採用的設定。"
+        ]
+      },
+      {
+        "id": "question",
+        "code": ";; QUESTION SECTION:\n;cs-kairos.com.                 IN      A",
+        "refs": [
+          "header"
+        ],
+        "title": "6. QUESTION：名稱、類別、類型",
+        "paragraphs": [
+          "QUESTION SECTION 重述本次問題：cs-kairos.com. 的 IN 類別 A 記錄是什麼？名稱最後的點表示完整名稱到 DNS 根。IN 是 Internet 類別，不是國家代碼；A 表示 IPv4 記錄類型，不是整個網域的全部資料。"
+        ]
+      },
+      {
+        "id": "answers",
+        "code": ";; ANSWER SECTION:\ncs-kairos.com.          300     IN      A       104.21.61.207\ncs-kairos.com.          300     IN      A       172.67.214.140",
+        "refs": [
+          "header"
+        ],
+        "title": "7. ANSWER：同一名稱的兩筆 IPv4 記錄",
+        "paragraphs": [
+          "兩行由左到右都是：名稱 cs-kairos.com.、TTL 300、類別 IN、類型 A，再接 IPv4 位址。第一筆是 104.21.61.207，第二筆是 172.67.214.140；兩筆同時出現在這份回覆中，不是先後步驟。",
+          "300 秒等於 5 分鐘，是回覆中的快取有效時間。它可能接近權威端設定的新鮮 TTL，也可能是解析器回覆的剩餘 TTL；只看一次輸出，無法分辨快取命中或未命中。它不是網站保證正常運作的時間。",
+          "兩個位址不能直接換算成兩台來源主機，也不能確認來源主機、供應商歸屬或網站授權。服務可能使用代理或其他架構；這份 dig 輸出只提供此時的 DNS 記錄觀察。"
+        ]
+      },
+      {
+        "id": "time",
+        "code": ";; Query time: 150 msec",
+        "refs": [
+          "dig"
+        ],
+        "title": "8. Query time：這次 DNS 查詢花多久？",
+        "paragraphs": [
+          "150 msec 是 dig 記錄的這次查詢回應耗時，約 0.15 秒。它可能包含本機解析器處理與等待上游的時間，但本輸出沒有把時間拆開；不能當作 ping 延遲、網站載入時間或固定效能保證。"
+        ]
+      },
+      {
+        "id": "server",
+        "code": ";; SERVER: 127.0.0.53#53(127.0.0.53) (UDP)",
+        "refs": [
+          "stub"
+        ],
+        "title": "9. SERVER：回答 dig 的是誰？",
+        "paragraphs": [
+          "127.0.0.53 屬於 loopback（本機回環）位址，代表這次 dig 問的是本機端點。Ubuntu 上常見由 systemd-resolved 在這個位址提供 stub resolver；這是依系統慣例的解讀，單靠此行還不能確定執行中的程式。",
+          "#53 是 DNS 服務連接埠；括號內重複顯示端點位址。(UDP) 表示這次 dig 與此端點使用 UDP；不能由它推定上游也使用 UDP，更不能看出上游是 ISP、公開解析器或哪一台權威伺服器。"
+        ]
+      },
+      {
+        "id": "when",
+        "code": ";; WHEN: Sun Oct 25 17:37:14 CST 2026",
+        "refs": [],
+        "title": "10. WHEN：保留查詢當時的時間",
+        "paragraphs": [
+          "原文記錄 Sun Oct 25 17:37:14 CST 2026，應連同其他輸出保存。CST 是顯示的時區縮寫，全球不只一種時區使用它。以使用者在台灣的情境，可按 UTC+8 理解；若要嚴格比對跨系統時間，仍應核對該主機的實際時區設定，不能將所有 CST 都當成台灣時間。"
+        ]
+      },
+      {
+        "id": "size",
+        "code": ";; MSG SIZE  rcvd: 74",
+        "refs": [
+          "dig",
+          "edns"
+        ],
+        "title": "11. MSG SIZE：74 bytes 與 65494 有何不同？",
+        "paragraphs": [
+          "MSG SIZE rcvd: 74 是 dig 收到的 DNS 訊息大小，單位 bytes；不包含完整 Ethernet、IP、UDP 標頭等傳輸開銷。",
+          "74 是本次實際 DNS 回覆大小，65494 是 OPT 中宣告的 UDP payload 容量，兩者用途不同。空白行只是方便閱讀的分段，不是額外 DNS 記錄。"
+        ]
+      }
+    ]
+  },
+  "en": {
+    "title": "Worked example: read this dig output line by line",
+    "provenance": "User-supplied observation · original timestamp: Sun Oct 25 17:37:14 CST 2026. The output is preserved below; this page did not perform a fresh lookup and current results may differ.",
+    "overview": "Start with the result: a local DNS endpoint returned NOERROR and two A records. This establishes that two IPv4 addresses were returned then; connectivity, TLS, HTTP and login access remain untested. Expand the sections to interpret each line.",
+    "rawLabel": "Expand the complete original output (selectable text)",
+    "followupTitle": "What can you check next? (read-only practice)",
+    "followup": [
+      "resolvectl status: if already available, inspect current DNS and per-link configuration. Current configuration is not historical proof of the original upstream path.",
+      "dig cs-kairos.com A: optionally collect a fresh timestamped response. Compare the full output; addresses, TTLs and timing can change. These are reader-run examples, not actions performed by this page.",
+      "To assess the website, continue to the lesson’s layered connectivity, TLS/HTTPS, application and access-control checks. Reading this example requires no installation, resolver changes or security testing."
+    ],
+    "sections": [
+      {
+        "id": "command",
+        "code": "❯ dig cs-kairos.com A",
+        "refs": [
+          "dig"
+        ],
+        "title": "1. Command: what am I asking?",
+        "paragraphs": [
+          "❯ is the shell prompt, not part of the command. To practice, enter only dig cs-kairos.com A. This is terminal text, not a YAML configuration.",
+          "dig is the lookup tool; cs-kairos.com is the name; A requests IPv4 address records. No @server is supplied, so dig uses local resolver configuration. The SERVER line identifies the endpoint actually queried."
+        ]
+      },
+      {
+        "id": "client",
+        "code": "; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> cs-kairos.com A\n;; global options: +cmd\n;; Got answer:",
+        "refs": [
+          "dig"
+        ],
+        "title": "2. First three lines: client version and display options",
+        "paragraphs": [
+          "The DiG string identifies the client and its Ubuntu package version. It does not identify software running on the DNS server.",
+          "+cmd controls the initial version/options comment and is enabled by default; it does not execute a server-side command. Got answer means a response arrived, so read its status and records next. Leading semicolons are output formatting, not commands to execute."
+        ]
+      },
+      {
+        "id": "header",
+        "code": ";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11774",
+        "refs": [
+          "header"
+        ],
+        "title": "3. HEADER: operation, result and transaction ID",
+        "paragraphs": [
+          "QUERY is the standard DNS operation. NOERROR reports no DNS error in this response; inspect the answer before drawing conclusions. It does not demonstrate website connectivity or login access.",
+          "11774 is the 16-bit transaction ID used to correlate a reply with a query. It is not an account, an IP address or sufficient authentication by itself."
+        ]
+      },
+      {
+        "id": "flags",
+        "code": ";; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1",
+        "refs": [
+          "header",
+          "ad",
+          "edns"
+        ],
+        "title": "4. Flags and four counts: what is in the response?",
+        "paragraphs": [
+          "qr marks a response. rd reflects recursion requested by the client. ra advertises recursion availability. These flags do not establish which upstream servers were contacted or whether a cache was used.",
+          "Neither aa (Authoritative Answer) nor ad (Authenticated Data) is set here. The response makes neither assertion; their absence alone does not prove insecure service or absence of DNSSEC deployment.",
+          "QUERY: 1 counts one question; ANSWER: 2 counts two answer records; AUTHORITY: 0 means no authority records in this message, not no authoritative servers for the domain. ADDITIONAL: 1 counts the OPT pseudo-RR below, not a third website IP."
+        ]
+      },
+      {
+        "id": "edns",
+        "code": ";; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 65494",
+        "refs": [
+          "edns"
+        ],
+        "title": "5. OPT: DNS extension information",
+        "paragraphs": [
+          "OPT carries EDNS control information as a pseudo-RR, not an ordinary domain record. Version 0 is the EDNS extension version, not an IP or DNSSEC version.",
+          "The blank flags field lists no EDNS flags, such as do (DNSSEC OK). This is separate from the header flags qr, rd and ra. Absence of do also does not establish that the domain is unsigned.",
+          "udp: 65494 is the UDP payload capacity advertised in this response OPT, in bytes. A response advertises the responder’s capacity; here it describes the local DNS endpoint. It does not reveal the original query’s advertisement. It is not the actual packet size, MTU, port or a recommended Internet-wide setting."
+        ]
+      },
+      {
+        "id": "question",
+        "code": ";; QUESTION SECTION:\n;cs-kairos.com.                 IN      A",
+        "refs": [
+          "header"
+        ],
+        "title": "6. QUESTION: name, class and type",
+        "paragraphs": [
+          "The question asks for IN-class A records for cs-kairos.com. The final dot denotes an absolute name ending at the DNS root. IN means Internet class, not a country code. A requests IPv4 records, not every record in the domain."
+        ]
+      },
+      {
+        "id": "answers",
+        "code": ";; ANSWER SECTION:\ncs-kairos.com.          300     IN      A       104.21.61.207\ncs-kairos.com.          300     IN      A       172.67.214.140",
+        "refs": [
+          "header"
+        ],
+        "title": "7. ANSWER: two IPv4 records for one name",
+        "paragraphs": [
+          "Both rows contain the same name, a TTL of 300, class IN and type A, followed by distinct addresses: 104.21.61.207 and 172.67.214.140. They are two records in this response, not sequential steps.",
+          "300 seconds is five minutes of reported cache lifetime. It may be a fresh configured TTL or a resolver’s remaining TTL. One sample cannot distinguish a cache hit from a miss, and the TTL does not guarantee website availability.",
+          "Two addresses do not establish two origin machines, identify the origin or provider, or grant access. A service may use proxies or other architecture. This output is a point-in-time DNS observation only."
+        ]
+      },
+      {
+        "id": "time",
+        "code": ";; Query time: 150 msec",
+        "refs": [
+          "dig"
+        ],
+        "title": "8. Query time: how long did this lookup take?",
+        "paragraphs": [
+          "150 msec is the query-response time reported by dig, about 0.15 seconds. It can include local resolver processing and upstream waiting, but this output provides no breakdown. It is not a ping measurement, page-load time or performance guarantee."
+        ]
+      },
+      {
+        "id": "server",
+        "code": ";; SERVER: 127.0.0.53#53(127.0.0.53) (UDP)",
+        "refs": [
+          "stub"
+        ],
+        "title": "9. SERVER: who answered dig?",
+        "paragraphs": [
+          "127.0.0.53 is a loopback address, so dig queried a local endpoint. Ubuntu commonly runs the systemd-resolved stub there; that is an interpretation based on the documented convention, not proof of the running process from this line alone.",
+          "#53 is the service port; the parentheses repeat the endpoint address. UDP describes this exchange with the local endpoint. It does not identify upstream resolvers or their transport."
+        ]
+      },
+      {
+        "id": "when",
+        "code": ";; WHEN: Sun Oct 25 17:37:14 CST 2026",
+        "refs": [],
+        "title": "10. WHEN: preserve the observation time",
+        "paragraphs": [
+          "The supplied line is Sun Oct 25 17:37:14 CST 2026. Preserve it with the observation. CST is ambiguous worldwide. UTC+8 fits the user’s Taiwan context, but strict cross-system comparisons require checking the host’s actual timezone rather than assuming every CST means Taiwan time."
+        ]
+      },
+      {
+        "id": "size",
+        "code": ";; MSG SIZE  rcvd: 74",
+        "refs": [
+          "dig",
+          "edns"
+        ],
+        "title": "11. MSG SIZE: how do 74 and 65494 differ?",
+        "paragraphs": [
+          "MSG SIZE rcvd: 74 is the received DNS message length in bytes. It excludes the full Ethernet/IP/UDP framing overhead.",
+          "74 describes this DNS response; 65494 advertises UDP payload capacity in OPT. They serve different purposes. Blank lines separate the display and do not add DNS records."
+        ]
+      }
+    ]
+  }
+}

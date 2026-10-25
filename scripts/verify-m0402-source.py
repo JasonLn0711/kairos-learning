@@ -41,6 +41,7 @@ if a.html:
    if tag in ['meta','link','img','br','hr','input','source','wbr']:return
    self.tags.append(tag)
    if at.get('class')=='source-body':self.depth=len(self.tags)
+   if self.depth and 'data-dig-walkthrough' in at:self.skip=len(self.tags)
    if self.depth and 'data-dns-diagram' in at:self.parts.append('[[diagram:'+at['data-dns-diagram']+']]');self.skip=len(self.tags)
   def handle_endtag(self,tag):
    if self.skip==len(self.tags):self.skip=0
