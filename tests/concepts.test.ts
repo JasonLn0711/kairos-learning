@@ -28,7 +28,7 @@ test('draft, future, pending and nonexistent concepts have no public body or sea
     assert.equal(catalog.get(t.id,'zh'),null);assert.equal(catalog.list('zh')[1].href,null);
     assert.ok(!JSON.stringify(catalog.searchEntries).includes('SECOND_CONCEPT_FIXTURE'));
   }
-  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-08/'),null);
+  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-09/'),null);
   assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-99/'),null);
   assert.equal(createConceptCatalog(concepts,[first],'2026-10-23').get('M99-99','en'),null);
 });
@@ -77,7 +77,7 @@ test('semantic content versions preserve legacy revisions and sort numerically',
   const t=structuredClone(first);t.contentVersion=v;
   assert.throws(()=>createConceptCatalog(concepts,[t],'2026-10-25'),/content version/);
  }
- assert.ok(allConceptTeachings.filter(t=>!['M04-01','M04-02','M04-03'].includes(t.id)).every(t=>t.contentVersion===undefined));
+ assert.ok(allConceptTeachings.filter(t=>['M04-04','M04-05','M04-06','M04-07'].includes(t.id)).every(t=>t.contentVersion===undefined));
  assert.ok(createConceptCatalog(concepts,[first],'2026-10-25').searchEntries.every(e=>e.text.includes('v2.0.2')));
 });
 
