@@ -97,3 +97,7 @@ Original supplied answers, editorial corrections, supplemental diagrams and test
 For a source-faithful concept, `text.<locale>.sourceBody` can replace the section array while preserving ordered headings, paragraphs, lists and code. Keep `sections: []` in that locale. A `visual` source block wraps the existing `flow`/`cards` format with a local `/images/ceh/*.svg` download and label; all semantic figure text remains searchable. M04-07 demonstrates this pattern with an explicitly labeled web supplement alongside unchanged delivered text. Keep the source archive and the web supplement distinguishable.
 
 The M04-01 Q&A examples place status cards and the SMB/Kafka architecture figures beside the matching source paragraphs. `QAIllustration.svelte` reflows text on mobile; its six inspectable SVG downloads are under `site/images/ceh/m04-01-qa-*`. Source labels remain searchable DOM text in their original order. The earlier combined SVG URLs remain available for existing links; the page presents the three requested figures once. Kafka data arrows branch from the broker to independent consumer groups; the caption separately identifies consumer fetch behavior.
+
+## Proposed content versioning
+
+The [October 25 content-version proposal](proposals/concept-content-versioning-2026-10-25.md) evaluates `vMAJOR.MINOR.PATCH` and M04-01 legacy revisions. It is **proposed, awaiting confirmation**; current public labels and the integer revision schema remain unchanged.
