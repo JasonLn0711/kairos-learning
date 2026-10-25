@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createConceptCatalog, type ConceptTeaching } from '../src/lib/concepts.ts';
+import { compareContentVersions, conceptVersionLabel, createConceptCatalog, type ConceptTeaching } from '../src/lib/concepts.ts';
 import { concepts, allConceptTeachings, getPage } from '../src/lib/server/catalog.ts';
 const first=allConceptTeachings[0];
 function second(): ConceptTeaching {
@@ -64,3 +64,19 @@ test('visuals have searchable text and reject missing descriptions',()=>{
 });
 
 test("published DNS uses its own body and adjacent concepts",()=>{const p=getPage("/courses/ceh/v13/m04/concepts/m04-02/")!;assert.equal(p.conceptTeaching?.id,"M04-02");assert.equal(p.conceptNavigation?.previous?.id,"M04-01");assert.equal(p.conceptNavigation?.next?.id,"M04-03");assert.deepEqual(p.conceptTeaching?.qa,[]);});
+
+test('semantic content versions preserve legacy revisions and sort numerically',()=>{
+ assert.equal(first.revision,8);assert.equal(first.contentVersion,'2.0.0');
+ assert.equal(conceptVersionLabel(first),'v2.0.0');
+ assert.equal(conceptVersionLabel({revision:7}),'v7');
+ assert.equal(compareContentVersions('2.10.0','2.9.99'),1);
+ assert.equal(compareContentVersions('2.0.10','2.0.9'),1);
+ assert.equal(compareContentVersions('2.0.0','3.0.0'),-1);
+ assert.equal(compareContentVersions('2.0.0','2.0.0'),0);
+ for(const v of ['v2.0.0','2.0','02.0.0','2.01.0','0.1.0','2.0.0-beta','2.-1.0','2.0.0 ']) {
+  const t=structuredClone(first);t.contentVersion=v;
+  assert.throws(()=>createConceptCatalog(concepts,[t],'2026-10-25'),/content version/);
+ }
+ assert.ok(allConceptTeachings.filter(t=>t.id!=='M04-01').every(t=>t.contentVersion===undefined));
+ assert.ok(createConceptCatalog(concepts,[first],'2026-10-25').searchEntries.every(e=>e.text.includes('v2.0.0')));
+});

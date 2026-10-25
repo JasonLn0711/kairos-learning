@@ -6,11 +6,19 @@ export type ConceptBlock = ConceptVisual | {kind:'table';caption:string;headers:
 export type ConceptCheck = {id:string;answer:number;text:Partial<Bilingual<{prompt:string;options:string[];rationales:string[]}>>};
 export type SourceBlock = {kind:'visual';visual:ConceptVisual;src:string;downloadLabel:string} | {kind:'accessDiagram';src:string;texts:string[]} | {kind:'paragraph'|'heading'|'code';text:string;id?:string} | {kind:'list';items:string[]} | {kind:'table';headers:string[];rows:string[][]};
 export type ConceptTeaching = {
-  id: string; revision: number; date: string; status: 'draft' | 'published'; publishedOn: string;
+  id: string; revision: number; contentVersion?: string; date: string; status: 'draft' | 'published'; publishedOn: string;
   text: Bilingual<{summary: string; sourceBody?: SourceBlock[]; sections: {id: string; heading: string; paragraphs: string[];blocks?:ConceptBlock[]}[]}>;
   checks?: ConceptCheck[];
   qa?: {id: string; format?: 'markdown'; text: Bilingual<{question: string; originalQuestion?:string; answer: string[]; explanation?: string[]; editorial?: string[]}>}[];
 };
+const contentVersionPattern = /^[1-9]\d*\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+export function compareContentVersions(a: string, b: string): number {
+  if (!contentVersionPattern.test(a) || !contentVersionPattern.test(b)) throw new Error('Invalid content version');
+  const left=a.split('.').map(BigInt), right=b.split('.').map(BigInt);
+  for(let i=0;i<3;i++) { if(left[i]<right[i]) return -1; if(left[i]>right[i]) return 1; }
+  return 0;
+}
+export const conceptVersionLabel = (t: Pick<ConceptTeaching,'revision'|'contentVersion'>) => `v${t.contentVersion ?? t.revision}`;
 export const conceptPath = (id: string, lang: Locale) => localized(`/courses/ceh/v13/${id.slice(0,3).toLowerCase()}/concepts/${id.toLowerCase()}/`,lang);
 // One catalog controls routes, search, navigation and serialized public teaching.
 export function createConceptCatalog(entries: ConceptEntry[], teachings: ConceptTeaching[], today: string) {
@@ -26,6 +34,7 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   for (const t of teachings) {
     if (!ids.has(t.id) || seen.has(t.id)) fail(`unknown or duplicate teaching ${t.id}`);
     seen.add(t.id);
+    if (t.contentVersion !== undefined && (typeof t.contentVersion !== 'string' || !contentVersionPattern.test(t.contentVersion))) fail(`${t.id}: invalid content version`);
     if (!Number.isInteger(t.revision) || t.revision < 1 || !['draft','published'].includes(t.status) || !isPublic({status:'published',publishedOn:t.publishedOn},'9999-12-31') || !isPublic({status:'published',publishedOn:t.date},'9999-12-31')) fail(`${t.id}: invalid revision/status/date`);
     for (const lang of ['zh','en'] as const) {
       const text = t.text?.[lang];
@@ -93,7 +102,7 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   };
   const searchEntries: SearchEntry[] = (['zh','en'] as Locale[]).flatMap(lang=>entries.flatMap(c=>{
     const t=published.get(c.id); if (!t) return [];
-    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...(t.text[lang].sourceBody??[]).flatMap(b=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='accessDiagram'?b.texts:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text]),...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>{const text=q.text[lang];return text?[text.prompt,...text.options,...text.rationales]:[];}),...(t.qa??[]).flatMap(q=>[q.text[lang].question,q.text[lang].originalQuestion??'',...q.text[lang].answer,...(q.text[lang].editorial??[]),...(q.text[lang].explanation??[])])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
+    return [{id:c.id,lang,title:`${c.id} · ${c.title[lang]}`,summary:t.text[lang].summary,text:[...(t.contentVersion ? [conceptVersionLabel(t)] : []),...(t.text[lang].sourceBody??[]).flatMap(b=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='accessDiagram'?b.texts:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text]),...t.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'items' in b?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:[b.heading,...b.paragraphs,b.code??''])]),...(t.checks??[]).flatMap(q=>{const text=q.text[lang];return text?[text.prompt,...text.options,...text.rationales]:[];}),...(t.qa??[]).flatMap(q=>[q.text[lang].question,q.text[lang].originalQuestion??'',...q.text[lang].answer,...(q.text[lang].editorial??[]),...(q.text[lang].explanation??[])])].join(' '),href:conceptPath(c.id,lang),label:`CEH ${c.module.toUpperCase()}`}];
   }));
   return {list,get,searchEntries};
 }
