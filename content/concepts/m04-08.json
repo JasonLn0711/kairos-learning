@@ -1,0 +1,431 @@
+{
+  "id": "M04-08",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-10-25",
+  "status": "published",
+  "publishedOn": "2026-10-25",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "先記住：查到共享目錄、成功掛載、讀到檔案、修改檔案，是四種不同的證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "10/25 晚間：一次學一個核心概念"
+        },
+        {
+          "kind": "heading",
+          "id": "definition",
+          "text": "1. NFS 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS（Network File System，網路檔案系統）讓電腦透過網路使用遠端檔案系統，在用戶端看起來像從本機的一個目錄進入遠端資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如公司把教材集中在 Linux 伺服器，工作站就能使用同一份教材，不必各自維護副本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先認識兩個動作："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Export（匯出／對外共享）：伺服器決定提供哪個目錄，以及開放條件。",
+            "Mount（掛載）：用戶端把遠端檔案系統接到自己的目錄樹，例如 /mnt/course。這不等於把整份資料複製到本機。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用條件包括網路可達、版本相容、伺服器允許該用戶端，以及身分與檔案權限符合要求。"
+        },
+        {
+          "kind": "heading",
+          "id": "enumeration",
+          "text": "2. 列舉是在查什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在已授權環境，整理共享路徑、允許的用戶端範圍、NFS 版本與存取條件；管理者再對照伺服器設定與日誌。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見查詢語法是："
+        },
+        {
+          "kind": "code",
+          "text": "showmount -e <已授權的伺服器>"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尖括號是占位文字，本課沒有實際執行。-e 查 export 清單，不是列出共享內所有檔案，也不是取得讀寫許可。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "showmount 聯絡的是 MNT 服務。只提供 NFSv4 的伺服器可能不開放它，所以查詢失敗或沒有清單，不能直接斷言「沒有 NFS」。[showmount 手冊](https://man7.org/linux/man-pages/man8/showmount.8.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFSv3 部署常涉及 rpcbind、mountd 等輔助服務；NFSv4 整合了原本的 MOUNT 功能，常見使用 TCP 2049。因此版本不同，查核方法與防火牆需求也可能不同。[NFSv4 規格](https://www.rfc-editor.org/rfc/rfc7530.html#section-3.1)"
+        },
+        {
+          "kind": "heading",
+          "id": "identity",
+          "text": "3. 接續上一課：伺服器認為你是誰？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上一課的 UID、GID 是使用者與群組的數字識別碼。常見 sec=sys／AUTH_SYS 模式使用用戶端提供的數字身分資訊；兩台機器上的帳號名稱相同，不保證數字身分或權限相同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "判讀時要分三層："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "用戶端：這台電腦是否在共享允許範圍？",
+            "身分：伺服器把請求對應成哪個使用者與群組？",
+            "資源：該身分能否對這個路徑執行這項操作？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 的 root_squash 會把遠端 UID/GID 0 對應為匿名身分，避免直接把用戶端 root 當成伺服器 root；它不是把所有使用者匿名化，也不是完整的安全保障。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同理，export 設為 rw，只表示共享層允許寫入，檔案權限與 ACL 仍可能拒絕特定操作。[exports 與身分對應](https://man7.org/linux/man-pages/man5/exports.5.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "4. 具體例子：掛載成功，卻讀不到檔案"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是合成情境，不是真實測試結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司只允許教材工作站使用唯讀共享 /srv/course；學生把它掛到 /mnt/course。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "讀取 /mnt/course/readme.txt：成功。",
+            "讀取 /mnt/course/staff.txt：Permission denied。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "能確認的是：這個掛載可用，且這次讀取 readme.txt 成功；這次讀取 staff.txt 遭拒。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能推論：所有檔案都能讀、使用者有管理權限，或可以修改共享內的資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一步應核對實際請求身分、UID/GID 對應、路徑與父目錄權限、ACL，以及伺服器日誌。不要只憑一個錯誤字串，就認定唯一原因。"
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "cards",
+            "caption": "網頁補充：同一共享，分開記錄結果",
+            "description": "合成案例；以下是獨立觀察，不是自動授權流程。",
+            "items": [
+              {
+                "title": "掛載可用",
+                "body": "/srv/course → /mnt/course"
+              },
+              {
+                "title": "本次讀取成功",
+                "body": "/mnt/course/readme.txt"
+              },
+              {
+                "title": "本次讀取遭拒",
+                "body": "/mnt/course/staff.txt — Permission denied"
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-08-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖解"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "5. 防護與證據判讀"
+        },
+        {
+          "kind": "paragraph",
+          "text": "共享只開放必要的用戶端與資料；只需閱讀時，採用伺服器端唯讀政策，並檢查檔案權限和身分對應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "sec=sys 本身不提供密碼學保護。需要較強保護時，可依部署條件評估 Kerberos："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "krb5：身分驗證。",
+            "krb5i：再加完整性保護。",
+            "krb5p：再加隱私保護。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些需要相應的基礎設施與設定；使用 NFSv4，不代表實際已啟用 Kerberos 或加密。[安全選項](https://man7.org/linux/man-pages/man5/exports.5.html)｜[協定安全機制](https://www.rfc-editor.org/rfc/rfc7530.html#section-3)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "證據應記錄時間、伺服器、版本、共享路徑、用戶端、身分、安全模式、操作與回應，再對照預期政策。共享存在本身，不等於設定有漏洞。"
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "6. 小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在授權環境查到 NFS export 並成功掛載，讀取 staff.txt 卻遭拒。目前最合理的是？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 掛載成功，代表所有檔案都能讀寫。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 已確認掛載成功，但這次讀檔遭拒；仍需查身分、路徑與權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 改用 NFSv4 就一定能讀。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. 出現拒絕訊息，證明伺服器已遭入侵。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "回覆選項，再用一句話說明「掛載成功」與「讀檔成功」的差別即可。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Remember: discovering an exported directory, mounting it, reading a file, and modifying a file are four different kinds of evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "October 25 evening: one core concept at a time"
+        },
+        {
+          "kind": "heading",
+          "id": "definition",
+          "text": "1. What is NFS?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS (Network File System) lets a computer use a remote filesystem over a network. On the client, it looks like entering remote data through a local directory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a company keeps course materials on a Linux server so workstations can use the same materials without maintaining separate copies."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, distinguish two actions:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Export: the server decides which directory to share and under what conditions.",
+            "Mount: the client attaches the remote filesystem to its directory tree, for example at /mnt/course. This does not copy the entire dataset onto the client."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Using the share requires network reachability, compatible versions, server permission for the client, and suitable identity and file permissions."
+        },
+        {
+          "kind": "heading",
+          "id": "enumeration",
+          "text": "2. What does enumeration examine?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Within an authorized environment, identify exported paths, permitted client ranges, NFS versions, and access conditions. Administrators can compare these observations with server configuration and logs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A common query syntax is:"
+        },
+        {
+          "kind": "code",
+          "text": "showmount -e <authorized-server>"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The angle brackets indicate a placeholder. No query was executed for this lesson. The -e option requests the export list, not every file in the share or permission to read and write."
+        },
+        {
+          "kind": "paragraph",
+          "text": "showmount contacts the MNT service. An NFSv4-only server may not expose that service, so a failed query or unavailable list does not establish that NFS is absent. [showmount manual](https://man7.org/linux/man-pages/man8/showmount.8.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFSv3 deployments often involve supporting services such as rpcbind and mountd. NFSv4 integrates the former MOUNT functionality and commonly uses TCP 2049. Different versions can therefore require different checks and firewall rules. [NFSv4 specification](https://www.rfc-editor.org/rfc/rfc7530.html#section-3.1)"
+        },
+        {
+          "kind": "heading",
+          "id": "identity",
+          "text": "3. Continuing the previous lesson: who does the server think you are?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UIDs and GIDs from the previous lesson are numeric user and group identifiers. The common sec=sys / AUTH_SYS mode uses numeric identity information supplied by the client. Identical account names on two machines do not guarantee identical numeric identities or permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Interpret access at three levels:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Client: is this computer within the share's permitted client scope?",
+            "Identity: which user and groups does the server associate with the request?",
+            "Resource: may that identity perform this operation on this path?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "On Linux, root_squash maps remote UID/GID 0 to an anonymous identity, rather than treating client root directly as server root. It does not anonymize every user and is not complete security protection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Similarly, rw permits writes at the export layer, while file permissions and ACLs can still reject specific operations. [Exports and identity mapping](https://man7.org/linux/man-pages/man5/exports.5.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "4. A concrete example: mounting succeeds, but reading fails"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a synthetic scenario, not an actual test result."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A company permits only course workstations to use the read-only export /srv/course. A student mounts it at /mnt/course."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Reading /mnt/course/readme.txt: succeeds.",
+            "Reading /mnt/course/staff.txt: Permission denied."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The evidence establishes that this mount is usable, this read of readme.txt succeeded, and this read of staff.txt was denied."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not establish that every file is readable, that the user has administrative access, or that data in the share can be modified."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, check the actual request identity, UID/GID mapping, path and parent-directory permissions, ACLs, and server logs. A single error string does not establish a unique cause."
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "cards",
+            "caption": "Web supplement: separate results within one share",
+            "description": "Synthetic scenario: independent observations, not automatic permission grants.",
+            "items": [
+              {
+                "title": "Mount usable",
+                "body": "/srv/course → /mnt/course"
+              },
+              {
+                "title": "This read succeeded",
+                "body": "/mnt/course/readme.txt"
+              },
+              {
+                "title": "This read denied",
+                "body": "/mnt/course/staff.txt — Permission denied"
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-08-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "5. Defenses and evidence interpretation"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Expose only the necessary data to the necessary clients. When reading is sufficient, use a server-side read-only policy and check file permissions and identity mapping."
+        },
+        {
+          "kind": "paragraph",
+          "text": "sec=sys itself provides no cryptographic protection. Where stronger protection is needed, evaluate Kerberos according to deployment conditions:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "krb5: authentication.",
+            "krb5i: adds integrity protection.",
+            "krb5p: additionally provides privacy protection."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These require suitable infrastructure and configuration. Using NFSv4 does not establish that Kerberos or encryption is enabled. [Security options](https://man7.org/linux/man-pages/man5/exports.5.html) | [Protocol security mechanisms](https://www.rfc-editor.org/rfc/rfc7530.html#section-3)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Evidence should record time, server, version, exported path, client, identity, security mode, operation, and response, then compare them with the intended policy. The existence of a share does not itself establish a vulnerability."
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "6. Quick check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In an authorized environment, you discover an NFS export and mount it successfully, but reading staff.txt is denied. Which conclusion is best supported?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. A successful mount means every file can be read and written."
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Mounting succeeded, but this read was denied; identity, path, and permissions still need checking."
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Switching to NFSv4 will always allow the read."
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. A denial message proves that the server has been compromised."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reply with your choice and one sentence explaining the difference between a successful mount and a successful file read."
+        }
+      ]
+    }
+  }
+}
