@@ -1,12 +1,14 @@
 <script lang="ts">
   import type { SourceBlock } from '$lib/concepts';
+  import ConceptBlocks from './ConceptBlocks.svelte';
   import AccessDiagram from './AccessDiagram.svelte';
   import InlineText from './InlineText.svelte';
   let { blocks }: {blocks: SourceBlock[]} = $props();
 </script>
 <div class="source-body">
   {#each blocks as block}
-    {#if block.kind === 'accessDiagram'}<AccessDiagram texts={block.texts} src={block.src} />
+    {#if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
+    {:else if block.kind === 'accessDiagram'}<AccessDiagram texts={block.texts} src={block.src} />
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph'}<p><InlineText text={block.text} /></p>
     {:else if block.kind === 'code'}<pre><code>{block.text}</code></pre>
