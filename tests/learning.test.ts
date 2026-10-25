@@ -74,6 +74,6 @@ test('one-concept routes expose real teaching only, with private progress absent
   assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-07/'), null);
   assert.equal(page.conceptTeaching.text.zh.sections.length, 7);
   assert.equal(page.conceptTeaching.text.en.sections.length, 7);
-  assert.ok(page.conceptTeaching.text.zh.sections.find(s => s.id === 'check')?.paragraphs.some(p => p.includes('Finance')));
+  assert.ok(page.conceptTeaching.text.zh.sections.find(s => s.id === 'check')?.paragraphs.some(p => p.includes('埠與協定證據')));
   assert.ok(!JSON.stringify(page).includes('Sentinel_'));
 });

@@ -38,15 +38,16 @@ test('empty Q&A is optional; invalid translations, duplicates and reserved ancho
   assert.throws(()=>createConceptCatalog(concepts,[first,first],'2026-10-23'),/duplicate/);
   const anchor=second();anchor.text.zh.sections[0].id='discussion';assert.throws(()=>createConceptCatalog(concepts,[anchor],'2026-10-23'),/invalid section/);
 });
-test('M04 revision three keeps seven teaching sections and three tests distinct from empty discussion',()=>{
-  assert.equal(first.revision,3);assert.equal(first.text.zh.sections.length,7);
+test('M04 revision four keeps seven teaching sections and three tests distinct from empty discussion',()=>{
+  assert.equal(first.revision,4);assert.equal(first.text.zh.sections.length,7);
   assert.deepEqual(first.text.zh.sections.map(s=>s.id),first.text.en.sections.map(s=>s.id));
   assert.deepEqual(first.checks?.map(q=>q.answer),[1,2,1]);assert.deepEqual(first.qa,[]);
   for(const lang of ['zh','en'] as const){
     assert.deepEqual(first.text[lang].sections.filter(s=>s.blocks?.length).map(s=>s.blocks!.map(b=>b.kind)),first.text.zh.sections.filter(s=>s.blocks?.length).map(s=>s.blocks!.map(b=>b.kind)));
     const codes=first.text[lang].sections.flatMap(s=>s.blocks??[]).map(b=>b.kind==='step' ? b.code??'' : '').join('\n');
-    assert.ok(codes.includes('get test.txt downloaded-test.txt'));assert.ok(!codes.includes("-c 'ls'"));
-    assert.ok(codes.includes('mktemp -d'));assert.ok(!codes.includes('%PASSWORD'));
+    if(lang==='en'){assert.ok(codes.includes('get test.txt downloaded-test.txt'));assert.ok(codes.includes('mktemp -d'));}
+    else{assert.ok(codes.includes('Test-NetConnection 192.168.56.10 -Port 445'));assert.ok(codes.includes("Get-Content '\\\\192.168.56.10\\Finance\\demo.txt'"));}
+    assert.ok(!codes.includes("-c 'ls'"));assert.ok(!codes.includes('%PASSWORD'));
     const serialized=JSON.stringify(first.text[lang]);assert.ok(!/utm_|favicons|&#x20;/.test(serialized));
   }
 });
