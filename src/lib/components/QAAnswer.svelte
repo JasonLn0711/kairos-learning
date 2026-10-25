@@ -1,12 +1,17 @@
 <script lang="ts">
+ import QAIllustration from './QAIllustration.svelte';
  import {parseQA} from '$lib/qa-markdown';import QAInline from './QAInline.svelte';import QAQuiz from './QAQuiz.svelte';
  let {source,id,explanation,lang}:{source:string;id:string;explanation:string[];lang:string}=$props();
  const blocks=$derived(parseQA(source));
+ const statusStart=$derived(id==='qa-smb-basics'?blocks.findIndex((b,i)=>{const next=blocks[i+2];return b.kind==='paragraph'&&b.text==='Public'&&next?.kind==='paragraph'&&next.text==='Finance'}):-1);
 </script>
 <div class="qa-original">
 {#each blocks as b,i}
- {#if b.kind==='heading'}<h3 id={id+'-section-'+i} class="qa-source-text"><QAInline text={b.text}/></h3>
+ {#if i===statusStart}<QAIllustration kind="status" {lang} sourceLabels={true}/>
+ {:else if statusStart>=0&&i>statusStart&&i<statusStart+6}<!-- Original labels are rendered once in the status figure. -->
+ {:else if b.kind==='heading'}<h3 id={id+'-section-'+i} class="qa-source-text"><QAInline text={b.text}/></h3>
  {:else if b.kind==='paragraph'}<p class="qa-source-text"><QAInline text={b.text}/></p>
+ {#if id==='qa-smb-kafka'&&(b.text.startsWith('架構 A：')||b.text.startsWith('Architecture A:'))}<QAIllustration kind="smb" {lang}/>{:else if id==='qa-smb-kafka'&&(b.text.startsWith('架構 B：')||b.text.startsWith('Architecture B:'))}<QAIllustration kind="kafka" {lang}/>{/if}
  {:else if b.kind==='code'}<pre><code class="qa-source-code">{b.text}</code></pre>
  {:else if b.kind==='table'}
  <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard scroll access for wide tables.) -->
