@@ -1,7 +1,7 @@
 {
   "id": "M04-01",
-  "revision": 3,
-  "date": "2026-10-23",
+  "revision": 4,
+  "date": "2026-10-25",
   "text": {
     "zh": {
       "summary": "看得到資料夾名稱，和能打開裡面的檔案，是兩件事。跟著一個檔案分享案例，學會查資訊、看回應，再說清楚自己確認了什麼。",
@@ -10,154 +10,162 @@
           "id": "definition",
           "heading": "一、查到 Public 和 Finance，接著能做什麼？",
           "paragraphs": [
-            "先看一個合成的練習情境。你用 labuser 這個測試帳號登入檔案伺服器，查到 Public、Finance 兩個共享名稱。伺服器是提供服務的電腦；共享是能透過網路連線的檔案分享入口。",
-            "接著用 SMB（網路檔案分享的通訊規則），讀取兩邊約定好的 test.txt。Public 下載成功，Finance 回覆 ACCESS_DENIED，意思是這次讀取被拒絕。下面把這些觀察分開列出。"
+            "這一課最重要的觀念：發現某個資源存在，不代表你有權限使用它。先跟著一個公司授權的合成情境：檔案伺服器是192.168.56.10，公司提供labuser測試帳號，並約定查詢Public、Finance及兩邊的demo.txt。以下回應全是模擬教材，並未對任何主機實際執行測試。",
+            "IP位址像地址，讓電腦找到通訊對象；埠（port）像服務櫃檯的編號，搭配IP與傳輸協定辨識通訊端點。192.168.56.10是本例假設的私人實驗網路位址，使用前仍要確認它確實是獲准的主機。",
+            "SMB（Server Message Block）是網路檔案共用協定，Windows常用它分享資料夾與印表機；現代直接透過TCP的SMB常用445埠。Public與Finance是共用名稱，也就是管理者提供的網路分享入口。"
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "先看結果：同一個帳號，兩個讀檔結果",
+              "heading": "先看合成結果：同一個帳號，兩個讀檔結果",
               "paragraphs": [
-                "本例已取得測試許可，labuser 也已成功登入；下面是整理過的教學紀錄，實際練習請保存工具真正回傳的內容。",
-                "可以這樣向同事說：「labuser 查得到 Finance 名稱；這次讀取 Finance/test.txt 被拒絕。」目錄、其他檔案和寫入操作，各自再查。",
-                "向服務查詢共享名稱、帳號或群組這類具體資訊，就叫列舉（Enumeration）。像到公司櫃檯拿部門名單；進辦公室、讀文件或修改文件，則各有許可。資安人員用列舉盤點資源，也檢查誰看得到哪些資訊。"
+                "本例先確認SMB服務，並確認實際連線身分為labuser。這個帳號查到Public、Finance，讀取Public的指定測試檔成功，讀取Finance的指定測試檔遭拒。",
+                "列舉（Enumeration）就是向服務查詢具體資訊，例如共用名稱、帳號或群組。這裡查到Finance名稱，是名稱列舉；讀取其中內容是另外的操作。",
+                "可以向同事說：「labuser看得到Finance名稱，這次讀取Finance\\demo.txt遭拒。」其他檔案、上傳與修改權限，各自保留待查項目。"
               ],
-              "code": "445/tcp open\nSMB protocol response confirmed\nShare names: Public, Finance\n\\\\fileserver\\Public\\test.txt  → Read successful\n\\\\fileserver\\Finance\\test.txt → ACCESS_DENIED",
+              "code": "模擬紀錄，非實測\n目標：192.168.56.10\n身分：labuser（本例假設已驗證）\n共用名稱：Public、Finance\nPublic\\demo.txt  → 讀取成功\nFinance\\demo.txt → Access is denied",
               "id": "example"
             }
           ]
         },
         {
           "id": "connections",
-          "heading": "二、把剛才的結果拆成五步",
+          "heading": "二、用五個問題分清楚目前知道什麼",
           "paragraphs": [
-            "掃描像是確認哪個櫃檯有回應；列舉像是向櫃檯詢問名單。更前面的偵察，則是先找公司名稱、網域或系統用途等背景。工具有時會把幾件事一起做，我們仍把結果分開記。",
-            "先取得測試許可，約定主機、時段、帳號與操作範圍。服務要求登入時，先完成登入再查詢；有些服務允許匿名查詢，結果也要註明使用的身分。下面的五步是閱讀順序，不是工具必定執行的固定流程。"
+            "從發現目標到確認權限，是概念上的學習流程，不是所有工具必須遵守的固定順序。某些服務要先登入，才能列舉；工具也可能同時完成探測、驗證與查詢。下面依問題整理證據。",
+            "公司的測試授權，是同意你在約定主機、時段與操作範圍內測試；系統帳號的存取權限，是伺服器實際允許該身分做什麼。開始前兩者都要確認，遇到範圍外的操作就先停下來。"
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "從找到入口，到讀取指定檔案",
-              "description": "前提：已取得測試許可。每一步都記下身分與回應；需要登入時先完成驗證。",
+              "caption": "從服務入口到指定操作：概念上的查核方向",
+              "description": "已取得公司測試許可；需要登入的服務先完成驗證。這張圖用來整理證據，不限定工具的時間順序。",
               "items": [
                 {
                   "title": "找到入口",
-                  "body": "TCP 445 顯示 open：這次探測觀察到程式接受連線。"
+                  "body": "觀察TCP 445是否接受連線。"
                 },
                 {
                   "title": "確認協定",
-                  "body": "查看 SMB 協定回應，確認對方以 SMB 規則交談。"
+                  "body": "用服務回應確認是否為SMB。"
                 },
                 {
-                  "title": "列共享名稱",
-                  "body": "查到 Public、Finance：記下這次身分看見的名稱。"
+                  "title": "列共用名稱",
+                  "body": "記錄目前身分查到的Public、Finance。"
                 },
                 {
-                  "title": "列目錄",
-                  "body": "執行 ls：記下這個目錄列出了哪些項目。"
+                  "title": "確認身分",
+                  "body": "記錄實際使用的帳號與驗證結果；需要時先完成。"
                 },
                 {
-                  "title": "讀測試檔",
-                  "body": "執行 get：記下指定檔案是否下載成功。"
+                  "title": "查指定操作",
+                  "body": "對約定的demo.txt記錄讀取結果，其他操作另查。"
                 }
               ]
             },
             {
               "kind": "table",
-              "caption": "四個基礎名詞",
+              "caption": "五個問題，五種證據",
               "headers": [
-                "名詞",
-                "意義",
-                "本課例子"
+                "觀念",
+                "回答什麼問題？",
+                "本例證據"
               ],
               "rows": [
                 [
-                  "埠（Port）",
-                  "通訊入口的編號；和 IP 位址、傳輸協定一起辨識端點",
-                  "TCP 445"
+                  "偵察",
+                  "目標在哪裡、用途是什麼？",
+                  "找到IP位址或網域名稱"
                 ],
                 [
-                  "服務（Service）",
-                  "提供功能的程式或功能",
-                  "檔案分享服務"
+                  "掃描",
+                  "哪個服務入口有回應？",
+                  "此次TCP 445顯示open"
                 ],
                 [
-                  "協定（Protocol）",
-                  "雙方交換訊息時遵守的規則",
-                  "SMB"
+                  "列舉",
+                  "服務透露哪些具體資訊？",
+                  "查到Public、Finance名稱"
                 ],
                 [
-                  "資源（Resource）",
-                  "服務管理的具體對象",
-                  "Public、Finance 共享"
+                  "身分驗證",
+                  "目前是誰在操作？",
+                  "確認labuser的登入結果"
+                ],
+                [
+                  "存取授權",
+                  "這個身分能做哪些操作？",
+                  "指定檔案讀取成功或遭拒"
                 ]
               ]
             },
             {
               "kind": "step",
-              "heading": "445 是線索，回應才幫你確認服務",
+              "heading": "先讀Nmap結果：埠、服務名稱與協定證據",
               "paragraphs": [
-                "TCP 是傳輸資料使用的協定之一。看到 445/tcp open，可以記下「這次有程式接受連線」。常見的 SMB 使用 TCP 445，接著仍要查看協定回應。",
-                "Nmap 是探測主機與服務的工具。它的 -sV 選項會送出探測，嘗試辨識服務與版本；把辨識結果和原始回應一起保存，方便確認工具判斷的依據。[埠狀態](https://nmap.org/book/man-port-scanning-basics.html) · [服務辨識](https://nmap.org/book/man-version-detection.html)"
-              ]
+                "在已授權實驗環境的終端機，nmap -p 445 192.168.56.10指定查看TCP 445。下方是簡化的模擬輸出。open描述此次來源位置與條件下，探測觀察到埠接受連線。",
+                "SERVICE欄的microsoft-ds可能只是Nmap依埠號資料庫填入的名稱。接著要用服務回應確認SMB；若另獲准使用-sV，工具會主動探測服務與版本，也要保留辨識依據。埠開放、協定確認與檔案權限分開判讀。[Nmap埠狀態](https://nmap.org/book/man-port-scanning-basics.html) · [服務辨識](https://nmap.org/book/man-version-detection.html)"
+              ],
+              "code": "nmap -p 445 192.168.56.10\n\n模擬輸出：\nPORT    STATE SERVICE\n445/tcp open  microsoft-ds"
             },
             {
               "kind": "details",
-              "heading": "延伸：NetShareEnum 資訊層級",
+              "heading": "延伸：NetShareEnum查的是哪些欄位？",
               "paragraphs": [
-                "API 是程式向其他程式請求功能的介面。Microsoft 的 NetShareEnum 是查共享資訊的一個例子；「Level」表示這次想拿哪些欄位。",
-                "Level 0 回傳共享名稱；Level 1 再加資源類型與註解。較高層級可要求其他資訊，權限條件依呼叫情境與平台而定。",
-                "文件所說的「Level 0／1 無特殊群組資格要求」，描述的是群組資格；匿名查詢是否可行，仍由驗證與服務政策決定。[NetShareEnum 官方文件](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
+                "API是程式向其他程式請求功能的介面。Microsoft NetShareEnum可查詢伺服器的共用資源資訊；Level表示希望取得哪些欄位。",
+                "Level 0回傳共用名稱，Level 1再包含類型與說明。較高資訊層級可能需要額外權限，依平台與呼叫條件判定。Level 0／1的群組資格要求，也不等於匿名一定能查。",
+                "資訊揭露程度與操作權限不是同一個維度：知道更多欄位，與能否讀寫Finance\\demo.txt，要各自查核。[NetShareEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
               ]
             }
           ]
         },
         {
           "id": "permissions",
-          "heading": "三、把「你是誰」和「能做什麼」分開",
+          "heading": "三、查到名稱後，再確認這個身分能做什麼",
           "paragraphs": [
-            "身分驗證（Authentication）確認「你是誰」，像是用 labuser 帳號和密碼登入。存取授權（Authorization）決定「這個帳號能做什麼」，像是讀取或修改檔案。測試許可是事先取得的同意；登入與系統權限則是電腦實際檢查的條件。[驗證與授權](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)",
-            "下面四張卡都在看同一個 Finance 共享，卻各自回答不同問題。卡片是合成案例的判讀，尚待查核的項目也保留下來。",
-            "Windows 常見的 SMB 檔案存取會同時受到共享權限與 NTFS 權限影響。共享權限管理從網路進入的操作；NTFS 是 Windows 的檔案系統，它的權限再管理資料夾與檔案。例如共享允許讀寫、NTFS 只允許讀取，沿這條路徑通常只有讀取權限。實際還要看帳號所屬群組、從上層沿用的規則，以及允許與拒絕設定。",
-            "收到 ACCESS_DENIED 時，先記下「這次指定操作被拒絕」。再核對登入是否成功、SMB 政策、共享與 NTFS 權限，並查看日誌，逐步找出拒絕原因。[排查步驟](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+            "已確認SMB且公司提供labuser後，可在約定範圍查詢共用名稱。假設回應列出Public與Finance，兩者類型都是Disk，表示這次列出了磁碟共用資源的名稱，Finance內的內容仍要另查。",
+            "身分驗證（Authentication）確認你是誰；存取授權（Authorization）判斷這個身分可以做什麼。本例使用同一labuser，Public\\demo.txt讀取成功，Finance\\demo.txt讀取遭拒，兩筆結果各自保存。",
+            "Share Permissions（共用權限）管理從網路共用入口進行的存取；NTFS Permissions（檔案系統權限）管理Windows NTFS上的資料夾與檔案。經SMB存取Windows NTFS時，兩層都會影響結果，還要核對群組、繼承與拒絕規則。",
+            "Access Denied直接支持的結論是「本次指定操作遭拒」。要找原因，對照完整回應、完整路徑、實際身分、SMB政策、權限設定及對應稽核。換帳號、讀其他檔案、上傳或修改，都需要各自的結果。[拒絕存取排查](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
           ],
           "blocks": [
             {
               "kind": "cards",
               "caption": "Finance：四種操作，四筆獨立結果",
-              "description": "合成情境，使用帳號 labuser。每張卡只描述這次操作；換帳號、路徑或條件時另記一筆。",
+              "description": "同一labuser與同一伺服器的合成情境；這些卡片不是逐級包含的權限。",
               "items": [
                 {
                   "title": "看見名稱",
-                  "body": "labuser · Finance：已觀察：共享清單出現 Finance。"
+                  "body": "本例查詢清單出現Finance。"
                 },
                 {
                   "title": "列出目錄",
-                  "body": "labuser · Finance：待查核：還要記錄 Finance 內的 ls 回應。"
+                  "body": "Finance裡的項目另行查核。"
                 },
                 {
-                  "title": "讀取檔案",
-                  "body": "labuser · Finance/test.txt：已觀察：Finance/test.txt 的讀取被拒絕。"
+                  "title": "讀取指定檔",
+                  "body": "Finance\\demo.txt的這次讀取遭拒。"
                 },
                 {
-                  "title": "寫入檔案",
-                  "body": "labuser · Finance：待查核：需另外取得操作許可並驗證。"
+                  "title": "上傳或修改",
+                  "body": "本例未測試，需另約定並取得結果。"
                 }
               ]
             },
             {
               "kind": "step",
-              "heading": "讀檔時，沿著哪幾層查？",
+              "heading": "把名稱清單與讀檔結果分開保存",
               "paragraphs": [
-                "假設 labuser 已成功登入：先核對共享是否允許這次讀取，再核對 NTFS 是否允許讀取指定檔案，最後連同其他適用政策判讀結果。這是查問題的順序；系統內部實際檢查順序依實作而定。"
-              ]
+                "下方是名稱列舉的模擬輸出，不含Finance的檔案內容。本例已確認labuser完成驗證；再查這次讀取是否符合共用與NTFS的有效權限，並核對其他適用政策。這是排查方向，不宣稱系統內部固定檢查順序。"
+              ],
+              "code": "模擬共用清單：\nSharename  Type\nPublic     Disk\nFinance    Disk"
             },
             {
               "kind": "details",
               "heading": "延伸：ABE 控制的是共享內的顯示",
               "paragraphs": [
-                "ABE（Access-Based Enumeration）是依權限決定哪些檔案、資料夾要顯示的功能。SMB 的 FolderEnumerationMode=AccessBased 控制共享內的這種顯示方式。",
-                "ABE 處理的是 Finance 裡面的項目；伺服器列出哪些共享名稱，是另一層查詢。真正讀寫資源時，仍由存取控制檢查權限。[FolderEnumerationMode](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
+                "ABE（Access-Based Enumeration）依權限調整共用內檔案與資料夾的顯示。SMB的FolderEnumerationMode=AccessBased控制這一層可見性。",
+                "Finance是否出現在伺服器共用名稱清單，是另一層查詢；實際讀寫仍由存取控制判定。[共用內顯示設定](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
               ]
             }
           ]
@@ -166,66 +174,68 @@
           "id": "practice",
           "heading": "四、動手做：每下一個指令，就記一個結果",
           "paragraphs": [
-            "這組練習使用 Ubuntu／Linux 電腦上的 Nmap 與 smbclient。smbclient 是連線到 SMB 服務的工具。先準備好工具、獲准測試的伺服器、labuser 測試帳號，以及伺服器上的 Public/test.txt 合成檔案。",
-            "開始前，把主機、時段、允許操作、停止條件及可保存的紀錄約定清楚。192.0.2.10 是文件用的示例位址，執行每個指令前都要換成獲准的實驗主機。[文件位址說明](https://www.rfc-editor.org/rfc/rfc5737)",
-            "在終端機輸入下列指令；密碼等程式提示時再輸入。保存紀錄時移除密碼與個資。前面的案例是示意，這裡請記下自己真正看到的結果。"
+            "以下是Windows PowerShell授權練習，另附Linux Samba的名稱查詢。公司需先準備實驗主機192.168.56.10、約定的測試身分，以及Public與Finance中的demo.txt合成檔案。私人IP位址本身不代表取得測試許可。",
+            "先確認主機、時段、允許的查詢與讀檔操作、停止條件及紀錄保存方式。Windows步驟沿用目前SMB連線的實際身分，先與管理者確認；不要把電腦登入名稱直接當成遠端已驗證身分。",
+            "以下所有輸出都標為模擬；實際練習逐步記錄真正回應。遇到拒絕先保存證據，依約定停止或交由管理者核對，不擅自換帳號、修改權限或繞過限制。"
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "A．觀察埠與服務",
+              "heading": "A．PowerShell：測試TCP入口",
               "paragraphs": [
-                "-p 445 指定要查看 TCP 445，-sV 嘗試辨識服務與版本。執行後找出埠狀態和服務辨識結果，保存原始輸出。看到 open 時，先記下入口有回應，再核對服務的協定證據。"
+                "在Windows PowerShell輸入下列命令。TcpTestSucceeded : True只表示此次TCP連線測試成功；SMB協定、可見名稱與檔案權限，各自另查。[Test-NetConnection](https://learn.microsoft.com/en-us/powershell/module/nettcpip/test-netconnection)"
               ],
-              "code": "nmap -sV -p 445 192.0.2.10"
+              "code": "Test-NetConnection 192.168.56.10 -Port 445\n\n模擬輸出：\nTcpTestSucceeded : True"
             },
             {
               "kind": "step",
-              "heading": "B．列出共享名稱",
+              "heading": "B．PowerShell：查詢共用名稱",
               "paragraphs": [
-                "-L 要求列出共享，-U 指定登入帳號。依提示輸入密碼後，找出回傳的共享名稱。如果看到 Public、Finance，就記下「labuser 這次查到這兩個名稱」。"
+                "確認目前Windows／SMB連線所用的認證身分與服務條件後，再列出指定伺服器的共用資源；既有連線可能使用與Windows登入帳號不同的憑證。net view本身沒有指定labuser，未加/ALL時也可能省略名稱以$結尾的共用資源。",
+                "模擬結果列出Public與Finance；這筆證據描述名稱可見性。[net view](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/hh875576%28v%3Dws.11%29)"
               ],
-              "code": "smbclient -L 192.0.2.10 -U labuser"
+              "code": "net view \\\\192.168.56.10\n\n模擬簡化輸出：\nShare name  Type\nPublic      Disk\nFinance     Disk"
             },
             {
               "kind": "step",
-              "heading": "C．在本機終端機準備下載資料夾",
+              "heading": "C．PowerShell：讀取Public的約定測試檔",
               "paragraphs": [
-                "先在本機終端機貼上這一小段。mktemp -d 建立全新的暫存資料夾，lab_dir 保存它的路徑；cd 切換到該資料夾，pwd 顯示目前位置。",
-                "如果建立或切換失敗，會顯示 STOP，請先處理錯誤，再繼續下一步。成功時會印出新的資料夾路徑。下載前確認其中還沒有 downloaded-test.txt，避免覆寫既有檔案。"
+                "Get-Content讀取指定位置的內容；此處只讀事先準備的合成文字檔。下方成功結果只適用這個身分、路徑與當次條件。[Get-Content](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-content)"
               ],
-              "code": "if lab_dir=$(mktemp -d) && cd \"$lab_dir\"; then\n  pwd\nelse\n  printf \"%s\\n\" \"STOP: prepare the local directory first.\"\nfi"
+              "code": "Get-Content '\\\\192.168.56.10\\Public\\demo.txt'\n\n模擬輸出：\nThis is a synthetic test file."
             },
             {
               "kind": "step",
-              "heading": "D．連線到同一台伺服器的 Public",
+              "heading": "D．PowerShell：讀取Finance的約定測試檔",
               "paragraphs": [
-                "確認上一小步成功後，在同一個本機終端機輸入下列指令，依提示輸入密碼。成功連線後，提示字元會變成 smb:，接著才輸入下一小步的指令。"
+                "沿用同一已確認身分，測試另一個事先約定的檔案。若收到Access is denied，記錄這次指定讀取遭拒，再核對身分、設定與稽核。",
+                "這項結果只描述Finance\\demo.txt的當次讀取；其他檔案、其他帳號與上傳修改權限，仍各有待查項目。"
               ],
-              "code": "smbclient //192.0.2.10/Public -U labuser"
+              "code": "Get-Content '\\\\192.168.56.10\\Finance\\demo.txt'\n\n模擬錯誤節錄：\nAccess is denied"
             },
             {
               "kind": "step",
-              "heading": "E．在 smb: 提示字元列目錄與讀檔",
+              "heading": "E．Linux：用Samba查詢名稱",
               "paragraphs": [
-                "在 smb: 提示字元逐行輸入。ls 列出目前伺服器目錄的項目；get 讀取事先準備且獲准的 test.txt，存成本機目前資料夾的 downloaded-test.txt；quit 結束連線。",
-                "每一行都先看回應再繼續：ls 成功，就記「列目錄成功」；get 成功，就記「指定合成檔下載成功」。遇到拒絕時，保存錯誤訊息與路徑，按前一節的順序查原因。"
+                "在已安裝smbclient的Linux終端機執行。-L查詢伺服器提供的資源，-U指定labuser；密碼依互動提示輸入，留在終端機，不寫進命令、教材或公開紀錄。",
+                "本步列資源名稱，讀取內容是另一項操作。查詢失敗時保存原始回應，先核對授權條件。"
               ],
-              "code": "ls\nget test.txt downloaded-test.txt\nquit"
+              "code": "smbclient -L 192.168.56.10 -U labuser"
             },
             {
               "kind": "step",
-              "heading": "保存與結束",
+              "heading": "保存結果並結束",
               "paragraphs": [
-                "把時間、主機、帳號、路徑、指令和回應一起保存。Finance 若也在許可範圍內，可用相同方式查它的合成檔；建立、寫入與刪除則各自確認許可再測。",
-                "結束連線後，依約定保留報告，再清掉這次下載的合成檔與專用暫存資料夾。這組步驟只讀取伺服器資料，清理對象是本機副本。"
+                "把時間、來源與目標、實際身分、完整路徑、指令、原始回應及限制一併保存。這組步驟不包含上傳、修改或刪除測試；若日後需要，另行約定範圍。",
+                "報告可寫「本次列出Finance名稱，指定檔案讀取遭拒」，讓結論對應證據。若要判斷是否已有不當存取，需要新的操作與設定證據。"
               ]
             },
             {
               "kind": "details",
-              "heading": "工具選項：為什麼採互動模式",
+              "heading": "工具補充：密碼提示與查詢範圍",
               "paragraphs": [
-                "Samba 手冊指出 -c 會隱含 -N（不提示密碼）。本課改用互動連線，再執行 ls、get 與 quit，讓密碼提示與每一步回應更容易核對。[smbclient 官方手冊](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+                "smbclient的-L列出伺服器提供的服務資源；它不是讀取共用內容的命令。單用-U labuser時，依提示輸入密碼，不把密碼附在帳號後面。",
+                "Samba手冊指出-c會隱含-N（不提示密碼）。本課保留互動密碼輸入，避免把不會提示密碼的方式說成互動登入。[smbclient](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
               ]
             },
             {
@@ -233,34 +243,34 @@
               "caption": "回頭整理：這筆結果支持哪個結論？",
               "headers": [
                 "觀察",
-                "已確認",
-                "後續獨立查核"
+                "此次確認",
+                "另行查核"
               ],
               "rows": [
                 [
-                  "TCP 445 open",
-                  "該次探測觀測到埠接受連線",
-                  "實際服務與資源權限"
+                  "TCP445 open／TcpTestSucceeded True",
+                  "入口接受連線／TCP測試成功",
+                  "SMB協定與檔案權限"
                 ],
                 [
-                  "SMB 協定回應",
-                  "取得 SMB 協定互動證據",
-                  "可見共享及可用操作"
+                  "SMB協定回應",
+                  "服務以SMB進行協定互動",
+                  "目前身分與允許操作"
                 ],
                 [
-                  "列出 Finance",
-                  "此查詢身分看見共享名稱",
-                  "目錄列出、讀取及寫入"
+                  "列出Public、Finance",
+                  "這次查詢可見兩個共用名稱",
+                  "共用內項目及檔案內容"
                 ],
                 [
-                  "ls 成功",
-                  "指定目錄的列出操作成功",
-                  "指定檔案完整讀取"
+                  "Public\\demo.txt讀取成功",
+                  "這個身分此次讀到指定合成檔",
+                  "其他檔案與修改權限"
                 ],
                 [
-                  "指定檔案 get 遭拒",
-                  "該次讀取／下載未成功",
-                  "拒絕層次、其他檔案與其他操作"
+                  "Finance\\demo.txt讀取遭拒",
+                  "本次指定讀取被拒絕",
+                  "拒絕原因與相應稽核"
                 ]
               ]
             }
@@ -270,19 +280,19 @@
           "id": "defense",
           "heading": "五、查到資訊後，怎麼判斷風險？",
           "paragraphs": [
-            "先問「原本預期誰可以看見這些資訊？」員工查到部門共享名稱，可能就是正常設計。如果外部訪客也能查到敏感部門結構或員工名單，就要追查公開的範圍與原因。",
-            "評估時一起看五件事：資訊有多敏感、誰查得到、規定允許誰看、哪些網路能連進來，以及資訊可能怎麼被利用。先寫觀察結果，再補上支持風險判斷的證據。",
-            "MITRE ATT&CK 是整理攻擊者常見行為的知識庫。查網路共享可對照 [T1135](https://attack.mitre.org/techniques/T1135/)，查帳號可對照 [T1087](https://attack.mitre.org/techniques/T1087/)。合法盤點也可能出現相似查詢，要連同測試許可與情境判讀。",
-            "防護可以分三層：限制哪些網路能連線、只回傳工作需要的資訊、替讀取與修改等操作設定適當權限。再用日誌（系統留下的事件紀錄）觀察異常大量查詢。調整後，以獲准的不同帳號重測，確認限制生效，正常工作也能繼續。"
+            "普通員工看見部門共用名稱，可能符合正常業務需求。先問名稱是否敏感、哪些身分能取得、工作上是否需要，以及是否同時存在不必要的讀寫權限。",
+            "資訊揭露程度與操作權限是兩個維度：名稱可見，不自動等於弱點；名稱看似普通，也不代表讀寫設定一定合適。把觀察與預期政策對照，再說明風險。",
+            "防護分三層：網路限制，讓需要的來源連得到；最小權限，只提供業務所需資訊與操作；安全稽核，保存適當事件並檢查異常。調整後依約定重新驗證，確認正常工作仍可完成。",
+            "報告記下時間、來源與目標、身分、指令、實際結果、條件與限制。若證據只有名稱清單與讀取遭拒，就據此描述；「Finance已攻破」需要相應的成功存取證據。"
           ],
           "blocks": [
             {
               "kind": "details",
               "heading": "延伸：5140／5145 的稽核範圍",
               "paragraphs": [
-                "稽核是讓系統記錄特定事件的設定。先確認伺服器開啟相關稽核，再查事件編號。5140 提供一個工作階段首次共享存取嘗試的背景，例如帳號、來源位址與共享。要追每個檔案的讀取結果，還需查看相應的檔案存取證據。",
-                "5145（Audit Detailed File Share）記錄共享物件存取檢查；其失敗事件針對共享層拒絕。NTFS 層拒絕不會因此自動產生5145失敗事件，需另查檔案系統稽核及相關回應。",
-                "時間、目標、身分、操作與回應要一起保留，換帳號或網路位置後另記一組結果。[5140 官方文件](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5140) · [5145 官方文件](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5145)"
+                "先確認相關稽核政策已啟用。Windows 5140提供工作階段首次共用存取嘗試的背景；它適合核對帳號、來源與共用，不是完整的逐檔讀取清單。[5140](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5140)",
+                "5145記錄共用層級的詳細存取檢查，其失敗事件針對共用層拒絕。NTFS拒絕要另查Audit File System（檔案系統稽核）與相符的SACL（指定要記錄哪些存取的稽核規則），並核對權限與回應。[5145](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5145) · [檔案系統稽核](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/audit-file-system)",
+                "把事件時間、路徑、身分與工具回應對起來，才能定位拒絕發生的條件。缺少事件不等於沒有操作；先核對稽核政策與SACL，再保留仍缺少的證據。"
               ]
             }
           ]
@@ -291,9 +301,9 @@
           "id": "map",
           "heading": "六、下一課也用同一套問法",
           "paragraphs": [
-            "換成其他服務，也先問三件事：「我在問哪個服務？它回了哪些具體資訊？這個帳號在這些條件下能做什麼？」下表先當索引，之後每課再認識一種服務。",
-            "[EC-Council CEH 課程](https://www.eccouncil.org/train-certify/certified-ethical-hacker-ceh/)與[考試藍圖 v5.0](https://cert.eccouncil.org/wp-content/uploads/2024/04/CEH-Exam-Blueprint-v5.pdf)可用來核對列舉範圍。本站 M04 的12核心是教學安排，各章概念數依內容整理。",
-            "下一個核心維持 M04-02 DNS 列舉。帳號、群組、權限與 Active Directory 的關係保留為相關延伸，之後連到 LDAP、權限提升與橫向移動的學習脈絡。"
+            "現在學的是列舉的共同原理：服務會向什麼身分透露哪些資訊？這些資訊是否超過業務需要？換一種協定，仍用這兩個問題開始，再查各項操作權限。",
+            "下表是後續章節的知識地圖。每種服務的查詢方式、身分要求與可見範圍不同；將來用各課的具體回應來確認。",
+            "本概念頁的下一個閱讀主題仍是M04-02 DNS。這次只是M04-01的教材修訂，不代表新增交付概念或理解確認。"
           ],
           "blocks": [
             {
@@ -305,28 +315,28 @@
               ],
               "rows": [
                 [
-                  "SMB／NetBIOS",
-                  "共享資源、電腦名稱"
-                ],
-                [
-                  "LDAP／Active Directory",
-                  "帳號、群組、組織資訊"
-                ],
-                [
                   "DNS",
-                  "網域、主機與DNS記錄"
+                  "主機名稱與DNS記錄"
+                ],
+                [
+                  "SMB",
+                  "共用名稱與條件允許的部分伺服器資訊"
+                ],
+                [
+                  "LDAP",
+                  "目錄中的帳號、群組與物件"
                 ],
                 [
                   "SNMP",
-                  "網路設備與管理資訊"
+                  "設備、介面與管理資料"
+                ],
+                [
+                  "SMTP",
+                  "郵件服務在政策允許下提供的查詢資訊"
                 ],
                 [
                   "NFS",
                   "匯出的檔案系統資源"
-                ],
-                [
-                  "SMTP",
-                  "郵件服務資訊；特定設定下的收件者驗證"
                 ],
                 [
                   "RPC",
@@ -340,8 +350,8 @@
           "id": "check",
           "heading": "七、測驗：三題理解檢核",
           "paragraphs": [
-            "先自己選答案，想一句理由，再展開解析核對。展開只會顯示教材答案；你的作答與理解確認，留待後續討論。",
-            "原本的小檢核仍可作為口頭解釋：列出了 Finance 名稱，但讀取其中指定檔案遭拒時，你會如何向同事說明已確認的結果，以及接著要查哪些權限？"
+            "先選答案並想一句理由，再展開教材解析。三題分別檢查埠與協定證據、列舉與操作權限、拒絕原因與稽核。",
+            "展開只顯示教材答案，不會傳送作答或更新理解狀態。實際問題與討論收到後，再另外整理到Q&A。"
           ],
           "blocks": []
         }
@@ -701,18 +711,18 @@
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "使用 smbclient 成功列出 Finance 共享名稱，但還沒開啟任何檔案。最準確的結論是什麼？",
+          "prompt": "Nmap顯示445/tcp open microsoft-ds，最準確的判讀是什麼？",
           "options": [
-            "已取得 Finance 讀取權限",
-            "已確認 Finance 共享名稱在此次查詢中可見",
-            "已確認 Finance 存在高風險漏洞",
-            "已取得 Finance 管理員權限"
+            "已確認SMB與Finance讀取權限",
+            "此次觀察到埠開放；服務名稱可能來自埠號對照，SMB仍需回應確認",
+            "已取得伺服器管理員權限",
+            "已確認這個埠在所有網路位置都可連線"
           ],
           "rationales": [
-            "A：讀取指定檔案是另一項操作，需保留實際讀取結果。",
-            "B：正確。這次回應告訴我們，這個帳號看得到共享名稱。",
-            "C：風險分級還需核對政策、敏感度與可利用條件。",
-            "D：管理權限需要其他明確證據。"
+            "A：埠結果、SMB協定與檔案操作各有自己的證據。",
+            "B：正確。open描述此次探測觀察，SERVICE欄可能只是埠號名稱；接著核對協定回應。",
+            "C：管理員權限需要身分與授權證據。",
+            "D：來源位置與網路條件改變後，要另外記錄結果。"
           ]
         },
         "en": {
@@ -737,18 +747,18 @@
       "answer": 2,
       "text": {
         "zh": {
-          "prompt": "labuser 讀取 Finance/test.txt 時得到 ACCESS_DENIED。下列哪種推論最不合理？",
+          "prompt": "labuser查到Public與Finance，尚未讀取任何檔案。這筆結果支持什麼？",
           "options": [
-            "這次指定檔案讀取未成功",
-            "需要檢查有效權限與拒絕原因",
-            "labuser 一定不能對 Finance 做任何操作",
-            "其他使用者可能得到不同結果"
+            "Finance的所有檔案都可讀",
+            "已獲准上傳與修改Finance內容",
+            "這次查詢可見兩個共用名稱，內容與操作權限另查",
+            "Finance的名稱敏感度已確定為高風險"
           ],
           "rationales": [
-            "A：這是本次回應直接支持的觀察。",
-            "B：核對身分、政策、共享／NTFS權限與日誌，有助定位拒絕。",
-            "C：答案。把單一讀取遭拒擴大成所有操作都不可行，超出這次證據範圍。",
-            "D：不同身分可能適用不同權限，需另行觀察。"
+            "A：讀取指定檔案要有相應結果。",
+            "B：上傳與修改是不同操作，需另約定與驗證。",
+            "C：正確。列舉取得名稱資訊，操作權限是另一個維度。",
+            "D：風險還要對照名稱敏感度、可見身分與業務需求。"
           ]
         },
         "en": {
@@ -773,18 +783,18 @@
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "同一台伺服器、同一個共享資源，以兩種不同帳號查詢得到不同結果，最值得優先研究的是什麼？",
+          "prompt": "讀取Finance\\demo.txt遭拒，怎麼安排下一步最合適？",
           "options": [
-            "CPU 時脈",
-            "身分與授權政策",
-            "螢幕解析度",
-            "硬碟轉速"
+            "只看5145就能確定所有NTFS拒絕原因",
+            "核對完整回應、路徑、身分與有效權限，並依拒絕層次查相應稽核",
+            "立即換其他帳號持續嘗試",
+            "將整個Finance標為所有人都無法使用"
           ],
           "rationales": [
-            "A：CPU時脈不是本案例優先比較的權限條件。",
-            "B：正確。先核對帳號、群組、授權政策與其他查詢條件是否一致。",
-            "C：螢幕解析度與服務端授權判斷無直接關係。",
-            "D：硬碟轉速通常影響效能，這裡優先研究身分與政策。"
+            "A：5145失敗事件針對共用層拒絕；NTFS拒絕要查相應檔案系統稽核。",
+            "B：正確。先將這次操作與條件對齊，確認稽核設定，再定位拒絕原因。",
+            "C：換帳號需在另行約定的授權範圍內，不以自行嘗試取代證據核對。",
+            "D：本次結果只描述指定身分對指定檔案的讀取；其他人與操作另查。"
           ]
         },
         "en": {
