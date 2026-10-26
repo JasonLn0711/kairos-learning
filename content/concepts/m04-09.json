@@ -1,0 +1,343 @@
+{
+  "id": "M04-09",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-10-26",
+  "status": "published",
+  "publishedOn": "2026-10-26",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "先記住一句：SNMP 能揭露設備的管理資訊；讀得到資料、能修改設定與取得管理員權限，是不同的事。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "10/26 早間：一次學一個核心概念"
+        },
+        {
+          "kind": "heading",
+          "id": "definition",
+          "text": "1. SNMP 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMP（Simple Network Management Protocol，簡易網路管理協定）讓管理系統監看交換器、路由器或伺服器的名稱、介面狀態與流量等資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "像設備旁的管理櫃檯，你可以詢問資料，但櫃檯會依你的身分與權限決定回答多少。SNMP 列舉就是有系統地整理這些回應，用於授權的設備盤點與資訊揭露檢查，不是看到服務開著就可以任意操作。"
+        },
+        {
+          "kind": "heading",
+          "id": "roles",
+          "text": "2. 四個必要角色"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Manager（管理端）：提出查詢的管理工具。",
+            "Agent（代理程式）：設備上接收並處理管理要求的程式。",
+            "MIB（管理資訊庫）：定義可管理物件的名稱、型別與意義，像欄位說明書；不等於可直接下載的整份設備資料。",
+            "OID（物件識別碼）：管理物件在階層樹中的識別。例如 1.3.6.1.2.1.1.5.0 對應 sysName.0，也就是系統名稱這個純量物件的實例。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "白話說：管理端拿著 OID 問代理程式，代理程式依權限回傳值，MIB 幫你理解這個值代表什麼。"
+        },
+        {
+          "kind": "heading",
+          "id": "operations",
+          "text": "3. GET、WALK 與 SET 差在哪？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "GET：取得指定物件實例的值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "GETNEXT：取得依 OID 排序的下一個可存取實例，不是把最後一個數字加一。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "WALK：工具反覆查詢，走訪指定子樹。Net-SNMP 的 snmpwalk 使用 GETNEXT；WALK 不是獨立的協定訊息。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SET：嘗試修改物件的值，需要物件支援且具備相應寫入權限。本課只討論唯讀查詢，不實際修改設備。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，「能列出資料」不能直接跳成「能設定設備」。[Net-SNMP 查詢教學](https://www.net-snmp.org/tutorial/tutorial-5/commands/snmpgetnext.html)；[RFC 3416](https://www.rfc-editor.org/rfc/rfc3416.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "security",
+          "text": "4. 連接埠與安全版本"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見情況是 Agent 在 UDP 161 接收查詢；Trap／Inform 等通知送到接收端的 UDP 162。這是常見配置，不代表 SNMP 只能使用 UDP 或這兩個連接埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "v1／v2c 使用 community string，傳統協定本身不提供它的加密保護。唯讀或可寫取決於設備設定，不是由字串名稱決定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "v3 也不等於一定加密，要看安全層級："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "noAuthNoPriv：沒有訊息認證，也沒有加密。",
+            "authNoPriv：有認證與完整性保護，沒有加密。",
+            "authPriv：有認證、完整性與加密保護。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "訊息有加密，仍不代表這個身分可以讀取所有資料或修改設定，授權範圍要另外確認。[RFC 3417](https://www.rfc-editor.org/rfc/rfc3417.html)；[RFC 3411](https://www.rfc-editor.org/rfc/rfc3411.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "5. 一個合成例子"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設隔離實驗室裡有一台交換器，管理員只授權你讀取 system 子樹。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你用 GET 查詢 sysName.0，收到 lab-switch-01；再用 WALK 取得允許讀取的系統描述與名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這份證據只能支持：「這個身分，在這個時間與設定下，能讀到這些物件。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不能證明你可以使用 SET，更不能證明你能登入設備管理介面。沒有回應時，也不能直接判定服務不存在，可能是防火牆、認證或設定問題。"
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "flow",
+            "caption": "網頁補充：一次 GET 的請求與回應",
+            "description": "合成案例；讀取結果不代表寫入或登入權限。",
+            "items": [
+              {
+                "title": "Manager → Agent｜提出查詢",
+                "body": "GET sysName.0"
+              },
+              {
+                "title": "Agent｜檢查存取範圍",
+                "body": "依身分、設定與 MIB view 處理。"
+              },
+              {
+                "title": "Agent → Manager｜回覆值",
+                "body": "lab-switch-01：本次讀取證據。"
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-09-get-zh.svg",
+          "downloadLabel": "下載 SVG 圖解"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "6. 防護與證據判讀"
+        },
+        {
+          "kind": "paragraph",
+          "text": "限制管理來源與網段，採最小權限及受限的 MIB view；不需要的 SNMP 停用，需要時優先採合適演算法與金鑰設定的 v3 authPriv。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "報告記錄時間、來源、版本／安全層級、查詢 OID 與必要回應，但不記錄 community 或金鑰。設備回傳的版本字串是調查線索，不足以單獨證明漏洞存在。"
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "小檢核："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你成功讀到交換器名稱，能不能因此判定自己可以修改設定？還要確認哪一類權限？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "用一兩句回答就好。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Remember: SNMP can reveal device management information. Reading data, changing settings, and obtaining administrator privileges are different things.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "October 26 morning: one core concept at a time"
+        },
+        {
+          "kind": "heading",
+          "id": "definition",
+          "text": "1. What is SNMP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMP (Simple Network Management Protocol) lets management systems monitor information such as names, interface status, and traffic on switches, routers, and servers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of a management desk beside a device: you can ask for information, but the desk decides how much to disclose based on your identity and permissions. SNMP enumeration systematically organizes these responses for authorized device inventory and information-disclosure checks. An available service does not authorize arbitrary operations."
+        },
+        {
+          "kind": "heading",
+          "id": "roles",
+          "text": "2. Four essential roles"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Manager: the management tool that sends queries.",
+            "Agent: the program on a device that receives and processes management requests.",
+            "MIB (Management Information Base): definitions of managed objects' names, types, and meanings, like a field reference. It is not an entire device dataset that can simply be downloaded.",
+            "OID (Object Identifier): identifies a managed object in a hierarchical tree. For example, 1.3.6.1.2.1.1.5.0 corresponds to sysName.0, an instance of the scalar system-name object."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "In plain terms, the manager queries the agent using an OID, the agent returns a value according to access permissions, and the MIB explains what that value means."
+        },
+        {
+          "kind": "heading",
+          "id": "operations",
+          "text": "3. How do GET, WALK, and SET differ?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "GET: retrieves the value of a specified object instance."
+        },
+        {
+          "kind": "paragraph",
+          "text": "GETNEXT: retrieves the next accessible instance in OID order, rather than adding one to the last number."
+        },
+        {
+          "kind": "paragraph",
+          "text": "WALK: a tool repeatedly queries to traverse a specified subtree. Net-SNMP snmpwalk uses GETNEXT; WALK is not a separate protocol message."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SET: attempts to change an object's value. The object must support the operation and the requester needs appropriate write access. This lesson discusses read-only queries and does not modify devices."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Being able to list information does not establish permission to configure a device. [Net-SNMP query tutorial](https://www.net-snmp.org/tutorial/tutorial-5/commands/snmpgetnext.html); [RFC 3416](https://www.rfc-editor.org/rfc/rfc3416.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "security",
+          "text": "4. Ports and security versions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Commonly, an agent receives queries on UDP 161, while notifications such as Trap and Inform messages go to a receiver on UDP 162. These are common configurations, not the only possible transports or ports for SNMP."
+        },
+        {
+          "kind": "paragraph",
+          "text": "v1/v2c use a community string, which the traditional protocols do not encrypt. Read-only or writable access depends on device configuration, not the name of the string."
+        },
+        {
+          "kind": "paragraph",
+          "text": "v3 does not necessarily mean encryption. Check the security level:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "noAuthNoPriv: no message authentication and no encryption.",
+            "authNoPriv: authentication and integrity protection, without encryption.",
+            "authPriv: authentication, integrity protection, and encryption."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Encrypted messages do not establish that an identity may read all data or change settings. Authorization scope must be checked separately. [RFC 3417](https://www.rfc-editor.org/rfc/rfc3417.html); [RFC 3411](https://www.rfc-editor.org/rfc/rfc3411.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "5. A synthetic example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an isolated laboratory has a switch, and the administrator authorizes you to read only the system subtree."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You GET sysName.0 and receive lab-switch-01, then WALK the permitted system-description and name objects."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This evidence supports only this conclusion: this identity could read these objects at this time under these settings."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not establish SET access or permission to log in to the device's management interface. No response does not establish that the service is absent: firewall, authentication, or configuration issues may be responsible."
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "flow",
+            "caption": "Web supplement: one GET request and response",
+            "description": "Synthetic example; a read result does not establish write or login access.",
+            "items": [
+              {
+                "title": "Manager → Agent | Request",
+                "body": "GET sysName.0"
+              },
+              {
+                "title": "Agent | Check access scope",
+                "body": "Process the identity, settings, and MIB view."
+              },
+              {
+                "title": "Agent → Manager | Response",
+                "body": "lab-switch-01: evidence of this read."
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-09-get-en.svg",
+          "downloadLabel": "Download SVG diagram"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "6. Defenses and evidence interpretation"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Restrict management sources and networks, apply least privilege and a limited MIB view, and disable SNMP when unnecessary. When needed, prefer v3 authPriv with suitable algorithms and key configuration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record the time, source, version/security level, queried OIDs, and necessary responses, but omit community strings and keys. A device's version string is an investigative clue, not sufficient evidence of a vulnerability by itself."
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "Quick check:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You successfully read a switch's name. Does that establish that you may change its settings? What kind of permission still needs checking?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reply in one or two sentences."
+        }
+      ]
+    }
+  }
+}

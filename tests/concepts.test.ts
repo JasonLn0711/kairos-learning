@@ -28,7 +28,7 @@ test('draft, future, pending and nonexistent concepts have no public body or sea
     assert.equal(catalog.get(t.id,'zh'),null);assert.equal(catalog.list('zh')[1].href,null);
     assert.ok(!JSON.stringify(catalog.searchEntries).includes('SECOND_CONCEPT_FIXTURE'));
   }
-  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-09/'),null);
+  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-10/'),null);
   assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-99/'),null);
   assert.equal(createConceptCatalog(concepts,[first],'2026-10-23').get('M99-99','en'),null);
 });
