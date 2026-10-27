@@ -126,14 +126,15 @@ test('M01-03 primary revision preserves ten sections, seven tables, full flow an
   assert.deepEqual(t.qa,[]);
 });
 
-test('M01-04 and M01-05 retain full beginner lessons with one reference answer each',()=>{
+test('M01-04 primary revision and M01-05 retain complete beginner lessons',()=>{
   for(const id of ['M01-04','M01-05']) {
     const t=allConceptTeachings.find(t=>t.id===id)!; assert.ok(t);
-    assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
+    assert.equal(t.contentVersion,id==='M01-04'?'1.1.0':'1.0.0');assert.deepEqual(t.qa,[]);
     for(const lang of ['zh','en'] as const){
       const b=t.text[lang].sourceBody!;
       assert.equal(b.filter(x=>x.kind==='heading').length,7);
-      assert.equal(b.filter(x=>x.kind==='answer').length,1);
+      assert.equal(b.filter(x=>x.kind==='answer').length,id==='M01-04'?3:1);
+      if(id==='M01-04'){assert.equal(b.filter(x=>x.kind==='table').length,5);assert.equal(b.filter(x=>x.kind==='code').length,3);}
       assert.ok(b.length>60);
     }
   }
