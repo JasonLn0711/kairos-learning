@@ -134,3 +134,15 @@ Chinese body placements currently refer to the preserved source block indices 8,
 The user explicitly requested that only actual Q&A retain expand/collapse. Apply this to CEH course teaching and navigation, not unrelated website sections. Render diagrams, prose, retained source material, lab/implementation steps, ASCII schematics, technical notes and dig line explanations directly. Do not use `details open` as a substitute: non-Q&A teaching has no collapse control. A figure inside an actual Q&A appears with its parent answer, without a nested figure disclosure.
 
 `ConceptQA` remains the actual discussion disclosure. Ordinary concept checks show their answer/rationales directly; they are not reclassified as Q&A. Interactive `QuestionCard` tests retain answer selection/submission and post-answer feedback, which is assessment behavior rather than a presentation toggle. Its no-JavaScript answer fallback is directly visible. Keep all source sentences/order, stable anchors, selectable code, responsive HTML and independent SVG downloads. This shared UI-only change is recorded in site release history; lesson content editions and revisions remain unchanged.
+
+## CEH answer and code presentation — October 27, 2026
+
+This supersedes the October 25 rule only for explicitly supplied **reference answers to teaching checks**. Keep learner discussion in `qa` separate: publishing a reference answer is not a learner submission or evidence of understanding.
+
+- All CEH code/output/ASCII blocks use a light background and dark text. The shared CEH page override uses `#f2f6f5` / `#18252c` (14.39:1 measured text contrast); unrelated courses are outside this change.
+- Give teaching questions plain-language Traditional Chinese reference answers using Taiwanese phrasing. Put each answer in a native disclosure, closed initially; label it clearly as a reference answer. Keep a complete matching English answer on bilingual pages.
+- A `sourceBody` answer is `{kind:'answer', id:'answer-...', summary:string, paragraphs:string[]}`. Its content remains searchable. It does not create a learner Q&A entry, store a response or advance progress.
+- Body prose, tables, code, diagrams and procedural explanations remain directly visible, including diagrams inside an opened answer; no nested diagram disclosures.
+- Preserve stable IDs/URLs and delivered history. New instruction to publish answers supersedes earlier “do not reveal answers” wording for the same supplied check. Record that editorial change, without implying the reader has learned it.
+
+M01-02 v1.1.0 provides the seven-section example of this format. Retain independent content, code contrast, default-closed disclosure, keyboard and viewport checks. Never label an unexecuted browser check as passed.

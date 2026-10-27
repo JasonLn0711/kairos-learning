@@ -23,6 +23,7 @@
     {:else if block.kind === 'paragraph'}<p><InlineText text={block.text} /></p>
     {:else if block.kind === 'code'}{#if conceptId==='M04-03' && block.id?.startsWith('ftp-ascii')}<div class="ascii"><!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontal ASCII scrolling.) -->
 <pre role="region" aria-label={lang==='zh'?'可捲動文字示意':'Scrollable text schematic'} tabindex="0"><code>{block.text}</code></pre></div>{:else}<pre><code>{block.text}</code></pre>{/if}
+    {:else if block.kind === 'answer'}<details class="reference-answer" id={block.id}><summary><InlineText text={block.summary}/></summary>{#each block.paragraphs as paragraph}<p><InlineText text={paragraph}/></p>{/each}</details>
     {:else if block.kind === 'list'}<ul>{#each block.items as item}<li><InlineText text={item} /></li>{/each}</ul>
     {:else if block.kind === 'table'}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable tables need keyboard access.) -->
@@ -34,6 +35,8 @@
   {/each}
 </div>
 <style>
+  .reference-answer{border:1px solid var(--line);border-radius:8px;padding:1rem;margin:1.5rem 0;background:var(--soft)}
+  .reference-answer summary{cursor:pointer;font-weight:600}
   .ascii{margin:1rem 0;border:1px solid var(--line);border-radius:8px;padding:.7rem}.ascii pre{max-width:100%;overflow:auto}
   .source-body.ftp :global(p){white-space:pre-line}
   .table-scroll{max-width:100%;overflow-x:auto;margin:1.5rem 0}
