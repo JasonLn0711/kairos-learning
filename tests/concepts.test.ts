@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compareContentVersions, conceptVersionLabel, createConceptCatalog, type ConceptTeaching } from '../src/lib/concepts.ts';
 import { concepts, allConceptTeachings, getPage } from '../src/lib/server/catalog.ts';
-const first=allConceptTeachings[0];
+const first=allConceptTeachings.find(t=>t.id==='M04-01')!;
 function second(): ConceptTeaching {
   const t=structuredClone(first);t.id='M04-02';delete t.checks;
   for(const lang of ['zh','en'] as const) t.text[lang]={summary:`${lang} SECOND_CONCEPT_FIXTURE`,sections:[{id:'own-section',heading:`${lang} Own heading`,paragraphs:[`${lang} Own teaching`]}]};
@@ -25,7 +25,7 @@ test('draft, future, pending and nonexistent concepts have no public body or sea
   for(const status of ['draft','future'] as const){
     const t=second();if(status==='draft')t.status='draft';else t.publishedOn='2099-01-01';
     const catalog=createConceptCatalog(concepts,[first,t],'2026-10-23');
-    assert.equal(catalog.get(t.id,'zh'),null);assert.equal(catalog.list('zh')[1].href,null);
+    assert.equal(catalog.get(t.id,'zh'),null);assert.equal(catalog.list('zh').find(c=>c.id===t.id)!.href,null);
     assert.ok(!JSON.stringify(catalog.searchEntries).includes('SECOND_CONCEPT_FIXTURE'));
   }
   assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-13/'),null);
