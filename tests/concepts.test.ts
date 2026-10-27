@@ -125,3 +125,16 @@ test('M01-03 primary revision preserves ten sections, seven tables, full flow an
   }
   assert.deepEqual(t.qa,[]);
 });
+
+test('M01-04 and M01-05 retain full beginner lessons with one reference answer each',()=>{
+  for(const id of ['M01-04','M01-05']) {
+    const t=allConceptTeachings.find(t=>t.id===id)!; assert.ok(t);
+    assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
+    for(const lang of ['zh','en'] as const){
+      const b=t.text[lang].sourceBody!;
+      assert.equal(b.filter(x=>x.kind==='heading').length,7);
+      assert.equal(b.filter(x=>x.kind==='answer').length,1);
+      assert.ok(b.length>60);
+    }
+  }
+});
