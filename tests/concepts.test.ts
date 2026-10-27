@@ -96,3 +96,17 @@ test('DNS source edition keeps eleven sections, five questions and searchable di
  bad.text.zh.sourceBody!.push({kind:'dnsDiagram',id:'unknown'} as never);
  assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-25'),/invalid DNS diagram/);
 });
+
+test('reference answers are searchable but not learner responses and require safe unique anchors',()=>{
+  const t=second();t.qa=[];
+  for(const lang of ['zh','en'] as const) t.text[lang]={summary:'Reference answer fixture',sections:[],sourceBody:[{kind:'heading',id:'check',text:'Check'},{kind:'answer',id:'answer-check',summary:'Reference answer',paragraphs:['Answer is not proof of understanding.']}]};
+  const catalog=createConceptCatalog(concepts,[t],'2026-10-23');
+  assert.ok(catalog.searchEntries.every(e=>e.text.includes('Answer is not proof')));
+  assert.deepEqual(catalog.get(t.id,'zh')!.teaching.qa,[]);
+  for(const id of ['discussion','qa-actual','answer-']) {
+    const bad=structuredClone(t);const answer=bad.text.zh.sourceBody![1];if(answer.kind==='answer')answer.id=id;
+    assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'),/reference answer/);
+  }
+  const duplicate=structuredClone(t);duplicate.text.zh.sourceBody!.push(structuredClone(duplicate.text.zh.sourceBody![1]));
+  assert.throws(()=>createConceptCatalog(concepts,[duplicate],'2026-10-23'),/reference answer/);
+});

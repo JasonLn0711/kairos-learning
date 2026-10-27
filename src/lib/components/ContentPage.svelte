@@ -33,7 +33,7 @@
 <header class="site-header"><a class="brand" href={localized('/',lang)}><span class="mark" aria-hidden="true">K</span><span>CS Kairos <em>Learn</em></span></a><nav aria-label={zh ? '主要導覽' : 'Main navigation'}><a href={localized('/',lang)}>{zh ? '課程' : 'Courses'}</a><a href={localized('/glossary/',lang)}>{zh ? '詞彙表' : 'Glossary'}</a><a href={localized('/search/',lang)}>{zh ? '搜尋' : 'Search'}</a><a href={localized('/review/',lang)}>{zh ? '錯題複習' : 'Review'}</a><a class="language" data-sveltekit-reload href={counterpart} lang={zh ? 'en' : 'zh-Hant'} hreflang={zh ? 'en' : 'zh-Hant'}>{zh ? 'English' : '繁體中文'}</a></nav></header>
 <div class:with-rail={showRail} class="page-shell">
   {#if showRail}<aside class="module-rail"><div class="rail-content"><p class="rail-title">{zh ? 'CEH 學習地圖' : 'CEH learning map'}</p><nav aria-label={zh ? '章節導覽' : 'Module navigation'}><a href={localized('/courses/ceh/v13/',lang)}>{zh ? '課程總覽' : 'Course overview'}</a>{#each data.modules as m}<a href={modulePath(m.id,lang)} aria-current={data.module?.id === m.id ? 'page' : undefined}><span>{m.id.toUpperCase()}</span>{m.title[lang]}</a>{/each}</nav></div></aside>{/if}
-  <main id="main" tabindex="-1">
+  <main id="main" tabindex="-1" class:ceh-code={Boolean(data.module) || lesson?.course === 'ceh'}>
     {#if kind !== 'home'}<nav class="breadcrumbs" aria-label={zh ? '所在位置' : 'Breadcrumb'}><a href={localized('/',lang)}>{zh ? '課程' : 'Courses'}</a>{#if showRail}<span>/</span><a href={localized('/courses/ceh/v13/',lang)}>CEH v13</a>{#if kind !== 'module' && data.module}<span>/</span><a href={modulePath(data.module.id,lang)}>{data.module.id.toUpperCase()}</a>{/if}{/if}</nav>{/if}
     <div class="eyebrow">{kind === 'home' ? 'RESEARCH → UNDERSTANDING → PRACTICE' : kind === 'lesson' ? `${lesson.course.toUpperCase()} · ${lesson.module.toUpperCase()}` : 'CS KAIROS · LEARNING LIBRARY'}</div>
     <h1 class:hero={kind === 'home'}>{title}</h1>
@@ -92,3 +92,8 @@
   </main>
 </div>
 <footer><p><a href={MAIN}>CS Kairos</a> <span aria-hidden="true">/</span> {zh ? '研究與學習，持續累積。' : 'Research and learning, built over time.'}</p><nav aria-label={zh ? '頁尾導覽' : 'Footer navigation'}><a href={MAIN + '/teaching/'}>{zh ? '教學與主站' : 'Teaching & main site'}</a><a href={localized('/standards/',lang)}>{zh ? '內容原則' : 'Content principles'}</a><a href="https://github.com/JasonLn0711/kairos-learning">GitHub</a></nav></footer>
+
+<style>
+  .ceh-code :global(pre) { background:#f2f6f5; color:#18252c; }
+  .ceh-code :global(pre code) { background:transparent; color:inherit; }
+</style>
