@@ -110,3 +110,18 @@ test('reference answers are searchable but not learner responses and require saf
   const duplicate=structuredClone(t);duplicate.text.zh.sourceBody!.push(structuredClone(duplicate.text.zh.sourceBody![1]));
   assert.throws(()=>createConceptCatalog(concepts,[duplicate],'2026-10-23'),/reference answer/);
 });
+
+test('M01-03 primary revision preserves ten sections, seven tables, full flow and three reference answers',()=>{
+  const t=allConceptTeachings.find(t=>t.id==='M01-03')!;
+  assert.equal(t.contentVersion,'1.1.0');
+  for(const lang of ['zh','en'] as const){
+    const b=t.text[lang].sourceBody!;
+    assert.equal(b.filter(x=>x.kind==='heading').length,10);
+    assert.equal(b.filter(x=>x.kind==='table').length,7);
+    assert.equal(b.filter(x=>x.kind==='answer').length,3);
+    assert.equal(b.filter(x=>x.kind==='code').length,1);
+    assert.ok(b.some(x=>x.kind==='paragraph'&&x.text.includes('403')));
+    assert.ok(b.some(x=>x.kind==='paragraph'&&x.text.includes('358')));
+  }
+  assert.deepEqual(t.qa,[]);
+});
