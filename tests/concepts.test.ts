@@ -140,3 +140,15 @@ test('M01-04 primary revision and M01-05 retain complete beginner lessons',()=>{
     }
   }
 });
+
+test('M01-06 preserves full beginner teaching and a closed reference answer, not learner Q&A',()=>{
+ const t=allConceptTeachings.find(t=>t.id==='M01-06')!;
+ assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
+ for(const lang of ['zh','en'] as const){
+  const b=t.text[lang].sourceBody!;
+  assert.equal(b.filter(x=>x.kind==='heading').length,8);
+  assert.equal(b.filter(x=>x.kind==='answer').length,1);
+  assert.ok(b.length>70);
+  assert.ok(b.some(x=>'text'in x&&x.text.includes('MFA')));
+ }
+});
