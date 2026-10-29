@@ -200,3 +200,22 @@ test('source images preserve local paths and searchable alternatives, and reject
   assert.throws(()=>createConceptCatalog(concepts,[copy],'2026-10-29'));
  }
 });
+
+test('M09-01 preserves its source-led bilingual lesson and the four original SVG placements',()=>{
+ const t=allConceptTeachings.find(t=>t.id==='M09-01')!;
+ assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
+ for(const lang of ['zh','en'] as const){
+  const b=t.text[lang].sourceBody!;
+  assert.ok(b.length>=207);
+  assert.equal(b.filter(x=>x.kind==='table').length,3);
+  assert.equal(b.filter(x=>x.kind==='answer').length,5);
+  const images=b.filter(x=>x.kind==='sourceImage');
+  assert.deepEqual(images.map(x=>x.src),[1,2,3,4].map(n=>`/images/ceh/m09-01-original-${n}.svg`));
+  for(const term of ['Authentication','Authorization','Least Privilege','T1566.004','M01-07']) assert.ok(JSON.stringify(b).toLowerCase().includes(term.toLowerCase()));
+  assert.ok(!JSON.stringify(b).includes('sandbox:'));
+  assert.ok(!JSON.stringify(b).includes('chatgpt-content-reference'));
+ }
+ assert.deepEqual(t.text.zh.sourceBody!.map(b=>b.kind),t.text.en.sourceBody!.map(b=>b.kind));
+ const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-29');
+ assert.equal(catalog.searchEntries.filter(e=>e.id==='M09-01').length,2);
+});
