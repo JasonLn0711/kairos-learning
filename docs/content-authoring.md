@@ -167,12 +167,22 @@ after editing approved assets/support; it regenerates the lesson, deterministic
 ZIP, sanitized inline bundle, and searchable SVG labels. CI checks these exact
 artifacts and the source-preservation contract.
 
-Diagrams retain an 800px minimum canvas and at least 16px native labels. Narrow
-screens get a bounded, keyboard-focusable horizontal scroller plus full-size SVG
-links and directly visible reflowing explanations. This preserves geometry and
-font size; it is **not** responsive SVG re-layout. Do not shrink the whole figure
-to 320px and claim its labels remain readable. Original answers, prose, diagrams,
-and new read-the-arrow guidance remain distinct; only reference answers collapse.
+The later October 29 column-fit presentation preference supersedes the initial
+800px minimum canvas. All full teaching SVG figures must fit their available
+column: `width:100%`, `max-width:100%`, `height:auto`, with the original `viewBox`
+and proportional `preserveAspectRatio="xMidYMid meet"`. Do not impose a fixed or
+minimum pixel display width, a fixed height, forced horizontal panning, or crop
+the diagram to make it fit. The SVG drawing coordinates remain unchanged.
+
+Uniform scaling also shrinks labels. Retain visible reflowing explanations and
+an original-SVG zoom link; do not claim native 16px labels remain 16px at every
+screen width. This is proportional scaling, not rearrangement of diagram nodes.
+Existing `sourceImage` SVG images and MATLAB `figure img` already follow the same
+column-fit rule. Decorative node icons and logos retain their intentional small
+sizes; never apply an indiscriminate global `svg{width:100%}` rule.
+
+This is a shared presentation update, not a lesson-content edition increment.
+Original answers, prose and diagrams remain intact; only reference answers collapse.
 
 Solid/conditional arrows, undirected concept lines, shared-control boundaries,
 and evidence support have explicitly different meanings. In particular, code

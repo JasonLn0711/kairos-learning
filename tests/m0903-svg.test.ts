@@ -16,8 +16,10 @@ test('M09-03 inline SVG bundle is fail-closed and matches every reviewed downloa
     assert.equal(result.status,0,result.stdout+result.stderr);
   }
   const component=readFileSync('src/lib/components/ReviewedSvgVisual.svelte','utf8');
-  assert.ok(component.includes('tabindex="0"')&&component.includes('overflow-x:auto'));
-  assert.ok(component.includes('min-width:800px')&&component.includes('Open full-size SVG'));
+  assert.ok(!component.includes('tabindex="0"')&&!component.includes('overflow-x:auto'));
+  assert.ok(!component.includes('min-width:800px')&&component.includes('Open full-size SVG'));
+  assert.ok(component.includes('width:100%;max-width:100%;height:auto'));
+  assert.ok(!/min-width:\s*[1-9]\d*px/.test(component));
   assert.ok(!component.includes('<details'));
   const source=readFileSync('src/lib/components/SourceBody.svelte','utf8');
   assert.ok(source.includes("block.kind === 'visual' && reviewedSvgMarkup(block.src)"));

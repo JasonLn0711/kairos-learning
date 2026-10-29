@@ -66,6 +66,10 @@ def sanitized_svg(raw, prefix):
     box = [float(v) for v in root.get('viewBox', '').split()]
     if len(box) != 4 or box[0:2] != [0, 0] or not (0 < box[2] <= 900 and 0 < box[3] <= 1800):
         raise ValueError('Bounded viewBox required')
+    # Coordinates describe the drawing, not a fixed on-page display size.
+    root.attrib.pop('width', None)
+    root.attrib.pop('height', None)
+    root.set('preserveAspectRatio', 'xMidYMid meet')
     return ET.tostring(root, encoding='unicode', short_empty_elements=True)
 
 
