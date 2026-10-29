@@ -4,7 +4,9 @@ The supplied Chinese manuscript is the primary source. Its full English translat
 
 The website presents all narrative, tables and diagrams directly. Only the four supplemental reference answers are initially collapsed. This is a content revision, not a statement about an individual reader's progress.
 
-Four new semantic HTML/CSS flow/card diagrams reuse the existing M04 visual infrastructure, with eight matching standalone bilingual SVG downloads. Original diagram meaning is retained in a simpler layout, rather than shrinking the original wide drawings on a phone. Diagram text participates in search. The risk comparison is illustrative, not measured data. Publication correction removes the unavailable ZIP/PNG bundle claim; four supplied SVGs are the only original diagram files.
+The current v1.0.1 page displays the four original SVG files directly as external images, unchanged byte-for-byte. The images remain in their four original section positions. Only responsive container sizing, alternative text, captions and open/download links are added. The English page retains the original Chinese artwork and explicitly says so; it does not substitute an English redraw. On small screens the original wide image scales proportionally, with an original-file link for zooming. This is not a claim that its internal text reflows.
+
+The eight redrawn download assets and reconstructed HTML/CSS substitute figures from v1.0.0 are no longer published. Their source history and `diagram-data.json` remain available for provenance only; they are not the current diagram specification. Publication correction removes the unavailable ZIP/PNG bundle claim; four supplied SVGs are the only original diagram files.
 
 Four clearly labeled verification notes clarify continuous risk assessment, residual risk, the privacy-law effective-date check, and the cybersecurity-law revision. The original manuscript is unchanged in this archive. See [release evidence](../../releases/2026-10-29-m01-07-primary.json) and run `python3 scripts/verify-m0107.py` for source-text and static SVG checks.
 

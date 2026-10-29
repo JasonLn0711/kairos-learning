@@ -24,23 +24,19 @@ for lang,suffix in [('zh',''),('en','.en')]:
    assert u in flat,(lang,u)
    checked+=1
  assert sum(b['kind']=='answer' for b in body)==4
- assert sum(b['kind']=='visual' for b in body)==4
+ assert sum(b['kind']=='sourceImage' for b in body)==4
  counts[lang]=checked
 assets=[]
-for p in sorted((R/'site/images/ceh').glob('m01-07-*.svg')):
+for p in sorted((R/'site/images/ceh').glob('m01-07-original-*.svg')):
  assert p.stat().st_size<100000
- root=ET.parse(p).getroot(); w,h=map(float,root.attrib['viewBox'].split()[2:])
+ n=int(p.stem.split('-')[-1])
+ assert p.read_bytes()==(R/f'docs/sources/m01-07/original-diagram-{n}.svg').read_bytes()
+ root=ET.parse(p).getroot()
  for e in root.iter():
-  assert not e.tag.endswith(('script','foreignObject','image'))
+  assert e.tag.rsplit('}',1)[-1] not in ['script','foreignObject','image','use']
   assert not any(k.lower().startswith('on') or 'href' in k for k in e.attrib)
-  if e.tag.endswith('text'):
-   x=float(e.attrib['x']);y=float(e.attrib['y']);assert 0<=x<w and 0<=y<h
-   s=''.join(e.itertext());weight=sum(2 if ord(c)>255 else 1 for c in s)
-   # 18 px text, conservative 10 px per Latin-width unit.
-   assert x+weight*10<=w,(p,s,weight)
+  assert not any(re.search(r'url\(\s*(?:https?:|//|data:)',v) for v in e.attrib.values())
  assets.append({'path':str(p.relative_to(R)),'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
-def lum(h):
- a=[int(h[i:i+2],16)/255 for i in (0,2,4)];a=[v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4 for v in a];return sum(v*w for v,w in zip(a,[.2126,.7152,.0722]))
-contrast=(lum('f2f6f5')+.05)/(lum('18252c')+.05)
-assert contrast>=4.5
-print(json.dumps({'sourceUnitsPreserved':counts,'assets':assets,'diagramTextContrast':round(contrast,2),'browserVerification':'not performed'},ensure_ascii=False,indent=2))
+assert len(assets)==4
+assert not list((R/'site/images/ceh').glob('m01-07-diagram-*.svg'))
+print(json.dumps({'sourceUnitsPreserved':counts,'originalAssets':assets,'originalBytesUnchanged':True,'browserVerification':'not performed'},ensure_ascii=False,indent=2))
