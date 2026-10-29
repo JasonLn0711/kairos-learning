@@ -6,6 +6,8 @@
   import M0401Visual from './M0401Visual.svelte';
   import type { SourceBlock } from '$lib/concepts';
   import ConceptBlocks from './ConceptBlocks.svelte';
+  import ReviewedSvgVisual from './ReviewedSvgVisual.svelte';
+  import { reviewedSvgMarkup } from '$lib/reviewed-svg';
   import AccessDiagram from './AccessDiagram.svelte';
   import InlineText from './InlineText.svelte';
   let { blocks, conceptId='', lang='zh' }: {blocks: SourceBlock[];conceptId?:string;lang?:string} = $props();
@@ -22,7 +24,7 @@
         <p class="image-links"><a href={block.src}>{block.openLabel}</a><a href={block.src} download>{block.downloadLabel}</a></p>
         <figcaption>{block.caption}</figcaption>
       </figure>
-    {:else if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
+    {:else if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
     {:else if block.kind === 'accessDiagram'}<AccessDiagram texts={block.texts} src={block.src} />
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>

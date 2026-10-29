@@ -11,6 +11,7 @@ import json
 import re
 import zipfile
 import xml.etree.ElementTree as ET
+from m0903_svg import generate, generate_labels
 
 ROOT = Path(__file__).resolve().parents[1]
 lesson = json.loads((ROOT / 'content/concepts/m09-03.json').read_text())
@@ -78,6 +79,8 @@ def text_units(block):
     return [block['text']]
 
 
+inline = json.loads(generate())
+assert (ROOT / 'src/lib/m0903-inline-svg.json').read_text() == generate()
 evidence = {'status': 'pass', 'languages': {}, 'assets': []}
 for lang, prefix in [('zh', ''), ('en', 'en/')]:
     path = ROOT / f'build/{prefix}courses/ceh/v13/m09/concepts/m09-03/index.html'
@@ -92,8 +95,8 @@ for lang, prefix in [('zh', ''), ('en', 'en/')]:
             assert at >= 0, (lang, 'Missing/out-of-order rendered text', value)
             cursor = at + len(value)
             count += 1
-    assert len(page.details) == 4 and all('open' not in a for a in page.details)
-    assert [a['id'] for a in page.details] == ['answer-tabletop', 'answer-classification', 'answer-otp', 'answer-response']
+    assert len(page.details) == 5 and all('open' not in a for a in page.details)
+    assert [a['id'] for a in page.details] == ['answer-tabletop', 'answer-classification', 'answer-otp', 'answer-response', 'answer-visual-reasoning']
     assert page.tables == [0] * 3, 'All body tables must be directly visible'
     assert page.figures == [0] * 7, 'All seven figures must be directly visible'
     assert re.search(r'<article[^>]*class="[^"]*light-code', raw)
@@ -103,6 +106,7 @@ for lang, prefix in [('zh', ''), ('en', 'en/')]:
     assert not (ROOT / f'build/{prefix}courses/ceh/v13/m09/concepts/m09-04').exists()
     for visual in [b for b in lesson['text'][lang]['sourceBody'] if b['kind'] == 'visual']:
         src = visual['src']
+        assert inline[src] in raw, (lang, 'Reviewed sanitized inline SVG missing', src)
         assert any(a.get('href') == src and 'download' in a and depth == 0 for a, depth in page.links)
         svg = (ROOT / 'site' / src.lstrip('/')).read_bytes()
         assert svg == (ROOT / 'build' / src.lstrip('/')).read_bytes()
@@ -115,7 +119,9 @@ for lang, prefix in [('zh', ''), ('en', 'en/')]:
             assert not any(k.lower().startswith('on') or 'href' in k.lower() for k in node.attrib)
             assert not any(re.search(r'url\(\s*(?:https?:|//|data:)', v, re.I) for v in node.attrib.values())
         evidence['assets'].append({'src': src, 'bytes': len(svg), 'sha256': hashlib.sha256(svg).hexdigest()})
-    evidence['languages'][lang] = {'blocks': len(lesson['text'][lang]['sourceBody']), 'renderedTextUnits': count, 'visibleTables': 3, 'visibleResponsiveFigures': 7, 'initiallyClosedReferenceAnswers': 4}
+    evidence['languages'][lang] = {'blocks': len(lesson['text'][lang]['sourceBody']), 'renderedTextUnits': count, 'visibleTables': 3, 'visibleInlineSvgFigures': 7, 'initiallyClosedReferenceAnswers': 5}
+    assert raw.count('data-reviewed-svg=') == 7
+    assert raw.count('class="diagram-viewport') == 7
     assert 'https://learn.cs-kairos.com/downloads/ceh-m09-03-bilingual-svg.zip' in raw
 
 bundle = ROOT / 'site/downloads/ceh-m09-03-bilingual-svg.zip'
@@ -135,6 +141,8 @@ assert len([x for x in index if x['id'] == 'M09-03']) == 2
 assert not any(x['id'] == 'M09-04' for x in index)
 for lang in ['zh', 'en']:
     text = next(x['text'] for x in index if x['id'] == 'M09-03' and x['lang'] == lang)
+    for label in json.loads(generate_labels())[lang]:
+        assert label in text, ('SVG label absent from search', lang, label)
     for block in lesson['text'][lang]['sourceBody']:
         if block['kind'] == 'answer':
             assert all(p in text for p in block['paragraphs'])

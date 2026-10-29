@@ -146,3 +146,42 @@ This supersedes the October 25 rule only for explicitly supplied **reference ans
 - Preserve stable IDs/URLs and delivered history. New instruction to publish answers supersedes earlier “do not reveal answers” wording for the same supplied check. Record that editorial change, without implying the reader has learned it.
 
 M01-02 v1.1.0 provides the seven-section example of this format. Retain independent content, code contrast, default-closed disclosure, keyboard and viewport checks. Never label an unexecuted browser check as passed.
+
+## M09-03 spatial SVG reading model — October 29, 2026
+
+The v1.2.0 revision preserves all four published primary manuscript/reference-answer
+files byte for byte. Seven bilingual spatial figures replace the earlier visual
+presentation, with separately labeled concept → diagram → example → mechanism →
+limits guidance in `docs/sources/m09-03/spatial-reading-support.json`. One additional
+three-part visual-reasoning exercise has a fifth closed reference answer; `qa`
+remains empty. This is a minor content addition, not evidence of learner progress.
+
+`ReviewedSvgVisual.svelte` renders only the assets registered by `reviewed-svg.ts`
+(currently M09-03). It embeds only generated,
+reviewed repository SVG markup; other concepts keep their existing renderer.
+`scripts/m0903_svg.py` rejects non-allowlisted elements/attributes, active or external
+content, CSS escapes/comments, duplicate or unscoped IDs, and unresolved references.
+Unique title/description IDs support accessible inline figures. Do not replace
+this boundary with arbitrary supplied HTML. Run `python3 scripts/build-m0903.py`
+after editing approved assets/support; it regenerates the lesson, deterministic
+ZIP, sanitized inline bundle, and searchable SVG labels. CI checks these exact
+artifacts and the source-preservation contract.
+
+Diagrams retain an 800px minimum canvas and at least 16px native labels. Narrow
+screens get a bounded, keyboard-focusable horizontal scroller plus full-size SVG
+links and directly visible reflowing explanations. This preserves geometry and
+font size; it is **not** responsive SVG re-layout. Do not shrink the whole figure
+to 320px and claim its labels remain readable. Original answers, prose, diagrams,
+and new read-the-arrow guidance remain distinct; only reference answers collapse.
+
+Solid/conditional arrows, undirected concept lines, shared-control boundaries,
+and evidence support have explicitly different meanings. In particular, code
+disclosure is not proof of login or exfiltration; WebAuthn browser scope rejection
+is distinct from RP assertion verification; no private key travels in the
+authentication reply. Native pixel/geometry checks and static HTML checks are
+recorded separately from browser/mobile/keyboard QA and production readback.
+
+A later lesson may reuse this component by registering its separately validated
+generated SVG map and adding exact-asset/safety tests. Keep namespace prefixes
+unique per lesson, figure and language; never register raw external or runtime
+user markup. Unregistered `visual` assets retain the existing semantic renderer.
