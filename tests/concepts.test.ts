@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { compareContentVersions, conceptVersionLabel, createConceptCatalog, type ConceptTeaching } from '../src/lib/concepts.ts';
 import { concepts, allConceptTeachings, getPage } from '../src/lib/server/catalog.ts';
 const first=allConceptTeachings.find(t=>t.id==='M04-01')!;
@@ -155,18 +157,37 @@ test('M01-06 preserves full beginner teaching and a closed reference answer, not
  }
 });
 
-test('M09-02 provides full bilingual phishing teaching and separate reference answers',()=>{
+test('M09-02 preserves the full primary manuscript, aligned languages and five unchanged original SVGs',()=>{
  const t=allConceptTeachings.find(t=>t.id==='M09-02')!;
- assert.ok(t);assert.deepEqual(t.qa,[]);
+ assert.equal(t.contentVersion,'1.1.0');assert.equal(t.revision,2);assert.deepEqual(t.qa,[]);
  for(const lang of ['zh','en'] as const){
   const body=t.text[lang].sourceBody!;
-  assert.ok(body.length>=65);
-  assert.equal(body.filter(b=>b.kind==='table').length,3);
-  assert.equal(body.filter(b=>b.kind==='answer').length,1);
+  assert.ok(body.length>=270);
+  assert.equal(body.filter(b=>b.kind==='table').length,4);
+  assert.equal(body.filter(b=>b.kind==='answer').length,4);
+  assert.equal(body.filter(b=>b.kind==='heading').length,10);
+  const images=body.filter(b=>b.kind==='sourceImage');
+  assert.deepEqual(images.map(b=>b.src),[1,3,2,4,5].map(n=>`/images/ceh/m09-02-original-${n}.svg`));
   const text=JSON.stringify(body);
-  for(const word of ['Phishing','Spear Phishing','Whaling','Northstar']) assert.ok(text.toLowerCase().includes(word.toLowerCase()));
-  assert.ok(!/Sentinel_|libfile_|CalpicoFile_|understanding.*pending/.test(text));
+  for(const word of ['Phishing','Spear Phishing','Whaling','Northstar','Trust Boundary','T1566.004','WebAuthn','DMARC']) assert.ok(text.toLowerCase().includes(word.toLowerCase()));
+  assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
  }
+ const shape=(lang:'zh'|'en')=>t.text[lang].sourceBody!.map(b=>({kind:b.kind,id:'id'in b?b.id:undefined,rows:b.kind==='table'?b.rows.map(r=>r.length):undefined,items:b.kind==='list'?b.items.length:undefined}));
+ assert.deepEqual(shape('zh'),shape('en'));
+ const raw=readFileSync('docs/sources/m09-02/user-primary-2026-10-29.md','utf8');
+ assert.equal(createHash('sha256').update(raw).digest('hex'),'d3125240593f7d15483a5049b47099f40109c855e1c98c469cfaf1449099d2aa');
+ const text=t.text.zh.sourceBody!.flatMap(b=>b.kind==='sourceImage'?[b.alt,b.caption]:b.kind==='list'?b.items:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='answer'?[b.summary,...b.paragraphs]:'text'in b?[b.text]:[]).join('\n');
+ let cursor=0;let count=0;
+ for(let line of raw.split('\n')){
+  line=line.trim();if(!line||line==='---'||line.startsWith('# ')||line==='>'||line.includes('/images/ceh/m09-02-original-')||line.includes('/downloads/ceh-m09-02-original-svg.zip')||/^[| :\-]+$/.test(line))continue;
+  const units=line.startsWith('|')?line.slice(1,-1).split('|'): [line.replace(/^#{2,3} /,'').replace(/^> /,'').replace(/^(?:- |\d+\. )/,'')];
+  for(let unit of units){unit=unit.replaceAll('**','').replaceAll('?utm_source=chatgpt.com','').replaceAll('&utm_source=chatgpt.com','').trim();const at=text.indexOf(unit,cursor);assert.ok(at>=0,`Missing/out-of-order source: ${unit}`);cursor=at+unit.length;count++;}
+ }
+ assert.ok(count>270);
+ const hashes=["9b5d90ad2e2b90da290117d04fabf77b0deafe43962167d9a556ee8fdde4261b", "f692cbf0e8e7bd26d11203f78ba88fbce52188e959447c646c03dcd758d3b03e", "6d540bbea409fe6894d0d6297e02eda98a96fb322bc6ea1474ff3bd68b3f1e22", "6fe0e29867826e199ed7c6373dbc3ae7ea300f3a2df728f46c5ddd0c5fc6e1e5", "4a4a28c1462f3f03e4aaba2cf0e04913f4cf1ba41603c4f9a2914339f1b48a67"];
+ for(const [i,hash] of hashes.entries())assert.equal(createHash('sha256').update(readFileSync(`site/images/ceh/m09-02-original-${i+1}.svg`)).digest('hex'),hash);
+ const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-29');
+ assert.equal(catalog.searchEntries.filter(e=>e.id==='M09-02').length,2);
 });
 
 test('M01-07 preserves the primary manuscript, four original SVG images and four closed reference answers',()=>{
