@@ -7,14 +7,14 @@ import { allConceptTeachings, concepts } from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M09-03')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
 
-test('M09-03 keeps complete aligned bilingual teaching, seven diagrams, four reference answers and pending M09-04',()=>{
-  assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,2);assert.deepEqual(lesson.qa,[]);
+test('M09-03 keeps complete aligned bilingual teaching, seven diagrams, five reference answers and pending M09-04',()=>{
+  assert.equal(lesson.contentVersion,'1.2.0');assert.equal(lesson.revision,3);assert.deepEqual(lesson.qa,[]);
   const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-29');
   for(const lang of ['zh','en'] as const){
     const body=lesson.text[lang].sourceBody!;
     assert.ok(body.length>=140);assert.equal(body.filter(b=>b.kind==='table').length,3);
-    assert.equal(body.filter(b=>b.kind==='heading').length,9);assert.equal(body.filter(b=>b.kind==='visual').length,7);
-    assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-tabletop','answer-classification','answer-otp','answer-response']);
+    assert.equal(body.filter(b=>b.kind==='heading').length,10);assert.equal(body.filter(b=>b.kind==='visual').length,7);
+    assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-tabletop','answer-classification','answer-otp','answer-response','answer-visual-reasoning']);
     const text=body.flatMap(flatten).join('\n');
     for(const term of ['Vishing','Smishing','Impersonation','Northstar','OTP','MFA','Authentication','Authorization','M09-04'])assert.ok(text.toLowerCase().includes(term.toLowerCase()),term);
     assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
