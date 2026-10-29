@@ -168,3 +168,21 @@ test('M09-02 provides full bilingual phishing teaching and separate reference an
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|understanding.*pending/.test(text));
  }
 });
+
+test('M01-07 preserves the primary manuscript, four responsive diagrams and four closed reference answers',()=>{
+ const t=allConceptTeachings.find(t=>t.id==='M01-07')!;
+ assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
+ for(const lang of ['zh','en'] as const){
+  const b=t.text[lang].sourceBody!;
+  assert.equal(b.filter(x=>x.kind==='heading').length,9);
+  assert.equal(b.filter(x=>x.kind==='table').length,9);
+  assert.equal(b.filter(x=>x.kind==='visual').length,4);
+  assert.equal(b.filter(x=>x.kind==='answer').length,4);
+  assert.ok(b.length>220);
+  for(const term of ['450','500','2025','Govern','Residual Risk','ISO/IEC 27001']) assert.ok(JSON.stringify(b).includes(term));
+  assert.ok(!JSON.stringify(b).includes('sandbox:'));
+  assert.ok(!JSON.stringify(b).includes('chatgpt-content-reference'));
+ }
+ const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-29');
+ assert.ok(catalog.searchEntries.filter(e=>e.id==='M01-07').every(e=>e.text.includes('Govern')));
+});
