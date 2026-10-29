@@ -1,14 +1,13 @@
 """Normalize the complete M09-03 sources; keep reference answers separate.
 
-The only public-reading wording change replaces the chat-specific invitation
-to wait for a reply. Route A/B become responsive cards with unchanged wording.
+The reviewed primary manuscript is authoritative. Seven simplified bilingual
+figures replace caption markers; four reference answers remain separate.
 No learner response or understanding state is inferred by this conversion.
 """
 from pathlib import Path
-import html
 import json
 import re
-import textwrap
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = ROOT / 'docs/sources/m09-03'
@@ -71,64 +70,97 @@ def parse_markdown(raw):
     return blocks
 
 
-def svg_for(lang, visual):
-    """Standalone counterpart to the responsive semantic HTML cards."""
-    is_zh = lang == 'zh'
-    wrap = lambda s: textwrap.wrap(s, width=35 if is_zh else 72, break_long_words=False) if not is_zh else [s[i:i+31] for i in range(0, len(s), 31)]
-    out = ['<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640" role="img" aria-labelledby="title desc">',
-           f'<title id="title">{html.escape(visual["caption"])}</title>',
-           f'<desc id="desc">{html.escape(visual["description"] + " " + " ".join(i["title"] + ": " + i["body"] for i in visual["items"]))}</desc>',
-           '<rect width="1000" height="640" fill="#f5f8fa"/>',
-           '<g font-family="Noto Sans CJK TC, sans-serif" fill="#18252c">',
-           f'<text x="42" y="60" font-size="30" font-weight="700">{html.escape(visual["caption"])}</text>',
-           f'<text x="42" y="100" font-size="20">{html.escape(visual["description"])}</text>']
-    for i, item in enumerate(visual['items']):
-        y = 138 + i * 235
-        out.append(f'<rect x="40" y="{y}" width="920" height="210" rx="12" fill="#ffffff" stroke="#5a7282" stroke-width="2"/>')
-        out.append(f'<text x="64" y="{y+40}" font-size="25" font-weight="700">{html.escape(item["title"])}</text>')
-        for j, line in enumerate(wrap(item['body'])):
-            out.append(f'<text x="64" y="{y+82+j*32}" font-size="23">{html.escape(line)}</text>')
-    out.append('</g></svg>')
-    return '\n'.join(out) + '\n'
+def answer_blocks(raw, lang):
+    blocks = []
+    identifiers = ['tabletop', 'classification', 'otp', 'response']
+    for block in parse_markdown(raw):
+        if block['kind'] == 'heading' and re.match(r'^[1-4]\. ', block['text']):
+            blocks.append({'kind': 'answer', 'id': f'answer-{identifiers[len(blocks)]}', 'summary': ('參考解答：' if lang == 'zh' else 'Reference explanation: ') + block['text'], 'paragraphs': []})
+        elif blocks:
+            if block['kind'] in ('heading', 'paragraph'):
+                blocks[-1]['paragraphs'].append(block['text'])
+            elif block['kind'] == 'list':
+                blocks[-1]['paragraphs'].extend(block['items'])
+            else:
+                raise ValueError('Reference answers use paragraphs and lists only')
+    assert len(blocks) == 4 and all(b['paragraphs'] for b in blocks)
+    return blocks
 
 
-lesson = {'id': 'M09-03', 'revision': 1, 'contentVersion': '1.0.0', 'date': '2026-10-29', 'status': 'published', 'publishedOn': '2026-10-29', 'qa': [], 'text': {}}
+lesson = {'id': 'M09-03', 'revision': 2, 'contentVersion': '1.1.0', 'date': '2026-10-29', 'status': 'published', 'publishedOn': '2026-10-29', 'qa': [], 'text': {}}
+visuals = json.loads((SOURCES / 'primary-visuals.json').read_text())
 for lang, suffix in [('zh', 'zh-TW'), ('en', 'en')]:
-    body = parse_markdown((SOURCES / f'M09-03-teaching.{suffix}.md').read_text())
-    if lang == 'en':
-        at = next(i for i, b in enumerate(body) if b['kind'] == 'table')
-        body.insert(at, {'kind': 'paragraph', 'text': 'Putting the three terms side by side makes the distinction easier to remember:'})
-    # The card bodies preserve the two complete route sentences once, in order.
-    route_prefix = '路線 A：' if lang == 'zh' else 'Path A:'
-    at = next(i for i, b in enumerate(body) if b.get('text', '').startswith(route_prefix))
-    routes = body[at:at+2]
-    titles = ['路線 A：來源仍在同一圈', '路線 B：回到既有可信程序'] if lang == 'zh' else ['Path A: the same source controls the chain', 'Path B: return to an established trusted process']
-    visual = {'kind': 'cards', 'caption': '兩條查證路線' if lang == 'zh' else 'Two verification paths', 'description': '每一步的聯絡資料，是誰提供的？' if lang == 'zh' else 'Who supplied the contact details at each step?', 'items': [{'title': title, 'body': b['text']} for title, b in zip(titles, routes)]}
-    src = f'/images/ceh/m09-03-verification-paths-{lang}.svg'
-    body[at:at+2] = [{'kind': 'visual', 'visual': visual, 'src': src, 'downloadLabel': '下載查證路線 SVG 圖' if lang == 'zh' else 'Download the verification-path SVG'}]
-    (ROOT / 'site' / src.lstrip('/')).write_text(svg_for(lang, visual))
-    for b in body:
-        if lang == 'zh' and b.get('text', '').startswith('NIST 明確區分'):
-            b['text'] = b['text'].replace('特定連線工作階段', '特定連線工作階段（一段特定的驗證互動）')
-        if b.get('text', '').startswith('不需要寫很多'):
-            b['text'] = '不需要寫很多，也不用給信心分數。請先自行作答，再展開下方參考解答比對推理；閱讀解答不等於已完成本人作答或理解驗收。'
-        elif b.get('text', '').startswith('No long response or confidence score'):
-            b['text'] = 'No long response or confidence score is needed. Try your own answer before opening the reference explanations below. Reading an explanation is not a submitted learner answer or verified understanding.'
-    answers = parse_markdown((SOURCES / f'M09-03-reference-answers.{suffix}.md').read_text())
-    answer_blocks = []
-    for b in answers:
-        if b['kind'] == 'heading' and re.match(r'^[123]\. ', b['text']):
-            answer_blocks.append({'kind': 'answer', 'id': f'answer-{len(answer_blocks)+1}', 'summary': ('參考解答：' if lang == 'zh' else 'Reference explanation: ') + b['text'], 'paragraphs': []})
-        elif answer_blocks:
-            if b['kind'] in ('heading', 'paragraph'):
-                answer_blocks[-1]['paragraphs'].append(b['text'])
-            elif b['kind'] == 'list':
-                answer_blocks[-1]['paragraphs'].extend(b['items'])
-    # Insert the three explanations after the question and before its summary.
-    at = next(i for i, b in enumerate(body) if b.get('text') in ['本課總結', 'Summary'])
-    body[at:at] = answer_blocks
+    body = parse_markdown((SOURCES / f'primary-2026-10-29.{suffix}.md').read_text())
+    # Figure 4's explanatory comparison becomes the semantic card body once.
+    figure4_at = next(i for i, b in enumerate(body) if re.match(r'^(?:圖|Figure)\s*4\s*[｜|]', b.get('text', '')))
+    figure4_start = next(i for i, b in enumerate(body[:figure4_at]) if b.get('text') in ['傳統 OTP', 'Traditional OTP'])
+    del body[figure4_start:figure4_at]
+    seen = []
+    for i, block in enumerate(body):
+        match = re.match(r'^(?:圖|Figure)\s*([1-7])\s*[｜|]', block.get('text', ''))
+        if not match:
+            continue
+        number = int(match[1]); seen.append(number)
+        visual = json.loads(json.dumps(visuals[str(number)][lang]))
+        # The original caption is retained in its original position.
+        visual['visual']['caption'] = block['text']
+        body[i] = visual
+    assert seen == list(range(1, 8)), seen
+    answers = answer_blocks((SOURCES / f'primary-reference-answers.{suffix}.md').read_text(), lang)
+    at = next(i for i, b in enumerate(body) if b.get('id') == 'section-8')
+    body[at:at] = answers[:1]
+    at = next(i for i, b in enumerate(body) if b.get('text', '').startswith(('最後把 M09-03', 'Finally, bring M09-03 together')))
+    body[at:at] = answers[1:]
     prefix = '' if lang == 'zh' else 'en/'
     ids = ['M09-01', 'M09-02', 'M01-01', 'M01-02', 'M01-03', 'M01-04', 'M01-05', 'M01-06', 'M01-07']
-    body.extend([{'kind': 'heading', 'id': 'connections', 'text': '前後課程連結' if lang == 'zh' else 'Connections to earlier lessons'}, {'kind': 'paragraph', 'text': ' · '.join(f'[{id}](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/{id[:3].lower()}/concepts/{id.lower()}/)' for id in ids)}, {'kind': 'paragraph', 'text': f'[M09-04：藉口設計、誘餌與尾隨（待整理）](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m09/#m09-04)' if lang == 'zh' else f'[M09-04: Pretexting, baiting and tailgating (pending)](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m09/#m09-04)'}])
-    lesson['text'][lang] = {'summary': '從虛構簡訊與來電案例，分辨語音釣魚、簡訊釣魚與身分冒充，練習獨立查證、驗證碼防護與證據判讀。' if lang == 'zh' else 'Distinguish vishing, smishing and impersonation through a fictional text-and-call scenario, then practice independent verification, login-code protection and evidence-based reasoning.', 'sections': [], 'sourceBody': body}
+    body.extend([
+        {'kind': 'heading', 'id': 'connections', 'text': '延伸閱讀與圖檔' if lang == 'zh' else 'Related reading and diagram files'},
+        {'kind': 'paragraph', 'text': ' · '.join(f'[{id}](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/{id[:3].lower()}/concepts/{id.lower()}/)' for id in ids)},
+        {'kind': 'paragraph', 'text': f'[M02 偵察與足跡蒐集](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m02/) · [M04 列舉](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m04/)' if lang == 'zh' else f'[M02 reconnaissance and footprinting](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m02/) · [M04 enumeration](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m04/)'},
+        {'kind': 'paragraph', 'text': '本版校訂：將簡訊帶外驗證與嚴格定義的 OTP 驗證器分開；把驗證碼期限限定於本例；補正 passkey 為 FIDO 密碼學憑證。來源卡片與送出按鈕殘字已改為正式來源連結及閱讀指引，未建立作答提交功能。' if lang == 'zh' else 'Editorial clarifications: SMS out-of-band verification is distinguished from the formal OTP-authenticator category; expiration is scoped to this example; a passkey is described as a FIDO cryptographic credential. Imported source cards and submit-button text are replaced by direct references and reading guidance, not an answer-submission feature.'},
+        {'kind': 'paragraph', 'text': '[下載七張圖的繁中／英文 SVG 組合包](https://learn.cs-kairos.com/downloads/ceh-m09-03-bilingual-svg.zip)' if lang == 'zh' else '[Download all seven diagrams in Chinese and English (SVG ZIP)](https://learn.cs-kairos.com/downloads/ceh-m09-03-bilingual-svg.zip)'},
+        {'kind': 'paragraph', 'text': f'[M09-04：情境編造、誘餌與尾隨（待整理）](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m09/#m09-04)' if lang == 'zh' else f'[M09-04: Pretexting, baiting and tailgating (pending)](https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m09/#m09-04)'}
+    ])
+    lesson['text'][lang] = {'summary': '透過完整 Northstar 案例與七張雙語示意圖，理解跨管道冒充、OTP 轉交、抗釣魚驗證、獨立查證與事件證據，並連結 CEH 的防護與應變知識。' if lang == 'zh' else 'Follow the full Northstar scenario and seven bilingual diagrams to understand cross-channel impersonation, OTP relay, phishing-resistant authentication, independent verification, and incident evidence in the wider CEH context.', 'sections': [], 'sourceBody': body}
 (ROOT / 'content/concepts/m09-03.json').write_text(json.dumps(lesson, ensure_ascii=False, indent=2) + '\n')
+
+# A deterministic bilingual download contains the same reviewed native SVG bytes.
+readme = """# CEH M09-03 — Bilingual SVG diagrams / 雙語 SVG 示意圖
+
+Seven simplified diagrams, each in Traditional Chinese (zh-TW/) and English (en/).
+七張簡潔教學圖，每張包含繁體中文與英文版本，共十四個原生 SVG。
+
+1. Four analysis dimensions / 四維攻擊分析
+2. One controller, two channels / 同一控制來源、兩個接觸管道
+3. Conditional OTP relay / 有前提的驗證碼轉交流程
+4. OTP and phishing-resistant authentication / OTP 與抗釣魚驗證
+5. Independent verification / 獨立查證
+6. Separate evidence questions / 分別核對各層證據
+7. CEH concept relationships / CEH 概念關聯
+
+The Northstar scenario is fictional. Arrows express the labeled relationships,
+not proof that compromise occurred. Figure 6 does not assert inevitable
+progression; Figure 7 is a concept map rather than an attack sequence.
+Northstar 是虛構案例；箭頭代表圖中明示的關係，不代表已證實入侵。
+圖6不表示事件必然發展，圖7是概念關聯圖，不是攻擊順序。
+
+SVG text remains editable. No scripts, external images, external font files,
+or private source material are included. The website provides responsive
+semantic HTML equivalents; standalone SVG files use fixed layouts and zoom.
+SVG 文字可編輯，不含腳本、外部圖片、外部字型檔或私人來源材料。
+網站採可重排的語意 HTML 呈現；獨立 SVG 採固定版面，可放大閱讀。
+
+Version 1.1.0 / 2026-10-29
+"""
+bundle = ROOT / 'site/downloads/ceh-m09-03-bilingual-svg.zip'
+with zipfile.ZipFile(bundle, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+    files = [('README.md', readme.encode())]
+    for lang, folder in [('zh', 'zh-TW'), ('en', 'en')]:
+        for n in range(1, 8):
+            src = visuals[str(n)][lang]['src']
+            files.append((f'{folder}/{Path(src).name}', (ROOT / 'site' / src.lstrip('/')).read_bytes()))
+    for filename, raw in files:
+        info = zipfile.ZipInfo(filename, date_time=(2026, 10, 29, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        info.external_attr = 0o100644 << 16
+        archive.writestr(info, raw)

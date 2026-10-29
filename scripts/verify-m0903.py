@@ -9,6 +9,7 @@ import hashlib
 import html
 import json
 import re
+import zipfile
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,27 +92,43 @@ for lang, prefix in [('zh', ''), ('en', 'en/')]:
             assert at >= 0, (lang, 'Missing/out-of-order rendered text', value)
             cursor = at + len(value)
             count += 1
-    assert len(page.details) == 3 and all('open' not in a for a in page.details)
-    assert [a['id'] for a in page.details] == ['answer-1', 'answer-2', 'answer-3']
-    assert page.tables == [0] * 5, 'All body tables must be directly visible'
-    assert page.figures == [0], 'The path comparison must be directly visible'
+    assert len(page.details) == 4 and all('open' not in a for a in page.details)
+    assert [a['id'] for a in page.details] == ['answer-tabletop', 'answer-classification', 'answer-otp', 'answer-response']
+    assert page.tables == [0] * 3, 'All body tables must be directly visible'
+    assert page.figures == [0] * 7, 'All seven figures must be directly visible'
     assert re.search(r'<article[^>]*class="[^"]*light-code', raw)
-    assert not re.search(r'Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference', raw)
+    assert not re.search(r'Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference|google\.com/s2/favicons|data-d-component', raw)
     assert f'/{prefix}courses/ceh/v13/m09/concepts/m09-02/' in raw
     assert f'/{prefix}courses/ceh/v13/m09/#m09-04' in raw
     assert not (ROOT / f'build/{prefix}courses/ceh/v13/m09/concepts/m09-04').exists()
-    visual = next(b for b in lesson['text'][lang]['sourceBody'] if b['kind'] == 'visual')
-    src = visual['src']
-    assert any(a.get('href') == src and 'download' in a and depth == 0 for a, depth in page.links)
-    svg = (ROOT / 'site' / src.lstrip('/')).read_bytes()
-    assert svg == (ROOT / 'build' / src.lstrip('/')).read_bytes()
-    assert len(svg) < 100000
-    root = ET.fromstring(svg)
-    for node in root.iter():
-        assert node.tag.rsplit('}', 1)[-1] not in ['script', 'foreignObject', 'image', 'use']
-        assert not any(k.lower().startswith('on') or 'href' in k.lower() for k in node.attrib)
-    evidence['languages'][lang] = {'blocks': 110, 'renderedTextUnits': count, 'visibleTables': 5, 'visibleResponsiveFigures': 1, 'initiallyClosedReferenceAnswers': 3}
-    evidence['assets'].append({'src': src, 'bytes': len(svg), 'sha256': hashlib.sha256(svg).hexdigest()})
+    for visual in [b for b in lesson['text'][lang]['sourceBody'] if b['kind'] == 'visual']:
+        src = visual['src']
+        assert any(a.get('href') == src and 'download' in a and depth == 0 for a, depth in page.links)
+        svg = (ROOT / 'site' / src.lstrip('/')).read_bytes()
+        assert svg == (ROOT / 'build' / src.lstrip('/')).read_bytes()
+        assert len(svg) < 100000
+        root = ET.fromstring(svg)
+        assert root.find('{http://www.w3.org/2000/svg}title') is not None
+        assert root.find('{http://www.w3.org/2000/svg}desc') is not None
+        for node in root.iter():
+            assert node.tag.rsplit('}', 1)[-1] not in ['script', 'foreignObject', 'image', 'use']
+            assert not any(k.lower().startswith('on') or 'href' in k.lower() for k in node.attrib)
+            assert not any(re.search(r'url\(\s*(?:https?:|//|data:)', v, re.I) for v in node.attrib.values())
+        evidence['assets'].append({'src': src, 'bytes': len(svg), 'sha256': hashlib.sha256(svg).hexdigest()})
+    evidence['languages'][lang] = {'blocks': len(lesson['text'][lang]['sourceBody']), 'renderedTextUnits': count, 'visibleTables': 3, 'visibleResponsiveFigures': 7, 'initiallyClosedReferenceAnswers': 4}
+    assert 'https://learn.cs-kairos.com/downloads/ceh-m09-03-bilingual-svg.zip' in raw
+
+bundle = ROOT / 'site/downloads/ceh-m09-03-bilingual-svg.zip'
+assert bundle.read_bytes() == (ROOT / 'build/downloads/ceh-m09-03-bilingual-svg.zip').read_bytes()
+with zipfile.ZipFile(bundle) as archive:
+    expected = ['README.md']
+    for lang, folder in [('zh', 'zh-TW'), ('en', 'en')]:
+        for visual in [b for b in lesson['text'][lang]['sourceBody'] if b['kind'] == 'visual']:
+            filename = Path(visual['src']).name
+            expected.append(f'{folder}/{filename}')
+            assert archive.read(f'{folder}/{filename}') == (ROOT / 'site' / visual['src'].lstrip('/')).read_bytes()
+    assert sorted(archive.namelist()) == sorted(expected)
+evidence['bundle'] = {'src': '/downloads/ceh-m09-03-bilingual-svg.zip', 'bytes': bundle.stat().st_size, 'sha256': hashlib.sha256(bundle.read_bytes()).hexdigest(), 'svgCount': 14}
 
 index = json.loads((ROOT / 'build/search-index.json').read_text())
 assert len([x for x in index if x['id'] == 'M09-03']) == 2
