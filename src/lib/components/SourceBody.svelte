@@ -16,7 +16,13 @@
     {#if conceptId==='M04-02' && lang==='zh' && block.kind==='paragraph' && block.text==='步驟三：依序查詢不同類型'}<DigWalkthrough {lang}/>{/if}
     {#if conceptId==='M04-03' && block.kind==='code' && block.id==='ftp-ascii-login'}<FtpDiagram id="login" {lang}/>{/if}
     {#if conceptId==='M04-03' && block.kind==='code' && block.id==='ftp-ascii-download'}<FtpDiagram id="download" {lang}/>{/if}
-    {#if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
+    {#if block.kind === 'sourceImage'}
+      <figure class="original-image">
+        <img src={block.src} alt={block.alt} width={block.width} height={block.height} loading="lazy" />
+        <p class="image-links"><a href={block.src}>{block.openLabel}</a><a href={block.src} download>{block.downloadLabel}</a></p>
+        <figcaption>{block.caption}</figcaption>
+      </figure>
+    {:else if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
     {:else if block.kind === 'accessDiagram'}<AccessDiagram texts={block.texts} src={block.src} />
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>
@@ -35,6 +41,11 @@
   {/each}
 </div>
 <style>
+  .original-image{margin:1.5rem 0;max-width:100%;min-width:0}
+  .original-image img{display:block;width:100%;height:auto;max-width:100%}
+  .original-image figcaption{margin-top:.6rem;overflow-wrap:anywhere}
+  .image-links{display:flex;flex-wrap:wrap;gap:.6rem 1.2rem}
+
   .reference-answer{border:1px solid var(--line);border-radius:8px;padding:1rem;margin:1.5rem 0;background:var(--soft)}
   .reference-answer summary{cursor:pointer;font-weight:600}
   .ascii{margin:1rem 0;border:1px solid var(--line);border-radius:8px;padding:.7rem}.ascii pre{max-width:100%;overflow:auto}

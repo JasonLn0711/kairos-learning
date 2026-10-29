@@ -169,14 +169,14 @@ test('M09-02 provides full bilingual phishing teaching and separate reference an
  }
 });
 
-test('M01-07 preserves the primary manuscript, four responsive diagrams and four closed reference answers',()=>{
+test('M01-07 preserves the primary manuscript, four original SVG images and four closed reference answers',()=>{
  const t=allConceptTeachings.find(t=>t.id==='M01-07')!;
- assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
+ assert.equal(t.contentVersion,'1.0.1');assert.deepEqual(t.qa,[]);
  for(const lang of ['zh','en'] as const){
   const b=t.text[lang].sourceBody!;
   assert.equal(b.filter(x=>x.kind==='heading').length,9);
   assert.equal(b.filter(x=>x.kind==='table').length,9);
-  assert.equal(b.filter(x=>x.kind==='visual').length,4);
+  assert.equal(b.filter(x=>x.kind==='sourceImage').length,4);
   assert.equal(b.filter(x=>x.kind==='answer').length,4);
   assert.ok(b.length>220);
   for(const term of ['450','500','2025','Govern','Residual Risk','ISO/IEC 27001']) assert.ok(JSON.stringify(b).includes(term));
@@ -185,4 +185,18 @@ test('M01-07 preserves the primary manuscript, four responsive diagrams and four
  }
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-29');
  assert.ok(catalog.searchEntries.filter(e=>e.id==='M01-07').every(e=>e.text.includes('Govern')));
+});
+
+test('source images preserve local paths and searchable alternatives, and reject unsafe or incomplete metadata',()=>{
+ const original=allConceptTeachings.find(t=>t.id==='M01-07')!;
+ const catalog=createConceptCatalog(concepts,[original],'2026-10-29');
+ for(const lang of ['zh','en'] as const){
+  const image=original.text[lang].sourceBody!.find(b=>b.kind==='sourceImage')!;
+  assert.equal(image.kind,'sourceImage');
+  assert.ok(catalog.searchEntries.find(e=>e.lang===lang)!.text.includes(image.alt));
+ }
+ for(const bad of [{src:'https://example.com/unsafe.svg'},{alt:''},{width:0}]) {
+  const copy=structuredClone(original);const image=copy.text.zh.sourceBody!.find(b=>b.kind==='sourceImage')!;Object.assign(image,bad);
+  assert.throws(()=>createConceptCatalog(concepts,[copy],'2026-10-29'));
+ }
 });
