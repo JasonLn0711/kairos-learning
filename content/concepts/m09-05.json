@@ -1,0 +1,789 @@
+{
+  "id": "M09-05",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-10-29",
+  "status": "published",
+  "publishedOn": "2026-10-29",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "分清人、帳號、身分與授權，理解內部威脅與身分竊用的差異，以分層防護及證據驗證避免過早歸因。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M09-05｜內部威脅與身分竊用"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Module 09：Social Engineering（社交工程）。本課是一個連貫單元：Insider Threats & Identity Theft。建議閱讀 10～15 分鐘。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先說結論：合法帳號，不代表每個行為都合法；帳號留下紀錄，也不等於已查明是誰操作"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上一課 M09-04 談情境編造、誘餌與尾隨進入：不能因為故事合理、東西誘人或門已經打開，就省略授權檢查。今天換個角度：如果對方本來就有鑰匙，或者外人拿到了別人的鑰匙，怎麼辦？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像虛構的 Northstar 教材中心。小安是行政同仁，工作需要查看學員聯絡資料。有一天，系統留下「小安帳號大量匯出資料」的紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先不要直接說：「小安偷資料！」至少有三種可能：小安依核准工作匯出；小安誤把檔案寄到錯的地方；或者有人取得他的帳號後操作。也可能真的有人故意濫用權限，但要有證據才能判斷。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天最重要的能力，是把四件事拆開：人是誰、帳號是誰的、允許做什麼、實際做了什麼。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、先建立知識地圖：內部威脅與身分竊用，是兩個可以交會、但不相等的概念"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m09-05-map-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖1：先分清楚人、帳號與身分",
+            "description": "誰有權限？誰在操作？哪些資料遭利用？",
+            "items": [
+              {
+                "title": "兩個角度",
+                "body": "內部威脅看授權與濫用；身分竊用看他人資料遭不當使用，兩者可以交會。"
+              },
+              {
+                "title": "人與帳號分開",
+                "body": "帳號活動可能由本人或外部冒用者造成，不能直接認定動機。"
+              },
+              {
+                "title": "點線的意思",
+                "body": "表示概念關聯，不是必然先後或因果。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Insider Threat（內部威脅），指具有或曾具有組織授權存取能力的人，可能有意或無意地利用這種能力，對組織造成不利影響。重點是「原本具有的存取與信任關係」，不是人此刻是否坐在辦公室。員工、承包商與合作夥伴都可能涉及；也不能反過來把這些人一律視為可疑。定義依 [Carnegie Mellon SEI 的 insider threat 說明](https://insights.sei.cmu.edu/insider-threat/)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Identity Theft（身分竊用，也常譯身分盜用），是未經允許使用他人的個人或財務資訊。白話說，是「拿別人的身分資料，替自己辦事情」。它不只限於網路帳號，例如冒名申辦服務也可能涉及。這裡講安全概念，不替個案作法律定罪。[FTC：What To Know About Identity Theft](https://consumer.ftc.gov/articles/what-know-about-identity-theft)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者可以交會：有權查看資料的人，可能濫用取得的資料去冒用他人身分。但外部攻擊者也能取得資料；內部人員也可能破壞檔案而完全沒有冒用身分。因此，不能畫成「內部威脅一定造成身分竊用」的固定流程。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "圖1的兩條概念關係線，是分類上的關聯，不是已發生的攻擊，也不是必然的先後順序。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、內部威脅：有鑰匙，不等於能把東西帶走"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 惡意與非惡意，先分清楚"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Malicious Insider（惡意內部人員）：有意濫用或超出授權。例如行政同仁為了私利，將名單帶到未核准的私人服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Unintentional Insider Threat（非蓄意內部威脅）：沒有惡意，卻因行為或疏漏造成損害或增加風險。例如同仁把包含個資的檔案寄錯收件人，或被假客服說服，替對方開啟不該開的權限。[SEI：Unintentional Insider Threat and Social Engineering](https://sei.cmu.edu/blog/unintentional-insider-threat-and-social-engineering/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "「非蓄意」不代表一定沒有責任，也不代表必然是粗心。可能是介面難用、流程不清、訓練不足或遭到操弄；這些原因要調查，不能先入為主。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 外人使用員工帳號，不等於已證明員工是內鬼"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Compromised Account（遭入侵或遭冒用的帳號），表示帳號的安全控制已失守，未獲授權者可能取得使用能力。教材有時把這種風險放進廣義的內部威脅管理，但在證據判讀時，仍要區分「外人借用內部身分」與「內部人員故意濫用」。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m09-05-access-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖2：有權登入，不等於有權做所有事",
+            "description": "合成情境：公司客戶名單，不使用真實個資。",
+            "items": [
+              {
+                "title": "正常存取",
+                "body": "實線表示員工依工作需要使用已核准的查閱權限。"
+              },
+              {
+                "title": "用途邊界",
+                "body": "紅色虛線表示可能外傳到私人信箱；是否發生及原因需要證據。"
+              },
+              {
+                "title": "另一種解釋",
+                "body": "外部人員也可能使用遭冒用帳號；帳號紀錄不等於本人行為。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "圖2的實線是正常、已授權的查閱；紅色虛線是可能跨過用途或分享權限邊界的風險，不代表已經發生。底下另列外部人員使用遭冒用帳號的可能性；這仍以取得必要驗證材料、且系統接受為條件，不是知道帳號名稱就一定能登入。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "系統不應只檢查「這個帳號能登入嗎」，還要檢查「這個帳號目前能對這份資料做這個動作嗎」。即使某個按鈕技術上可以點，也不表示把資料拿去任何地方都符合業務授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 Authentication（身分驗證） 與 Authorization（授權） 的差別：前者檢查登入者能否提出符合要求的驗證證明；後者決定可以操作哪些資源、執行哪些動作。驗證降低冒用風險，但不是對真實操作者與動機的絕對保證。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、身分竊用：不是只有密碼被偷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先分清四個容易混在一起的狀態："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "資料外洩：資料被不該接觸的人取得。外洩會增加冒用風險，但不能單憑外洩宣稱已經發生冒名申辦。",
+            "Credential Theft（驗證憑證竊取）：密碼或其他可用來驗證的材料被取得。「憑證」在這裡不只指數位憑證檔案。",
+            "Account Takeover（帳號接管）：未獲授權者取得對既有帳號的控制或操作能力。例如登入後更改復原信箱。",
+            "身分竊用：未經同意使用他人的個人或財務資訊；可能發生在既有帳號，也可能冒名建立新服務。其範圍比「盜走一個網路帳號」更廣。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例子：有人知道小安的姓名，還不足以證明他能登入。有人取得小安的證件影本，代表敏感資料有風險，也還不能直接證明已成功冒名開戶。若服務機構查核到未經小安授權、使用其資料提出的申請，才有更具體的冒用證據；是否成功、造成什麼損失，仍需分開確認。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m09-05-identity-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖3：身分竊用，不只是帳號被盜",
+            "description": "區分資料暴露、帳號接管與冒名使用。",
+            "items": [
+              {
+                "title": "三種狀態",
+                "body": "資料外洩、帳號接管、身分竊用不能混為一談。"
+              },
+              {
+                "title": "兩種風險",
+                "body": "可能接管既有帳號，也可能冒名申辦而未接管任何帳號。"
+              },
+              {
+                "title": "不能跳步",
+                "body": "外洩增加風險，但是否實際冒用及造成損害仍要查核。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Identity Proofing（身分查核），是建立線上申請者與真實世界身分之間的可信連結。例如新申請服務時，不只檢查資料是否存在，也要查核證據及申請者是否為真正持有人。它和日後每次登入的驗證不同。這裡是入門簡化模型，不代表每項服務都採完全相同流程。[NIST SP 800-63A-4](https://pages.nist.gov/800-63-4/sp800-63a.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，「他能說出我的生日」或「傳來的照片很像本人」不是充分證明。前面 M09-03 談過的冒充與 AI Deepfake（AI 深偽，合成或操弄的人像、影音），會讓表面線索更像真的；應回到可信管道與適當的查核程序，而非只比聲音或長相。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、怎麼防護：保護帳號，也限制帳號能造成的影響"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一層：只給工作需要的權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Least Privilege（最小權限）：只提供完成職務必要的存取能力。小安需要聯絡某班學員，不表示要能讀取所有班級的敏感附件，更不表示需要刪除整個資料庫。[NIST：Least Privilege](https://csrc.nist.gov/glossary/term/least_privilege)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "權限也要隨職務調整。換工作、結束合作、離職時，應依既定程序撤銷不再需要的帳號、權限與有效登入狀態；不能只收回門禁卡，就認為雲端存取也已解除。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二層：高影響動作，不讓一個人說了算"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Separation of Duties（職務分離）：把不應由同一人獨立完成的關鍵步驟分開。例如名單匯出由一人提出，另一位有權限的人審核用途與對象；仍需記錄與技術落實，不能只多一個形式上的勾選。[NIST：Separation of Duty](https://csrc.nist.gov/glossary/term/separation_of_duty)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三層：降低冒用，並注意復原入口"
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用不同服務不重複的強密碼、妥善保管驗證材料，並啟用 MFA（Multi-Factor Authentication，多因素驗證）。多因素是不同種類的證明，不是把兩組密碼當成兩個因素。敏感操作、復原帳號與變更驗證方式，也需要相應保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "MFA不是萬能：如果真正員工本來就可以匯出，MFA不會自動阻止他濫用；既有登入狀態遭竊或復原程序薄弱，也可能留下缺口。這正是 M01-06「多層防禦」的用處，不把安全全押在一個登入關卡上。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四層：讓異常看得見，但不要把告警當判決"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Audit Log（稽核日誌），是記錄誰的帳號在何時對哪些資源執行哪些動作的資料。應保護紀錄不被任意修改，保留合適的時間與來源資訊，並限制誰能查看。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Data Loss Prevention（DLP，資料外洩防護），可依規則辨識、警示或阻擋某些敏感資料傳送。但它可能誤判或漏判，也未必涵蓋所有裝置與通道。只有「大量下載」告警，不能直接判定外洩，更不能直接認定某人惡意。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些措施都是依業務情境設計的例子，不是所有組織都應套同一組門檻。控制措施可參考 [NIST SP 800-53 Rev.5](https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final)，但本課不是宣稱做了這幾項就通過任何合規認證。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、回到 Northstar：怎麼把觀察、推論與驗證分開？"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m09-05-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖4：先查證，再判讀；必要時先控風險",
+            "description": "安全控制與證據判讀要一起做。",
+            "items": [
+              {
+                "title": "先保留與核對",
+                "body": "大量下載是警訊；保存必要證據，查工作安排、時間、裝置與存取紀錄。"
+              },
+              {
+                "title": "有證據支持",
+                "body": "依授權程序處置、限制風險並複核，不公開指控個人。"
+              },
+              {
+                "title": "證據仍不足",
+                "body": "維持待確認、補足紀錄；必要時先控風險，未知不等於無事。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們只有一則紀錄：「行政帳號在深夜下載了大量檔案。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Observation（觀察）：某個帳號在特定時間出現下載紀錄。先確認紀錄欄位的意思、時區、完整性，以及是否真的是完成下載，而非僅提出要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Inference（推論）：可能是核准的資料搬移、本人誤操作、本人濫用，或外人冒用。它們是待查假設，不應全部寫成事實。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Verification（驗證）：由有權限的人比對工作安排、核准紀錄、登入與裝置紀錄、檔案存取及必要的傳送紀錄；核實實際資料、目的地、成功與否、影響範圍。帳號、裝置或網路位址單獨一項，都通常不足以完整確認真實操作者與意圖。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果仍有持續風險，應依事件處理程序，採取適當且可回復的限制措施，同時保存原始紀錄；不必等到「找出犯人」才保護資料，也不要為了調查擅自刪除、修改紀錄或存取無關私人資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "沒有找到外傳紀錄，只能說「在目前可用紀錄中尚未找到」。如果系統本來沒有記錄某個通道，就不能據此宣稱資料從未離開。這和 M01-02 的「發現弱點，不等於事件已發生」是同一種證據紀律。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "調查應限於授權範圍、必要資料與有權處理的人，不能因為一個異常就公開指責同仁。防護是在管理存取風險，不是在猜測人格。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、把前後章節接起來"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "M01-01 CIA：名單外流影響機密性；資料被改影響完整性；惡意刪除或誤刪也可能影響可用性。",
+            "M01-02 風險：同樣匯出100筆，公開教材與敏感個資的影響不同；不能只看數量。",
+            "M01-03 授權：能登入、能按按鈕，仍不等於任意用途都有授權。",
+            "M09-01～04 社交工程：外人可能先取得信任，讓內部人員交出驗證材料或替他做事。",
+            "下一課 M09-06：把獨立查證與反釣魚控制，整理成真正做得到的防護流程。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、看圖推理：三個小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請看圖2與圖4，再用自己的話回答："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "1. 系統顯示「小安帳號成功下載」，為什麼不能直接說「小安惡意偷資料」？至少提出兩個還要核實的問題。",
+            "2. 若實際是小安本人、使用合法權限，把名單交給未核准的對象，MFA能單獨解決嗎？你會在哪一道界線加什麼控制？",
+            "3. 某人的證件影本外洩，但尚無冒名申辦或帳號接管證據。現在可以確認什麼、不能確認什麼？如果圖3右側的服務收到新申請，為什麼不能只靠「資料內容正確」就放行？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "參考解答另外整理，網站以預設收合呈現。公布答案不代表你已作答或已理解；目前保留待驗證，不計成學會。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-boundary",
+          "summary": "參考解答：1. 為什麼不能直接認定小安惡意偷資料？",
+          "paragraphs": [
+            "紀錄首先指出的是「哪個帳號做了什麼」，不是已經證明「哪個人抱著什麼目的操作」。要確認至少兩件事：這次下載是否經過核准、符合工作需要？是否確實由小安本人操作，還是帳號或登入狀態遭冒用？另外也應確認紀錄代表成功完成下載還是僅送出要求、涉及哪些資料，以及是否傳給未核准對象。",
+            "圖2的紅色虛線只是可能越界的路徑；圖4要求先查紀錄與工作脈絡，不能把告警直接當成惡意行為的判決。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-evidence",
+          "summary": "參考解答：2. MFA能單獨防止本人濫用合法權限嗎？",
+          "paragraphs": [
+            "不能。MFA主要幫助驗證登入者；若真正的小安通過驗證，他仍可能濫用原本可用的功能。應在圖2的「用途／分享權限邊界」加上對應控制，例如限制可匯出的資料範圍、名單外傳需由另一位有權人員核准、限定核准的收件人或通道，並保留稽核紀錄。",
+            "必要時搭配DLP辨識或阻擋敏感資料傳送。但不能保證抓到所有情況，也不能只憑DLP告警判定惡意。重點是身分驗證、授權與監督各自處理不同問題。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-response",
+          "summary": "參考解答：3. 證件影本外洩，可以確認什麼？",
+          "paragraphs": [
+            "可以確認的是：依題目給定條件，證件影本已外洩，敏感身分資料面臨冒用風險。不能直接確認的是：已有帳號遭接管、已有冒名申辦成功，或已造成某筆特定損失。這些都需要另外查證。",
+            "申請資料正確，只能顯示申請者掌握這些資料，不足以證明他就是資料本人或獲得授權。圖3右側的新服務申請，應依適當的身分查核程序，查核證據以及申請者與該身分的連結；不能把「知道資料」當成「就是本人」。同時應保留必要證據、依可信管道處理疑似冒用，避免讓更多個資外流。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、最後記住這四句話"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有權限，不代表能任意使用。 是內部帳號，不代表一定是內部本人操作。 個資外洩、帳號接管、身分竊用，不是同一個狀態。 先用證據確認行為與影響，再談原因與責任。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[下載本課四張中英文 SVG 圖檔](https://learn.cs-kairos.com/downloads/ceh-m09-05-bilingual-svg.zip)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "延伸閱讀：[M09-01](https://learn.cs-kairos.com/courses/ceh/v13/m09/concepts/m09-01/) · [M09-02](https://learn.cs-kairos.com/courses/ceh/v13/m09/concepts/m09-02/) · [M09-03](https://learn.cs-kairos.com/courses/ceh/v13/m09/concepts/m09-03/) · [M09-04](https://learn.cs-kairos.com/courses/ceh/v13/m09/concepts/m09-04/) · [M01-01](https://learn.cs-kairos.com/courses/ceh/v13/m01/concepts/m01-01/) · [M01-02](https://learn.cs-kairos.com/courses/ceh/v13/m01/concepts/m01-02/) · [M01-03](https://learn.cs-kairos.com/courses/ceh/v13/m01/concepts/m01-03/) · [M01-06](https://learn.cs-kairos.com/courses/ceh/v13/m01/concepts/m01-06/) · [M01-07](https://learn.cs-kairos.com/courses/ceh/v13/m01/concepts/m01-07/)"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Separate people, accounts, identity and authorization to understand insider threats and identity theft, layered controls and careful evidence interpretation.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M09-05 | Insider Threats and Identity Theft"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Module 09: Social Engineering. This lesson is one connected unit: Insider Threats & Identity Theft. Suggested reading time: 10–15 minutes."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Start with the conclusion: a legitimate account does not make every action authorized, and an account record does not identify the actual operator"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M09-04 discussed pretexting, baiting and tailgating: a plausible story, an attractive offer or an open door is not a reason to skip authorization checks. Today, consider a different problem: what if the person already has a key, or an outsider obtains someone else's key?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine the fictional Northstar learning center. An administrative employee, Alex, needs to read learners' contact information for work. One day, the system records a large data export under Alex's account."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not immediately conclude, “Alex stole the data!” There are at least three possibilities: Alex performed an approved export; Alex accidentally sent the file to the wrong destination; or someone obtained access to Alex's account and operated it. Deliberate misuse is also possible, but a conclusion needs evidence."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The essential skill today is separating four questions: Who is the person? Whose account is it? What is authorized? What actually happened?"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Build the knowledge map: insider threats and identity theft can overlap, but they are not the same concept"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m09-05-map-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 1: Separate people, accounts and identity",
+            "description": "Who has access? Who acts? What data is misused?",
+            "items": [
+              {
+                "title": "Two lenses",
+                "body": "Insider threats concern trusted access and misuse; identity theft concerns unauthorized use of another person's information. They can overlap."
+              },
+              {
+                "title": "Separate people and accounts",
+                "body": "An account action may come from its holder or an external impostor. It does not establish intent."
+              },
+              {
+                "title": "Dotted relationships",
+                "body": "Dotted lines show conceptual links, not inevitable order or causation."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "An Insider Threat involves a person who has, or previously had, authorized access to an organization and may intentionally or unintentionally use that access in a way that adversely affects it. The key is the existing access and trust relationship—not whether the person is currently inside an office. Employees, contractors and business partners can be involved; that does not make all such people suspicious. This explanation follows [Carnegie Mellon SEI's insider-threat overview](https://insights.sei.cmu.edu/insider-threat/)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Identity Theft means using another person's personal or financial information without permission. In everyday terms, it is using someone else's identity information to do something for yourself. It extends beyond online accounts; applying for a service in another person's name can also be involved. This lesson explains a security concept, not a legal finding about an individual case. [FTC: What To Know About Identity Theft](https://consumer.ftc.gov/articles/what-know-about-identity-theft)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The two concepts can overlap: a person authorized to read information might misuse it to impersonate someone else. However, outsiders can also obtain information, and an insider can damage files without misusing anyone's identity. Therefore, they should not be drawn as a fixed sequence in which an insider threat inevitably produces identity theft."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The two concept links in Figure 1 show relationships between categories. They are neither established attacks nor an inevitable order of events."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. Insider threats: having a key does not mean you may take things away"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Distinguish malicious from unintentional behavior"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A Malicious Insider intentionally misuses or exceeds authorization. For example, an administrator might transfer a contact list to an unapproved personal service for private gain."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An Unintentional Insider Threat involves harm or increased risk caused by an action or omission without malicious intent. For example, an employee might send a file containing personal information to the wrong recipient, or be persuaded by fake support personnel to grant access that should not be granted. [SEI: Unintentional Insider Threat and Social Engineering](https://sei.cmu.edu/blog/unintentional-insider-threat-and-social-engineering/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Unintentional” does not automatically remove responsibility, nor does it necessarily mean carelessness. A difficult interface, unclear process, insufficient training or manipulation may contribute. These causes require investigation rather than assumptions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. An outsider using an employee's account does not prove that the employee is a malicious insider"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A Compromised Account is an account whose security protections have been defeated, potentially enabling unauthorized use. Some teaching materials include this risk within a broad insider-threat management scope. Evidence analysis must still distinguish an outsider acting through an internal identity from an insider deliberately misusing access."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m09-05-access-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 2: Login access is not unlimited permission",
+            "description": "Synthetic example: a company customer list.",
+            "items": [
+              {
+                "title": "Normal access",
+                "body": "The solid arrow shows an employee using approved read access for work."
+              },
+              {
+                "title": "Purpose boundary",
+                "body": "The red dashed arrow is a possible transfer to a personal mailbox. Occurrence and intent require evidence."
+              },
+              {
+                "title": "Alternative explanation",
+                "body": "An outsider may use a compromised account. Account activity is not proof of the holder's action."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Figure 2's solid arrow represents normal, authorized reading. The red dashed arrow represents a possible risk that crosses a purpose or sharing boundary—not an established event. The separate box below describes the possibility of an outsider using a compromised account. This still depends on obtaining the necessary authentication material and the system accepting it; merely knowing an account name does not guarantee login access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A system should check more than “Can this account log in?” It should also check “May this account perform this action on this resource right now?” Even if a button can technically be clicked, using the data for any imaginable purpose is not necessarily authorized by the organization."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the distinction between Authentication and Authorization. Authentication checks whether the claimant can provide the required authentication evidence. Authorization determines which resources and actions are permitted. Authentication reduces impersonation risk, but is not an absolute guarantee of the real operator's identity or motive."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Identity theft: it is not just a stolen password"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Distinguish four states that are often confused:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Data exposure or disclosure: information reaches someone who should not have it. This increases the risk of misuse, but exposure alone does not establish that a fraudulent application has occurred.",
+            "Credential Theft: passwords or other authentication material are obtained. Here, “credential” does not refer only to a digital certificate file.",
+            "Account Takeover: an unauthorized person gains control of, or the ability to operate, an existing account. Changing its recovery email after logging in is one example.",
+            "Identity Theft: another person's personal or financial information is used without permission. It may involve an existing account or a new service opened in their name. Its scope is broader than taking over one online account."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, knowing Alex's name does not establish an ability to log in. Obtaining a copy of Alex's identification document exposes sensitive information to risk, but does not establish that an account was successfully opened in Alex's name. If a service provider verifies an application made using Alex's information without authorization, there is more concrete evidence of identity misuse. Whether it succeeded and what harm resulted remain separate questions."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m09-05-identity-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 3: Identity theft is more than account theft",
+            "description": "Separate exposure, account takeover and identity misuse.",
+            "items": [
+              {
+                "title": "Different states",
+                "body": "Data exposure, account takeover and identity theft are not interchangeable."
+              },
+              {
+                "title": "Different risks",
+                "body": "Misuse may involve an existing account or a new fraudulent application without account takeover."
+              },
+              {
+                "title": "Do not skip evidence",
+                "body": "Exposure increases risk. Actual misuse and harm require separate verification."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Identity Proofing establishes a trustworthy connection between an online applicant and a real-world identity. When someone applies for a new service, for example, the process may check not only whether information exists, but also the evidence and whether the applicant is its rightful holder. This differs from authenticating subsequent logins. This is a simplified introductory model, not a claim that every service follows an identical process. [NIST SP 800-63A-4](https://pages.nist.gov/800-63-4/sp800-63a.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Therefore, “They know my birthday” or “The photo looks like the person” is not sufficient proof. The impersonation and AI Deepfakes discussed in M09-03—synthetic or manipulated images, audio or video—can make surface clues seem convincing. Return to trusted channels and appropriate verification procedures rather than relying only on a voice or appearance."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Protection: secure the account and limit the impact it can have"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Layer 1: grant only the access required for the job"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Least Privilege means providing only the access needed to perform assigned duties. Alex's need to contact one class does not imply a need to read sensitive attachments for every class, much less delete the entire database. [NIST: Least Privilege](https://csrc.nist.gov/glossary/term/least_privilege)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Access must also change with responsibilities. When duties change, a contract ends or an employee leaves, established procedures should revoke accounts, permissions and active sessions that are no longer needed. Collecting a physical access card does not automatically remove cloud access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Layer 2: do not let one person independently approve every high-impact action"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Separation of Duties divides critical steps that should not be completed independently by the same person. For example, one person requests a list export and another authorized person reviews its purpose and recipient. This still needs records and technical enforcement; adding a merely ceremonial checkbox is not enough. [NIST: Separation of Duty](https://csrc.nist.gov/glossary/term/separation_of_duty)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Layer 3: reduce impersonation risk and protect recovery paths"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use strong passwords that are not reused across services, safeguard authentication material, and enable Multi-Factor Authentication (MFA). Multiple factors are different kinds of evidence—not simply two passwords. Sensitive operations, account recovery and changes to authentication methods also need appropriate protection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "MFA is not a cure-all. If a real employee already has permission to export, MFA does not automatically prevent misuse. Stolen active sessions or weak recovery procedures can also leave gaps. This is why M01-06's defense in depth matters: security should not depend entirely on one login checkpoint."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Layer 4: make anomalies visible without treating alerts as verdicts"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An Audit Log records which account performed which action on which resource and when. Protect logs from arbitrary modification, preserve suitable time and source information, and restrict who can read them."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Data Loss Prevention (DLP) can use rules to identify, alert on or block certain transfers of sensitive information. It can produce false positives or miss events, and may not cover every device or channel. A “large download” alert alone proves neither disclosure nor malicious intent by a particular person."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These controls are examples to adapt to business context, not universal thresholds for every organization. [NIST SP 800-53 Rev. 5](https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final) provides a reference for controls. This lesson does not claim that implementing these examples establishes any particular compliance certification."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Return to Northstar: separate observation, inference and verification"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m09-05-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 4: Verify before concluding; contain risk where needed",
+            "description": "Combine protective controls with careful interpretation.",
+            "items": [
+              {
+                "title": "Preserve and check",
+                "body": "Large downloads are a warning. Preserve necessary evidence and check work context, time, devices and access records."
+              },
+              {
+                "title": "Supported finding",
+                "body": "Follow authorized procedures, reduce risk and review evidence without public accusations."
+              },
+              {
+                "title": "Insufficient evidence",
+                "body": "Keep uncertainty explicit, obtain missing evidence and reduce ongoing risk when needed. Unknown is not harmless."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the only available record says, “An administrative account downloaded many files late at night.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Observation: a particular account has a download record at a particular time. First check the meaning of the fields, time zone, completeness, and whether the record represents a completed download rather than merely a request."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Inference: this might be an approved data migration, an operator error, deliberate misuse by the account owner, or unauthorized use by an outsider. These are hypotheses to investigate, not facts to report simultaneously as established."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Verification: an authorized investigator compares work assignments, approvals, login and device records, file-access records and necessary transfer records. Establish what data was involved, its destination, whether the action succeeded, and the scope of impact. An account, device or network address by itself is generally insufficient to fully identify the real operator and their intent."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If risk is continuing, follow the incident-response process to apply appropriate, reversible restrictions while preserving original records. Protecting data does not have to wait until someone has “found the culprit.” Equally, an investigation is not permission to arbitrarily delete or alter logs or access unrelated private information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not finding an outbound-transfer record means only that none was found in the records currently available. If a channel was never logged, that absence cannot establish that data never left. This is the same evidence discipline as M01-02's distinction between discovering a vulnerability and establishing that an incident occurred."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Investigations should remain within authorized scope, necessary data and authorized personnel. One anomaly is not grounds for publicly accusing a colleague. Security manages access risk; it does not guess people's character."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Connect this lesson to the surrounding chapters"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "M01-01, CIA: disclosure affects confidentiality; altered records affect integrity; malicious or accidental deletion can affect availability.",
+            "M01-02, risk: exporting 100 public teaching records and 100 sensitive personal records can have different impacts. Quantity alone is not enough.",
+            "M01-03, authorization: being able to log in or click a button does not authorize every purpose.",
+            "M09-01–04, social engineering: an outsider may first gain trust, then persuade an insider to surrender authentication material or act on the outsider's behalf.",
+            "Next, M09-06: combine independent verification and anti-phishing controls into a practical protective workflow."
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Reason from the diagrams: three quick checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Look at Figures 2 and 4, then answer in your own words:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "1. The system reports “Alex's account successfully downloaded the data.” Why does that not establish “Alex maliciously stole data”? Give at least two questions that still need verification.",
+            "2. Suppose Alex really did use legitimate access to give the list to an unapproved recipient. Can MFA solve this on its own? At which boundary would you add a control, and what would it be?",
+            "3. A copy of someone's identification document has been exposed, but there is no evidence of a fraudulent application or account takeover. What is established, and what is not? If the service on the right of Figure 3 receives a new application, why is correct information alone insufficient to approve it?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reference answers are provided separately and are collapsed by default on the website. Publishing answers does not mean you have answered or understood them. Understanding remains unverified; the lesson is not marked as mastered."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-boundary",
+          "summary": "Reference explanation: 1. Why can we not immediately conclude that Alex maliciously stole data?",
+          "paragraphs": [
+            "A record initially identifies which account performed an action, not necessarily which person operated it or with what intent. Verify at least two things: was the download approved and required for work? Did Alex actually perform it, or was the account or session compromised? Also establish whether the record represents a completed download or merely a request, which data was involved, and whether it reached an unapproved recipient.",
+            "Figure 2's red dashed arrow is only a possible boundary-crossing path. Figure 4 requires checking records and work context rather than treating an alert as a verdict of malicious behavior."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-evidence",
+          "summary": "Reference explanation: 2. Can MFA alone prevent an authorized person from misusing legitimate access?",
+          "paragraphs": [
+            "No. MFA primarily helps authenticate the claimant. If the real Alex passes authentication, Alex may still misuse an available function. Add appropriate controls at Figure 2's purpose / sharing authorization boundary: limit which data can be exported, require another authorized person to approve disclosure, restrict recipients or transfer channels to approved destinations, and preserve audit records.",
+            "DLP may help identify or block sensitive-data transfers, but cannot guarantee coverage of every case. A DLP alert alone does not establish malice. Authentication, authorization and oversight address different problems."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-response",
+          "summary": "Reference explanation: 3. What does an exposed copy of an identification document establish?",
+          "paragraphs": [
+            "Under the question's stated conditions, the document copy has been exposed and sensitive identity information is at risk of misuse. It does not establish that an existing account has been taken over, that a fraudulent application succeeded, or that a particular financial loss occurred. Those claims need separate evidence.",
+            "Correct application information shows that the applicant possesses the information; it does not establish that the applicant is its rightful holder or is authorized to use it. The new-service application on the right of Figure 3 needs an appropriate identity-proofing process that checks the evidence and the applicant's connection to that identity. Knowing the information is not the same as being the person. Preserve necessary evidence and use trusted channels to address suspected misuse without exposing more personal information."
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Remember these four sentences"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Having access does not authorize every use. An internal account does not prove an internal person operated it. Personal-data exposure, account takeover and identity theft are different states. Use evidence to establish actions and impact before concluding causes or responsibility."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Download all four diagrams in Chinese and English (SVG ZIP)](https://learn.cs-kairos.com/downloads/ceh-m09-05-bilingual-svg.zip)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Related reading: [M09-01](https://learn.cs-kairos.com/en/courses/ceh/v13/m09/concepts/m09-01/) · [M09-02](https://learn.cs-kairos.com/en/courses/ceh/v13/m09/concepts/m09-02/) · [M09-03](https://learn.cs-kairos.com/en/courses/ceh/v13/m09/concepts/m09-03/) · [M09-04](https://learn.cs-kairos.com/en/courses/ceh/v13/m09/concepts/m09-04/) · [M01-01](https://learn.cs-kairos.com/en/courses/ceh/v13/m01/concepts/m01-01/) · [M01-02](https://learn.cs-kairos.com/en/courses/ceh/v13/m01/concepts/m01-02/) · [M01-03](https://learn.cs-kairos.com/en/courses/ceh/v13/m01/concepts/m01-03/) · [M01-06](https://learn.cs-kairos.com/en/courses/ceh/v13/m01/concepts/m01-06/) · [M01-07](https://learn.cs-kairos.com/en/courses/ceh/v13/m01/concepts/m01-07/)"
+        }
+      ]
+    }
+  }
+}
