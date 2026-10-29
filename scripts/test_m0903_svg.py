@@ -1,5 +1,6 @@
 """Adversarial input tests for the reviewed-asset-only inline SVG boundary."""
 import unittest
+import xml.etree.ElementTree as ET
 from m0903_svg import sanitized_svg
 
 P = 'm0903-f1-zh-'
@@ -7,6 +8,14 @@ BASE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" role="img"
 
 
 class Boundary(unittest.TestCase):
+    def test_inline_root_fits_column_without_distortion_or_fixed_dimensions(self):
+        value=BASE.format('').replace('<svg ', '<svg width="800" height="300" preserveAspectRatio="none" ')
+        root=ET.fromstring(sanitized_svg(value,P))
+        self.assertNotIn('width',root.attrib)
+        self.assertNotIn('height',root.attrib)
+        self.assertEqual(root.get('viewBox'),'0 0 560 300')
+        self.assertEqual(root.get('preserveAspectRatio'),'xMidYMid meet')
+
     def test_plain_geometry_and_local_reference(self):
         value = BASE.format('<defs><marker id="m0903-f1-zh-arrow"><path d="M0 0L8 4L0 8Z"/></marker></defs><path d="M0 0L10 10" marker-end="url(#m0903-f1-zh-arrow)"/>')
         self.assertIn('marker-end', sanitized_svg(value, P))

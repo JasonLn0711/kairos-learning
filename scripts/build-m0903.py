@@ -180,11 +180,13 @@ Northstar 是虛構案例；箭頭代表圖中明示的關係，不代表已證�
 
 SVG text remains editable. No scripts, external images, external font files,
 or private source material are included. The website embeds allowlist-validated SVG with visible reflowing explanations.
-Fixed diagram geometry remains at least 800px wide in a keyboard-scrollable frame
-on narrow screens; use the full-size SVG link to zoom. This is not SVG reflow.
+The whole diagram scales proportionally to the available column width without
+cropping. Labels also shrink on small screens; open the original SVG to zoom.
+The viewBox remains the drawing coordinate system, not a fixed display width.
 SVG 文字可編輯，不含腳本、外部圖片、外部字型檔或私人來源材料。
 網站直接內嵌經白名單驗證的 SVG，並保留可換行文字解說。
-窄螢幕圖框保留至少800px寬，可鍵盤左右捲動或開啟原圖放大；SVG本身不是重新排版。
+整張圖依可用欄寬等比縮放、不裁切；小螢幕的圖中文字也會變小，可開啟原圖放大。
+viewBox保留圖形座標，不是固定顯示尺寸。
 
 Version 1.2.0 / 2026-10-29
 """
