@@ -7,7 +7,7 @@ import { allConceptTeachings, concepts } from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M09-03')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
 
-test('M09-03 keeps complete aligned bilingual teaching, seven diagrams, five reference answers and pending M09-04',()=>{
+test('M09-03 keeps complete aligned bilingual teaching, seven diagrams, five reference answers and published M09-04',()=>{
   assert.equal(lesson.contentVersion,'1.2.0');assert.equal(lesson.revision,3);assert.deepEqual(lesson.qa,[]);
   const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-29');
   for(const lang of ['zh','en'] as const){
@@ -20,8 +20,8 @@ test('M09-03 keeps complete aligned bilingual teaching, seven diagrams, five ref
     assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
     const page=catalog.get('M09-03',lang)!;
     assert.equal(page.navigation.previous?.id,'M09-02');assert.ok(page.navigation.previous?.href);
-    assert.equal(page.navigation.next?.id,'M09-04');assert.equal(page.navigation.next?.href,null);
-    assert.equal(catalog.get('M09-04',lang),null);
+    assert.equal(page.navigation.next?.id,'M09-04');assert.ok(page.navigation.next?.href);
+    assert.ok(catalog.get('M09-04',lang));
     const search=catalog.searchEntries.find(e=>e.id==='M09-03'&&e.lang===lang)!;
     for(const b of body.filter(b=>b.kind==='answer'))for(const p of b.paragraphs)assert.ok(search.text.includes(p));
     for(const image of body.filter(b=>b.kind==='visual')){assert.equal(image.kind,'visual');

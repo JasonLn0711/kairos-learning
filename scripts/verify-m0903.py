@@ -103,7 +103,8 @@ for lang, prefix in [('zh', ''), ('en', 'en/')]:
     assert not re.search(r'Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference|google\.com/s2/favicons|data-d-component', raw)
     assert f'/{prefix}courses/ceh/v13/m09/concepts/m09-02/' in raw
     assert f'/{prefix}courses/ceh/v13/m09/#m09-04' in raw
-    assert not (ROOT / f'build/{prefix}courses/ceh/v13/m09/concepts/m09-04').exists()
+    assert (ROOT / f'build/{prefix}courses/ceh/v13/m09/concepts/m09-04').exists()
+    assert not (ROOT / f'build/{prefix}courses/ceh/v13/m09/concepts/m09-05').exists()
     for visual in [b for b in lesson['text'][lang]['sourceBody'] if b['kind'] == 'visual']:
         src = visual['src']
         assert inline[src] in raw, (lang, 'Reviewed sanitized inline SVG missing', src)
@@ -138,7 +139,8 @@ evidence['bundle'] = {'src': '/downloads/ceh-m09-03-bilingual-svg.zip', 'bytes':
 
 index = json.loads((ROOT / 'build/search-index.json').read_text())
 assert len([x for x in index if x['id'] == 'M09-03']) == 2
-assert not any(x['id'] == 'M09-04' for x in index)
+assert len([x for x in index if x['id'] == 'M09-04']) == 2
+assert not any(x['id'] == 'M09-05' for x in index)
 for lang in ['zh', 'en']:
     text = next(x['text'] for x in index if x['id'] == 'M09-03' and x['lang'] == lang)
     for label in json.loads(generate_labels())[lang]:
