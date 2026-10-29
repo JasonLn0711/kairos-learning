@@ -155,6 +155,20 @@ test('M01-06 preserves full beginner teaching and a closed reference answer, not
  }
 });
 
+test('M09-02 provides full bilingual phishing teaching and separate reference answers',()=>{
+ const t=allConceptTeachings.find(t=>t.id==='M09-02')!;
+ assert.ok(t);assert.deepEqual(t.qa,[]);
+ for(const lang of ['zh','en'] as const){
+  const body=t.text[lang].sourceBody!;
+  assert.ok(body.length>=65);
+  assert.equal(body.filter(b=>b.kind==='table').length,3);
+  assert.equal(body.filter(b=>b.kind==='answer').length,1);
+  const text=JSON.stringify(body);
+  for(const word of ['Phishing','Spear Phishing','Whaling','Northstar']) assert.ok(text.toLowerCase().includes(word.toLowerCase()));
+  assert.ok(!/Sentinel_|libfile_|CalpicoFile_|understanding.*pending/.test(text));
+ }
+});
+
 test('M01-07 preserves the primary manuscript, four responsive diagrams and four closed reference answers',()=>{
  const t=allConceptTeachings.find(t=>t.id==='M01-07')!;
  assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
