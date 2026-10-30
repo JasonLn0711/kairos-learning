@@ -1,0 +1,835 @@
+{
+  "id": "M02-01",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-10-30",
+  "status": "published",
+  "publishedOn": "2026-10-30",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "以實際資料流區分被動與主動偵察，掌握授權、DNS 快取與證據界線。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M02-01｜被動與主動偵察：先分清楚，你是在查資料，還是在碰目標？"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. 先記住這個結論"
+        },
+        {
+          "kind": "paragraph",
+          "text": "判斷被動或主動偵察，不是看你有沒有打字、開工具，而是看蒐集資訊的過程，有沒有對目標系統產生直接互動。 被動不代表完全沒有網路流量；主動不等於已經入侵。兩者都不能跳過授權、隱私與證據查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你想了解一家咖啡店：看第三方平台已保存的菜單與評論，和打電話問店員「今天還有什麼豆子」，都能取得資訊，但後者會讓店家接收到你的詢問。資安偵察也有這個差別：讀既有線索，或主動向系統詢問。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這堂課只做合成情境與紙上判讀，不對真實第三方網站、帳號或主機測試。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. 知識地圖：偵察是什麼，與前面學的有何關係？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reconnaissance（偵察）是為後續決策蒐集目標相關資訊，例如有哪些網站、使用哪些技術、誰負責某項業務。防守方可以用它盤點外界看得到的資訊；攻擊者也可能用同一批資訊規劃詐騙或入侵。MITRE 的偵察分類同時包含主動與被動資訊蒐集。[來源：MITRE Reconnaissance](https://attack.mitre.org/tactics/TA0043/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Footprinting（足跡蒐集／輪廓建立）可先理解成「把零散線索整理成目標的輪廓」；不是看到一筆資料就認定整家公司都如此。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "OSINT，Open-Source Intelligence（公開來源情報）是從公開可取得的資料，經蒐集、比對與分析形成有用途的情報。這裡的 open-source 指公開來源，不是只找開放原始碼。公開資料本身是素材，仍要判斷日期、真偽、適用範圍。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "問題",
+            "本堂的判斷重點"
+          ],
+          "rows": [
+            [
+              "我想知道什麼？",
+              "先定目的，不無限蒐集個資"
+            ],
+            [
+              "資料在哪裡？",
+              "第三方既有資料，或目標自己的系統"
+            ],
+            [
+              "我的動作送到哪裡？",
+              "看實際資料流，不只看工具名稱"
+            ],
+            [
+              "看到的東西能證明什麼？",
+              "區分觀察、推論與待驗證"
+            ],
+            [
+              "可不可以繼續？",
+              "看書面授權、範圍與停止條件"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "前面的 M09 社交工程告訴我們：知道職稱、活動與合作對象，就能讓冒充更像真的。本章反過來問「這些背景線索從哪裡來？」M01 的授權觀念則是全程的邊界。後面的 M02-02 才深入來源可信度，M03 再談掃描；這堂先建立分類方法。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. 被動與主動：不是「安全／危險」二分法"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-01-paths-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜同一個目的，不同互動路徑",
+            "description": "上半部箭頭＝向第三方取資料；下半部箭頭＝直接與目標互動；被動不等於全世界都沒有流量",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "上半部箭頭＝向第三方取資料；下半部箭頭＝直接與目標互動；被動不等於全世界都沒有流量"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passive Reconnaissance（被動偵察）：相對於目標，不直接向目標系統發出探查請求，主要讀取第三方已持有的資訊。例如閱讀搜尋引擎索引摘要、第三方網站已保存的歷史資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Active Reconnaissance（主動偵察）：為取得資訊，直接與目標系統互動。例如在授權實驗網段，向主機發出請求，觀察哪些服務回應。Probe（探查請求）就像有目的地敲門，透過回應了解狀態；不等於已闖進房間。MITRE 的 Active Scanning 明確描述向目標基礎設施送出網路探查流量。[來源：MITRE Active Scanning](https://attack.mitre.org/techniques/T1595/)"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "面向",
+            "被動偵察",
+            "主動偵察"
+          ],
+          "rows": [
+            [
+              "互動對象",
+              "主要是第三方既有資訊",
+              "直接接觸目標系統"
+            ],
+            [
+              "資料時效",
+              "可能過期、缺漏",
+              "較接近查詢當下，但仍有限制"
+            ],
+            [
+              "目標可見性",
+              "目標通常較難直接看到你的查詢",
+              "目標或其代管服務可能留下紀錄"
+            ],
+            [
+              "風險",
+              "隱私、來源錯誤、過度推論",
+              "加上系統負載、告警與越界風險"
+            ],
+            [
+              "是否保證隱形",
+              "不保證，第三方可能記錄查詢",
+              "不保證，也不應以躲避紀錄為目的"
+            ],
+            [
+              "能否直接證明漏洞",
+              "不能",
+              "單憑回應也不能"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "本堂採「是否直接與目標互動」的操作性定義。 不同教材可能把瀏覽公開官網稱為被動、半被動或低互動偵察；實務報告不要只貼標籤，要寫清楚動作：你是讀搜尋摘要，還是發出 HTTP 請求給官網？HTTP（Hypertext Transfer Protocol，超文字傳輸協定）就是瀏覽器與網站交換網頁內容常用的協定。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. 最容易判錯的三個邊界"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-01-dns-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜DNS：快取決定後續路徑",
+            "description": "簡化模型；不以工具名稱判分類；有轉送、委派與其他快取策略；沒有觀測路徑，就保留未知",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "簡化模型；不以工具名稱判分類；有轉送、委派與其他快取策略；沒有觀測路徑，就保留未知"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1",
+          "text": "邊界一：查搜尋結果與點進官網不是同一件事"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你只讀搜尋平台已保存的摘要，請求主要送給搜尋平台。你點開目標官網後，瀏覽器會向網站或其代管服務請求內容；這已是直接互動，網站可能記錄時間、來源位址、路徑等。正常瀏覽不等於漏洞掃描，也不代表惡意；但「低衝擊」不能當作「零互動」。 網頁還可能載入圖片、分析服務或其他外部資源，實際請求不一定只有一個。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2",
+          "text": "邊界二：查 DNS 不能只靠工具名稱分類"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS（Domain Name System，網域名稱系統）可以把名稱對應到網路服務資訊。Resolver（解析器）替你查詢；cache（快取）是暫時保存的答案；authoritative name server（權威名稱伺服器）則對特定區域提供具權威性的 DNS 資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果解析器已有有效快取，可能直接回覆你；沒有答案時，可能再向其他 DNS 伺服器詢問，最後接觸該網域的權威服務。因此「我只問第三方解析器」不能保證目標相關服務完全沒有接收到查詢。這是簡化模型，實際還有轉送、委派與快取策略。[來源：RFC 1034，DNS 概念、快取與遞迴查詢](https://www.rfc-editor.org/rfc/rfc1034.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3",
+          "text": "邊界三：公開資料，不代表可以任意利用"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公開徵才資訊提到某項技術，你可以在合法範圍內讀取，但不能因此推論「所有主機都用該技術」，更不能把它當作登入、掃描、猜密碼或蒐集不必要個資的授權。MITRE 也把公開網站、社群與程式碼平台列為可能的偵察來源；防守方不能只注意機房，忽略對外資訊。[來源：MITRE Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593/)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. 具體例子：替一間合成公司做外部資訊盤點"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-01-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜觀察，不等於最終結論",
+            "description": "箭頭＝推理與查核步驟，不是因果；技術名稱 ≠ 現行版本 ≠ 可利用漏洞；驗證也可以讀現行資產紀錄",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "箭頭＝推理與查核步驟，不是因果；技術名稱 ≠ 現行版本 ≠ 可利用漏洞；驗證也可以讀現行資產紀錄"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設「海嶼咖啡」是完全虛構的公司，教材名稱為 `coffee.example`，所有資料都是人工製作，不連線測試。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你受託回答：「外界能不能拼出我們的客服與登入系統輪廓？」"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "1. 先讀授權：只准讀取提供的公開資料副本與內部資產清單，不准碰正式主機。不因為找到了新網址就自行擴大範圍。",
+            "2. 蒐集既有線索：第三方舊徵才快照寫著「熟悉某資料庫佳」。可以記錄「這份職缺曾提及這項技能」，不能寫「正式系統目前一定使用這套資料庫」。",
+            "3. 建立待驗證假設：某張歷史截圖出現客服入口。可以列為「可能的服務入口，日期與歸屬待核實」，不是現行資產清單的確定項目。",
+            "4. 遇到互動需求就停下來：若想直接連線確認服務是否存在，這已超出本次授權。改請資產管理者提供現行清單，或先完成授權變更；不能先做再補簽。",
+            "5. 交付有邊界的結論：「兩份歷史來源顯示曾有客服入口；目前是否仍提供服務未知。建議由系統負責人核對。」這比看似厲害但沒有證據的斷言更專業。"
+          ]
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "證據層級",
+            "範例",
+            "不可跳過的缺口"
+          ],
+          "rows": [
+            [
+              "Observation（觀察）",
+              "截圖上看見一個客服網址",
+              "截圖日期、來源、完整性"
+            ],
+            [
+              "Inference（推論）",
+              "公司可能曾提供客服入口",
+              "網址是否歸該公司、是否仍有效"
+            ],
+            [
+              "Verification（驗證）",
+              "資產負責人以現行紀錄確認",
+              "確認時間、涵蓋範圍、可追溯依據"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗證不是永遠等於掃描。 有時查現行資產紀錄，既更可靠，也更符合授權。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. 如何做得安全，又讓防守方有證據？"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-01-scope-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜有線索，先過授權關卡",
+            "description": "下方兩種結果不是連續執行；新發現的資產不會自動納入授權；保留既有允許工作，不先做再補簽",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "下方兩種結果不是連續執行；新發現的資產不會自動納入授權；保留既有允許工作，不先做再補簽"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Rules of Engagement，ROE（測試執行規則）可把授權變成可操作的邊界：允許哪些資產、方法、時間與資料處理方式，遇到什麼情況停止，聯絡誰。NIST SP 800-115 是 2008 年發布的評估方法指引，不是本堂宣稱的最新法律或當代工具清單；其評估規劃與 ROE 範本可用來理解這些基本要求。[來源：NIST SP 800-115](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf)"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "防護工作",
+            "為什麼有用",
+            "要留什麼證據"
+          ],
+          "rows": [
+            [
+              "對外資訊盤點",
+              "降低不必要的技術、人員與流程曝光",
+              "發布清單、審核紀錄、移除後檢查"
+            ],
+            [
+              "現行資產清冊",
+              "避免把歷史或他人資產當成自己的",
+              "負責人、用途、歸屬、更新日期"
+            ],
+            [
+              "服務端與網路紀錄",
+              "看見可疑互動與探查模式",
+              "時間、目的服務、回應、關聯事件"
+            ],
+            [
+              "流量限制與告警",
+              "減少異常密集請求造成的影響",
+              "規則、觸發紀錄、正常流量誤報檢查"
+            ],
+            [
+              "最小蒐集與存取控制",
+              "不讓盤點報告反而成為敏感資料集中庫",
+              "蒐集目的、存取名單、保留與刪除規則"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是看到一次連線就能判定攻擊，也不是沒有告警就代表沒有人研究你。第三方平台上的查詢，可能根本不在你的監控範圍。應將時間、頻率、行為與其他證據一起分析。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. 不用安裝工具的三分鐘練習與小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "拿一張紙畫三個框：「我」「第三方資料平台」「目標系統」。對每個動作畫出請求箭頭，再回答：目標是否收到互動？資料是否可能過期？這個動作是否在授權內？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "練習情境全部是假設：A 讀第三方保存的舊網頁摘要；B 在隔離實驗室詢問自己的測試服務；C 從第三方解析器查名稱，但不知道快取狀態；D 看到一年前徵才頁寫某技術，直接認定正式主機有漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "檢核 1：同一個瀏覽器，先讀搜尋摘要，再點官網，為什麼不能只用「我只是上網」來判定被動偵察？請說出兩條箭頭的終點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "檢核 2：你只向第三方 DNS 解析器查詢，能否保證目標權威 DNS 沒收到查詢？還缺什麼資訊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "檢核 3：歷史職缺提過某技術、正式系統某個服務有回應、資產負責人核對現行清單，這三種證據各能證明什麼？哪一種能單獨證明可被入侵？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "檢核 4：授權只允許讀公開資料副本，但你發現一個疑似遺漏的主機。你下一步怎麼做，才能既有進度又不越界？"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-paths",
+          "summary": "參考解答：1. 同一個瀏覽器，不同資料流",
+          "paragraphs": [
+            "讀既有摘要時，主要箭頭是「我 → 搜尋平台」；點官網後，是「我 → 目標網站或其代管服務」。工具一樣，接收請求的系統不同。本堂採直接互動的定義，因此後者不是零互動；正常瀏覽仍不等同漏洞掃描。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-dns",
+          "summary": "參考解答：2. 第三方 DNS 不保證沒有間接互動",
+          "paragraphs": [
+            "不能保證。解析器可能從有效快取回覆，也可能繼續向其他伺服器詢問。還需知道快取、轉送與實際解析路徑；只知道工具或解析器名字不夠。權威服務看到的來源也可能是解析器，不是原始查詢者。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-evidence",
+          "summary": "參考解答：3. 三種證據，三種有限結論",
+          "paragraphs": [
+            "舊職缺只能支持「當時公開文件提及某技能」；服務回應支持「特定時間、位置與請求條件下有回應」；負責人的現行清單可支持其涵蓋範圍內的資產歸屬與狀態。三者都不能單獨證明可被入侵。技術版本、設定、可達性與實際弱點仍須在授權內另行核實。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-scope",
+          "summary": "參考解答：4. 發現新線索，不等於範圍自動擴大",
+          "paragraphs": [
+            "先記錄來源、時間、可能關聯與不確定性，列為待確認；請負責人核對，必要時先更新授權。原本允許的副本分析可繼續，但不要直接探測新主機。可疑範圍與異常情況依既定停止、通報規則處理。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. 今天的一句話與下一步"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先畫資料流，再判斷被動或主動；先看授權，再決定能不能做；先界定證據，再下結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本單元的學習成果是能解釋上述差異，不是完成一次真實目標偵察。下一單元 M02-02 才進一步處理 OSINT 來源與來源驗證。本次未要求或執行第三方探測；"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[下載本課中英文 SVG 圖檔](https://learn.cs-kairos.com/downloads/ceh-m02-01-bilingual-svg.zip)"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Classify passive and active reconnaissance by data flow, with authorization, DNS caching and bounded evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M02-01 | Passive and Active Reconnaissance: Are You Reading Records or Interacting with the Target?"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Start with the conclusion"
+        },
+        {
+          "kind": "paragraph",
+          "text": "To distinguish passive from active reconnaissance, ask whether information gathering directly interacts with the target system—not whether you typed something or opened a tool. Passive does not mean no network traffic anywhere. Active does not mean a system has already been compromised. Neither removes the need for authorization, privacy protection, or evidence checks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine researching a coffee shop. Reading a menu and reviews already stored on a third-party platform differs from calling an employee to ask which beans are available today. Both provide information, but the second sends an inquiry to the shop. Security reconnaissance has the same distinction: reading existing clues versus asking a system directly."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson uses synthetic scenarios and paper-based reasoning only. It does not test real third-party websites, accounts, or hosts."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Knowledge map: What is reconnaissance, and how does it connect?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reconnaissance gathers information about a target to support later decisions: its websites, technologies, or people responsible for a business function. Defenders can use it to inventory externally visible information. An attacker might use the same material to plan fraud or intrusion. MITRE's reconnaissance category includes both active and passive information gathering. [Source: MITRE Reconnaissance](https://attack.mitre.org/tactics/TA0043/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Footprinting can be understood as assembling scattered clues into a profile of a target. One piece of information does not establish how an entire organization operates."
+        },
+        {
+          "kind": "paragraph",
+          "text": "OSINT, Open-Source Intelligence, turns publicly available material into useful intelligence through collection, comparison, and analysis. Here, “open-source” means public sources, not just open-source software. Public records are raw material: their dates, authenticity, and scope still require assessment."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Question",
+            "What to examine in this lesson"
+          ],
+          "rows": [
+            [
+              "What do I want to know?",
+              "Define a purpose; do not collect personal information without limits"
+            ],
+            [
+              "Where is the information?",
+              "Existing third-party records or the target's own systems"
+            ],
+            [
+              "Where does my action go?",
+              "Follow actual data flow, not just the tool's name"
+            ],
+            [
+              "What does this observation establish?",
+              "Separate observation, inference, and unanswered questions"
+            ],
+            [
+              "May I continue?",
+              "Check written authorization, scope, and stopping conditions"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "M09 social engineering explains how knowledge of job titles, events, and business relationships can make impersonation more convincing. This chapter asks where those background clues come from. M01's authorization principles remain the boundary throughout. M02-02 examines source reliability in more detail; M03 addresses scanning. This lesson first establishes a classification method."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. Passive versus active is not a safe-versus-dangerous binary"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-01-paths-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "1 | Same goal, different request paths",
+            "description": "Upper arrow: query a third party. Lower arrow: interact with target. Passive does not mean zero traffic",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Upper arrow: query a third party. Lower arrow: interact with target. Passive does not mean zero traffic"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passive reconnaissance does not send investigative requests directly to the target system, relative to the target under discussion. It mainly reads information that third parties already hold, such as indexed search snippets or historical records saved on a third-party site."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Active reconnaissance directly interacts with the target system to obtain information. In an authorized lab network, for example, a request can ask a host which services respond. A probe is a deliberate inquiry—like knocking on a door to learn from the response. It does not mean someone has entered the room. MITRE's Active Scanning technique explicitly describes network probes sent to target infrastructure. [Source: MITRE Active Scanning](https://attack.mitre.org/techniques/T1595/)"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Dimension",
+            "Passive reconnaissance",
+            "Active reconnaissance"
+          ],
+          "rows": [
+            [
+              "Interaction",
+              "Mainly existing third-party information",
+              "Direct contact with target systems"
+            ],
+            [
+              "Freshness",
+              "May be outdated or incomplete",
+              "Closer to the time of inquiry, but still limited"
+            ],
+            [
+              "Target visibility",
+              "Usually harder for the target to observe the inquiry directly",
+              "The target or its hosting provider may record it"
+            ],
+            [
+              "Risks",
+              "Privacy, incorrect sources, and overinterpretation",
+              "Also system load, alerts, and out-of-scope activity"
+            ],
+            [
+              "Guaranteed invisibility?",
+              "No; third parties may log queries",
+              "No; avoiding records should not be the objective"
+            ],
+            [
+              "Direct proof of a vulnerability?",
+              "No",
+              "A response alone is not proof either"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson uses direct interaction with the target as its operational definition. Other teaching materials may call browsing a public website passive, semi-passive, or low-interaction reconnaissance. A practical report should describe the action rather than rely only on a label: did you read a search snippet, or send an HTTP request to the website? HTTP, Hypertext Transfer Protocol, is a protocol commonly used by browsers and websites to exchange web content."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Three boundaries that are easy to misclassify"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-01-dns-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "2 | DNS: cache changes the next path",
+            "description": "Simplified model, not a tool label. Forwarding and delegation vary. Unknown path remains unknown",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Simplified model, not a tool label. Forwarding and delegation vary. Unknown path remains unknown"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1",
+          "text": "Boundary one: Reading search results is not the same as opening the target website"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When you read a snippet already stored by a search platform, your request primarily goes to that platform. Once you open the target's website, the browser requests content from the site or its hosting service. That is direct interaction. The service may record the time, source address, requested path, and other details. Ordinary browsing is not vulnerability scanning or evidence of malicious intent. Nevertheless, low impact is not the same as zero interaction. A page may also load images, analytics services, or other external resources, so there may be more than one request."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2",
+          "text": "Boundary two: A DNS tool's name does not determine the classification"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS, the Domain Name System, associates names with network-service information. A resolver performs lookups for you. A cache temporarily stores answers. An authoritative name server provides authoritative DNS data for a particular zone."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A resolver with a valid cached answer may reply immediately. Without an answer, it may query other DNS servers and eventually contact the domain's authoritative service. Therefore, “I only asked a third-party resolver” does not guarantee that no target-related service receives a query. This is a simplified model: forwarding, delegation, and caching policies also affect the path. [Source: RFC 1034, DNS concepts, caching, and recursive queries](https://www.rfc-editor.org/rfc/rfc1034.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3",
+          "text": "Boundary three: Public availability is not unrestricted permission"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A public job advertisement may mention a technology. Reading it within applicable rules does not establish that every host uses that technology. Nor does it authorize logging in, scanning, guessing passwords, or collecting unnecessary personal information. MITRE includes public websites, social platforms, and code repositories among possible reconnaissance sources. Defenders therefore need to examine public information, not just their server rooms. [Source: MITRE Search Open Websites/Domains](https://attack.mitre.org/techniques/T1593/)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Worked example: External-information review for a synthetic company"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-01-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "3 | Observation is not a verdict",
+            "description": "Arrows: reasoning, not causation. Technology ≠ version ≠ exploitability. Verification may use asset records",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Arrows: reasoning, not causation. Technology ≠ version ≠ exploitability. Verification may use asset records"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Island Coffee” is a completely fictional company represented by `coffee.example`. Every record in this example is manually created. No network testing is performed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your assignment is to answer: “Could an outsider assemble a profile of our customer-service and login systems?”"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "1. Read the authorization first. Only the supplied copies of public records and the internal asset inventory may be reviewed. Production hosts are excluded. Finding a new URL does not expand the scope.",
+            "2. Collect existing clues. An old third-party job snapshot says that familiarity with a particular database is desirable. Record that the advertisement mentioned the skill, not that production systems definitely use that database today.",
+            "3. Create a hypothesis to verify. A historical screenshot shows a customer-service entry point. Record it as a possible service whose date and ownership need confirmation, not as a confirmed current asset.",
+            "4. Pause when direct interaction would be needed. Connecting to check whether the service exists would exceed this authorization. Ask the asset owner for a current inventory or obtain a scope change first. Do not perform the action and seek approval afterward.",
+            "5. Deliver a bounded conclusion. “Two historical sources indicate that a customer-service entry point previously existed. Its current availability is unknown. The system owner should verify it.” That is more professional than an impressive-sounding assertion without evidence."
+          ]
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Evidence level",
+            "Example",
+            "Gap that still matters"
+          ],
+          "rows": [
+            [
+              "Observation",
+              "A screenshot contains a customer-service URL",
+              "Screenshot date, source, and integrity"
+            ],
+            [
+              "Inference",
+              "The company may previously have offered that service",
+              "Whether the URL belongs to the company and remains current"
+            ],
+            [
+              "Verification",
+              "The asset owner confirms it using current records",
+              "Confirmation time, coverage, and traceable evidence"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Verification does not always mean scanning. Checking current asset records may be both more reliable and more consistent with the authorization."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. How can the work stay safe and produce useful defensive evidence?"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-01-scope-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "4 | A clue still needs authorization",
+            "description": "Bottom outcomes are alternatives. New assets are not auto-authorized. Keep permitted work; no retroapproval",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Bottom outcomes are alternatives. New assets are not auto-authorized. Keep permitted work; no retroapproval"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Rules of Engagement, or ROE, turn authorization into operational boundaries: permitted assets, methods, times, and data handling; conditions that require stopping; and whom to contact. NIST SP 800-115 is an assessment-methodology guide published in 2008—not a claim about current law or a modern tool catalog. Its assessment planning guidance and ROE template help explain these basic requirements. [Source: NIST SP 800-115](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf)"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Defensive activity",
+            "Why it helps",
+            "Evidence to retain"
+          ],
+          "rows": [
+            [
+              "Inventory public information",
+              "Reduce unnecessary exposure of technology, personnel, and processes",
+              "Publication inventory, review records, and removal verification"
+            ],
+            [
+              "Maintain a current asset inventory",
+              "Avoid treating historical or third-party assets as your own",
+              "Owner, purpose, ownership, and update date"
+            ],
+            [
+              "Keep service and network records",
+              "Observe suspicious interactions and probing patterns",
+              "Time, destination service, response, and related events"
+            ],
+            [
+              "Apply rate controls and alerts",
+              "Reduce the impact of unusually concentrated requests",
+              "Rules, trigger records, and false-positive checks against normal traffic"
+            ],
+            [
+              "Minimize collection and control access",
+              "Avoid turning the assessment report into a sensitive-data repository",
+              "Collection purpose, access list, retention, and deletion rules"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "One connection does not establish an attack. No alert does not establish that nobody is researching the organization. Queries made on a third-party platform may fall entirely outside your monitoring coverage. Analyze timing, frequency, behavior, and other evidence together."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. A three-minute paper exercise and reasoning checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Draw three boxes: “Me,” “Third-party information platform,” and “Target system.” For each action, draw the request arrows. Then ask: does the target receive an interaction? Could the information be outdated? Is the action authorized?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "All scenarios are hypothetical: A, read an old web snippet saved by a third party; B, query your own test service inside an isolated lab; C, ask a third-party resolver for a name without knowing its cache state; D, see a technology in a year-old job advertisement and immediately conclude that a production host is vulnerable."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check 1: In the same browser, you read a search snippet and then open the target website. Why is “I am only browsing” insufficient to classify the whole activity as passive? Identify the destination of each request arrow."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check 2: If you query only a third-party DNS resolver, can you guarantee that the target's authoritative DNS service receives no query? What information is missing?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check 3: A historical job advertisement mentions a technology; a production service responds; an asset owner verifies a current inventory. What does each piece of evidence support? Which one, by itself, proves that the system can be compromised?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check 4: Authorization permits only reviewing copies of public records, but you find a possibly overlooked host. What should you do next to make progress without exceeding scope?"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-paths",
+          "summary": "Reference answer: 1. Same browser, different data flows",
+          "paragraphs": [
+            "For an existing snippet, the main arrow is “Me → Search platform.” Opening the target website changes it to “Me → Target website or its hosting service.” The tool is the same, but the recipient differs. Under this lesson's direct-interaction definition, the latter is not zero interaction. Ordinary browsing still does not equal vulnerability scanning."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-dns",
+          "summary": "Reference answer: 2. Third-party DNS does not guarantee no indirect interaction",
+          "paragraphs": [
+            "There is no such guarantee. A resolver may answer from a valid cache or query other servers. You need information about caching, forwarding, and the actual resolution path; a tool or resolver name is insufficient. The source seen by the authoritative service may also be the resolver rather than the original requester."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-evidence",
+          "summary": "Reference answer: 3. Three pieces of evidence support three limited conclusions",
+          "paragraphs": [
+            "An old job advertisement supports only that a public document mentioned a skill at that time. A service response supports that a response occurred under a particular request, time, and observation point. An owner's current inventory can support asset ownership and status within its coverage. None alone proves that a system can be compromised. Versions, configuration, reachability, and actual weaknesses still require separately authorized verification."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-scope",
+          "summary": "Reference answer: 4. A new clue does not automatically expand the scope",
+          "paragraphs": [
+            "Record the source, time, possible relationship, and uncertainty as an item awaiting confirmation. Ask the responsible owner to verify it and update authorization first if necessary. Already permitted analysis of supplied records can continue, but do not directly probe the new host. Follow established stopping and reporting rules when scope is unclear or unusual conditions arise."
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. The takeaway and what comes next"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Draw the data flow before classifying passive or active; check authorization before acting; define the limits of the evidence before concluding."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The learning outcome is the ability to explain these distinctions, not the completion of reconnaissance against a real target. M02-02 next examines OSINT sources and source validation. No third-party probing is requested or performed in this lesson."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Download bilingual SVG diagrams](https://learn.cs-kairos.com/downloads/ceh-m02-01-bilingual-svg.zip)"
+        }
+      ]
+    }
+  }
+}
