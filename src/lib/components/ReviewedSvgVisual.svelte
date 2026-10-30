@@ -10,9 +10,9 @@
 </script>
 <figure class="spatial-diagram" data-reviewed-svg={block.src}>
   <figcaption><strong>{block.visual.caption}</strong><p>{block.visual.description}</p></figcaption>
-  <p class="reading-hint">{lang==='en'?'The whole diagram scales proportionally to this column. Small screens also shrink its text; open the original SVG to zoom, or read the explanation below.':'整張圖依欄位寬度等比縮放，不裁切。小螢幕的圖中文字也會變小，可開啟原圖放大，或閱讀下方會自動換行的文字解說。'}</p>
+  <p class="reading-hint">{block.src.startsWith('/images/ceh/m02-01-') ? (lang==='en'?'The largest diagram text is capped at body size. Narrower columns shrink the whole diagram; open the original SVG to zoom.':'圖中文字最大不超過內文；欄寬不足時整張圖等比縮小，可開啟原圖放大。') : lang==='en'?'The whole diagram scales proportionally to this column. Small screens also shrink its text; open the original SVG to zoom, or read the explanation below.':'整張圖依欄位寬度等比縮放，不裁切。小螢幕的圖中文字也會變小，可開啟原圖放大，或閱讀下方會自動換行的文字解說。'}</p>
   <div class="diagram-viewport">
-    <div class="diagram-canvas">
+    <div class="diagram-canvas" class:body-sized={block.src.startsWith("/images/ceh/m02-01-")}>
       <!-- Generated only by scripts/m0903_svg.py: strict element/attribute allowlist,
            local unique IDs, no scripts, styles, links or external resources. -->
       {@html svg}
@@ -28,6 +28,7 @@
   .diagram-viewport{width:100%;max-width:100%;min-width:0;border:1px solid #cbd5e1;border-radius:12px;background:white}
   .diagram-canvas{width:100%;max-width:100%;min-width:0;margin:auto}
   .diagram-canvas :global(svg){display:block;width:100%;max-width:100%;height:auto}
+  .diagram-canvas.body-sized{width:min(100%,23.076923em)}
   a:focus-visible{outline:3px solid #175f91;outline-offset:3px}
   .text-equivalent{margin:1rem 0 0;display:grid;gap:.65rem}.text-equivalent>div{min-width:0;padding:.65rem .8rem;background:#fff;border-radius:8px;border:1px solid #cbd5e1}dt{font-weight:650}dd{margin:.25rem 0 0;line-height:1.75;overflow-wrap:anywhere}
   .diagram-links{display:flex;flex-wrap:wrap;gap:.65rem 1.2rem;margin:1rem 0 0}a{color:#145685}
