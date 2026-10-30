@@ -8,7 +8,7 @@ import {createConceptCatalog,type SourceBlock} from '../src/lib/concepts.ts';
 import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M02-01')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
-test('M02-01 complete bilingual lesson, four diagrams, four closed-answer data records and next pending unit',()=>{
+test('M02-01 complete bilingual lesson, four diagrams, four closed-answer data records and next published unit',()=>{
  assert.equal(lesson.contentVersion,'1.0.0');assert.equal(lesson.revision,1);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-30');
  for(const lang of ['zh','en'] as const){
@@ -20,8 +20,8 @@ test('M02-01 complete bilingual lesson, four diagrams, four closed-answer data r
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
   const page=catalog.get('M02-01',lang)!;
   assert.equal(page.navigation.previous?.id,'M09-06');assert.ok(page.navigation.previous?.href);
-  assert.equal(page.navigation.next?.id,'M02-02');assert.equal(page.navigation.next?.href,null);
-  assert.equal(catalog.get('M02-02',lang),null);
+  assert.equal(page.navigation.next?.id,'M02-02');assert.ok(page.navigation.next?.href);
+  assert.ok(catalog.get('M02-02',lang));
   const search=catalog.searchEntries.find(e=>e.id==='M02-01'&&e.lang===lang)!;
   for(const b of body.filter(b=>b.kind==='answer'))for(const p of b.paragraphs)assert.ok(search.text.includes(p));
  }
@@ -56,7 +56,7 @@ test('M02-01 reviewed inline bundle and search labels match deterministic allowl
 test('M02-01 caps largest SVG text at inherited body size and shrinks below the cap',()=>{
  const c=readFileSync('src/lib/components/ReviewedSvgVisual.svelte','utf8');
  assert.ok(c.includes('width:min(100%,23.076923em)'));
- assert.ok(c.includes('class:body-sized={block.src.startsWith("/images/ceh/m02-01-")}'));
+ assert.ok(c.includes('class:body-sized={block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-")}'));
  for(const lang of ['zh','en'] as const)for(const b of lesson.text[lang].sourceBody!.filter(b=>b.kind==='visual')){
   const svg=readFileSync('site'+b.src,'utf8');const fonts=[...svg.matchAll(/font-size="([0-9.]+)"/g)].map(m=>Number(m[1]));
   assert.equal(Math.max(...fonts),26);assert.ok(svg.includes('viewBox="0 0 600 765"'));
