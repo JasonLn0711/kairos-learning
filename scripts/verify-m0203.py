@@ -25,8 +25,8 @@ for lang,prefix in [('zh',''),('en','en/')]:
  assert '<meta name="robots" content="noindex">' not in raw
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
  assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-02/' in raw
- assert f'/{prefix}courses/ceh/v13/m02/#m02-04' in raw
- assert not (ROOT/f'build/{prefix}courses/ceh/v13/m02/concepts/m02-04/index.html').exists()
+ assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-04/' in raw
+ assert (ROOT/f'build/{prefix}courses/ceh/v13/m02/concepts/m02-04/index.html').exists()
  for b in [b for b in lesson['text'][lang]['sourceBody'] if b['kind']=='visual']:
   assert bundle[b['src']] in raw
   assert (ROOT/'site'/b['src'].lstrip('/')).read_bytes()==(ROOT/'build'/b['src'].lstrip('/')).read_bytes()
@@ -37,7 +37,7 @@ with zipfile.ZipFile(p) as z:
  assert len(z.namelist())==8
  for src in bundle:
   if '05-noindex-flow' not in src:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
-print('PASS M02-03 bilingual full text order; 5 inline SVG per language; 2 closed answers; search labels; preserved original 8-SVG ZIP plus separate noindex diagrams; pending M02-04. Static output verification.')
+print('PASS M02-03 bilingual full text order; 5 inline SVG per language; 2 closed answers; search labels; preserved original 8-SVG ZIP plus separate noindex diagrams; linked M02-04. Static output verification.')
 
 for lang,prefix in [('zh',''),('en','en/')]:
  target=f'https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m02/concepts/m02-03/#section-5'

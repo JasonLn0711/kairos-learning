@@ -19,7 +19,7 @@ test('M02-05 complete bilingual lesson, four diagrams, two closed-answer data re
   for(const term of ['MAIL FROM','SPF','DKIM','DMARC','coffee.example','rfc9989'])assert.ok(text.includes(term));
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
   const page=catalog.get('M02-05',lang)!;
-  assert.equal(page.navigation.previous?.id,'M02-04');assert.equal(page.navigation.previous?.href,null);
+  assert.equal(page.navigation.previous?.id,'M02-04');assert.ok(page.navigation.previous?.href);
   assert.equal(page.navigation.next?.id,'M02-06');assert.equal(page.navigation.next?.href,null);
   assert.equal(catalog.get('M02-06',lang),null);
   const search=catalog.searchEntries.find(e=>e.id==='M02-05'&&e.lang===lang)!;

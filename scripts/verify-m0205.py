@@ -22,7 +22,7 @@ for lang,prefix in [('zh',''),('en','en/')]:
  assert [d['id'] for d in page.details]==['answer-check','answer-choice']
  assert raw.count('data-reviewed-svg=')==4
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
- assert f'/{prefix}courses/ceh/v13/m02/#m02-04' in raw
+ assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-04/' in raw
  assert f'/{prefix}courses/ceh/v13/m02/#m02-06' in raw
  assert not (ROOT/f'build/{prefix}courses/ceh/v13/m02/concepts/m02-06/index.html').exists()
  for b in [b for b in lesson['text'][lang]['sourceBody'] if b['kind']=='visual']:

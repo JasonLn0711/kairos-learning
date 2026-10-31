@@ -1,0 +1,789 @@
+{
+  "id": "M02-04",
+  "revision": 2,
+  "contentVersion": "1.1.0",
+  "date": "2026-10-31",
+  "status": "published",
+  "publishedOn": "2026-10-31",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "分辨 DNS 解析與網域註冊資料，以可查核的線索建立足跡，並依角色與管理證據核實歸屬。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "M02-04｜DNS、WHOIS / RDAP Footprinting：從服務位址讀懂註冊角色"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1｜結論先行：把「服務怎麼找到」與「網域怎麼登記」分開"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天只學一個完整概念：用 DNS 與網域註冊資料建立可查證的外部輪廓，並依資料角色與證據核實服務位置及營運歸屬。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS（Domain Name System，網域名稱系統）像電話簿加分層問路系統，回答「這個名稱有哪些服務紀錄」。WHOIS（傳統註冊資料查詢協定）與 RDAP（Registration Data Access Protocol，註冊資料存取協定）則比較像查登記資料，回答「這個網域在註冊體系中留下哪些資料」。Footprinting（足跡蒐集）是把這些線索整理成範圍清楚、附時間與來源的輪廓。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "生活上，一間咖啡店的外送聯絡電話、代收郵件地址、店面租約登記人可能各不相同。網域也一樣：網站、信箱、DNS 託管商、註冊商和實際營運者可以是不同角色。真正要學會的是「每個欄位回答哪個問題，以及進一步核實需要哪些資料」。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2｜DNS 查詢的旅程：誰幫你問，誰有權回答？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你要開啟合成案例的 www.coffee.example。你的裝置通常先問遞迴解析器（Recursive Resolver）：一個替你找答案、也可能保存先前答案的服務。若快取已有可使用的答案，它就直接回覆，節省查找時間。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若需要查找，解析器可沿 DNS 階層取得指引：根名稱伺服器知道頂層網域的委派資訊；頂層網域（Top-Level Domain，TLD）伺服器再指向相關網域的權威名稱伺服器（Authoritative Name Server）。權威伺服器提供它負責區域的紀錄。實際查詢路徑會依可用快取與已知委派資訊調整。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "「遞迴」是幫你完成查找；「權威」是對自己管理的區域提供正式資料。DNS 區域（Zone）是一段由特定權威伺服器管理的名稱空間，其管理範圍依委派切分，子網域可以另外委派。以上角色與委派結構可參考 [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "快取（Cache）像抄下來暫時使用的電話簿。TTL（Time to Live，存活時間）告訴快取一筆紀錄可以保留多久；全球各處反映變更的時間，還要搭配各解析器快取與查詢條件觀察。觀察到的 TTL 也可能是剩餘時間。不同解析器、查詢時間或網路位置，可能看到不同結果。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-04-01-dns-journey-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜DNS 的角色與查找",
+            "description": "裝置詢問解析器；需要時沿委派找到權威答案。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "裝置詢問解析器；需要時沿委派找到權威答案。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3｜讀懂紀錄：每種欄位都只回答自己的問題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資源紀錄（Resource Record）是 DNS 中的資料單位。每種紀錄描述一種對應關係，資產歸屬則搭配管理或契約資料核實。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "類型",
+            "白話用途",
+            "判讀重點與核實方向"
+          ],
+          "rows": [
+            [
+              "A",
+              "名稱對應 IPv4 位址",
+              "可能指向共用主機、代理入口或原始主機，依服務架構核實"
+            ],
+            [
+              "AAAA",
+              "名稱對應 IPv6 位址",
+              "與 A 分開查，完整掌握 IPv4 與 IPv6 服務配置"
+            ],
+            [
+              "CNAME",
+              "這個名稱是另一個名稱的別名",
+              "可看出服務依賴，主機歸屬再由資產管理資料核實"
+            ],
+            [
+              "MX",
+              "郵件應送往哪些郵件交換主機",
+              "提供收信路由線索；寄件來源需另查該封郵件的傳送證據"
+            ],
+            [
+              "NS",
+              "這個區域由哪些名稱伺服器服務",
+              "常反映 DNS 託管；持有人則依註冊角色與管理資料核實"
+            ],
+            [
+              "SOA",
+              "區域管理的起始資訊與計時參數",
+              "序號協助區域版本管理，格式依管理者採用的編號方式判讀"
+            ],
+            [
+              "TXT",
+              "文字資料，可供驗證或政策使用",
+              "依內容與相應規格解讀，辨識驗證、政策等公開用途"
+            ],
+            [
+              "PTR",
+              "常用於反向查詢，由位址找名稱",
+              "提供反向名稱線索；正向對應及所有權分別核實"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "MX 的偏好值較小者優先嘗試，數值表達嘗試順序。TXT 可能放 SPF（Sender Policy Framework，寄信來源政策）、網域驗證字串等；依字串內容與規格，分別辨識寄信政策、驗證等用途。DNS 的基本紀錄格式及多數上述類型見 [RFC 1035](https://www.rfc-editor.org/rfc/rfc1035)；IPv6 的 AAAA 紀錄見 [RFC 3596](https://www.rfc-editor.org/rfc/rfc3596)。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-04-02-record-roles-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜紀錄不同，問題不同",
+            "description": "依位址、別名、郵件與區域角色判讀，搭配管理證據核實歸屬。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "依位址、別名、郵件與區域角色判讀，搭配管理證據核實歸屬。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4｜WHOIS 與 RDAP：辨識註冊體系的三種角色"
+        },
+        {
+          "kind": "paragraph",
+          "text": "註冊人（Registrant）是網域註冊關係中的持有人角色；註冊商（Registrar）提供網域註冊服務；註冊管理機構（Registry）管理某個頂層網域的登錄資料。這三種角色各有職責。即使某平台同時提供多種服務，仍要按欄位角色判讀。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳統 WHOIS 使用 TCP（Transmission Control Protocol，傳輸控制協定）的 43 埠；埠可想成服務的收件窗口。回覆常是文字，格式及可取得的欄位會因服務而異；它採用傳統文字交換設計；需要強固存取控制與資料保密時，應選用具備這些安全服務的協定。[RFC 3912](https://www.rfc-editor.org/rfc/rfc3912)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP 的安全規範要求支援 HTTPS，也就是以加密連線傳送 HTTP（Hypertext Transfer Protocol，超文字傳輸協定，網頁傳輸常用規則）資料；連線加密保護資料傳輸，網站營運歸屬則依欄位角色及管理證據核實。[RFC 7481](https://www.rfc-editor.org/rfc/rfc7481)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP 使用標準化查詢與結構化回應，讓人和程式較容易辨識欄位；JSON（JavaScript Object Notation，資料交換格式）將欄位名稱和值組織起來，供程式處理或介面呈現。RDAP 回應可包含名稱、狀態、事件、實體及其角色、名稱伺服器、說明與連結，應連同角色和事件類型一起讀。[RFC 9083](https://www.rfc-editor.org/rfc/rfc9083)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如「某日期」要先看它是註冊、更新還是到期事件，再按該事件解讀。網站改版日可查發布紀錄，公司成立日可查公司登記；各類日期都有對應來源。註冊商欄位說明提供註冊服務的角色，網站營運者則搭配管理資料核實。資料因隱私保護而遮蔽或缺省時，記錄為「公開欄位未提供」，並列出確認持有人所需的合法來源。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "截至本課查核，ICANN 說明 RDAP 已成為註冊資料的主要替代協定；自 2025 年 1 月 28 日起，一般頂層網域的註冊管理機構與註冊商通常不再被要求提供 WHOIS，但頁面列有 .com、.name、.post 例外。實際 WHOIS 服務可能持續運作；國家或地區頂層網域則依各自規則查核。[ICANN RDAP 說明](https://www.icann.org/rdap)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-04-03-registration-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜註冊角色與核實方向",
+            "description": "註冊管理機構、註冊商與註冊人是不同角色；遮蔽欄位保留未知。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "註冊管理機構、註冊商與註冊人是不同角色；遮蔽欄位保留未知。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5｜把線索串起來：一間合成咖啡店的外部輪廓"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下使用教材自編資料、.example 名稱與文件用 IP。練習範圍是閱讀這組合成資料，實際操作應置於合法授權的隔離環境。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "自編觀察",
+            "可以記錄的事實",
+            "進一步核實的資料"
+          ],
+          "rows": [
+            [
+              "www.coffee.example 的 CNAME 指向 edge.vendor.example",
+              "這個網站名稱使用了另一名稱作為別名",
+              "原始主機的位置須查服務設定；測試對象須逐一對照書面授權"
+            ],
+            [
+              "別名後續的 A 回覆為 192.0.2.10",
+              "此次解析取得這個 IPv4 位址",
+              "位址使用者、網路位置與弱點狀態，各需對應的資產及授權驗證資料"
+            ],
+            [
+              "coffee.example 的 MX 為 10 mail.vendor.example",
+              "收信路由指向這個郵件主機",
+              "帳號管理與個別郵件的傳送證據，依其目的與授權另外查核"
+            ],
+            [
+              "RDAP 的 registrar 角色為範例註冊商",
+              "登記資料標示此註冊商角色",
+              "店主與網站營運者的歸屬，需查對應管理或登記資料"
+            ],
+            [
+              "另一時間查詢得到不同 IP",
+              "兩次結果不同，需保留各自時間與查詢條件",
+              "快取、異動紀錄、服務配置及安全紀錄，可協助釐清差異來源"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "內容傳遞網路（Content Delivery Network，CDN）或反向代理（Reverse Proxy，替後端接收請求的前端服務）可替後端提供對外入口，原始主機的位置由服務架構決定。多個網站共用一個入口 IP 很常見，各網站的營運者可各自獨立。報告可先寫「觀察到依賴或對應」，再以資產管理或契約資料確認歸屬。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6｜回應狀態、差異原因與查詢互動"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NXDOMAIN 是回覆所述的名稱不存在狀態。名稱存在、但所問紀錄類型缺少資料時，要依相應回覆內容判讀。逾時表示在等待期限內未收到答案，可從網路、伺服器、限制或設定查找原因。保留回應狀態、查詢名稱和類型，就能讓讀者重建當時條件。DNS 負面回覆也可能被快取。[RFC 2308](https://www.rfc-editor.org/rfc/rfc2308)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "結果不同，可能是快取、變更時點、地理或負載導向、不同 DNS 視圖。Split DNS（分割視圖 DNS）讓內外部網路看到不同答案，外部與內部的資產狀態應在各自授權視角查核。若要判定竄改，需進一步比對設定變更、管理者授權及安全紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查第三方已保存的歷史 DNS 資料，和直接向解析器或權威伺服器查詢，屬於不同互動路徑。一般 DNS 查詢仍會產生網路流量；你問遞迴解析器，也可能間接觸發它去問權威伺服器。是否列為被動蒐集，要按課程定義與書面測試規則判斷，並依書面授權明定查詢對象、頻率與方法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本單元重點是少量、範圍明確的紀錄判讀。先前 M04 的 DNS Enumeration（DNS 列舉）內容可用來快速複習：單筆查詢提供該次紀錄的線索；完整列舉則需要另定範圍與方法。大量猜名稱、測試區域傳送或進一步探測，應先確認相應授權與規則。本課專注於已提供的合成紀錄判讀。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7｜防護與證據：讓公開資料與管理權各得其所"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 本來就需要對外公布部分服務線索。防護目標是讓公開資料恰當、管理權安全、服務本身有存取控制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可落實的作法包括定期盤點公開紀錄，移除不再使用的紀錄與服務依賴，避免把內部命名或敏感資料放入公開區域，保護註冊商與 DNS 管理帳號，啟用適當的多因素驗證與異動監控。若 CNAME 指向已停用的外部服務，先核實服務實際狀態與可接管條件，再處理紀錄，並用查核結果描述實際風險。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC（Domain Name System Security Extensions，DNS 安全擴充）讓驗證端檢查 DNS 資料來源真實性及完整性。DNSSEC 的工作是驗真與完整性驗證，DNS 資料仍可被讀取。傳輸保密需另用加密機制；網站內容安全、服務可用性及營運者可信度，各由相應的安全控制與證據評估。[RFC 4033](https://www.rfc-editor.org/rfc/rfc4033)"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "證據欄位",
+            "要留下什麼"
+          ],
+          "rows": [
+            [
+              "範圍與來源",
+              "被授權的名稱、查詢服務或資料庫、直接查詢或歷史資料"
+            ],
+            [
+              "時間與條件",
+              "日期、時區、解析器、網路視角、查詢名稱與紀錄類型"
+            ],
+            [
+              "原始結果",
+              "回應狀態、紀錄值、TTL；只保留必要資料"
+            ],
+            [
+              "判讀",
+              "觀察到的事實、可能解釋、待核實的歸屬"
+            ],
+            [
+              "防護核驗",
+              "經授權的變更前後比較、管理紀錄及仍待確認之處"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如「已移除舊 CNAME」要以設定變更與適當查核支持；剛改完後某個快取仍看到舊值，可先檢查時間、TTL 與查詢來源，再依快取期限和權威資料確認生效情況。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-04-04-evidence-boundary-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜線索到防護的查核流程",
+            "description": "查詢會產生互動；保留條件並將觀察與推論分開。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "查詢會產生互動；保留條件並將觀察與推論分開。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8｜小檢核：一個情境，四個判讀"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在授權的合成練習中，你看到：www.coffee.example 指向某 CDN 名稱；A 回覆 192.0.2.10；RDAP 只有註冊商資料，持有人欄位未公開；另一位同事的 DNS 查詢逾時。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請試著用自己的話回答：① 192.0.2.10 提供哪種線索，核實原始主機與歸屬還需要哪些資料？② 註冊商扮演什麼角色，網站營運者如何核實？③ 逾時描述哪種狀態，應如何記錄並查找原因？④ 若想讓報告可重查，你最少要補哪些查詢條件？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用本頁合成資料即可完成理解檢核；將判讀理由說清楚，有助於檢查自己是否掌握各欄位的意義。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-1",
+          "summary": "參考解答：由入口位址核實服務架構",
+          "paragraphs": [
+            "A 紀錄顯示這次解析取得的位址，CDN 可替多個網站提供入口。要確認咖啡店的專屬原始主機，應查服務設定、資產清單及相應管理資料。實際測試逐一對照書面授權中的目標與方法。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-2",
+          "summary": "參考解答：依註冊角色確認營運歸屬",
+          "paragraphs": [
+            "註冊商提供網域註冊服務；網站營運者則由相關管理、契約或登記資料核實。持有人欄位未公開時，記錄公開資料的可用範圍，並列出合法取得補充證據的方式。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-3",
+          "summary": "參考解答：記錄逾時狀態並查找原因",
+          "paragraphs": [
+            "逾時表示等待期限內未收到回應，可檢查網路、伺服器、限制或設定。NXDOMAIN 是回覆所述的名稱不存在狀態。對兩種情況都保留來源、時間及查詢條件，讓後續查核有一致依據。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-4",
+          "summary": "參考解答：讓另一個人能照條件重查",
+          "paragraphs": [
+            "至少保留授權範圍、查詢日期與時區、來源或解析器、網路視角、完整名稱、紀錄類型、回應狀態及原始值。若有 TTL 也一併記錄，並將「觀察」與「待核實的歸屬」分開。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9｜今天帶走的觀念與來源"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一句話收束：DNS 告訴你「名稱如何連到服務」，WHOIS／RDAP 告訴你「註冊資料如何描述角色」；兩者都需要來源、時間與適用條件，才能變成可靠的資產線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一個單元是 M02-05 Email Footprinting，再把郵件線索接回寄送路徑與可證實的資訊。本單元到這裡完成 DNS 與註冊資料的連結。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主要查證來源：[DNS 概念 RFC 1034](https://www.rfc-editor.org/rfc/rfc1034)、[DNS 紀錄 RFC 1035](https://www.rfc-editor.org/rfc/rfc1035)、[IPv6 DNS RFC 3596](https://www.rfc-editor.org/rfc/rfc3596)、[負面快取 RFC 2308](https://www.rfc-editor.org/rfc/rfc2308)、[RDAP JSON RFC 9083](https://www.rfc-editor.org/rfc/rfc9083)、[ICANN RDAP](https://www.icann.org/rdap)、[DNSSEC RFC 4033](https://www.rfc-editor.org/rfc/rfc4033)。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Distinguish DNS resolution from registration data, build an evidence-based footprint, and verify attribution using roles and management evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "M02-04 | DNS, WHOIS / RDAP Footprinting: Connect Service Addresses with Registration Roles"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1 | The main idea: Separate finding a service from registering a domain"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Today we study one complete concept: using DNS and domain registration data to build a verifiable external picture, and using role-specific evidence to verify service locations and operational ownership."
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS, the Domain Name System, works like a telephone directory combined with a layered system for asking directions. It answers, “What service records exist for this name?” WHOIS, the traditional registration-data query protocol, and RDAP, the Registration Data Access Protocol, are closer to looking up registration records. They answer, “What information does the registration system hold about this domain?” Footprinting means organizing these clues into a clearly scoped picture with sources and timestamps."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of a coffee shop. Its delivery telephone number, mail-receiving address, and the person named on its lease may all differ. Domains are similar: the website, email service, DNS hosting provider, registrar, and actual operator can involve different roles. The important skill is knowing which question each field answers—and what evidence supports further verification."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2 | The DNS lookup journey: Who asks for you, and who can answer authoritatively?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you want to open www.coffee.example in our fictional scenario. Your device normally asks a recursive resolver first. This service finds answers for you and may also keep previous answers. If its cache already contains a usable answer, it can reply without starting the search again."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When a lookup is needed, the resolver can follow referrals through the DNS hierarchy. Root name servers provide delegation information for top-level domains. A Top-Level Domain, or TLD, server then points toward the domain's authoritative name servers. An authoritative server supplies records for the zone it serves. The actual path depends on available cache entries and known delegation information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Recursive” means completing the lookup on your behalf. “Authoritative” means supplying authoritative data for a zone the server manages. A DNS zone is a portion of the namespace managed by particular authoritative servers. Its management boundary follows delegation; a subdomain can be delegated separately. See [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034) for these roles and delegation concepts."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A cache resembles a copied telephone directory that remains usable temporarily. TTL, or Time to Live, tells a cache how long it may retain a record. To assess when a change becomes visible across locations, examine each resolver’s cache and query conditions. The TTL you observe may also be the remaining lifetime. Different resolvers, query times, or network locations can produce different results."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-04-01-dns-journey-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "1 | DNS roles and lookup",
+            "description": "A device asks a resolver; delegation leads to authoritative data when needed.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "A device asks a resolver; delegation leads to authoritative data when needed."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3 | Reading records: Each type answers its own question"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A resource record is a unit of data in DNS. Each record describes a particular mapping; administration or contractual evidence helps verify asset ownership."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Type",
+            "Plain-language purpose",
+            "Interpretation and verification"
+          ],
+          "rows": [
+            [
+              "A",
+              "Maps a name to an IPv4 address",
+              "May identify shared hosting, a proxy entry, or an origin; check the service architecture"
+            ],
+            [
+              "AAAA",
+              "Maps a name to an IPv6 address",
+              "Query separately from A to cover both IPv4 and IPv6 service configurations"
+            ],
+            [
+              "CNAME",
+              "Makes one name an alias for another name",
+              "Shows a service dependency; verify server ownership with asset records"
+            ],
+            [
+              "MX",
+              "Identifies mail exchange hosts to which mail should be sent",
+              "Describes incoming-mail routing; check message-specific evidence for sending sources"
+            ],
+            [
+              "NS",
+              "Identifies name servers serving a zone",
+              "Often identifies DNS hosting; verify the holder using registration roles and administration records"
+            ],
+            [
+              "SOA",
+              "Provides zone administration information and timing parameters",
+              "Its serial tracks zone versions; interpret its format using the administrator’s numbering scheme"
+            ],
+            [
+              "TXT",
+              "Holds text used for purposes such as verification or policy",
+              "Use the relevant specification to identify public verification, policy, and other purposes"
+            ],
+            [
+              "PTR",
+              "Commonly supports reverse lookup, from an address to a name",
+              "Provides a reverse-name clue; verify forward mappings and ownership separately"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For MX records, a lower preference number is tried first; the number expresses attempt order. TXT records may contain SPF, the Sender Policy Framework used to express sending-source policy, or domain-verification strings. Interpret the string and its specification to distinguish sending policies, verification, and other purposes. See [RFC 1035](https://www.rfc-editor.org/rfc/rfc1035) for basic record formats and most of the types above, and [RFC 3596](https://www.rfc-editor.org/rfc/rfc3596) for IPv6 AAAA records."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-04-02-record-roles-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "2 | Different records, different questions",
+            "description": "Read address, alias, mail, and zone roles; verify ownership with administration evidence.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Read address, alias, mail, and zone roles; verify ownership with administration evidence."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4 | WHOIS and RDAP: Identify three registration-system roles"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A registrant is the holder role in a domain registration relationship. A registrar provides domain registration services. A registry maintains registration information for a top-level domain. These are distinct roles. Even when a platform offers several services, interpret each field according to its stated role."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Traditional WHOIS uses TCP (Transmission Control Protocol) port 43. A port is a service endpoint, like a receiving window for that service. Its responses are often text, with formatting and available fields varying by service. It follows a traditional text-exchange design; applications requiring strong access control and confidentiality should use a protocol providing those security services. [RFC 3912](https://www.rfc-editor.org/rfc/rfc3912)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP security requirements mandate support for HTTPS, which carries HTTP (Hypertext Transfer Protocol, a commonly used set of rules for web transfers) data over an encrypted connection. Encryption protects transport; role-specific fields and administration evidence establish the website’s operational ownership. [RFC 7481](https://www.rfc-editor.org/rfc/rfc7481)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP uses standardized queries and structured responses, making fields easier for people and software to identify. JSON, or JavaScript Object Notation, organizes field names and values for software processing or interface presentation. An RDAP response may include names, status, events, entities and their roles, name servers, notices, and links. Read roles and event types together with their values. [RFC 9083](https://www.rfc-editor.org/rfc/rfc9083)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, before interpreting a date, check whether its event is registration, update, or expiration. Interpret each date according to that event. Release records can establish a website redesign date, while company registration records establish incorporation dates. The registrar field identifies the registration-service role; administration evidence helps establish the website operator. For fields redacted or omitted for privacy, record “public field unavailable” and identify lawful sources for verifying the holder."
+        },
+        {
+          "kind": "paragraph",
+          "text": "At the time of this lesson's check, ICANN describes RDAP as the principal replacement protocol for registration data. Since January 28, 2025, generic top-level domain registries and registrars generally have no obligation to provide WHOIS, but the page lists exceptions for .com, .name, and .post. Individual WHOIS services may continue operating. Check country-code top-level domains under their respective rules. [ICANN's RDAP explanation](https://www.icann.org/rdap)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-04-03-registration-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "3 | Registration roles and verification",
+            "description": "Registry, registrar, and registrant are different roles; redacted data stays unknown.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Registry, registrar, and registrant are different roles; redacted data stays unknown."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5 | Connecting the clues: An external picture of a fictional coffee shop"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following invented teaching data uses .example names and a documentation IP address. This exercise consists of interpreting the supplied data; practical work belongs in a legally authorized, isolated environment."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Invented observation",
+            "Fact you may record",
+            "Evidence for further verification"
+          ],
+          "rows": [
+            [
+              "The CNAME for www.coffee.example points to edge.vendor.example",
+              "This website name aliases another name",
+              "Check service configuration for the origin location and written scope for each authorized target"
+            ],
+            [
+              "A subsequent A response for the alias is 192.0.2.10",
+              "This lookup returned that IPv4 address",
+              "Verify address users, network location, and vulnerabilities using asset records and authorized validation"
+            ],
+            [
+              "The MX for coffee.example is 10 mail.vendor.example",
+              "Incoming-mail routing points to that mail host",
+              "Review account administration and message-specific transport evidence under their own purpose and authorization"
+            ],
+            [
+              "RDAP identifies an example registrar in the registrar role",
+              "The registration data assigns that registrar role",
+              "Use the relevant administration or registration evidence to verify the shop owner and website operator"
+            ],
+            [
+              "A query at another time returns a different IP",
+              "Results differ; preserve both timestamps and query conditions",
+              "Compare cache conditions, change records, service configuration, and security logs to explain the difference"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A Content Delivery Network, or CDN, or a reverse proxy—a front-end service receiving requests on behalf of a back end—can provide a public entry point for a back end. Service architecture determines the origin location. Several websites commonly share one entry-point IP and may have independent operators. Record an “observed dependency or mapping,” then verify ownership with asset or contractual records."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6 | Response states, differences, and query interactions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NXDOMAIN is the response status stating that the queried name does not exist. When a name exists but the requested record type has no data, interpret the corresponding response. A timeout means the waiting period ended before an answer arrived; examine the network, server, restrictions, and configuration for causes. Preserve the response status, query name, and query type so readers can reconstruct the conditions. Negative DNS responses may also be cached. [RFC 2308](https://www.rfc-editor.org/rfc/rfc2308)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Different results may reflect caching, the timing of changes, geographic or load-based routing, or different DNS views. Split DNS provides different answers to internal and external networks. Check external and internal assets from their respective authorized viewpoints. A tampering assessment additionally requires configuration changes, administrator authorization, and security records."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Looking at historical DNS data already held by a third party is a different interaction from querying a resolver or authoritative server directly. An ordinary DNS query still generates network traffic. Asking a recursive resolver can indirectly cause it to query an authoritative server. Whether an activity counts as passive collection depends on the course definition and written testing rules. Use the written authorization to specify targets, query frequency, and methods."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This unit focuses on interpreting a small number of clearly scoped records. Use the earlier M04 material on DNS Enumeration—systematically discovering DNS information—as a brief review: a single query provides evidence for that record at that time. A comprehensive enumeration requires its own scope and methods. Confirm the applicable authorization and rules before large-scale name guessing, zone-transfer tests, or further probing. This lesson focuses on interpreting the supplied synthetic records."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7 | Protection and evidence: Give public information and management access their proper roles"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS needs to publish some service information. The defensive goal is to keep public information appropriate, management access secure, and the services themselves protected by access controls."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Practical measures include regularly reviewing public records, removing unused records and service dependencies, keeping internal naming and sensitive information out of public zones, protecting registrar and DNS administration accounts, and enabling suitable multifactor authentication and change monitoring. If a CNAME points to a discontinued external service, verify the service's actual state and the conditions required for takeover before addressing the record. Describe the actual risk using the verified service state and takeover prerequisites."
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC, Domain Name System Security Extensions, lets a validating party check DNS data's origin authenticity and integrity. Its role is authenticity and integrity validation; DNS data remains readable. Transport confidentiality uses a separate encryption mechanism. Website content security, availability, and operator trust each require their corresponding controls and evidence. [RFC 4033](https://www.rfc-editor.org/rfc/rfc4033)"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Evidence field",
+            "What to retain"
+          ],
+          "rows": [
+            [
+              "Scope and source",
+              "Authorized name, query service or database, and whether the data came from a direct query or historical records"
+            ],
+            [
+              "Time and conditions",
+              "Date, time zone, resolver, network viewpoint, query name, and record type"
+            ],
+            [
+              "Original result",
+              "Response status, record values, and TTL; retain only necessary data"
+            ],
+            [
+              "Interpretation",
+              "Observed facts, possible explanations, and ownership that remains unverified"
+            ],
+            [
+              "Defensive validation",
+              "Authorized before-and-after comparisons, administration records, and remaining uncertainties"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, “the old CNAME was removed” needs support from the configuration change and appropriate checks. If a cache still returns the old value immediately after a change, examine timing, TTL, and the query source then verify effectiveness against the cache lifetime and authoritative data."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-04-04-evidence-boundary-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "4 | From clues to verified protection",
+            "description": "Queries create interaction; retain conditions and separate facts from inference.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Queries create interaction; retain conditions and separate facts from inference."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8 | Small check: One scenario, four interpretations"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In an authorized fictional exercise, you observe that www.coffee.example points to a CDN name. An A response returns 192.0.2.10. RDAP provides registrar information but does not publicly disclose the holder field. A colleague's DNS query times out."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Try answering in your own words: ① What clue does 192.0.2.10 provide, and what further evidence verifies the origin and ownership? ② What role does the registrar perform, and how can you verify the website operator? ③ What state does a timeout describe, and how should you record it and investigate causes? ④ What query conditions must you add so someone else can recheck your report?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Complete this understanding check using the synthetic data on this page. Explaining your reasoning helps you assess how well you understand each field."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-1",
+          "summary": "Reference answer: Use the entry address to verify the service architecture",
+          "paragraphs": [
+            "An A record identifies the address returned by this lookup. A CDN can provide an entry point for multiple websites. To establish the coffee shop’s dedicated origin, check service configuration, asset inventories, and the relevant administration records. Match each actual test target and method to the written authorization."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-2",
+          "summary": "Reference answer: Verify operational ownership using registration roles",
+          "paragraphs": [
+            "The registrar provides domain registration services. Verify the website operator using the relevant administration, contractual, or registration evidence. When holder information is not public, record the scope of available public data and lawful ways to obtain additional evidence."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-3",
+          "summary": "Reference answer: Record the timeout state and investigate causes",
+          "paragraphs": [
+            "A timeout means the waiting period ended before a response arrived. Check the network, server, restrictions, and configuration. NXDOMAIN is the response status stating that the queried name does not exist. For both situations, retain the source, time, and query conditions to support consistent follow-up checks."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-4",
+          "summary": "Reference answer: Let someone else repeat the check under known conditions",
+          "paragraphs": [
+            "At minimum, retain the authorized scope, query date and time zone, source or resolver, network viewpoint, complete name, record type, response status, and original values. Include TTL when available, and separate observations from ownership that requires further verification."
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9 | Takeaway and sources"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In one sentence: DNS describes how names connect to services, while WHOIS and RDAP describe roles in registration data. Both require sources, timestamps, and applicable conditions before they become reliable asset clues."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The next unit is M02-05 Email Footprinting, connecting email clues with delivery paths and verifiable information. This unit completes the connection between DNS and registration data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Primary references: [DNS concepts, RFC 1034](https://www.rfc-editor.org/rfc/rfc1034), [DNS records, RFC 1035](https://www.rfc-editor.org/rfc/rfc1035), [IPv6 DNS, RFC 3596](https://www.rfc-editor.org/rfc/rfc3596), [Negative caching, RFC 2308](https://www.rfc-editor.org/rfc/rfc2308), [RDAP JSON, RFC 9083](https://www.rfc-editor.org/rfc/rfc9083), [ICANN RDAP](https://www.icann.org/rdap), and [DNSSEC, RFC 4033](https://www.rfc-editor.org/rfc/rfc4033)."
+        }
+      ]
+    }
+  }
+}

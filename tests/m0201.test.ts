@@ -56,7 +56,7 @@ test('M02-01 reviewed inline bundle and search labels match deterministic allowl
 test('M02-01 caps largest SVG text at inherited body size and shrinks below the cap',()=>{
  const c=readFileSync('src/lib/components/ReviewedSvgVisual.svelte','utf8');
  assert.ok(c.includes('width:min(100%,23.076923em)'));
- assert.ok(c.includes('class:body-sized={block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-") || block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-05-")}'));
+ assert.ok(c.includes('class:body-sized={block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-") || block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-04-") || block.src.startsWith("/images/ceh/m02-05-")}'));
  for(const lang of ['zh','en'] as const)for(const b of lesson.text[lang].sourceBody!.filter(b=>b.kind==='visual')){
   const svg=readFileSync('site'+b.src,'utf8');const fonts=[...svg.matchAll(/font-size="([0-9.]+)"/g)].map(m=>Number(m[1]));
   assert.equal(Math.max(...fonts),26);assert.ok(svg.includes('viewBox="0 0 600 765"'));
