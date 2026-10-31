@@ -1,7 +1,7 @@
 {
   "id": "M02-05",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.1.0",
   "date": "2026-10-31",
   "status": "published",
   "publishedOn": "2026-10-31",
@@ -125,27 +125,112 @@
         },
         {
           "kind": "paragraph",
-          "text": "郵件伺服器接到信時，通常把自己的 Received 欄位加到既有標頭的上方。因此，畫面上方通常是較新的接收紀錄；要描述信件走過的時間順序，可以由下往上整理。[SMTP 的追蹤資訊](https://www.rfc-editor.org/rfc/rfc5321)"
+          "text": "Received 回答「信經過哪些接收節點」，SPF、DKIM、DMARC 則回答「寄送來源、簽署網域與畫面作者如何對照」。先把兩類問題分開，再把證據接起來，閱讀完整郵件就有了清楚順序。"
         },
         {
           "kind": "paragraph",
-          "text": "實際查核則從自己收件端的可信紀錄開始，確認「哪台伺服器記錄它從哪個連線對象收到信」，再往前追溯。這裡有兩種不同方向：敘述路徑按時間前進，確認可信度從自己的系統往外延伸。"
+          "text": "4.1 用物流配送理解接收紀錄"
         },
         {
           "kind": "paragraph",
-          "text": "假設可信收件端留下這段合成資料："
+          "text": "想像從台北寄出的包裹，依序經過寄件站、轉運站、收件站。每到一站，該站都寫下：「我在什麼時間，從哪個上一站收到包裹。」郵件伺服器（Mail Server）也會留下這類交接紀錄。Received 是寫在郵件標頭（Header）中的接收欄位；負責轉送的系統稱為 MTA（Mail Transfer Agent，郵件傳輸代理）。"
         },
         {
           "kind": "code",
           "text": "Received: from outbound.mailer.example (192.0.2.25)\n        by mx.recipient.example;\n        Sat, 31 Oct 2026 10:00:05 +0000"
         },
         {
-          "kind": "paragraph",
-          "text": "它呈現的事實是：mx.recipient.example 記錄在該時間，從 IP 192.0.2.25 的連線收到郵件，並附上對方名稱。確認這筆紀錄由自家收件系統產生後，就能把它作為該段傳遞的證據。郵件服務商的出口 IP 對應服務節點；若要追查操作帳號或裝置，再依法定與授權程序對照服務端紀錄。"
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "白話意思與查核重點"
+          ],
+          "rows": [
+            [
+              "Received",
+              "一筆接收事件，先確認由哪個系統寫入。"
+            ],
+            [
+              "from outbound.mailer.example",
+              "上一站的名稱資訊；與實際連線 IP 一起判讀。"
+            ],
+            [
+              "(192.0.2.25)",
+              "此例中接收端記錄的連線來源 IP。"
+            ],
+            [
+              "by mx.recipient.example",
+              "寫下這筆接收事件的伺服器。"
+            ],
+            [
+              "10:00:05 +0000",
+              "該伺服器記錄的時間；+0000 表示與 UTC 相同的時差。"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "更前面的 Received 資料可能來自其他系統，應逐段記下其產生者與可核對來源。每一站的時間還涉及時區與系統時鐘；分析延遲時，先統一時區並核對可信節點。這就是 M02-01 的範圍觀念在郵件上的應用：本課分析已取得的資料，進一步向第三方發送探測或測試郵件時，另依書面授權執行。"
+          "text": "若已確認這筆紀錄由可信的 mx.recipient.example 產生，可寫成：「該收件伺服器在這個時間，記錄到來自 192.0.2.25 的郵件連線。」這是節點間交接的證據。要進一步確認操作帳號與裝置，再依權限取得提交服務、登入或端點紀錄，讓每一層結論都有對應材料。[SMTP 追蹤資訊：RFC 5321 §4.4](https://www.rfc-editor.org/rfc/rfc5321.html#section-4.4)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4.2 三站例子：時間閱讀與可信度查核各有方向"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是同一封合成郵件的三筆接收紀錄。所有 .example 名稱與 192.0.2.x 位址都供教學使用。假設收件組織管理 mx.recipient.example 與 mailbox.recipient.example，並能查閱兩者的日誌。"
+        },
+        {
+          "kind": "code",
+          "text": "Received: from mx.recipient.example (192.0.2.30)\n        by mailbox.recipient.example;\n        Sat, 31 Oct 2026 10:00:10 +0000\nReceived: from outbound.mailer.example (192.0.2.25)\n        by mx.recipient.example;\n        Sat, 31 Oct 2026 10:00:05 +0000\nReceived: from submit.mailer.example (192.0.2.20)\n        by outbound.mailer.example;\n        Sat, 31 Oct 2026 10:00:00 +0000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "新接收的伺服器會把自己的 Received 加在既有紀錄上面。於是這段標頭最上方是 10:00:10，最下方是 10:00:00。[Received 的加入方式：RFC 5321 §4.4](https://www.rfc-editor.org/rfc/rfc5321.html#section-4.4)"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "閱讀目的",
+            "起點與方向",
+            "這個例子的做法"
+          ],
+          "rows": [
+            [
+              "還原記錄中的時間順序",
+              "由下往上，較早到較晚",
+              "10:00:00 代寄出口接收 → 10:00:05 閘道接收 → 10:00:10 內部投遞。"
+            ],
+            [
+              "查核每段紀錄的可信度",
+              "從自己的可信收件系統，逐站往前",
+              "先核對 mailbox 的內部接收，再核對 mx 的外部連線；outbound 寫下的更早資料另找服務商證據。"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "先把各筆時間換成同一時區。例如 10:00:05 +0000 對應台灣 18:00:05 +0800。要估算兩站延遲，還要考慮兩台系統的時鐘同步狀態；把「標頭記載的時差」與「已核實的傳遞延遲」分開記錄，分析會更精確。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4.3 信任邊界：把每筆紀錄接回產生它的系統"
+        },
+        {
+          "kind": "paragraph",
+          "text": "信任邊界（Trust Boundary）是區分「自己可查核的系統」與「外部提供的資料」的界線。上例中，mx 直接觀察到 outbound 的連線；更早的 submit → outbound 段，則由外部系統描述。可以把證據表分成「己方日誌已對照」和「外部紀錄待對照」兩欄，再逐段補齊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如標頭中出現下面這行時，它首先是一項待核對的來源主張："
+        },
+        {
+          "kind": "code",
+          "text": "Received: from official-bank.example\n        by secure-gateway.example;\n        Sat, 31 Oct 2026 09:00:00 +0000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認這段主張的做法，是辨識寫入者、核對可信接收鏈與相關服務日誌。信件進入可信系統以前的標頭可能由外部寄件方預先填入，因此「紀錄外觀」與「來源核驗」各自列欄。這也接回 M09 社交工程：正式名稱和熟悉招牌可以吸引信任；獨立來源與系統紀錄，則讓信任有可查核的依據。"
         },
         {
           "kind": "visual",
@@ -164,33 +249,212 @@
           }
         },
         {
+          "kind": "visual",
+          "src": "/images/ceh/m02-05-05-received-logistics-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 5｜Received 像逐站蓋章的物流單",
+            "description": "最上方／最新：10:00:10 / 第三站：我方可信收件服務 / 查核起點：比對本站伺服器日誌；中間：10:00:05 / 第二站：前一個郵件中繼站 / 逐站核對來源與可取得的日誌；最下方／最早：10:00:00 / 第一站：更早的郵件接收節點 / 外部記載以來源與日誌逐項核實；兩個方向，各回答一個問題 / 時間還原：下 → 中 → 上 / 信任查核：我方最上站 → 逐站向前",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "最上方／最新：10:00:10 / 第三站：我方可信收件服務 / 查核起點：比對本站伺服器日誌；中間：10:00:05 / 第二站：前一個郵件中繼站 / 逐站核對來源與可取得的日誌；最下方／最早：10:00:00 / 第一站：更早的郵件接收節點 / 外部記載以來源與日誌逐項核實；兩個方向，各回答一個問題 / 時間還原：下 → 中 → 上 / 信任查核：我方最上站 → 逐站向前"
+              }
+            ]
+          }
+        },
+        {
           "kind": "heading",
           "id": "section-5",
           "text": "5｜SPF、DKIM、DMARC：三個互補的檢查"
         },
         {
           "kind": "paragraph",
-          "text": "先把它想成「寄件車輛名單」「文件封條」「品牌與憑證的對照規則」。三者共同提供網域寄送的技術證據，內容中的付款、登入或資料提供要求，再接回 M09-06 的獨立查證流程。"
+          "text": "5.1 用車輛名單、文件封條與招牌對照來理解"
         },
         {
           "kind": "paragraph",
-          "text": "SPF（Sender Policy Framework，寄件者政策框架）讓網域在 DNS 公告哪些來源可代表它寄信。收件端主要把目前連進來的 IP，和 SMTP MAIL FROM 所用網域的政策比較；在相關情況也會檢查 HELO 身分。HELO／EHLO 是 SMTP 連線時的身分招呼。SPF 的核心問題是：「這個寄送來源是否符合這個網域的寄信政策？」[SPF 規範](https://www.rfc-editor.org/rfc/rfc7208)"
+          "text": "假設郵件顯示 From: 台灣某銀行 <service@bank.example>。From 是郵件呈現的作者資訊；收件系統接著核對寄送來源與簽章，把這個名稱連到技術證據。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "機制",
+            "生活比喻",
+            "實際檢查"
+          ],
+          "rows": [
+            [
+              "SPF",
+              "寄送車輛的授權名單",
+              "連線來源 IP 是否符合所檢查網域的寄送政策。"
+            ],
+            [
+              "DKIM",
+              "文件的數位封條",
+              "簽署網域的簽章與其涵蓋的內容是否驗證一致。"
+            ],
+            [
+              "DMARC",
+              "憑證與店面招牌的對照",
+              "通過 SPF 或 DKIM 的網域，是否和 From 網域對齊。"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "DKIM（DomainKeys Identified Mail，網域金鑰識別郵件）由寄件系統使用私鑰產生數位簽章，收件端依 DNS 中的公鑰驗證。簽章的 d= 標示簽署網域，s= 標示 selector（選擇器，用來找到對應金鑰）。驗證涵蓋簽章指定的標頭與本文資料，協助確認簽署網域及受保護內容的一致性。[DKIM 規範](https://www.rfc-editor.org/rfc/rfc6376)"
+          "text": "5.2 SPF：將來源 IP 與網域授權名單對照"
         },
         {
           "kind": "paragraph",
-          "text": "DMARC（Domain-based Message Authentication, Reporting, and Conformance，網域式郵件驗證、報告與一致性機制）把使用者看到的 From 網域，與通過 SPF 或 DKIM 的網域作 Alignment（對齊）檢查。只要至少一條路徑「驗證通過，而且與 From 網域對齊」，即可形成 DMARC 通過條件。Strict（嚴格）對齊要求網域相同；Relaxed（寬鬆）對齊依組織網域規則判定。[現行 DMARC 規範 RFC 9989](https://www.rfc-editor.org/rfc/rfc9989)"
+          "text": "SPF（Sender Policy Framework，寄件者政策框架）讓網域在 DNS（Domain Name System，網域名稱系統）公布寄送政策。TXT 是 DNS 中可放文字資料的紀錄類型。假設代寄平台使用 192.0.2.25，教學政策可寫成："
+        },
+        {
+          "kind": "code",
+          "text": "mailer.example. TXT \"v=spf1 ip4:192.0.2.25 -all\""
         },
         {
           "kind": "paragraph",
-          "text": "網域也可以公布處理偏好：p=none 供觀察與評估，p=quarantine 建議隔離，p=reject 建議拒收；收件端會結合自身政策與其他訊號決定處理方式。2026 年發布的 RFC 9989 已取代舊 RFC 7489，本課採現行規範的核心概念。[DMARC 處理政策](https://www.rfc-editor.org/rfc/rfc9989)"
+          "text": "v=spf1 標示 SPF 版本；ip4:192.0.2.25 列出授權的 IPv4 來源。若前面的條件都未符合，-all 讓 SPF 得到 fail 結果，表達這個網域未授權該來源；收件系統再依自己的處理政策決定拒收、標記或其他處置。[SPF fail 與處理：RFC 7208 §2.6.4、§8.4](https://www.rfc-editor.org/rfc/rfc7208.html#section-8.4)"
         },
         {
           "kind": "paragraph",
-          "text": "查看 Authentication-Results 時，先辨識寫下結果的 authserv-id（驗證服務識別），以自己郵件服務的可信結果為主。轉寄會改變接收端看見的連線 IP；郵件清單加上頁尾時，也可能改動被簽署內容。遇到驗證差異，就把轉寄流程、網域對齊與服務日誌一起納入分析。[結果標頭的信任模型](https://www.rfc-editor.org/rfc/rfc8601)、[間接郵件流程](https://www.rfc-editor.org/rfc/rfc7960)"
+          "text": "收件端通常將當前連線 IP 與 SMTP（Simple Mail Transfer Protocol，簡單郵件傳輸協定）MAIL FROM 的網域比對；MAIL FROM 是投遞信封的退信身分。SPF 也定義 HELO／EHLO 身分檢查；這是 SMTP 連線的招呼名稱。分析結果時，直接寫出「哪個 IP、哪個身分、哪個網域、什麼結果」，就能和畫面上的 From 分開對照。[SPF 驗證身分：RFC 7208 §2](https://www.rfc-editor.org/rfc/rfc7208.html#section-2)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.3 DKIM：以公私鑰驗證簽章涵蓋的內容"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DKIM（DomainKeys Identified Mail，網域金鑰識別郵件）使用非對稱式密碼學（Asymmetric Cryptography）：簽署方保管私鑰（Private Key）來產生數位簽章，收件端取得 DNS 上的公鑰（Public Key）來驗證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下節錄只展示需要辨識的標籤，真正的簽章另有演算法與簽章值等欄位："
+        },
+        {
+          "kind": "code",
+          "text": "DKIM-Signature: v=1;\n    d=coffee.example;\n    s=selector1;\n    h=from:to:subject:date;\n    c=relaxed/relaxed;"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "標籤或步驟",
+            "怎麼理解"
+          ],
+          "rows": [
+            [
+              "d=coffee.example",
+              "簽署網域；接著用它和 From 做對齊檢查。"
+            ],
+            [
+              "s=selector1",
+              "Selector（選擇器），用來定位金鑰。此例查詢 selector1._domainkey.coffee.example 的 DNS TXT 紀錄。"
+            ],
+            [
+              "h=from:to:subject:date",
+              "列出這個簽章選用的標頭名稱；From 必須納入簽署，驗證器依規則選取相應欄位實例。"
+            ],
+            [
+              "c=relaxed/relaxed",
+              "Canonicalization（正規化）規則，分別作用於標頭與本文，把允許的格式差異整理後再計算。"
+            ],
+            [
+              "bh= 與 b=",
+              "bh= 保存本文的雜湊值；b= 是簽章值。驗證器檢查本文雜湊及簽章。"
+            ],
+            [
+              "可選的 l=",
+              "指定正規化後本文參與雜湊的位元組長度；省略時涵蓋整份正規化後本文。"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "數位封條的保護範圍，是選入的標頭及依規則處理的本文資料。閱讀時一併標出 h=、c= 與是否存在 l=，就能精確描述驗證涵蓋什麼。轉寄或郵件清單若改寫受保護資料，應配合其處理流程解釋驗證結果。業務內容的查核則接續由訂單、原有聯絡管道與帳號活動完成。[DKIM 標籤與驗證：RFC 6376 §3.4、§3.5、§6](https://www.rfc-editor.org/rfc/rfc6376.html#section-3.5)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.4 DMARC：至少一條「驗證通過且對齊」的路徑"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DMARC（Domain-based Message Authentication, Reporting, and Conformance，網域式郵件驗證、報告與一致性機制）把驗證身分連到 From 的作者網域。Alignment（對齊）就是比較這兩個網域的關係。假設："
+        },
+        {
+          "kind": "code",
+          "text": "From: receipt@coffee.example\nReturn-Path: <bounce@mailer.example>"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可信收件端記錄 SPF pass，所檢查的是 mailer.example；DKIM pass 的 d= 是 coffee.example。From 也是 coffee.example，因此 DKIM 這條路徑同時符合「通過」與「對齊」。可以把邏輯寫成容易閱讀的式子："
+        },
+        {
+          "kind": "code",
+          "text": "DMARC 通過 =\n  (SPF 通過 且 SPF 網域對齊)\n  或\n  (DKIM 通過 且 DKIM 簽署網域對齊)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Strict Alignment（嚴格對齊）要求比較的網域完全相同；Relaxed Alignment（寬鬆對齊）依規範判定兩者是否具有相同的 Organizational Domain（組織網域）。例如在 coffee.example 為共同組織網域的前提下，mail.coffee.example 與 coffee.example 可寬鬆對齊。實作依現行規範尋找組織網域，並非一律截取最後兩段文字。[DMARC 對齊：RFC 9989](https://www.rfc-editor.org/rfc/rfc9989.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網域政策 p=none 表達觀察模式；p=quarantine 表達隔離偏好；p=reject 表達拒收偏好。收件系統將這些偏好與自己的評估一起用於處理決策。查證與補充：RFC 9989 於 2026 年 5 月發布，取代 RFC 7489 與 RFC 9091；本課採此現行核心規範。[RFC 9989 發布資訊與政策](https://www.rfc-editor.org/rfc/rfc9989.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.5 逐欄閱讀 Authentication-Results"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication-Results（驗證結果標頭）是收件驗證服務寫下的檢查紀錄。先確認 authserv-id（驗證服務識別）及該欄位確由可信服務產生，再解讀每個 pass 或 fail。自己的郵件管理規則、可信閘道與日誌，是確認來源的依據。[驗證結果的信任邊界：RFC 8601 §1.2、§7](https://www.rfc-editor.org/rfc/rfc8601.html#section-1.2)"
+        },
+        {
+          "kind": "code",
+          "text": "From: Coffee Shop <receipt@coffee.example>\nReturn-Path: <bounce@mailer.example>\nAuthentication-Results: mx.recipient.example;\n    spf=pass smtp.mailfrom=mailer.example;\n    dkim=pass header.d=coffee.example;\n    dmarc=pass header.from=coffee.example"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "看到的欄位",
+            "解讀方式"
+          ],
+          "rows": [
+            [
+              "mx.recipient.example",
+              "宣告產生結果的驗證服務識別；先與可信服務設定及日誌對照。"
+            ],
+            [
+              "spf=pass",
+              "此次 SPF 檢查通過。"
+            ],
+            [
+              "smtp.mailfrom=mailer.example",
+              "此次檢查的信封寄件網域。"
+            ],
+            [
+              "dkim=pass",
+              "此次 DKIM 簽章驗證通過。"
+            ],
+            [
+              "header.d=coffee.example",
+              "該 DKIM 簽章的簽署網域。"
+            ],
+            [
+              "dmarc=pass",
+              "此次 DMARC 評估通過。"
+            ],
+            [
+              "header.from=coffee.example",
+              "DMARC 對照的作者網域。"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "把這段讀成一句完整的判斷：「可信收件服務確認代寄平台的 SPF，以及 coffee.example 的 DKIM；其中 DKIM 和 From 對齊，形成 DMARC 通過條件。」若經過轉寄，另記錄連線來源的變化與郵件內容處理，便能追查結果差異。[間接郵件流程：RFC 7960](https://www.rfc-editor.org/rfc/rfc7960.html)"
         },
         {
           "kind": "visual",
@@ -204,6 +468,22 @@
               {
                 "title": "讀圖重點",
                 "body": "SPF檢查信封網域的授權IP，DKIM驗證簽章，DMARC檢查From網域對齊。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-05-06-authentication-alignment-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 6｜從網域對齊讀懂 DMARC",
+            "description": "收件者看到的 From 網域 / From: notice@coffee.example / 對齊比較的基準：coffee.example；SPF：pass；對齊：未符合 / MAIL FROM 網域：mailer.example / 寄送來源通過該網域 SPF 檢查；DKIM：pass；對齊：符合 / d=coffee.example；s=selector1 / 簽署網域與 From 網域相同；DMARC：pass / SPF 通過且對齊，或 DKIM 通過且對齊 / 本例由 DKIM 這條路徑符合條件",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "收件者看到的 From 網域 / From: notice@coffee.example / 對齊比較的基準：coffee.example；SPF：pass；對齊：未符合 / MAIL FROM 網域：mailer.example / 寄送來源通過該網域 SPF 檢查；DKIM：pass；對齊：符合 / d=coffee.example；s=selector1 / 簽署網域與 From 網域相同；DMARC：pass / SPF 通過且對齊，或 DKIM 通過且對齊 / 本例由 DKIM 這條路徑符合條件"
               }
             ]
           }
@@ -236,6 +516,54 @@
         {
           "kind": "paragraph",
           "text": "第四步，結合業務情境。如果這是你剛完成購買的收據，可以再核對訂單編號、品項與金額；若信件另要求更改匯款帳戶，就透過原先保存的客服管道確認。技術層確認網域使用，業務層確認要求內容，兩層配合形成完整判讀。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.1 六層判斷：把傳遞、網域與業務證據接起來"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "分析層次",
+            "主要問題",
+            "對應證據"
+          ],
+          "rows": [
+            [
+              "傳遞路徑",
+              "哪個節點把郵件交給哪個節點？",
+              "Received 與統一時區的時間線。"
+            ],
+            [
+              "可信來源",
+              "哪些紀錄來自可查核的系統？",
+              "己方 MTA、閘道設定與郵件日誌。"
+            ],
+            [
+              "來源授權",
+              "此連線 IP 是否符合該網域寄送政策？",
+              "SPF 結果及所檢查的身分。"
+            ],
+            [
+              "簽章驗證",
+              "簽署網域與受保護內容如何驗證？",
+              "DKIM 結果、d=、s= 與涵蓋範圍。"
+            ],
+            [
+              "網域對齊",
+              "通過驗證的網域如何對應 From？",
+              "DMARC 與至少一條通過且對齊的路徑。"
+            ],
+            [
+              "業務可信度",
+              "這項要求是否符合真實交易與既有流程？",
+              "訂單、交易紀錄、原有聯絡管道與帳號活動。"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "技術驗證處理網域授權與簽章；業務驗證處理實際要求。像遭接管的合法帳號、或攻擊者自有的相似拼字網域，都可能具備正常的網域驗證結果；因此付款變更與登入要求，接著透過獨立管道確認。這正是 M02 與 M09 的連結：M02 建立可追溯的技術證據，M09 檢視訊息如何利用人際信任，兩者一起支持下一步決策。"
         },
         {
           "kind": "heading",
@@ -292,6 +620,30 @@
           "text": "參考答案會隨網站教材提供。你可以先用自己的話回答，我再依你的理解補充。"
         },
         {
+          "kind": "paragraph",
+          "text": "8.1 延伸理解檢核：銀行來信情境"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設以下結果已確認來自公司可信收件服務。這是合成案例，供離線判讀："
+        },
+        {
+          "kind": "code",
+          "text": "From: security@bank.example\nAuthentication-Results: mx.company.example;\n    spf=pass smtp.mailfrom=mailer.example;\n    dkim=pass header.d=mailer.example;\n    dmarc=fail header.from=bank.example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題一：SPF 與 DKIM 都通過，DMARC 卻失敗，最直接的原因是什麼？A. 通過驗證的網域與 From 未對齊；B. SPF 要求與 DKIM 使用相同 IP；C. DKIM 只允許自行寄信；D. 我想再對照一次網域。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題二：最下面的 Received 寫著信件來自銀行。合適的下一步是什麼？A. 依該行的銀行名稱直接歸屬來源；B. 從可信收件節點開始，逐段核對該行的產生者與證據；C. 我想再檢查一次信任邊界。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題三：你是公司資安人員。請提出兩項接下來要核對的證據，分別說明它們如何協助確認技術來源與業務可信度。"
+        },
+        {
           "kind": "answer",
           "id": "answer-check",
           "summary": "參考解答：郵件角色與驗證",
@@ -307,6 +659,34 @@
           "summary": "參考解答：Received 與可信紀錄",
           "paragraphs": [
             "選 B：先查看自家可信節點產生的 Received。它記錄該節點接收郵件的連線對象與時間，適合對照自家日誌。接著逐段確認上游紀錄的產生者，再整理時間順序。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-extension-1",
+          "summary": "參考解答：兩種驗證通過後，還要對照哪個網域？",
+          "paragraphs": [
+            "答案是 A。SPF 通過的信封網域是 mailer.example，DKIM 通過的簽署網域也是 mailer.example；畫面 From 則是 bank.example。兩條通過的路徑都與 bank.example 未對齊，因此這份可信結果記為 DMARC fail。",
+            "可以在紙上畫三欄：From → bank.example；SPF → mailer.example；DKIM → mailer.example。先找出每個驗證結果所屬的身分，再與 From 比較。DMARC 的通過條件是至少一條「通過而且對齊」的路徑。SPF 的來源 IP 檢查與 DKIM 的簽章檢查，各自有不同工作；合法代寄可以透過對齊的信封網域或 DKIM 簽署網域配合此規則。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-extension-2",
+          "summary": "參考解答：從哪裡開始驗證 Received？",
+          "paragraphs": [
+            "答案是 B。先讀公司可信收件節點自己產生的 Received，對照實際連線來源與郵件日誌，再逐段往前核對。最下面那行可以先列為「較早的來源主張」，確認其寫入系統後，再給予相應的證據權重。",
+            "記憶方式是：「時間線由下往上整理；可信度從自己的收件系統往前查。」若先前節點的日誌尚未取得，就把那段列為待查證，保留原始標頭與已核實部分。若需確認實際操作人員，另依權限取得帳號與登入等紀錄。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-extension-3",
+          "summary": "參考解答：哪兩項證據能支持下一步判斷？",
+          "paragraphs": [
+            "第一項可以是己方郵件閘道或 MTA 日誌，搭配它產生的 Received 與 Authentication-Results。核對接收時間、連線 IP、內部郵件識別與驗證服務，確認這份結果確實屬於本封郵件，並確認外部系統把信送到哪個己方節點。",
+            "第二項可以是銀行既有官方聯絡管道及相關業務或交易紀錄。使用先前已保存、由獨立來源確認的客服或承辦窗口，核對本次要求、通知編號與交易背景；涉及付款變更時，沿用公司的覆核流程。這樣同時建立技術來源和實際業務需求的證據。",
+            "其他合理材料包括授權取得的代寄服務日誌、DKIM 簽章與當時驗證紀錄、帳號異常登入紀錄。判斷重點是寫清楚每份材料回答哪一個問題，並把技術驗證與業務確認接起來。"
           ]
         },
         {
@@ -442,31 +822,116 @@
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "4 | Read Received: establish trusted nodes, then rebuild chronology"
+          "text": "4｜Reading Received: establish trusted hops, then reconstruct chronology"
         },
         {
           "kind": "paragraph",
-          "text": "A mail server normally prepends its Received field when accepting a message. Newer reception records therefore tend to appear at the top. Reading from the bottom upward helps describe delivery in chronological order. [SMTP trace information](https://www.rfc-editor.org/rfc/rfc5321)"
+          "text": "Received describes reception hops. SPF, DKIM, and DMARC describe sending authorization, signing domains, and their relationship to the visible author. Separate these questions first, then connect the evidence into a clear account of the message."
         },
         {
           "kind": "paragraph",
-          "text": "For verification, start with your receiving system's trusted record. Identify which server recorded receiving the message from which connection peer, then trace earlier stages. These are two distinct directions: narrate the route forward in time, and extend trust outward from your own system."
+          "text": "4.1 Understand reception records through parcel delivery"
         },
         {
           "kind": "paragraph",
-          "text": "Suppose a trusted receiving node records this synthetic entry:"
+          "text": "Imagine a parcel leaving Taipei and passing through an origin station, a transfer station, and a destination station. Each station records: “At this time, I received the parcel from this previous station.” A mail server leaves similar handover records. Received is a reception field in the message header; a system that transfers messages is called an MTA (Mail Transfer Agent)."
         },
         {
           "kind": "code",
           "text": "Received: from outbound.mailer.example (192.0.2.25)\n        by mx.recipient.example;\n        Sat, 31 Oct 2026 10:00:05 +0000"
         },
         {
-          "kind": "paragraph",
-          "text": "The recorded fact is that mx.recipient.example accepted mail at that time from a connection at 192.0.2.25, with the listed peer name. Once its origin in your receiving system is established, this record supports that delivery segment. A provider's outbound IP describes a service node; tracing an operating account or device calls for authorized correlation with service records."
+          "kind": "table",
+          "headers": [
+            "Field",
+            "Plain-language meaning and verification point"
+          ],
+          "rows": [
+            [
+              "Received",
+              "A reception event; identify the system that wrote it first."
+            ],
+            [
+              "from outbound.mailer.example",
+              "Information about the previous host's name; interpret it alongside the connection IP."
+            ],
+            [
+              "(192.0.2.25)",
+              "In this example, the connection-source IP recorded by the receiver."
+            ],
+            [
+              "by mx.recipient.example",
+              "The server recording this reception event."
+            ],
+            [
+              "10:00:05 +0000",
+              "The server's recorded time; +0000 is the same offset as UTC."
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "Earlier Received entries may come from other systems. Record who generated each segment and what evidence can corroborate it. Each time stamp also depends on a time zone and a system clock; normalize zones and check trusted nodes when studying delays. This applies M02-01 scope to mail: the lesson reads available evidence, while probes or test messages to third parties follow separate written authorization."
+          "text": "Once the record is established as originating from trusted mx.recipient.example, report: “At this time, this receiving server recorded a mail connection from 192.0.2.25.” That is evidence of a handover between systems. To identify the operating account or device, obtain authorized submission-service, sign-in, or endpoint records, giving each layer of the conclusion its own supporting material. [SMTP trace information: RFC 5321 §4.4](https://www.rfc-editor.org/rfc/rfc5321.html#section-4.4)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4.2 A three-hop example: chronology and trust verification have different directions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following synthetic message contains three reception records. All .example names and 192.0.2.x addresses are instructional. Assume the receiving organization operates mx.recipient.example and mailbox.recipient.example and can examine both systems' logs."
+        },
+        {
+          "kind": "code",
+          "text": "Received: from mx.recipient.example (192.0.2.30)\n        by mailbox.recipient.example;\n        Sat, 31 Oct 2026 10:00:10 +0000\nReceived: from outbound.mailer.example (192.0.2.25)\n        by mx.recipient.example;\n        Sat, 31 Oct 2026 10:00:05 +0000\nReceived: from submit.mailer.example (192.0.2.20)\n        by outbound.mailer.example;\n        Sat, 31 Oct 2026 10:00:00 +0000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A receiving server adds its own Received above the existing records. Here, the top entry is at 10:00:10 and the bottom entry is at 10:00:00. [How Received is added: RFC 5321 §4.4](https://www.rfc-editor.org/rfc/rfc5321.html#section-4.4)"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Reading goal",
+            "Starting point and direction",
+            "Application to this example"
+          ],
+          "rows": [
+            [
+              "Reconstruct the chronology described by the records",
+              "Bottom to top, earlier to later",
+              "10:00:00 acceptance by the outbound server → 10:00:05 gateway reception → 10:00:10 internal delivery."
+            ],
+            [
+              "Verify the credibility of each segment",
+              "Start with your trusted receiver and work toward earlier hops",
+              "Check mailbox's internal reception, then mx's external connection; obtain separate provider evidence for the earlier record written by outbound."
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Convert times to a common zone first. For example, 10:00:05 +0000 is 18:00:05 +0800 in Taiwan. Estimating delay between two servers also requires considering clock synchronization. Record “the difference between header timestamps” separately from “verified transport delay” for a precise analysis."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4.3 Trust boundaries: connect each record to the system that produced it"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A trust boundary separates systems you can verify from externally supplied information. In this example, mx directly observed outbound's connection; an external system describes the earlier submit → outbound segment. Divide an evidence table into “corroborated with our logs” and “external record awaiting corroboration,” then complete it segment by segment."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, this header entry initially provides a source claim to investigate:"
+        },
+        {
+          "kind": "code",
+          "text": "Received: from official-bank.example\n        by secure-gateway.example;\n        Sat, 31 Oct 2026 09:00:00 +0000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Verify the claim by identifying its writer and comparing the trusted reception chain with relevant service logs. An external sender may prepopulate header content before the message enters the trusted system, so record “appearance of the entry” and “verification of its origin” separately. This connects to M09 social engineering: official-looking names and familiar brands attract trust, while independent sources and system records provide a verifiable basis for that trust."
         },
         {
           "kind": "visual",
@@ -485,33 +950,212 @@
           }
         },
         {
+          "kind": "visual",
+          "src": "/images/ceh/m02-05-05-received-logistics-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "5 | Received: a parcel’s checkpoint stamps",
+            "description": "Top / newest: 10:00:10 / Stop 3: our trusted receiving service / Start verification with this server’s logs；Middle: 10:00:05 / Stop 2: the preceding mail relay / Check the source and available logs；Bottom / earliest: 10:00:00 / Stop 1: an earlier receiving hop / Validate external entries with sources and logs；Two directions answer different questions / Timeline: bottom → middle → top / Trust: our top hop → earlier hops",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Top / newest: 10:00:10 / Stop 3: our trusted receiving service / Start verification with this server’s logs；Middle: 10:00:05 / Stop 2: the preceding mail relay / Check the source and available logs；Bottom / earliest: 10:00:00 / Stop 1: an earlier receiving hop / Validate external entries with sources and logs；Two directions answer different questions / Timeline: bottom → middle → top / Trust: our top hop → earlier hops"
+              }
+            ]
+          }
+        },
+        {
           "kind": "heading",
           "id": "section-5",
-          "text": "5 | SPF, DKIM, and DMARC: three complementary checks"
+          "text": "5｜SPF, DKIM, and DMARC: three complementary checks"
         },
         {
           "kind": "paragraph",
-          "text": "Think of an approved delivery-vehicle list, a document seal, and a rule matching the brand to its credentials. Together they provide technical evidence about sending domains. Requests for payments, logins, or data then connect to M09-06 independent verification."
+          "text": "5.1 Think of authorized vehicles, document seals, and a storefront name"
         },
         {
           "kind": "paragraph",
-          "text": "SPF (Sender Policy Framework) lets a domain publish which sources may send for it in DNS. The receiver primarily compares the current connecting IP with the policy for the SMTP MAIL FROM domain; relevant cases also check HELO identity. HELO / EHLO is the SMTP connection's identity greeting. SPF asks: Does this sending source fit this domain's sending policy? [SPF specification](https://www.rfc-editor.org/rfc/rfc7208)"
+          "text": "Suppose a message displays From: A Bank <service@bank.example>. From presents author information; the receiving system then checks sending authorization and signatures to connect that name with technical evidence."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Mechanism",
+            "Everyday analogy",
+            "Actual check"
+          ],
+          "rows": [
+            [
+              "SPF",
+              "A list of authorized delivery vehicles",
+              "Whether the connection-source IP matches the checked domain's sending policy."
+            ],
+            [
+              "DKIM",
+              "A digital document seal",
+              "Whether the signing domain's signature and the content it covers verify consistently."
+            ],
+            [
+              "DMARC",
+              "Comparing credentials with the storefront name",
+              "Whether a domain authenticated by SPF or DKIM aligns with the From domain."
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "DKIM (DomainKeys Identified Mail) uses a private key to create a digital signature that a receiver checks against a public key in DNS. The d= tag identifies the signing domain; s= is the selector used to locate the key. Verification covers the selected headers and body data, helping validate the signing domain and consistency of the protected content. [DKIM specification](https://www.rfc-editor.org/rfc/rfc6376)"
+          "text": "5.2 SPF: compare a source IP with a domain's authorization list"
         },
         {
           "kind": "paragraph",
-          "text": "DMARC (Domain-based Message Authentication, Reporting, and Conformance) checks alignment between the visible From domain and a domain authenticated by SPF or DKIM. At least one path must both pass authentication and align with From. Strict alignment requires the same domain; relaxed alignment follows organizational-domain rules. [Current DMARC specification, RFC 9989](https://www.rfc-editor.org/rfc/rfc9989)"
+          "text": "SPF (Sender Policy Framework) lets a domain publish sending policy in DNS (Domain Name System). TXT is a DNS record type that holds text. If a delivery platform uses 192.0.2.25, an instructional policy can be written as:"
+        },
+        {
+          "kind": "code",
+          "text": "mailer.example. TXT \"v=spf1 ip4:192.0.2.25 -all\""
         },
         {
           "kind": "paragraph",
-          "text": "A domain may publish handling preferences: p=none for observation and evaluation, p=quarantine to recommend quarantine, and p=reject to recommend rejection. Receiving systems combine these with local policy and other signals. RFC 9989, published in 2026, replaces RFC 7489; this lesson uses the current specification's core concepts. [DMARC handling policy](https://www.rfc-editor.org/rfc/rfc9989)"
+          "text": "v=spf1 identifies the SPF version; ip4:192.0.2.25 lists an authorized IPv4 source. If preceding conditions do not match, -all produces an SPF fail result, expressing that this domain has not authorized that source. The receiver then applies its own handling policy to reject, annotate, or otherwise process the message. [SPF fail and handling: RFC 7208 §2.6.4 and §8.4](https://www.rfc-editor.org/rfc/rfc7208.html#section-8.4)"
         },
         {
           "kind": "paragraph",
-          "text": "When reading Authentication-Results, identify the authserv-id, or authentication-service identifier, and use results from your trusted mail service. Forwarding changes the connection IP visible to a receiver; a mailing list's footer may change signed content. Investigate differing results with the forwarding path, domain alignment, and service logs. [Result-header trust model](https://www.rfc-editor.org/rfc/rfc8601), [indirect mail flows](https://www.rfc-editor.org/rfc/rfc7960)"
+          "text": "The receiver usually compares the current connection IP with the domain in SMTP (Simple Mail Transfer Protocol) MAIL FROM, the delivery envelope's reverse-path identity. SPF also defines checks of the HELO/EHLO identity, the greeting name used in an SMTP connection. In your analysis, explicitly record “which IP, which identity, which domain, and which result,” then compare those with the visible From. [SPF identities: RFC 7208 §2](https://www.rfc-editor.org/rfc/rfc7208.html#section-2)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.3 DKIM: use a key pair to verify covered content"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DKIM (DomainKeys Identified Mail) uses asymmetric cryptography: the signer keeps a private key to generate a digital signature, and the receiver obtains the public key from DNS to verify it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This excerpt shows the tags to recognize. A real signature also contains an algorithm, signature value, and other required fields:"
+        },
+        {
+          "kind": "code",
+          "text": "DKIM-Signature: v=1;\n    d=coffee.example;\n    s=selector1;\n    h=from:to:subject:date;\n    c=relaxed/relaxed;"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Tag or step",
+            "How to understand it"
+          ],
+          "rows": [
+            [
+              "d=coffee.example",
+              "The signing domain, subsequently compared with From for alignment."
+            ],
+            [
+              "s=selector1",
+              "The selector locates a key. Here the verifier queries the DNS TXT record at selector1._domainkey.coffee.example."
+            ],
+            [
+              "h=from:to:subject:date",
+              "Lists the header names selected for this signature; From must be signed, and the verifier selects corresponding field instances according to the rules."
+            ],
+            [
+              "c=relaxed/relaxed",
+              "Canonicalization rules for headers and body respectively; they normalize allowed formatting differences before calculation."
+            ],
+            [
+              "bh= and b=",
+              "bh= holds the body hash; b= holds the signature value. The verifier checks both the body hash and the signature."
+            ],
+            [
+              "Optional l=",
+              "Specifies the number of canonicalized body octets included in hashing; omitting it covers the entire canonicalized body."
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The digital seal covers selected headers and the body data processed under those rules. Recording h=, c=, and the presence of l= precisely describes the verification scope. When forwarding or mailing-list processing changes protected material, interpret the result together with that processing. Business-content checks continue through orders, established contact channels, and account activity. [DKIM tags and verification: RFC 6376 §3.4, §3.5, and §6](https://www.rfc-editor.org/rfc/rfc6376.html#section-3.5)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.4 DMARC: at least one path that both passes and aligns"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DMARC (Domain-based Message Authentication, Reporting, and Conformance) connects an authenticated identity with the author domain in From. Alignment compares the relationship between those domains. Suppose:"
+        },
+        {
+          "kind": "code",
+          "text": "From: receipt@coffee.example\nReturn-Path: <bounce@mailer.example>"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The trusted receiver records SPF pass for mailer.example and DKIM pass with d=coffee.example. From also uses coffee.example, so the DKIM path both passes and aligns. Its logic can be written as:"
+        },
+        {
+          "kind": "code",
+          "text": "DMARC pass =\n  (SPF pass AND SPF domain aligned)\n  OR\n  (DKIM pass AND DKIM signing domain aligned)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Strict alignment requires the compared domains to be identical. Relaxed alignment checks whether they share an organizational domain under the specification. For example, if coffee.example is their common organizational domain, mail.coffee.example and coffee.example can align in relaxed mode. Implementations discover organizational domains using the current specification rather than simply taking the last two labels. [DMARC alignment: RFC 9989](https://www.rfc-editor.org/rfc/rfc9989.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The domain policy p=none expresses monitoring mode, p=quarantine expresses a quarantine preference, and p=reject expresses a rejection preference. The receiver combines these preferences with its own assessment when deciding how to handle mail. Verification and supplementation: RFC 9989 was published in May 2026 and obsoletes RFC 7489 and RFC 9091; this lesson uses that current core specification. [RFC 9989 publication information and policy](https://www.rfc-editor.org/rfc/rfc9989.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.5 Read Authentication-Results field by field"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication-Results records checks performed by a receiving authentication service. First establish the authserv-id (authentication service identifier) and that the field was actually produced by a trusted service; then interpret pass or fail. Your mail-administration rules, trusted gateways, and logs provide that source assurance. [Authentication-result trust boundaries: RFC 8601 §1.2 and §7](https://www.rfc-editor.org/rfc/rfc8601.html#section-1.2)"
+        },
+        {
+          "kind": "code",
+          "text": "From: Coffee Shop <receipt@coffee.example>\nReturn-Path: <bounce@mailer.example>\nAuthentication-Results: mx.recipient.example;\n    spf=pass smtp.mailfrom=mailer.example;\n    dkim=pass header.d=coffee.example;\n    dmarc=pass header.from=coffee.example"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Observed field",
+            "Interpretation"
+          ],
+          "rows": [
+            [
+              "mx.recipient.example",
+              "The declared authentication service identifier; compare it with trusted-service configuration and logs first."
+            ],
+            [
+              "spf=pass",
+              "This SPF check passed."
+            ],
+            [
+              "smtp.mailfrom=mailer.example",
+              "The envelope-sender domain checked here."
+            ],
+            [
+              "dkim=pass",
+              "This DKIM signature verified."
+            ],
+            [
+              "header.d=coffee.example",
+              "The signing domain of that DKIM signature."
+            ],
+            [
+              "dmarc=pass",
+              "This DMARC evaluation passed."
+            ],
+            [
+              "header.from=coffee.example",
+              "The author domain compared by DMARC."
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read this as one complete assessment: “The trusted receiving service verified the platform's SPF and coffee.example's DKIM. DKIM aligns with From, satisfying the DMARC passing condition.” If forwarding occurred, also record the changed connection source and message processing to investigate differences in results. [Indirect mail flows: RFC 7960](https://www.rfc-editor.org/rfc/rfc7960.html)"
         },
         {
           "kind": "visual",
@@ -525,6 +1169,22 @@
               {
                 "title": "How to read the diagram",
                 "body": "SPF checks envelope-domain IP authorization, DKIM checks signatures, and DMARC checks alignment with From."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-05-06-authentication-alignment-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "6 | Read DMARC through domain alignment",
+            "description": "Domain in the visible From address / From: notice@coffee.example / Alignment reference: coffee.example；SPF: pass; alignment: no match / MAIL FROM domain: mailer.example / Source passes that domain’s SPF check；DKIM: pass; alignment: match / d=coffee.example; s=selector1 / Signing domain matches the From domain；DMARC: pass / Aligned SPF pass OR aligned DKIM pass / The DKIM path meets the condition here",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Domain in the visible From address / From: notice@coffee.example / Alignment reference: coffee.example；SPF: pass; alignment: no match / MAIL FROM domain: mailer.example / Source passes that domain’s SPF check；DKIM: pass; alignment: match / d=coffee.example; s=selector1 / Signing domain matches the From domain；DMARC: pass / Aligned SPF pass OR aligned DKIM pass / The DKIM path meets the condition here"
               }
             ]
           }
@@ -557,6 +1217,54 @@
         {
           "kind": "paragraph",
           "text": "Fourth, connect the business context. For a receipt from a purchase you just made, compare the order ID, items, and amount. A request to change payment details should be confirmed through a previously saved contact channel. The technical layer validates domain use; the business layer validates the requested action."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.1 Six layers of assessment: connect transport, domain, and business evidence"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Analysis layer",
+            "Main question",
+            "Supporting evidence"
+          ],
+          "rows": [
+            [
+              "Delivery path",
+              "Which node handed the message to which node?",
+              "Received and a timeline normalized to one time zone."
+            ],
+            [
+              "Trusted origin",
+              "Which records come from verifiable systems?",
+              "Your MTA, gateway configuration, and mail logs."
+            ],
+            [
+              "Source authorization",
+              "Does this connection IP match the domain's sending policy?",
+              "SPF results and the checked identity."
+            ],
+            [
+              "Signature verification",
+              "How are the signing domain and protected content verified?",
+              "DKIM results, d=, s=, and coverage."
+            ],
+            [
+              "Domain alignment",
+              "How does an authenticated domain relate to From?",
+              "DMARC and at least one passing, aligned path."
+            ],
+            [
+              "Business credibility",
+              "Does the request match the real transaction and established process?",
+              "Orders, transaction records, established contacts, and account activity."
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Technical validation addresses domain authorization and signatures; business validation addresses the actual request. A compromised legitimate account or an attacker-owned lookalike domain may have normal domain-authentication results, so payment changes and sign-in requests receive a further independent-channel check. This connects M02 with M09: M02 builds traceable technical evidence, and M09 examines how messages use interpersonal trust. Together they support the next decision."
         },
         {
           "kind": "heading",
@@ -613,6 +1321,30 @@
           "text": "Reference answers will accompany the website lesson. Try your own explanation first; it will help focus any follow-up teaching."
         },
         {
+          "kind": "paragraph",
+          "text": "8.1 Extended understanding check: a bank-message scenario"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Assume these results have been established as originating from the company's trusted receiving service. This synthetic example is for offline interpretation:"
+        },
+        {
+          "kind": "code",
+          "text": "From: security@bank.example\nAuthentication-Results: mx.company.example;\n    spf=pass smtp.mailfrom=mailer.example;\n    dkim=pass header.d=mailer.example;\n    dmarc=fail header.from=bank.example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 1: SPF and DKIM both pass, while DMARC fails. What is the most direct reason? A. The authenticated domains do not align with From; B. SPF requires the same IP as DKIM; C. DKIM allows only self-operated sending; D. I would like to compare the domains again."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 2: The lowest Received entry says the message came from a bank. What is the appropriate next step? A. Attribute the source directly from that bank name; B. Start with trusted receiving nodes and verify the entry's producer and evidence segment by segment; C. I would like to review the trust boundary again."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 3: As the company's security analyst, name two pieces of evidence to check next and explain how they help establish technical origin and business credibility."
+        },
+        {
           "kind": "answer",
           "id": "answer-check",
           "summary": "Reference answer: Mail roles and authentication",
@@ -628,6 +1360,34 @@
           "summary": "Reference answer: Received and trusted records",
           "paragraphs": [
             "Choose B: start with Received generated by your trusted node. It records that node's connection peer and reception time and can be correlated with your logs. Then establish the origin of upstream records and organize their chronology."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-extension-1",
+          "summary": "Reference answer: Which domain still needs comparison after two checks pass?",
+          "paragraphs": [
+            "The answer is A. The SPF-authenticated envelope domain is mailer.example, and the DKIM-authenticated signing domain is also mailer.example. The visible From uses bank.example. Neither passing path aligns with bank.example, so this trusted result records DMARC fail.",
+            "Draw three columns: From → bank.example; SPF → mailer.example; DKIM → mailer.example. Identify the identity associated with each authentication result, then compare it with From. DMARC requires at least one path that both passes and aligns. SPF checks the sending source, while DKIM checks a signature. Legitimate outsourced delivery can satisfy the rule through an aligned envelope domain or DKIM signing domain."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-extension-2",
+          "summary": "Reference answer: Where should Received verification begin?",
+          "paragraphs": [
+            "The answer is B. Start with the Received produced by the company's trusted receiving node, compare the actual connection source with mail logs, and verify earlier segments in turn. Initially classify the lowest entry as an earlier source claim; give it evidence weight appropriate to the verification of its writing system.",
+            "Remember: “Build chronology from bottom to top; verify trust outward from your own receiver.” If an earlier node's logs are still unavailable, mark that segment for verification while preserving the original header and the already verified portions. Identifying an individual operator calls for separately authorized account and sign-in evidence."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-extension-3",
+          "summary": "Reference answer: Which two pieces of evidence support the next assessment?",
+          "paragraphs": [
+            "First, use your mail gateway or MTA logs together with its Received and Authentication-Results. Match reception time, connection IP, internal message identifier, and authentication service to establish that the results belong to this message and identify the external-to-internal handover.",
+            "Second, use the bank's established official contact channel and relevant business or transaction records. Contact an independently verified support or account representative through previously saved details to confirm the request, notification identifier, and transaction context. For payment changes, follow the company's existing verification process. This builds evidence for both technical origin and the real business requirement.",
+            "Other reasonable materials include authorized delivery-provider logs, the DKIM signature and contemporaneous verification record, and unusual account sign-in records. The key is to state which question each item answers and connect technical validation with business confirmation."
           ]
         },
         {

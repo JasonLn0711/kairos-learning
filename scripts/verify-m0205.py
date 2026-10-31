@@ -18,9 +18,9 @@ for lang,prefix in [('zh',''),('en','en/')]:
   units=([b['text']] if k in ['heading','paragraph','code'] else b['items'] if k=='list' else b['headers']+[v for r in b['rows'] for v in r] if k=='table' else [b['summary']]+b['paragraphs'] if k=='answer' else [b['visual']['caption'],b['visual']['description']]+[v for item in b['visual']['items'] for v in [item['title'],item['body']]] )
   for u in units:
    u=norm(u);at=text.find(u,cursor);assert at>=0,(lang,u);cursor=at+len(u)
- assert len(page.details)==2 and all('open' not in d for d in page.details)
- assert [d['id'] for d in page.details]==['answer-check','answer-choice']
- assert raw.count('data-reviewed-svg=')==4
+ assert len(page.details)==5 and all('open' not in d for d in page.details)
+ assert [d['id'] for d in page.details]==['answer-check','answer-choice','answer-extension-1','answer-extension-2','answer-extension-3']
+ assert raw.count('data-reviewed-svg=')==6
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
  assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-04/' in raw
  assert f'/{prefix}courses/ceh/v13/m02/#m02-06' in raw
@@ -32,6 +32,6 @@ for lang,prefix in [('zh',''),('en','en/')]:
  for label in labels[lang]:assert label in entry['text']
 p=ROOT/'site/downloads/ceh-m02-05-bilingual-svg.zip';assert p.read_bytes()==(ROOT/'build/downloads/ceh-m02-05-bilingual-svg.zip').read_bytes()
 with zipfile.ZipFile(p) as z:
- assert len(z.namelist())==8
+ assert len(z.namelist())==12
  for src in bundle:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
-print('PASS M02-05 bilingual full text order; 4 inline SVG per language; 2 closed reference answers; search labels; exact assets/ZIP; pending M02-06. Browser/live checks NOT performed.')
+print('PASS M02-05 bilingual full text order; 6 inline SVG per language; 5 closed reference answers; search labels; exact assets/ZIP; pending M02-06. Browser/live checks NOT performed.')
