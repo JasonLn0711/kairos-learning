@@ -1,0 +1,631 @@
+{
+  "id": "M02-03",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-10-31",
+  "status": "published",
+  "publishedOn": "2026-10-31",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "區分搜尋索引與網站現況，辨識公開線索，守住授權與證據的界線。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M02-03｜搜尋引擎與網站足跡：看見公開線索，不把線索當成漏洞"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. 先記住這個結論"
+        },
+        {
+          "kind": "paragraph",
+          "text": "搜尋引擎與網站足跡蒐集（Search Engine & Website Footprinting），就是從搜尋結果與網站公開提供的內容，整理「這個網站對外露出了什麼」。目的是畫出可查證的輪廓，不是看到網址就嘗試闖入。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天最重要的三句話：搜尋結果不等於網站現在的內容；公開線索不等於已證實的弱點；看得到不等於有權測試。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上次 M02-02 練的是來源驗證，這次把它用在網站：同一則搜尋摘要、原始頁面與轉貼文章，不能自動當成三個獨立證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. 先用找咖啡店菜單理解搜尋引擎"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你找咖啡店菜單。搜尋引擎像一份定期更新的店家目錄，不是店裡的即時監視器。它大致經過三步：爬取（Crawling）是程式讀取網頁；建立索引（Indexing）是分析內容並存入可搜尋的資料；提供搜尋結果（Serving）是根據你的查詢挑出結果。不是每個頁面都一定會被收錄。[Google 搜尋運作方式](https://developers.google.com/search/docs/fundamentals/how-search-works)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，搜尋摘要寫「舊菜單」，只能支持「查詢當下搜尋引擎顯示了這段資訊」。你還不能說店家現在仍用那份菜單。要確認現況，必須在授權範圍內核對當前原始頁面，並分開記錄查詢時間與頁面內容時間。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也連回 M02-01 的界線：查詢第三方搜尋服務，和點進網站讓瀏覽器向目標送出請求，是不同的互動。即使只是一般瀏覽，網站也可能留下存取紀錄；本課不操作任何第三方目標。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-03-01-index-boundary-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜索引不是即時網站",
+            "description": "搜尋服務與目標網站分開；點開會直接互動。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "搜尋服務與目標網站分開；點開會直接互動。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. 搜尋運算子：把問題問清楚，而不是變出隱藏權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "搜尋運算子（Search Operator）是協助縮小結果的特殊語法。下面全部是虛構的 coffee.example 範例，只用來讀懂語法，不必實際執行。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "語法",
+            "想問的問題",
+            "不能推論的事"
+          ],
+          "rows": [
+            [
+              "site:coffee.example",
+              "搜尋引擎收錄了這個網域的哪些結果？",
+              "結果不是完整資產清單"
+            ],
+            [
+              "\"季節菜單\"",
+              "找到符合這組詞語的結果",
+              "不代表內容仍有效或來自正確店家"
+            ],
+            [
+              "filetype:pdf",
+              "將結果限縮到 PDF 類型",
+              "PDF 不一定比網頁可靠或較新"
+            ],
+            [
+              "菜單 -招募",
+              "排除含有指定詞的結果",
+              "排除條件也可能漏掉有用內容"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "組合例子是 site:coffee.example \"季節菜單\" filetype:pdf。site: 後不要加空格。不同搜尋服務支援的語法可能不同，不要把某一家或舊教材的功能當成永遠通用。[Google 搜尋說明](https://support.google.com/websearch/answer/2466433?hl=en)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尤其要記住：site: 查不到，不等於網站不存在或資料已刪除；查得到，也不代表列出了全部頁面。Google 官方明確提醒搜尋運算子有索引與擷取限制。[Google 搜尋運算子文件](https://developers.google.com/search/docs/monitor-debug/search-operators)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. 網站足跡可以看什麼？先分清「前台線索」與「後台事實」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網站足跡是公開頁面留下的結構與技術線索。一般畫面是第一層；瀏覽器收到的 HTML（超文字標記語言，描述網頁結構）與公開資源，是第二層；HTTP 回應標頭（伺服器回覆時附帶的描述資訊）則可能提供傳輸或軟體線索。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "公開線索",
+            "可以記下什麼",
+            "必須保留的限制"
+          ],
+          "rows": [
+            [
+              "導覽、頁面標題、連結、網址路徑",
+              "對外提供的服務與頁面關係",
+              "沒有連結不代表功能不存在"
+            ],
+            [
+              "HTML 註解、公開 JavaScript／CSS",
+              "已交付給瀏覽器的文字、程式與樣式",
+              "不等於取得伺服器端原始碼"
+            ],
+            [
+              "文件中繼資料（Metadata）",
+              "文件標題、作者欄位、建立時間等描述",
+              "作者欄可沿用範本；時間也可能不準"
+            ],
+            [
+              "回應標頭或頁面上的技術標示",
+              "某次回應顯示的軟體或服務線索",
+              "可能是代理服務、舊字串或刻意簡化資訊"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如看到 Server 標頭，不應直接寫「已確認後端版本有漏洞」。它最多先是一個待驗證的技術線索。瀏覽器檢視到的 HTML 原始內容，也可能和 JavaScript 執行後的畫面結構不同；兩者都不是完整的後端程式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "OWASP 的網頁內容檢查把註解、中繼資料等列為資訊外洩檢查面向；本課只整理已授權的公開內容，不猜路徑、批量枚舉或測試登入繞過。[OWASP WSTG：網頁內容資訊外洩](https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Webpage_Content_for_Information_Leakage/)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-03-02-public-layers-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜公開層不等於後台全貌",
+            "description": "逐層記錄公開觀察；不將線索升格成後台事實。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "逐層記錄公開觀察；不將線索升格成後台事實。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. 最容易混淆的四樣東西：地圖、爬蟲規則、索引規則與門鎖"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網站地圖（Sitemap）像提供給搜尋服務的網址目錄，協助發現內容；它不是完整網站保證書，也不代表其中每個網址都已被收錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "robots.txt 是給配合規則的爬蟲看的存取指示。它不是登入系統，也不是保密措施。被禁止爬取的網址，仍可能因其他地方的連結而出現在搜尋結果；不要把敏感路徑寫進 robots.txt 就以為藏好了。[Google robots.txt 說明](https://developers.google.com/search/docs/crawling-indexing/robots/intro)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "noindex 的意思是要求支援此規則的搜尋引擎不要把內容放進搜尋索引。Google 必須能爬取頁面，才能讀到頁面中的 noindex 或 HTTP 標頭規則；若同時用 robots.txt 阻擋，可能看不到這項指示。noindex 也不會阻止知道網址的人直接打開內容。[Google noindex 說明](https://developers.google.com/search/docs/crawling-indexing/block-indexing)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正要保護私人內容，需要驗證身分與授權檢查：你是誰，以及你能不能讀這份資料。白話記法：Sitemap 是地圖；robots.txt 是給爬蟲的告示；noindex 是不要列入目錄的請求；存取控制才是門鎖。這些功能不同，不能互相代替。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-03-03-controls-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜地圖、告示、目錄與門鎖",
+            "description": "四個機制各有目的，只有存取控制負責許可判斷。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "四個機制各有目的，只有存取控制負責許可判斷。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. 把線索寫成有用報告：一個完整的虛構例子"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你獲准檢查自家咖啡店的測試站，只能檢視公開教學頁與提供給你的範例文件，不可探測其他路徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一個線索：搜尋範例畫面顯示去年菜單。你記錄「範例搜尋摘要提到去年菜單」，不寫「目前網站仍販售去年品項」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二個線索：測試站公開 PDF 的作者欄是「Office Template」。你記錄欄位值與文件網址，不把它當成真實員工姓名，也不把它當成文件實際擁有人。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三個線索：示範 robots.txt 寫著一個內部文件路徑。你只記錄它洩露了路徑名稱，不因此開啟或猜測該路徑；是否能讀取、是否有機密資料、是否存在弱點，全都尚未確認。需要更深入驗證時，先取得相應授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "報告可以寫：「公開範例資料暴露文件描述與路徑命名線索。現有證據不足以判定後端版本、私人文件可讀性或可利用漏洞。建議由站方核對發布清單及存取控制。」這不是含糊，而是把事實與推論分清楚。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. 防護與證據：不只把搜尋結果藏起來"
+        },
+        {
+          "kind": "paragraph",
+          "text": "發布前，先列出真正要公開的頁面與文件；移除不必要的作者個資、內部註解與測試資訊。公開的 JavaScript 不能當秘密保管箱，必要的權限判斷應在伺服器端落實。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "發現不該公開的內容時，先處理原始網站的內容與存取權限，再處理搜尋服務上的索引殘留。只移除搜尋結果，原始網址仍可能可讀；只改原始頁面，搜尋摘要也不一定立刻更新。若真的暴露憑證，應依事件處理流程撤銷或更換，而不是僅刪除畫面上的文字。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗證防護是否有效，應由站方使用授權測試帳號，比較未登入、一般帳號與有權限帳號的結果；不把「搜尋不到」當成安全測試通過。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最低限度的證據紀錄包括：授權範圍、查核時間與時區、查詢語句、來源網址、看到的具體內容、來源顯示的內容日期、尚未驗證的部分，以及建議下一步。截圖或節錄只保留必要資訊；若意外遇到個資或秘密，停止擴大蒐集並走既定通報管道。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-03-04-evidence-cycle-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜觀察到防護的證據鏈",
+            "description": "保留事實與限制；經授權驗證後確認防護效果。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "保留事實與限制；經授權驗證後確認防護效果。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. 小檢核：你能否守住推論邊界？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情境：你在授權的教學資料中看到三件事：搜尋結果有一份舊 PDF；robots.txt 禁止爬取一個目錄；某頁標頭顯示軟體名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請用自己的話回答：① 搜尋摘要能證明 PDF 目前仍公開嗎？② robots.txt 能保證目錄保密嗎？③ 標頭能直接證明某個版本漏洞存在嗎？④ 若你是網站負責人，要用什麼證據驗證私人內容受到保護？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一題情境檢核，不用長篇回答；尚未作答不代表已學會。參考答案會隨網站教材提供，不以作答作為公布條件。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-1",
+          "summary": "參考解答：搜尋結果、規則與安全證據",
+          "paragraphs": [
+            "① 不能。摘要只能證明搜尋服務在查詢當下顯示該線索；要核對目前公開狀態，需在授權範圍內檢查原始資源，並記錄時間。不要因為舊摘要就宣稱現況。",
+            "② 不能。robots.txt 是給配合規則的爬蟲的指示，不是權限檢查。noindex 也只是索引規則，不能代替私人內容的存取控制。",
+            "③ 不能。標頭可能來自代理層，也可能是舊字串或被簡化的標示。版本、設定、適用條件與實際弱點都需要另外授權的驗證。",
+            "④ 由站方在核准範圍內，以未登入、一般帳號及有權限帳號比較存取結果，檢查伺服器端是否依資源與身分落實授權。保留測試範圍、帳號角色、時間及結果；搜尋不到或單獨看到某個狀態碼，都不足以取代完整權限驗證。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. 今天帶走的一句話與來源"
+        },
+        {
+          "kind": "paragraph",
+          "text": "搜尋引擎幫你找線索，原始頁面幫你核對現況，授權範圍決定你能做什麼；只有經過適當驗證的證據，才能支撐安全結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本單元依既有 M02-03 路線編寫，使用合成案例。搜尋引擎的即時語法以各服務官方文件為準；舊版 WSTG 的快取或特定搜尋功能說明不視為現行服務保證。[OWASP 搜尋引擎偵察方法](https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/01-Information_Gathering/01-Conduct_Search_Engine_Discovery_Reconnaissance_for_Information_Leakage/)"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Separate search indexes from current pages, interpret public clues, and respect authorization and evidence boundaries.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M02-03 | Search Engine and Website Footprinting: Public Clues Are Not Proven Vulnerabilities"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Start with this conclusion"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Search Engine and Website Footprinting means organizing what a website exposes through search results and publicly provided content. The goal is a verifiable picture, not permission to enter every discovered URL."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember three distinctions: search results are not necessarily the website's current content; public clues are not proven weaknesses; visibility is not authorization to test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "M02-02 introduced source validation. Apply it here: a search snippet, its original page, and an article quoting that page are not automatically three independent pieces of evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Understand search through a café menu"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine looking for a café menu. A search engine resembles a periodically updated directory, not a live camera inside the café. Its broad stages are crawling, where software fetches pages; indexing, where content is analyzed and stored for retrieval; and serving, where results are selected for a query. Not every page is necessarily indexed. [How Google Search works](https://developers.google.com/search/docs/fundamentals/how-search-works)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If a snippet mentions an old menu, it supports only the statement that the search engine displayed that information at query time. It does not establish that the café still uses that menu. To check the present state, compare the current original page within authorization, recording query time separately from the content's own date."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connects to M02-01: querying a third-party search service differs from clicking through and making a request to the target site. Even ordinary browsing can produce access logs. This lesson does not interact with any third-party target."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-03-01-index-boundary-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "1 | Index ≠ live website",
+            "description": "Search and target services differ; clicking makes a direct request.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Search and target services differ; clicking makes a direct request."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. Search operators clarify questions; they do not grant access"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A search operator is special syntax that narrows results. All examples below use the fictional coffee.example domain to explain syntax; there is no need to execute them."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Syntax",
+            "Question it helps ask",
+            "What it does not establish"
+          ],
+          "rows": [
+            [
+              "site:coffee.example",
+              "Which indexed results are associated with this domain?",
+              "The results are not a complete asset inventory"
+            ],
+            [
+              "\"seasonal menu\"",
+              "Which results match this phrase?",
+              "Content is not necessarily current or from the intended business"
+            ],
+            [
+              "filetype:pdf",
+              "Which results are identified as PDF files?",
+              "A PDF is not necessarily more reliable or recent"
+            ],
+            [
+              "menu -careers",
+              "Can results containing a specified term be excluded?",
+              "Exclusion may also remove useful results"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A combined example is site:coffee.example \"seasonal menu\" filetype:pdf. Do not insert a space after site:. Support differs between search services; do not treat one provider's syntax or an old textbook's features as universal and permanent. [Google Search help](https://support.google.com/websearch/answer/2466433?hl=en)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A missing site: result does not establish that a site does not exist or that content was deleted. A returned result does not make the list exhaustive either. Google's documentation explicitly notes indexing and retrieval limitations for search operators. [Google search operators](https://developers.google.com/search/docs/monitor-debug/search-operators)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Website footprints: separate public-facing clues from backend facts"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Website footprints are structural and technical clues in public content. The visible page is one layer. HTML, or HyperText Markup Language, describes page structure and is delivered to the browser alongside public resources. HTTP response headers are descriptive fields accompanying a server's response and may reveal transport or software clues."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Public clue",
+            "What can be recorded",
+            "Limit to preserve"
+          ],
+          "rows": [
+            [
+              "Navigation, titles, links, URL paths",
+              "Public services and relationships between pages",
+              "An absent link does not prove absent functionality"
+            ],
+            [
+              "HTML comments and public JavaScript/CSS",
+              "Text, code, and styling delivered to the browser",
+              "This is not the server-side source code"
+            ],
+            [
+              "Document metadata",
+              "Descriptive fields such as title, author, and creation time",
+              "Template authors and timestamps may be misleading"
+            ],
+            [
+              "Response headers and technology labels",
+              "What a particular response says about software or services",
+              "A proxy, stale string, or simplified label may be involved"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a Server header does not justify writing “the backend version has a confirmed vulnerability.” It is initially a technical clue requiring verification. The HTML source received by a browser may also differ from the page structure after JavaScript executes; neither is the complete backend program."
+        },
+        {
+          "kind": "paragraph",
+          "text": "OWASP includes comments and metadata among potential information-disclosure surfaces. Here we only organize authorized public content: no path guessing, bulk enumeration, or login-bypass testing. [OWASP WSTG: webpage content information leakage](https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Webpage_Content_for_Information_Leakage/)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-03-02-public-layers-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "2 | Public layers ≠ full backend",
+            "description": "Record public observations without claiming backend certainty.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Record public observations without claiming backend certainty."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Four different controls: map, crawler instructions, indexing rule, and lock"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A sitemap is a list of URLs supplied to help search services discover content. It is neither a guarantee of a complete website inventory nor proof that every listed URL is indexed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "robots.txt supplies instructions to cooperative crawlers. It is not a login system or a confidentiality control. A URL blocked from crawling can still appear in search results through links elsewhere. Listing a sensitive path in robots.txt does not conceal it. [Google robots.txt documentation](https://developers.google.com/search/docs/crawling-indexing/robots/intro)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "noindex asks supporting search engines not to include content in their indexes. Google must be able to crawl a page to see its noindex metadata or HTTP-header rule. Blocking crawling with robots.txt can prevent that rule from being read. noindex does not prevent someone who knows the URL from opening the content directly. [Google noindex documentation](https://developers.google.com/search/docs/crawling-indexing/block-indexing)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Private content needs authentication and authorization checks: who you are and whether you may read that resource. Remember the analogy: a sitemap is a map; robots.txt is a crawler notice; noindex asks for exclusion from a directory; access control is the lock. These mechanisms serve different purposes and cannot substitute for one another."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-03-03-controls-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "3 | Map, notice, directory, lock",
+            "description": "Four distinct mechanisms; access control enforces permission.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Four distinct mechanisms; access control enforces permission."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Turn clues into a useful report: a complete synthetic example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are authorized to inspect your café's training site. You may inspect public teaching pages and supplied example documents, but not probe other paths."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First clue: a sample search screenshot shows last year's menu. Record “the sample search snippet mentions last year's menu,” not “the current site still sells last year's items.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second clue: a public training PDF has an author field of “Office Template.” Record the field and document URL. Do not interpret it as an actual employee's name or the document's actual owner."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third clue: a sample robots.txt names an internal-document path. Record that the path name is exposed; do not open or guess paths on that basis. Whether it is readable, contains confidential data, or represents a weakness remains unverified. Obtain appropriate authorization before deeper checks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A suitable report says: “Public sample materials expose descriptive document fields and path-naming clues. Current evidence does not establish the backend version, readability of private documents, or an exploitable vulnerability. The owner should review the publishing inventory and access controls.” This is not evasive: it separates observation from inference."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Defense and evidence: do more than hide search results"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Before publication, identify the pages and documents actually intended for public access. Remove unnecessary personal metadata, internal comments, and test information. Public JavaScript is not a secret vault; required authorization decisions belong on the server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When content should not have been public, first address the original site's content and access permissions, then handle residual search indexing. Removing a search result alone may leave the original URL readable. Editing the original page may not immediately update a search snippet. If credentials are exposed, revoke or replace them through the incident-response process rather than merely deleting the displayed text."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The owner should validate protection using authorized test accounts, comparing unauthenticated, ordinary-user, and permitted-user access. “Not found in search” is not a passed security test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "At minimum, record authorization scope, observation time and timezone, query, source URL, the exact observation, any content date shown by the source, unresolved questions, and the proposed next step. Preserve only necessary information in screenshots or excerpts. If personal data or secrets appear unexpectedly, stop expanding collection and follow the established reporting process."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-03-04-evidence-cycle-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "4 | From observation to protection",
+            "description": "Preserve observations and limits, then validate defenses with authorization.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Preserve observations and limits, then validate defenses with authorization."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Small check: can you preserve the inference boundary?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scenario: authorized teaching materials show an old PDF in search results, a directory disallowed in robots.txt, and a software name in a response header."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Explain in your own words: (1) Does the snippet prove the PDF is still public? (2) Does robots.txt guarantee that the directory is private? (3) Does the header directly prove a version-specific vulnerability? (4) As the site owner, what evidence would you use to verify that private content is protected?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is one scenario with four short prompts; no long essay is needed. An unanswered check is not evidence of mastery. Reference answers accompany the website lesson and do not depend on a learner response."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-1",
+          "summary": "Reference answer: Search results, rules, and security evidence",
+          "paragraphs": [
+            "(1) No. A snippet establishes only what the search service displayed at query time. Check the original resource within authorization to establish its current public status, and record the time. Do not turn an old snippet into a claim about the present.",
+            "(2) No. robots.txt instructs cooperative crawlers; it does not enforce permissions. noindex is an indexing rule and also cannot replace access control for private content.",
+            "(3) No. The header could describe a proxy, contain an old string, or use a simplified label. The version, configuration, applicability conditions, and actual weakness require separately authorized verification.",
+            "(4) Within approved scope, the owner should compare access by unauthenticated, ordinary-user, and permitted-user roles, checking whether the server enforces authorization for each identity and resource. Preserve scope, account roles, times, and outcomes. Search absence or an isolated status code does not replace complete access-control verification."
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. One takeaway and sources"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Search engines help discover clues; original pages help check the present state; authorization determines what you may do. Only appropriately verified evidence can support a security conclusion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson follows the existing M02-03 route and uses synthetic examples. Current search syntax is governed by each provider's official documentation. Cache or provider-specific features described in older WSTG editions are not guarantees of current service behavior. [OWASP search-engine reconnaissance](https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/01-Information_Gathering/01-Conduct_Search_Engine_Discovery_Reconnaissance_for_Information_Leakage/)"
+        }
+      ]
+    }
+  }
+}
