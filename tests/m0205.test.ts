@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {reviewedSvgMarkup} from '../src/lib/reviewed-svg.ts';
 import svgLabels from '../src/lib/m0205-svg-labels.json' with {type:'json'};
@@ -8,13 +9,13 @@ import {createConceptCatalog,type SourceBlock} from '../src/lib/concepts.ts';
 import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M02-05')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
-test('M02-05 complete bilingual lesson, four diagrams, two closed-answer data records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.0.0');assert.equal(lesson.revision,1);assert.deepEqual(lesson.qa,[]);
+test('M02-05 complete bilingual lesson, six diagrams, five closed-answer data records and next linked unit',()=>{
+ assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,2);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-31');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
-  assert.equal(body.filter(b=>b.kind==='heading').length,9);
-  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-check','answer-choice']);
+  assert.equal(body.filter(b=>b.kind==='heading'&&/^section-\d+$/.test(b.id??'')).length,9);
+  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-check','answer-choice','answer-extension-1','answer-extension-2','answer-extension-3']);
   const text=body.flatMap(flatten).join('\n');
   for(const term of ['MAIL FROM','SPF','DKIM','DMARC','coffee.example','rfc9989'])assert.ok(text.includes(term));
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
@@ -43,7 +44,7 @@ test('M02-05 reviewed inline bundle and search labels match deterministic allowl
  const result=spawnSync('python3',['scripts/m0205_svg.py','--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stdout+result.stderr);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-31');
  for(const lang of ['zh','en'] as const){
-  const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,4);
+  const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,6);
   for(const b of body.filter(b=>b.kind==='visual')){
    const svg=readFileSync('site'+b.src,'utf8');assert.equal(reviewedSvgMarkup(b.src),svg);assert.ok(Buffer.byteLength(svg)<100000);
    assert.ok(!/<(?:script|foreignObject|image|use)\b|\bon\w+=|\bhref=/i.test(svg));
@@ -67,8 +68,18 @@ test('M02-05 SVG labels stay at or below inherited body size',()=>{
  assert.ok(component.includes('.diagram-canvas.compact-text{width:min(100%,33.333333em)}'));
  for(const lang of ['zh','en'] as const)for(const b of lesson.text[lang].sourceBody!.filter(b=>b.kind==='visual')){
   const svg=readFileSync('site'+b.src,'utf8');const sizes=[...svg.matchAll(/font-size="([0-9.]+)"/g)].map(m=>Number(m[1]));
-  assert.equal(Math.max(...sizes),18);assert.ok(svg.includes('viewBox="0 0 600 700"'));assert.ok(33.333333*18/600<=1);
+  assert.equal(Math.max(...sizes),18);assert.ok(/viewBox="0 0 600 (700|750)"/.test(svg));assert.ok(33.333333*18/600<=1);
  }
 });
 
 
+
+test('M02-05 preserves the supplied supplement verbatim and replaces source placeholders in published teaching',()=>{
+ const original=readFileSync('docs/sources/m02-05/original-supplement-2026-10-31.zh-TW.txt');
+ assert.equal(createHash('sha256').update(original).digest('hex'),'8da66fa58ce7021f7eb7f3269de950d1d9fdf861007844231db05594f082deb9');
+ for(const lang of ['zh','en'] as const){
+  const text=lesson.text[lang].sourceBody!.flatMap(flatten).join('\n');
+  for(const fragment of ['10:00:00','10:00:05','10:00:10','selector1._domainkey.coffee.example','-all','h=','bh=','l=','M09'])assert.ok(text.includes(fragment),fragment);
+  assert.ok(!/CS Kairos Learn \+2|提交答案並取得解析|示意資料/.test(text));
+ }
+});

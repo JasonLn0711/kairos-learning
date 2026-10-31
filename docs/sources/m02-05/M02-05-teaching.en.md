@@ -1,5 +1,6 @@
 # CEH M02-05 | Email Footprinting: Reading Delivery Paths and Domain Authentication
 
+
 ## 1 | The main idea
 
 Email footprinting uses public contact information and original messages you are authorized to inspect to organize sending domains, mail services, delivery paths, and authentication results. Together, these clues answer: Which systems handled this message? Which domain was used? What checks did the receiving system perform?
@@ -37,13 +38,13 @@ In browser-based Gmail, open a message you received and choose Show original fro
 
 Role mailboxes such as info@ and support@ on public contact pages, and department or contact details in signatures, can also reveal an organization's public footprint. Collect fields relevant to the task and separate public-page information from technical message evidence. This continues M02-02 source validation: each field retains its own source and time.
 
-## 4 | Read Received: establish trusted nodes, then rebuild chronology
+## 4｜Reading Received: establish trusted hops, then reconstruct chronology
 
-A mail server normally prepends its Received field when accepting a message. Newer reception records therefore tend to appear at the top. Reading from the bottom upward helps describe delivery in chronological order. [SMTP trace information](https://www.rfc-editor.org/rfc/rfc5321)
+Received describes reception hops. SPF, DKIM, and DMARC describe sending authorization, signing domains, and their relationship to the visible author. Separate these questions first, then connect the evidence into a clear account of the message.
 
-For verification, start with your receiving system's trusted record. Identify which server recorded receiving the message from which connection peer, then trace earlier stages. These are two distinct directions: narrate the route forward in time, and extend trust outward from your own system.
+**4.1 Understand reception records through parcel delivery**
 
-Suppose a trusted receiving node records this synthetic entry:
+Imagine a parcel leaving Taipei and passing through an origin station, a transfer station, and a destination station. Each station records: “At this time, I received the parcel from this previous station.” A mail server leaves similar handover records. Received is a reception field in the message header; a system that transfers messages is called an MTA (Mail Transfer Agent).
 
 ```
 Received: from outbound.mailer.example (192.0.2.25)
@@ -51,27 +52,158 @@ Received: from outbound.mailer.example (192.0.2.25)
         Sat, 31 Oct 2026 10:00:05 +0000
 ```
 
-The recorded fact is that mx.recipient.example accepted mail at that time from a connection at 192.0.2.25, with the listed peer name. Once its origin in your receiving system is established, this record supports that delivery segment. A provider's outbound IP describes a service node; tracing an operating account or device calls for authorized correlation with service records.
+| Field | Plain-language meaning and verification point |
+|---|---|
+| Received | A reception event; identify the system that wrote it first. |
+| from outbound.mailer.example | Information about the previous host's name; interpret it alongside the connection IP. |
+| (192.0.2.25) | In this example, the connection-source IP recorded by the receiver. |
+| by mx.recipient.example | The server recording this reception event. |
+| 10:00:05 +0000 | The server's recorded time; +0000 is the same offset as UTC. |
 
-Earlier Received entries may come from other systems. Record who generated each segment and what evidence can corroborate it. Each time stamp also depends on a time zone and a system clock; normalize zones and check trusted nodes when studying delays. This applies M02-01 scope to mail: the lesson reads available evidence, while probes or test messages to third parties follow separate written authorization.
+Once the record is established as originating from trusted mx.recipient.example, report: “At this time, this receiving server recorded a mail connection from 192.0.2.25.” That is evidence of a handover between systems. To identify the operating account or device, obtain authorized submission-service, sign-in, or endpoint records, giving each layer of the conclusion its own supporting material. [SMTP trace information: RFC 5321 §4.4](https://www.rfc-editor.org/rfc/rfc5321.html#section-4.4)
 
-![Delivery path](figures/02-header-trust.en.svg)
+**4.2 A three-hop example: chronology and trust verification have different directions**
 
-## 5 | SPF, DKIM, and DMARC: three complementary checks
+The following synthetic message contains three reception records. All .example names and 192.0.2.x addresses are instructional. Assume the receiving organization operates mx.recipient.example and mailbox.recipient.example and can examine both systems' logs.
 
-Think of an approved delivery-vehicle list, a document seal, and a rule matching the brand to its credentials. Together they provide technical evidence about sending domains. Requests for payments, logins, or data then connect to M09-06 independent verification.
+```
+Received: from mx.recipient.example (192.0.2.30)
+        by mailbox.recipient.example;
+        Sat, 31 Oct 2026 10:00:10 +0000
+Received: from outbound.mailer.example (192.0.2.25)
+        by mx.recipient.example;
+        Sat, 31 Oct 2026 10:00:05 +0000
+Received: from submit.mailer.example (192.0.2.20)
+        by outbound.mailer.example;
+        Sat, 31 Oct 2026 10:00:00 +0000
+```
 
-SPF (Sender Policy Framework) lets a domain publish which sources may send for it in DNS. The receiver primarily compares the current connecting IP with the policy for the SMTP MAIL FROM domain; relevant cases also check HELO identity. HELO / EHLO is the SMTP connection's identity greeting. SPF asks: Does this sending source fit this domain's sending policy? [SPF specification](https://www.rfc-editor.org/rfc/rfc7208)
+A receiving server adds its own Received above the existing records. Here, the top entry is at 10:00:10 and the bottom entry is at 10:00:00. [How Received is added: RFC 5321 §4.4](https://www.rfc-editor.org/rfc/rfc5321.html#section-4.4)
 
-DKIM (DomainKeys Identified Mail) uses a private key to create a digital signature that a receiver checks against a public key in DNS. The d= tag identifies the signing domain; s= is the selector used to locate the key. Verification covers the selected headers and body data, helping validate the signing domain and consistency of the protected content. [DKIM specification](https://www.rfc-editor.org/rfc/rfc6376)
+| Reading goal | Starting point and direction | Application to this example |
+|---|---|---|
+| Reconstruct the chronology described by the records | Bottom to top, earlier to later | 10:00:00 acceptance by the outbound server → 10:00:05 gateway reception → 10:00:10 internal delivery. |
+| Verify the credibility of each segment | Start with your trusted receiver and work toward earlier hops | Check mailbox's internal reception, then mx's external connection; obtain separate provider evidence for the earlier record written by outbound. |
 
-DMARC (Domain-based Message Authentication, Reporting, and Conformance) checks alignment between the visible From domain and a domain authenticated by SPF or DKIM. At least one path must both pass authentication and align with From. Strict alignment requires the same domain; relaxed alignment follows organizational-domain rules. [Current DMARC specification, RFC 9989](https://www.rfc-editor.org/rfc/rfc9989)
+Convert times to a common zone first. For example, 10:00:05 +0000 is 18:00:05 +0800 in Taiwan. Estimating delay between two servers also requires considering clock synchronization. Record “the difference between header timestamps” separately from “verified transport delay” for a precise analysis.
 
-A domain may publish handling preferences: p=none for observation and evaluation, p=quarantine to recommend quarantine, and p=reject to recommend rejection. Receiving systems combine these with local policy and other signals. RFC 9989, published in 2026, replaces RFC 7489; this lesson uses the current specification's core concepts. [DMARC handling policy](https://www.rfc-editor.org/rfc/rfc9989)
+**4.3 Trust boundaries: connect each record to the system that produced it**
 
-When reading Authentication-Results, identify the authserv-id, or authentication-service identifier, and use results from your trusted mail service. Forwarding changes the connection IP visible to a receiver; a mailing list's footer may change signed content. Investigate differing results with the forwarding path, domain alignment, and service logs. [Result-header trust model](https://www.rfc-editor.org/rfc/rfc8601), [indirect mail flows](https://www.rfc-editor.org/rfc/rfc7960)
+A trust boundary separates systems you can verify from externally supplied information. In this example, mx directly observed outbound's connection; an external system describes the earlier submit → outbound segment. Divide an evidence table into “corroborated with our logs” and “external record awaiting corroboration,” then complete it segment by segment.
 
-![Domain authentication](figures/03-mail-authentication.en.svg)
+For example, this header entry initially provides a source claim to investigate:
+
+```
+Received: from official-bank.example
+        by secure-gateway.example;
+        Sat, 31 Oct 2026 09:00:00 +0000
+```
+
+Verify the claim by identifying its writer and comparing the trusted reception chain with relevant service logs. An external sender may prepopulate header content before the message enters the trusted system, so record “appearance of the entry” and “verification of its origin” separately. This connects to M09 social engineering: official-looking names and familiar brands attract trust, while independent sources and system records provide a verifiable basis for that trust.
+
+![Received](figures/02-header-trust.en.svg)
+
+![Received logistics](figures/05-received-logistics.en.svg)
+
+## 5｜SPF, DKIM, and DMARC: three complementary checks
+
+**5.1 Think of authorized vehicles, document seals, and a storefront name**
+
+Suppose a message displays From: A Bank <service@bank.example>. From presents author information; the receiving system then checks sending authorization and signatures to connect that name with technical evidence.
+
+| Mechanism | Everyday analogy | Actual check |
+|---|---|---|
+| SPF | A list of authorized delivery vehicles | Whether the connection-source IP matches the checked domain's sending policy. |
+| DKIM | A digital document seal | Whether the signing domain's signature and the content it covers verify consistently. |
+| DMARC | Comparing credentials with the storefront name | Whether a domain authenticated by SPF or DKIM aligns with the From domain. |
+
+**5.2 SPF: compare a source IP with a domain's authorization list**
+
+SPF (Sender Policy Framework) lets a domain publish sending policy in DNS (Domain Name System). TXT is a DNS record type that holds text. If a delivery platform uses 192.0.2.25, an instructional policy can be written as:
+
+```
+mailer.example. TXT "v=spf1 ip4:192.0.2.25 -all"
+```
+
+v=spf1 identifies the SPF version; ip4:192.0.2.25 lists an authorized IPv4 source. If preceding conditions do not match, -all produces an SPF fail result, expressing that this domain has not authorized that source. The receiver then applies its own handling policy to reject, annotate, or otherwise process the message. [SPF fail and handling: RFC 7208 §2.6.4 and §8.4](https://www.rfc-editor.org/rfc/rfc7208.html#section-8.4)
+
+The receiver usually compares the current connection IP with the domain in SMTP (Simple Mail Transfer Protocol) MAIL FROM, the delivery envelope's reverse-path identity. SPF also defines checks of the HELO/EHLO identity, the greeting name used in an SMTP connection. In your analysis, explicitly record “which IP, which identity, which domain, and which result,” then compare those with the visible From. [SPF identities: RFC 7208 §2](https://www.rfc-editor.org/rfc/rfc7208.html#section-2)
+
+**5.3 DKIM: use a key pair to verify covered content**
+
+DKIM (DomainKeys Identified Mail) uses asymmetric cryptography: the signer keeps a private key to generate a digital signature, and the receiver obtains the public key from DNS to verify it.
+
+This excerpt shows the tags to recognize. A real signature also contains an algorithm, signature value, and other required fields:
+
+```
+DKIM-Signature: v=1;
+    d=coffee.example;
+    s=selector1;
+    h=from:to:subject:date;
+    c=relaxed/relaxed;
+```
+
+| Tag or step | How to understand it |
+|---|---|
+| d=coffee.example | The signing domain, subsequently compared with From for alignment. |
+| s=selector1 | The selector locates a key. Here the verifier queries the DNS TXT record at selector1._domainkey.coffee.example. |
+| h=from:to:subject:date | Lists the header names selected for this signature; From must be signed, and the verifier selects corresponding field instances according to the rules. |
+| c=relaxed/relaxed | Canonicalization rules for headers and body respectively; they normalize allowed formatting differences before calculation. |
+| bh= and b= | bh= holds the body hash; b= holds the signature value. The verifier checks both the body hash and the signature. |
+| Optional l= | Specifies the number of canonicalized body octets included in hashing; omitting it covers the entire canonicalized body. |
+
+The digital seal covers selected headers and the body data processed under those rules. Recording h=, c=, and the presence of l= precisely describes the verification scope. When forwarding or mailing-list processing changes protected material, interpret the result together with that processing. Business-content checks continue through orders, established contact channels, and account activity. [DKIM tags and verification: RFC 6376 §3.4, §3.5, and §6](https://www.rfc-editor.org/rfc/rfc6376.html#section-3.5)
+
+**5.4 DMARC: at least one path that both passes and aligns**
+
+DMARC (Domain-based Message Authentication, Reporting, and Conformance) connects an authenticated identity with the author domain in From. Alignment compares the relationship between those domains. Suppose:
+
+```
+From: receipt@coffee.example
+Return-Path: <bounce@mailer.example>
+```
+
+The trusted receiver records SPF pass for mailer.example and DKIM pass with d=coffee.example. From also uses coffee.example, so the DKIM path both passes and aligns. Its logic can be written as:
+
+```
+DMARC pass =
+  (SPF pass AND SPF domain aligned)
+  OR
+  (DKIM pass AND DKIM signing domain aligned)
+```
+
+Strict alignment requires the compared domains to be identical. Relaxed alignment checks whether they share an organizational domain under the specification. For example, if coffee.example is their common organizational domain, mail.coffee.example and coffee.example can align in relaxed mode. Implementations discover organizational domains using the current specification rather than simply taking the last two labels. [DMARC alignment: RFC 9989](https://www.rfc-editor.org/rfc/rfc9989.html)
+
+The domain policy p=none expresses monitoring mode, p=quarantine expresses a quarantine preference, and p=reject expresses a rejection preference. The receiver combines these preferences with its own assessment when deciding how to handle mail. Verification and supplementation: RFC 9989 was published in May 2026 and obsoletes RFC 7489 and RFC 9091; this lesson uses that current core specification. [RFC 9989 publication information and policy](https://www.rfc-editor.org/rfc/rfc9989.html)
+
+**5.5 Read Authentication-Results field by field**
+
+Authentication-Results records checks performed by a receiving authentication service. First establish the authserv-id (authentication service identifier) and that the field was actually produced by a trusted service; then interpret pass or fail. Your mail-administration rules, trusted gateways, and logs provide that source assurance. [Authentication-result trust boundaries: RFC 8601 §1.2 and §7](https://www.rfc-editor.org/rfc/rfc8601.html#section-1.2)
+
+```
+From: Coffee Shop <receipt@coffee.example>
+Return-Path: <bounce@mailer.example>
+Authentication-Results: mx.recipient.example;
+    spf=pass smtp.mailfrom=mailer.example;
+    dkim=pass header.d=coffee.example;
+    dmarc=pass header.from=coffee.example
+```
+
+| Observed field | Interpretation |
+|---|---|
+| mx.recipient.example | The declared authentication service identifier; compare it with trusted-service configuration and logs first. |
+| spf=pass | This SPF check passed. |
+| smtp.mailfrom=mailer.example | The envelope-sender domain checked here. |
+| dkim=pass | This DKIM signature verified. |
+| header.d=coffee.example | The signing domain of that DKIM signature. |
+| dmarc=pass | This DMARC evaluation passed. |
+| header.from=coffee.example | The author domain compared by DMARC. |
+
+Read this as one complete assessment: “The trusted receiving service verified the platform's SPF and coffee.example's DKIM. DKIM aligns with From, satisfying the DMARC passing condition.” If forwarding occurred, also record the changed connection source and message processing to investigate differences in results. [Indirect mail flows: RFC 7960](https://www.rfc-editor.org/rfc/rfc7960.html)
+
+![Authentication](figures/03-mail-authentication.en.svg)
+
+![Alignment](figures/06-authentication-alignment.en.svg)
 
 ## 6 | Worked example: a platform sends the coffee shop's receipt
 
@@ -95,6 +227,19 @@ Third, check alignment. From uses coffee.example and DKIM d= also uses coffee.ex
 
 Fourth, connect the business context. For a receipt from a purchase you just made, compare the order ID, items, and amount. A request to change payment details should be confirmed through a previously saved contact channel. The technical layer validates domain use; the business layer validates the requested action.
 
+**6.1 Six layers of assessment: connect transport, domain, and business evidence**
+
+| Analysis layer | Main question | Supporting evidence |
+|---|---|---|
+| Delivery path | Which node handed the message to which node? | Received and a timeline normalized to one time zone. |
+| Trusted origin | Which records come from verifiable systems? | Your MTA, gateway configuration, and mail logs. |
+| Source authorization | Does this connection IP match the domain's sending policy? | SPF results and the checked identity. |
+| Signature verification | How are the signing domain and protected content verified? | DKIM results, d=, s=, and coverage. |
+| Domain alignment | How does an authenticated domain relate to From? | DMARC and at least one passing, aligned path. |
+| Business credibility | Does the request match the real transaction and established process? | Orders, transaction records, established contacts, and account activity. |
+
+Technical validation addresses domain authorization and signatures; business validation addresses the actual request. A compromised legitimate account or an attacker-owned lookalike domain may have normal domain-authentication results, so payment changes and sign-in requests receive a further independent-channel check. This connects M02 with M09: M02 builds traceable technical evidence, and M09 examines how messages use interpersonal trust. Together they support the next decision.
+
 ## 7 | Turn footprinting into protection and useful evidence
 
 For administrators, inventory the systems sending on the organization's behalf: support, newsletters, receipts, and cloud services. Compare SPF, DKIM, and DMARC settings with that inventory. Test legitimate sending and forwarding incrementally, review results and reports, and adjust handling policy for the organization's needs. Multi-factor authentication, unusual-login detection, and established independent confirmation channels cover accounts and business processes alongside domains.
@@ -114,6 +259,24 @@ Explain briefly: ① Which domains handle delivery errors and the visible author
 Multiple choice: To identify the connection peer from which your mail server accepted a message, which evidence do you check first? A. Display name; B. Received generated by your trusted node; C. Subject; D. Message signature block.
 
 Reference answers will accompany the website lesson. Try your own explanation first; it will help focus any follow-up teaching.
+
+**8.1 Extended understanding check: a bank-message scenario**
+
+Assume these results have been established as originating from the company's trusted receiving service. This synthetic example is for offline interpretation:
+
+```
+From: security@bank.example
+Authentication-Results: mx.company.example;
+    spf=pass smtp.mailfrom=mailer.example;
+    dkim=pass header.d=mailer.example;
+    dmarc=fail header.from=bank.example
+```
+
+Question 1: SPF and DKIM both pass, while DMARC fails. What is the most direct reason? A. The authenticated domains do not align with From; B. SPF requires the same IP as DKIM; C. DKIM allows only self-operated sending; D. I would like to compare the domains again.
+
+Question 2: The lowest Received entry says the message came from a bank. What is the appropriate next step? A. Attribute the source directly from that bank name; B. Start with trusted receiving nodes and verify the entry's producer and evidence segment by segment; C. I would like to review the trust boundary again.
+
+Question 3: As the company's security analyst, name two pieces of evidence to check next and explain how they help establish technical origin and business credibility.
 
 ## 9 | Takeaway
 

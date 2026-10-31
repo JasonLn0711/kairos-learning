@@ -1,0 +1,254 @@
+請將以下補充資料加入、並優化：
+
+CEH M02-05｜電子郵件足跡蒐集
+
+第 4、5 節延伸教學｜資訊工程初學者｜CS Kairos Learn
+
+這兩節其實在回答兩個完全不同的資安問題：
+
+* Received：這封電子郵件是怎麼送到我手上的？ 經過哪些郵件伺服器？有哪些傳遞紀錄可以相信？
+* SPF、DKIM、DMARC：這封信是否有資格使用它宣稱的寄件網域？ 寄送來源有沒有授權？數位簽章是否有效？驗證過的網域與畫面上的寄件者是否一致？
+
+這也是 CS Kairos Learn M02-05⁠￼ 的核心觀念。CS Kairos Learn +2
+
+4｜Received 怎麼讀：先確認可信節點，再還原時間順序
+
+4.1 先用物流配送理解 Received
+
+假設你從台北網購一件商品，包裹經過三個地方：
+
+每到一個物流中心，對方會記錄：「我在什麼時間，從哪個上一站收到包裹。」
+
+電子郵件也是一樣，只是包裹變成電子郵件，物流中心變成郵件伺服器（Mail Server）。
+
+例如：
+
+Received: from outbound.mailer.example (192.0.2.25)
+          by mx.recipient.example;
+          Sat, 31 Oct 2026 10:00:05 +0000
+
+這筆紀錄可以拆成四個部分：
+
+欄位	白話文
+Received:	這是一筆郵件接收紀錄
+from outbound.mailer.example	上一站宣稱或被識別為這台主機
+by mx.recipient.example	記錄接收事件的伺服器
+Sat, 31 Oct 2026 10:00:05 +0000	這台伺服器記錄的接收時間，使用 UTC
+
+若我們確認這筆資料是由可信的 mx.recipient.example 產生，就可以得到一個有依據的結論：
+
+收件伺服器記錄到自己從 IP 192.0.2.25 接收到這封郵件。
+
+但是，這並不能直接證明是哪個人按下「寄送」，更不能單憑這個 IP 就認定寄件人的個人身分。
+
+4.2 為什麼 Received 要由下往上讀？
+
+因為郵件伺服器接到信件時，會把新的 Received 加在舊紀錄上面，而不是接在最下面。
+
+例如同一封信的三筆紀錄：
+
+原始郵件 Header 的排列方式
+
+示意資料
+
+因此有兩種不同的閱讀方向：
+
+* 還原時間：由下往上。 這是信件紀錄中描述的先後順序。
+* 查證可信度：從收件端自己產生的可信紀錄開始，逐站往前。 不能因為某行寫著 Received 就認定它是真的。
+
+第二點尤其重要。
+
+4.3 為什麼不能相信每一筆 Received？
+
+假設有人寄出假冒銀行的電子郵件，並在信件中預先放進一行假的紀錄：
+
+Received: from official-bank.example
+          by secure-gateway.example;
+          Sat, 31 Oct 2026 09:00:00 +0000
+
+即使字面看起來像經過銀行伺服器，也不代表銀行真的處理過這封信。
+
+原因是：攻擊者可能控制信件進入可信收件系統以前的部分標頭內容。
+
+真正要找的是信任邊界（Trust Boundary）。
+
+這與 CEH M09 社交工程的邏輯相同：
+
+一段資訊看起來很正式，不代表來源已經通過驗證。
+
+另外，分析時間時要注意 +0800 與 +0000 的時區差異，以及伺服器可能存在的時鐘誤差。比較延遲之前，應先把時間換成同一個時區。[rfc-editor.org](http://rfc-editor.org) +1
+
+5｜SPF、DKIM、DMARC：三個互補的檢查
+
+5.1 為什麼電子郵件需要三種驗證？
+
+假設你收到一封電子郵件：
+
+From: 台灣某銀行 <service@bank.example>
+Subject: 您的帳戶需要立即驗證
+
+表面看來是銀行寄來的，但電子郵件中的 From 並不是不可偽造的身分證明。
+
+所以收件伺服器需要透過其他技術，判斷這封信是否符合寄件網域的授權政策。
+
+我們可以把三種技術想像成：
+
+SPF：檢查寄送車輛是否在授權名單內
+
+這台伺服器的 IP，是否被相關寄件網域允許寄信？
+
+DKIM：檢查文件上的數位封條
+
+這封信的數位簽章是否有效？受簽章保護的內容是否一致？
+
+DMARC：核對授權身分與招牌是否一致
+
+通過驗證的網域，跟使用者看到的 From 網域是否對得起來？
+
+5.2 SPF：檢查哪台郵件伺服器有寄信資格
+
+SPF 全名為 Sender Policy Framework。
+
+假設一家咖啡店請外部郵件平台幫忙寄發收據，代寄平台使用的 IP 是 192.0.2.25。
+
+網域管理者可以在 DNS 中公告 SPF 政策，例如：
+
+mailer.example. TXT "v=spf1 ip4:192.0.2.25 -all"
+
+白話意思是：「對 mailer.example 這個網域而言，192.0.2.25 是允許寄信的 IPv4 來源，其他不符合前面條件的來源不授權。」
+
+收件端可以依照 SMTP 傳遞時取得的來源 IP，與 MAIL FROM 網域的 SPF 政策進行比對。
+
+這裡有一個關鍵：
+
+SPF 主要驗證的是 SMTP 信封上的寄件網域，而不一定是你在信箱畫面看見的 From 網域。
+
+所以 spf=pass 不等於「畫面上那家銀行已經被驗證」。
+
+5.3 DKIM：用密碼學確認數位簽章
+
+DKIM 全名為 DomainKeys Identified Mail。
+
+它與 SPF 不同，不是主要檢查寄信伺服器的 IP，而是使用非對稱式密碼學（Asymmetric Cryptography）進行數位簽章。
+
+這裡的私鑰（Private Key）由簽署方保管，公鑰（Public Key）則公布在 DNS。
+
+若有人修改了 DKIM 簽章所保護的內容，就可能讓驗證失敗。
+
+不過要留意：DKIM 只保障簽章指定的標頭與本文範圍，並非保證所有郵件欄位都不能更動，也不是保證內容沒有惡意。
+
+在原始郵件可能看到：
+
+DKIM-Signature: v=1;
+    d=coffee.example;
+    s=selector1;
+    ...
+
+這裡的 d= 代表簽署網域，s= 是 Selector，用來找到 DNS 上對應的公鑰。
+
+5.4 DMARC：為什麼 SPF、DKIM 通過還不夠？
+
+這是三者之中最值得深入理解的概念。
+
+假設一封郵件具有以下資訊：
+
+From: receipt@coffee.example
+Return-Path: bounce@mailer.example
+
+收件系統檢查後發現：
+
+* SPF 通過，驗證的是 mailer.example。
+* DKIM 通過，簽署網域是 coffee.example。
+* 畫面上 From 的網域是 coffee.example。
+
+這時 DKIM 的簽署網域與 From 一致，因此 DKIM 這條路徑符合 DMARC 的驗證與對齊要求。
+
+DMARC 的基本邏輯可以寫成：
+
+\text{DMARC Pass}=
+(\text{SPF Pass}\land\text{SPF Aligned})
+\lor
+(\text{DKIM Pass}\land\text{DKIM Aligned})
+
+換句話說，不是要求 SPF 和 DKIM 都通過，而是要求至少一個通過驗證的身分與 From 網域對齊（Alignment）。
+
+對齊又分成：
+
+* Strict Alignment：驗證網域必須完全相同。
+* Relaxed Alignment：在規範定義下，兩者具有相同的組織網域即可，例如 mail.coffee.example 和 coffee.example。
+
+此外，DMARC 網域政策可以要求收件系統觀察（p=none）、隔離（p=quarantine）或拒收（p=reject），但實際處理仍由收件系統依政策決定。
+
+這裡也有一項值得更新的標準知識：2026 年 5 月發布的 RFC 9989 已取代原本的 RFC 7489，成為 DMARC 核心規範。 [IETF Datatracker](http://datatracker.ietf.org) +2
+
+5.5 真正動手讀一次 Authentication-Results
+
+以下使用課程的咖啡店代寄收據案例：
+
+From: Coffee Shop <receipt@coffee.example>
+Return-Path: <bounce@mailer.example>
+Authentication-Results: mx.recipient.example;
+    spf=pass smtp.mailfrom=mailer.example;
+    dkim=pass header.d=coffee.example;
+    dmarc=pass header.from=coffee.example
+
+看到的欄位	應該怎麼解讀
+mx.recipient.example	宣稱產生結果的驗證服務，應先確認可信
+spf=pass	SPF 驗證通過
+smtp.mailfrom=mailer.example	SPF 檢查涉及的信封網域
+dkim=pass	DKIM 簽章驗證通過
+header.d=coffee.example	通過 DKIM 的簽署網域
+dmarc=pass	DMARC 驗證結果通過
+header.from=coffee.example	DMARC 核對的畫面 From 網域
+
+其中 Authentication-Results 本身也可能被偽造，因此必須確認這筆結果來自自己信任的收件系統，而不是單純看見 pass 就相信。這也是 RFC 8601 明確處理的信任邊界問題。RFC Editor +1
+
+6｜把第 4、5 節合在一起，才形成完整判斷
+
+分析階段	主要問題	對應資訊
+傳遞路徑	誰把郵件交給誰？	Received
+可信來源	哪一筆紀錄由我方可信系統產生？	可信 MTA、日誌
+來源授權	這個來源 IP 有寄送資格嗎？	SPF
+簽章驗證	簽署者與受保護內容是否符合簽章？	DKIM
+網域對齊	驗證身分和 From 是否一致？	DMARC
+業務可信度	信件要求的操作真的安全嗎？	獨立查證、交易紀錄
+
+最後一個觀念非常重要：
+
+SPF、DKIM、DMARC 全部通過，仍然不代表這封信一定安全。
+
+例如攻擊者控制了某個合法的公司帳號，或使用自己合法持有、但外觀與知名品牌相似的網域寄送詐騙信，郵件仍可能通過技術驗證。技術驗證回答的是網域授權問題，不直接判斷信件內容的真實性。
+
+因此這堂 CEH M02 教材與 M09 社交工程可以串在一起理解：M02 建立技術證據，M09 進一步檢查利用信任進行的欺騙。
+
+7｜理解檢核：真實情境推理
+
+某公司收到一封自稱合作銀行寄出的信：
+
+From: security@bank.example
+Authentication-Results: mx.company.example;
+    spf=pass smtp.mailfrom=mailer.example;
+    dkim=pass header.d=mailer.example;
+    dmarc=fail header.from=bank.example
+
+問題一：為什麼 SPF 與 DKIM 都通過，DMARC 卻失敗？
+
+因為 SPF 與 DKIM 驗證的網域，沒有和 From 對齊
+
+因為 SPF 一定要和 DKIM 使用相同 IP
+
+因為 DKIM 不允許代寄平台使用
+
+還不確定
+
+問題二：若最下面的 Received 宣稱信件來自銀行，能直接認定是真的嗎？
+
+可以，因為 Received 無法偽造
+
+不行，必須先確認該紀錄是否可信
+
+還不確定
+
+問題三：如果你是公司資安人員，接下來會檢查哪兩項證據，以判斷這封信的來源與可信度？
+
+提交答案並取得解析

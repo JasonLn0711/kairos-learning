@@ -3,7 +3,7 @@ from pathlib import Path
 import json,re,sys,xml.etree.ElementTree as ET
 from m0903_svg import sanitized_svg,NS
 ROOT=Path(__file__).resolve().parents[1]
-NAMES=['01-mail-journey','02-header-trust','03-mail-authentication','04-evidence-workflow']
+NAMES=['01-mail-journey','02-header-trust','03-mail-authentication','04-evidence-workflow','05-received-logistics','06-authentication-alignment']
 def generate():
  bundle={};labels={'zh':[],'en':[]}
  for lang,suffix in [('zh','zh-TW'),('en','en')]:
@@ -26,4 +26,4 @@ if __name__=='__main__':
  for target,value in targets.items():
   if '--check' in sys.argv:assert target.read_text()==value,str(target)
   else:target.write_text(value)
- print('8 M02-05 assets and inline/search bundles match strict serializer')
+ print('12 M02-05 assets and inline/search bundles match strict serializer')
