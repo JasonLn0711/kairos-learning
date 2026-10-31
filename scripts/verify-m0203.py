@@ -38,3 +38,10 @@ with zipfile.ZipFile(p) as z:
  for src in bundle:
   if '05-noindex-flow' not in src:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
 print('PASS M02-03 bilingual full text order; 5 inline SVG per language; 2 closed answers; search labels; preserved original 8-SVG ZIP plus separate noindex diagrams; pending M02-04. Static output verification.')
+
+for lang,prefix in [('zh',''),('en','en/')]:
+ target=f'https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m02/concepts/m02-03/#section-5'
+ for module,slug in [('m13','web-server-exposure-and-hardening'),('m14','object-level-authorization')]:
+  raw=(ROOT/f'build/{prefix}courses/ceh/v13/{module}/{slug}/index.html').read_text()
+  assert f'href="{target}"' in raw,(module,lang,'cross-link')
+print('PASS M13/M14 paired cross-links render as real anchors.')

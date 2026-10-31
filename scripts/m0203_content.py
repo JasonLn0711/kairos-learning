@@ -37,4 +37,11 @@ def parse(lang,suffix):
  at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=answers
  return dict(summary='區分搜尋索引與網站現況，辨識公開線索，守住授權與證據的界線。' if lang=='zh' else 'Separate search indexes from current pages, interpret public clues, and respect authorization and evidence boundaries.',sections=[],sourceBody=blocks)
 lesson=dict(id='M02-03',revision=2,contentVersion='1.1.0',date='2026-10-31',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+# Editorial web labels are independent of the preserved SVG artwork.
+for block in lesson['text']['zh']['sourceBody']:
+ if block.get('src') == '/images/ceh/m02-03-01-index-boundary-zh.svg':
+  block['visual'] = json.loads("{\"kind\":\"cards\",\"caption\":\"圖 1｜索引不是即時網站\",\"description\":\"「搜尋」服務並非呼叫目標網站；反之，點開網站則會直接之互動。\",\"items\":[{\"title\":\"讀圖重點\",\"body\":\"「搜尋」服務並非呼叫目標網站；反之，點開網站則會直接之互動。\"}]}")
+for block in lesson['text']['zh']['sourceBody']:
+ if block.get('src') == '/images/ceh/m02-03-02-public-layers-zh.svg':
+  block['visual'] = json.loads("{\"kind\":\"cards\",\"caption\":\"圖 2｜公開層能表達部分事實，但不等於全貌\",\"description\":\"逐層記錄公開觀察；不將線索升格成後台事實。\",\"items\":[{\"title\":\"讀圖重點\",\"body\":\"逐層記錄公開觀察；不將線索升格成後台事實。\"}]}")
 (ROOT/'content/concepts/m02-03.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

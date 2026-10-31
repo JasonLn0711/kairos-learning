@@ -16,6 +16,10 @@
 - [Search Console temporary removals](https://support.google.com/webmasters/answer/9689846): about six months; pair with the appropriate long-term content/indexing/access decision.
 - [OWASP authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html): resource and action checks for every request, including static resources.
 
+## Editorial continuity
+
+Integrates the latest Chinese editorial source and two independent web captions from main `494a52e`, preserving those supplied revisions alongside the noindex expansion.
+
 ## Validation record
 
 - Passed 62 tests, bilingual content validation, and Svelte/TypeScript checking (0 errors, 0 warnings).

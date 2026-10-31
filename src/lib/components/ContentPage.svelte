@@ -6,6 +6,7 @@
   import Review from './Review.svelte';
   import Lab from './Lab.svelte';
   import Concept from './Concept.svelte';
+  import InlineText from './InlineText.svelte';
   let { data }: { data: Page } = $props();
   const lang = $derived(data.route.lang);
   const zh = $derived(lang === 'zh');
@@ -70,7 +71,7 @@
       <p class="lead">{text.summary}</p><p class="metadata">{zh ? '發布' : 'Published'} {lesson.publishedOn} · {zh ? '內容校對' : 'Content checked'} {lesson.reviewedOn} · v{lesson.revision}</p>
       <div class="notice"><strong>{zh ? '讀完後，你可以' : 'After this lesson, you can'}</strong><ul>{#each text.objectives as objective}<li>{objective}</li>{/each}</ul>{#if lesson.prerequisites.length}<p>{zh ? '先備閱讀：' : 'Prerequisites: '}{#each lesson.prerequisites as id,i}{#if i} · {/if}<a href={data.index.find(l=>l.id===id)?.href}>{data.index.find(l=>l.id===id)?.title}</a>{/each}</p>{/if}</div>
       <nav class="toc" aria-label={zh ? '本文目錄' : 'On this page'}><strong>{zh ? '本文導覽' : 'On this page'}</strong><ol>{#each text.sections as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{/each}<li><a href="#example">{zh ? '完整例子' : 'Worked example'}</a></li><li><a href="#practice">{zh ? '安全練習' : 'Safe practice'}</a></li><li><a href="#questions">{zh ? '測驗' : 'Test'}</a></li><li><a href="#sources">{zh ? '參考來源' : 'Sources'}</a></li></ol></nav>
-      <article class="prose">{#each text.sections as section}<section><h2 id={section.id}>{section.heading}</h2>{#each section.paragraphs as p}<p>{p}</p>{/each}{#if section.code}<pre><code>{section.code}</code></pre>{/if}{#if section.sourceIds.length}<p class="source-note">{zh ? '延伸閱讀：' : 'Further reading: '}{#each section.sourceIds as id,i}{#if i} · {/if}<a href={data.sources.find(s=>s.id===id)?.url}>{data.sources.find(s=>s.id===id)?.title}</a>{/each}</p>{/if}</section>{/each}
+      <article class="prose">{#each text.sections as section}<section><h2 id={section.id}>{section.heading}</h2>{#each section.paragraphs as p}<p><InlineText text={p}/></p>{/each}{#if section.code}<pre><code>{section.code}</code></pre>{/if}{#if section.sourceIds.length}<p class="source-note">{zh ? '延伸閱讀：' : 'Further reading: '}{#each section.sourceIds as id,i}{#if i} · {/if}<a href={data.sources.find(s=>s.id===id)?.url}>{data.sources.find(s=>s.id===id)?.title}</a>{/each}</p>{/if}</section>{/each}
         <section><h2 id="example">{text.example.title}</h2><p>{text.example.scenario}</p>{#if text.example.code}<pre><code>{text.example.code}</code></pre>{/if}<p>{text.example.reasoning}</p><p><strong>{zh ? '判斷：' : 'Conclusion: '}</strong>{text.example.conclusion}</p></section>
         <Lab lab={text.lab} {lang} />
       </article>
