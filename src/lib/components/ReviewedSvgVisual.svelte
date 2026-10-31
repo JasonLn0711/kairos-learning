@@ -10,9 +10,9 @@
 </script>
 <figure class="spatial-diagram" data-reviewed-svg={block.src}>
   <figcaption><strong>{block.visual.caption}</strong><p>{block.visual.description}</p></figcaption>
-  <p class="reading-hint">{(block.src.startsWith('/images/ceh/m02-01-') || block.src.startsWith('/images/ceh/m02-02-') || block.src.startsWith('/images/ceh/m02-03-')) ? (lang==='en'?'The largest diagram text is capped at body size. Narrower columns shrink the whole diagram; open the original SVG to zoom.':'圖中文字最大不超過內文；欄寬不足時整張圖等比縮小，可開啟原圖放大。') : lang==='en'?'The whole diagram scales proportionally to this column. Small screens also shrink its text; open the original SVG to zoom, or read the explanation below.':'整張圖依欄位寬度等比縮放，不裁切。小螢幕的圖中文字也會變小，可開啟原圖放大，或閱讀下方會自動換行的文字解說。'}</p>
+  <p class="reading-hint">{(block.src.startsWith('/images/ceh/m02-01-') || block.src.startsWith('/images/ceh/m02-02-') || block.src.startsWith('/images/ceh/m02-03-') || block.src.startsWith('/images/ceh/m02-05-')) ? (lang==='en'?'The largest diagram text is capped at body size. Narrower columns shrink the whole diagram; open the original SVG to zoom.':'圖中文字最大不超過內文；欄寬不足時整張圖等比縮小，可開啟原圖放大。') : lang==='en'?'The whole diagram scales proportionally to this column. Small screens also shrink its text; open the original SVG to zoom, or read the explanation below.':'整張圖依欄位寬度等比縮放，不裁切。小螢幕的圖中文字也會變小，可開啟原圖放大，或閱讀下方會自動換行的文字解說。'}</p>
   <div class="diagram-viewport">
-    <div class="diagram-canvas" class:compact-text={block.src.startsWith("/images/ceh/m02-03-")} class:body-sized={block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-") || block.src.startsWith("/images/ceh/m02-03-")}>
+    <div class="diagram-canvas" class:compact-text={block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-05-")} class:body-sized={block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-") || block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-05-")}>
       <!-- Generated only by scripts/m0903_svg.py: strict element/attribute allowlist,
            local unique IDs, no scripts, styles, links or external resources. -->
       {@html svg}
