@@ -9,7 +9,7 @@ import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M02-02')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
 test('M02-02 complete bilingual lesson, four diagrams, four closed-answer data records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.0.0');assert.equal(lesson.revision,1);assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.0.1');assert.equal(lesson.revision,1);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-31');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=45);
@@ -56,7 +56,7 @@ test('M02-02 reviewed inline bundle and search labels match deterministic allowl
 test('M02-02 caps largest SVG text at inherited body size and shrinks below the cap',()=>{
  const c=readFileSync('src/lib/components/ReviewedSvgVisual.svelte','utf8');
  assert.ok(c.includes('width:min(100%,23.076923em)'));
- assert.ok(c.includes('class:body-sized={block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-") || block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-04-")}'));
+ assert.ok(c.includes('class:body-sized={block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-") || block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-04-") || block.src.startsWith("/images/ceh/m02-05-")}'));
  for(const lang of ['zh','en'] as const)for(const b of lesson.text[lang].sourceBody!.filter(b=>b.kind==='visual')){
   const svg=readFileSync('site'+b.src,'utf8');const fonts=[...svg.matchAll(/font-size="([0-9.]+)"/g)].map(m=>Number(m[1]));
   assert.equal(Math.max(...fonts),26);assert.ok(svg.includes('viewBox="0 0 600 765"'));

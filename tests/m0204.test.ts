@@ -9,7 +9,7 @@ import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M02-04')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
 test('M02-04 complete bilingual lesson, four diagrams, four closed scenario-answer records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.0.0');assert.equal(lesson.revision,1);assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,2);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-31');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
@@ -20,8 +20,8 @@ test('M02-04 complete bilingual lesson, four diagrams, four closed scenario-answ
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
   const page=catalog.get('M02-04',lang)!;
   assert.equal(page.navigation.previous?.id,'M02-03');assert.ok(page.navigation.previous?.href);
-  assert.equal(page.navigation.next?.id,'M02-05');assert.equal(page.navigation.next?.href,null);
-  assert.equal(catalog.get('M02-05',lang),null);
+  assert.equal(page.navigation.next?.id,'M02-05');assert.ok(page.navigation.next?.href);
+  assert.ok(catalog.get('M02-05',lang));
   const search=catalog.searchEntries.find(e=>e.id==='M02-04'&&e.lang===lang)!;
   for(const b of body.filter(b=>b.kind==='answer'))for(const p of b.paragraphs)assert.ok(search.text.includes(p));
  }

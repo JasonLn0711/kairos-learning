@@ -31,5 +31,9 @@ def parse(lang,suffix):
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
  at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=answers
  return dict(summary='追溯來源、辨認同源轉貼，核對時間與對象，留下有限且可驗證的結論。' if lang=='zh' else 'Trace provenance, separate reposts from independent evidence, align time and identity, and report bounded conclusions.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-02',revision=1,contentVersion='1.0.0',date='2026-10-30',status='published',publishedOn='2026-10-30',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M02-02',revision=1,contentVersion='1.0.1',date='2026-10-30',status='published',publishedOn='2026-10-30',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+# The editorial caption is independent of the preserved SVG's accessible title.
+for block in lesson['text']['zh']['sourceBody']:
+ if block.get('src') == '/images/ceh/m02-02-roots-zh.svg':
+  block['visual']['caption'] = '圖 2｜計算來源資訊的數量，非網址的個數'
 (ROOT/'content/concepts/m02-02.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

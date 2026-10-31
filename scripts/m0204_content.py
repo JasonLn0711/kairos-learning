@@ -30,6 +30,6 @@ def parse(lang,suffix):
   heading,*paras=chunk.strip().split('\n\n');ident,title=re.split(r'｜|\s*\|\s*',heading,maxsplit=1)
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
  at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=answers
- return dict(summary='分辨 DNS 解析與網域註冊資料，以可查核的線索建立足跡，不把服務商誤當擁有人。' if lang=='zh' else 'Distinguish DNS resolution from registration data and build an evidence-based footprint without mistaking providers for owners.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-04',revision=1,contentVersion='1.0.0',date='2026-10-31',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+ return dict(summary='分辨 DNS 解析與網域註冊資料，以可查核的線索建立足跡，並依角色與管理證據核實歸屬。' if lang=='zh' else 'Distinguish DNS resolution from registration data, build an evidence-based footprint, and verify attribution using roles and management evidence.',sections=[],sourceBody=blocks)
+lesson=dict(id='M02-04',revision=2,contentVersion='1.1.0',date='2026-10-31',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m02-04.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

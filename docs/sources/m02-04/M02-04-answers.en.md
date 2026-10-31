@@ -1,17 +1,17 @@
 # M02-04 Reference Answers
 
-## answer-1 | A CDN address does not prove the origin server
+## answer-1 | Use the entry address to verify the service architecture
 
-No. An A record shows the address returned by this lookup; a CDN can proxy multiple websites. There is insufficient evidence that this address is exclusive to the coffee shop. It certainly does not place the entire CDN within the authorized testing scope.
+An A record identifies the address returned by this lookup. A CDN can provide an entry point for multiple websites. To establish the coffee shop’s dedicated origin, check service configuration, asset inventories, and the relevant administration records. Match each actual test target and method to the written authorization.
 
-## answer-2 | Different roles are not interchangeable
+## answer-2 | Verify operational ownership using registration roles
 
-No. A registrar provides domain registration services and is not necessarily the website operator. If holder information is not public, record that public information is insufficient; do not guess a name or ownership.
+The registrar provides domain registration services. Verify the website operator using the relevant administration, contractual, or registration evidence. When holder information is not public, record the scope of available public data and lawful ways to obtain additional evidence.
 
-## answer-3 | A timeout does not mean nonexistence
+## answer-3 | Record the timeout state and investigate causes
 
-No. A timeout means a response did not arrive in time, possibly because of network or service conditions. NXDOMAIN is the response status stating that the queried name does not exist. Even when receiving NXDOMAIN, retain the source, time, and query conditions.
+A timeout means the waiting period ended before a response arrived. Check the network, server, restrictions, and configuration. NXDOMAIN is the response status stating that the queried name does not exist. For both situations, retain the source, time, and query conditions to support consistent follow-up checks.
 
 ## answer-4 | Let someone else repeat the check under known conditions
 
-At minimum, retain the authorized scope, query date and time zone, source or resolver, network viewpoint, complete name, record type, response status, and original values. Include TTL when available, and separate observations from ownership that remains unverified.
+At minimum, retain the authorized scope, query date and time zone, source or resolver, network viewpoint, complete name, record type, response status, and original values. Include TTL when available, and separate observations from ownership that requires further verification.

@@ -1,16 +1,16 @@
 # CEH M02-03｜搜尋引擎與網站足跡：看見公開線索，不把線索當成漏洞
 
-## 1. 先記住這個結論
+## 1. 摘要
 
-搜尋引擎與網站足跡蒐集（Search Engine & Website Footprinting），就是從搜尋結果與網站公開提供的內容，整理「這個網站對外露出了什麼」。目的是畫出可查證的輪廓，不是看到網址就嘗試闖入。
+搜尋引擎與網站足跡蒐集（Search Engine & Website Footprinting），就是從搜尋結果與網站公開提供的內容，整理「這個網站對外露出了什麼」。目的是畫出可查證的輪廓，不嘗試闖入。
 
 今天最重要的三句話：搜尋結果不等於網站現在的內容；公開線索不等於已證實的弱點；看得到不等於有權測試。
 
 上次 M02-02 練的是來源驗證，這次把它用在網站：同一則搜尋摘要、原始頁面與轉貼文章，不能自動當成三個獨立證據。
 
-## 2. 先用找咖啡店菜單理解搜尋引擎
+## 2. 用「找咖啡店的菜單」來理解搜尋引擎
 
-想像你找咖啡店菜單。搜尋引擎像一份定期更新的店家目錄，不是店裡的即時監視器。它大致經過三步：爬取（Crawling）是程式讀取網頁；建立索引（Indexing）是分析內容並存入可搜尋的資料；提供搜尋結果（Serving）是根據你的查詢挑出結果。不是每個頁面都一定會被收錄。[Google 搜尋運作方式](https://developers.google.com/search/docs/fundamentals/how-search-works)
+想像你正在找咖啡店菜單。搜尋引擎像一份定期更新的店家目錄，不是店裡的即時監視器。它大致經過三步：爬取（Crawling）是程式讀取網頁；建立索引（Indexing）是分析內容並存入可搜尋的資料；提供搜尋結果（Serving）是根據你的查詢挑出結果。不是每個頁面都一定會被收錄。[Google 搜尋運作方式](https://developers.google.com/search/docs/fundamentals/how-search-works)
 
 因此，搜尋摘要寫「舊菜單」，只能支持「查詢當下搜尋引擎顯示了這段資訊」。你還不能說店家現在仍用那份菜單。要確認現況，必須在授權範圍內核對當前原始頁面，並分開記錄查詢時間與頁面內容時間。
 
@@ -18,9 +18,9 @@
 
 ![01-index-boundary](figures/01-index-boundary.zh-TW.svg)
 
-## 3. 搜尋運算子：把問題問清楚，而不是變出隱藏權限
+## 3. 搜尋運算子 Search Operators
 
-搜尋運算子（Search Operator）是協助縮小結果的特殊語法。下面全部是虛構的 coffee.example 範例，只用來讀懂語法，不必實際執行。
+搜尋運算子（Search Operator）是協助縮小結果的特殊語法。下面全部是虛構的 coffee.example 範例，用來讀懂語法。
 
 | 語法 | 想問的問題 | 不能推論的事 |
 | --- | --- | --- |
@@ -33,9 +33,9 @@
 
 尤其要記住：site: 查不到，不等於網站不存在或資料已刪除；查得到，也不代表列出了全部頁面。Google 官方明確提醒搜尋運算子有索引與擷取限制。[Google 搜尋運算子文件](https://developers.google.com/search/docs/monitor-debug/search-operators)
 
-## 4. 網站足跡可以看什麼？先分清「前台線索」與「後台事實」
+## 4. 網站足跡可以看什麼？分清「前台線索」與「後台事實」
 
-網站足跡是公開頁面留下的結構與技術線索。一般畫面是第一層；瀏覽器收到的 HTML（超文字標記語言，描述網頁結構）與公開資源，是第二層；HTTP 回應標頭（伺服器回覆時附帶的描述資訊）則可能提供傳輸或軟體線索。
+網站足跡是公開頁面留下的結構與技術線索。一般畫面是第一層；瀏覽器收到的 HTML（超文字標記語言，描述網頁結構）與公開資源，是第二層；HTTP 回應標頭（header, 伺服器回覆時附帶的描述資訊）則可能提供傳輸或軟體線索。
 
 | 公開線索 | 可以記下什麼 | 必須保留的限制 |
 | --- | --- | --- |
@@ -50,17 +50,50 @@ OWASP 的網頁內容檢查把註解、中繼資料等列為資訊外洩檢查�
 
 ![02-public-layers](figures/02-public-layers.zh-TW.svg)
 
-## 5. 最容易混淆的四樣東西：地圖、爬蟲規則、索引規則與門鎖
+## 5. noindex：讓搜尋索引與內容權限各司其職
 
-網站地圖（Sitemap）像提供給搜尋服務的網址目錄，協助發現內容；它不是完整網站保證書，也不代表其中每個網址都已被收錄。
+一句話理解：noindex 是給支援此規則的搜尋引擎的索引指示，要求將頁面排除於搜尋結果；頁面本身依網站的存取設定提供內容。
 
-robots.txt 是給配合規則的爬蟲看的存取指示。它不是登入系統，也不是保密措施。被禁止爬取的網址，仍可能因其他地方的連結而出現在搜尋結果；不要把敏感路徑寫進 robots.txt 就以為藏好了。[Google robots.txt 說明](https://developers.google.com/search/docs/crawling-indexing/robots/intro)
+把網站想成圖書館：網站地圖（Sitemap）提供書目線索，robots.txt 安排爬蟲可走的路線，noindex 決定哪些頁面退出搜尋目錄，存取控制則核對讀者的身分與借閱權限。
 
-noindex 的意思是要求支援此規則的搜尋引擎不要把內容放進搜尋索引。Google 必須能爬取頁面，才能讀到頁面中的 noindex 或 HTTP 標頭規則；若同時用 robots.txt 阻擋，可能看不到這項指示。noindex 也不會阻止知道網址的人直接打開內容。[Google noindex 說明](https://developers.google.com/search/docs/crawling-indexing/block-indexing)
+| 機制 | 管理目標 | 實際做法 |
+| --- | --- | --- |
+| Sitemap | 協助搜尋服務發現網址 | 提供希望被發現的公開網址 |
+| robots.txt | 規範配合規則的爬蟲可爬取的路徑 | 設定適合的爬取範圍 |
+| noindex | 管理搜尋索引 | 對公開可存取頁面傳送索引排除指示 |
+| 身分驗證與授權 | 管理誰能取得哪份內容 | 伺服器逐次核對身分、資源及允許的動作 |
 
-真正要保護私人內容，需要驗證身分與授權檢查：你是誰，以及你能不能讀這份資料。白話記法：Sitemap 是地圖；robots.txt 是給爬蟲的告示；noindex 是不要列入目錄的請求；存取控制才是門鎖。這些功能不同，不能互相代替。
+[Google robots.txt 說明](https://developers.google.com/search/docs/crawling-indexing/robots/intro)
 
 ![03-controls](figures/03-controls.zh-TW.svg)
+
+例如，虛構測試頁 https://coffee.example/test/ 可以開放閱讀，同時使用 noindex 管理搜尋曝光。搜尋服務依序爬取（Crawling，讀取內容）、建立索引（Indexing，分析並儲存搜尋資料），再排序與呈現結果（Ranking / Serving）。noindex 作用於索引管理。
+
+方法 A：HTML 網頁可在 <head> 中加入 meta 標籤：
+
+```html
+<meta name="robots" content="noindex">
+```
+
+方法 B：伺服器可在 HTTP 回應標頭（Response Header，隨內容送出的描述欄位）加入 X-Robots-Tag。這也適用於 PDF、圖片等資源：
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/pdf
+X-Robots-Tag: noindex
+```
+
+兩種方式對 Google 的 noindex 效果相同，依資源格式與網站設定方式選用。[Google noindex 設定](https://developers.google.com/search/docs/crawling-indexing/block-indexing)
+
+生效流程是「爬蟲取得資源 → 讀取 noindex → 更新搜尋索引」。對想保留公開閱讀、同時退出搜尋結果的頁面，應讓 Googlebot 能取得頁面及其規則。例如 robots.txt 的 Disallow: /test/ 會先停止該路徑的爬取，Googlebot 便讀不到頁面上的新 noindex；其他頁面的連結仍可能讓該網址出現在搜尋結果。設定時應一起檢查爬取規則與索引規則。
+
+![05-noindex-flow](figures/05-noindex-flow.zh-TW.svg)
+
+若內容是會員專用 PDF，採用身分驗證（Authentication，確認是誰）與授權（Authorization，確認可讀哪些檔案），在每次下載請求核對權限。測試時分別使用未登入、已登入但未獲授權、已獲授權的角色，檢查實際回應與檔案內容。存取控制的作法可接著閱讀 [M01-06 安全控制與縱深防禦](https://learn.cs-kairos.com/courses/ceh/v13/m01/concepts/m01-06/)、[M13 網頁伺服器加固](https://learn.cs-kairos.com/courses/ceh/v13/m13/web-server-exposure-and-hardening/)與 [M14 物件授權](https://learn.cs-kairos.com/courses/ceh/v13/m14/object-level-authorization/)。[OWASP 授權指引](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
+
+查核分成兩條線：索引設定用 Google Search Console 的網址審查工具檢視 Googlebot 取得的內容，並觀察網頁索引報表；私人內容則用上述角色測試確認實際存取結果。已被收錄的自有網址若需快速退出 Google 搜尋，可搭配 Search Console 暫時移除工具，其效果約維持六個月；期間依目標持續保留可讀取的 noindex、移除內容，或落實私人內容的存取控制。[Search Console 移除工具](https://support.google.com/webmasters/answer/9689846)
+
+記住這個分工：公開測試頁用 noindex 管理索引，爬蟲路線用 robots.txt 管理，私人檔案用身分驗證與授權保護。
 
 ## 6. 把線索寫成有用報告：一個完整的虛構例子
 
@@ -93,6 +126,8 @@ noindex 的意思是要求支援此規則的搜尋引擎不要把內容放進搜
 請用自己的話回答：① 搜尋摘要能證明 PDF 目前仍公開嗎？② robots.txt 能保證目錄保密嗎？③ 標頭能直接證明某個版本漏洞存在嗎？④ 若你是網站負責人，要用什麼證據驗證私人內容受到保護？
 
 這是一題情境檢核，不用長篇回答；尚未作答不代表已學會。參考答案會隨網站教材提供，不以作答作為公布條件。
+
+補充檢核：一份 PDF 的回應包含 X-Robots-Tag: noindex，網站仍提供公開下載。取得完整網址的人會收到什麼？若改為會員專用，你會加入哪些檢查？
 
 ## 9. 今天帶走的一句話與來源
 

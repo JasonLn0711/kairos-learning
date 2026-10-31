@@ -18,9 +18,11 @@ for lang,prefix in [('zh',''),('en','en/')]:
   units=([b['text']] if k in ['heading','paragraph','code'] else b['items'] if k=='list' else b['headers']+[v for r in b['rows'] for v in r] if k=='table' else [b['summary']]+b['paragraphs'] if k=='answer' else [b['visual']['caption'],b['visual']['description']]+[v for item in b['visual']['items'] for v in [item['title'],item['body']]] )
   for u in units:
    u=norm(u);at=text.find(u,cursor);assert at>=0,(lang,u);cursor=at+len(u)
- assert len(page.details)==1 and all('open' not in d for d in page.details)
- assert [d['id'] for d in page.details]==['answer-1']
- assert raw.count('data-reviewed-svg=')==4
+ assert len(page.details)==2 and all('open' not in d for d in page.details)
+ assert [d['id'] for d in page.details]==['answer-1','answer-noindex']
+ assert raw.count('data-reviewed-svg=')==5
+ assert '&lt;meta name="robots" content="noindex"' in raw
+ assert '<meta name="robots" content="noindex">' not in raw
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
  assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-02/' in raw
  assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-04/' in raw
@@ -33,5 +35,13 @@ for lang,prefix in [('zh',''),('en','en/')]:
 p=ROOT/'site/downloads/ceh-m02-03-bilingual-svg.zip';assert p.read_bytes()==(ROOT/'build/downloads/ceh-m02-03-bilingual-svg.zip').read_bytes()
 with zipfile.ZipFile(p) as z:
  assert len(z.namelist())==8
- for src in bundle:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
-print('PASS M02-03 bilingual full text order; 4 inline SVG per language; 1 closed scenario answer; search labels; exact assets/ZIP; linked M02-04. Browser/live checks NOT performed.')
+ for src in bundle:
+  if '05-noindex-flow' not in src:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
+print('PASS M02-03 bilingual full text order; 5 inline SVG per language; 2 closed answers; search labels; preserved original 8-SVG ZIP plus separate noindex diagrams; linked M02-04. Static output verification.')
+
+for lang,prefix in [('zh',''),('en','en/')]:
+ target=f'https://learn.cs-kairos.com/{prefix}courses/ceh/v13/m02/concepts/m02-03/#section-5'
+ for module,slug in [('m13','web-server-exposure-and-hardening'),('m14','object-level-authorization')]:
+  raw=(ROOT/f'build/{prefix}courses/ceh/v13/{module}/{slug}/index.html').read_text()
+  assert f'href="{target}"' in raw,(module,lang,'cross-link')
+print('PASS M13/M14 paired cross-links render as real anchors.')
