@@ -13,6 +13,11 @@ def parse(lang,suffix):
   s=lines[i].strip();i+=1
   if not s:continue
   s=s.replace('**','')
+  if s.startswith('```'):
+   code=[]
+   while i<len(lines) and not lines[i].strip().startswith('```'):
+    code.append(lines[i]);i+=1
+   i+=1;blocks.append(dict(kind='code',text='\n'.join(code)));continue
   if s.startswith('!['):
    name=re.search(r'figures/([^.]*)',s)[1];r=ET.parse(DEST/f'figures/{name}.{suffix}.svg').getroot();title=r.find(NS+'title').text;desc=r.find(NS+'desc').text
    blocks.append(dict(kind='visual',src=f'/images/ceh/m02-03-{name}-{lang}.svg',downloadLabel='下載 SVG 圖檔' if lang=='zh' else 'Download SVG diagram',visual=dict(kind='cards',caption=title,description=desc,items=[dict(title='讀圖重點' if lang=='zh' else 'How to read the diagram',body=desc)])));continue
@@ -31,5 +36,5 @@ def parse(lang,suffix):
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
  at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=answers
  return dict(summary='區分搜尋索引與網站現況，辨識公開線索，守住授權與證據的界線。' if lang=='zh' else 'Separate search indexes from current pages, interpret public clues, and respect authorization and evidence boundaries.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-03',revision=1,contentVersion='1.0.0',date='2026-10-31',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M02-03',revision=2,contentVersion='1.1.0',date='2026-10-31',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m02-03.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

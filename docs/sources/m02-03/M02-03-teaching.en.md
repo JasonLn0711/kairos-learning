@@ -50,17 +50,50 @@ OWASP includes comments and metadata among potential information-disclosure surf
 
 ![02-public-layers](figures/02-public-layers.en.svg)
 
-## 5. Four different controls: map, crawler instructions, indexing rule, and lock
+## 5. noindex: give search indexing and content access distinct jobs
 
-A sitemap is a list of URLs supplied to help search services discover content. It is neither a guarantee of a complete website inventory nor proof that every listed URL is indexed.
+In one sentence, noindex asks supporting search engines to exclude a page from search results; the website's access settings govern delivery of the page itself.
 
-robots.txt supplies instructions to cooperative crawlers. It is not a login system or a confidentiality control. A URL blocked from crawling can still appear in search results through links elsewhere. Listing a sensitive path in robots.txt does not conceal it. [Google robots.txt documentation](https://developers.google.com/search/docs/crawling-indexing/robots/intro)
+Think of a library: a sitemap supplies catalog clues, robots.txt assigns crawler routes, noindex selects pages to leave the search catalog, and access control checks a reader's identity and borrowing rights.
 
-noindex asks supporting search engines not to include content in their indexes. Google must be able to crawl a page to see its noindex metadata or HTTP-header rule. Blocking crawling with robots.txt can prevent that rule from being read. noindex does not prevent someone who knows the URL from opening the content directly. [Google noindex documentation](https://developers.google.com/search/docs/crawling-indexing/block-indexing)
+| Mechanism | Goal | Practical action |
+| --- | --- | --- |
+| Sitemap | Help search services discover URLs | Supply intended public URLs |
+| robots.txt | Set routes for cooperative crawlers | Configure the appropriate crawling scope |
+| noindex | Manage the search index | Send an index-exclusion instruction for an accessible resource |
+| Authentication and authorization | Control who can obtain each resource | Check identity, resource, and allowed action on each request |
 
-Private content needs authentication and authorization checks: who you are and whether you may read that resource. Remember the analogy: a sitemap is a map; robots.txt is a crawler notice; noindex asks for exclusion from a directory; access control is the lock. These mechanisms serve different purposes and cannot substitute for one another.
+[Google robots.txt guide](https://developers.google.com/search/docs/crawling-indexing/robots/intro)
 
 ![03-controls](figures/03-controls.en.svg)
+
+For example, the fictional https://coffee.example/test/ page can remain publicly readable while using noindex to manage search visibility. Search proceeds through crawling (fetching content), indexing (analyzing and storing searchable information), and ranking / serving results. noindex governs indexing.
+
+Method A: an HTML page can include this meta tag in its <head>:
+
+```html
+<meta name="robots" content="noindex">
+```
+
+Method B: the server can send X-Robots-Tag in an HTTP response header, a descriptive field delivered alongside content. This also works for resources such as PDFs and images:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/pdf
+X-Robots-Tag: noindex
+```
+
+Both methods have the same noindex effect for Google. Choose according to resource type and configuration options. [Google noindex setup](https://developers.google.com/search/docs/crawling-indexing/block-indexing)
+
+The sequence is “fetch resource → read noindex → update the search index.” Keep the resource and rule accessible to Googlebot when a publicly readable page should leave search results. For example, Disallow: /test/ in robots.txt stops crawling that route first, leaving the new page-level noindex unread; links from other pages may still surface the URL in search results. Review crawling and indexing rules together.
+
+![05-noindex-flow](figures/05-noindex-flow.en.svg)
+
+For a members-only PDF, use authentication (checking identity) and authorization (checking permitted files) on each download request. Test signed-out, signed-in but unpermitted, and permitted roles, inspecting actual responses and file contents. Continue with [M01-06 security controls and defense in depth](https://learn.cs-kairos.com/en/courses/ceh/v13/m01/concepts/m01-06/), [M13 web server hardening](https://learn.cs-kairos.com/en/courses/ceh/v13/m13/), and [M14 object authorization](https://learn.cs-kairos.com/en/courses/ceh/v13/m14/). [OWASP authorization guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
+
+Verify indexing through Google Search Console's URL Inspection and Page Indexing reports; verify private access with the role tests above. For urgent removal of an owned URL already in Google Search, the temporary-removal tool lasts about six months. Use that period to maintain accessible noindex, remove content, or enforce private access, according to the goal. [Search Console Removals tool](https://support.google.com/webmasters/answer/9689846)
+
+Remember the roles: noindex manages indexing for a public test page, robots.txt manages crawler routes, and authentication plus authorization protects private files.
 
 ## 6. Turn clues into a useful report: a complete synthetic example
 
@@ -93,6 +126,8 @@ Scenario: authorized teaching materials show an old PDF in search results, a dir
 Explain in your own words: (1) Does the snippet prove the PDF is still public? (2) Does robots.txt guarantee that the directory is private? (3) Does the header directly prove a version-specific vulnerability? (4) As the site owner, what evidence would you use to verify that private content is protected?
 
 This is one scenario with four short prompts; no long essay is needed. An unanswered check is not evidence of mastery. Reference answers accompany the website lesson and do not depend on a learner response.
+
+Supplement check: a PDF response contains X-Robots-Tag: noindex while the site still serves it publicly. What will someone with its full URL receive? Which checks would you add for members-only access?
 
 ## 9. One takeaway and sources
 
