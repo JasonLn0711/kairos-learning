@@ -20,8 +20,8 @@ test('M02-03 complete bilingual lesson, four diagrams, four closed-answer data r
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
   const page=catalog.get('M02-03',lang)!;
   assert.equal(page.navigation.previous?.id,'M02-02');assert.ok(page.navigation.previous?.href);
-  assert.equal(page.navigation.next?.id,'M02-04');assert.equal(page.navigation.next?.href,null);
-  assert.equal(catalog.get('M02-04',lang),null);
+  assert.equal(page.navigation.next?.id,'M02-04');assert.ok(page.navigation.next?.href);
+  assert.ok(catalog.get('M02-04',lang));
   const search=catalog.searchEntries.find(e=>e.id==='M02-03'&&e.lang===lang)!;
   for(const b of body.filter(b=>b.kind==='answer'))for(const p of b.paragraphs)assert.ok(search.text.includes(p));
  }

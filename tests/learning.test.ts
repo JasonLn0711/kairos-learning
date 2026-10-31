@@ -70,7 +70,7 @@ test('one-concept routes expose real teaching only, with private progress absent
   const page = getPage('/courses/ceh/v13/m04/concepts/m04-01/');
   assert.ok(page?.conceptTeaching);
   assert.equal(page.concepts.length, 80);
-  assert.equal(page.concepts.filter(c => c.href).length, 28);
+  assert.equal(page.concepts.filter(c => c.href).length, 29);
   assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-13/'), null);
   assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-03/')?.conceptTeaching);
   assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-04/')?.conceptTeaching);
