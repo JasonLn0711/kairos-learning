@@ -51,3 +51,10 @@ Safari 原生工具曾逾時；重新取得狀態後成功開啟正式中文文�
 本機 87 項單元測試、內容驗證、建置及 11 項 NAS 瀏覽器驗收通過；包括兩語四種尺寸、200% 文字、鍵盤、無 JavaScript、下載與搜尋。證據在 `.local/nas-editorial-*.log` 及 `.local/nas/`。Git 與正式站讀回於發布後另補，不由本機結果推定。
 
 關聯：[正式內容](../../content/perspectives/nas-offline-recovery.json) ↔ [來源與設計](../perspectives/nas-content-design.md#nas-v2-editorial) ↔ [文章規範](../article-standards.md#原發布版本與修訂日期write-06) ↔ [Planning 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W44/days/2026-11-01.md#nas-v2-editorial)。工程證據由本站管理；Planning 保存狀態、容量及下一關。
+
+
+### v2 發布回執
+
+內容 `117a1d7` 與文件 `febbfc2` 分開提交、非強制推送 main；[Pages 41285251060](https://github.com/JasonLn0711/kairos-learning/actions/runs/41285251060) 成功部署 `febbfc2a698664900cba6dfd826478ead3f75a7b`。正式中英頁五個新標題、v2 與日期資訊列已逐一讀回。`NAS_BASE_URL=https://learn.cs-kairos.com npm run test:browser:nas` 11/11 通過（39.0 秒）；紀錄在 `.local/nas-v2-live.log` 與 `.local/nas/results.json`。Svelte 0 error／0 warning，完整 release validators 通過。
+
+Planning 分開提交 `3f6a2bb2`（專案／工具入口）與 `fd74f42d`（日誌／週容量），已非強制推送 main，[CI 41285286611](https://github.com/JasonLn0711/planning-everything-track/actions/runs/41285286611) 成功；日／週 Agenda 及 10 個新增相對連結與錨點檢查通過。兩邊發布前均無分歧，不需合併或重寫歷史；回執另以文件提交保存。下一關為 Jason 的實際閱讀回饋，設備維運與本人理解仍各自驗收。
