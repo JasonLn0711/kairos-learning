@@ -9,7 +9,7 @@
 </script>
 <p class="eyebrow">{({analysis:zh?'議題解讀':'Analysis','field-notes':zh?'實作手記':'Field notes',reflection:zh?'觀點反思':'Reflection'})[article.category]} · {article.topics.map(t=>({cs:zh?'資工':'Computing',ai:'AI',security:zh?'資安':'Security'})[t]).join(' / ')}</p>
 <p class="lead">{t.summary}</p>
-<ArticleMetadata {lang} author={t.author} publishedOn={article.publishedOn} version={'v'+article.revision} revisedOn={article.updatedOn} observedAt={article.observedAt}/>
+<ArticleMetadata {lang} author={t.author} publishedOn={article.publishedOn} version={'v'+article.contentVersion} revisedOn={article.updatedOn} observedAt={article.observedAt}/>
 <nav class="toc" aria-label={zh?'本文導覽':'On this page'}><ol>{#each t.sections as s}<li><a href={'#'+s.id}>{s.heading}</a></li>{/each}</ol></nav>
 <article class="prose">{#each t.sections as s}<section><h2 id={s.id}>{s.heading}</h2>{#each s.paragraphs as paragraph}<p><QAInline text={paragraph}/></p>{/each}{#if s.diagram}<TeachingDiagram diagram={s.diagram} articleId={article.id} {lang}/>{/if}{#if s.list}<ul>{#each s.list as item}<li><QAInline text={item}/></li>{/each}</ul>{/if}{#if s.code}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard scrolling for long code.) -->
 <pre tabindex="0" role="region" aria-label={(zh?'程式碼：':'Code: ')+s.heading}><code>{s.code}</code></pre>{/if}{#if s.table}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard scrolling for wide tables.) -->

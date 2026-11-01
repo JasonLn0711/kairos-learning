@@ -12,3 +12,13 @@ test('field notes require a valid observed timestamp and avoid shell anchor coll
  const b=fixture();b.observedAt='2026-01-01Tgarbage+08:00';assert.throws(()=>validatePerspectives([b],known),/observation/);
  const c=fixture();c.text.zh.sections[0].id='main';assert.throws(()=>validatePerspectives([c],known),/section/);
 });
+
+// Public semantic versions must never fall back to the internal revision counter.
+test('perspectives require a three-part semantic content version',()=>{
+ for(const version of [undefined,'2','v1.0.1','1.01.0','1.0','1.0.0-beta']){
+  const p=fixture();p.contentVersion=version as string;
+  assert.throws(()=>validatePerspectives([p],known),/content version/);
+ }
+ const p=fixture();p.contentVersion='1.0.1';p.revision=3;
+ assert.equal(validatePerspectives([p],known)[0].contentVersion,'1.0.1');
+});

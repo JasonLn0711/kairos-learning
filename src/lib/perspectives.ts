@@ -1,7 +1,7 @@
 import {validateDiagram, type TeachingDiagram} from './perspective-diagrams.ts';
 import {isPublic, type Bilingual} from './model.ts';
 export type Perspective = {
- id:string;slug:string;status:'draft'|'published';publishedOn:string;updatedOn:string;revision:number;
+ id:string;slug:string;status:'draft'|'published';publishedOn:string;updatedOn:string;contentVersion:string;revision:number;
  category:'analysis'|'field-notes'|'reflection';topics:('cs'|'ai'|'security')[];observedAt?:string;
  text:Bilingual<{title:string;summary:string;author:string;sections:{id:string;heading:string;paragraphs:string[];list?:string[];code?:string;table?:{headers:string[];rows:string[][]};sourceIds?:string[];diagram?:TeachingDiagram}[]}>;
  sources:{id:string;title:string;url:string;checkedOn:string}[];
@@ -17,6 +17,7 @@ export function validatePerspectives(items:Perspective[],known:{lesson:Set<strin
   if(!/^[a-z][a-z0-9-]*$/.test(p.id)||ids.has(p.id)||!/^[a-z][a-z0-9-]*$/.test(p.slug)||slugs.has(p.slug))fail('invalid or duplicate identity');
   ids.add(p.id);slugs.add(p.slug);
   if(!['draft','published'].includes(p.status)||!date(p.publishedOn)||!date(p.updatedOn)||p.updatedOn<p.publishedOn||!Number.isInteger(p.revision)||p.revision<1)fail('invalid publication metadata');
+  if(typeof p.contentVersion!=='string'||!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(p.contentVersion))fail('invalid content version');
   if(!['analysis','field-notes','reflection'].includes(p.category)||!p.topics?.length||p.topics.some(t=>!['cs','ai','security'].includes(t)))fail('invalid category/topics');
   if(p.category==='field-notes'&&!p.observedAt)fail('field notes require observation time');
   if(p.observedAt&&(!Number.isFinite(Date.parse(p.observedAt))||!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(p.observedAt)))fail('observation requires timestamp and timezone');
