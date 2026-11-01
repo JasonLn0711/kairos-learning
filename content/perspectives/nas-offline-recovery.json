@@ -4,7 +4,7 @@
   "status": "published",
   "publishedOn": "2026-11-01",
   "updatedOn": "2026-11-01",
-  "revision": 1,
+  "revision": 2,
   "category": "analysis",
   "topics": [
     "security",
@@ -54,7 +54,15 @@
       "id": "ceh-m04-enumeration"
     }
   ],
-  "updates": [],
+  "updates": [
+    {
+      "date": "2026-11-01",
+      "text": {
+        "zh": "v2：以「什麼是 NAS？ NAS 如何共享檔案？」重寫入門說明，依共用資料夾、帳號權限、IP 與 SMB、連線範例、DSM 與套件的順序解釋；同步英文。沿用觀點現有整數版號，原發布日期不變。 同版續修：以拔除 NAS 網路線與阻斷外網連線兩個情境，說明隔離範圍、內網存取及逐步復線；同步英文。 同版續修：改以「漏洞（弱點）是否能被攻擊者利用？」說明利用條件、共享檔案寫入風險與權限驗收；同步英文。 同版續修：以手機系統與 App 比喻解釋 DSM 與套件更新，重寫版本查核、警訊對照及更新後驗證說明；重新核對兩份官方公告並同步英文。 同版續修：以瀏覽器與共享資料夾的使用情境解釋遠端入口專責化，區分服務路徑、身分檢查與 NAS 權限；核對 Cloudflare 文件並同步英文。",
+        "en": "v2: Rewrote the NAS introduction around shared folders, account permissions, IP and SMB, a connection example, and DSM and packages. Updated both languages, retaining the existing integer revision format and original publication date. Continued editing in the same unpublished revision: explained isolation through unplugging NAS links versus blocking Internet access, including local access and gradual reconnection, in both languages. Further editing in the same revision: clarified exploitation conditions, shared-file write risks, and permission checks in both languages. Continued editing: used a phone OS-and-app analogy to explain DSM and package updates, clarified version checks and post-update verification, rechecked both official advisories, and synchronized both languages. Continued editing: explained purpose-specific remote access through browser and shared-folder tasks, distinguishing routes, identity checks, and NAS permissions; checked Cloudflare documentation and updated both languages."
+      }
+    }
+  ],
   "text": {
     "zh": {
       "title": "NAS 已經斷網，接下來該確認什麼？",
@@ -71,11 +79,13 @@
         },
         {
           "id": "shared-storage",
-          "heading": "先看懂 NAS 如何共享檔案",
+          "heading": "什麼是 NAS？ NAS 如何共享檔案？",
           "paragraphs": [
-            "NAS（Network Attached Storage，網路附加儲存設備）是一台透過網路提供檔案的伺服器。研究生各自使用電腦，把論文、模型與研究資料放到共同的儲存空間；NAS 依帳號與資料夾權限決定誰可以讀取、寫入或刪除。",
-            "IP 位址像網路上的投遞地址，讓電腦找到設備；SMB（Server Message Block）則是常見的檔案共享協定。DSM（DiskStation Manager）是 Synology NAS 的作業系統，套件則是在系統上提供額外功能的軟體。找到地址、登入成功與取得寫入權限，是三個分開的條件。",
-            "例如在受管理的測試內網中，`smb://192.168.1.20/Research` 表示透過 SMB 開啟某台 NAS 的 Research 共享目錄。此位址與名稱為合成示例；輸入路徑前，先向管理者確認獲准使用的位址與帳號。"
+            "NAS（Network Attached Storage，網路附加儲存設備）是一台連上網路、專門儲存與分享檔案的設備。你可以把它想成團隊共用的檔案櫃：研究生各自使用自己的電腦，透過網路開啟 NAS 上的共享資料夾，把論文、模型與研究資料存放在同一個地方。",
+            "共享檔案時，電腦會先找到 NAS，再以帳號登入。NAS 依照這個帳號的權限，決定使用者能開啟哪些資料夾，以及能否新增、修改或刪除檔案。例如，研究生 A 可以修改某個資料夾裡的檔案，研究生 B 則只能讀取；兩人都能連到同一台 NAS，能做的事卻可以不同。",
+            "IP 位址像設備在網路上的地址，幫助電腦找到 NAS；SMB（Server Message Block）是常見的檔案共享協定，也就是電腦與 NAS 傳送檔案、溝通操作要求時使用的一套規則。因此，找到 NAS、登入帳號與獲准修改檔案，是需要分別確認的三件事。",
+            "以受管理的測試內網為例，`smb://192.168.1.20/Research` 表示透過 SMB，開啟位址為 192.168.1.20 的 NAS 上名為 Research 的共享資料夾。這裡的位址與名稱是教學用的合成示例；實際連線時，使用管理者提供的位址與獲准帳號。",
+            "管理者則透過 NAS 的作業系統設定帳號、共享資料夾與權限。Synology NAS 的作業系統稱為 DSM（DiskStation Manager）；安裝在 DSM 上、提供額外功能的軟體稱為「套件」。後面討論系統與套件更新時，指的就是這兩個層次。"
           ],
           "diagram": {
             "id": "nas-lan",
@@ -112,10 +122,13 @@
         },
         {
           "id": "isolation",
-          "heading": "「斷網」要說清楚斷在哪裡",
+          "heading": "口語化的「斷網」究竟代表什麼？是拔了網路線？還是阻斷外網連線？",
           "paragraphs": [
-            "切斷網際網路的連線後，交換器與區域網路可能仍然運作，內網電腦也可能繼續存取 NAS。若拔除 NAS 的所有網路連線，原本透過那些介面存取的電腦就失去路徑。管理者應確認所有網路介面、路由與遠端入口，記錄實際隔離範圍。",
-            "隔離的目的，是控制目前哪些路徑可以到達設備。若內網電腦已受感染，且帳號仍能寫入共享資料夾，就要同時處理端點與權限。復線前的測試應使用受控電腦與獲准路徑，避免為了方便更新而重新開放所有入口。"
+            "聽到「NAS 已經斷網」，我們可以接著問：拔掉的是哪一條網路線？還是在路由器或防火牆上阻斷外網連線？這些做法會影響不同的連線，所以要先確認實際做了什麼，才知道哪些電腦還能存取 NAS。",
+            "第一種情況是拔掉 NAS 本身的網路線。原本經由這條線連到 NAS 的電腦，就無法再沿著這條路徑存取檔案。如果 NAS 還接著其他網路線，或另有啟用的網路介面，就要一起確認。確認 NAS 的所有網路連線都已中斷後，才能判定其他電腦已無法透過網路連到它。",
+            "第二種情況是阻斷外網連線，也就是切斷通往網際網路的路徑。此時，實驗室內的交換器仍可能讓電腦與 NAS 互相連線；即使上不了網，研究生仍可能開啟 NAS 的共享資料夾。管理者可以記錄阻斷的位置、方向與範圍，並核對其他遠端入口，確認實際還有哪些路徑能連到 NAS。",
+            "我們做隔離，是為了控制誰還能透過哪些路徑接觸 NAS。如果內網某台電腦已感染惡意程式，而且登入帳號有修改共享檔案的權限，這台電腦仍可能影響 NAS 裡的資料。因此，除了處理 NAS，也要檢查相關電腦，並調整帳號與資料夾權限。",
+            "準備恢復連線時，先選定供維護使用、狀態已確認的電腦與獲准的連線路徑，只開放這次更新或測試需要的入口。完成後，再確認哪些人能連線、能讀寫哪些資料夾，依結果逐步恢復服務。"
           ],
           "diagram": {
             "id": "nas-isolation",
@@ -158,10 +171,12 @@
         },
         {
           "id": "attack-paths",
-          "heading": "漏洞與寫入權限，是兩條不同的風險路徑",
+          "heading": "漏洞（弱點）是否能被攻擊者利用？",
           "paragraphs": [
-            "漏洞是軟體設計或實作上的缺口。攻擊者能否利用它，取決於服務是否可達、版本是否受影響，以及是否需要登入等條件。勒索軟體也可能直接利用受感染電腦既有的帳號權限，改寫共享檔案。這條路徑即使沒有利用 NAS 本身的漏洞，也值得納入防護。",
-            "因此，修補服務與限制資料寫入要一起規劃。管理帳號和日常使用帳號分開；依工作需要分配資料夾權限，讓只需閱讀的人取得唯讀權限。測試時同時確認「該成功的操作成功」與「未授權的操作被拒絕」。"
+            "漏洞（弱點）是系統在設計、實作或設定上，可能讓人繞過原有保護的缺口。要判斷攻擊者能否利用某個漏洞，可以先問三個問題：攻擊者連得到有問題的服務嗎？目前使用的版本與設定符合公告列出的受影響條件嗎？利用這個漏洞，需要先登入或具備特定權限嗎？把這些條件逐一對照，才能判斷它與這台 NAS 的關係。",
+            "例如，某個漏洞需要先登入才能利用，就要確認攻擊者是否可能取得可用帳號；若漏洞位於某項服務，也要確認那項服務是否啟用，以及哪些人能連到它。漏洞公告中的利用條件，可以幫助管理者安排修補順序與暫時的隔離措施。",
+            "共享檔案還有另一個需要檢查的地方：誰有權限修改資料？假設研究生的電腦感染勒索軟體，而這台電腦使用的帳號能修改 NAS 裡的共享檔案，惡意程式就可能沿用這些權限，加密或破壞檔案。這種情況不一定需要利用 NAS 本身的漏洞，因此修補 NAS 與管理寫入權限都要做。",
+            "實際管理時，將管理帳號與日常使用帳號分開，依工作需要設定資料夾權限。只需要看資料的人給予唯讀權限，需要編輯的人才開放寫入。驗收可以使用測試資料夾與測試檔案：確認有權限的帳號能完成預定操作，也確認唯讀帳號無法新增、修改或刪除檔案。"
           ],
           "diagram": {
             "id": "nas-threat-paths",
@@ -222,11 +237,13 @@
         },
         {
           "id": "patch-inventory",
-          "heading": "把 DSM 與套件分開盤點",
+          "heading": "NAS 系統更新了，裡面的軟體也更新了嗎？",
           "paragraphs": [
-            "截至 2026-11-01 查核，Synology SA-26:13 對 DSM 7.4 列出 `7.4-90075` 修補門檻，也為其他 DSM 分支列出各自版本。公告涵蓋不同權限條件的漏洞；請按實際分支及完整版本比對，不以一個版本數字代替所有檢查。",
-            "SA-26:14 則針對 PHP、Mail Station 與 Synology Calendar 套件。公告將 PHP 7.3 列為生命週期結束、不提供修補；其餘受影響套件各有對應版本。因此，DSM 更新後仍要開啟套件中心逐項核對。",
-            "本篇採用公告作為盤點示例。管理者仍需取得原始警訊與確切 CVE（漏洞識別編號），確認是否對應現場設備。記錄更新前後版本、執行時間與功能測試；入侵跡象則交由事件調查流程處理。"
+            "可以把 NAS 的更新想成手機更新：手機有作業系統，也有另外安裝的 App。Synology NAS 的 DSM 是作業系統，套件則是安裝在裡面、提供額外功能的軟體。檢查安全更新時，先確認 DSM 的版本，再到「套件中心」查看已安裝套件的版本，兩邊都要核對。",
+            "先看 DSM。依 2026-11-01 查核的 Synology 安全公告 SA-26:13，使用 DSM 7.4 的設備，需更新至 `7.4-90075` 或更新版本，才符合該公告列出的修補要求。如果設備使用 DSM 7.3 或其他版本系列，就要查看公告中對應的那一列。比對時記下完整版本號與 Update 編號，才能確認是否已包含這次修補。",
+            "再看套件。同日查核的 SA-26:14 列出 PHP、Mail Station 與 Synology Calendar 的漏洞及各自的修補版本。其中 PHP 7.3 已停止支援，公告明確表示不提供修補。若有安裝，下一步是確認哪些服務依賴它，再規劃改用仍受支援、且已修補的版本，或停用不再需要的功能。因此，完成 DSM 更新後，還要逐項確認相關套件是否已處理。",
+            "收到安全警訊時，可以先保留原始通知，找出其中的 CVE 編號。CVE 是用來辨認特定漏洞的公開編號，方便把警訊、官方公告與設備上的軟體對起來。本文的兩份公告示範了查核方法；實際處理時，要以警訊提到的漏洞及設備安裝的版本為準。",
+            "更新前後各記一次版本，並記下操作時間。完成後，用測試檔案確認登入、開啟共享資料夾與必要功能是否正常。如果看到陌生帳號、異常登入或大量檔案遭修改，也要保存相關紀錄，交由負責資安事件的人員繼續調查。版本紀錄回答「修補做了什麼」，事件調查則釐清「是否已有人入侵」。下表整理可以去哪裡查看，以及要留下哪些資料。"
           ],
           "sourceIds": [
             "synology-dsm",
@@ -234,8 +251,8 @@
           ],
           "table": {
             "headers": [
-              "盤點位置",
-              "應記錄的證據"
+              "去哪裡查看？",
+              "要記下什麼？"
             ],
             "rows": [
               [
@@ -263,11 +280,13 @@
         },
         {
           "id": "remote-access",
-          "heading": "遠端入口：網頁與 SMB 分開設計",
+          "heading": "遠端入口的專責化：網頁與 SMB 等單一功能為何要分開設計？",
           "paragraphs": [
-            "Cloudflare Tunnel 由內部的連接器建立對外連線，讓服務透過 Cloudflare 傳送流量。針對網頁服務，另設定 Access 的身分與允許政策，才能把「有通道」與「誰可進入」接起來。NAS 自己的登入與檔案權限仍保有責任。",
-            "SMB 是檔案共享協定，不會因為網頁入口受到保護就自動套用同一條路徑。Cloudflare 的 SMB 文件提供 Cloudflare One Client 搭配私有路由的方式，並要求調整 Split Tunnels，讓對應私有網段流量進入用戶端路徑。實作時再核對網路政策、名稱解析與 NAS 權限。",
-            "這裡呈現的是候選架構。採用前，以授權與未授權帳號分別驗證存取結果，確認公開入口沒有繞過身分檢查的路徑，再由管理者核准使用範圍。"
+            "人在實驗室外使用 NAS，可能有兩種需求：用瀏覽器開啟某個網頁服務，或用電腦的檔案管理工具開啟共享資料夾。前者使用網頁連線，後者可以使用 SMB 檔案共享協定。這裡說的「專責化」，就是為每項功能訂清楚誰能使用、從哪裡連入，以及能做哪些事；需要讀取研究資料的人，就只開放完成這項工作所需的功能。",
+            "以網頁入口為例，Cloudflare Tunnel 會由內網中的連接程式主動連到 Cloudflare，建立傳送服務流量的通道。接著設定 Cloudflare Access，檢查使用者身分，並依允許規則決定誰能開啟這個網頁服務。使用者進入後，NAS 本身仍要檢查登入帳號與操作權限。通道、入口身分檢查與 NAS 權限，各自負責一段。",
+            "如果需求是開啟 SMB 共享資料夾，就要另外確認這種連線怎麼走。Cloudflare 官方文件提供的一種方式，是在使用者電腦安裝 Cloudflare One Client，搭配通往內網的私有路由。Split Tunnels（流量分流設定）決定哪些連線交給這個用戶端處理；管理者要讓通往 NAS 的指定內網位址走入這條路徑，再設定可連線的使用者、目標與服務範圍。若使用設備名稱連線，也要確認名稱能對應到正確位址。",
+            "完成 SMB 連線後，使用者仍以 NAS 帳號存取獲准的共享資料夾。因此，能開啟受保護的網頁，不代表已取得 SMB 的連線與檔案權限。分開設計讓管理者能依需求開放網頁或共享資料夾；兩者可以共用底層通道，重點是各項服務的路徑與權限都有明確設定。",
+            "這是供管理者評估的架構方案。採用前，分別測試網頁與 SMB：獲准帳號能完成指定工作，未獲准帳號會被拒絕；唯讀帳號能看檔案，但無法修改。也要核對其他公開位址、連接埠與轉送設定，確認沒有繞過預定身分檢查的入口。記錄結果後，再由管理者確認開放對象與功能範圍。"
           ],
           "sourceIds": [
             "cloudflare-tunnel",
@@ -459,11 +478,13 @@
         },
         {
           "id": "shared-storage",
-          "heading": "How a NAS shares files",
+          "heading": "What is a NAS? How does it share files?",
           "paragraphs": [
-            "Network Attached Storage (NAS) is a server that provides files over a network. Researchers use their own computers to share papers, models and research data. Accounts and folder permissions determine who can read, write or delete files.",
-            "An IP address helps a computer locate a device. SMB (Server Message Block) is a common file-sharing protocol. DSM (DiskStation Manager) is the operating system on a Synology NAS; packages add services. Reaching an address, signing in and obtaining write access are separate conditions.",
-            "For example, `smb://192.168.1.20/Research` opens a Research share over SMB in a managed test network. This address and name are synthetic. Confirm the authorized address and account with the administrator before connecting."
+            "A NAS (Network Attached Storage) is a network-connected device dedicated to storing and sharing files. Think of it as a shared filing cabinet for a team: researchers use their own computers to open shared folders on the NAS over the network, keeping papers, models, and research data in one place.",
+            "To access shared files, a computer first finds the NAS and then signs in with an account. The NAS uses that account’s permissions to determine which folders the user can open and whether they can add, edit, or delete files. For example, researcher A may edit files in a folder while researcher B can only read them. Both connect to the same NAS, but their permissions can differ.",
+            "An IP address acts like a device’s address on the network, helping the computer find the NAS. SMB (Server Message Block) is a common file-sharing protocol: a set of rules computers and the NAS use to transfer files and communicate requests. Finding the NAS, signing in, and receiving permission to edit files are three separate things to verify.",
+            "On a managed test LAN, for example, `smb://192.168.1.20/Research` opens the shared folder named Research on the NAS at 192.168.1.20 using SMB. This address and folder name are synthetic teaching examples; for an actual connection, use the address and authorized account provided by the administrator.",
+            "Administrators use the NAS operating system to configure accounts, shared folders, and permissions. Synology calls its NAS operating system DSM (DiskStation Manager). Software installed on DSM to provide additional functions is called a package. These are the two layers discussed later when we cover system and package updates."
           ],
           "diagram": {
             "id": "nas-lan",
@@ -500,10 +521,13 @@
         },
         {
           "id": "isolation",
-          "heading": "Name the exact isolation boundary",
+          "heading": "What does “offline” actually mean: unplugging a network cable or blocking Internet access?",
           "paragraphs": [
-            "After the Internet uplink is disconnected, the switch and local network may still operate, and local computers may still reach the NAS. Disconnecting all NAS network links removes access through those interfaces. Record all interfaces, routes and remote entry points to establish the actual boundary.",
-            "Isolation controls which paths can reach the device. An infected local computer with write access also requires endpoint and permission controls. Use a controlled computer and an approved path for maintenance instead of reopening every entry point for an update."
+            "When someone says “the NAS is offline,” ask which network cable was unplugged, or whether Internet access was blocked on a router or firewall. These actions affect different connections. Knowing what was actually done helps establish which computers can still access the NAS.",
+            "One possibility is unplugging a network cable from the NAS itself. Computers that used that link can no longer access files through it. If the NAS has other connected cables or enabled network interfaces, check those too. Confirm that all NAS network connections are disconnected before concluding that other computers can no longer reach it over the network.",
+            "Another possibility is blocking the path to the Internet. The laboratory switch may still connect local computers to the NAS, so researchers may still open shared folders even when Internet access is unavailable. Record where traffic was blocked, in which direction, and to what extent. Check other remote entry points to establish which paths can still reach the NAS.",
+            "Isolation controls who can reach the NAS and through which paths. If a local computer is infected with malware and its signed-in account can modify shared files, it may still affect data on the NAS. Alongside the NAS, check the relevant computers and adjust account and folder permissions.",
+            "To restore connectivity, start with a maintenance computer whose state has been checked and an approved connection path. Open only the entry points needed for the update or test. Then verify who can connect and which folders they can read or write, restoring services gradually based on those results."
           ],
           "diagram": {
             "id": "nas-isolation",
@@ -546,10 +570,12 @@
         },
         {
           "id": "attack-paths",
-          "heading": "Vulnerabilities and write permissions create different paths",
+          "heading": "Can an attacker exploit the vulnerability?",
           "paragraphs": [
-            "A vulnerability is a flaw in software design or implementation. Exploitation depends on reachability, affected versions and conditions such as authentication. Ransomware can also modify shared files using the existing permissions of an infected computer. This path matters even when no NAS vulnerability is exploited.",
-            "Plan patching and write restrictions together. Separate administrative and everyday accounts, grant folder permissions by task, and use read-only access where sufficient. Test both that intended operations succeed and that unauthorized operations are denied."
+            "A vulnerability is a weakness in a system’s design, implementation, or configuration that may allow someone to bypass its protections. Start with three questions: Can the attacker reach the affected service? Do the installed version and configuration match the advisory’s affected conditions? Does exploitation require signing in or holding particular permissions? Comparing these conditions helps establish how the vulnerability applies to this NAS.",
+            "For example, if exploitation requires signing in, check whether an attacker could obtain a usable account. If the vulnerability affects a particular service, check whether that service is enabled and who can reach it. The exploitation conditions in an advisory help administrators prioritize patches and temporary isolation measures.",
+            "Shared files introduce another question: Who has permission to change the data? Suppose a researcher’s computer is infected with ransomware and its account can modify shared files on the NAS. The malware may use those existing permissions to encrypt or damage the files. This does not necessarily require exploiting a vulnerability in the NAS itself, so both patching and write-permission management matter.",
+            "Keep administrator accounts separate from everyday accounts and assign folder permissions according to work needs. Give read-only access to people who only need to view data, and write access to those who need to edit it. Use a test folder and test files for acceptance checks: confirm that authorized accounts can perform the intended operations and that read-only accounts cannot add, modify, or delete files."
           ],
           "diagram": {
             "id": "nas-threat-paths",
@@ -610,11 +636,13 @@
         },
         {
           "id": "patch-inventory",
-          "heading": "Inventory DSM and packages separately",
+          "heading": "The NAS system is updated. Are its installed apps updated too?",
           "paragraphs": [
-            "Checked on November 1, 2026, Synology SA-26:13 lists `7.4-90075` for DSM 7.4 and separate fixes for other branches. Its vulnerabilities have differing privilege requirements. Compare the actual branch and full version rather than applying one number to every system.",
-            "SA-26:14 addresses PHP, Mail Station and Synology Calendar packages. PHP 7.3 is end of life with no fix; the other affected packages have their own fixed releases. Check Package Center separately after updating DSM.",
-            "These advisories illustrate inventory checks. Obtain the original alert and exact CVE vulnerability identifier to establish relevance to the device. Record versions before and after maintenance, execution time and functional tests. Handle signs of compromise through incident investigation."
+            "Think of NAS updates like phone updates: a phone has an operating system and separately installed apps. On a Synology NAS, DSM is the operating system, while packages are installed software that adds functions. Check the DSM version first, then open Package Center to check installed package versions. Both need attention.",
+            "Start with DSM. As checked on November 1, 2026, Synology advisory SA-26:13 requires DSM 7.4 devices to run `7.4-90075` or later to meet its listed fix requirement. For DSM 7.3 or another release series, use the corresponding row in the advisory. Record the complete version and Update number to establish whether the fix is included.",
+            "Next, check packages. SA-26:14, checked on the same date, lists vulnerabilities and separate fixed releases for PHP, Mail Station, and Synology Calendar. PHP 7.3 has reached end of life, and the advisory explicitly states that no fix will be provided. If it is installed, identify services that depend on it, then plan a move to a supported, patched version or disable functions no longer needed. After updating DSM, check that each relevant package has also been addressed.",
+            "When a security alert arrives, keep the original notice and find its CVE identifier. A CVE is a public identifier for a specific vulnerability, helping connect the alert, official advisory, and installed software. The two advisories here illustrate the checking process; actual maintenance should follow the vulnerability in the alert and the versions installed on the device.",
+            "Record versions before and after updating, along with the time of the work. Then use test files to check sign-in, shared-folder access, and required functions. If you find unfamiliar accounts, unusual logins, or widespread file changes, preserve the relevant records for the people responsible for incident investigation. Version records show what was patched; investigation establishes whether an intrusion occurred. The table below lists where to look and what to record."
           ],
           "sourceIds": [
             "synology-dsm",
@@ -622,8 +650,8 @@
           ],
           "table": {
             "headers": [
-              "Inventory location",
-              "Evidence to record"
+              "Where should you look?",
+              "What should you record?"
             ],
             "rows": [
               [
@@ -651,11 +679,13 @@
         },
         {
           "id": "remote-access",
-          "heading": "Design web and SMB access separately",
+          "heading": "Purpose-specific remote access: why design web, SMB, and other functions separately?",
           "paragraphs": [
-            "A Cloudflare Tunnel connector establishes outbound connections so traffic can pass through Cloudflare. For a web service, configure Access identity and allow policies as well: a transport path and permission to enter are different controls. NAS authentication and file permissions still apply.",
-            "SMB does not automatically inherit a protected web application’s path. Cloudflare documents SMB access using the Cloudflare One Client with private routes and Split Tunnels configuration for the relevant private network. Verify network policy, name resolution and NAS permissions during implementation.",
-            "This is a candidate architecture. Test authorized and unauthorized accounts, check for paths that bypass identity controls, and have the administrator approve the access scope before adopting it."
+            "Outside the laboratory, someone may need to open a web service in a browser or open a shared folder in their computer’s file manager. The first uses a web connection; the second can use SMB file sharing. Purpose-specific access means defining who may use each function, how they connect, and what they may do. Someone who needs research files receives only the functions needed for that task.",
+            "For a web entry point, Cloudflare Tunnel uses a connector inside the network to initiate a connection to Cloudflare and carry service traffic. Configure Cloudflare Access to check identity and apply rules for who may open the web service. The NAS still checks its own accounts and operation permissions. The tunnel, entry-point identity check, and NAS permissions each have a role.",
+            "For an SMB shared folder, establish its connection path separately. One method in Cloudflare’s documentation uses the Cloudflare One Client on the user’s computer with a private route to the internal network. Split Tunnels settings determine which connections the client handles. Route the designated internal NAS addresses through it, then configure the allowed users, destinations, and services. If users connect by device name, verify that it resolves to the correct address.",
+            "After connecting over SMB, users still access approved shared folders with NAS accounts. Access to a protected web page does not establish SMB connectivity or file permissions. Separate design lets administrators enable the web service or shared folders according to need. They can share an underlying tunnel; each service still needs an explicit path and permission configuration.",
+            "This is an architecture proposal for administrator evaluation. Before adopting it, test web and SMB access separately: authorized accounts complete their intended tasks, unauthorized accounts are denied, and read-only accounts can view files but cannot modify them. Check other public addresses, ports, and forwarding rules for entry points that bypass the intended identity checks. Record the results, then have the administrator confirm the permitted users and functions."
           ],
           "sourceIds": [
             "cloudflare-tunnel",
