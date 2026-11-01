@@ -215,3 +215,13 @@ AI 可以協助擬大綱、解釋概念、改寫、翻譯與檢查一致性。�
 ## 全站共同規範
 
 所有教學頁面遵循[文章與響應式閱讀規範](../article-standards.md)。既有歷史規則有差異時，以共同規範的閱讀品質與收合要求為準；資料契約及原始教材保留要求持續適用。
+
+## 可重用的響應式圖解
+
+章節可加入 `diagram`，資料契約與驗證在 [perspective-diagrams.ts](../../src/lib/perspective-diagrams.ts)，渲染由 [TeachingDiagram.svelte](../../src/lib/components/TeachingDiagram.svelte)承接。參考 [NAS 正式雙語資料](../../content/perspectives/nas-offline-recovery.json)。
+
+每張圖包含穩定 `id`、`caption`、`description`、`note` 與 `groups`。群組的 `mode` 使用 `flow` 表示有向順序、`cards` 表示平行角色；每個節點包含 `title`、`body`、受限的 `icon` 和 `tone`。以節點文字寫明關係和前提，窄版重排後不依賴位置猜測連線。模型不接受任意 HTML、SVG 路徑或外部圖示。
+
+修改雙語圖解後執行 `npm run generate:perspective-diagrams`，檢閱 `site/images/perspectives/` 的 SVG，再執行內容、型別及單元測試。匯出與搜尋共用正式內容；單元測試核對 NAS 圖解下載檔與產生器逐位元組一致。靜態目錄會公開，只有確認可公開的已發布文章才匯出；未來日期素材也要按公開資產審核。
+
+`npm run test:browser:nas` 使用現有 `build/`，涵蓋兩種語言、四種尺寸、鍵盤下載、200% 文字、無 JavaScript 與導覽。先完成建置再執行；`NAS_BASE_URL` 可指定公開站驗收。瀏覽器模擬及文字倍增檢查與實體手機、完整輔助工具驗收分別記錄。
