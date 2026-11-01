@@ -225,3 +225,5 @@ AI 可以協助擬大綱、解釋概念、改寫、翻譯與檢查一致性。�
 修改雙語圖解後執行 `npm run generate:perspective-diagrams`，檢閱 `site/images/perspectives/` 的 SVG，再執行內容、型別及單元測試。匯出與搜尋共用正式內容；單元測試核對 NAS 圖解下載檔與產生器逐位元組一致。靜態目錄會公開，只有確認可公開的已發布文章才匯出；未來日期素材也要按公開資產審核。
 
 `npm run test:browser:nas` 使用現有 `build/`，涵蓋兩種語言、四種尺寸、鍵盤下載、200% 文字、無 JavaScript 與導覽。先完成建置再執行；`NAS_BASE_URL` 可指定公開站驗收。瀏覽器模擬及文字倍增檢查與實體手機、完整輔助工具驗收分別記錄。
+
+文章日期與版本資訊列依共同規範 [WRITE-06](../article-standards.md#原發布版本與修訂日期write-06)；原發布日保留，`updatedOn` 對應目前修訂，觀察截止日期獨立呈現。

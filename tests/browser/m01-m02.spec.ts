@@ -4,13 +4,17 @@ const guides=JSON.parse(readFileSync('content/reading-support/ceh-m01-m02.json',
 const cases=Object.keys(guides).flatMap(id=>['zh','en'].map(lang=>{
  const lesson=id.startsWith('ceh-')?JSON.parse(readFileSync(`content/lessons/${id}.json`,'utf8')):undefined;
  const route=lesson?`/courses/ceh/v13/${lesson.module}/${lesson.slug}/`:`/courses/ceh/v13/${id.slice(0,3).toLowerCase()}/concepts/${id.toLowerCase()}/`;
- return {id,lang,url:(lang==='en'?'/en':'')+route};
+ const source=lesson??JSON.parse(readFileSync(`content/concepts/${id.toLowerCase()}.json`,'utf8'));
+ return {id,lang,url:(lang==='en'?'/en':'')+route,source};
 }));
 mkdirSync('.local/m01-m02/screenshots',{recursive:true});
 for(const c of cases){
  test(`${c.id} ${c.lang}: four viewports, text resize, original downloads`,async({page,request})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(c.url);await expect(page.locator('.article-reading-guide')).toHaveCount(1);
+  await page.goto(c.url);await expect(page.locator('.article-reading-guide')).toHaveCount(1);await expect(page.locator('.article-metadata')).not.toContainText(/閱讀更新|Reading updated/);
+  await expect(page.locator('.article-metadata')).toContainText('v'+c.source.contentVersion);
+  await expect(page.locator('.article-metadata')).toContainText(c.source.publishedOn);
+  await expect(page.locator('.article-metadata')).toContainText((c.lang==='zh'?'版本修訂':'Version revised')+' 2026-11-01');
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}px page overflow`).toBe(true);

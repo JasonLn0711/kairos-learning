@@ -36,7 +36,7 @@ def parse(lang,suffix):
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
  at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=answers
  return dict(summary='區分搜尋索引與網站現況，辨識公開線索，守住授權與證據的界線。' if lang=='zh' else 'Separate search indexes from current pages, interpret public clues, and respect authorization and evidence boundaries.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-03',revision=2,contentVersion='1.1.0',date='2026-10-31',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M02-03',revision=3,contentVersion='1.1.1',date='2026-11-01',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 # Editorial web labels are independent of the preserved SVG artwork.
 for block in lesson['text']['zh']['sourceBody']:
  if block.get('src') == '/images/ceh/m02-03-01-index-boundary-zh.svg':

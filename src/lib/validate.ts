@@ -17,6 +17,8 @@ export function validateContent(lessons: Lesson[], modules: Module[], sources: S
     expect(/^[a-z0-9-]+$/.test(l.id) && /^[a-z0-9-]+$/.test(l.slug), `${tag}: invalid id/slug`);
     expect(['draft','published'].includes(l.status), `${tag}: invalid status`);
     expect(date(l.publishedOn) && date(l.reviewedOn), `${tag}: invalid dates`);
+    if(l.contentVersion!==undefined) expect(/^[1-9]\d*\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(l.contentVersion), `${tag}: invalid content version`);
+    if(l.revisedOn!==undefined) expect(date(l.revisedOn) && l.revisedOn>=l.publishedOn, `${tag}: invalid revision date`);
     expect(Number.isInteger(l.revision) && l.revision > 0, `${tag}: invalid revision`);
     expect(['ceh','ai-ml','networking'].includes(l.course), `${tag}: unknown course`);
     if(l.course === 'ceh') expect(modules.some(m=>m.id===l.module), `${tag}: unknown module`);

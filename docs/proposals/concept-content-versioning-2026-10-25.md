@@ -63,3 +63,7 @@ Current code uses `ConceptTeaching.revision: number` in `src/lib/concepts.ts:9`,
 5. Validate valid/invalid semantic versions, legacy fallback, M04-01 display, unchanged other lessons and question-attempt parsing; check bilingual metadata, source-text fidelity, links, search and downloads. Run existing CI/release checks and production readback. Update the private publication evidence only after deployment; never infer understanding from a version change.
 
 This is a targeted schema addition and display change, not a data rewrite. The existing authoring guide remains the canonical workflow and links this approved policy. No standalone concept downloads carry edition labels today; existing SVG downloads remain byte-identical. Search includes v2.0.0 for M04-01, while concept order stays registry-based rather than version-based.
+
+## 2026-11-01 閱讀改善納入版本
+
+使用者確認閱讀改善也是版本更新。導讀、圖解閱讀、響應式、排版與無障礙改善均依影響升版；維持核心教學範圍採 patch，版本修訂日期同步更新，原發布日期保留。文章只顯示原發布、內容版本與版本修訂，不另列閱讀更新。以 [WRITE-06](../article-standards.md#原發布版本與修訂日期write-06)為現行規範；既有歷史紀錄保留。

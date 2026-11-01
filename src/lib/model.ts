@@ -11,7 +11,7 @@ export type LessonText = {
 };
 export type Lesson = {
   id: string; order: number; course: 'ceh' | 'ai-ml' | 'networking'; module: string; slug: string;
-  revision: number; status: 'draft' | 'published'; publishedOn: string; reviewedOn: string;
+  revision: number; status: 'draft' | 'published'; publishedOn: string; reviewedOn: string; revisedOn?: string; contentVersion?: string;
   sourceIds: string[]; prerequisites: string[]; related: string[]; terms: string[];
   text: Bilingual<LessonText>; questions: Question[];
 };

@@ -37,5 +37,5 @@ def parse(lang,suffix):
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
  at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=answers
  return dict(summary='從郵件角色、傳遞紀錄與網域驗證，建立清楚可查核的郵件足跡。' if lang=='zh' else 'Build a clear email footprint from message roles, delivery records, and domain authentication.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-05',revision=2,contentVersion='1.1.0',date='2026-10-31',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M02-05',revision=3,contentVersion='1.1.1',date='2026-11-01',status='published',publishedOn='2026-10-31',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m02-05.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

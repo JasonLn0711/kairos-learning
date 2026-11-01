@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ArticleMetadata from './ArticleMetadata.svelte';
   import ArticleReadingGuide from './ArticleReadingGuide.svelte';
   import {readingGuide} from '$lib/article-reading';
   import type { Page } from '$lib/server/catalog';
@@ -77,7 +78,7 @@
     {:else if kind === 'concept'}
       <Concept {data} />
     {:else if kind === 'lesson'}
-      <p class="lead">{text.summary}</p><p class="metadata">{zh ? '發布' : 'Published'} {lesson.publishedOn} · {zh ? '內容校對' : 'Content checked'} {lesson.reviewedOn} · v{lesson.revision}</p>
+      <p class="lead">{text.summary}</p><ArticleMetadata {lang} publishedOn={lesson.publishedOn} version={'v'+(lesson.contentVersion??lesson.revision)} revisedOn={lesson.revisedOn} reviewedOn={lesson.reviewedOn}/>
       <ArticleReadingGuide id={lesson.id} {lang}/>
       <div class="notice"><strong>{zh ? '讀完後，你可以' : 'After this lesson, you can'}</strong><ul>{#each text.objectives as objective}<li>{objective}</li>{/each}</ul>{#if lesson.prerequisites.length}<p>{zh ? '先備閱讀：' : 'Prerequisites: '}{#each lesson.prerequisites as id,i}{#if i} · {/if}<a href={data.index.find(l=>l.id===id)?.href}>{data.index.find(l=>l.id===id)?.title}</a>{/each}</p>{/if}</div>
       <nav class="toc" aria-label={zh ? '本文目錄' : 'On this page'}><strong>{zh ? '本文導覽' : 'On this page'}</strong><ol>{#each text.sections as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{/each}<li><a href="#example">{zh ? '完整例子' : 'Worked example'}</a></li><li><a href="#practice">{zh ? '安全練習' : 'Safe practice'}</a></li><li><a href="#questions">{zh ? '測驗' : 'Test'}</a></li><li><a href="#sources">{zh ? '參考來源' : 'Sources'}</a></li></ol></nav>

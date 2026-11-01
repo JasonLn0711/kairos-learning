@@ -209,10 +209,19 @@ user markup. Unregistered `visual` assets retain the existing semantic renderer.
 
 [逐篇導讀資料](../content/reading-support/ceh-m01-m02.json)以既有文章 ID 為鍵，每篇提供 `zh`、`en`，各包含 `goal`（主要學習成果）、`startingPoint`（起點）、`route`（閱讀順序）、`output`（可檢查的練習產物）。先核對原文實際教學內容，再撰寫四欄；不把新增練習寫成已完成的學習成效。這份資料由 [ArticleReadingGuide](../src/lib/components/ArticleReadingGuide.svelte)直接輸出語意 HTML，並納入既有發布閘門後的搜尋索引。
 
-導讀屬於閱讀輔助層。原始稿件、教材 JSON、來源日期、內容版本、題目答案及 SVG 保持其原有身分；修訂正文時仍依各課的版本與來源保留規則處理。未完成的 M02 後續概念不因導讀機制而發布。
+導讀屬於文章版本的一部分。依 11/01 使用者確認，閱讀改善也須更新文章版本與修訂日期；保留原始稿件、正文、來源查核日期、題目答案及 SVG。未完成的 M02 後續概念不因導讀機制而發布。
 
 [圖解文字產生器](../scripts/build-readable-diagrams.py)將 M02 的原圖標籤匯出為 [可換行文字資料](../src/lib/m01-m02-readable-diagrams.json)。相鄰文字僅按原圖矩形歸組，維持來源順序，不從座標推導箭頭、因果或流程。M01-07 使用已有的[雙語圖解資料](sources/m01-07/diagram-data.json)，搭配保留的四張中文原圖。既有 HTML 圖解持續採原元件。
 
 修改圖解後執行 `npm run generate:readable-diagrams`，核對描述、標籤、分組與原圖；`python3 scripts/build-readable-diagrams.py --check` 檢查產物同步。`ReadableDiagramText` 只輸出文字，不接受任意 SVG／HTML；原 SVG 仍經既有受審核邊界。重排文字直接可見，參考答案才使用原生收合。
 
 驗收入口：`npm run test:browser:m01-m02`。測試包含 32 頁四種寬度、200% 根文字大小、鍵盤順序、原生收合、局部捲動、無 JavaScript 與原圖下載。另執行既有內容、型別、單元、發布閘門及靜態發布檢查。結果與範圍見 [M01–M02 改善紀錄](releases/2026-11-01-m01-m02-readability.md)。
+
+
+## 文章日期資訊列
+
+依 [WRITE-06](article-standards.md#原發布版本與修訂日期write-06)維護日期；由 [ArticleMetadata](../src/lib/components/ArticleMetadata.svelte)統一呈現。概念文章使用 `publishedOn`、`contentVersion`／`revision`、`date`；觀點使用 `publishedOn`、`revision`、`updatedOn`。章節教材新增可選 `contentVersion` 與 `revisedOn`，校對仍使用 `reviewedOn`；`revisedOn` 必須是有效日期且不早於原發布日。舊章節缺修訂紀錄時省略，不把 `reviewedOn` 改當修訂日。
+
+閱讀改善視為文章版本更新，依影響提升 patch／minor／major 並同步修訂日期；不新增獨立「閱讀更新」欄位。原稿、全文順序及原發布日保留。共享元件變更需列出實際影響文章，依同一規則判定，不能以 UI-only 為由跳過版本記錄。本次三篇舊章節 `v1` 明確以 1.0.0 作語意基準，閱讀修訂採 `v1.0.1`、內部 revision 2；歷史 v1 標示仍由 Git 保留。MATLAB 靜態原稿依既有保留要求維持原檔，後續有文章修訂需求時依同規範處理。
+
+11/01 版本規則優先於本文件早期「shared UI-only release 不改教材版本」的做法；舊段落作為歷史保留，新修訂遵循 [WRITE-06](article-standards.md#原發布版本與修訂日期write-06)。純重新建置或部署仍不升版。

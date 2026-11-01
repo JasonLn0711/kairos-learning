@@ -115,7 +115,7 @@ test('reference answers are searchable but not learner responses and require saf
 
 test('M01-03 primary revision preserves ten sections, seven tables, full flow and three reference answers',()=>{
   const t=allConceptTeachings.find(t=>t.id==='M01-03')!;
-  assert.equal(t.contentVersion,'1.1.0');
+  assert.equal(t.contentVersion,'1.1.1');
   for(const lang of ['zh','en'] as const){
     const b=t.text[lang].sourceBody!;
     assert.equal(b.filter(x=>x.kind==='heading').length,10);
@@ -131,7 +131,7 @@ test('M01-03 primary revision preserves ten sections, seven tables, full flow an
 test('M01-04 primary revision and M01-05 retain complete beginner lessons',()=>{
   for(const id of ['M01-04','M01-05']) {
     const t=allConceptTeachings.find(t=>t.id===id)!; assert.ok(t);
-    assert.equal(t.contentVersion,'1.1.0');assert.deepEqual(t.qa,[]);
+    assert.equal(t.contentVersion,'1.1.1');assert.deepEqual(t.qa,[]);
     for(const lang of ['zh','en'] as const){
       const b=t.text[lang].sourceBody!;
       assert.equal(b.filter(x=>x.kind==='heading').length,id==='M01-04'?7:9);
@@ -145,7 +145,7 @@ test('M01-04 primary revision and M01-05 retain complete beginner lessons',()=>{
 
 test('M01-06 preserves full beginner teaching and a closed reference answer, not learner Q&A',()=>{
  const t=allConceptTeachings.find(t=>t.id==='M01-06')!;
- assert.equal(t.contentVersion,'1.1.1');assert.deepEqual(t.qa,[]);
+ assert.equal(t.contentVersion,'1.1.2');assert.deepEqual(t.qa,[]);
  for(const lang of ['zh','en'] as const){
   const b=t.text[lang].sourceBody!;
   assert.equal(b.filter(x=>x.kind==='heading').length,9);
@@ -192,7 +192,7 @@ test('M09-02 preserves the full primary manuscript, aligned languages and five u
 
 test('M01-07 preserves the primary manuscript, four original SVG images and four closed reference answers',()=>{
  const t=allConceptTeachings.find(t=>t.id==='M01-07')!;
- assert.equal(t.contentVersion,'1.0.1');assert.deepEqual(t.qa,[]);
+ assert.equal(t.contentVersion,'1.0.2');assert.deepEqual(t.qa,[]);
  for(const lang of ['zh','en'] as const){
   const b=t.text[lang].sourceBody!;
   assert.equal(b.filter(x=>x.kind==='heading').length,9);
