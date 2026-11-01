@@ -232,3 +232,6 @@ AI 可以協助擬大綱、解釋概念、改寫、翻譯與檢查一致性。�
 ## 文章語意版本
 
 依 [WRITE-06](../article-standards.md#原發布版本與修訂日期write-06)，每篇觀點必填 `contentVersion`（例如 `1.0.1`），公開顯示 `v1.0.1`。初版 `1.0.0`；閱讀改善升 patch，新增範圍升 minor，重大變更升 major。同步維護 `updatedOn`、雙語 `updates` 及內部 `revision`，原發布日保持；驗證器拒絕缺漏或整數版本，頁面不可回退顯示 revision。NAS 本次遷移與誤標更正見 [發布回執](../releases/2026-11-01-nas-perspective.md#nas-semver-correction)。
+
+
+NAS 漏洞公告的八圖範例見[內容設計](nas-cve-content-design.md)與[驗收回執](../releases/2026-11-01-nas-cve-patching.md)。執行 `npm run generate:perspective-diagrams` 同步下載檔；建置後 `npm run test:browser:nas-cve` 驗證兩語、尺寸、放大、鍵盤、無 JavaScript、搜尋及雙向閱讀連結。正式站使用 `NAS_CVE_BASE_URL=https://learn.cs-kairos.com npm run test:browser:nas-cve`，證據另存 `.local/nas-cve/live/`。
