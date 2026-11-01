@@ -7,7 +7,8 @@ const cases=Object.keys(guides).flatMap(id=>['zh','en'].map(lang=>{
  const source=lesson??JSON.parse(readFileSync(`content/concepts/${id.toLowerCase()}.json`,'utf8'));
  return {id,lang,url:(lang==='en'?'/en':'')+route,source};
 }));
-mkdirSync('.local/m01-m02/screenshots',{recursive:true});
+const screenshots=process.env.CEH_READING_BASE_URL?'.local/m01-m02/live/screenshots':'.local/m01-m02/screenshots';
+mkdirSync(screenshots,{recursive:true});
 for(const c of cases){
  test(`${c.id} ${c.lang}: four viewports, text resize, original downloads`,async({page,request})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
@@ -23,8 +24,8 @@ for(const c of cases){
    }).map(e=>e.textContent?.slice(0,80)));
    expect(issues,`${width}px body readability`).toEqual([]);
    if(width===390||width===1280){
-    await page.screenshot({path:`.local/m01-m02/screenshots/${c.id}-${c.lang}-${width}.png`});
-    const diagram=page.locator('figure').first();if(await diagram.count())await diagram.screenshot({path:`.local/m01-m02/screenshots/${c.id}-${c.lang}-${width}-diagram.png`});
+    await page.screenshot({path:`${screenshots}/${c.id}-${c.lang}-${width}.png`});
+    const diagram=page.locator('figure').first();if(await diagram.count())await diagram.screenshot({path:`${screenshots}/${c.id}-${c.lang}-${width}-diagram.png`});
    }
   }
   await page.setViewportSize({width:390,height:900});await page.addStyleTag({content:'html{font-size:200% !important}'});
@@ -37,6 +38,8 @@ for(const c of cases){
  });
  test(`${c.id} ${c.lang}: keyboard and no JavaScript`,async({page,browser,baseURL})=>{
   await page.setViewportSize({width:320,height:900});await page.goto(c.url);
+  // The first Tab must follow initial client startup, which may restore body focus.
+  await page.waitForLoadState('networkidle');
   await page.keyboard.press('Tab');await expect(page.locator('.skip')).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#main')).toBeFocused();
   expect(await page.locator('main pre:not([tabindex="0"])').count()).toBe(0);
   // Real tab order, including scroll regions, disclosure controls and downloads.

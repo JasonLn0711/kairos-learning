@@ -1,6 +1,6 @@
-# M01–M02 全篇閱讀優化與本機驗收
+# M01–M02 全篇閱讀優化、版本與發布驗收
 
-日期：2026-11-01。範圍為當時已撰寫的 13 篇概念教材與 3 篇章節教材，共 32 個中英頁面。狀態：本機修改及驗收完成；使用者已要求分開提交並推送 main，正式部署另列回執。M02-07 之後的待整理概念維持待整理。
+日期：2026-11-01。範圍為當時已撰寫的 13 篇概念教材與 3 篇章節教材，共 32 個中英頁面。狀態：本機與正式站驗收完成，已依使用者授權分開提交、推送 main 並部署；正式回執見文末。M02-07 之後的待整理概念維持待整理。
 
 ## 設計與內容
 
@@ -114,3 +114,16 @@
 讀者注意力、維護時間與版本可信度是本次設計的稀缺資源。網站正本集中保存內容、元件、規範與逐頁證據；Planning 保留狀態、容量及下一個驗證關卡。[11/01 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W44/days/2026-11-01.md#kairos-m01-m02-2026-11-01) ↔ [週計畫](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W44/weekly-plan.md#kairos-m01-m02-2026-11-01) ↔ [網站專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-m01-m02-2026-11-01)連回此工程回執。網站維護不代替本人學習成效或新增交付計數。
 
 Git 歷史以遠端 main 為基準核對，網站與 Planning 起始皆為 `0 0`；不重寫、刪除或強制推送既有提交。之前正式網站版本為 `17d7c15`，[Pages 41278871423](https://github.com/JasonLn0711/kairos-learning/actions/runs/41278871423) 已成功。此次分開提交閱讀功能、版本／日期規則及工程回執；正式推送與部署結果另記。
+
+
+## 正式 Git 與部署回執
+
+網站分開提交 `6159a00`（閱讀導引／圖解／鍵盤與測試）、`81e19e3`（閱讀改善升版、日期設計與規範）、`a23390c`（驗收與 Planning 關聯）。推送 `HEAD:main` 成功；[Pages 41282675594](https://github.com/JasonLn0711/kairos-learning/actions/runs/41282675594) 於 2026-11-01 成功部署 `a23390c816858d58f3dda6e7d36ee2404479ecba`。本回執與正式站測試入口另以驗證提交保存，不改網站內容。
+
+最終本機結果為 87 項單元測試、Svelte 0 error／0 warning、64 項 M01–M02 瀏覽器測試、發布邊界及靜態檢查通過。依賴高風險閘門通過，既有 5 項 low 訊息保留，不做額外套件升級。
+
+正式站完整重驗 **64/64 通過**：32 個中英頁面、128 組寬度、390px 的 200% 文字、Tab／Shift+Tab／Enter／Space、局部捲動、無 JavaScript、原 SVG 下載位元組比對。每頁實測新 patch 版號、原發布日、2026-11-01 修訂日，以及不顯示「閱讀更新」。範例：[M01-01](https://learn.cs-kairos.com/courses/ceh/v13/m01/concepts/m01-01/)、[M02-06](https://learn.cs-kairos.com/courses/ceh/v13/m02/concepts/m02-06/)、[CIA 章節](https://learn.cs-kairos.com/courses/ceh/v13/m01/cia-and-security-controls/)。
+
+第一輪正式站為 63 通過／1 失敗，失敗項為 M02-05 英文頁初始 Tab 未落在跳至正文連結。測試改為等待頁面初始網路載入安定後操作，再完整重跑 64 項通過；此為穩定啟動後的操作驗收，不宣稱排除載入中的所有競態或完整無障礙認證。首輪證據在 `.local/m01-m02/live-first-pass/`，最終結果、trace 與截圖在 `.local/m01-m02/live/`。
+
+Planning 以 `22e86e02`（所有權及相關專案連結）、`e4e8fc5d`（日誌與週容量）分開提交，已非強制推送 main；[CI 41282681125](https://github.com/JasonLn0711/planning-everything-track/actions/runs/41282681125) 成功。當日／週 Agenda 與 13 個新增本機連結／錨點檢查通過。後續回執另行提交，維持薄日誌與工程正本的分工。
