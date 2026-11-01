@@ -59,3 +59,5 @@ Learn 的觀點專欄承接有教學價值的事件解讀與實作反思；個�
 所有教學頁面遵循[文章與響應式閱讀規範](docs/article-standards.md)。既有歷史規則有差異時，以共同規範的閱讀品質與收合要求為準；資料契約及原始教材保留要求持續適用。
 
 [本次成果、驗證與跨 repo 關聯](docs/releases/2026-11-01-perspectives-standards.md)記錄實際結果及後續驗收。
+
+M01–M02 的 16 篇教材採用雙語閱讀導引與可換行圖解；[資料契約](docs/content-authoring.md#m01m02-閱讀導引與可換行圖解)及[逐頁驗收紀錄](docs/releases/2026-11-01-m01-m02-readability.md)說明本機成果與發布狀態。
