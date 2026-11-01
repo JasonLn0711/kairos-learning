@@ -68,3 +68,8 @@ Planning 分開提交 `3f6a2bb2`（專案／工具入口）與 `fd74f42d`（日�
 觀點資料模型必填 `contentVersion`，驗證器拒絕缺漏、整數與非三段版本，頁面只顯示此欄位。全站規範、觀點指南及兩份撰稿模板同步說明初版／patch／minor／major，禁止 revision 作公開版號。新增資料契約測試，NAS 中英瀏覽器測試直接核對 v1.0.1，防止再誤顯示 v2。正文與圖解沿用已確認的白話修訂。
 
 [規範](../article-standards.md#原發布版本與修訂日期write-06) ↔ [觀點指南](../perspectives/authoring.md#文章語意版本) ↔ [Planning 更正](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W44/days/2026-11-01.md#nas-semver-correction)。本輪驗收與部署另列回執。
+
+
+### v1.0.1 驗收與發布
+
+`8a08eee`（資料契約／顯示／回歸測試）與 `a424808`（規範／模板／遷移紀錄）分開非強制推送 main。[Pages 41285509773](https://github.com/JasonLn0711/kairos-learning/actions/runs/41285509773) 成功部署 `a42480891de9abe5e777ecdeee47a54aa872ef13`；88 項單元測試、Svelte 0 error／0 warning、發布邊界與 release checks 通過。本機及正式站各 11 項 NAS 瀏覽器驗收通過，正式站 35.3 秒，直接核對兩語四種尺寸的 v1.0.1 顯示，並驗證鍵盤／放大／無 JavaScript／下載／搜尋。證據在 `.local/nas-semver-*.log`。Planning 更正 `7914720c` 已推送 main，[CI 41285529073](https://github.com/JasonLn0711/planning-everything-track/actions/runs/41285529073) 成功；原發布日與修訂日仍為 2026-11-01。本段為後續文件回執，不改已驗證文章或元件。
