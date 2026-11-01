@@ -1,4 +1,5 @@
 <script lang="ts">
+ import StructuredDiagram from './StructuredDiagram.svelte';
  import {diagramAsset,diagramIcons,diagramTones,type TeachingDiagram} from '$lib/perspective-diagrams';
  let {diagram:d,articleId,lang}:{diagram:TeachingDiagram;articleId:string;lang:'zh'|'en'}=$props();
  const captionId=$derived(`${articleId}-${d.id}-${lang}-caption`);
@@ -6,6 +7,7 @@
 <figure class="teaching-diagram" aria-labelledby={captionId}>
  <figcaption id={captionId}>{d.caption}</figcaption>
  <p class="description">{d.description}</p>
+ {#if d.layout}<StructuredDiagram diagram={d}/>{:else}
  <div class="groups">
  {#each d.groups as group}
  <section class="diagram-group"><h3>{group.title}</h3>
@@ -20,6 +22,7 @@
  {/each}</svelte:element></section>
  {/each}
  </div>
+ {/if}
  <p class="note">{d.note}</p>
  <a class="svg-download" href={diagramAsset(articleId,d,lang)} download>{lang==='zh'?'下載 SVG：':'Download SVG: '}{d.caption}</a>
 </figure>

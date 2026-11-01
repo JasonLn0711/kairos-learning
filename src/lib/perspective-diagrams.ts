@@ -1,3 +1,4 @@
+import {renderStructuredDiagramSvg} from './structured-diagram-svg.ts';
 /** Text-first diagrams: no arbitrary markup, URLs, CSS or SVG paths in content. */
 export const diagramTones = {blue:'#eaf1ff',teal:'#e2f5f2',orange:'#fff1dd',red:'#ffe9e9',purple:'#f0eaff',gray:'#eef1f4'} as const;
 export const diagramIcons = {
@@ -9,12 +10,26 @@ export const diagramIcons = {
  check:'M4 12l5 5L20 5',
  warning:'M12 2 23 21H1z M12 8v6 M12 17v1'
 } as const;
-export type TeachingDiagram = {id:string;caption:string;description:string;groups:{title:string;mode:'flow'|'cards';items:{title:string;body:string;icon:keyof typeof diagramIcons;tone:keyof typeof diagramTones}[]}[];note:string};
-export function diagramText(d:TeachingDiagram):string[]{return [d.caption,d.description,...d.groups.flatMap(g=>[g.title,...g.items.flatMap(i=>[i.title,i.body])]),d.note]}
+export type TeachingDiagram = {id:string;layout?:'cells'|'stages'|'layers'|'reference';caption:string;description:string;groups:{title:string;mode:'flow'|'cards';items:{title:string;body:string;cells?:string[];state?:'released';icon:keyof typeof diagramIcons;tone:keyof typeof diagramTones}[]}[];note:string};
+export function diagramText(d:TeachingDiagram):string[]{return [d.caption,d.description,...d.groups.flatMap(g=>[g.title,...g.items.flatMap(i=>[i.title,...(i.cells??[]),i.body])]),d.note]}
 export function validateDiagram(d:TeachingDiagram):void {
  const text=(s:unknown)=>typeof s==='string'&&s.trim().length>0&&s.length<=800;
  if(!d||!(/^[a-z][a-z0-9-]*$/).test(d.id)||![d.caption,d.description,d.note].every(text)||!Array.isArray(d.groups)||!d.groups.length||d.groups.length>6)throw Error('invalid diagram');
- for(const g of d.groups){if(!text(g.title)||!['flow','cards'].includes(g.mode)||!Array.isArray(g.items)||!g.items.length||g.items.length>6)throw Error('invalid diagram group');for(const i of g.items)if(!text(i.title)||!text(i.body)||!Object.hasOwn(diagramIcons,i.icon)||!Object.hasOwn(diagramTones,i.tone))throw Error('invalid diagram node');}
+ if(d.layout!==undefined&&!['cells','stages','layers','reference'].includes(d.layout))throw Error('invalid diagram layout');
+ for(const g of d.groups){
+  if(!text(g.title)||!['flow','cards'].includes(g.mode)||!Array.isArray(g.items)||!g.items.length||g.items.length>6)throw Error('invalid diagram group');
+  for(const i of g.items){
+   if(!i||!text(i.title)||!text(i.body)||!Object.hasOwn(diagramIcons,i.icon)||!Object.hasOwn(diagramTones,i.tone))throw Error('invalid diagram node');
+   if(i.cells!==undefined&&(!['cells','stages'].includes(d.layout??'')||!Array.isArray(i.cells)||!i.cells.length||i.cells.length>4||i.cells.some(c=>!text(c)||c.length>8)))throw Error('invalid memory cells');
+   if(i.state!==undefined&&(d.layout!=='stages'||i.state!=='released'))throw Error('invalid node state');
+  }
+ }
+ if(!d.layout)return;
+ const shape=d.groups.map(g=>`${g.mode}:${g.items.length}`).join(',');
+ const expected={cells:'cards:4',stages:'flow:3',layers:'flow:2,cards:1',reference:'flow:3'};
+ if(shape!==expected[d.layout])throw Error('invalid layout structure');
+ if(d.layout==='cells'&&d.groups[0].items.some(n=>n.cells?.length!==1))throw Error('cells layout requires one value per address');
+ if(d.layout==='stages'&&d.groups[0].items.some(n=>n.cells?.length!==3))throw Error('stages layout requires three cells');
 }
 export function diagramAsset(articleId:string,d:TeachingDiagram,lang:string){return `/images/perspectives/${articleId}-${d.id}-${lang}.svg`}
 const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]!));
@@ -29,7 +44,7 @@ function wrap(s:string,max:number){
  }if(line.trim())lines.push(line.trimEnd());return lines;
 }
 export function renderDiagramSvg(d:TeachingDiagram,lang:string):string {
- validateDiagram(d);let y=36;const parts:string[]=[];
+ validateDiagram(d);if(d.layout)return renderStructuredDiagramSvg(d,lang);let y=36;const parts:string[]=[];
  const text=(s:string,x:number,size:number,max:number,bold=false)=>{for(const line of wrap(s,max)){parts.push(`<text x="${x}" y="${y}" font-size="${size}"${bold?' font-weight="700"':''}>${escape(line)}</text>`);y+=size*1.65;}};
  text(d.caption,28,24,28,true);text(d.description,28,18,37);y+=12;
  for(const g of d.groups){text(g.title,28,21,32,true);for(const [index,i] of g.items.entries()){
