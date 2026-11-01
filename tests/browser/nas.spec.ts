@@ -4,7 +4,7 @@ mkdirSync('.local/nas/screenshots',{recursive:true});
 const path=(lang:string)=>`${lang==='en'?'/en':''}/perspectives/nas-offline-recovery/`;
 for(const lang of ['zh','en'])for(const width of [320,390,768,1280])test(`${lang} ${width}px diagram readability and downloads`,async({page,request})=>{
  await page.setViewportSize({width,height:900});const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(path(lang));
- await expect(page.locator('.article-metadata')).toContainText('v1.0.1');
+ await expect(page.locator('.article-metadata')).toContainText('v'+JSON.parse(readFileSync('content/perspectives/nas-offline-recovery.json','utf8')).contentVersion);
  await expect(page.locator('.article-metadata')).not.toContainText(/v2(?:\s|$)/);
  await expect(page.locator('figure.teaching-diagram')).toHaveCount(6);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
