@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ArticleReadingGuide from './ArticleReadingGuide.svelte';
+  import {readingGuide} from '$lib/article-reading';
   import type { Page } from '$lib/server/catalog';
   import { SITE, MAIN, localized, modulePath } from '$lib/model';
   import QuestionCard from './QuestionCard.svelte';
@@ -35,7 +37,7 @@
 <header class="site-header"><a class="brand" href={localized('/',lang)}><span class="mark" aria-hidden="true">K</span><span>CS Kairos <em>Learn</em></span></a><nav aria-label={zh ? '主要導覽' : 'Main navigation'}><a href={localized('/',lang)}>{zh ? '課程' : 'Courses'}</a><a href={localized('/perspectives/',lang)}>{zh ? '觀點' : 'Perspectives'}</a><a href={localized('/glossary/',lang)}>{zh ? '詞彙表' : 'Glossary'}</a><a href={localized('/search/',lang)}>{zh ? '搜尋' : 'Search'}</a><a href={localized('/review/',lang)}>{zh ? '錯題複習' : 'Review'}</a><a class="language" data-sveltekit-reload href={counterpart} lang={zh ? 'en' : 'zh-Hant'} hreflang={zh ? 'en' : 'zh-Hant'}>{zh ? 'English' : '繁體中文'}</a></nav></header>
 <div class:with-rail={showRail} class="page-shell">
   {#if showRail}<aside class="module-rail"><div class="rail-content"><p class="rail-title">{zh ? 'CEH 學習地圖' : 'CEH learning map'}</p><nav aria-label={zh ? '章節導覽' : 'Module navigation'}><a href={localized('/courses/ceh/v13/',lang)}>{zh ? '課程總覽' : 'Course overview'}</a>{#each data.modules as m}<a href={modulePath(m.id,lang)} aria-current={data.module?.id === m.id ? 'page' : undefined}><span>{m.id.toUpperCase()}</span>{m.title[lang]}</a>{/each}</nav></div></aside>{/if}
-  <main id="main" tabindex="-1" class:ceh-code={Boolean(data.module) || lesson?.course === 'ceh'}>
+  <main class:reading-enhanced={Boolean(readingGuide(kind==='concept'?data.conceptTeaching!.id:kind==='lesson'?lesson.id:'',lang))} id="main" tabindex="-1" class:ceh-code={Boolean(data.module) || lesson?.course === 'ceh'}>
     {#if kind !== 'home'}<nav class="breadcrumbs" aria-label={zh ? '所在位置' : 'Breadcrumb'}><a href={localized('/',lang)}>{zh ? '首頁' : 'Home'}</a>{#if kind==='perspective'}<span>/</span><a href={localized('/perspectives/',lang)}>{zh?'觀點':'Perspectives'}</a>{/if}{#if showRail}<span>/</span><a href={localized('/courses/ceh/v13/',lang)}>CEH v13</a>{#if kind !== 'module' && data.module}<span>/</span><a href={modulePath(data.module.id,lang)}>{data.module.id.toUpperCase()}</a>{/if}{/if}</nav>{/if}
     <div class="eyebrow">{kind === 'home' ? 'RESEARCH → UNDERSTANDING → PRACTICE' : kind === 'lesson' ? `${lesson.course.toUpperCase()} · ${lesson.module.toUpperCase()}` : 'CS KAIROS · LEARNING LIBRARY'}</div>
     <h1 class:hero={kind === 'home'}>{title}</h1>
@@ -76,11 +78,12 @@
       <Concept {data} />
     {:else if kind === 'lesson'}
       <p class="lead">{text.summary}</p><p class="metadata">{zh ? '發布' : 'Published'} {lesson.publishedOn} · {zh ? '內容校對' : 'Content checked'} {lesson.reviewedOn} · v{lesson.revision}</p>
+      <ArticleReadingGuide id={lesson.id} {lang}/>
       <div class="notice"><strong>{zh ? '讀完後，你可以' : 'After this lesson, you can'}</strong><ul>{#each text.objectives as objective}<li>{objective}</li>{/each}</ul>{#if lesson.prerequisites.length}<p>{zh ? '先備閱讀：' : 'Prerequisites: '}{#each lesson.prerequisites as id,i}{#if i} · {/if}<a href={data.index.find(l=>l.id===id)?.href}>{data.index.find(l=>l.id===id)?.title}</a>{/each}</p>{/if}</div>
       <nav class="toc" aria-label={zh ? '本文目錄' : 'On this page'}><strong>{zh ? '本文導覽' : 'On this page'}</strong><ol>{#each text.sections as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{/each}<li><a href="#example">{zh ? '完整例子' : 'Worked example'}</a></li><li><a href="#practice">{zh ? '安全練習' : 'Safe practice'}</a></li><li><a href="#questions">{zh ? '測驗' : 'Test'}</a></li><li><a href="#sources">{zh ? '參考來源' : 'Sources'}</a></li></ol></nav>
       <article class="prose">{#each text.sections as section}<section><h2 id={section.id}>{section.heading}</h2>{#each section.paragraphs as p}<p><InlineText text={p}/></p>{/each}{#if section.code}<pre><code>{section.code}</code></pre>{/if}{#if section.sourceIds.length}<p class="source-note">{zh ? '延伸閱讀：' : 'Further reading: '}{#each section.sourceIds as id,i}{#if i} · {/if}<a href={data.sources.find(s=>s.id===id)?.url}>{data.sources.find(s=>s.id===id)?.title}</a>{/each}</p>{/if}</section>{/each}
         <section><h2 id="example">{text.example.title}</h2><p>{text.example.scenario}</p>{#if text.example.code}<pre><code>{text.example.code}</code></pre>{/if}<p>{text.example.reasoning}</p><p><strong>{zh ? '判斷：' : 'Conclusion: '}</strong>{text.example.conclusion}</p></section>
-        <Lab lab={text.lab} {lang} />
+        <Lab lab={text.lab} {lang} keyboardScroll={Boolean(readingGuide(lesson.id,lang))} />
       </article>
       <section><h2 id="questions">{zh ? '測驗' : 'Test'} · {zh ? '檢查你的理由' : 'Check your reasoning'}</h2><p class="muted">{zh ? '選一個答案與作答信心，再閱讀所有選項的解析。答案只儲存在此瀏覽器。' : 'Choose an answer and confidence, then read every explanation. Answers stay in this browser.'}</p>{#each lesson.questions as question (question.id)}<QuestionCard {question} {lang} directReading={lesson.course==='ceh'} />{/each}</section>
       {#if related.length}<section><h2>{zh ? '連結下一個概念' : 'Connect the next idea'}</h2><ul>{#each related as l}<li><a href={l.href}>{l.title}</a></li>{/each}</ul></section>{/if}
@@ -104,6 +107,11 @@
 <footer><p><a href={MAIN}>CS Kairos</a> <span aria-hidden="true">/</span> {zh ? '研究與學習，持續累積。' : 'Research and learning, built over time.'}</p><nav aria-label={zh ? '頁尾導覽' : 'Footer navigation'}><a href={MAIN + '/teaching/'}>{zh ? '教學與主站' : 'Teaching & main site'}</a><a href={localized('/standards/',lang)}>{zh ? '內容原則' : 'Content principles'}</a><a href="https://github.com/JasonLn0711/kairos-learning">GitHub</a></nav></footer>
 
 <style>
+  .reading-enhanced{overflow-wrap:anywhere}
+  .reading-enhanced :global(.prose p),.reading-enhanced :global(.prose li),.reading-enhanced :global(.prose td),.reading-enhanced :global(.prose th),.reading-enhanced :global(.prose dd){font-size:1rem;line-height:1.8;overflow-wrap:anywhere}
+  .reading-enhanced :global(pre){max-width:100%;overflow:auto;font-size:1rem;line-height:1.7}
+  .reading-enhanced :global(:focus-visible){outline:3px solid #175f91;outline-offset:3px}
+
   .ceh-code :global(pre) { background:#f2f6f5; color:#18252c; }
   .ceh-code :global(pre code) { background:transparent; color:inherit; }
 </style>

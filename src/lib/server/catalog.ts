@@ -1,3 +1,4 @@
+import {readingText} from '../article-reading.ts';
 import {diagramText} from '../perspective-diagrams.ts';
 import {validatePerspectives, type Perspective} from '../perspectives.ts';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -12,7 +13,7 @@ export const allLessons = readdirSync(join(root, 'lessons')).filter(f => f.endsW
 export const lessons = allLessons.filter(l => isPublic(l, new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())));
 export const allTerms = JSON.parse(readFileSync(join(root, 'glossary.json'), 'utf8')) as Term[];
 export const terms = allTerms.map(t => ({...t, lessons: t.lessons.filter(id => lessons.some(l => l.id === id))})).filter(t => t.lessons.length);
-export const searchEntries: SearchEntry[] = lessons.flatMap(l => (['zh','en'] as Locale[]).map(lang => ({ id:l.id, lang, title:l.text[lang].title, summary:l.text[lang].summary, text:[...l.text[lang].objectives, ...l.text[lang].sections.flatMap(s => [s.heading,...s.paragraphs,s.code ?? '']), ...Object.values(l.text[lang].example), ...Object.values(l.text[lang].lab).flat(), ...l.questions.flatMap(q => [q.text[lang].prompt,...q.text[lang].options,...q.text[lang].rationales]), ...l.terms].join(' '), href:lessonPath(l,lang), label:l.course === 'ceh' ? `CEH ${l.module.toUpperCase()}` : l.course })));
+export const searchEntries: SearchEntry[] = lessons.flatMap(l => (['zh','en'] as Locale[]).map(lang => ({ id:l.id, lang, title:l.text[lang].title, summary:l.text[lang].summary, text:[...readingText(l.id,lang),...l.text[lang].objectives, ...l.text[lang].sections.flatMap(s => [s.heading,...s.paragraphs,s.code ?? '']), ...Object.values(l.text[lang].example), ...Object.values(l.text[lang].lab).flat(), ...l.questions.flatMap(q => [q.text[lang].prompt,...q.text[lang].options,...q.text[lang].rationales]), ...l.terms].join(' '), href:lessonPath(l,lang), label:l.course === 'ceh' ? `CEH ${l.module.toUpperCase()}` : l.course })));
 export const concepts = JSON.parse(readFileSync(join(root, 'concepts.json'), 'utf8')) as ConceptEntry[];
 if (concepts.some(c => !modules.some(m => m.id === c.module))) throw new Error('Concept registry references an unknown module');
 export const allConceptTeachings = readdirSync(join(root,'concepts')).filter(f => f.endsWith('.json')).map(f => JSON.parse(readFileSync(join(root,'concepts',f),'utf8')) as ConceptTeaching);

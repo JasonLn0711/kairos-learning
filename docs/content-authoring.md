@@ -203,3 +203,16 @@ user markup. Unregistered `visual` assets retain the existing semantic renderer.
 ## 全站共同規範
 
 所有教學頁面遵循[文章與響應式閱讀規範](article-standards.md)。既有歷史規則有差異時，以共同規範的閱讀品質與收合要求為準；資料契約及原始教材保留要求持續適用。
+
+
+## M01–M02 閱讀導引與可換行圖解
+
+[逐篇導讀資料](../content/reading-support/ceh-m01-m02.json)以既有文章 ID 為鍵，每篇提供 `zh`、`en`，各包含 `goal`（主要學習成果）、`startingPoint`（起點）、`route`（閱讀順序）、`output`（可檢查的練習產物）。先核對原文實際教學內容，再撰寫四欄；不把新增練習寫成已完成的學習成效。這份資料由 [ArticleReadingGuide](../src/lib/components/ArticleReadingGuide.svelte)直接輸出語意 HTML，並納入既有發布閘門後的搜尋索引。
+
+導讀屬於閱讀輔助層。原始稿件、教材 JSON、來源日期、內容版本、題目答案及 SVG 保持其原有身分；修訂正文時仍依各課的版本與來源保留規則處理。未完成的 M02 後續概念不因導讀機制而發布。
+
+[圖解文字產生器](../scripts/build-readable-diagrams.py)將 M02 的原圖標籤匯出為 [可換行文字資料](../src/lib/m01-m02-readable-diagrams.json)。相鄰文字僅按原圖矩形歸組，維持來源順序，不從座標推導箭頭、因果或流程。M01-07 使用已有的[雙語圖解資料](sources/m01-07/diagram-data.json)，搭配保留的四張中文原圖。既有 HTML 圖解持續採原元件。
+
+修改圖解後執行 `npm run generate:readable-diagrams`，核對描述、標籤、分組與原圖；`python3 scripts/build-readable-diagrams.py --check` 檢查產物同步。`ReadableDiagramText` 只輸出文字，不接受任意 SVG／HTML；原 SVG 仍經既有受審核邊界。重排文字直接可見，參考答案才使用原生收合。
+
+驗收入口：`npm run test:browser:m01-m02`。測試包含 32 頁四種寬度、200% 根文字大小、鍵盤順序、原生收合、局部捲動、無 JavaScript 與原圖下載。另執行既有內容、型別、單元、發布閘門及靜態發布檢查。結果與範圍見 [M01–M02 改善紀錄](releases/2026-11-01-m01-m02-readability.md)。

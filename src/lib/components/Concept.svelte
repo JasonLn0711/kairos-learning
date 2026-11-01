@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ArticleReadingGuide from './ArticleReadingGuide.svelte';
   import type { Page } from '$lib/server/catalog';
   import { conceptVersionLabel } from '$lib/concepts';
   import DigWalkthrough from './DigWalkthrough.svelte';
@@ -25,6 +26,7 @@
 </script>
 <p class="lead">{text.summary}</p>
 <p class="metadata">{teaching.id} · {conceptVersionLabel(teaching)} · {teaching.date} · {zh ? '公開教學版' : 'Public teaching edition'}</p>
+<ArticleReadingGuide id={teaching.id} {lang}/>
 <nav class="toc" aria-label={zh ? '本文導覽' : 'On this page'}><ol>{#each toc as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{#if teaching.id==='M04-02' && section.id==='practice'}<li><a href="#dig-observation">{zh ? 'dig 真實輸出逐行解釋' : 'Real dig output walkthrough'}</a></li>{/if}{/each}<li><a href="#discussion">Q&A</a></li></ol></nav>
 <article style:overflow-wrap={teaching.id === 'M04-10' ? 'anywhere' : undefined} class="prose" class:light-code={(zh && teaching.id === 'M04-01') || teaching.id === 'M04-07' || teaching.id === 'M04-02' || teaching.id === 'M04-03' || teaching.id === 'M09-02' || teaching.id === 'M09-03' || teaching.id === 'M09-04' || teaching.id === 'M09-05' || teaching.id === 'M09-06'}>{#if text.sourceBody}<SourceBody blocks={text.sourceBody} conceptId={teaching.id} {lang} />{:else}{#each text.sections as section}<section><h2 id={section.id}>{section.heading}</h2>{#each section.paragraphs as p}<p style="white-space: pre-line">{#each parts(p) as part}{#if part.href}<a href={part.href}>{part.label}</a>{:else}{part.label}{/if}{/each}</p>{/each}{#if section.blocks}<ConceptBlocks blocks={section.blocks} />{/if}{#if section.id === 'check' && teaching.checks?.length}<ConceptChecks checks={teaching.checks} {lang} />{/if}{#if teaching.id==='M04-02'&&lang==='en'}{#if section.id==='practice'}<DigWalkthrough {lang}/>{/if}{#if section.id==='story'}<DnsDiagram id="lookup" {lang}/>{:else if section.id==='roles'}<DnsDiagram id="resolution" {lang}/>{:else if section.id==='records'}<DnsDiagram id="cname" {lang}/>{:else if section.id==='defense'}<DnsDiagram id="axfr" {lang}/>{/if}{/if}{#if teaching.id==='M04-01'&&lang==='en'}{#if section.id==='connections'}<M0401Visual id="questions" {lang}/><M0401Visual id="entry-evidence" {lang}/>{:else if section.id==='permissions'}<M0401Visual id="permissions" {lang}/>{:else if section.id==='map'}<M0401Visual id="protocols" {lang}/>{/if}{/if}</section>{/each}{/if}
 {#if teaching.id==='M04-03'}<M0403Supplement {lang}/>{/if}

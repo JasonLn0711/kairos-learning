@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ReadableDiagramText from './ReadableDiagramText.svelte';
+  import {readingGuide} from '$lib/article-reading';
   import FtpDiagram from './FtpDiagram.svelte';
   import FtpEditorial from './FtpEditorial.svelte';
   import DigWalkthrough from './DigWalkthrough.svelte';
@@ -22,6 +24,7 @@
       <figure class="original-image">
         <img src={block.src} alt={block.alt} width={block.width} height={block.height} loading="lazy" />
         <p class="image-links"><a href={block.src}>{block.openLabel}</a><a href={block.src} download>{block.downloadLabel}</a></p>
+        <ReadableDiagramText src={block.src} {lang}/>
         <figcaption>{block.caption}</figcaption>
       </figure>
     {:else if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
@@ -30,7 +33,7 @@
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>
     {:else if block.kind === 'paragraph'}<p><InlineText text={block.text} /></p>
     {:else if block.kind === 'code'}{#if conceptId==='M04-03' && block.id?.startsWith('ftp-ascii')}<div class="ascii"><!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontal ASCII scrolling.) -->
-<pre role="region" aria-label={lang==='zh'?'可捲動文字示意':'Scrollable text schematic'} tabindex="0"><code>{block.text}</code></pre></div>{:else}<pre><code>{block.text}</code></pre>{/if}
+<pre role="region" aria-label={lang==='zh'?'可捲動文字示意':'Scrollable text schematic'} tabindex="0"><code>{block.text}</code></pre></div>{:else if readingGuide(conceptId,lang)}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontally scrolling code.) --><pre tabindex="0" role="region" aria-label={lang==='zh'?'可捲動程式碼或文字範例':'Scrollable code or text example'}><code>{block.text}</code></pre>{:else}<pre><code>{block.text}</code></pre>{/if}
     {:else if block.kind === 'answer'}<details class="reference-answer" id={block.id}><summary><InlineText text={block.summary}/></summary>{#each block.paragraphs as paragraph}<p><InlineText text={paragraph}/></p>{/each}</details>
     {:else if block.kind === 'list'}<ul>{#each block.items as item}<li><InlineText text={item} /></li>{/each}</ul>
     {:else if block.kind === 'table'}
