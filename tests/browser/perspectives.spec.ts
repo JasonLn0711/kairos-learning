@@ -50,8 +50,8 @@ for(const lang of ['zh','en'])test(`${lang} search failure, fallback and recover
  broken=false;await page.getByRole('button',{name:lang==='zh'?'搜尋':'Search',exact:true}).click();await expect(page.getByRole('status')).toHaveCount(0);
  await expect(page.getByRole('link',{name:lang==='zh'?'合成版型示範（非真實事件）':'Synthetic template preview (not a real incident)',exact:true})).toHaveCount(2);
 });
-test('normal build has empty bilingual column, no synthetic route',async({page})=>{
- for(const prefix of ['','/en']){await page.goto(`http://127.0.0.1:4187${prefix}/perspectives/`);await expect(page.locator('main')).toContainText(prefix?'Articles are being prepared':'觀點文章整理中');expect((await page.goto(`http://127.0.0.1:4187${prefix}/perspectives/preview-perspective/`))?.status()).toBe(404);}
+test('normal build publishes NAS article without synthetic route',async({page})=>{
+ for(const prefix of ['','/en']){await page.goto(`http://127.0.0.1:4187${prefix}/perspectives/`);await expect(page.getByRole('link',{name:prefix?'The NAS Is Offline. What Should We Verify Next?':'NAS 已經斷網，接下來該確認什麼？',exact:true})).toBeVisible();expect((await page.goto(`http://127.0.0.1:4187${prefix}/perspectives/preview-perspective/`))?.status()).toBe(404);}
 });
 
 test('touch-emulated phone follows list, article, language and back',async({browser})=>{

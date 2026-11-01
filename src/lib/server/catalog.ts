@@ -1,3 +1,4 @@
+import {diagramText} from '../perspective-diagrams.ts';
 import {validatePerspectives, type Perspective} from '../perspectives.ts';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -20,7 +21,7 @@ searchEntries.push(...conceptCatalog.searchEntries);
 const allPerspectives = readdirSync(join(root,'perspectives')).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(readFileSync(join(root,'perspectives',f),'utf8'))) as Perspective[];
 validatePerspectives(allPerspectives,{lesson:new Set(allLessons.map(l=>l.id)),concept:new Set(concepts.map(c=>c.id))});
 export const perspectives = allPerspectives.filter(p=>isPublic(p,new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))).sort((a,b)=>b.publishedOn.localeCompare(a.publishedOn)||a.id.localeCompare(b.id));
-searchEntries.push(...perspectives.flatMap(p=>(['zh','en'] as Locale[]).map(lang=>({id:p.id,lang,title:p.text[lang].title,summary:p.text[lang].summary,text:p.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.list??[]),s.code??'',...(s.table?[...s.table.headers,...s.table.rows.flat()]:[])]).join(' '),href:localized(`/perspectives/${p.slug}/`,lang),label:lang==='zh'?'觀點':'Perspectives'}))));
+searchEntries.push(...perspectives.flatMap(p=>(['zh','en'] as Locale[]).map(lang=>({id:p.id,lang,title:p.text[lang].title,summary:p.text[lang].summary,text:p.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.list??[]),s.code??'',...(s.diagram?diagramText(s.diagram):[]),...(s.table?[...s.table.headers,...s.table.rows.flat()]:[])]).join(' '),href:localized(`/perspectives/${p.slug}/`,lang),label:lang==='zh'?'觀點':'Perspectives'}))));
 export type Kind = 'perspectives' | 'perspective' | 'concept' | 'home' | 'ceh' | 'module' | 'lesson' | 'quiz' | 'lab' | 'course' | 'glossary' | 'search' | 'review' | 'standards';
 export type Route = { path: string; kind: Kind; lang: Locale; lessonId?: string; moduleId?: string; courseId?: string; perspectiveId?: string; conceptId?: string };
 export const routes: Route[] = (['zh','en'] as Locale[]).flatMap(lang => [
