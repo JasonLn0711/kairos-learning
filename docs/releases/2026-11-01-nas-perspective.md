@@ -37,3 +37,17 @@ Safari 原生工具曾逾時；重新取得狀態後成功開啟正式中文文�
 公開站結果在 `.local/nas/live-browser.log` 與 `results.json`；本機初次結果另保留為 `local-results.json`。此收據更新只改文件，網站內容與元件仍對應上述已驗證版本。
 
 維護方式與命令見[撰稿指南](../perspectives/authoring.md#可重用的響應式圖解)。本次不改變原有課程內容或學習進度。
+
+
+<a id="nas-v2-editorial"></a>
+## v2｜從讀者問題出發的白話改寫
+
+2026-11-01，Jason 逐段指定標題與閱讀方向，AI 協助中英改寫及官方來源核對。FIRST PRINCIPLE：讀者需要先理解要解決的問題，再理解術語、條件與操作；稀缺資源是注意力與查證時間。保留證據界線，讓每段從日常情境走到可驗證的判斷。
+
+五個段落依序回答：NAS 是什麼及如何共享檔案、斷網實際阻斷哪條路徑、漏洞如何被利用、系統與套件各自如何更新，以及網頁與 SMB 為何分別設定入口與權限。共用原有六圖、十二張 SVG 與章節錨點；正文和英文同步，沒有新增部署能力或宣稱實機處置結果。SA-26:13、SA-26:14、Cloudflare Tunnel 與 SMB 官方文件已於本日重新核對。
+
+依 WRITE-01–06 更新內容及修訂紀錄，原發布日保留 2026-11-01，版本修訂日同日；觀點資料契約仍使用整數 revision，本輪由 v1 升為 v2，五次續修合併為同一個尚未發布版本。這是既有整數版號相容處理，不虛構歷史語意版本，也不另設閱讀更新日期。
+
+本機 87 項單元測試、內容驗證、建置及 11 項 NAS 瀏覽器驗收通過；包括兩語四種尺寸、200% 文字、鍵盤、無 JavaScript、下載與搜尋。證據在 `.local/nas-editorial-*.log` 及 `.local/nas/`。Git 與正式站讀回於發布後另補，不由本機結果推定。
+
+關聯：[正式內容](../../content/perspectives/nas-offline-recovery.json) ↔ [來源與設計](../perspectives/nas-content-design.md#nas-v2-editorial) ↔ [文章規範](../article-standards.md#原發布版本與修訂日期write-06) ↔ [Planning 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W44/days/2026-11-01.md#nas-v2-editorial)。工程證據由本站管理；Planning 保存狀態、容量及下一關。
