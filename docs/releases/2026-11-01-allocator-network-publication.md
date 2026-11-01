@@ -12,7 +12,7 @@ FIRST PRINCIPLE：保護讀者注意力、編輯時間與證據可追溯性。Ka
 
 110 項單元測試通過；Svelte／TypeScript 0 errors、0 warnings；內容驗證、靜態發布檢查通過。draft／future 邊界檢查在 536 份部署文字產物中通過，移除 fixture 後重建。數字包含遠端新增教材，與前輪 94 項測試分開記錄。規則對應 WRITE-01–07、HTML-01–04、FIG-01–05、A11Y-01–03；各修訂回執保存逐項證據。
 
-整合證據位於發布 checkout 的 `.local/publication/`；原驗證證據仍在原工作目錄的 `.local/nas-allocator/` 與 `.local/m0206-revision/`。整合後瀏覽器 M02-06 12 項、NAS 14 項全部通過；紀錄為 `browser-m0206.log` 與 `browser-nas.log`。原下載校驗通過；npm audit 的 high 門檻通過，仍有 5 項既有 low severity，未擴大為相依套件升級。新增本機連結與 `git diff --check` 通過。Git 推送與正式站結果於執行後追加。
+整合證據位於發布 checkout 的 `.local/publication/`；原驗證證據仍在原工作目錄的 `.local/nas-allocator/` 與 `.local/m0206-revision/`。整合後瀏覽器 M02-06 12 項、NAS 14 項全部通過；紀錄為 `browser-m0206.log` 與 `browser-nas.log`。原下載校驗通過；npm audit 的 high 門檻通過，仍有 5 項既有 low severity，未擴大為相依套件升級。新增本機連結與 `git diff --check` 通過。Git 推送與正式站結果見下方回執。
 
 ## 下一關
 
