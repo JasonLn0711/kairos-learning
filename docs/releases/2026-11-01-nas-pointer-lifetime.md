@@ -42,3 +42,10 @@ FIG-04／05 的共用規範新增資料結構、線型、狀態徽章、指標�
 實作提交 `34e33af`、規範提交 `10b4dc3` 已非強制推送 main。[Pages 41301308480](https://github.com/JasonLn0711/kairos-learning/actions/runs/41301308480) 成功部署 `10b4dc3910c7022b338e02fe10d118d684e9437a`。正式站獨立 Chrome 完整 14 項通過，讀回 v1.3.0、雙語二十六節／十七圖／八表、兩份 C 程式碼、六種響應式版型、鍵盤操作與下載、200% 文字、無 JavaScript、搜尋與閱讀互連；圖檔與正式資料逐位元組一致。
 
 正式證據：`.local/nas-pointers/live.log` 及 `.local/nas-cve/live/` 結果、截圖與 trace。Python HTTP 探測收到 403，未將它當成頁面驗收；以上結果來自實際瀏覽器。正式閱讀入口為本回執首段的雙語 `#free-pointer` 連結。
+
+
+## Planning 狀態與容量連結
+
+2026-11-01 依 FIRST PRINCIPLE 補齊跨 repo 紀錄：稀缺資源為讀者注意力、查證時間與證據可信度。本站保存來源、採用設計、實作與驗收；[Planning 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W44/days/2026-11-01.md#kairos-nas-memory-2026-11-01)串接本篇與前版回執，[網站專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-nas-memory-2026-11-01)提供持續入口。週計畫及整合索引由日誌連出。
+
+本次僅更新文件連結並核對既有 Git 證據；上方測試、macOS 程式執行及正式站結果保留原執行範圍，沒有以文件更新推定重新驗收。Jason 下次閱讀回饋為下一關；維持既有 Red 容量與個人學習 must-win，實體裝置、理解及 NAS 實機處置各自留證。
