@@ -21,6 +21,14 @@ try {
     l.text.en.title=markers[i]; l.text.zh.title=markers[i];
     writeFileSync(path,JSON.stringify(l)); files.push(path);
   }
+  for(let i=0;i<2;i++) {
+    const path=`content/perspectives/boundary-${i}.json`;
+    if(existsSync(path)) throw Error('Reserved perspective fixture exists');
+    const p=JSON.parse(readFileSync('tests/fixtures/perspectives/example.json','utf8'));
+    p.id=p.slug=`perspective-boundary-${i}`;p.status=i===0?'draft':'published';p.publishedOn=p.updatedOn=i===0?'2026-01-01':'2099-01-01';
+    p.text.zh.title=p.text.en.title=markers[i];
+    writeFileSync(path,JSON.stringify(p));files.push(path);
+  }
   const registry=JSON.parse(originalRegistry);
   for(let i=0;i<2;i++) {
     const id=`M04-${98+i}`;
