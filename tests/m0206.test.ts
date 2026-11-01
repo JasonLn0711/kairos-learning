@@ -22,8 +22,8 @@ test('M02-06 complete bilingual lesson, eight diagrams, paired closed-answer dat
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
   const page=catalog.get('M02-06',lang)!;
   assert.equal(page.navigation.previous?.id,'M02-05');assert.ok(page.navigation.previous?.href);
-  assert.equal(page.navigation.next?.id,'M02-07');assert.equal(page.navigation.next?.href,null);
-  assert.equal(catalog.get('M02-07',lang),null);
+  assert.equal(page.navigation.next?.id,'M02-07');assert.ok(page.navigation.next?.href);
+  assert.ok(catalog.get('M02-07',lang));
   const search=catalog.searchEntries.find(e=>e.id==='M02-06'&&e.lang===lang)!;
   for(const b of body.filter(b=>b.kind==='answer'))for(const p of b.paragraphs)assert.ok(search.text.includes(p));
  }

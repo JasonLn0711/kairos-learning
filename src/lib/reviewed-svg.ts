@@ -1,3 +1,6 @@
+import m0301 from './m0301-inline-svg.json' with {type:'json'};
+import m0207 from './m0207-inline-svg.json' with {type:'json'};
+import m0208 from './m0208-inline-svg.json' with {type:'json'};
 import m0206 from './m0206-inline-svg.json' with { type: 'json' };
 import m0204 from './m0204-inline-svg.json' with { type: 'json' };
 import m0205 from './m0205-inline-svg.json' with { type: 'json' };
@@ -14,7 +17,7 @@ import m0904 from './m0904-inline-svg.json' with { type: 'json' };
 
 import m0905 from './m0905-inline-svg.json' with { type: 'json' };
 
-const reviewed:Readonly<Record<string,string>>=Object.freeze({...m0903,...m0904,...m0905,...m0906,...m0201,...m0202,...m0203,...m0204,...m0205,...m0206});
+const reviewed:Readonly<Record<string,string>>=Object.freeze({...m0301,...m0207,...m0208,...m0903,...m0904,...m0905,...m0906,...m0201,...m0202,...m0203,...m0204,...m0205,...m0206});
 export function reviewedSvgMarkup(src:string):string|undefined {
   return Object.hasOwn(reviewed,src) ? reviewed[src] : undefined;
 }
