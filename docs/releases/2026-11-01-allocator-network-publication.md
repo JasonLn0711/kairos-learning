@@ -17,3 +17,12 @@ FIRST PRINCIPLE：保護讀者注意力、編輯時間與證據可追溯性。Ka
 ## 下一關
 
 Jason 下次閱讀確認圖解與措辭；實體手機、完整螢幕閱讀器與獨立理解仍待驗證。NAS 實機修補與公開資產查詢不在本輪驗收範圍。維持 W44 Red 與本人學習 must-win，不新增時數或學習完成計數。
+
+
+## Git 與正式站回執
+
+`788da48`、`74b20a0`、`f410541`、`1500069` 已非強制推送 Kairos `origin/main`；推送後 fetch 的 divergence 為 `0 0`。合併保留既有本機與遠端提交。[Pages 41322994555](https://github.com/JasonLn0711/kairos-learning/actions/runs/41322994555) 成功部署 `1500069`。
+
+正式站讀回中英四頁皆 HTTP 200：NAS v1.4.0、19 圖及 tiny_alloc 文字正確；M02-06 v1.1.0、六張新圖及 CIDR 滑桿 hydration／End 鍵 /30 結果正確。390px 無頁面水平溢出。新網路圖 ZIP 與中文配置器架構 SVG 下載逐位元組吻合。這是正式站 smoke，完整 26 項瀏覽器驗收在本機整合樹執行；證據 `.local/publication/live-smoke.log`。
+
+Planning 專案定位 `0a49b20e`、日／週紀錄 `3a7212a9` 已推送 main，fetch 後 divergence `0 0`，[CI 41322945860](https://github.com/JasonLn0711/planning-everything-track/actions/runs/41322945860) 成功。Knowledge 186／186、日／週 Agenda、新增相對連結與錨點通過；repository validator 保留 44 項既有警告、0 項新增。最終回執為後續文件提交，不變更已驗證的教材或程式。
