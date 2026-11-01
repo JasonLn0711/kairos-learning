@@ -58,3 +58,13 @@ Safari 原生工具曾逾時；重新取得狀態後成功開啟正式中文文�
 內容 `117a1d7` 與文件 `febbfc2` 分開提交、非強制推送 main；[Pages 41285251060](https://github.com/JasonLn0711/kairos-learning/actions/runs/41285251060) 成功部署 `febbfc2a698664900cba6dfd826478ead3f75a7b`。正式中英頁五個新標題、v2 與日期資訊列已逐一讀回。`NAS_BASE_URL=https://learn.cs-kairos.com npm run test:browser:nas` 11/11 通過（39.0 秒）；紀錄在 `.local/nas-v2-live.log` 與 `.local/nas/results.json`。Svelte 0 error／0 warning，完整 release validators 通過。
 
 Planning 分開提交 `3f6a2bb2`（專案／工具入口）與 `fd74f42d`（日誌／週容量），已非強制推送 main，[CI 41285286611](https://github.com/JasonLn0711/planning-everything-track/actions/runs/41285286611) 成功；日／週 Agenda 及 10 個新增相對連結與錨點檢查通過。兩邊發布前均無分歧，不需合併或重寫歷史；回執另以文件提交保存。下一關為 Jason 的實際閱讀回饋，設備維運與本人理解仍各自驗收。
+
+
+<a id="nas-semver-correction"></a>
+## 語意版本更正：v1.0.1
+
+使用者指出 v2 不符合文章 `v x.x.x` 規範。前述 v2 是當時實際部署與測試的誤標紀錄，保留供追溯；目前修訂統一為 **v1.0.1**。原 v1 以 1.0.0 為明確遷移基準，五段閱讀改善屬 patch，並非 major 2。內部 revision 增至 3，僅供修訂計數；原發布與版本修訂日均維持 2026-11-01。沒有聲稱歷史頁面曾顯示 v1.0.0。
+
+觀點資料模型必填 `contentVersion`，驗證器拒絕缺漏、整數與非三段版本，頁面只顯示此欄位。全站規範、觀點指南及兩份撰稿模板同步說明初版／patch／minor／major，禁止 revision 作公開版號。新增資料契約測試，NAS 中英瀏覽器測試直接核對 v1.0.1，防止再誤顯示 v2。正文與圖解沿用已確認的白話修訂。
+
+[規範](../article-standards.md#原發布版本與修訂日期write-06) ↔ [觀點指南](../perspectives/authoring.md#文章語意版本) ↔ [Planning 更正](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W44/days/2026-11-01.md#nas-semver-correction)。本輪驗收與部署另列回執。

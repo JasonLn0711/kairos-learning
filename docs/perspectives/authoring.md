@@ -227,3 +227,8 @@ AI 可以協助擬大綱、解釋概念、改寫、翻譯與檢查一致性。�
 `npm run test:browser:nas` 使用現有 `build/`，涵蓋兩種語言、四種尺寸、鍵盤下載、200% 文字、無 JavaScript 與導覽。先完成建置再執行；`NAS_BASE_URL` 可指定公開站驗收。瀏覽器模擬及文字倍增檢查與實體手機、完整輔助工具驗收分別記錄。
 
 文章日期與版本資訊列依共同規範 [WRITE-06](../article-standards.md#原發布版本與修訂日期write-06)；原發布日保留，`updatedOn` 對應目前修訂，觀察截止日期獨立呈現。
+
+
+## 文章語意版本
+
+依 [WRITE-06](../article-standards.md#原發布版本與修訂日期write-06)，每篇觀點必填 `contentVersion`（例如 `1.0.1`），公開顯示 `v1.0.1`。初版 `1.0.0`；閱讀改善升 patch，新增範圍升 minor，重大變更升 major。同步維護 `updatedOn`、雙語 `updates` 及內部 `revision`，原發布日保持；驗證器拒絕缺漏或整數版本，頁面不可回退顯示 revision。NAS 本次遷移與誤標更正見 [發布回執](../releases/2026-11-01-nas-perspective.md#nas-semver-correction)。

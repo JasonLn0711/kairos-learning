@@ -220,7 +220,7 @@ user markup. Unregistered `visual` assets retain the existing semantic renderer.
 
 ## 文章日期資訊列
 
-依 [WRITE-06](article-standards.md#原發布版本與修訂日期write-06)維護日期；由 [ArticleMetadata](../src/lib/components/ArticleMetadata.svelte)統一呈現。概念文章使用 `publishedOn`、`contentVersion`／`revision`、`date`；觀點使用 `publishedOn`、`revision`、`updatedOn`。章節教材新增可選 `contentVersion` 與 `revisedOn`，校對仍使用 `reviewedOn`；`revisedOn` 必須是有效日期且不早於原發布日。舊章節缺修訂紀錄時省略，不把 `reviewedOn` 改當修訂日。
+依 [WRITE-06](article-standards.md#原發布版本與修訂日期write-06)維護日期；由 [ArticleMetadata](../src/lib/components/ArticleMetadata.svelte)統一呈現。概念文章使用 `publishedOn`、`contentVersion`／`revision`、`date`；觀點使用 `publishedOn`、`contentVersion`、`updatedOn`，內部 `revision` 不作顯示版號。章節教材新增可選 `contentVersion` 與 `revisedOn`，校對仍使用 `reviewedOn`；`revisedOn` 必須是有效日期且不早於原發布日。舊章節缺修訂紀錄時省略，不把 `reviewedOn` 改當修訂日。
 
 閱讀改善視為文章版本更新，依影響提升 patch／minor／major 並同步修訂日期；不新增獨立「閱讀更新」欄位。原稿、全文順序及原發布日保留。共享元件變更需列出實際影響文章，依同一規則判定，不能以 UI-only 為由跳過版本記錄。本次三篇舊章節 `v1` 明確以 1.0.0 作語意基準，閱讀修訂採 `v1.0.1`、內部 revision 2；歷史 v1 標示仍由 Git 保留。MATLAB 靜態原稿依既有保留要求維持原檔，後續有文章修訂需求時依同規範處理。
 
