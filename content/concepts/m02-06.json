@@ -1,7 +1,7 @@
 {
   "id": "M02-06",
-  "revision": 2,
-  "contentVersion": "1.0.1",
+  "revision": 3,
+  "contentVersion": "1.1.0",
   "date": "2026-11-01",
   "status": "published",
   "publishedOn": "2026-11-01",
@@ -18,7 +18,7 @@
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "1｜先記住這個結論"
+          "text": "1｜摘要"
         },
         {
           "kind": "paragraph",
@@ -30,7 +30,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "本課接續 M02-04 的 DNS（Domain Name System，網域名稱系統）與 M02-05 的郵件路徑。這次從「名字與郵件」轉向「位址與網路」。所有位址、ASN、網域與輸出都是合成教材；練習採離線判讀與本機計算。主動量測以另行核定的自有隔離實驗環境為範圍。"
+          "text": "本課接續 M02-04 的 DNS（Domain Name System，網域名稱系統）與 M02-05 的郵件路徑。這次從「名字與郵件」轉向「位址與網路」。示意位址、ASN 與路徑輸出採合成教材；另列本機與公開資料查詢練習，實際結果依查詢時間與位置記錄。主動量測以另行核定的自有隔離實驗環境為範圍。"
         },
         {
           "kind": "heading",
@@ -39,73 +39,377 @@
         },
         {
           "kind": "paragraph",
-          "text": "IP（Internet Protocol，網際網路協定）負責以來源與目的位址傳送資料。資料在網路上被裝成 Packet（封包）；Router（路由器）依路由資訊，把封包送向下一站。網路位址可以配置給介面，服務也可以透過共享或虛擬位址對外提供。"
+          "text": "當你在瀏覽器輸入網址，DNS、位址與路由各自回答不同問題。先用寄送包裹的比喻建立全圖，再逐步查核。"
         },
         {
-          "kind": "paragraph",
-          "text": "IPv4 位址長度是 32 位元，常寫成四段十進位數字，例如 `192.0.2.25`。IPv6 使用 128 位元，例如 `2001:db8::25`；雙冒號表示一段連續的零。同一個網站可以同時提供 IPv4 與 IPv6，分析時分開保存兩組結果。[IPv4 規範](https://www.rfc-editor.org/rfc/rfc791)、[IPv6 規範](https://www.rfc-editor.org/rfc/rfc8200)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "CIDR（Classless Inter-Domain Routing，無類別網域間路由）用「位址／前綴長度」表示網段。`192.0.2.0/24` 的 `/24` 表示前 24 位元是共同前綴，剩餘 8 位元形成 `2^8 = 256` 個位址，範圍從 `192.0.2.0` 到 `192.0.2.255`。這裡計算的是整個位址範圍；實際可配置給設備的數量，再依子網用途與配置規則判斷。[CIDR 規範](https://www.rfc-editor.org/rfc/rfc4632)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "同樣方法，IPv4 `/25` 留下 7 位元，有 128 個位址；`/24` 留下 8 位元，有 256 個位址。前綴長度越大，指定的範圍越小。把它想成地址寫得越精細，涵蓋的街區就越小。"
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-network-map-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜從名稱到路由管理資訊",
+            "description": "箭頭表示查核順序；每一步需要不同來源，不是封包傳送路徑。",
+            "items": [
+              {
+                "title": "1　Domain｜網域名稱",
+                "body": "shop.coffee.example"
+              },
+              {
+                "title": "2　IP Address｜IP 位址",
+                "body": "192.0.2.25"
+              },
+              {
+                "title": "3　CIDR / Prefix｜網段",
+                "body": "192.0.2.0/24"
+              },
+              {
+                "title": "4　ASN｜自治系統編號",
+                "body": "AS64496"
+              }
+            ]
+          }
         },
         {
           "kind": "table",
           "headers": [
-            "資訊",
-            "合成例子",
-            "讀法"
+            "概念",
+            "白話比喻",
+            "真正的功能"
           ],
           "rows": [
             [
-              "單一位址",
-              "192.0.2.25",
-              "一個網路位址"
+              "DNS",
+              "查地址的通訊錄",
+              "將網域名稱解析為 IP 等紀錄"
             ],
             [
-              "網路前綴",
-              "192.0.2.0/24",
-              "包含這個位址的一段範圍"
+              "IP",
+              "收件地址",
+              "指定封包要送往的網路位址"
             ],
             [
-              "私有網路",
-              "10.20.0.0/24",
-              "組織內部可配置的一段私有位址"
+              "CIDR／網段",
+              "街區或地址範圍",
+              "把一群 IP 位址表示成一個範圍"
             ],
             [
-              "IPv6 文件位址",
-              "2001:db8::25",
-              "供教材使用的 IPv6 位址"
+              "AS／ASN",
+              "物流公司的路由管理體系與編號",
+              "識別具有共同對外路由政策的網路"
+            ],
+            [
+              "BGP",
+              "物流公司之間交換的運送路線資訊",
+              "讓自治系統交換網路可達性資訊"
+            ],
+            [
+              "CDN",
+              "分散各地的配送中心",
+              "在邊緣節點提供內容或代理服務"
             ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "RFC 1918 的私有 IPv4 範圍是 `10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`，不同組織可各自使用。NAT（Network Address Translation，網路位址轉換）讓內外部位址之間建立轉換關係；多人或多台設備可能共用對外位址。實務追查會把外部 IP、精確時間、連接埠與相關系統紀錄一起比對。[私有位址](https://www.rfc-editor.org/rfc/rfc1918)、[傳統 NAT](https://www.rfc-editor.org/rfc/rfc3022)"
+          "text": "網站名稱、網路位址、位址的登記者、路由營運者和網站經營者，不一定是同一個單位。"
         },
         {
           "kind": "paragraph",
-          "text": "本課的 `192.0.2.0/24`、`198.51.100.0/24`、`203.0.113.0/24` 是文件示例範圍，`2001:db8::/32` 是 IPv6 文件範圍，適合用於說明與離線計算。[IPv4 文件位址](https://www.rfc-editor.org/rfc/rfc5737)、[IPv6 文件位址](https://www.rfc-editor.org/rfc/rfc3849)"
+          "text": "第 2–4 節依序建立這些角色之間的關係。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-1",
+          "text": "2.1 IP 是什麼？為什麼電腦需要 IP？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你要寄包裹給朋友。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你需要知道朋友的收件地址，物流公司才能將包裹送到正確的位置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網際網路也是如此。電腦彼此交換資料時，需要使用 IP 位址作為來源與目的地的識別資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`192.0.2.25`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一個 IPv4 位址。它由四組數字組成，每組數字範圍為 0～255。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們常見的 IP 有兩種格式："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "類型",
+            "地址範例",
+            "長度"
+          ],
+          "rows": [
+            [
+              "IPv4",
+              "`192.0.2.25`",
+              "32 bits"
+            ],
+            [
+              "IPv6",
+              "`2001:db8::25`",
+              "128 bits"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 bit（位元）是電腦儲存資訊的最小單位之一，只有 `0` 或 `1` 兩種值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 不是直接代表一台永久固定的電腦。它通常配置在網路介面上，也可能代表虛擬服務、負載平衡器或其他網路入口。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 什麼是網段（Subnet / Network Prefix）？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 IP 是一個門牌地址，那麼網段就是一整個街區。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設有三台實驗室設備："
+        },
+        {
+          "kind": "code",
+          "text": "192.0.2.10   電腦 A\n192.0.2.20   電腦 B\n192.0.2.25   電腦 C"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它們的 IP 有共同部分：`192.0.2`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們可以使用 CIDR（Classless Inter-Domain Routing）來表示一段位址範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`192.0.2.0/24`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡最難理解的是 `/24`。"
         },
         {
           "kind": "visual",
-          "src": "/images/ceh/m02-06-02-address-prefix-as-zh.svg",
+          "src": "/images/ceh/m02-06-prefix-bits-zh.svg",
           "downloadLabel": "下載 SVG 圖檔",
           "visual": {
             "kind": "cards",
-            "caption": "圖 2｜位址、前綴與 ASN 的層次",
-            "description": "IP是位址，前綴是位址範圍，ASN識別自治系統。使用文件保留位址與ASN，以及私有網路範例。",
+            "caption": "圖 2｜192.0.2.25/24 的位元結構",
+            "description": "此 /24 的前三組數字固定；其他前綴不一定落在整組數字的邊界。",
             "items": [
               {
-                "title": "讀圖重點",
-                "body": "IP是位址，前綴是位址範圍，ASN識別自治系統。使用文件保留位址與ASN，以及私有網路範例。"
+                "title": "192",
+                "body": "8 bits"
+              },
+              {
+                "title": "0",
+                "body": "8 bits"
+              },
+              {
+                "title": "2",
+                "body": "8 bits"
+              },
+              {
+                "title": "25",
+                "body": "8 bits"
               }
             ]
           }
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv4 總共 32 位元，而 `/24` 表示前 24 位元用來識別共同的網路前綴。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "32 − 24 = 8"
+        },
+        {
+          "kind": "paragraph",
+          "text": "剩下 8 位元可以變化。每個位元只有 0 或 1，因此總共有："
+        },
+        {
+          "kind": "paragraph",
+          "text": "2⁸ = 256"
+        },
+        {
+          "kind": "paragraph",
+          "text": "也就是 `192.0.2.0` 到 `192.0.2.255`，總共 256 個位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在傳統的 IPv4 `/24` 區域網路配置中，通常會保留第一個網路位址和最後一個廣播位址，因此常見的可用主機位址數量為 254。但不是所有前綴都能直接套用「減二」規則。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "2.3 為什麼 /24、/25、/26 的範圍不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請觀察以下比較。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "網段",
+            "IP 範圍",
+            "總位址數"
+          ],
+          "rows": [
+            [
+              "`192.0.2.0/24`",
+              "`.0` ～ `.255`",
+              "256"
+            ],
+            [
+              "`192.0.2.0/25`",
+              "`.0` ～ `.127`",
+              "128"
+            ],
+            [
+              "`192.0.2.0/26`",
+              "`.0` ～ `.63`",
+              "64"
+            ],
+            [
+              "`192.0.2.0/27`",
+              "`.0` ～ `.31`",
+              "32"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表 `/25` 並不是比 `/24` 多一個 IP，而是網路前綴多固定了一個位元，讓涵蓋的位址範圍縮小一半。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以操作下面的模擬器，觀察同一個 `192.0.2.25` 在不同前綴下，所屬的網段如何改變。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "模擬器以 192.0.2.25 為固定 IP，可選 /24 到 /30；結果顯示所屬網段、總位址數與範圍。無 JavaScript 時仍可閱讀 /24 的預設結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網段不是一個實體盒子，而是一套用來描述及比對 IP 範圍的規則。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "路由器可以藉此判斷某個目的 IP 符合哪些路由前綴，再依路由表決定下一站。當不同路由前綴重疊時，通常先依最長前綴比對（Longest Prefix Match），選擇最精確的符合項目。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[CIDR 與最長前綴比對](https://www.rfc-editor.org/rfc/rfc4632)。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-4",
+          "text": "2.4 私有 IP 和公開 IP 有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你的實驗室裡有 NAS、電腦和路由器："
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-private-network-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜實驗室內部網路",
+            "description": "電腦與 NAS 平行連到同一個路由器／防火牆，再由該設備連往外部。",
+            "items": [
+              {
+                "title": "電腦",
+                "body": "10.20.0.10"
+              },
+              {
+                "title": "NAS",
+                "body": "10.20.0.25"
+              },
+              {
+                "title": "路由器／防火牆",
+                "body": "可進行 NAT 與存取控制"
+              },
+              {
+                "title": "外部網路／Internet",
+                "body": "是否可達仍由路由與政策決定"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "像 `10.20.0.25` 就是私有 IPv4 位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見的私有 IPv4 位址範圍有："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些位址可以在不同組織的內部網路重複使用，不會直接在全球公開網際網路上被當作目的地路由。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "私有 IP 不代表安全，也不代表只有同一個房間才能存取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，位於其他校區的電腦，如果校園網路有建立適當的路由，而且防火牆允許，仍然可能存取你的 NAS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NAT（Network Address Translation，網路位址轉換）則可以讓多台內部設備透過較少的公開 IP 對外通訊。它是一種位址轉換機制，不能單獨取代防火牆與身分驗證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，在資安管理上，IP 和網段讓我們有能力精確定義：哪些來源可以連線、哪些目的地允許存取，以及不同網段之間是否需要隔離。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節使用的 `192.0.2.0/24` 是文件保留位址，用於教學；不是可直接拿來部署公開網站的位址範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[私有 IPv4](https://www.rfc-editor.org/rfc/rfc1918)、[IPv4 文件位址](https://www.rfc-editor.org/rfc/rfc5737)、[IPv6 文件位址](https://www.rfc-editor.org/rfc/rfc3849)。"
         },
         {
           "kind": "heading",
@@ -114,23 +418,187 @@
         },
         {
           "kind": "paragraph",
-          "text": "AS（Autonomous System，自主系統）是一組對外呈現一致路由政策的網路；ASN（Autonomous System Number，自主系統號碼）是它的識別號碼，例如教材中的 `AS64496`。可以把 AS 想成有自己運送規則的物流體系，ASN 就是體系的識別編號。[AS 定義](https://www.rfc-editor.org/rfc/rfc1930)"
+          "text": "ASN 把前面的位址範圍連到對外路由政策。"
         },
         {
           "kind": "paragraph",
-          "text": "ISP（Internet Service Provider，網際網路服務供應商）、雲端平台、大型企業或學術網路，都可能營運 AS。一個 AS 可以宣告多個網路前綴；同一組織也可能管理多個 AS。ASN 與 IP 位址各有角色：前者辨識路由管理，後者供封包定址。"
+          "id": "section-3-1",
+          "text": "3.1 為什麼有 IP 還需要 ASN？"
         },
         {
           "kind": "paragraph",
-          "text": "不同 AS 之間透過 BGP（Border Gateway Protocol，邊界閘道協定）交換可到達哪些前綴的資訊。BGP 的 AS_PATH 是路由公告中的 AS 路徑屬性；Traceroute 則透過探測封包的回覆觀察路徑。把兩種資料分欄保存，就能分別理解「路由公告」與「某次量測」。[BGP 規範](https://www.rfc-editor.org/rfc/rfc4271)"
+          "text": "假設你知道朋友的住址在日本東京。"
         },
         {
           "kind": "paragraph",
-          "text": "查網路資源時，可使用 RIR（Regional Internet Registry，區域網際網路註冊管理機構）提供的 RDAP（Registration Data Access Protocol，註冊資料存取協定）查詢。RDAP 可以提供 IP 網段、ASN、登記組織、聯絡角色與更新資訊；實際欄位依資料庫而定。[ARIN 的 RDAP 說明](https://www.arin.net/resources/registry/whois/rdap/)"
+          "text": "你要從台灣寄一個包裹過去，光是知道目的地地址還不夠。包裹需要由不同的物流業者接力運送。"
         },
         {
           "kind": "paragraph",
-          "text": "例如合成紀錄顯示：`192.0.2.0/24` 登記給 Example Edge，路由資料將該前綴關聯到 AS64496。報告可以分別寫「登記組織」與「觀察到的路由起源 AS」，再用服務合約、雲端控制台與資產清單確認組織自己的服務關係。教材採用的 AS64496、AS64497 屬於文件示例保留範圍。[文件用 ASN](https://www.rfc-editor.org/rfc/rfc5398)"
+          "text": "網際網路同樣如此。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的電腦可能先連上中華電信或其他網路供應商，再經過其他業者管理的網路，最終到達網站所在的網路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這裡存在一個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些網路由不同組織管理，大家要怎麼協調哪些目的地可以經由誰抵達？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，我們需要了解兩個概念："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- AS（Autonomous System，自治系統）：在對外路由上呈現一致政策的網路體系。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- ASN（Autonomous System Number，自治系統編號）：識別這個自治系統的號碼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 `AS64496` 是教材用的示例編號，不是 IP，也不是電腦編號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一個 AS 可以管理或宣告許多不同的網段；同一家公司也可能營運多個 AS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[AS 定義](https://www.rfc-editor.org/rfc/rfc1930)、[文件用 ASN](https://www.rfc-editor.org/rfc/rfc5398)。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 什麼是 BGP？不同 AS 如何交換路由資訊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP（Border Gateway Protocol，邊界閘道協定）可以理解成不同網路營運者之間交換的「可達目的地資訊」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 CDN 業者營運 `AS64496`，其網路可以提供 `192.0.2.0/24` 這個目的位址範圍的連線服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它會透過 BGP 向相鄰的 AS 宣告相關路由資訊，讓其他網路知道如何到達這個前綴。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-bgp-routing-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜封包轉送與 BGP 公告",
+            "description": "藍色實線向下代表封包；橘色虛線向上代表此例的路由公告。",
+            "items": [
+              {
+                "title": "你的電腦",
+                "body": "使用者端"
+              },
+              {
+                "title": "ISP｜AS64497",
+                "body": "提供使用者網路連線"
+              },
+              {
+                "title": "CDN 網路｜AS64496",
+                "body": "提供 192.0.2.0/24 的可達性\n包含目的位址 192.0.2.25"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP 負責交換路由資訊；路由器則依照選定的路由資訊轉送實際封包。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP 不會替每一個使用者封包重新向全世界詢問一次怎麼走。它維護和交換路由資訊，讓路由設備能建立可用的轉送決策。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且 BGP 選路也不一定是物理距離最短的路線。商業關係、路由政策、網路配置和其他屬性都可能影響選擇。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[BGP 規範](https://www.rfc-editor.org/rfc/rfc4271)。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 查到 ASN，就知道網站是誰的嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。這是 CEH 網路足跡蒐集裡非常容易誤判的地方。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們得到："
+        },
+        {
+          "kind": "code",
+          "text": "IP：192.0.2.25\n所屬前綴：192.0.2.0/24\nIP 網段登記者：Example Edge\nBGP Origin AS：AS64496"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們可以合理地說，資料顯示這個網段與 Example Edge 的登記資料有關，而且在所查詢的路由資料中，`AS64496` 是它的起源自治系統（Origin AS）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但我們還不能因此斷定 Example Edge 就是網站經營者。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為使用這個 IP 的網站可能是某間咖啡店，而 Example Edge 只是它所使用的 CDN、雲端或網路服務供應商。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實務上必須把幾種證據分開："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "資料來源",
+            "可以回答的問題"
+          ],
+          "rows": [
+            [
+              "DNS",
+              "網域目前解析到哪些位址或名稱？"
+            ],
+            [
+              "RDAP／IP 登記資料",
+              "IP 資源登記給誰？"
+            ],
+            [
+              "BGP 路由資料",
+              "哪個 AS 正在宣告這個網路前綴？"
+            ],
+            [
+              "網站與組織內部設定",
+              "誰實際經營網站、管理後端服務？"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP（Registration Data Access Protocol）是查詢網域、IP 與 ASN 等登記資料的重要標準之一。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "至於 BGP 的 `AS_PATH`，則是公告中的路由屬性，不是 Traceroute 實測結果；不能直接把兩者視為相同的網路行經紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[ARIN RDAP](https://www.arin.net/resources/registry/whois/rdap/)。"
         },
         {
           "kind": "heading",
@@ -139,39 +607,244 @@
         },
         {
           "kind": "paragraph",
-          "text": "延續咖啡店案例，假設已取得以下合成資料："
-        },
-        {
-          "kind": "code",
-          "text": "取得時間：2026-11-01 08:00 +08:00\nDNS：shop.coffee.example A 192.0.2.25\n資源登記：192.0.2.0/24 → Example Edge\n路由資料：192.0.2.0/24 → origin AS64496\n自家服務設定：shop.coffee.example 使用邊緣代理"
+          "text": "這一節要回答的問題是："
         },
         {
           "kind": "paragraph",
-          "text": "DNS 的 A 紀錄連到 IPv4；AAAA 紀錄連到 IPv6。這份資料把網站名稱連到邊緣服務位址，再連到網段與路由資訊。CDN（Content Delivery Network，內容傳遞網路）可以讓多個邊緣節點提供內容；Reverse Proxy（反向代理）則在用戶端與後端服務之間接收、轉送請求。對外解析位址可能對應這些服務節點。[Cloudflare 代理 DNS 的運作](https://developers.cloudflare.com/dns/proxy-status/)"
+          "text": "當你查到一個網站的 IP，為什麼這個 IP 有時候不是網站真正的伺服器？"
         },
         {
           "kind": "paragraph",
-          "text": "整理時，請分清楚四個角色：網域的管理者、IP 資源的登記者、提供路由的網路、實際營運應用程式的人。雲端共享環境中，這些角色可能由不同單位負責。接續的查核工作，就是用各角色的官方或自家紀錄建立連結。"
+          "id": "section-4-1",
+          "text": "4.1 從你輸入網址開始"
         },
         {
           "kind": "paragraph",
-          "text": "同一網站也可能因觀察地點、時間、IPv4／IPv6、負載平衡而得到不同位址。Anycast（任播）讓同一位址可由多個位置提供服務，網路路由會把流量引向其中的節點。紀錄「從哪裡、何時看到什麼」，就能保留量測的實際意義。[任播服務運作](https://www.rfc-editor.org/rfc/rfc4786)"
+          "text": "假設你要進入一家咖啡店網站："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`shop.coffee.example`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一步，瀏覽器需要知道這個網域所對應的 IP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，它會透過 DNS 解析機制取得資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡最常見的三種 DNS 紀錄是："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "DNS 紀錄",
+            "用途",
+            "示意"
+          ],
+          "rows": [
+            [
+              "A",
+              "名稱對應 IPv4",
+              "`192.0.2.25`"
+            ],
+            [
+              "AAAA",
+              "名稱對應 IPv6",
+              "`2001:db8::25`"
+            ],
+            [
+              "CNAME",
+              "名稱指向另一個名稱",
+              "`cdn.coffee.example`"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 DNS 回覆 `192.0.2.25`，你的瀏覽器便可以使用這個目的位址建立後續連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但如果咖啡店有使用 CDN，這個 IP 可能其實屬於 CDN 的邊緣服務節點，而不是咖啡店真正的主機。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[DNS A／CNAME](https://www.rfc-editor.org/rfc/rfc1035)、[AAAA](https://www.rfc-editor.org/rfc/rfc3596)。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 CDN 與 Reverse Proxy 到底在做什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CDN（Content Delivery Network，內容傳遞網路）可以想成分散在各地的配送中心。它可以快取網站內容、降低回應延遲，並減輕原始伺服器的負載。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reverse Proxy（反向代理）則像站在伺服器前面的接待櫃檯：由它先接收訪客的請求，再決定是否轉送後端。"
         },
         {
           "kind": "visual",
-          "src": "/images/ceh/m02-06-01-domain-network-zh.svg",
+          "src": "/images/ceh/m02-06-cdn-origin-zh.svg",
           "downloadLabel": "下載 SVG 圖檔",
           "visual": {
             "kind": "cards",
-            "caption": "圖 1｜從網域走到網路治理",
-            "description": "DNS解析取得IP；前綴組成路由範圍，AS代表共同路由政策管理；服務與網路營運角色分層。",
+            "caption": "圖 5｜DNS、CDN 與 Origin 的分工",
+            "description": "DNS 查詢與 HTTPS 傳輸是不同通訊過程；回源只在需要時發生。",
             "items": [
               {
-                "title": "讀圖重點",
-                "body": "DNS解析取得IP；前綴組成路由範圍，AS代表共同路由政策管理；服務與網路營運角色分層。"
+                "title": "使用者瀏覽器",
+                "body": "shop.coffee.example"
+              },
+              {
+                "title": "DNS",
+                "body": "回覆 CDN 的 IP"
+              },
+              {
+                "title": "CDN Edge / Reverse Proxy",
+                "body": "192.0.2.25（對外服務 IP）\n快取命中可直接回覆使用者"
+              },
+              {
+                "title": "Origin Server｜原始伺服器",
+                "body": "可能位於企業內網或雲端"
               }
             ]
           }
+        },
+        {
+          "kind": "paragraph",
+          "text": "當你透過 CDN 訪問網站時，可能發生以下情況："
+        },
+        {
+          "kind": "paragraph",
+          "text": "瀏覽器先透過 DNS 取得 CDN 的 IP，之後向 CDN 發送 HTTPS 請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 CDN 已經快取了所需內容，它可以直接回覆；如果需要動態資料，便可能向原始伺服器（Origin Server）取得內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，DNS 回覆的 IP 可以是服務入口，而不是最終儲存資料或執行應用程式的主機。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 為什麼 Cloudflare 有時能隱藏原始 IP，有時不能？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡用 Cloudflare 的兩種設定作比較。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS Only"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在此示例，DNS 回覆設定的 Origin IP；流量不經一般的 Cloudflare HTTP 代理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Proxied"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 對外回覆代理 IP；支援的網站流量先經 Cloudflare，必要時才轉送 Origin。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-proxy-modes-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 6｜DNS Only 與 Proxied",
+            "description": "兩欄比較同一網站的不同入口配置，省略路由器、ISP 與其他中間網路。",
+            "items": [
+              {
+                "title": "使用者",
+                "body": "直接連線到設定的網站位址"
+              },
+              {
+                "title": "Origin｜原始伺服器",
+                "body": "DNS Only：回覆設定的位址"
+              },
+              {
+                "title": "使用者",
+                "body": "連線到代理入口"
+              },
+              {
+                "title": "Cloudflare 邊緣代理",
+                "body": "先處理支援的網站流量"
+              },
+              {
+                "title": "Origin｜原始伺服器",
+                "body": "需要回源時接收代理請求"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這項差異也影響 Origin 的存取控制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果使用 Cloudflare 的 HTTP 反向代理，但原始伺服器的 IP 仍然公開、而且可以從外部直接連線，攻擊者可能繞過 Cloudflare，直接攻擊 Origin。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以除了代理設定，還必須考慮 Origin 的防火牆、存取控制及其他暴露途徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，一般 Cloudflare HTTP Proxy 不會自動保護 SMB、SSH 等非 HTTP 服務。這類服務需要考慮不同的安全連線方案，例如具備身分驗證與存取政策的 VPN 或 Cloudflare Zero Trust 私有網路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Cloudflare 代理狀態](https://developers.cloudflare.com/dns/proxy-status/)、[Origin 保護](https://developers.cloudflare.com/fundamentals/security/protect-your-origin-server/)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Cloudflare 私有網路](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/private-net/)。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 同一個 IP，為什麼不同地方會連到不同伺服器？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與 Anycast（任播）有關。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像一家物流公司，在台北、東京和新加坡各設立一個服務據點，但是對外使用同一個服務地址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網際網路中的 Anycast 允許多個不同位置的服務節點宣告同一個 IP 前綴，使連線可以依當下路由政策被送往其中一個位置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，即使兩個人查到完全相同的 CDN IP，也不代表兩個人的封包必然抵達同一棟資料中心。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "必須注意：Anycast 並不保證送到地理距離最近的節點，而是依網路路由決策選擇可達路徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[任播服務運作](https://www.rfc-editor.org/rfc/rfc4786)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[下載這六張圖的中英 SVG](https://learn.cs-kairos.com/downloads/ceh-m02-06-network-svg.zip)。"
         },
         {
           "kind": "heading",
@@ -363,6 +1036,160 @@
           "text": "參考解析隨網站教材提供；你的作答可另外留下，方便依理解程度接續補充。"
         },
         {
+          "kind": "paragraph",
+          "text": "以下觀察適用 Ubuntu。DNS 與公開資料查詢會對外送出請求；本機介面資訊可能包含私人位址，分享前先去識別化。這些指令不修改設定，不執行服務掃描；離線 Python 範例不需連線。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-1",
+          "text": "8.1｜查詢網站的 DNS 位址"
+        },
+        {
+          "kind": "code",
+          "text": "dig +short A learn.cs-kairos.com\ndig +short AAAA learn.cs-kairos.com\ndig +short CNAME learn.cs-kairos.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一行查詢 IPv4；第二行查詢 IPv6；第三行查詢是否能觀察到 CNAME。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若沒有取得 AAAA 或 CNAME，不一定是錯誤，也可能沒有這類紀錄、名稱被展平，或代理機制改變回覆。需要判讀狀態時移除 +short，檢查狀態碼、解析器與回覆時間；不要把空白輸出直接當作不存在。若沒有 dig，可先完成離線練習。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2｜觀察自己電腦的 IP 和路由"
+        },
+        {
+          "kind": "code",
+          "text": "ip -br address\nip route"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一個指令顯示本機網路介面的位址；第二個顯示 IPv4 路由資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以觀察自己的電腦是否使用 `192.168.x.x` 或 `10.x.x.x` 這類私有位址，以及預設路由指向哪個閘道器。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3｜用 Python 解析網段"
+        },
+        {
+          "kind": "code",
+          "text": "from ipaddress import ip_interface\n\ninterface = ip_interface(\"192.0.2.25/24\")\nnetwork = interface.network\nprint(\"IP:\", interface.ip)\nprint(\"Network:\", network)\nprint(\"Start:\", network.network_address)\nprint(\"End:\", network.broadcast_address)\nprint(\"Addresses:\", network.num_addresses)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "將程式存成 cidr.py，執行 python3 cidr.py。預期依序輸出 IP: 192.0.2.25、Network: 192.0.2.0/24、Start: 192.0.2.0、End: 192.0.2.255、Addresses: 256。再改成 /30，核對範圍 .24–.27 與總數 4；完成後可刪除 cidr.py。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4｜進一步查詢 ASN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "取得某個公開 IP 後，可以使用 [RIPEstat](https://stat.ripe.net/) 觀察其網路前綴與 BGP 相關資訊，再利用 [RDAP 查詢入口](https://rdap.org/) 或適當的區域網際網路註冊管理機構，交叉核對登記資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些工具回答的是不同層次的問題，不應只靠單一查詢就認定網站真正的經營者、設備所在位置或安全狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5",
+          "text": "8.5｜把線索用在 NAS 存取判斷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果日後你要檢查一台實驗室 NAS，可以沿用這次學到的架構："
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路資產與暴露面分析"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一層｜設備與網段"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認 NAS 的私有 IP、所在 VLAN、子網路遮罩、閘道器與跨網段存取規則。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二層｜外部路由與服務入口"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認是否有公開 IP、NAT、連接埠轉送、VPN 或其他遠端存取路徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三層｜DNS、代理與實際服務"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查明網域是否經 CDN 或反向代理，以及 SMB、SSH、HTTPS 分別由哪些設備與政策保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候你就不會只問「NAS 有沒有公開 IP」，而能進一步判斷：哪些來源網路能夠抵達它、有哪些服務可被連線、哪些安全控制真正位在封包路徑上。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "把可達性、服務與控制位置分開記錄，能讓後續驗收找到對應證據。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-6",
+          "text": "8.6｜整合案例理解檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設某網站的 DNS 顯示 `192.0.2.25`（教材示例），所屬前綴為 `192.0.2.0/24`，路由資料顯示 Origin AS64496。網站負責人告訴你，他們有使用 CDN。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題 1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個 /24 前綴包含多少個 IPv4 位址？192.0.2.25 是否在範圍內？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題 2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AS64496 能證明網站經營者就是這個自治系統的管理者嗎？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題 3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 DNS 指向 CDN，能否直接得知真正的 Origin Server IP？還需要哪些證據？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題 4"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果網站前面有 Cloudflare，能否推論同一台主機的 SMB 服務也受到相同的保護？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先寫下判斷，再展開下方「整合案例」參考解答；答案不會傳送或寫入學習進度。"
+        },
+        {
           "kind": "answer",
           "id": "answer-local-prefix",
           "summary": "參考解答：本機網段練習",
@@ -400,6 +1227,38 @@
           "summary": "參考解答：小檢核四：確認服務關係",
           "paragraphs": [
             "可選：①含查詢時間與解析器的DNS結果；②含資料時間的RDAP登記及路由前綴/ASN紀錄；③自家雲端或CDN控制台中的網域、邊緣代理、後端與資產負責人設定。三者分別串起名稱、網路資源與實際服務管理；報告保留原始來源及查核時間。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-integrated-prefix",
+          "summary": "參考解答：整合案例：範圍",
+          "paragraphs": [
+            "/24 有 2^(32 − 24) = 256 個位址，從 192.0.2.0 到 192.0.2.255，包含 192.0.2.25。這是總位址數；傳統 /24 區域網路常用主機數為 254。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-integrated-operator",
+          "summary": "參考解答：整合案例：營運者",
+          "paragraphs": [
+            "AS64496 識別自治系統，路由資料支持該前綴的起源 AS 觀察。網站可能由 CDN 客戶營運，仍需資產清單、服務合約或控制台設定確認經營者。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-integrated-origin",
+          "summary": "參考解答：整合案例：Origin 證據",
+          "paragraphs": [
+            "CDN 的 DNS 回覆通常只揭示入口。由管理者的 DNS／代理控制台、Origin 設定、資產清單與服務紀錄交叉核對後端，不以邊緣 IP 推定原始 IP。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-integrated-smb",
+          "summary": "參考解答：整合案例：SMB 保護",
+          "paragraphs": [
+            "一般 HTTP 反向代理不自動涵蓋 SMB。分別核對 SMB 的路由、監聽介面、防火牆、VPN／私有網路與身分政策；不能只依網站代理狀態推定安全。"
           ]
         },
         {
@@ -444,107 +1303,375 @@
         },
         {
           "kind": "paragraph",
-          "text": "This lesson follows M02-04 DNS (Domain Name System) and M02-05 email paths. We now move from names and messages to addresses and networks. All addresses, ASNs, domains and outputs below are synthetic teaching data. Practice is offline interpretation and local calculation. Active measurements belong to a separately approved, owned, isolated lab."
+          "text": "This lesson follows M02-04 DNS (Domain Name System) and M02-05 email paths. We now move from names and messages to addresses and networks. Diagram addresses, ASNs and path outputs are synthetic. Optional local and public-record queries are recorded with their actual time and observation point. Active measurements belong to a separately approved, owned, isolated lab."
         },
         {
           "kind": "heading",
           "id": "section-2",
-          "text": "2 | IP addresses and prefixes"
+          "text": "2 | IP addresses and prefixes: addresses and ranges"
         },
         {
           "kind": "paragraph",
-          "text": "IP (Internet Protocol) carries data using source and destination addresses. A packet is a unit of network data. A router forwards packets toward a next hop using routing information. Addresses can be assigned to interfaces; services can also use shared or virtual addresses."
-        },
-        {
-          "kind": "paragraph",
-          "text": "An IPv4 address has 32 bits and is commonly written as four decimal numbers, such as `192.0.2.25`. IPv6 has 128 bits; `2001:db8::25` uses a double colon to compress a run of zeros. A website may offer both families, so retain their observations separately. [IPv4 specification](https://www.rfc-editor.org/rfc/rfc791), [IPv6 specification](https://www.rfc-editor.org/rfc/rfc8200)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "CIDR (Classless Inter-Domain Routing) writes a range as an address and prefix length. In `192.0.2.0/24`, the first 24 bits form a common prefix. The remaining eight bits provide `2^8 = 256` addresses, from `192.0.2.0` to `192.0.2.255`. This counts the entire address range; assignable interface counts depend on the subnet's purpose and configuration. [CIDR specification](https://www.rfc-editor.org/rfc/rfc4632)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "An IPv4 /25 leaves seven bits and contains 128 addresses; a /24 leaves eight bits and contains 256. A longer prefix identifies a smaller range, like adding detail to an address narrows the district being described."
-        },
-        {
-          "kind": "table",
-          "headers": [
-            "Information",
-            "Synthetic example",
-            "Interpretation"
-          ],
-          "rows": [
-            [
-              "Individual address",
-              "192.0.2.25",
-              "A network address"
-            ],
-            [
-              "Network prefix",
-              "192.0.2.0/24",
-              "A range containing that address"
-            ],
-            [
-              "Private network",
-              "10.20.0.0/24",
-              "A privately configured internal range"
-            ],
-            [
-              "IPv6 documentation address",
-              "2001:db8::25",
-              "An address reserved for examples"
-            ]
-          ]
-        },
-        {
-          "kind": "paragraph",
-          "text": "RFC 1918 reserves `10.0.0.0/8`, `172.16.0.0/12` and `192.168.0.0/16` for private IPv4 use. Different organizations can use these internally. NAT (Network Address Translation) maps internal and external addressing; multiple devices or people may share an external address. Investigations correlate the external address, precise time, ports and appropriate system records. [Private addressing](https://www.rfc-editor.org/rfc/rfc1918), [Traditional NAT](https://www.rfc-editor.org/rfc/rfc3022)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "The ranges `192.0.2.0/24`, `198.51.100.0/24` and `203.0.113.0/24` are reserved IPv4 documentation examples. IPv6 uses `2001:db8::/32` for documentation. They support examples and offline calculations here. [IPv4 documentation ranges](https://www.rfc-editor.org/rfc/rfc5737), [IPv6 documentation prefix](https://www.rfc-editor.org/rfc/rfc3849)"
+          "text": "When you enter a website name, DNS, addresses and routing answer different questions. Use a parcel-delivery analogy to build the map, then verify each relationship."
         },
         {
           "kind": "visual",
-          "src": "/images/ceh/m02-06-02-address-prefix-as-en.svg",
+          "src": "/images/ceh/m02-06-network-map-en.svg",
           "downloadLabel": "Download SVG diagram",
           "visual": {
             "kind": "cards",
-            "caption": "2 | Address, prefix, and ASN layers",
-            "description": "An IP is an address, a prefix is a range, and an ASN identifies an AS. Examples use documentation resources and private addresses.",
+            "caption": "Figure 1 | From a name to routing records",
+            "description": "Arrows show an investigation order using different sources, not a packet path.",
             "items": [
               {
-                "title": "How to read the diagram",
-                "body": "An IP is an address, a prefix is a range, and an ASN identifies an AS. Examples use documentation resources and private addresses."
+                "title": "1　Domain",
+                "body": "shop.coffee.example"
+              },
+              {
+                "title": "2　IP address",
+                "body": "192.0.2.25"
+              },
+              {
+                "title": "3　CIDR / prefix",
+                "body": "192.0.2.0/24"
+              },
+              {
+                "title": "4　ASN",
+                "body": "AS64496"
               }
             ]
           }
         },
         {
+          "kind": "table",
+          "headers": [
+            "Concept",
+            "Analogy",
+            "Actual role"
+          ],
+          "rows": [
+            [
+              "DNS",
+              "Address directory",
+              "Resolves domain names to IP addresses and other records"
+            ],
+            [
+              "IP",
+              "Delivery address",
+              "Identifies network source and destination addresses"
+            ],
+            [
+              "CIDR / prefix",
+              "Neighborhood or address range",
+              "Represents a range of IP addresses"
+            ],
+            [
+              "AS / ASN",
+              "A delivery operator’s routing system and identifier",
+              "Identifies a network with a common external routing policy"
+            ],
+            [
+              "BGP",
+              "Route information exchanged between operators",
+              "Exchanges network reachability information between ASes"
+            ],
+            [
+              "CDN",
+              "Distributed delivery centers",
+              "Provides content or proxy services at edge nodes"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A website name, network address, resource registrant, routing operator and website operator may belong to different organizations. Sections 2–4 explain how to connect these roles with evidence."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-1",
+          "text": "2.1 What is an IP address, and why do computers need one?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sending a parcel requires a destination address. Similarly, computers exchange packets using IP source and destination addresses. For example, 192.0.2.25 is an IPv4 address with four decimal octets, each from 0 to 255."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Type",
+            "Example",
+            "Length"
+          ],
+          "rows": [
+            [
+              "IPv4",
+              "192.0.2.25",
+              "32 bits"
+            ],
+            [
+              "IPv6",
+              "2001:db8::25",
+              "128 bits"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A bit has two possible values, 0 and 1. An IP address is usually assigned to a network interface; it can also serve a virtual service, load balancer or shared entry point. It does not permanently identify one computer."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 What is a subnet or network prefix?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If an IP address is a street address, a prefix describes a neighborhood. Consider three lab devices:"
+        },
+        {
+          "kind": "code",
+          "text": "192.0.2.10   Computer A\n192.0.2.20   Computer B\n192.0.2.25   Computer C"
+        },
+        {
+          "kind": "paragraph",
+          "text": "They share the first three octets, 192.0.2. CIDR (Classless Inter-Domain Routing) expresses a range as an address and prefix length, such as 192.0.2.0/24."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-prefix-bits-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 2 | Bits in 192.0.2.25/24",
+            "description": "This /24 fixes the first three octets; other prefixes need not end on an octet boundary.",
+            "items": [
+              {
+                "title": "192",
+                "body": "8 bits"
+              },
+              {
+                "title": "0",
+                "body": "8 bits"
+              },
+              {
+                "title": "2",
+                "body": "8 bits"
+              },
+              {
+                "title": "25",
+                "body": "8 bits"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv4 has 32 bits; /24 fixes the first 24 as the common network prefix. This leaves 32 − 24 = 8 variable bits and 2⁸ = 256 addresses, from 192.0.2.0 through 192.0.2.255."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A conventional IPv4 /24 LAN reserves its network and broadcast addresses, commonly leaving 254 host addresses. The “subtract two” rule does not apply to every prefix or use case."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "2.3 Why do /24, /25 and /26 describe different ranges?"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Prefix",
+            "Address range",
+            "Total addresses"
+          ],
+          "rows": [
+            [
+              "192.0.2.0/24",
+              ".0 through .255",
+              "256"
+            ],
+            [
+              "192.0.2.0/25",
+              ".0 through .127",
+              "128"
+            ],
+            [
+              "192.0.2.0/26",
+              ".0 through .63",
+              "64"
+            ],
+            [
+              "192.0.2.0/27",
+              ".0 through .31",
+              "32"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Moving from /24 to /25 fixes one additional bit, halving the range. It does not add one address. Use the simulator beneath the bit diagram to see the containing prefix for the fixed address 192.0.2.25, from /24 through /30. It displays the prefix, count and endpoints; the /24 default remains readable without JavaScript."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A prefix is a rule for describing and matching address ranges, not a physical box. Routers compare a destination with available forwarding entries. When prefixes overlap, longest-prefix matching selects the most specific matching entry. [CIDR and longest-prefix matching](https://www.rfc-editor.org/rfc/rfc4632)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-4",
+          "text": "2.4 How do private and public IP addresses differ?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider a lab with a computer, a NAS and a router:"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-private-network-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 3 | A private lab network",
+            "description": "The PC and NAS connect in parallel to one router/firewall, which connects outward.",
+            "items": [
+              {
+                "title": "Computer",
+                "body": "10.20.0.10"
+              },
+              {
+                "title": "NAS",
+                "body": "10.20.0.25"
+              },
+              {
+                "title": "Router / firewall",
+                "body": "May provide NAT and access controls"
+              },
+              {
+                "title": "External network / Internet",
+                "body": "Reachability depends on routes and policy"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.20.0.25 is a private IPv4 address. The private ranges are 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16. Organizations can reuse them internally; these addresses are not routed as destinations on the global public Internet."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Private addressing does not establish safety or restrict access to the same room. Another campus can reach the NAS if inter-campus routing exists and the firewall permits it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NAT (Network Address Translation) can let multiple internal devices communicate through fewer public addresses. Address translation does not replace firewall policy or authentication. Addresses and prefixes help define permitted sources, destinations and segmentation boundaries."
+        },
+        {
+          "kind": "paragraph",
+          "text": "192.0.2.0/24 is reserved for documentation, not for deploying a public website. 2001:db8::/32 is the IPv6 documentation range. [Private IPv4](https://www.rfc-editor.org/rfc/rfc1918), [IPv4 documentation addresses](https://www.rfc-editor.org/rfc/rfc5737), [IPv6 documentation addresses](https://www.rfc-editor.org/rfc/rfc3849)."
+        },
+        {
           "kind": "heading",
           "id": "section-3",
-          "text": "3 | ASN: who manages the routing policy?"
+          "text": "3 | ASN: who manages a common routing policy?"
         },
         {
           "kind": "paragraph",
-          "text": "An AS (Autonomous System) presents a coherent external routing policy for a collection of networks. Its ASN (Autonomous System Number), such as our documentation example `AS64496`, is an identifier. Think of an AS as a carrier with its own routing rules and an ASN as that carrier system's identification number. [AS definition](https://www.rfc-editor.org/rfc/rfc1930)"
+          "text": "ASN connects an address range to external routing policy."
         },
         {
           "kind": "paragraph",
-          "text": "An ISP (Internet Service Provider), cloud platform, large enterprise or academic network may operate an AS. One AS can announce multiple prefixes, and one organization may operate several ASes. ASNs identify routing systems; IP addresses support packet addressing."
+          "id": "section-3-1",
+          "text": "3.1 Why do we need ASNs as well as IP addresses?"
         },
         {
           "kind": "paragraph",
-          "text": "BGP (Border Gateway Protocol) exchanges prefix reachability information between autonomous systems. Its AS_PATH is an attribute of a routing announcement. Traceroute uses probe responses to observe a path. Separate columns preserve the distinction between a routing announcement and a particular measurement. [BGP specification](https://www.rfc-editor.org/rfc/rfc4271)"
+          "text": "A parcel sent from Taiwan to Tokyo may pass between delivery operators. Likewise, your computer can connect through an ISP, other operators’ networks and finally the destination network. Independently managed networks need a way to exchange which destinations are reachable through which neighbors."
         },
         {
           "kind": "paragraph",
-          "text": "RIRs (Regional Internet Registries) provide registration information through RDAP (Registration Data Access Protocol). Results may describe IP ranges, ASNs, registered organizations, contact roles and update information; available fields depend on the registry. [ARIN RDAP guide](https://www.arin.net/resources/registry/whois/rdap/)"
+          "text": "An AS (Autonomous System) presents a common external routing policy. Its ASN (Autonomous System Number) identifies that system. AS64496 is a documentation example, not an IP address or a computer number. One AS can announce many prefixes, and one company can operate multiple ASes. [AS definition](https://www.rfc-editor.org/rfc/rfc1930), [documentation ASNs](https://www.rfc-editor.org/rfc/rfc5398)."
         },
         {
           "kind": "paragraph",
-          "text": "For example, a synthetic record assigns `192.0.2.0/24` to Example Edge, while routing data associates its origin with AS64496. Record the registered organization and observed routing origin separately. Then consult contracts, cloud settings and your asset inventory to establish your service relationship. AS64496 and AS64497 are documentation ASNs. [Documentation ASN reservations](https://www.rfc-editor.org/rfc/rfc5398)"
+          "id": "section-3-2",
+          "text": "3.2 How does BGP exchange reachability information?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP (Border Gateway Protocol) exchanges network reachability information. Suppose a CDN operates AS64496 and provides reachability to 192.0.2.0/24. It can announce that route to a neighboring AS, allowing other networks to learn a path to the prefix."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-bgp-routing-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 4 | Packet forwarding and BGP",
+            "description": "Solid blue arrows point down for packets; the dashed orange arrow points up for this route announcement.",
+            "items": [
+              {
+                "title": "Your computer",
+                "body": "Client"
+              },
+              {
+                "title": "ISP | AS64497",
+                "body": "Provides the client’s network connection"
+              },
+              {
+                "title": "CDN network | AS64496",
+                "body": "Provides reachability to 192.0.2.0/24\nIncludes destination 192.0.2.25"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP exchanges route information; routers forward packets using selected forwarding entries. BGP does not ask the entire Internet for directions for every user packet. Policy, business relationships, network configuration and route attributes affect selection, so the chosen route need not be geographically shortest. [BGP specification](https://www.rfc-editor.org/rfc/rfc4271)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 Does an ASN identify the website operator?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider this synthetic record:"
+        },
+        {
+          "kind": "code",
+          "text": "IP: 192.0.2.25\nContaining prefix: 192.0.2.0/24\nIP resource registrant: Example Edge\nBGP origin AS: AS64496"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It associates the prefix with Example Edge’s registration and shows AS64496 as the origin in the queried routing data. It does not establish that Example Edge operates the website. A coffee shop could operate the site while Example Edge supplies CDN, cloud or network services."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Source",
+            "Question it answers"
+          ],
+          "rows": [
+            [
+              "DNS",
+              "Which addresses or names does the domain resolve to?"
+            ],
+            [
+              "RDAP / IP registration",
+              "Who is the IP resource registered to?"
+            ],
+            [
+              "BGP routing data",
+              "Which origin AS is observed announcing the prefix?"
+            ],
+            [
+              "Website and internal settings",
+              "Who operates the website and manages its backend?"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP (Registration Data Access Protocol) is a standard for accessing domain, IP and ASN registration data. BGP AS_PATH is an announcement attribute, not a measured traceroute; keep these observations separate. [ARIN RDAP](https://www.arin.net/resources/registry/whois/rdap/)."
         },
         {
           "kind": "heading",
@@ -553,39 +1680,164 @@
         },
         {
           "kind": "paragraph",
-          "text": "Continue the coffee-shop scenario with this synthetic evidence:"
-        },
-        {
-          "kind": "code",
-          "text": "Collected: 2026-11-01 08:00 +08:00\nDNS: shop.coffee.example A 192.0.2.25\nRegistration: 192.0.2.0/24 → Example Edge\nRouting data: 192.0.2.0/24 → origin AS64496\nOwned service configuration: shop.coffee.example uses an edge proxy"
+          "text": "Why might a website’s resolved IP identify an entry point rather than its backend server?"
         },
         {
           "kind": "paragraph",
-          "text": "A DNS A record points to IPv4; AAAA points to IPv6. These records connect a service name to an edge address, then to registration and routing information. A CDN (Content Delivery Network) serves content through distributed edge nodes. A reverse proxy receives and forwards client requests toward backend services. Public DNS may therefore identify these service nodes. [Cloudflare proxied DNS behavior](https://developers.cloudflare.com/dns/proxy-status/)"
+          "id": "section-4-1",
+          "text": "4.1 Start with the website name"
         },
         {
           "kind": "paragraph",
-          "text": "Keep four roles distinct: domain administrator, address registrant, routing provider and application operator. In shared cloud environments, different parties may perform each role. Appropriate official and owned records establish the relationship among them."
+          "text": "Suppose you visit shop.coffee.example. The browser uses DNS resolution to obtain address information. Three common record types are:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Record",
+            "Purpose",
+            "Example"
+          ],
+          "rows": [
+            [
+              "A",
+              "Name to IPv4 address",
+              "192.0.2.25"
+            ],
+            [
+              "AAAA",
+              "Name to IPv6 address",
+              "2001:db8::25"
+            ],
+            [
+              "CNAME",
+              "Name to another name",
+              "cdn.coffee.example"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "A website can yield different observations by location, time, address family or load balancing. Anycast allows an address to be served from multiple locations, with routing directing traffic toward a serving node. Recording where and when a result was observed preserves its context. [Anycast service operation](https://www.rfc-editor.org/rfc/rfc4786)"
+          "text": "If the reply is 192.0.2.25, the browser can use that destination for a subsequent connection. With a CDN, it may be an edge-service address instead of the coffee shop’s origin host."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[DNS A/CNAME](https://www.rfc-editor.org/rfc/rfc1035), [AAAA](https://www.rfc-editor.org/rfc/rfc3596)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 What do a CDN and reverse proxy do?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A CDN (Content Delivery Network) resembles distributed delivery centers: it can cache content, reduce response latency and reduce origin load. A reverse proxy receives client requests in front of a server and determines whether to forward them to a backend."
         },
         {
           "kind": "visual",
-          "src": "/images/ceh/m02-06-01-domain-network-en.svg",
+          "src": "/images/ceh/m02-06-cdn-origin-en.svg",
           "downloadLabel": "Download SVG diagram",
           "visual": {
             "kind": "cards",
-            "caption": "1 | From a domain to network governance",
-            "description": "DNS resolves IP addresses, prefixes describe address ranges, and ASes group routing policy. Service and network operators have distinct roles.",
+            "caption": "Figure 5 | DNS, CDN and origin roles",
+            "description": "DNS queries and HTTPS transfers are separate exchanges; origin requests happen when needed.",
             "items": [
               {
-                "title": "How to read the diagram",
-                "body": "DNS resolves IP addresses, prefixes describe address ranges, and ASes group routing policy. Service and network operators have distinct roles."
+                "title": "User’s browser",
+                "body": "shop.coffee.example"
+              },
+              {
+                "title": "DNS",
+                "body": "Returns the CDN IP"
+              },
+              {
+                "title": "CDN edge / reverse proxy",
+                "body": "192.0.2.25 (public-facing service IP)\nA cache hit can answer the client directly"
+              },
+              {
+                "title": "Origin server",
+                "body": "May be on an internal network or in the cloud"
               }
             ]
           }
+        },
+        {
+          "kind": "paragraph",
+          "text": "The browser first obtains a CDN address through DNS, then sends an HTTPS request to the CDN. A cache hit can answer directly; a request needing backend data may reach the origin. The resolved address can therefore be an entry point rather than the host storing data or running the application."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 When does Cloudflare conceal the origin address?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS Only: in this example DNS returns the configured origin IP, and traffic bypasses the standard Cloudflare HTTP proxy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Proxied: DNS returns proxy IPs; supported web traffic reaches Cloudflare first and is forwarded to the origin when needed."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-proxy-modes-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 6 | DNS Only and Proxied",
+            "description": "Compare two configurations for one site; routers, ISPs and intermediate networks are omitted.",
+            "items": [
+              {
+                "title": "User",
+                "body": "Connects directly to the configured site address"
+              },
+              {
+                "title": "Origin server",
+                "body": "DNS Only: returns the configured address"
+              },
+              {
+                "title": "User",
+                "body": "Connects to the proxy entry point"
+              },
+              {
+                "title": "Cloudflare edge proxy",
+                "body": "Handles supported web traffic first"
+              },
+              {
+                "title": "Origin server",
+                "body": "Receives proxy requests when needed"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "If an origin IP remains exposed and accepts direct external connections, a client may bypass the HTTP proxy. Review origin firewall rules, access controls and other exposure paths as well as the proxy setting."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The standard Cloudflare HTTP proxy does not automatically protect SMB or SSH. Those services need an appropriate connection design, such as a VPN or a Cloudflare Zero Trust private network with authentication and access policies. [Proxy status](https://developers.cloudflare.com/dns/proxy-status/), [origin protection](https://developers.cloudflare.com/fundamentals/security/protect-your-origin-server/)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Cloudflare private networks](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/private-net/)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 Why can the same IP lead to different servers?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Anycast allows service nodes in multiple locations to announce the same IP prefix. Think of delivery offices in Taipei, Tokyo and Singapore sharing one service address: routing policy directs a connection to one location."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two users seeing the same CDN IP need not reach the same data center. Anycast follows routing decisions and does not guarantee the geographically nearest node. Record observation time and location. [Anycast operation](https://www.rfc-editor.org/rfc/rfc4786)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Download the six diagrams in both languages](https://learn.cs-kairos.com/downloads/ceh-m02-06-network-svg.zip)."
         },
         {
           "kind": "heading",
@@ -777,6 +2029,100 @@
           "text": "Reference explanations accompany the website lesson. Actual learner responses can be recorded separately to guide further explanation."
         },
         {
+          "kind": "paragraph",
+          "text": "The following observations apply to Ubuntu. DNS and public-record queries send external requests. Local interface output may reveal private addresses; de-identify it before sharing. These commands do not change settings or scan services. The Python calculation is offline."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-1",
+          "text": "8.1 | Query website DNS addresses"
+        },
+        {
+          "kind": "code",
+          "text": "dig +short A learn.cs-kairos.com\ndig +short AAAA learn.cs-kairos.com\ndig +short CNAME learn.cs-kairos.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The commands query IPv4, IPv6 and observable CNAME records respectively. An empty AAAA or CNAME result can reflect an absent record, flattening or proxy behavior. Remove +short to inspect status, resolver and response timing; an empty display alone does not prove absence. If dig is unavailable, begin with the offline exercise."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 | Inspect local addresses and routes"
+        },
+        {
+          "kind": "code",
+          "text": "ip -br address\nip route"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The first command lists interface addresses; the second shows IPv4 routes. Identify private addresses such as 192.168.x.x or 10.x.x.x and the default gateway. Record actual output rather than assuming a gateway address."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 | Parse a prefix with Python"
+        },
+        {
+          "kind": "code",
+          "text": "from ipaddress import ip_interface\n\ninterface = ip_interface(\"192.0.2.25/24\")\nnetwork = interface.network\nprint(\"IP:\", interface.ip)\nprint(\"Network:\", network)\nprint(\"Start:\", network.network_address)\nprint(\"End:\", network.broadcast_address)\nprint(\"Addresses:\", network.num_addresses)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Save as cidr.py and run python3 cidr.py. Expect IP: 192.0.2.25, Network: 192.0.2.0/24, Start: 192.0.2.0, End: 192.0.2.255 and Addresses: 256, on separate lines. Then use /30 and verify .24–.27 with four addresses. Remove cidr.py when finished if it is no longer needed."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 | Look up ASN evidence"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For a real public IP, use [RIPEstat](https://stat.ripe.net/) to inspect prefix and BGP information, and [RDAP](https://rdap.org/) or the relevant regional Internet registry to cross-check registration. These tools answer different questions; a single lookup does not establish the website operator, device location or security state."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5",
+          "text": "8.5 | Apply the evidence to NAS access"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For a lab NAS, organize the evidence into three layers. First, identify its private IP, VLAN, subnet mask, gateway and inter-subnet rules. Second, check public addressing, NAT, port forwarding, VPN and other remote-access paths. Third, connect DNS and proxy settings to actual services: identify which devices and policies protect SMB, SSH and HTTPS."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lets you ask which source networks can reach each service and which controls actually lie on that packet path. Record reachability, service roles and control placement separately so later acceptance has specific evidence to inspect."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-6",
+          "text": "8.6 | Integrated case check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A website resolves to the documentation address 192.0.2.25, inside 192.0.2.0/24. Routing data shows origin AS64496, and its operator reports using a CDN."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 1: How many IPv4 addresses does /24 contain? Is 192.0.2.25 inside it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 2: Does AS64496 prove that its operator also operates the website? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 3: Does DNS pointing to a CDN reveal the actual origin IP? What further evidence is needed?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 4: Does Cloudflare in front of the website establish equal protection for SMB on the same host?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Write your reasoning, then open the integrated-case reference answers below. No answer is transmitted or saved as learner progress."
+        },
+        {
           "kind": "answer",
           "id": "answer-local-prefix",
           "summary": "Reference answer: Local prefix practice",
@@ -814,6 +2160,38 @@
           "summary": "Reference answer: Check four: service relationship",
           "paragraphs": [
             "Preserve:①DNS results with query time and resolver;②RDAP registration and prefix/ASN routing records with their data times;③owned cloud or CDN settings linking the domain, edge proxy, backend and asset owner. These connect names, network resources and service administration. Retain original sources and verification times."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-integrated-prefix",
+          "summary": "Reference answer: Integrated case: Range",
+          "paragraphs": [
+            "A /24 has 2^(32 − 24) = 256 addresses, from 192.0.2.0 through 192.0.2.255, including 192.0.2.25. This is the total count; a conventional /24 LAN commonly has 254 host addresses."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-integrated-operator",
+          "summary": "Reference answer: Integrated case: Operator",
+          "paragraphs": [
+            "AS64496 identifies an AS; routing data supports an origin-AS observation for the prefix. A CDN customer may operate the website. Confirm the operator with an asset inventory, contract or control-panel settings."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-integrated-origin",
+          "summary": "Reference answer: Integrated case: Origin evidence",
+          "paragraphs": [
+            "A CDN DNS answer normally exposes an entry point. Cross-check owner-controlled DNS/proxy settings, origin configuration, asset inventory and service records; do not infer the origin IP from an edge IP."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-integrated-smb",
+          "summary": "Reference answer: Integrated case: SMB protection",
+          "paragraphs": [
+            "A standard HTTP reverse proxy does not automatically cover SMB. Check SMB routing, listening interfaces, firewall rules, VPN/private-network access and identity policy separately. Website proxy status alone does not establish safety."
           ]
         },
         {

@@ -19,3 +19,19 @@ A suitable record is: “None of the three hop-two probes received an expected r
 ## answer-service-correlation | Check four: service relationship
 
 Preserve:①DNS results with query time and resolver;②RDAP registration and prefix/ASN routing records with their data times;③owned cloud or CDN settings linking the domain, edge proxy, backend and asset owner. These connect names, network resources and service administration. Retain original sources and verification times.
+
+## answer-integrated-prefix | Integrated case: Range
+
+A /24 has 2^(32 − 24) = 256 addresses, from 192.0.2.0 through 192.0.2.255, including 192.0.2.25. This is the total count; a conventional /24 LAN commonly has 254 host addresses.
+
+## answer-integrated-operator | Integrated case: Operator
+
+AS64496 identifies an AS; routing data supports an origin-AS observation for the prefix. A CDN customer may operate the website. Confirm the operator with an asset inventory, contract or control-panel settings.
+
+## answer-integrated-origin | Integrated case: Origin evidence
+
+A CDN DNS answer normally exposes an entry point. Cross-check owner-controlled DNS/proxy settings, origin configuration, asset inventory and service records; do not infer the origin IP from an edge IP.
+
+## answer-integrated-smb | Integrated case: SMB protection
+
+A standard HTTP reverse proxy does not automatically cover SMB. Check SMB routing, listening interfaces, firewall rules, VPN/private-network access and identity policy separately. Website proxy status alone does not establish safety.

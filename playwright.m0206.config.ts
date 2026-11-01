@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'tests/browser',testMatch:'m0206.spec.ts',workers:1,timeout:90000,outputDir:'.local/m0206-revision/traces',reporter:[['list'],['json',{outputFile:'.local/m0206-revision/browser-results.json'}]],use:{baseURL:'http://127.0.0.1:4196',headless:true,trace:'retain-on-failure'},webServer:{command:'python3 -m http.server 4196 --bind 127.0.0.1 --directory build',url:'http://127.0.0.1:4196/',reuseExistingServer:false},projects:[{name:'chrome',use:{browserName:'chromium',channel:'chrome'}}]});
