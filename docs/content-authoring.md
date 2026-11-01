@@ -227,3 +227,7 @@ user markup. Unregistered `visual` assets retain the existing semantic renderer.
 11/01 版本規則優先於本文件早期「shared UI-only release 不改教材版本」的做法；舊段落作為歷史保留，新修訂遵循 [WRITE-06](article-standards.md#原發布版本與修訂日期write-06)。純重新建置或部署仍不升版。
 
 授權發布後，使用 `CEH_READING_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.m01-m02.config.ts` 對正式站重跑同一組驗收；正式站證據寫入 `.local/m01-m02/live/`，本機結果另存。測試不會自行部署。
+
+## 結構化記憶體與分層圖解
+
+新增 `cells`、`stages`、`layers`、`reference` 版型及受限 cells／released 欄位，契約、響應式規則與驗收統一依[圖解設計規範](diagram-design-system.md)。新增教學範圍與版型的實作見[記憶體基礎回執](releases/2026-11-01-nas-memory-foundations.md)。

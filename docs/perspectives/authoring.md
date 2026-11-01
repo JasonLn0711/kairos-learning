@@ -237,3 +237,7 @@ AI 可以協助擬大綱、解釋概念、改寫、翻譯與檢查一致性。�
 
 
 NAS 漏洞公告與記憶體生命週期的圖解範例見[內容設計](nas-cve-content-design.md)與[驗收回執](../releases/2026-11-01-nas-cve-patching.md)。執行 `npm run generate:perspective-diagrams` 同步下載檔；建置後 `npm run test:browser:nas-cve` 驗證兩語、尺寸、放大、鍵盤、無 JavaScript、搜尋及雙向閱讀連結。正式站使用 `NAS_CVE_BASE_URL=https://learn.cs-kairos.com npm run test:browser:nas-cve`，證據另存 `.local/nas-cve/live/`。
+
+## 結構化記憶體與分層圖解
+
+新增 `cells`、`stages`、`layers`、`reference` 版型及受限 cells／released 欄位，契約、響應式規則與驗收統一依[圖解設計規範](../diagram-design-system.md)。新增教學範圍與版型的實作見[記憶體基礎回執](../releases/2026-11-01-nas-memory-foundations.md)。
