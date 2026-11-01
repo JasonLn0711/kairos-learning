@@ -28,6 +28,12 @@
 
 ## 發布
 
-待填入實際 PR、部署 commit／run 與公開讀回結果；通過本機驗收尚不等同線上發布。
+已發布：[PR #62](https://github.com/JasonLn0711/kairos-learning/pull/62) 通過 [CI 41278512862](https://github.com/JasonLn0711/kairos-learning/actions/runs/41278512862) 後，以 merge commit `983acd8820f05cbb5b1fa238ce9227ac7a09deaf` 合併至 main，保留兩筆獨立提交：`bffb3e9`（文章、元件、下載與測試）、`03349fb`（設計、規範及驗收文件）。
+
+[Pages 41278580437](https://github.com/JasonLn0711/kairos-learning/actions/runs/41278580437) 已成功部署該 merge commit。之後以 `NAS_BASE_URL=https://learn.cs-kairos.com npm run test:browser:nas` 實際驗證正式站，11 項全部通過（38.1 秒），涵蓋兩種語言、四種尺寸、200% 文字、鍵盤下載、無 JavaScript 及導覽。十二張公開 SVG 與本機原始檔逐位元組一致；圖檔為 2341–4392 bytes，獨立 SVG 文字邊界檢查均無越界。
+
+Safari 原生工具曾逾時；重新取得狀態後成功開啟正式中文文章，讀到完整正文及六圖輔助使用文字，實際點選目錄並查看圖 1 卡片與下載連結畫面。此為 Safari 桌面閱讀觀察，手機尺寸與完整鍵盤測試由獨立 Chrome 執行。
+
+公開站結果在 `.local/nas/live-browser.log` 與 `results.json`；本機初次結果另保留為 `local-results.json`。此收據更新只改文件，網站內容與元件仍對應上述已驗證版本。
 
 維護方式與命令見[撰稿指南](../perspectives/authoring.md#可重用的響應式圖解)。本次不改變原有課程內容或學習進度。
