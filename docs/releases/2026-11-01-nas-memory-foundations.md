@@ -38,3 +38,9 @@ C 範例檢查 malloc／calloc 失敗、初始化後才讀取，包含字串結�
 本機結果：90 項單元測試通過，Svelte 0 error／0 warning，draft／future 標記未出現在 524 份部署文字產物，release 檢查通過。新篇最終瀏覽器 14 項通過（49.5 秒），既有 NAS 篇 11 項回歸通過（10.2 秒）。最終驗證器再限制版型對應的 flow／cards 與 cells 欄位，避免 HTML／SVG 線型不一致；重跑單元、型別、乾淨發布邊界與靜態驗收通過。三十份 SVG 為 1766–4926 bytes。
 
 證據：`unit-final.log`、`check-final.log`、`boundary-final.log`、`release-final.log`、`browser-delivery.log`、`previous-accepted.log`、`c-evidence.json`；獨立 SVG 目視預覽亦存於 `.local/nas-foundations/`。本輪先完成建置，再執行瀏覽器驗收，未並行覆寫 build。
+
+## 正式發布回執
+
+實作提交 `3ed255f`、規範提交 `ffc123d` 已非強制推送 main。[Pages 41300593143](https://github.com/JasonLn0711/kairos-learning/actions/runs/41300593143) 成功部署 `ffc123d31497b0a66cebbf276d79186386242b3b`。正式站獨立 Chrome 完整 14 項通過（1.5 分鐘），讀回 v1.2.0、雙語全文、十五圖／七表、四種響應式版型、八張記憶體圖的鍵盤下載及 SVG 文字邊界、200% 文字、無 JavaScript、程式碼及表格鍵盤捲動、搜尋與閱讀互連；圖檔與正式來源逐位元組相符。
+
+正式站證據：`.local/nas-foundations/live.log` 與 `.local/nas-cve/live/` 結果、截圖。正式閱讀入口為本回執首段的中英文 `#memory-address` 連結。保留本機與正式站結果，不以 CI 通過替代讀回驗收。
