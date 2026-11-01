@@ -8,9 +8,23 @@ export function renderStructuredDiagramSvg(d:TeachingDiagram,lang:string){
  const arrow=(x1:number,y1:number,x2:number,y2:number,dash=false)=>{const horizontal=y1===y2;parts.push(`<path d="M${x1} ${y1}${horizontal?`H${x2}`:`V${y2}`}m${horizontal?'-10 -8':'-8 -10'} ${horizontal?'10 8 -10 8':'8 10 8 -10'}" fill="none" stroke="#596b82" stroke-width="3"${dash?' stroke-dasharray="8 5"':''}/>`);};
  type Node=TeachingDiagram['groups'][number]['items'][number];
  const height=(n:Node,w:number)=>28+lines(n.title,w-40,24).length*37.2+(n.cells?94:0)+lines(n.body,w-40,20).length*31+22;
- const node=(n:Node,x:number,y:number,w:number,h:number)=>{const [fill,edge,ink]=palette[n.tone];rect(x,y,w,h,fill,edge);let yy=y+34;yy+=text(n.title,x+20,yy,w-40,24,true,ink,true);if(n.cells){const gap=10,cw=(w-40-gap*(n.cells.length-1))/n.cells.length;for(const [i,c] of n.cells.entries()){rect(x+20+i*(cw+gap),yy+8,cw,68,'#ffffff',edge,n.state==='released');text(c,x+20+i*(cw+gap),yy+53,cw,34,true,ink,true);}yy+=94;}text(n.body,x+20,yy+8,w-40,20,false,ink,true);};
+ const node=(n:Node,x:number,y:number,w:number,h:number)=>{const [fill,edge,ink]=palette[n.tone];rect(x,y,w,h,fill,edge,d.layout==='lifetime'&&n.state==='released');let yy=y+34;yy+=text(n.title,x+20,yy,w-40,24,true,ink,true);if(n.cells){const gap=10,cw=(w-40-gap*(n.cells.length-1))/n.cells.length;for(const [i,c] of n.cells.entries()){if(d.layout!=='lifetime')rect(x+20+i*(cw+gap),yy+8,cw,68,'#ffffff',edge,n.state==='released');text(c,x+20+i*(cw+gap),yy+53,cw,34,true,ink,true);}yy+=94;}text(n.body,x+20,yy+8,w-40,20,false,ink,true);};
  let y=42;y+=text(d.caption,32,y,1136,28,true);y+=text(d.description,32,y+12,1136,20)+36;
- if(d.layout==='layers'){
+ if(d.layout==='lifetime'){
+  for(const [gi,g] of d.groups.entries()){
+   const w=320,gap=56,h=Math.max(...g.items.map(n=>height(n,w))),th=lines(g.title,1072,24).length*37.2;
+   rect(32,y,1136,h+th+64,gi?'#fff9eb':'#eff6ff',gi?'#d48a00':'#5795ff');text(g.title,64,y+34,1072,24,true);
+   const top=y+th+46;g.items.forEach((n,i)=>{const nh=i===2?height(n,w):h;node(n,64+i*(w+gap),top+(h-nh)/2,w,nh);});
+   if(gi)parts.push(`<path d="M388 ${top+h/2}H436m-10-8 10 8-10 8" fill="none" stroke="#c62828" stroke-width="3" stroke-dasharray="8 5"/>`);else arrow(388,top+h/2,436,top+h/2);
+   y+=h+th+100;
+  }
+ }else if(d.layout==='access-path'){
+  const g=d.groups[0],w=352,gap=40,h=Math.max(...g.items.map(n=>height(n,w)));
+  y+=text(g.title,32,y,1136,24,true)+18;
+  g.items.forEach((n,i)=>{node(n,32+i*(w+gap),y,w,h);if(i)arrow(32+i*(w+gap)-36,y+h/2,32+i*(w+gap)-4,y+h/2);});
+  y+=h;parts.push(`<path d="M600 ${y}v64" fill="none" stroke="#b66b00" stroke-width="3" stroke-dasharray="8 5"/>`);y+=86;
+  y+=text(d.groups[1].title,240,y,720,21,true,'#994600',true)+18;const n=d.groups[1].items[0],nh=height(n,720);node(n,240,y,720,nh);y+=nh;
+ }else if(d.layout==='layers'){
   for(const [index,g] of d.groups.entries()){
    if(index){arrow(880,y,880,y+54,true);y+=74;}
    const cols=g.items.length,w=(1072-(cols-1)*48)/cols,h=Math.max(...g.items.map(n=>height(n,w)));

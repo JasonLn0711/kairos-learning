@@ -10,24 +10,26 @@ export const diagramIcons = {
  check:'M4 12l5 5L20 5',
  warning:'M12 2 23 21H1z M12 8v6 M12 17v1'
 } as const;
-export type TeachingDiagram = {id:string;layout?:'cells'|'stages'|'layers'|'reference';caption:string;description:string;groups:{title:string;mode:'flow'|'cards';items:{title:string;body:string;cells?:string[];state?:'released';icon:keyof typeof diagramIcons;tone:keyof typeof diagramTones}[]}[];note:string};
+export type TeachingDiagram = {id:string;layout?:'cells'|'stages'|'layers'|'reference'|'lifetime'|'access-path';caption:string;description:string;groups:{title:string;mode:'flow'|'cards';items:{title:string;body:string;cells?:string[];state?:'released';icon:keyof typeof diagramIcons;tone:keyof typeof diagramTones}[]}[];note:string};
 export function diagramText(d:TeachingDiagram):string[]{return [d.caption,d.description,...d.groups.flatMap(g=>[g.title,...g.items.flatMap(i=>[i.title,...(i.cells??[]),i.body])]),d.note]}
 export function validateDiagram(d:TeachingDiagram):void {
  const text=(s:unknown)=>typeof s==='string'&&s.trim().length>0&&s.length<=800;
  if(!d||!(/^[a-z][a-z0-9-]*$/).test(d.id)||![d.caption,d.description,d.note].every(text)||!Array.isArray(d.groups)||!d.groups.length||d.groups.length>6)throw Error('invalid diagram');
- if(d.layout!==undefined&&!['cells','stages','layers','reference'].includes(d.layout))throw Error('invalid diagram layout');
+ if(d.layout!==undefined&&!['cells','stages','layers','reference','lifetime','access-path'].includes(d.layout))throw Error('invalid diagram layout');
  for(const g of d.groups){
   if(!text(g.title)||!['flow','cards'].includes(g.mode)||!Array.isArray(g.items)||!g.items.length||g.items.length>6)throw Error('invalid diagram group');
   for(const i of g.items){
    if(!i||!text(i.title)||!text(i.body)||!Object.hasOwn(diagramIcons,i.icon)||!Object.hasOwn(diagramTones,i.tone))throw Error('invalid diagram node');
-   if(i.cells!==undefined&&(!['cells','stages'].includes(d.layout??'')||!Array.isArray(i.cells)||!i.cells.length||i.cells.length>4||i.cells.some(c=>!text(c)||c.length>8)))throw Error('invalid memory cells');
-   if(i.state!==undefined&&(d.layout!=='stages'||i.state!=='released'))throw Error('invalid node state');
+   if(i.cells!==undefined&&(!['cells','stages','lifetime'].includes(d.layout??'')||!Array.isArray(i.cells)||!i.cells.length||i.cells.length>4||i.cells.some(c=>!text(c)||c.length>8)))throw Error('invalid memory cells');
+   if(i.state!==undefined&&(!['stages','lifetime'].includes(d.layout??'')||i.state!=='released'))throw Error('invalid node state');
   }
  }
  if(!d.layout)return;
  const shape=d.groups.map(g=>`${g.mode}:${g.items.length}`).join(',');
- const expected={cells:'cards:4',stages:'flow:3',layers:'flow:2,cards:1',reference:'flow:3'};
+ const expected={cells:'cards:4',stages:'flow:3',layers:'flow:2,cards:1',reference:'flow:3',lifetime:'flow:3,flow:3','access-path':'flow:3,cards:1'};
  if(shape!==expected[d.layout])throw Error('invalid layout structure');
+ if(d.layout==='lifetime'&&d.groups.some((g,gi)=>g.items.some((n,i)=>gi===1&&i===1?n.state!=='released':n.state!==undefined)))throw Error('lifetime requires one released target in after-state');
+ if(d.layout==='lifetime'&&d.groups.some(g=>g.items.some((n,i)=>i<2?n.cells?.length!==1:n.cells!==undefined)))throw Error('lifetime requires pointer and memory values only');
  if(d.layout==='cells'&&d.groups[0].items.some(n=>n.cells?.length!==1))throw Error('cells layout requires one value per address');
  if(d.layout==='stages'&&d.groups[0].items.some(n=>n.cells?.length!==3))throw Error('stages layout requires three cells');
 }

@@ -20,11 +20,11 @@ test('diagram boundary rejects markup controls, malformed nodes and bilingual st
  const d=article().text.zh.sections.find(s=>s.diagram)!.diagram!;d.note='<script>alert("x")</script>';assert.doesNotMatch(renderDiagramSvg(d,'en'),/<script>/);
 });
 
-test('CVE article exports fifteen matching bilingual diagrams and reciprocal reading links',()=>{
+test('CVE article exports seventeen matching bilingual diagrams and reciprocal reading links',()=>{
  const p=JSON.parse(readFileSync('content/perspectives/nas-cve-patching.json','utf8')) as Perspective;
  validatePerspectives([p],known);assert.match(p.contentVersion,/^\d+\.\d+\.\d+$/);
  for(const lang of ['zh','en'] as const){
-  const ds=p.text[lang].sections.flatMap(s=>s.diagram?[s.diagram]:[]);assert.equal(ds.length,15);
+  const ds=p.text[lang].sections.flatMap(s=>s.diagram?[s.diagram]:[]);assert.equal(ds.length,17);
   for(const d of ds){const svg=readFileSync('site'+diagramAsset(p.id,d,lang),'utf8');assert.equal(svg,renderDiagramSvg(d,lang==='zh'?'zh-Hant':'en'));assert.ok(Buffer.byteLength(svg)<100000);assert.doesNotMatch(svg,/<script|foreignObject|onload=|href=/);for(const text of diagramText(d))assert.ok(searchEntries.find(e=>e.id===p.id&&e.lang===lang)!.text.includes(text));}
   assert.ok(getPage(`${lang==='en'?'/en':''}/perspectives/${p.slug}/`)?.perspective);
   assert.ok(p.text[lang].sections.some(s=>s.paragraphs.some(t=>t.includes('/nas-offline-recovery/'))));
@@ -39,4 +39,12 @@ test('structured layouts validate shape, cell values and bilingual presentation'
  const legacy=article().text.zh.sections.find(s=>s.diagram)!.diagram!;legacy.groups[0].items[0].cells=['A'];assert.throws(()=>validateDiagram(legacy));
  const escaped=structuredClone(sample);escaped.groups[0].items[0].title='<script>bad()</script>';assert.doesNotMatch(renderDiagramSvg(escaped,'en'),/<script>/);
  p.text.en.sections.find(s=>s.diagram?.layout==='cells')!.diagram!.groups[0].items[0].cells=['1','2'];assert.throws(()=>validatePerspectives([p],known));
+});
+
+test('pointer diagrams preserve lifecycle shape and never add arrows to status badges',()=>{
+ const p=JSON.parse(readFileSync('content/perspectives/nas-cve-patching.json','utf8')) as Perspective;
+ const lifetime=p.text.zh.sections.find(s=>s.diagram?.layout==='lifetime')!.diagram!;
+ assert.equal(lifetime.groups.length,2);assert.equal(lifetime.groups[1].items[1].state,'released');
+ for(const mutate of [(d:any)=>d.groups.pop(),(d:any)=>delete d.groups[1].items[1].state,(d:any)=>d.groups[0].items[2].cells=['bad'],(d:any)=>d.groups[0].mode='cards']){const d=structuredClone(lifetime);mutate(d);assert.throws(()=>validateDiagram(d));}
+ const access=p.text.zh.sections.find(s=>s.diagram?.layout==='access-path')!.diagram!;assert.equal(access.groups[0].items[1].tone,'purple');assert.equal(access.groups[1].mode,'cards');
 });
