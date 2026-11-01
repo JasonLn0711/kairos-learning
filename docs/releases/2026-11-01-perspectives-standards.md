@@ -30,3 +30,11 @@ FIRST PRINCIPLE：稀缺資源是讀者注意力、編輯維護時間與可驗�
 16 項專欄 Playwright 測試再次通過；253 頁、1012 筆四尺寸初篩無差距。253 頁完成無 JavaScript 正文長度及第一個鍵盤焦點／適用收合操作紀錄。人工圖解、完整操作流程、200% 放大及無 JavaScript 語意驗收仍待完成。
 
 分開提交：`966e685` 觀點功能與發布隔離、`2091909` 專欄瀏覽器測試、`5fbb36b` 全站寫作規範、`a37421e` 全站盤點工具。本回執及盤點為獨立證據提交。正式部署狀態由後續 GitHub 工作流程回讀確認。
+
+## Git 發布與正式站回執
+
+2026-11-01 已以 `git push origin HEAD:main` 非強制推送上述 5 個獨立提交，遠端讀回為 `033b52c1b842dae4182bf827f0d8e6740eb99154`，當時差距 0／0。遠端原有 12 個提交全部保留；備份分支及 stash 留在本機。
+
+[Pages 41276416247](https://github.com/JasonLn0711/kairos-learning/actions/runs/41276416247) 已 completed／success，對應 `033b52c`。正式 `/perspectives/` 與 `/en/perspectives/` 的 HTTP 讀回均回傳 403，停止重試；公開內容讀回仍待驗，不以部署成功代替。後續此文件的回執提交由相同 main 工作流程處理。
+
+Planning 分開提交 `c4c3f874`（專案／工具入口）與 `f3115036`（日誌／週計畫），推送後遠端一致；[CI 41276431136](https://github.com/JasonLn0711/planning-everything-track/actions/runs/41276431136) 成功。日／週 agenda 與新增相對連結、錨點檢查通過。網站 Python 快取及 Planning 原有未追蹤工具目錄維持本機，不列入此次公開變更。
