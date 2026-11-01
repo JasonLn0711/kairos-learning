@@ -1,8 +1,9 @@
+import {validateDiagram, type TeachingDiagram} from './perspective-diagrams.ts';
 import {isPublic, type Bilingual} from './model.ts';
 export type Perspective = {
  id:string;slug:string;status:'draft'|'published';publishedOn:string;updatedOn:string;revision:number;
  category:'analysis'|'field-notes'|'reflection';topics:('cs'|'ai'|'security')[];observedAt?:string;
- text:Bilingual<{title:string;summary:string;author:string;sections:{id:string;heading:string;paragraphs:string[];list?:string[];code?:string;table?:{headers:string[];rows:string[][]};sourceIds?:string[]}[]}>;
+ text:Bilingual<{title:string;summary:string;author:string;sections:{id:string;heading:string;paragraphs:string[];list?:string[];code?:string;table?:{headers:string[];rows:string[][]};sourceIds?:string[];diagram?:TeachingDiagram}[]}>;
  sources:{id:string;title:string;url:string;checkedOn:string}[];
  related:{kind:'lesson'|'concept';id:string}[];
  updates:{date:string;text:Bilingual}[];
@@ -23,9 +24,11 @@ export function validatePerspectives(items:Perspective[],known:{lesson:Set<strin
   if(!Array.isArray(p.sources)||!Array.isArray(p.related)||!Array.isArray(p.updates))fail('missing collection');
   for(const s of p.sources){if(!/^[a-z][a-z0-9-]*$/.test(s.id)||sources.has(s.id)||!nonempty(s.title)||!/^https:\/\//.test(s.url)||!date(s.checkedOn))fail('invalid source');sources.add(s.id)}
   for(const lang of ['zh','en'] as const){const t=p.text?.[lang];if(!t||![t.title,t.summary,t.author].every(nonempty)||!t.sections?.length)fail('missing translation');const anchors=new Set(['main','sources','related','updates']);
-   for(const s of t.sections){if(!/^[a-z][a-z0-9-]*$/.test(s.id)||anchors.has(s.id)||!nonempty(s.heading)||!s.paragraphs?.length||!s.paragraphs.every(nonempty))fail('invalid section');anchors.add(s.id);if(s.list&&(!s.list.length||!s.list.every(nonempty)))fail('invalid list');if(s.sourceIds?.some(id=>!sources.has(id)))fail('unknown source');if(s.table&&(!s.table.headers.length||s.table.rows.some(r=>r.length!==s.table!.headers.length)))fail('invalid table');}
+   for(const s of t.sections){if(!/^[a-z][a-z0-9-]*$/.test(s.id)||anchors.has(s.id)||!nonempty(s.heading)||!s.paragraphs?.length||!s.paragraphs.every(nonempty))fail('invalid section');anchors.add(s.id);if(s.diagram)validateDiagram(s.diagram);if(s.list&&(!s.list.length||!s.list.every(nonempty)))fail('invalid list');if(s.sourceIds?.some(id=>!sources.has(id)))fail('unknown source');if(s.table&&(!s.table.headers.length||s.table.rows.some(r=>r.length!==s.table!.headers.length)))fail('invalid table');}
   }
   if(p.text.zh.sections.map(s=>s.id).join()!==p.text.en.sections.map(s=>s.id).join())fail('translation sections mismatch');
+  for(let i=0;i<p.text.zh.sections.length;i++){const a=p.text.zh.sections[i].diagram,b=p.text.en.sections[i].diagram;if(Boolean(a)!==Boolean(b)||a&&b&&(a.id!==b.id||a.groups.map(g=>g.mode+g.items.length).join()!==b.groups.map(g=>g.mode+g.items.length).join()))fail('translation diagrams mismatch');}
+  for(const lang of ['zh','en'] as const){const diagrams=p.text[lang].sections.flatMap(s=>s.diagram?[s.diagram.id]:[]);if(new Set(diagrams).size!==diagrams.length)fail('duplicate diagram');}
   for(const r of p.related??[])if(!known[r.kind]?.has(r.id))fail('unknown related content');
   for(const u of p.updates??[])if(!date(u.date)||!nonempty(u.text.zh)||!nonempty(u.text.en))fail('invalid update');
  }
