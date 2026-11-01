@@ -26,3 +26,7 @@ WRITE-01–07、HTML-01–04、FIG-01–03、A11Y-01–03 為本次驗收範圍�
 完整本機瀏覽器 14 項通過：雙語 320／390／768／1280px、390px 下 200% 文字、無 JavaScript 十一圖與五表、搜尋 longjmp、互連、四圖真實 Tab／Enter 下載及逐位元組核對、八份記憶體 SVG 文字 viewBox 邊界、表格鍵盤水平捲動。圖解為靜態內容，沒有需要 Space 啟用的控制項。
 
 一次中間驗收與發布邊界重建同時讀取 build，產生一項暫時 404（其餘 13 項通過）；完成乾淨建置後依序重跑完整 14 項通過。保留 `browser-final.log` 與 `browser-verified.log`，不把重建期間的失敗歸為產品問題或略過測試。
+
+## 正式發布回執
+
+內容與圖檔提交 `ed32584`、設計與驗收文件提交 `34f51d9`，非強制推送 main；[Pages 41294559964](https://github.com/JasonLn0711/kairos-learning/actions/runs/41294559964) 對應 `34f51d92c54e7ac4c9d418e815fb39c3422d2bd1`，部署成功。正式站獨立 Chrome 完整 14 項通過（1.1 分鐘），核對 v1.1.0、全部雙語正文、十一圖／五表、四尺寸、200% 文字、無 JavaScript、鍵盤下載與圖檔位元組、SVG 邊界、表格鍵盤捲動、搜尋及閱讀互連。日誌 `.local/nas-memory/live.log`；結果與截圖 `.local/nas-cve/live/`。此為網站發布及閱讀驗收，不代表已操作或修補任何 NAS 實機。
