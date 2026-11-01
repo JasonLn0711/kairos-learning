@@ -6,7 +6,7 @@ const route=(lang:string)=>`${lang==='en'?'/en':''}/perspectives/nas-cve-patchin
 for(const lang of ['zh','en']){
  for(const width of [320,390,768,1280])test(`${lang} ${width}: content, layout and SVG downloads`,async({page,request})=>{
   await page.setViewportSize({width,height:900});await page.goto(route(lang));
-  await expect(page.locator('.article-metadata')).toContainText('v1.0.0');await expect(page.locator('.article-metadata')).toContainText('2026-11-01');
+  await expect(page.locator('.article-metadata')).toContainText(`v${article.contentVersion}`);await expect(page.locator('.article-metadata')).toContainText('2026-11-01');
   await expect(page.locator('figure.teaching-diagram')).toHaveCount(8);
   for(const s of article.text[lang].sections){await expect(page.getByRole('heading',{name:s.heading,exact:true})).toBeVisible();for(const para of s.paragraphs.filter((p:string)=>!p.includes('[')))await expect(page.locator('.prose')).toContainText(para);}
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
