@@ -33,3 +33,11 @@ The next evidence gate is independent reader completion of a lesson and its exer
 [README](../README.md) · [Content guide](content-authoring.md) · [Publishing](publishing-security.md) · [Release evidence](releases/2026-10-23-phase-0-3.md)
 
 Teaching diagrams follow the adopted [responsive diagram standard](content-authoring.md#responsive-teaching-diagrams--adopted-october-25), using native lightweight components and inspectable SVG assets within this architecture.
+
+## Perspectives extension
+
+Bilingual educational perspectives use a separate catalog with the shared publication date gate. See [authoring guide](perspectives/authoring.md). Private case material stays in ignored local storage. Synthetic preview builds are isolated and excluded from deployment. Publication evidence is recorded in [the November 1 release record](releases/2026-11-01-perspectives-standards.md).
+
+## 全站共同規範
+
+所有教學頁面遵循[文章與響應式閱讀規範](article-standards.md)。既有歷史規則有差異時，以共同規範的閱讀品質與收合要求為準；資料契約及原始教材保留要求持續適用。

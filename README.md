@@ -49,3 +49,13 @@ MATLAB 下載來源變更時，執行 `python3 scripts/package_release.py` 重�
 [CEH 編輯決策沿革](docs/ceh-bilingual-publishing-plan.zh-tw.md) · [CEH 學習橋接](https://github.com/JasonLn0711/ceh-cehp-certification-notes-2026/blob/main/docs/public-teaching-bridge-2026-10-23.md) · [主站平台規範](https://github.com/JasonLn0711/JasonLn0711.github.io/blob/main/docs/cs-kairos-platform-architecture-v1.zh-tw.md)
 
 2026-10-23 新增[一次學一個概念：M04 目錄](https://learn.cs-kairos.com/courses/ceh/v13/m04/#one-concept)與 [M04-01 列舉原理](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-01/)。12 核心之後接 M05，另外 7 項選讀；各章獨立概念路線逐步整理。原有雙語入門教材持續提供。
+
+## 觀點 Perspectives
+
+Learn 的觀點專欄承接有教學價值的事件解讀與實作反思；個人研究與專案論述仍由主站承接。每篇完整雙語。參見 [編輯指南](docs/perspectives/authoring.md) 、[撰稿模板](docs/perspectives/writing-template.md) 與 [首兩篇企劃](docs/perspectives/editorial-briefs.md)。使用 `npm run preview:perspectives` 檢查隔離的合成文章；目前沒有正式發布文章。
+
+## 全站共同規範
+
+所有教學頁面遵循[文章與響應式閱讀規範](docs/article-standards.md)。既有歷史規則有差異時，以共同規範的閱讀品質與收合要求為準；資料契約及原始教材保留要求持續適用。
+
+[本次成果、驗證與跨 repo 關聯](docs/releases/2026-11-01-perspectives-standards.md)記錄實際結果及後續驗收。

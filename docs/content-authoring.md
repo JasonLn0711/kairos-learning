@@ -195,3 +195,11 @@ A later lesson may reuse this component by registering its separately validated
 generated SVG map and adding exact-asset/safety tests. Keep namespace prefixes
 unique per lesson, figure and language; never register raw external or runtime
 user markup. Unregistered `visual` assets retain the existing semantic renderer.
+
+## Perspectives extension
+
+觀點專欄採完整中英雙語，使用獨立內容目錄與共用發布日期機制。選題、語氣、臺灣用語、白話教學、證據與校閱依[文章撰寫與編輯規範](perspectives/authoring.md)，工作稿使用[文章企劃與撰稿模板](perspectives/writing-template.md)。這套編輯流程適用於觀點專欄；教材沿用本文件既有規範。私人案例材料保存在忽略的本機目錄，合成預覽使用隔離建置。
+
+## 全站共同規範
+
+所有教學頁面遵循[文章與響應式閱讀規範](article-standards.md)。既有歷史規則有差異時，以共同規範的閱讀品質與收合要求為準；資料契約及原始教材保留要求持續適用。

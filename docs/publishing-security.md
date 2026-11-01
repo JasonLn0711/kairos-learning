@@ -24,3 +24,7 @@ After merge, confirm the Pages workflow succeeds, inspect the public root and de
 The pre-migration baseline is `69c24f847425486529424dfa858e0b53dddd1c03`, which deployed the original `site/` tree. It remains in Git history and can reconstruct MATLAB. The current workflow deploys `build/`; restoring a historical source also requires its matching workflow/configuration. Learning DNS remains the existing proxied GitHub Pages CNAME, independent of the main-site Worker. Do not edit API, console or other applications to recover a course release.
 
 An incident correction should state the affected content/version, evidence, correction and next validation. Capacity, learner scores and exam readiness remain in their subject/Planning records. This release adds no recurring daily-publication obligation.
+
+## Perspectives extension
+
+Bilingual educational perspectives use a separate catalog with the shared publication date gate. See [authoring guide](perspectives/authoring.md). Private case material stays in ignored local storage. Synthetic preview builds are isolated and excluded from deployment. Publication evidence is recorded in [the November 1 release record](releases/2026-11-01-perspectives-standards.md).
