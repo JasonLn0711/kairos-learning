@@ -36,3 +36,9 @@ FIG-04／05 的共用規範新增資料結構、線型、狀態徽章、指標�
 證據：`unit-final.log`、`check-final.log`、`content-final.log`、`boundary-final.log`、`release-final.log`、`browser-final.log`、`previous-final.log`、`audit-final.log`、`c-evidence.json`。正式發布結果另記於下方。
 
 既有 NAS 篇 11 項瀏覽器回歸通過（10.8 秒）。已目視兩份獨立 SVG，確認文字、線型、狀態標籤與圖說完整；預覽存於 `.local/nas-pointers/free-pointer-svg.png` 與 `memory-access-svg.png`。
+
+## 正式發布回執
+
+實作提交 `34e33af`、規範提交 `10b4dc3` 已非強制推送 main。[Pages 41301308480](https://github.com/JasonLn0711/kairos-learning/actions/runs/41301308480) 成功部署 `10b4dc3910c7022b338e02fe10d118d684e9437a`。正式站獨立 Chrome 完整 14 項通過，讀回 v1.3.0、雙語二十六節／十七圖／八表、兩份 C 程式碼、六種響應式版型、鍵盤操作與下載、200% 文字、無 JavaScript、搜尋與閱讀互連；圖檔與正式資料逐位元組一致。
+
+正式證據：`.local/nas-pointers/live.log` 及 `.local/nas-cve/live/` 結果、截圖與 trace。Python HTTP 探測收到 403，未將它當成頁面驗收；以上結果來自實際瀏覽器。正式閱讀入口為本回執首段的雙語 `#free-pointer` 連結。
