@@ -240,4 +240,4 @@ NAS 漏洞公告與記憶體生命週期的圖解範例見[內容設計](nas-cve
 
 ## 結構化記憶體與分層圖解
 
-新增 `cells`、`stages`、`layers`、`reference` 版型及受限 cells／released 欄位，契約、響應式規則與驗收統一依[圖解設計規範](../diagram-design-system.md)。新增教學範圍與版型的實作見[記憶體基礎回執](../releases/2026-11-01-nas-memory-foundations.md)。
+新增 `cells`、`stages`、`layers`、`reference`、`lifetime`、`access-path` 版型及受限 cells／released 欄位，契約、響應式規則與驗收統一依[圖解設計規範](../diagram-design-system.md)。新增教學範圍與版型的實作見[記憶體基礎回執](../releases/2026-11-01-nas-memory-foundations.md)。
