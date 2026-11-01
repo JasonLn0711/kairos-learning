@@ -1,0 +1,839 @@
+{
+  "id": "M02-06",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-01",
+  "status": "published",
+  "publishedOn": "2026-11-01",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "串連 IP、網段、ASN 與路徑觀測，建立可回查的網路地圖。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M02-06｜IP、ASN 與 Traceroute：把網路線索串成有依據的地圖"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1｜先記住這個結論"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路足跡蒐集（Network Footprinting）是把位址、網段、路由管理與路徑觀察連起來，建立一張附有來源、時間與觀察位置的網路地圖。 IP 告訴我們資料送往哪個網路位址；網段把位址整理成範圍；ASN 辨識路由政策的管理單位；Traceroute 呈現某次探測所收到的逐跳回覆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你要了解一間咖啡店的配送：店名方便人找到它，街道地址方便配送，街區用來整理範圍，物流業者管理運送路線，配送紀錄則描述某次實際經過的節點。這五種資訊放在一起，才容易看清楚關係。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課接續 M02-04 的 DNS（Domain Name System，網域名稱系統）與 M02-05 的郵件路徑。這次從「名字與郵件」轉向「位址與網路」。所有位址、ASN、網域與輸出都是合成教材；練習採離線判讀與本機計算。主動量測以另行核定的自有隔離實驗環境為範圍。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2｜IP 與網段：先學會看地址和範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP（Internet Protocol，網際網路協定）負責以來源與目的位址傳送資料。資料在網路上被裝成 Packet（封包）；Router（路由器）依路由資訊，把封包送向下一站。網路位址可以配置給介面，服務也可以透過共享或虛擬位址對外提供。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv4 位址長度是 32 位元，常寫成四段十進位數字，例如 `192.0.2.25`。IPv6 使用 128 位元，例如 `2001:db8::25`；雙冒號表示一段連續的零。同一個網站可以同時提供 IPv4 與 IPv6，分析時分開保存兩組結果。[IPv4 規範](https://www.rfc-editor.org/rfc/rfc791)、[IPv6 規範](https://www.rfc-editor.org/rfc/rfc8200)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CIDR（Classless Inter-Domain Routing，無類別網域間路由）用「位址／前綴長度」表示網段。`192.0.2.0/24` 的 `/24` 表示前 24 位元是共同前綴，剩餘 8 位元形成 `2^8 = 256` 個位址，範圍從 `192.0.2.0` 到 `192.0.2.255`。這裡計算的是整個位址範圍；實際可配置給設備的數量，再依子網用途與配置規則判斷。[CIDR 規範](https://www.rfc-editor.org/rfc/rfc4632)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣方法，IPv4 `/25` 留下 7 位元，有 128 個位址；`/24` 留下 8 位元，有 256 個位址。前綴長度越大，指定的範圍越小。把它想成地址寫得越精細，涵蓋的街區就越小。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "資訊",
+            "合成例子",
+            "讀法"
+          ],
+          "rows": [
+            [
+              "單一位址",
+              "192.0.2.25",
+              "一個網路位址"
+            ],
+            [
+              "網路前綴",
+              "192.0.2.0/24",
+              "包含這個位址的一段範圍"
+            ],
+            [
+              "私有網路",
+              "10.20.0.0/24",
+              "組織內部可配置的一段私有位址"
+            ],
+            [
+              "IPv6 文件位址",
+              "2001:db8::25",
+              "供教材使用的 IPv6 位址"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "RFC 1918 的私有 IPv4 範圍是 `10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`，不同組織可各自使用。NAT（Network Address Translation，網路位址轉換）讓內外部位址之間建立轉換關係；多人或多台設備可能共用對外位址。實務追查會把外部 IP、精確時間、連接埠與相關系統紀錄一起比對。[私有位址](https://www.rfc-editor.org/rfc/rfc1918)、[傳統 NAT](https://www.rfc-editor.org/rfc/rfc3022)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課的 `192.0.2.0/24`、`198.51.100.0/24`、`203.0.113.0/24` 是文件示例範圍，`2001:db8::/32` 是 IPv6 文件範圍，適合用於說明與離線計算。[IPv4 文件位址](https://www.rfc-editor.org/rfc/rfc5737)、[IPv6 文件位址](https://www.rfc-editor.org/rfc/rfc3849)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-02-address-prefix-as-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜位址、前綴與 ASN 的層次",
+            "description": "IP是位址，前綴是位址範圍，ASN識別自治系統。使用文件保留位址與ASN，以及私有網路範例。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "IP是位址，前綴是位址範圍，ASN識別自治系統。使用文件保留位址與ASN，以及私有網路範例。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3｜ASN：誰管理這一組路由政策？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AS（Autonomous System，自主系統）是一組對外呈現一致路由政策的網路；ASN（Autonomous System Number，自主系統號碼）是它的識別號碼，例如教材中的 `AS64496`。可以把 AS 想成有自己運送規則的物流體系，ASN 就是體系的識別編號。[AS 定義](https://www.rfc-editor.org/rfc/rfc1930)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ISP（Internet Service Provider，網際網路服務供應商）、雲端平台、大型企業或學術網路，都可能營運 AS。一個 AS 可以宣告多個網路前綴；同一組織也可能管理多個 AS。ASN 與 IP 位址各有角色：前者辨識路由管理，後者供封包定址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不同 AS 之間透過 BGP（Border Gateway Protocol，邊界閘道協定）交換可到達哪些前綴的資訊。BGP 的 AS_PATH 是路由公告中的 AS 路徑屬性；Traceroute 則透過探測封包的回覆觀察路徑。把兩種資料分欄保存，就能分別理解「路由公告」與「某次量測」。[BGP 規範](https://www.rfc-editor.org/rfc/rfc4271)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查網路資源時，可使用 RIR（Regional Internet Registry，區域網際網路註冊管理機構）提供的 RDAP（Registration Data Access Protocol，註冊資料存取協定）查詢。RDAP 可以提供 IP 網段、ASN、登記組織、聯絡角色與更新資訊；實際欄位依資料庫而定。[ARIN 的 RDAP 說明](https://www.arin.net/resources/registry/whois/rdap/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如合成紀錄顯示：`192.0.2.0/24` 登記給 Example Edge，路由資料將該前綴關聯到 AS64496。報告可以分別寫「登記組織」與「觀察到的路由起源 AS」，再用服務合約、雲端控制台與資產清單確認組織自己的服務關係。教材採用的 AS64496、AS64497 屬於文件示例保留範圍。[文件用 ASN](https://www.rfc-editor.org/rfc/rfc5398)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4｜把 DNS、IP、CDN 與服務角色連起來"
+        },
+        {
+          "kind": "paragraph",
+          "text": "延續咖啡店案例，假設已取得以下合成資料："
+        },
+        {
+          "kind": "code",
+          "text": "取得時間：2026-11-01 08:00 +08:00\nDNS：shop.coffee.example A 192.0.2.25\n資源登記：192.0.2.0/24 → Example Edge\n路由資料：192.0.2.0/24 → origin AS64496\n自家服務設定：shop.coffee.example 使用邊緣代理"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 的 A 紀錄連到 IPv4；AAAA 紀錄連到 IPv6。這份資料把網站名稱連到邊緣服務位址，再連到網段與路由資訊。CDN（Content Delivery Network，內容傳遞網路）可以讓多個邊緣節點提供內容；Reverse Proxy（反向代理）則在用戶端與後端服務之間接收、轉送請求。對外解析位址可能對應這些服務節點。[Cloudflare 代理 DNS 的運作](https://developers.cloudflare.com/dns/proxy-status/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "整理時，請分清楚四個角色：網域的管理者、IP 資源的登記者、提供路由的網路、實際營運應用程式的人。雲端共享環境中，這些角色可能由不同單位負責。接續的查核工作，就是用各角色的官方或自家紀錄建立連結。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同一網站也可能因觀察地點、時間、IPv4／IPv6、負載平衡而得到不同位址。Anycast（任播）讓同一位址可由多個位置提供服務，網路路由會把流量引向其中的節點。紀錄「從哪裡、何時看到什麼」，就能保留量測的實際意義。[任播服務運作](https://www.rfc-editor.org/rfc/rfc4786)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-01-domain-network-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜從網域走到網路治理",
+            "description": "DNS解析取得IP；前綴組成路由範圍，AS代表共同路由政策管理；服務與網路營運角色分層。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "DNS解析取得IP；前綴組成路由範圍，AS代表共同路由政策管理；服務與網路營運角色分層。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5｜Traceroute 原理：讓封包在不同站回報"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Traceroute（路徑追蹤）會主動送出探測封包，逐步增加它能經過的跳數，藉回覆整理沿途節點。Hop（一跳）可以先理解為一次路由轉送。把它想成寄出多個測試包裹：第一個請第一站回報，第二個走到第二站再回報，逐步延伸。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv4 標頭裡的 TTL（Time to Live，存活時間）在路由轉送時至少減少 1；歸零時，路由器丟棄該封包，通常送回 ICMP Time Exceeded。ICMP（Internet Control Message Protocol，網際網路控制訊息協定）用來回報網路控制與錯誤資訊。IPv6 對應欄位稱為 Hop Limit（跳數限制）。[IPv4 路由器 TTL 規則](https://www.rfc-editor.org/rfc/rfc1812)、[IPv6 Hop Limit](https://www.rfc-editor.org/rfc/rfc8200)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設路徑是「電腦 → R1 → R2 → 目的主機」：TTL=1 的探測在 R1 到期，R1 回覆；TTL=2 的探測在 R2 到期，R2 回覆；TTL=3 的探測到達目的主機，依探測方式取得終點回覆。工具把各次收到的來源位址與時間排成清單。這裡每次都是新的探測封包。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不同實作可以使用不同探測方式。Windows 的 `tracert` 使用 ICMP Echo 探測；Linux 的 traceroute 實作可支援 UDP、ICMP、TCP 等方式，實際預設與選項以安裝版本的說明為準。中間節點常見的回報是 Time Exceeded；終點判定則依探測方式，例如 ICMP Echo Reply，或傳統 UDP 探測收到目的端的 Port Unreachable。測試紀錄應寫明工具、版本、探測協定與參數。[Windows tracert](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tracert)、[Linux traceroute 專案](https://traceroute.sourceforge.net/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RTT（Round-Trip Time，往返時間）從送出探測算到收到回覆，通常以毫秒 ms 表示。每一列的時間包含探測前往回覆節點，以及回覆回到觀察端的過程；解讀時將它視為「這次探測的往返時間」。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-03-traceroute-hops-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜逐步增加 TTL 看見路徑",
+            "description": "IPv4 TTL隨轉送遞減；到零的路由器通常回Time Exceeded。TTL1顯示R1，TTL2顯示R2，TTL3抵達目的。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "IPv4 TTL隨轉送遞減；到零的路由器通常回Time Exceeded。TTL1顯示R1，TTL2顯示R2，TTL3抵達目的。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6｜實際讀一段合成輸出"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是紙上教材，省略工具啟動訊息；三個數值代表同一跳數的三次探測。"
+        },
+        {
+          "kind": "code",
+          "text": "觀察端：隔離教學網路的工作站\n目的地：203.0.113.80\n時間：2026-11-01 08:00 +08:00\n方式：ICMP Echo，合成輸出\n\nhop   probe 1   probe 2   probe 3   responding address\n 1      1 ms      1 ms      2 ms   10.20.0.1\n 2      *         *         *      —\n 3     17 ms     18 ms     16 ms   198.51.100.9\n 4     21 ms     20 ms     22 ms   203.0.113.80"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一列：跳數 1 的探測取得 `10.20.0.1` 回覆，三次往返時間約 1–2 ms。這是一個私有位址，結合教學拓撲可確認它在這個實驗中的角色。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二列：星號代表對應探測在等待時間內沒有收到預期回覆。原因可包含回覆過濾、速率限制、回程狀況或封包遺失；後續有回覆時，可以繼續整理後面的觀察結果。[tracert 對星號的說明](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tracert)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三列與第四列：探測分別收到中間節點與終點回覆。第四列這三次往返約 20–22 ms，適合記為本次量測的終點 RTT。比較效能時，可用一致條件重複量測，結合端到端應用程式監測，觀察是否有持續變化。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若第三跳是 80 ms、第四跳反而只有 20 ms，可先把這兩組實測值保留，再確認中間設備回應探測的優先序、負載、回程與取樣差異。路由器處理回覆的方式會影響數值；每一跳的 RTT 也各自包含往返路徑，適合分別分析。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "負載平衡與路由變動，可能讓同一跳數的多次探測收到不同位址。單次輸出是一份觀察快照；串聯不同時間與位置的紀錄，可以得到更完整的網路輪廓。RFC 2330 的網路量測框架，也強調量測方法、樣本與不確定性的清楚定義。[網路效能量測框架](https://www.rfc-editor.org/rfc/rfc2330)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7｜把線索整理成可用的防護證據"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一份網路足跡紀錄可以有以下欄位："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "這次要保存的內容"
+          ],
+          "rows": [
+            [
+              "目的與範圍",
+              "自家服務盤點、授權目標與允許的方法"
+            ],
+            [
+              "時間與觀察端",
+              "日期、時區、來源網路、IPv4／IPv6"
+            ],
+            [
+              "名稱與位址",
+              "DNS 查詢結果、解析器與查詢時間"
+            ],
+            [
+              "登記與路由",
+              "RDAP 來源、前綴、ASN、路由資料時間"
+            ],
+            [
+              "路徑觀察",
+              "工具版本、參數、探測協定、原始輸出"
+            ],
+            [
+              "服務角色",
+              "自家資產、供應商邊緣、代理或其他已確認角色"
+            ],
+            [
+              "判讀與下一步",
+              "已觀察事實、角色推論、需要補核的設定"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如可以寫：「08:00 從教學網路取得 shop.coffee.example 的 A 紀錄192.0.2.25；自家設定顯示使用邊緣代理，後續對照代理控制台與資產清單，確認後端服務及管理者。」每一句都能找到來源，也讓下一步明確。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防守方可以利用這張圖檢查：公開 DNS 是否仍指向預期服務？停用的位址與供應商是否已從設定移除？管理入口是否放在規劃的存取邊界？雲端、CDN、路由與應用程式各由誰負責？再把答案接到 M01 的安全控制，以及後續 M13、M19 的伺服器與雲端責任。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主動追蹤路徑需要遵循核定目標、探測頻率與停止條件。公開 RDAP 或既有路由資料可先作資料查詢；Traceroute 的封包會實際進入量測路徑，屬於 M02-01 的主動互動。完成紀錄後，分享去識別化節錄，原始資料依組織規則保存。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-04-evidence-workflow-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜讓觀測結果可以回查",
+            "description": "保留時間、觀測位置、方法與原始結果，搭配註冊和資產資料；星號表示等待期間沒有收到回應，RTT是來回時間。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "保留時間、觀測位置、方法與原始結果，搭配註冊和資產資料；星號表示等待期間沒有收到回應，RTT是來回時間。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8｜離線練習與小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先用本機 Python 標準函式庫 `ipaddress` 計算範圍。這段程式只做本機數值運算："
+        },
+        {
+          "kind": "code",
+          "text": "from ipaddress import ip_network, ip_address\n\nnetwork = ip_network(\"192.0.2.0/24\")\naddress = ip_address(\"192.0.2.25\")\nprint(network.num_addresses)\nprint(network.network_address, network.broadcast_address)\nprint(address in network)"
+        },
+        {
+          "kind": "code",
+          "text": "256\n192.0.2.0 192.0.2.255\nTrue"
+        },
+        {
+          "kind": "paragraph",
+          "text": "練習步驟：先預測位址數；執行程式比對；把前綴改成 `192.0.2.128/25`，再預測 `.25` 的歸屬；最後整理一行「前綴、範圍、是否包含該位址」。完成後可關閉程式，若另存測試檔則自行保留或刪除。[Python ipaddress 官方文件](https://docs.python.org/3/library/ipaddress.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "小檢核一：`192.0.2.0/24` 有幾個位址？A.24；B.128；C.256；D.只有一個。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "小檢核二：ASN 最直接識別哪個角色？A.單一使用者；B.路由政策的自主系統；C.每個網頁網址；D.單一 TCP 連接埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "小檢核三：第二跳全是星號，第四跳收到終點回覆。請用一句話記錄第二跳觀察，再列出一項可進一步查核的原因。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "小檢核四：某個網站解析到雲端邊緣 IP。你會保留哪三項資料，來確認它和自家服務的關係？請把資料來源與時間一起寫出來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "參考解析隨網站教材提供；你的作答可另外留下，方便依理解程度接續補充。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-local-prefix",
+          "summary": "參考解答：本機網段練習",
+          "paragraphs": [
+            "192.0.2.0/24 包含256個位址，範圍是192.0.2.0～192.0.2.255；192.0.2.25在範圍內。改成192.0.2.128/25後，範圍為192.0.2.128～192.0.2.255，共128個位址；.25落在這段範圍之外，因此成員檢查為False。這是整段位址數的計算。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-address-count",
+          "summary": "參考解答：小檢核一：前綴大小",
+          "paragraphs": [
+            "答案C：256。IPv4總共32位元，/24保留24位元共同前綴，剩下8位元，共2的8次方，也就是256種位址組合。24是前綴長度；128對應/25的位址數；一個IPv4位址可用/32表示。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-asn-role",
+          "summary": "參考解答：小檢核二：ASN的角色",
+          "paragraphs": [
+            "答案B：路由政策的自主系統。ASN是AS的識別號碼；使用者身分由帳號等證據建立，網頁由URL描述，TCP連接埠則標示傳輸服務入口。將這些欄位分開，就能建立清楚的角色關係。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-missing-reply",
+          "summary": "參考解答：小檢核三：星號的觀察",
+          "paragraphs": [
+            "可以寫：「本次跳數2的三個探測，在等待時間內均未收到預期回覆；跳數4收到目的端回覆。」可查核回覆過濾或速率限制，並對照實驗設備設定及日誌。觀察與原因分欄保存，下一步就很清楚。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-service-correlation",
+          "summary": "參考解答：小檢核四：確認服務關係",
+          "paragraphs": [
+            "可選：①含查詢時間與解析器的DNS結果；②含資料時間的RDAP登記及路由前綴/ASN紀錄；③自家雲端或CDN控制台中的網域、邊緣代理、後端與資產負責人設定。三者分別串起名稱、網路資源與實際服務管理；報告保留原始來源及查核時間。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9｜今天帶走的觀念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "名字連到位址，位址放進網段，網段連到登記與路由，路徑量測再補上特定時間與位置的觀察。 這就是網路足跡的基本骨架。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "讀圖時記住四個問題：我查的是哪種資料？誰產生它？它描述哪個時間與位置？接下來用哪項設定或紀錄確認關係？這套方法讓 IP、ASN 與 Traceroute 成為可重現的證據，而每個服務角色也有清楚的責任對應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課完整涵蓋新路線 M02-06 複合單元；下一課 M02-07 轉向社群媒體、人員搜尋與暗網來源，沿用來源、時間、範圍與交叉查核的整理方式。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Build a traceable network map with IP addresses, prefixes, ASNs, and path observations.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M02-06 | IP, ASN and Traceroute: Build an Evidence-Based Network Map"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1 | The central idea"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Network footprinting connects addresses, prefixes, routing administration and path observations into a map with sources, timestamps and vantage points. IP identifies a network destination; prefixes group addresses; an ASN identifies an autonomous routing system; traceroute reports responses to a particular sequence of probes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine investigating a coffee shop's deliveries. The shop name helps people find it, the street address guides delivery, a district groups addresses, a carrier manages routes, and tracking records describe an individual shipment. Each item contributes a different part of the picture."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson follows M02-04 DNS (Domain Name System) and M02-05 email paths. We now move from names and messages to addresses and networks. All addresses, ASNs, domains and outputs below are synthetic teaching data. Practice is offline interpretation and local calculation. Active measurements belong to a separately approved, owned, isolated lab."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2 | IP addresses and prefixes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP (Internet Protocol) carries data using source and destination addresses. A packet is a unit of network data. A router forwards packets toward a next hop using routing information. Addresses can be assigned to interfaces; services can also use shared or virtual addresses."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An IPv4 address has 32 bits and is commonly written as four decimal numbers, such as `192.0.2.25`. IPv6 has 128 bits; `2001:db8::25` uses a double colon to compress a run of zeros. A website may offer both families, so retain their observations separately. [IPv4 specification](https://www.rfc-editor.org/rfc/rfc791), [IPv6 specification](https://www.rfc-editor.org/rfc/rfc8200)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CIDR (Classless Inter-Domain Routing) writes a range as an address and prefix length. In `192.0.2.0/24`, the first 24 bits form a common prefix. The remaining eight bits provide `2^8 = 256` addresses, from `192.0.2.0` to `192.0.2.255`. This counts the entire address range; assignable interface counts depend on the subnet's purpose and configuration. [CIDR specification](https://www.rfc-editor.org/rfc/rfc4632)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An IPv4 /25 leaves seven bits and contains 128 addresses; a /24 leaves eight bits and contains 256. A longer prefix identifies a smaller range, like adding detail to an address narrows the district being described."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Information",
+            "Synthetic example",
+            "Interpretation"
+          ],
+          "rows": [
+            [
+              "Individual address",
+              "192.0.2.25",
+              "A network address"
+            ],
+            [
+              "Network prefix",
+              "192.0.2.0/24",
+              "A range containing that address"
+            ],
+            [
+              "Private network",
+              "10.20.0.0/24",
+              "A privately configured internal range"
+            ],
+            [
+              "IPv6 documentation address",
+              "2001:db8::25",
+              "An address reserved for examples"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "RFC 1918 reserves `10.0.0.0/8`, `172.16.0.0/12` and `192.168.0.0/16` for private IPv4 use. Different organizations can use these internally. NAT (Network Address Translation) maps internal and external addressing; multiple devices or people may share an external address. Investigations correlate the external address, precise time, ports and appropriate system records. [Private addressing](https://www.rfc-editor.org/rfc/rfc1918), [Traditional NAT](https://www.rfc-editor.org/rfc/rfc3022)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The ranges `192.0.2.0/24`, `198.51.100.0/24` and `203.0.113.0/24` are reserved IPv4 documentation examples. IPv6 uses `2001:db8::/32` for documentation. They support examples and offline calculations here. [IPv4 documentation ranges](https://www.rfc-editor.org/rfc/rfc5737), [IPv6 documentation prefix](https://www.rfc-editor.org/rfc/rfc3849)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-02-address-prefix-as-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "2 | Address, prefix, and ASN layers",
+            "description": "An IP is an address, a prefix is a range, and an ASN identifies an AS. Examples use documentation resources and private addresses.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "An IP is an address, a prefix is a range, and an ASN identifies an AS. Examples use documentation resources and private addresses."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3 | ASN: who manages the routing policy?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An AS (Autonomous System) presents a coherent external routing policy for a collection of networks. Its ASN (Autonomous System Number), such as our documentation example `AS64496`, is an identifier. Think of an AS as a carrier with its own routing rules and an ASN as that carrier system's identification number. [AS definition](https://www.rfc-editor.org/rfc/rfc1930)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An ISP (Internet Service Provider), cloud platform, large enterprise or academic network may operate an AS. One AS can announce multiple prefixes, and one organization may operate several ASes. ASNs identify routing systems; IP addresses support packet addressing."
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP (Border Gateway Protocol) exchanges prefix reachability information between autonomous systems. Its AS_PATH is an attribute of a routing announcement. Traceroute uses probe responses to observe a path. Separate columns preserve the distinction between a routing announcement and a particular measurement. [BGP specification](https://www.rfc-editor.org/rfc/rfc4271)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RIRs (Regional Internet Registries) provide registration information through RDAP (Registration Data Access Protocol). Results may describe IP ranges, ASNs, registered organizations, contact roles and update information; available fields depend on the registry. [ARIN RDAP guide](https://www.arin.net/resources/registry/whois/rdap/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a synthetic record assigns `192.0.2.0/24` to Example Edge, while routing data associates its origin with AS64496. Record the registered organization and observed routing origin separately. Then consult contracts, cloud settings and your asset inventory to establish your service relationship. AS64496 and AS64497 are documentation ASNs. [Documentation ASN reservations](https://www.rfc-editor.org/rfc/rfc5398)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4 | Connect DNS, IP, CDN and service roles"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Continue the coffee-shop scenario with this synthetic evidence:"
+        },
+        {
+          "kind": "code",
+          "text": "Collected: 2026-11-01 08:00 +08:00\nDNS: shop.coffee.example A 192.0.2.25\nRegistration: 192.0.2.0/24 → Example Edge\nRouting data: 192.0.2.0/24 → origin AS64496\nOwned service configuration: shop.coffee.example uses an edge proxy"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A DNS A record points to IPv4; AAAA points to IPv6. These records connect a service name to an edge address, then to registration and routing information. A CDN (Content Delivery Network) serves content through distributed edge nodes. A reverse proxy receives and forwards client requests toward backend services. Public DNS may therefore identify these service nodes. [Cloudflare proxied DNS behavior](https://developers.cloudflare.com/dns/proxy-status/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep four roles distinct: domain administrator, address registrant, routing provider and application operator. In shared cloud environments, different parties may perform each role. Appropriate official and owned records establish the relationship among them."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A website can yield different observations by location, time, address family or load balancing. Anycast allows an address to be served from multiple locations, with routing directing traffic toward a serving node. Recording where and when a result was observed preserves its context. [Anycast service operation](https://www.rfc-editor.org/rfc/rfc4786)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-01-domain-network-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "1 | From a domain to network governance",
+            "description": "DNS resolves IP addresses, prefixes describe address ranges, and ASes group routing policy. Service and network operators have distinct roles.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "DNS resolves IP addresses, prefixes describe address ranges, and ASes group routing policy. Service and network operators have distinct roles."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5 | Traceroute: ask different hops to report"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Traceroute actively sends probes with progressively larger hop allowances and organizes returned responses. A hop is a routing forwarding step. Imagine sending several test parcels: one reaches the first station, another reaches the second, and later parcels extend the observation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv4 TTL (Time to Live) decreases by at least one during router forwarding. On expiration the router discards the packet and normally returns ICMP Time Exceeded. ICMP (Internet Control Message Protocol) carries network control and error information. IPv6 uses the field name Hop Limit. [IPv4 router TTL behavior](https://www.rfc-editor.org/rfc/rfc1812), [IPv6 Hop Limit](https://www.rfc-editor.org/rfc/rfc8200)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider a workstation → R1 → R2 → destination path. A TTL=1 probe expires at R1; TTL=2 expires at R2; TTL=3 reaches the destination and obtains the response appropriate to the probing method. Each is a newly sent probe. The tool arranges response addresses and timings into rows."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Implementations support different methods. Windows `tracert` uses ICMP Echo probes. The Linux traceroute project supports UDP, ICMP and TCP, among others; consult the installed version for defaults and options. Intermediate responses commonly use Time Exceeded. Destination detection depends on the method, such as ICMP Echo Reply or a destination Port Unreachable for traditional UDP probing. Record tool version, protocol and parameters. [Windows tracert](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tracert), [Linux traceroute project](https://traceroute.sourceforge.net/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RTT (Round-Trip Time), commonly expressed in milliseconds, runs from sending a probe to receiving its response. Each value includes travel toward the responding node and travel back to the observer. Interpret it as that probe's round-trip observation."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-03-traceroute-hops-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "3 | Reveal hops by increasing TTL",
+            "description": "IPv4 TTL decreases when forwarded. A router reaching zero typically returns Time Exceeded. TTL 1 reveals R1; TTL 2 reveals R2; TTL 3 reaches the destination.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "IPv4 TTL decreases when forwarded. A router reaching zero typically returns Time Exceeded. TTL 1 reveals R1; TTL 2 reveals R2; TTL 3 reaches the destination."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6 | Read a synthetic output"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a paper exercise with startup messages omitted. Three values represent three probes using the same hop allowance."
+        },
+        {
+          "kind": "code",
+          "text": "Observer: workstation in an isolated teaching network\nDestination: 203.0.113.80\nTime: 2026-11-01 08:00 +08:00\nMethod: ICMP Echo; synthetic output\n\nhop   probe 1   probe 2   probe 3   responding address\n 1      1 ms      1 ms      2 ms   10.20.0.1\n 2      *         *         *      —\n 3     17 ms     18 ms     16 ms   198.51.100.9\n 4     21 ms     20 ms     22 ms   203.0.113.80"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Row one records replies from `10.20.0.1`, with round trips of approximately 1–2 ms. It is a private address; the teaching topology establishes its specific role in this lab."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Row two's stars indicate that the expected responses were absent within the waiting period. Possible explanations include response filtering, rate limiting, return-path conditions or loss. Later responses remain useful observations. [Microsoft's explanation of stars](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tracert)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Rows three and four contain intermediate and destination responses. The last row's 20–22 ms values describe this measurement's destination RTT. Repeated measurements under consistent conditions and end-to-end application monitoring can identify sustained changes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If hop three instead reports 80 ms and the destination reports 20 ms, preserve both observations and examine response prioritization, device load, return paths and sampling differences. Router response processing affects measured values. Each hop's RTT includes its own outbound and return portions and deserves separate interpretation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Load balancing and route changes can produce different responding addresses for probes at the same hop allowance. A single output is a snapshot; measurements from different times and locations extend the picture. RFC 2330 emphasizes explicit measurement methods, samples and uncertainty. [IP performance measurement framework](https://www.rfc-editor.org/rfc/rfc2330)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7 | Turn observations into defensive evidence"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A practical network footprint record can contain these fields:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Field",
+            "What to preserve"
+          ],
+          "rows": [
+            [
+              "Purpose and scope",
+              "Owned-service inventory, authorized targets and methods"
+            ],
+            [
+              "Time and vantage",
+              "Date, timezone, source network, IPv4 or IPv6"
+            ],
+            [
+              "Names and addresses",
+              "DNS results, resolver and query time"
+            ],
+            [
+              "Registration and routing",
+              "RDAP source, prefix, ASN and route-data time"
+            ],
+            [
+              "Path observation",
+              "Tool version, parameters, probe protocol, raw output"
+            ],
+            [
+              "Service roles",
+              "Confirmed owned asset, provider edge, proxy or other role"
+            ],
+            [
+              "Interpretation and next step",
+              "Observations, role inference and settings to verify"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example: “At 08:00 the teaching network obtained A record192.0.2.25 for shop.coffee.example. Owned configuration identifies an edge proxy. Next, correlate its console and the asset inventory to establish backend and administrator roles.” Each statement has a source and the next action is clear."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Defenders can then ask whether public DNS points to intended services, retired addresses and vendors have been removed, administration interfaces follow planned access boundaries, and cloud, CDN, routing and application responsibilities have named owners. This connects M01 controls with later M13 server and M19 cloud responsibilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Active tracing follows approved targets, frequency and stop conditions. Public RDAP and previously collected routing data can be consulted as records. Traceroute sends packets into the measured path, making it an active interaction under M02-01. Share appropriately redacted extracts and retain originals under the organization's policy."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m02-06-04-evidence-workflow-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "4 | Make observations traceable",
+            "description": "Preserve time, vantage point, method, and original results; correlate registry and asset records. An asterisk marks no reply within the wait; RTT measures a round trip.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Preserve time, vantage point, method, and original results; correlate registry and asset records. An asterisk marks no reply within the wait; RTT measures a round trip."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8 | Offline practice and knowledge checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use Python's standard `ipaddress` library for local range calculations. This program performs only local numeric operations:"
+        },
+        {
+          "kind": "code",
+          "text": "from ipaddress import ip_network, ip_address\n\nnetwork = ip_network(\"192.0.2.0/24\")\naddress = ip_address(\"192.0.2.25\")\nprint(network.num_addresses)\nprint(network.network_address, network.broadcast_address)\nprint(address in network)"
+        },
+        {
+          "kind": "code",
+          "text": "256\n192.0.2.0 192.0.2.255\nTrue"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First predict the count; then run and compare. Change the prefix to `192.0.2.128/25` and predict membership of `.25`. Finally record the prefix, range and membership. Close the program when finished; retain or delete any saved practice file as appropriate. [Python ipaddress documentation](https://docs.python.org/3/library/ipaddress.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check one: How many addresses does `192.0.2.0/24` contain? A.24; B.128; C.256; D.One."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check two: What does an ASN identify most directly? A.An individual user; B.An autonomous routing system; C.Every webpage URL; D.A TCP port."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check three: Hop two contains only stars, while hop four returns a destination response. Record the hop-two observation in one sentence and name one cause to investigate."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check four: A website resolves to a cloud edge address. Which three records would you preserve to establish its relationship with your service? Include sources and timestamps."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reference explanations accompany the website lesson. Actual learner responses can be recorded separately to guide further explanation."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-local-prefix",
+          "summary": "Reference answer: Local prefix practice",
+          "paragraphs": [
+            "192.0.2.0/24 contains256 addresses, from192.0.2.0 through192.0.2.255, including192.0.2.25. Changing to192.0.2.128/25 gives128 addresses from192.0.2.128 through192.0.2.255. The address .25 lies outside that range, so membership isFalse. These are total range counts."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-address-count",
+          "summary": "Reference answer: Check one: prefix size",
+          "paragraphs": [
+            "Answer C:256. IPv4 has32 bits; /24 fixes24 prefix bits and leaves8, producing2 to the power of8 address combinations.24 is the prefix length;128 corresponds to a /25; a single IPv4 address can be expressed as /32."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-asn-role",
+          "summary": "Reference answer: Check two: ASN role",
+          "paragraphs": [
+            "Answer B: an autonomous routing system. An ASN identifies an AS. Account and related evidence establish user identity, URLs describe web resources, and TCP ports identify transport service endpoints. Separate fields clarify each role."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-missing-reply",
+          "summary": "Reference answer: Check three: stars",
+          "paragraphs": [
+            "A suitable record is: “None of the three hop-two probes received an expected response within the waiting period; hop four returned a destination response.” Investigate response filtering or rate limiting using lab-device configuration and logs. Keep the observation and possible cause in separate fields."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-service-correlation",
+          "summary": "Reference answer: Check four: service relationship",
+          "paragraphs": [
+            "Preserve:①DNS results with query time and resolver;②RDAP registration and prefix/ASN routing records with their data times;③owned cloud or CDN settings linking the domain, edge proxy, backend and asset owner. These connect names, network resources and service administration. Retain original sources and verification times."
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9 | What to take away"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Names connect to addresses, addresses belong to prefixes, prefixes connect to registration and routing, and measurements add observations from a particular time and vantage point. That is the backbone of network footprinting."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ask four questions: Which kind of data is this? Who produced it? Which time and vantage does it describe? Which setting or record will establish the relationship next? These questions make IP, ASN and traceroute evidence reproducible and clarify service responsibilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson covers the complete compound M02-06 unit. Next, M02-07 turns to social media, people search and dark-web sources, carrying forward source, time, scope and corroboration practices."
+        }
+      ]
+    }
+  }
+}
