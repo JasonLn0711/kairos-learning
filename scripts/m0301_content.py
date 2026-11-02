@@ -11,7 +11,7 @@ def parse(lang,suffix):
  blocks=[];lines=path.read_text().splitlines();i=0
  while i<len(lines):
   s=lines[i].strip();i+=1
-  if not s:continue
+  if not s or s=='---':continue
   s=s.replace('**','')
   if s.startswith('```'):
    code=[]
@@ -21,6 +21,11 @@ def parse(lang,suffix):
   if s.startswith('!['):
    name=re.search(r'figures/([^.]*)',s)[1];r=ET.parse(DEST/f'figures/{name}.{suffix}.svg').getroot();title=r.find(NS+'title').text;desc=r.find(NS+'desc').text
    blocks.append(dict(kind='visual',src=f'/images/ceh/m03-01-{name}-{lang}.svg',downloadLabel='下載 SVG 圖檔' if lang=='zh' else 'Download SVG diagram',visual=dict(kind='cards',caption=title,description=desc,items=[dict(title='讀圖重點' if lang=='zh' else 'How to read the diagram',body=desc)])));continue
+  if s.startswith('- '):
+   items=[s[2:]]
+   while i<len(lines) and lines[i].startswith('- '):
+    items.append(lines[i][2:].replace('**',''));i+=1
+   blocks.append(dict(kind='list',items=items));continue
   if s.startswith('|'):
    rows=[[c.strip() for c in s.strip('|').split('|')]]
    while i<len(lines) and lines[i].strip().startswith('|'):
@@ -29,17 +34,17 @@ def parse(lang,suffix):
     rows.append([c.strip() for c in row.strip('|').split('|')])
    blocks.append(dict(kind='table',headers=rows[0],rows=rows[1:]));continue
   if s.startswith(('## ','### ')):
-   title=re.sub(r'^#{2,3} ', '', s); number=re.search(r'\d+(?:\.\d+)*',title)[0];blocks.append(dict(kind='heading',id='section-'+number.replace('.','-'),text=title));continue
+   title=re.sub(r'^#{2,3} ', '', s); match=re.match(r'\d+(?:\.\d+)*',title)
+   if match:
+    number=match[0];blocks.append(dict(kind='heading' if s.startswith('## ') else 'paragraph',id='section-'+number.replace('.','-'),text=title))
+   else:blocks.append(dict(kind='paragraph',text=title))
+   continue
   blocks.append(dict(kind='paragraph',text=s.removeprefix('# ')))
  answers=[]
  for chunk in ap.read_text().split('\n## ')[1:]:
   heading,*paras=chunk.strip().split('\n\n');ident,title=re.split(r'｜|\s*\|\s*',heading,maxsplit=1)
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
- for section,name in [(2,'01-layer-roles'),(3,'02-tcp-and-application'),(4,'03-transport-models'),(7,'04-flow-tuple')]:
-  root=ET.parse(DEST/f'figures/{name}.{suffix}.svg').getroot();title=root.find(NS+'title').text;desc=root.find(NS+'desc').text
-  block=dict(kind='visual',src=f'/images/ceh/m03-01-{name}-{lang}.svg',downloadLabel='下載 SVG 圖檔' if lang=='zh' else 'Download SVG diagram',visual=dict(kind='cards',caption=title,description=desc,items=[dict(title='讀圖重點' if lang=='zh' else 'How to read the diagram',body=desc)]))
-  at=next(i for i,b in enumerate(blocks) if b.get('id')==f'section-{section+1}');blocks.insert(at,block)
  blocks.extend(answers)
  return dict(summary='從IP、傳輸協定、連接埠到服務，理解網路請求的分工與判讀。' if lang=='zh' else 'Understand how IP, transport protocols, ports and services work together in a network request.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-01',revision=1,contentVersion='1.0.0',date='2026-11-01',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-01',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m03-01.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

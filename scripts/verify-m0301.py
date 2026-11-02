@@ -15,18 +15,18 @@ for lang,prefix in [('zh',''),('en','en/')]:
  raw=(ROOT/f'build/{prefix}courses/ceh/v13/m03/concepts/m03-01/index.html').read_text();page=Text(raw);text=norm(''.join(page.parts));cursor=0
  for b in lesson['text'][lang]['sourceBody']:
   k=b['kind']
-  units=([b['text']] if k in ['heading','paragraph','code'] else b['items'] if k=='list' else b['headers']+[v for r in b['rows'] for v in r] if k=='table' else [b['summary']]+b['paragraphs'] if k=='answer' else [b['visual']['caption'],b['visual']['description']]+[v for item in b['visual']['items'] for v in [item['title'],item['body']]] )
+  units=([b['text']] if k in ['heading','paragraph','code'] else b['items'] if k=='list' else b['headers']+[v for r in b['rows'] for v in r] if k=='table' else [b['summary']]+b['paragraphs'] if k=='answer' else [b['visual']['caption'],b['visual']['description']] )
   for u in units:
    u=norm(u);at=text.find(u,cursor);assert at>=0,(lang,u);cursor=at+len(u)
- assert len(page.details)==4 and all('open' not in d for d in page.details)
- assert [d['id'] for d in page.details]==['answer-layer-roles','answer-port-protocol','answer-handshake-login','answer-service-evidence']
- assert raw.count('data-reviewed-svg=')==4
+ assert len(page.details)==3 and all('open' not in d for d in page.details)
+ assert [d['id'] for d in page.details]==['answer-layer-roles','answer-handshake-login','answer-realtime-loss']
+ assert raw.count('data-transport-diagram=')==4
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
  assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-08/' in raw
  assert f'/{prefix}courses/ceh/v13/m03/#m03-02' in raw
  assert not (ROOT/f'build/{prefix}courses/ceh/v13/m03/concepts/m03-02/index.html').exists()
  for b in [b for b in lesson['text'][lang]['sourceBody'] if b['kind']=='visual']:
-  assert bundle[b['src']] in raw
+  assert b['src'] in raw
   assert (ROOT/'site'/b['src'].lstrip('/')).read_bytes()==(ROOT/'build'/b['src'].lstrip('/')).read_bytes()
  idx=json.loads((ROOT/'build/search-index.json').read_text());entry=next(x for x in idx if x['id']=='M03-01' and x['lang']==lang)
  for label in labels[lang]:assert label in entry['text']
@@ -34,4 +34,4 @@ p=ROOT/'site/downloads/ceh-m03-01-bilingual-svg.zip';assert p.read_bytes()==(ROO
 with zipfile.ZipFile(p) as z:
  assert len(z.namelist())==8
  for src in bundle:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
-print('PASS M03-01 bilingual full text order; 4 inline SVG per language; paired closed reference answers; search labels; exact assets/ZIP; pending M03-02. Browser/live checks NOT performed.')
+print('PASS M03-01 bilingual full text order; 4 responsive transport diagrams per language; paired closed reference answers; search labels; exact assets/ZIP; pending M03-02. Browser/live checks NOT performed.')

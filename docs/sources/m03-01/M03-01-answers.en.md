@@ -1,17 +1,13 @@
-# CEH M03-01 | Reference answers
+# M03-01 reference answers
 
-## answer-layer-roles | Check 1
+## answer-layer-roles | Why is an IP address insufficient?
 
-C. IP supports addressing and forwarding. Ports in transport protocols such as TCP and UDP help the operating system deliver data to communication endpoints. Programs provide services under application rules. Connect addresses, protocol, ports, and service evidence when reading a record.
+IP helps locate a network interface; one address can support multiple services. The transport protocol and destination port distinguish the intended communication endpoint. TCP/22, TCP/80 and TCP/443 commonly carry SSH, HTTP and HTTPS, but configuration or service responses must establish the actual service.
 
-## answer-port-protocol | Check 2
+## answer-handshake-login | Does the TCP handshake establish login?
 
-A. TCP and UDP have separate port namespaces, so TCP/443 and UDP/443 require separate identification. Common examples are HTTPS over TCP and QUIC/HTTP/3 over UDP. Confirm actual use through service configuration and protocol responses.
+The handshake establishes TCP transport state. HTTPS also needs TLS; application authentication and authorization determine account access and operation permissions. Establishing a communication channel does not itself grant access to an account or its data.
 
-## answer-handshake-login | Check 3
+## answer-realtime-loss | Should voice playback wait after loss?
 
-The TCP three-way handshake synchronizes initial sequence numbers and establishes transport connection state. Website login authenticates an account at the application layer. HTTPS additionally establishes a TLS secure channel according to the service flow. Examine each layer's own result.
-
-## answer-service-evidence | Check 4
-
-Retain source and destination IPs, source and destination ports, TCP, timestamp, observation point, and actual responses. Consult host listeners and program configuration, the asset inventory, reverse-proxy configuration, and owner-maintained records. Where authorized, corroborate protocol responses. Port 8443 supplies a service hypothesis; these sources establish its actual purpose.
+Decide from playback deadlines and application requirements. Audio that has missed its deadline may not be worth waiting for. Jitter buffering, loss concealment or selective retransmission can support continued playback. UDP has no automatic retransmission of its own, but higher layers can add reliability; protocol names alone do not establish performance.

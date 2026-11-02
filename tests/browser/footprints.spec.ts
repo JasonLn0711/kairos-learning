@@ -15,22 +15,22 @@ for(const c of cases){
   await page.goto(c.url);await expect(page.locator('.article-reading-guide')).toHaveCount(1);await expect(page.locator('.article-metadata')).not.toContainText(/閱讀更新|Reading updated/);
   await expect(page.locator('.article-metadata')).toContainText('v'+c.source.contentVersion);
   await expect(page.locator('.article-metadata')).toContainText(c.source.publishedOn);
-  await expect(page.locator('.article-metadata')).toContainText((c.lang==='zh'?'版本修訂':'Version revised')+' 2026-11-01');
+  await expect(page.locator('.article-metadata')).toContainText((c.lang==='zh'?'版本修訂':'Version revised')+' '+c.source.date);
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}px page overflow`).toBe(true);
-   const issues=await page.locator('.article-reading-guide dd,.readable-diagram-text p,.footprint-model p,.footprint-model h3,.prose p,.prose td,.prose li').evaluateAll(es=>es.filter(e=>{
+   const issues=await page.locator('.article-reading-guide dd,.readable-diagram-text p,.footprint-model p,.footprint-model h3,.transport-figure h3,.transport-figure p,.transport-figure li,.transport-figure dd,.prose p,.prose td,.prose li').evaluateAll(es=>es.filter(e=>{
     const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1);
    }).map(e=>e.textContent?.slice(0,80)));
    expect(issues,`${width}px body readability`).toEqual([]);
    if(width===390||width===1280){
     await page.screenshot({path:`${screenshots}/${c.id}-${c.lang}-${width}.png`});
-    const diagram=page.locator('figure').first();if(await diagram.count())await diagram.screenshot({path:`${screenshots}/${c.id}-${c.lang}-${width}-diagram.png`});
+    for(const [i,diagram] of (await page.locator('figure').all()).entries())await diagram.screenshot({path:`${screenshots}/${c.id}-${c.lang}-${width}-diagram-${i}.png`});
    }
   }
   await page.setViewportSize({width:390,height:900});await page.addStyleTag({content:'html{font-size:200% !important}'});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'200% page overflow').toBe(true);
-  expect(await page.locator('.article-reading-guide dd,.readable-diagram-text p,.footprint-model p,.footprint-model h3').evaluateAll(es=>es.every(e=>e.scrollWidth<=e.clientWidth+1))).toBe(true);
+  expect(await page.locator('.article-reading-guide dd,.readable-diagram-text p,.footprint-model p,.footprint-model h3,.transport-figure h3,.transport-figure p,.transport-figure li,.transport-figure dd').evaluateAll(es=>es.every(e=>e.scrollWidth<=e.clientWidth+1))).toBe(true);
   for(const a of await page.locator('main a[download][href$=".svg"]').all()){
    const href=(await a.getAttribute('href'))!;const response=await request.get(href);expect(response.status()).toBe(200);expect(await response.body()).toEqual(readFileSync('site'+href));
   }

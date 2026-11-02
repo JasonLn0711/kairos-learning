@@ -6,7 +6,7 @@ import json,xml.etree.ElementTree as ET,sys
 ROOT=Path(__file__).resolve().parents[1];NS='{http://www.w3.org/2000/svg}'
 flows={'m02-07-01':False,'m02-07-02':True,'m02-07-03':False,'m02-07-04':True,'m02-08-01':False,'m02-08-02':True,'m02-08-03':True,'m02-08-04':True,'m03-01-01':True,'m03-01-02':True,'m03-01-03':False,'m03-01-04':True}
 out={}
-for module in ['m02-07','m02-08','m03-01']:
+for module in ['m02-07','m02-08']:
  for p in sorted((ROOT/'site/images/ceh').glob(module+'-*.svg')):
   root=ET.parse(p).getroot();nodes=[]
   for y in [68,196,324,452]:
@@ -21,4 +21,4 @@ for module in ['m02-07','m02-08','m03-01']:
 s=json.dumps(out,ensure_ascii=False,indent=2)+'\n';p=ROOT/'src/lib/footprint-diagrams.json'
 if '--check' in sys.argv:assert p.read_text()==s
 else:p.write_text(s)
-print('24 footprint diagram models match source labels and explicit arrow contracts')
+print('16 footprint diagram models match source labels and explicit arrow contracts')
