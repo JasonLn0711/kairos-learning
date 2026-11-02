@@ -1,6 +1,6 @@
 """Deterministic M03-01 assets through the shared fail-closed SVG serializer."""
 from pathlib import Path
-import json,re,sys,xml.etree.ElementTree as ET
+import json,re,sys,zipfile,io,xml.etree.ElementTree as ET
 from m0903_svg import sanitized_svg,NS
 ROOT=Path(__file__).resolve().parents[1]
 NAMES=['01-layer-roles','02-tcp-and-application','03-transport-models','04-flow-tuple']
@@ -27,3 +27,11 @@ if __name__=='__main__':
   if '--check' in sys.argv:assert target.read_text()==value,str(target)
   else:target.write_text(value)
  print('8 M03-01 assets and inline/search bundles match strict serializer')
+
+ if '--check' not in sys.argv:
+  archive=io.BytesIO()
+  with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED) as z:
+   for src,markup in sorted(bundle.items()):
+    info=zipfile.ZipInfo(Path(src).name,date_time=(2026,11,3,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED
+    z.writestr(info,markup.encode())
+  (ROOT/'site/downloads/ceh-m03-01-bilingual-svg.zip').write_bytes(archive.getvalue())

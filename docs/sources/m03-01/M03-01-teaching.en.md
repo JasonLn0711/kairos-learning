@@ -1,131 +1,432 @@
-# CEH M03-01 | IP, TCP, UDP, Ports and Services: How Does a Network Request Find Its Destination?
+# CEH M03-01 | IP, TCP, UDP and Ports in Plain Language
 
-## 1 | The core idea
+These four concepts answer one question: when your computer communicates with another computer, how does the data reach the right place and the right program?
 
-**IP addresses help deliver data toward a network destination; TCP or UDP provides the transport; ports help deliver data to the appropriate program; the service handles the actual request.**
+- IP: Which network address should the data reach?
+- TCP: How can we transfer a reliable, ordered stream of bytes?
+- UDP: How can we send individual datagrams without first establishing a TCP-style connection?
+- Port: Which communication endpoint should receive the data after it reaches the computer?
 
-Imagine visiting an office building. The street address gets you to the building, an extension number identifies the relevant service desk, its intake process determines how requests and replies are handled, and the staff provide the actual service.
+These are foundations for CEH M03 Network Scanning. Understanding addresses, transport protocols and ports helps you interpret host discovery, port scans and service identification. [Kairos lesson](https://learn.cs-kairos.com/courses/ceh/v13/m03/concepts/m03-01/)
 
-On a network, IP resembles the address; a port resembles a desk number; TCP and UDP represent two transport approaches; web, email, and name-resolution programs provide different services. The analogy explains their roles. Actual operation depends on protocols, program configuration, and network paths.
+## 1 | The overall picture: an office building in a city
 
-This lesson answers one main question: after you open a webpage, how does the data find the correct host and program? You will learn to interpret a record containing source, destination, protocol, and ports—a foundation for host discovery and scan-result interpretation. All examples use documentation addresses and can be studied on paper.
+Imagine delivering documents to an office building. You need its location, a way to transport the documents, and the right desk inside. Network communication has similar responsibilities.
 
-## 2 | IP: locate a network destination
+![Figure 1](figures/01-layer-roles.en.svg)
 
-IP, the Internet Protocol, handles addressing and packet delivery across networks. A packet is a unit of transmitted data with a header and content. The header carries information needed to process it; the payload is the content carried at that layer.
+Suppose your computer connects to a website. Your computer has IP address `192.0.2.10`, and the server has `198.51.100.20`. These are documentation addresses, not claims about an operating public website. [RFC 5737](https://www.rfc-editor.org/rfc/rfc5737.html)
 
-An IP header contains source and destination addresses. A router uses the destination and its routing table to select the next hop. Routing is the selection and use of these forwarding paths.
+First, which host should receive the data? IP addresses that question.
 
-An IPv4 address is 32 bits long and commonly appears as four decimal numbers, such as `192.0.2.10`. An IPv6 address is 128 bits long and commonly uses colon-separated hexadecimal notation, such as `2001:db8::10`. RFC 8200 specifies IPv6 addressing and headers. [RFC 8200: IPv6](https://www.rfc-editor.org/rfc/rfc8200)
+Second, which transport mechanism should carry it? TCP or UDP addresses that question.
 
-A subnet groups addresses sharing a prefix. In `192.0.2.0/24`, `/24` identifies a 24-bit network prefix. Address configuration and routes determine whether a host sends directly to a neighbor on the same segment or through a gateway toward another network.
+Third, which endpoint on the server should receive it? The port helps identify that endpoint.
 
-A device can have several interfaces and addresses. One public address may represent a proxy, load balancer, or multiple devices sharing an outbound connection. Record the observed address, time, and network observation point, then use the asset inventory to understand the service entry point.
+Fourth, which program actually handles the request? That is the service.
 
-DNS, the Domain Name System, resolves names into addresses and other records. A browser might obtain an address for `shop.example` and then use it according to its connection requirements. Name resolution and subsequent data transfer are separately verifiable steps, connecting this lesson to M02-04.
+This is a teaching sequence, not packet encapsulation order. On transmission, application data normally goes to TCP or UDP and is then carried in IP packets. Reception processes the layers in the opposite direction.
+
+## 2 | IP: find a location on the network
+
+### 2.1 What is IP?
+
+IP stands for Internet Protocol. Think of an IP address as a logical network address, for example:
+
+```text
+192.168.1.10
+```
+
+An address can identify a network interface and help network devices decide where to forward data.
+
+An IP address is an address, not a computer's permanent identity. One computer may have Wi-Fi, Ethernet and VPN interfaces with different addresses. Multiple devices may also share a public IP through Network Address Translation (NAT). A matching public IP in two records does not establish that they came from the same person or device.
+
+### 2.2 What does IP do when you send data?
+
+Your computer in Taiwan can contact a server overseas without knowing every router along the path in advance. The packet carries a destination IP; each router consults routing information to choose the next hop.
+
+```text
+Your computer: 192.0.2.10
+    │ Destination IP: 198.51.100.20
+    ▼
+Home router
+    ▼
+Internet service provider network
+    ▼
+Routers in other networks
+    ▼
+Destination server: 198.51.100.20
+```
+
+A router usually needs the destination IP and routing information to forward a packet, rather than knowledge of which website button you clicked. Actual networks can also include firewalls, NAT, load balancers and other processing.
+
+IP itself does not guarantee arrival, arrival order or automatic retransmission of lost packets. Other layers supply those capabilities when required. [RFC 791](https://www.rfc-editor.org/rfc/rfc791.html)
+
+### 2.3 How are IP and DNS related?
+
+You normally enter a name such as `google.com`, not an IP address. The Domain Name System (DNS) can resolve a name to an IP address. For a teaching example:
+
+```text
+shop.example
+    │ DNS lookup
+    ▼
+198.51.100.20
+    │ Subsequent connection
+    ▼
+Website server
+```
+
+The computer or browser may already have a cached answer, so a new lookup is not always necessary.
+
+This connects to CEH M02: a domain name is a name; DNS resolves names; IP supports addressing; an Autonomous System Number (ASN) relates to autonomous-system routing policy. These are different objects.
+
+### 2.4 What are IPv4 and IPv6?
+
+`192.168.1.10` is an IPv4 address. IPv4 addresses contain 32 bits. `2001:db8::10` is an IPv6 example; IPv6 addresses contain 128 bits. A much larger address space is one purpose of IPv6. [RFC 8200](https://www.rfc-editor.org/rfc/rfc8200.html)
+
+The central point is the responsibility: IP handles network addressing and packet forwarding. It does not directly select the application that handles data on a server. That is why we also need ports.
 
 ## 3 | TCP: an ordered byte stream with connection state
 
-TCP, the Transmission Control Protocol, provides a reliable, ordered byte stream. A stream is a continuous sequence of bytes; the application determines which bytes form a message.
+### 3.1 What is TCP?
 
-A typical TCP connection starts with a three-way handshake:
+TCP stands for Transmission Control Protocol. If IP supplies addresses and roads, TCP resembles a document-delivery system with acknowledgments and replacement deliveries.
 
-1. The client sends SYN to request a connection and provide an initial sequence number.
-2. The server returns SYN-ACK, providing its own initial sequence number and acknowledging the client's.
-3. The client returns ACK, acknowledging the server's sequence number and completing the basic handshake.
+An important document may travel in many pieces. The receiver needs the bytes in order, without missing pieces. TCP provides this transport capability.
 
-SYN synchronizes sequence numbers; ACK acknowledges received data. A sequence number tracks byte positions. An acknowledgment number indicates the next sequence number expected by the receiver. After receiving 128 contiguous data bytes beginning at sequence 1201, the next expected value is 1329. This example assumes no gap and counts only data.
+TCP supplies a reliable, ordered byte stream while the connection operates. It does not promise unlimited retries until success under every possible network failure. [RFC 9293](https://www.rfc-editor.org/rfc/rfc9293.html)
 
-TCP coordinates transmission through acknowledgments, retransmission of lost data, flow control, and congestion control. An application that needs confirmation of a completed transaction uses its own request-and-response process, such as an order service returning an order number. RFC 9293 defines TCP. [RFC 9293: TCP](https://www.rfc-editor.org/rfc/rfc9293.html)
+### 3.2 Why establish a connection?
 
-Think of the handshake as establishing transport state for an exchange. Website login handles account identity at the application layer. Each stage has its own purpose. This also helps interpret sessions: network connections, authentication, and application login state can be observed separately.
+A browser and server normally start with the TCP three-way handshake.
 
-## 4 | UDP: send individual datagrams
+![Figure 2](figures/02-tcp-and-application.en.svg)
 
-UDP, the User Datagram Protocol, sends datagrams: individual messages with boundaries. Its header contains source port, destination port, length, and checksum. Basic UDP delivers datagrams; higher-level protocols add acknowledgment, retries, ordering, or duplicate suppression according to their needs. [RFC 768: UDP](https://www.rfc-editor.org/rfc/rfc768)
+Step one — SYN: the client sends a TCP segment with the SYN flag. In plain language, it asks to establish a connection. Technically, SYN synchronizes initial sequence-number information.
 
-For example, real-time voice values timely audio. The application decides how to handle data based on delay, loss, and playback deadlines. Name queries often use UDP, with the querying application managing timeouts and necessary retries. DNS also supports TCP; the actual choice depends on the query and protocol requirements. [RFC 1035: DNS transport](https://www.rfc-editor.org/rfc/rfc1035)
+Step two — SYN-ACK: the server supplies its own synchronization information and acknowledges the client's SYN.
 
-Compare their basic interfaces: TCP offers an ordered byte stream; UDP offers independent datagrams. Overall reliability, latency, and security emerge from the complete protocol stack and implementation.
+Step three — ACK: the client acknowledges the server's information. The endpoints establish the necessary TCP connection state and can normally exchange application data.
 
-Modern web traffic provides an example. QUIC is a secure, multiplexed transport protocol built over UDP, adding features such as streams and reliable transport. HTTP/3 maps web requests and responses onto QUIC. UDP traffic can therefore carry modern web services. [RFC 9000: QUIC](https://www.rfc-editor.org/rfc/rfc9000), [RFC 9114: HTTP/3](https://www.rfc-editor.org/rfc/rfc9114)
+### 3.3 What is an ACK, and why is it needed?
 
-## 5 | Ports: deliver data to the appropriate program endpoint
+ACK means acknowledgment. TCP sequence numbers identify byte positions so the receiver can track what has arrived and where data is missing.
 
-A port is a numeric field used by transport protocols such as TCP and UDP to help an operating system distinguish communication endpoints. TCP and UDP have separate port namespaces, so `TCP/53` and `UDP/53` are separately handled endpoints.
+```text
+Expected: data 1 → data 2 → data 3
+Arrives:  data 1 →          data 3
+                       data 2 is lost
+TCP detects the gap and retransmits data 2.
+Application reads: data 1 → data 2 → data 3
+```
 
-The port field has 16 bits, covering 0–65535. IANA, the Internet Assigned Numbers Authority, divides the registry into system ports 0–1023, user ports 1024–49151, and dynamic/private ports 49152–65535. Port 0 is reserved. [IANA service-name and port-number registry](https://www.iana.org/assignments/service-names-port-numbers/)
+For a research-paper PDF download, the application cannot treat a file with missing bytes as complete. Acknowledgment, retransmission and ordering help deliver the bytes correctly and in order.
 
-When a client sends a request, the operating system typically chooses a temporary source port. The server offers its service at a configured destination port. An ephemeral port is a temporarily used port; its actual selection range depends on operating-system configuration. IANA's dynamic range is a registry classification, while host settings govern observed behavior.
+TCP does not establish that the PDF is the version you intended, that its publisher is trustworthy, or that a website transaction completed. Applications and other security mechanisms address those questions.
 
-Example: `192.0.2.10:53000 → 198.51.100.20:443, TCP`.
+### 3.4 What is a byte stream?
 
-This describes TCP communication from source address 192.0.2.10, port 53000, to destination address 198.51.100.20, port 443. Return traffic is directed to the client's source port so the operating system can identify the requesting program.
+Suppose a program makes two writes:
 
-A five-tuple commonly consists of source IP, source port, destination IP, destination port, and transport protocol. It describes a network flow. Add the time and observation point to distinguish exchanges at different stages.
+```text
+First write:  HELLO
+Second write: WORLD
+```
 
-## 6 | Services: the programs and rules that handle requests
+The receiver is not guaranteed two corresponding reads:
 
-A service is a program or process providing a function, such as web access, name resolution, email, or remote administration. A listener is an endpoint where a program is ready to receive communication. A socket is a programming interface for network interaction, often described by address, port, and protocol information for its binding or connection.
+```text
+First read:  HELLO
+Second read: WORLD
+```
 
-A server can host multiple services, and one service can span several machines. Binding a program to an address affects which interfaces receive its traffic. A development service bound only to a loopback address serves local programs. When bound to an external interface, host and network rules further determine reachability.
+It could instead read:
 
-Useful common conventions include SSH, Secure Shell for remote administration, on TCP/22; DNS on UDP/53 and TCP/53; HTTP, Hypertext Transfer Protocol, on TCP/80; HTTPS, HTTP carried through a secure channel, commonly on TCP/443; and HTTP/3 over QUIC, commonly on UDP/443.
+```text
+First read:  HEL
+Second read: LOWORLD
+```
 
-Use the registry convention to form an initial service hypothesis, then confirm it through configuration, actual protocol responses, and administration records. Programs can use custom ports, such as 8443 for a test website. Record the protocol, port, and observed response together.
+Or it could read all the data at once:
 
-A reverse proxy may receive a public web request and forward it to an internal program. One IP can also host several websites. The website name, TLS configuration, and HTTP request help determine the eventual service. This extends the distinction between address, port, and service.
+```text
+HELLOWORLD
+```
 
-## 7 | Worked example: opening a secure webpage
+TCP preserves the ordered bytes, not the boundaries of individual application writes. Applications that need message boundaries define framing, such as a length prefix or delimiter. This matters when implementing network servers, WebSocket handling and custom protocols.
 
-This synthetic scenario uses documentation addresses and makes no live connection. Assume this browser exchange uses HTTPS over TCP.
+### 3.5 Does a TCP connection mean you have logged in?
 
-First, the browser obtains 198.51.100.20 as the service address for `shop.example` through name resolution. A real system may use a cached result.
+No. Connecting a telephone call to a bank establishes a communication channel; it does not prove that you own a bank account.
 
-Second, client 192.0.2.10 selects source port 53000 and connects to destination TCP/443. Routers forward traffic according to routes, and firewalls handle the flow under their configured rules.
+Likewise, TCP establishes transport state. HTTPS also needs the appropriate TLS security channel. A website requiring login still needs application authentication and authorization.
 
-Third, TCP completes the basic handshake. TLS, Transport Layer Security, then establishes a secure channel. The browser checks conditions including the service certificate and website name.
+TCP connection success ≠ TLS success ≠ user login success ≠ permission to perform an operation.
 
-Fourth, the browser sends an HTTP request and the web service returns content. If login is required, the application handles account authentication and authorization. If the user places an order, the service returns a transaction result.
+Keep this distinction when studying authentication, session management and session hijacking in CEH.
 
-Organize the example into four evidence cards:
-- Address card: which address did the name resolve to, from which source, and when?
-- Transport card: TCP or UDP, and which source and destination ports?
-- Secure-channel card: what were the TLS connection and certificate-check results?
-- Application card: which HTTP response, login result, or transaction outcome was received?
+## 4 | UDP: send data as datagrams
 
-This layered approach supports precise troubleshooting statements: name resolution succeeded and TCP is established, so TLS settings are under review; or the webpage responded, so application permissions are being checked. Each stage has its own observable data.
+### 4.1 What is UDP?
 
-## 8 | Turn the concepts into controls and records
+UDP stands for User Datagram Protocol. Its basic mechanism is simpler than TCP's. Imagine sending three separate notes: each note is an independent datagram. Sending does not first require TCP's three-way handshake.
 
-Map each service from business purpose to program, bound address, protocol/port, permitted sources, and responsible owner. Open the entry points required by the business. Use approved network and identity conditions for administration. When retiring a service, close its endpoints and update the inventory together.
+If a note is lost, UDP itself supplies no TCP-style automatic acknowledgment, retransmission and ordered-stream delivery. Applications that require those features implement them above UDP or use another protocol built on it. [RFC 768](https://www.rfc-editor.org/rfc/rfc768.html)
 
-A firewall handles traffic according to rules. Layer 3 conditions commonly include IP addresses; Layer 4 conditions include TCP/UDP and ports. Actual policies depend on the product and architecture. Application authentication and authorization operate at their corresponding layers.
+![Figure 3](figures/03-transport-models.en.svg)
 
-In an authorized environment, compare three evidence types: host listening configuration, network rules and logs, and normal user-facing service responses. For example: the program binds to an internal address on TCP/8443; policy allows only the management network; that network connects successfully while other approved test sources are restricted according to policy.
+### 4.2 Why not use TCP for everything?
 
-If observations span NAT, Network Address Translation, or a proxy, retain the observation point and mapping records. Addresses or ports may differ across those points. This connects to M02-06 network footprinting and M02-08's separation of sources, times, observations, and inferences.
+Applications have different requirements. In a live voice call, the speaker might say, “Hello, can you hear me?” Audio data keeps arriving. If a small piece is lost, must playback wait for its retransmission before playing anything later? Not necessarily.
 
-This lesson practices reading records. Later exercises introduce host discovery, scanning, and service identification in explicitly authorized isolated environments, recording tools, parameters, scope, and responses.
+A piece of audio that arrives after its playback deadline may no longer be useful. Some real-time systems therefore carry media over UDP and handle loss, jitter buffering and audio concealment in the application.
 
-## 9 | Paper exercise and checks
+This does not mean UDP is always faster. Its simpler datagram interface lets higher layers choose what is worth waiting for, acknowledging or retransmitting.
 
-Read two synthetic records:
+### 4.3 The core differences between TCP and UDP
 
-Record A: `192.0.2.10:53000 → 198.51.100.20:443, TCP`.
+| Property | TCP | UDP |
+|---|---|---|
+| Transport unit | Byte stream | Independent datagrams |
+| Transport connection establishment | Yes | No |
+| TCP three-way handshake | Yes | No |
+| Built-in reliable transport | Yes | No |
+| Built-in ordered delivery | Yes | No |
+| Application message boundaries | Not preserved | Datagram boundaries preserved |
+| Built-in encryption | No | No |
+| Common applications | SSH, HTTP/1.1, HTTP/2 | DNS, real-time media, QUIC |
+| Main characteristic | Reliable, ordered byte stream | Simple, independent datagram delivery |
 
-Record B: `192.0.2.10:53001 → 198.51.100.20:443, UDP`.
+Remember TCP's stream and UDP's datagram. DNS is listed as a common UDP application, not as a claim that DNS uses UDP exclusively.
 
-Write each five-tuple and add one sentence identifying the next service evidence you would seek. This connects the numbers and transport mechanisms to actual functions.
+### 4.4 Why does HTTP/3 use UDP?
 
-Check 1: which pairing best describes IP, ports, and services? A. IP is a login password; B. A port is an application name; C. IP helps address traffic, ports help select endpoints, and services handle requests; D. All three are identical.
+Modern websites do not all use TCP. HTTP/3 uses QUIC, which runs over UDP.
 
-Check 2: how do TCP/443 and UDP/443 relate? A. Different protocols require separate identification; B. They are always one connection; C. Matching ports share all state; D. UDP can only use port 53.
+```text
+HTTP/3: web requests and responses
+    ▼
+QUIC: encryption, connection management, reliable streams
+    ▼
+UDP: datagram transport
+    ▼
+IP: addressing and packet forwarding
+```
 
-Check 3: for a TCP-based service, what does the TCP handshake handle, and what does website login handle? Explain each in your own words.
+QUIC implements reliable streams, flow control and other mechanisms above UDP. UDP's lack of reliable delivery does not prevent a protocol using UDP from providing reliability. [RFC 9000](https://www.rfc-editor.org/rfc/rfc9000.html)
 
-Check 4: when you observe traffic to TCP/8443, what information would you retain, and where would you confirm the service's actual purpose?
+“TCP is reliable but slow; UDP is unreliable but fast” is an inadequate rule. Performance depends on network conditions, application protocols, loss, transport strategies and implementation.
 
-Reference answers accompany the material. Responses and understanding are recorded from actual learner replies.
+## 5 | Ports: deliver data to the right program endpoint
 
-**Identify the address, then the protocol and port, and use service evidence to confirm the purpose.** Next, M03-02 introduces host discovery through ICMP and ARP in authorized environments.
+### 5.1 Why do we need a port if we have an IP?
+
+An Ubuntu machine can run a website, SSH administration and a database at the same time. They may share IP address `192.168.1.10`. The destination IP alone does not distinguish their communication endpoints.
+
+TCP and UDP therefore include port numbers. Examples include:
+
+```text
+192.168.1.10:22
+192.168.1.10:80
+192.168.1.10:443
+```
+
+```text
+One server: 192.168.1.10
+    ├── TCP 22  → SSH
+    ├── TCP 80  → HTTP
+    └── TCP 443 → HTTPS
+```
+
+These are common configurations, not mandatory assignments. A port number is a logical protocol and operating-system identifier, not a physical USB or Ethernet socket on the computer case.
+
+### 5.2 Why are port numbers 0–65535?
+
+TCP and UDP port fields contain 16 bits. `2^16 = 65536` different values, starting from zero, give the range `0–65535`.
+
+IANA defines three ranges:
+
+| Port range | Category | Plain-language meaning |
+|---|---|---|
+| 0–1023 | System Ports | Range for common system and standard services |
+| 1024–49151 | User Ports | Range available for application-service registration |
+| 49152–65535 | Dynamic / Private Ports | Dynamic or private use |
+
+Port 0 is reserved. An operating system's actual ephemeral-source-port selection range need not exactly match IANA's dynamic-port classification. [IANA registry](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml)
+
+### 5.3 What are source and destination ports?
+
+Suppose your browser at `192.0.2.10` contacts an HTTPS service at `198.51.100.20` over TCP/443. Your operating system may choose ephemeral source port `53000`.
+
+```text
+Source:      192.0.2.10:53000
+                 ↓ TCP
+Destination: 198.51.100.20:443
+```
+
+The reply reverses the endpoints:
+
+```text
+198.51.100.20:443
+         ↓ TCP
+192.0.2.10:53000
+```
+
+Endpoint information helps both operating systems distinguish communications. One computer can have many website connections at the same time.
+
+![Figure 4](figures/04-flow-tuple.en.svg)
+
+### 5.4 What is a five-tuple?
+
+The five fields are source IP, source port, destination IP, destination port and transport protocol.
+
+```text
+192.0.2.10:53000
+        ↓ TCP
+198.51.100.20:443
+```
+
+| Field | Example |
+|---|---|
+| Source IP | 192.0.2.10 |
+| Source Port | 53000 |
+| Destination IP | 198.51.100.20 |
+| Destination Port | 443 |
+| Protocol | TCP |
+
+Firewalls, monitoring systems and traffic-analysis tools can match or aggregate these fields. If traffic crosses NAT, addresses or ports may differ at different observation points. Investigations therefore also need time, observation location and any relevant NAT mappings.
+
+### 5.5 Are TCP/443 and UDP/443 the same port?
+
+The numbers match, but the transport endpoints differ. TCP and UDP have separate port spaces.
+
+```text
+TCP / 443 → commonly conventional HTTPS
+UDP / 443 → commonly QUIC / HTTP/3
+```
+
+Inspect protocol plus port, not just `443`. Even TCP/443 does not prove that a service is HTTPS: applications can use different configured ports. Service identification requires more evidence than a port number.
+
+## 6 | Observe IP, TCP and ports on Ubuntu
+
+These exercises run on your own Ubuntu computer and do not scan anyone else's device.
+
+Experiment one — inspect your IP addresses:
+
+```bash
+ip -br addr
+```
+
+An illustrative output is:
+
+```text
+lo       UNKNOWN 127.0.0.1/8
+enp3s0   UP      192.168.1.10/24
+```
+
+`lo` is the loopback interface; `127.0.0.1` normally refers to this host. `enp3s0` is an example interface name. `192.168.1.10/24` is its IPv4 address with a network prefix length.
+
+Inspect routes with:
+
+```bash
+ip route
+```
+
+The routing table helps explain which interface or gateway the system selects for other networks.
+
+Experiment two — inspect local listening endpoints:
+
+```bash
+sudo ss -lntup
+```
+
+This shows local TCP/UDP listening or bound endpoints and available process information. An example TCP entry is:
+
+```text
+tcp LISTEN 0 128 127.0.0.1:8000
+```
+
+A process is listening on local TCP/8000. A bind address of `0.0.0.0:8000` normally covers all local IPv4 interfaces instead of only loopback. It does not prove external reachability: firewalls, NAT and other devices can still restrict access.
+
+Experiment three — start your own web service:
+
+```bash
+python3 -m http.server 8000 --bind 127.0.0.1
+```
+
+This simple HTTP server listens only on loopback. In another terminal, inspect the listener:
+
+```bash
+ss -lntp | grep ':8000'
+```
+
+Then request response headers:
+
+```bash
+curl -I http://127.0.0.1:8000
+```
+
+You should see HTTP response headers. Here the IP is `127.0.0.1`, the transport is TCP, the destination port is `8000`, and the service is Python's HTTP server. Press `Ctrl+C` in the first terminal to stop it.
+
+Listening on a port does not mean everyone on the network can access it. Scanning results depend on reachability, host configuration, firewalls and service responses.
+
+## 7 | Put the concepts together: one website connection
+
+Consider HTTPS using TCP:
+
+```text
+Enter website name
+    ▼
+DNS resolution if needed: obtain server IP
+    ▼
+IP: forward packets to destination
+    ▼
+TCP: establish connection and transport state
+    ▼
+Port 443: identify destination endpoint
+    ▼
+TLS: establish encryption and authentication mechanisms
+    ▼
+HTTP: send a website request
+    ▼
+Service: application handles the request
+    ▼
+Browser receives website content
+```
+
+This is a conceptual flow, not packet encapsulation order. DNS may use cached data, TCP, UDP or other transports. HTTP/3 has a different transport architecture.
+
+| CEH topic | Connection to this lesson |
+|---|---|
+| M02 Footprinting | DNS, IP, ASN and network scope |
+| M03 Network Scanning | Discover hosts, ports and services |
+| M04 Enumeration | Learn what information or resources a service exposes |
+| M08 Sniffing | Observe IP, TCP, UDP and packet contents |
+| M11 Session Hijacking | Distinguish transport connections, encrypted channels and application sessions |
+| M12 Firewalls | Control traffic using IP, protocol and port conditions |
+
+These distinctions also inform NAS, server and Cloudflare protection design. Allowing an IP to reach TCP/443 is network access control. Permission to connect does not establish permission to log in, and login does not grant every operation. Authentication and authorization need their own mechanisms.
+
+## 8 | Remember the architecture
+
+| Concept | Question it answers | Key terms |
+|---|---|---|
+| IP | Which network address receives the data? | Address, Routing |
+| TCP | How do we transfer reliable, ordered data? | Connection, Stream, ACK |
+| UDP | How do we send independent datagrams? | Datagram |
+| Port | Which communication endpoint receives the data? | Port Number, Socket |
+| Service | Who actually handles the request? | Application, Listener |
+
+IP locates the address, TCP or UDP supplies the transport, a port helps identify the program endpoint, and the service is the application providing the function.
+
+## 9 | Check your understanding
+
+Try these three questions without looking up an answer.
+
+Question one: a server at `192.168.1.100` runs SSH, HTTP and HTTPS. Why is the IP address alone insufficient to choose which service to contact?
+
+Question two: if your computer completes the TCP three-way handshake, does that mean you can log in to the website? Why?
+
+Question three: in a live voice system, a small audio packet is lost while later audio has arrived. Should playback always wait for retransmission, or can it process later audio according to playback deadlines? Explain your reasoning.
+
+These questions check IP/port responsibilities, the difference between TCP and authentication, and application-level TCP/UDP tradeoffs.

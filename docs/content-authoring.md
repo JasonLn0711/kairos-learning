@@ -258,3 +258,11 @@ npm run test:browser:m0206
 ```
 
 第二步同步十二張新下載圖、原有受審核註冊表及獨立 network-svg.zip；不改寫原 bilingual-svg.zip。`--check` 驗證來源圖、序列化輸出與 ZIP 確定性。英文換行保留完整詞；瀏覽器檢查 SVG 文字在 viewBox 內且不與箭頭交疊。圖號 1–6 是這次網路角色補充的內部順序，舊圖以原標題辨識；stable section-* 錨點與既有課程路線保留。
+
+## M03-01 隨文傳輸圖解（2026-11-03）
+
+[M03-01 v1.1.0 修訂回執](releases/2026-11-03-m03-01-transport.md)記錄九節正文替換、三題參考答案、四張參考圖與原版保存。[正式圖解模型](sources/m03-01/diagram-models.json)只含 overview、handshake、transport、tuple 四種版型，兩語節點數依序為 3、3、2、5；端點與 TCP 交握方向、TCP 重傳及 UDP 遺失須共同驗證。
+
+`python3 scripts/m0301_diagrams.py` 產生受限資料副本與來源 SVG；再依序執行 `m0301_svg.py`、`m0301_content.py`。SVG 沿用既有 fail-closed serializer，viewBox 維持 900×624，繪圖座標以等比 transform 保留參考圖比例。`TransportDiagram.svelte` 使用同一份資料輸出可選取 HTML，窄欄重排，不把縮小 SVG 當成手機正文。下載 SVG 與 ZIP 保留桌面關係；來源原版在 `archive-v1.0.0/`。
+
+驗收：內容、單元、型別、發布邊界、靜態輸出，加上 `npx playwright test --config playwright.footprints.config.ts`。圖解原生顯示，三題參考答案預設收合；`qa` 維持空陣列。原發布日不變，修訂與學習進度分開記錄。
