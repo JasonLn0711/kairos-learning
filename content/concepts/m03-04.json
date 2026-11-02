@@ -1,0 +1,999 @@
+{
+  "id": "M03-04",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-02",
+  "status": "published",
+  "publishedOn": "2026-11-03",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "把 Open、Closed、Filtered 與其他狀態連回觀察位置、方法及回應，選擇下一步查核。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-04｜Open、Closed、Filtered：把連接埠狀態讀成有依據的判斷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一句話結論：連接埠狀態是「從這個位置、用這種方法、在這次測試中，得到什麼回應」的判讀；把狀態和回應證據一起記下來，就能選對後續查核方向。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上一單元認識了 TCP Connect、SYN 與 UDP 三種掃描方式。今天把焦點放在讀懂結果：同樣看到 open、closed 或 filtered，我們要如何理解、記錄，並用它驗收自己的服務與防火牆設定？"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1｜從辦公大樓的分機開始理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你打電話到一棟辦公大樓："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 有人接起指定分機：這條聯絡路徑上，有人正在提供服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 總機明確說這個分機目前沒人接聽：你收到了一個具體的拒絕回覆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 總機依規定擋下外部來電：你看見的是聯絡政策的效果，下一步可以向管理者核對開放條件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "電腦裡的 Port（連接埠），可以先想成讓網路程式接收通訊的分機號碼。IP Address（IP 位址）協助封包找到網路端點；傳輸協定與連接埠則進一步區分通訊方式及服務入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如「192.0.2.20 的 TCP 443」和「192.0.2.20 的 UDP 443」是兩個分別查核的入口。TCP 是 Transmission Control Protocol，傳輸控制協定；UDP 是 User Datagram Protocol，使用者資料包協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課使用的位址與情境都是合成教材。實作範圍沿用自己的隔離實驗環境及事先核准的設備。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2｜先把三個核心狀態分清楚"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 是網路探索與安全稽核工具。它會根據探測方式和回應，把連接埠分類；本課主要掌握以下三種："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "狀態",
+            "白話理解",
+            "管理者接著關心什麼？"
+          ],
+          "rows": [
+            [
+              "open：開放",
+              "探測結果顯示，該入口有服務接受相應通訊",
+              "服務用途、允許的使用者、版本與保護設定"
+            ],
+            [
+              "closed：關閉",
+              "探測得到明確回覆，工具據此判為該入口沒有服務接聽",
+              "預期服務是否啟動、綁定位置是否正確"
+            ],
+            [
+              "filtered：受到過濾",
+              "探測結果符合過濾情況，入口的開放情形留待其他證據釐清",
+              "防火牆規則、路徑與相關紀錄"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的重點是觀察視角。同一個管理入口，可以讓管理網段連線，並讓其他網段的探測被過濾。兩份結果可以同時正確：它們分別描述各自的存取條件。[Nmap：連接埠狀態](https://nmap.org/book/man-port-scanning-basics.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "將結果寫成「從管理網段測得 TCP 443 open」，會比只寫「443 開著」更容易讓其他人重現與確認。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-04-01-core-states-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "三個核心狀態：各有下一步",
+            "description": "三種分類與觀察條件並列，沒有流程箭頭。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "三種分類與觀察條件並列，沒有流程箭頭。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3｜TCP SYN 掃描：用回應讀懂三種狀態"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SYN 是 TCP 用來發起連線的旗標；ACK 表示確認；RST 是重設連線的旗標。旗標就是封包裡用來表示控制意思的欄位。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對一般的 TCP SYN 掃描，可以用下面這張表讀取常見結果："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "送出的探測",
+            "觀察到的回應",
+            "常見分類"
+          ],
+          "rows": [
+            [
+              "SYN",
+              "SYN／ACK，對方回應連線請求",
+              "open"
+            ],
+            [
+              "SYN",
+              "RST，回覆重設",
+              "closed"
+            ],
+            [
+              "SYN",
+              "重試後仍無回應，或收到特定無法到達訊息",
+              "filtered"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "ICMP 是 Internet Control Message Protocol，網際網路控制訊息協定，用來傳遞網路錯誤等控制資訊。例如「管理政策禁止通訊」這類 ICMP 回覆，就能協助解釋路徑上的限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 的 SYN 掃描會把收到的訊息對應到狀態；重試與等待是判讀流程的一部分。因此，記錄結果時也要保留採用的掃描方法。[Nmap：TCP SYN 掃描](https://nmap.org/book/synscan.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "補充一個好用的讀法：把「收到 RST」放在觀察欄，把「Nmap 分類為 closed」放在判讀欄，再到設備端查服務接聽狀態。如此可以把網路回應和設備設定接起來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 的 RST 有其協定處理規則，實際網路設備也可能依政策產生回應；查核回應來源、主機與防火牆紀錄，可以進一步確認原因。[TCP 規範：RFC 9293](https://www.rfc-editor.org/rfc/rfc9293)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-04-02-syn-responses-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "TCP SYN：回應與分類對照",
+            "description": "SYN掃描三種常見回應與紀錄方式的並列比較。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "SYN掃描三種常見回應與紀錄方式的並列比較。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4｜UDP 的沉默，要保留兩個可能方向"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UDP 以資料包傳送訊息，沒有 TCP 那套建立連線的三向交握。應用程式收到資料後，可能回覆，也可能只處理符合自己格式的請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，讀 UDP 掃描時，特別要認識 open|filtered。中間的「|」在這裡表示兩種候選狀態：開放，或受到過濾。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "UDP 探測後的觀察",
+            "Nmap 常見分類",
+            "下一步查核方向"
+          ],
+          "rows": [
+            [
+              "收到相應 UDP 回覆",
+              "open",
+              "核對回覆內容與服務設定"
+            ],
+            [
+              "收到 IPv4 ICMP「連接埠無法到達」，Type 3／Code 3",
+              "closed",
+              "核對該入口的接聽程式"
+            ],
+            [
+              "收到其他符合過濾判定的 ICMP 錯誤",
+              "filtered",
+              "核對路徑與政策"
+            ],
+            [
+              "重試後仍無回應",
+              "open|filtered",
+              "比對服務日誌、防火牆日誌與適合該服務的測試"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如一個 UDP 服務只處理特定格式的資料，你送去的探測資料若不符合格式，就可能保持沉默；防火牆丟棄探測也可能得到相同表面結果。工具保留兩個候選，正好提醒我們補上哪一類證據。[Nmap：UDP 掃描](https://nmap.org/book/scan-methods-udp-scan.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先看掃描方法，再看回應，最後讀狀態。這個順序能幫助你理解：TCP SYN 的逾時常被分類為 filtered，UDP 的逾時則常被分類為 open|filtered。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-04-03-udp-responses-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "UDP：四種觀察、四個查核方向",
+            "description": "UDP回應與四個候選分類並列，沉默保留兩種可能。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "UDP回應與四個候選分類並列，沉默保留兩種可能。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5｜另外兩個標籤：知道它在回答哪個問題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "除了前三種與 open|filtered，Nmap 還有兩個狀態："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- unfiltered：未受該探測所見的過濾。這是 ACK 掃描常用的分類，用來描述該探測可得到回應；服務開放與否需要再用適合的方法查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- closed|filtered：關閉或受到過濾。這是特定 IP ID 閒置掃描使用的分類，本單元先記住它同樣是在保留候選狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ACK 掃描關心過濾規則的行為；SYN 掃描則可協助區分開放、關閉與過濾。兩者是在問不同問題，所以要搭配方法閱讀結果。[Nmap：掃描方式與分類](https://nmap.org/book/man-port-scanning-techniques.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "記憶法：open 看服務接受通訊，closed 看明確拒絕回應，filtered 看過濾判讀；帶「|」的標籤保留兩個查核方向。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6｜讀一次完整的合成案例"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你受託驗收實驗室的一台測試伺服器。事前核准只檢查 TCP 443、TCP 8443 與 UDP 53，並安排兩個觀察位置：管理網段與一般測試網段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是教材用的整理結果："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "位置／方法",
+            "入口",
+            "回應證據",
+            "分類"
+          ],
+          "rows": [
+            [
+              "管理網段／SYN",
+              "TCP 443",
+              "SYN／ACK",
+              "open"
+            ],
+            [
+              "一般測試網段／SYN",
+              "TCP 443",
+              "重試後無回應",
+              "filtered"
+            ],
+            [
+              "管理網段／SYN",
+              "TCP 8443",
+              "RST",
+              "closed"
+            ],
+            [
+              "管理網段／UDP",
+              "UDP 53",
+              "重試後無回應",
+              "open|filtered"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著按任務目的整理："
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，TCP 443 的兩個觀察位置呈現不同結果。若原先需求是「只讓管理網段使用」，這是可以進一步驗收的線索。管理者可以對照允許與拒絕規則，以及測試時間附近的日誌。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，TCP 8443 得到 closed。若服務原本應該開在這裡，就查程式是否啟動、是否接聽這個連接埠，以及是否只綁定在特定介面；若原本就沒有安排這個服務，則把結果與資產清單對照即可。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，UDP 53 留在 open|filtered。DNS 是 Domain Name System，網域名稱系統。若這台設備原本應提供 DNS，就使用經核准、符合服務格式的查詢，並對照 DNS 與防火牆紀錄，讓下一步證據回答剩下的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這份案例的收穫是：狀態不是評語，而是查核工作的路標。每個結果都能對應一個清楚的下一步。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7｜把掃描報告寫成別人能重現的紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一筆有用的紀錄，至少包含："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 目標與授權範圍：設備、IP、傳輸協定、連接埠與核准用途。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 觀察條件：來源網段、時間與時區、掃描方式、工具版本及重要設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 結果與理由：工具顯示的狀態，以及相應封包或錯誤回覆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 交叉證據：服務接聽設定、應用程式日誌、防火牆規則及日誌。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 後續處理：預期與實際的差異、負責人、核准的重測安排。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 的 `--reason` 選項會顯示狀態判定理由，可協助留下「為什麼被分成這類」的紀錄；保存原始輸出也方便前後比較。[Nmap：輸出與判定理由](https://nmap.org/book/man-output.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如可以寫："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「本次從管理測試網段，以 TCP SYN 探測測試主機的 443 埠，收到 SYN／ACK，工具分類為 open。下一步依變更單核對服務設定與允許來源，並保存同時段防火牆日誌。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種寫法把觀察、判讀與行動分開，閱讀者很容易知道查到哪裡。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-04-04-evidence-record-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "把結果整理成可重現的紀錄",
+            "description": "從測試條件到觀察判讀、交叉查核與核准下一步。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "從測試條件到觀察判讀、交叉查核與核准下一步。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8｜防護怎麼做，驗收就怎麼看"
+        },
+        {
+          "kind": "paragraph",
+          "text": "從防護角度，可以把檢查分成三層："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 服務層：每個開放入口都有業務用途、維護人與更新安排；停用不需要的服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 存取層：依必要來源與用途設定規則；管理入口限定管理網段或核准管道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 驗收層：從允許與限制的觀察位置分別測試，對照服務設定與日誌，再確認結果符合設計。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如同樣是 open，公開網站的服務入口與只供管理者使用的入口，原本就有不同的政策目標。是否符合需求，要將結果放回資產用途與存取政策一起判斷。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課的練習是讀取合成輸出與設計查核紀錄；實際探測依授權範圍、核准速率與維護安排進行。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9｜小檢核：把狀態翻成下一步"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先試著用自己的話回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 同一個 TCP 443，從管理網段測得 open，從其他網段測得 filtered。你會如何解釋這兩個結果，並補哪兩類證據？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. TCP SYN 探測收到 RST，與 UDP 探測重試後沒有回覆，分別通常對應哪個狀態？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. ACK 掃描顯示 unfiltered 時，下一步要怎麼確認服務是否開放？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 一份報告只寫「UDP 53 open|filtered」。請補出至少四項資訊，讓管理者能接續查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天帶走的核心：把「觀察位置＋掃描方法＋回應證據＋狀態＋下一步」串在一起，掃描結果就會成為可以驗收與協作的紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一單元 M03-05 接著學習服務版本與橫幅資訊，進一步理解開放入口背後提供的是什麼服務。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-observation-location",
+          "summary": "參考解答：1. 同一入口、不同位置",
+          "paragraphs": [
+            "兩份結果分別描述不同來源的存取條件：管理網段的 SYN 探測收到服務接受連線的回應，其他網段的探測呈現過濾情況。若政策原本只允許管理網段，這是可繼續驗收的線索。補上兩類證據：一、服務接聽與綁定設定；二、防火牆允許／拒絕規則與同時段日誌。一起核對來源、時間及方法，就能確認結果是否符合設計。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-response-states",
+          "summary": "參考解答：2. RST 與 UDP 沉默",
+          "paragraphs": [
+            "TCP SYN 探測收到 RST，通常分類為 **closed**。UDP 探測重試後仍沒有回應，通常分類為 **open|filtered**：服務可能只回覆符合格式的資料，路徑上的過濾也可能造成沉默。保留原始回應與測試條件，再依服務與防火牆紀錄查核。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ack-followup",
+          "summary": "參考解答：3. unfiltered 的下一步",
+          "paragraphs": [
+            "ACK 掃描的 unfiltered 表示該探測可得到回應，重點是過濾行為。接著在核准範圍內使用 TCP SYN 或 Connect 等適合的方法，觀察服務是否接受連線，並對照設備端的接聽設定；若要確認應用程式用途，再做核准的應用層查核。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-report-fields",
+          "summary": "參考解答：4. 補齊查核紀錄",
+          "paragraphs": [
+            "至少補四項，例如：目標 IP 與核准用途、來源網段、時間與時區、UDP 掃描方式與工具版本、等待／重試設定、探測資料格式、無回應的原始輸出與判定理由、服務接聽與 DNS 日誌、防火牆規則與日誌。保留 UDP 53 的傳輸協定和埠號，並列出下一步核准的服務格式查詢及負責人，讓其他人可以重現並接續處理。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Connect Open, Closed, Filtered and other states to observation location, method and response, then choose the next check.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-04 | Open, Closed, Filtered: Turn Port States into Evidence-Based Judgments"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In one sentence: a port state interprets the response obtained from this location, with this method, in this test; recording the state alongside its response evidence helps you choose the next verification step."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The previous unit introduced TCP Connect, SYN, and UDP scans. Today we focus on interpreting results: when we see open, closed, or filtered, how can we understand and document them and use them to validate our own services and firewall settings?"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1 | Start with extensions in an office building"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine calling an office building:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Someone answers the requested extension: a service is available along this communication path."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- The switchboard explicitly says nobody currently answers that extension: you have received a concrete rejection response."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- The switchboard blocks external calls according to policy: you are observing an access policy's effect; you can check its access conditions with the administrator next."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A port can initially be understood as an extension number through which a network program receives communications. An IP address (Internet Protocol address) helps packets reach a network endpoint; the transport protocol and port further distinguish the communication method and service entry point."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, “TCP 443 on 192.0.2.20” and “UDP 443 on 192.0.2.20” are two entry points to check separately. TCP stands for Transmission Control Protocol; UDP stands for User Datagram Protocol."
+        },
+        {
+          "kind": "paragraph",
+          "text": "All addresses and scenarios in this lesson are synthetic teaching examples. Practical work remains within your own isolated lab and equipment approved in advance."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2 | Distinguish the three core states first"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap is a network discovery and security auditing tool. It classifies ports according to the probe method and responses. This lesson focuses on three states:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "State",
+            "Plain-language meaning",
+            "What does the administrator check next?"
+          ],
+          "rows": [
+            [
+              "open",
+              "The probe indicates that a service accepts the corresponding communication at this entry point",
+              "Service purpose, authorized users, version, and protection settings"
+            ],
+            [
+              "closed",
+              "A definite response leads the tool to classify the entry point as having no listening service",
+              "Whether the expected service is running and bound to the correct location"
+            ],
+            [
+              "filtered",
+              "Probe results fit a filtering situation; other evidence will clarify whether the entry point is open",
+              "Firewall rules, the path, and related records"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The key is the observation perspective. The same management entry point can accept connections from a management subnet while probes from other subnets are filtered. Both results can be correct: each describes its own access conditions. [Nmap: port states](https://nmap.org/book/man-port-scanning-basics.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Writing “TCP 443 tested open from the management subnet” makes a result easier for others to reproduce and verify than simply writing “443 is open.”"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-04-01-core-states-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Three core states: different next steps",
+            "description": "Parallel categories and observation conditions, with no flow arrows.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Parallel categories and observation conditions, with no flow arrows."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3 | TCP SYN scans: read three states from responses"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SYN is the TCP flag used to initiate a connection; ACK indicates acknowledgment; RST is the connection-reset flag. A flag is a field in a packet that expresses a control meaning."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For an ordinary TCP SYN scan, this table explains common results:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Probe sent",
+            "Response observed",
+            "Common classification"
+          ],
+          "rows": [
+            [
+              "SYN",
+              "SYN/ACK: the peer responds to the connection request",
+              "open"
+            ],
+            [
+              "SYN",
+              "RST: a reset response",
+              "closed"
+            ],
+            [
+              "SYN",
+              "Still no response after retries, or certain unreachable messages",
+              "filtered"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "ICMP stands for Internet Control Message Protocol, which carries control information such as network errors. For example, an ICMP response indicating that communication is administratively prohibited can help explain restrictions along the path."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap's SYN scan maps received messages to states; retries and waiting are part of that interpretation process. Therefore, preserve the scan method when recording results. [Nmap: TCP SYN scan](https://nmap.org/book/synscan.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A useful reading habit: put “received RST” in the observation column and “Nmap classified it as closed” in the interpretation column, then check the device's listening-service state. This connects network responses to device settings."
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP defines processing rules for RST, and network devices can also generate responses according to policy. Checking the response source, host records, and firewall records helps establish the cause. [TCP specification: RFC 9293](https://www.rfc-editor.org/rfc/rfc9293)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-04-02-syn-responses-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "TCP SYN: responses and states",
+            "description": "Parallel comparison of three common SYN-scan responses and recording practice.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Parallel comparison of three common SYN-scan responses and recording practice."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4 | UDP silence keeps two possibilities open"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UDP sends messages as datagrams without TCP's connection-establishing three-way handshake. After receiving data, an application may reply, or it may process only requests matching its expected format."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That makes open|filtered particularly important when reading UDP scans. Here, the “|” separates two candidate states: open, or filtered."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Observation after a UDP probe",
+            "Common Nmap classification",
+            "Next verification step"
+          ],
+          "rows": [
+            [
+              "A corresponding UDP response",
+              "open",
+              "Check the response content and service settings"
+            ],
+            [
+              "IPv4 ICMP “port unreachable,” Type 3 / Code 3",
+              "closed",
+              "Check the program listening at that entry point"
+            ],
+            [
+              "Other ICMP errors that meet the filtering criteria",
+              "filtered",
+              "Check the path and policy"
+            ],
+            [
+              "Still no response after retries",
+              "open|filtered",
+              "Compare service logs, firewall logs, and a suitable service-specific test"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a UDP service that processes only a particular data format may remain silent when the probe does not match it; a firewall dropping the probe may produce the same visible result. Keeping both candidates tells us what kind of evidence to gather next. [Nmap: UDP scan](https://nmap.org/book/scan-methods-udp-scan.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read the scan method first, the response second, and the state last. This order explains why a TCP SYN timeout is commonly classified as filtered, whereas a UDP timeout is commonly classified as open|filtered."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-04-03-udp-responses-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "UDP: four observations and next steps",
+            "description": "Parallel UDP-response categories; silence preserves two possibilities.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Parallel UDP-response categories; silence preserves two possibilities."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5 | Two other labels: understand the question they answer"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Alongside the three core states and open|filtered, Nmap has two further states:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- unfiltered: the probe has not encountered filtering as observed by that method. ACK scans commonly use this classification to describe a probe receiving a response; an appropriate additional method checks whether a service is open."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- closed|filtered: closed or filtered. This classification is used by the particular IP ID idle-scan technique. For this unit, remember that it also preserves candidate states."
+        },
+        {
+          "kind": "paragraph",
+          "text": "ACK scans examine filtering-rule behavior; SYN scans help distinguish open, closed, and filtered ports. They ask different questions, so read each result together with its method. [Nmap: scan techniques and classifications](https://nmap.org/book/man-port-scanning-techniques.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Memory aid: open concerns a service accepting communication, closed a definite rejection response, and filtered a filtering interpretation; labels containing “|” preserve two verification directions."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6 | Read a complete synthetic case"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are assigned to validate a lab test server. Prior approval limits checks to TCP 443, TCP 8443, and UDP 53, with two observation locations: the management subnet and an ordinary test subnet."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here are the teaching example's summarized results:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Location / method",
+            "Entry point",
+            "Response evidence",
+            "Classification"
+          ],
+          "rows": [
+            [
+              "Management subnet / SYN",
+              "TCP 443",
+              "SYN/ACK",
+              "open"
+            ],
+            [
+              "Ordinary test subnet / SYN",
+              "TCP 443",
+              "No response after retries",
+              "filtered"
+            ],
+            [
+              "Management subnet / SYN",
+              "TCP 8443",
+              "RST",
+              "closed"
+            ],
+            [
+              "Management subnet / UDP",
+              "UDP 53",
+              "No response after retries",
+              "open|filtered"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, organize them around the task's purpose:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, TCP 443 produces different results from the two observation locations. If the requirement was “management-subnet access only,” this is a useful lead for further validation. The administrator can compare allow and deny rules and logs from around the test time."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second, TCP 8443 is closed. If the service should run there, check whether its program is running, listening on that port, and bound only to a particular interface. If no service was planned there, compare the result with the asset inventory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third, UDP 53 remains open|filtered. DNS stands for Domain Name System. If the device is expected to provide DNS, use an approved query in the service's expected format and compare DNS and firewall records, letting the next evidence resolve the remaining question."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The lesson from this case is: a state is a signpost for verification work, rather than a rating. Each result points to a clear next step."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7 | Write scan reports others can reproduce"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A useful record includes at least:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Target and authorized scope: device, IP address, transport protocol, port, and approved purpose."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Observation conditions: source subnet, date/time and time zone, scan method, tool version, and important settings."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Result and reason: the state displayed by the tool and the corresponding packet or error response."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Cross-checking evidence: listening-service settings, application logs, firewall rules, and firewall logs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. Follow-up: differences between expected and observed results, the responsible person, and approved retesting arrangements."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap's `--reason` option displays reasons for state classifications, helping document why a result entered a particular category; retaining original output also supports before-and-after comparisons. [Nmap: output and classification reasons](https://nmap.org/book/man-output.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“From the management test subnet, we used TCP SYN probes against port 443 on the test host, received SYN/ACK, and obtained an open classification. Next, we will check service settings and allowed sources against the change request and retain firewall logs from the same period.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Separating observation, interpretation, and action makes the progress of verification easy to follow."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-04-04-evidence-record-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Build a reproducible verification record",
+            "description": "Move from test conditions to observation, cross-checking, and an approved next step.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Move from test conditions to observation, cross-checking, and an approved next step."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8 | Validate protection according to its design"
+        },
+        {
+          "kind": "paragraph",
+          "text": "From a protection perspective, organize checks into three layers:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Service layer: every open entry point has a business purpose, a maintainer, and an update plan; disable unnecessary services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Access layer: configure rules around required sources and purposes; restrict management entry points to management subnets or approved channels."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Validation layer: test separately from allowed and restricted observation locations, compare service settings and logs, and confirm that results match the design."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a public website entry point and an administrator-only entry point have different policy objectives even when both are open. Judge whether a result meets requirements by considering the asset's purpose and access policy together."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson practices reading synthetic output and designing verification records; actual probing follows the authorized scope, approved rate, and maintenance arrangements."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9 | Quick check: translate states into next steps"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Try answering in your own words first:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. The same TCP 443 tests open from the management subnet and filtered from another subnet. How would you explain these results, and what two kinds of evidence would you add?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. What states commonly correspond to a TCP SYN probe receiving RST and a UDP probe receiving no response after retries, respectively?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. When an ACK scan reports unfiltered, how would you check next whether the service is open?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. A report says only “UDP 53 open|filtered.” Add at least four pieces of information that would help an administrator continue verification."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Today's takeaway: combine “observation location + scan method + response evidence + state + next step” to turn scan results into records that support validation and collaboration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, M03-05 introduces service versions and banner information to understand what service an open entry point provides."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-observation-location",
+          "summary": "Reference answer: 1. One entry point, different locations",
+          "paragraphs": [
+            "The two results describe access conditions for different sources: the management subnet's SYN probe receives a response accepting a connection, while probes from the other subnet show filtering. If policy permits only the management subnet, this is a lead for further validation. Add two categories of evidence: first, the service's listening and binding settings; second, firewall allow/deny rules and logs from the same period. Compare the source, time, and method together to check whether the results match the design."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-response-states",
+          "summary": "Reference answer: 2. RST and UDP silence",
+          "paragraphs": [
+            "A TCP SYN probe receiving RST is commonly classified as **closed**. A UDP probe still receiving no response after retries is commonly classified as **open|filtered**: the service may respond only to correctly formatted data, while path filtering can also produce silence. Preserve the original response evidence and test conditions, then check service and firewall records."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ack-followup",
+          "summary": "Reference answer: 3. The next step after unfiltered",
+          "paragraphs": [
+            "An ACK scan's unfiltered result means that this probe receives a response; its focus is filtering behavior. Next, within the approved scope, use an appropriate method such as TCP SYN or Connect to observe whether a service accepts connections, and compare the device's listening settings. To establish the application's purpose, follow with an approved application-layer check."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-report-fields",
+          "summary": "Reference answer: 4. Complete the verification record",
+          "paragraphs": [
+            "Add at least four items, such as the target IP address and approved purpose, source subnet, time and time zone, UDP scan method and tool version, waiting/retry settings, probe data format, original no-response output and classification reason, listening settings and DNS logs, or firewall rules and logs. Retain UDP 53's transport protocol and port number, and identify the next approved service-format query and responsible person so others can reproduce the test and continue the work."
+          ]
+        }
+      ]
+    }
+  }
+}

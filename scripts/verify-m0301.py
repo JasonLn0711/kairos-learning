@@ -23,8 +23,8 @@ for lang,prefix in [('zh',''),('en','en/')]:
  assert raw.count('data-transport-diagram=')==4
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
  assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-08/' in raw
- assert f'/{prefix}courses/ceh/v13/m03/#m03-02' in raw
- assert not (ROOT/f'build/{prefix}courses/ceh/v13/m03/concepts/m03-02/index.html').exists()
+ assert f'/{prefix}courses/ceh/v13/m03/concepts/m03-02/' in raw
+ assert (ROOT/f'build/{prefix}courses/ceh/v13/m03/concepts/m03-02/index.html').exists()
  for b in [b for b in lesson['text'][lang]['sourceBody'] if b['kind']=='visual']:
   assert b['src'] in raw
   assert (ROOT/'site'/b['src'].lstrip('/')).read_bytes()==(ROOT/'build'/b['src'].lstrip('/')).read_bytes()
@@ -34,4 +34,4 @@ p=ROOT/'site/downloads/ceh-m03-01-bilingual-svg.zip';assert p.read_bytes()==(ROO
 with zipfile.ZipFile(p) as z:
  assert len(z.namelist())==8
  for src in bundle:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
-print('PASS M03-01 bilingual full text order; 4 responsive transport diagrams per language; paired closed reference answers; search labels; exact assets/ZIP; pending M03-02. Browser/live checks NOT performed.')
+print('PASS M03-01 bilingual full text order; 4 responsive transport diagrams per language; paired closed reference answers; search labels; exact assets/ZIP; linked M03-02. Browser/live checks NOT performed.')
