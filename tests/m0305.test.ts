@@ -18,7 +18,7 @@ test('M03-05 bilingual structure, source order, answers, searchable figures and 
    const values=line.startsWith('|')?line.slice(1,-1).split(/(?<!\\)\|/):[line.replace(/^#{1,3} /,'')];
    for(let value of values){value=value.replaceAll('**','').trim();const at=text.indexOf(value,cursor);assert.ok(at>=0,`${lang}: ${value}`);cursor=at+value.length;}
   }
-  const page=catalog.get('M03-05',lang)!;assert.equal(page.navigation.previous?.id,'M03-04');assert.equal(page.navigation.next?.id,'M03-06');assert.equal(page.navigation.next?.href,null);assert.equal(catalog.get('M03-06',lang),null);
+  const page=catalog.get('M03-05',lang)!;assert.equal(page.navigation.previous?.id,'M03-04');assert.equal(page.navigation.next?.id,'M03-06');assert.ok(page.navigation.next?.href?.endsWith('/m03-06/'));assert.ok(catalog.get('M03-06',lang));
   const search=catalog.searchEntries.find(e=>e.id==='M03-05'&&e.lang===lang)!;
   for(const b of body.filter(b=>b.kind==='answer'||b.kind==='visual'))for(const t of flatten(b))assert.ok(search.text.includes(t));
   assert.ok(!/Sentinel_|libfile_|sandbox:/.test(text));
