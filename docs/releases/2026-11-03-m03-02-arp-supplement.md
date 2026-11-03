@@ -49,3 +49,11 @@ HTML-01–04、A11Y-01–03：沿用現有元件，驗收兩語 320／390／768�
 - 正式站證據為 `.local/m0302-arp/live/results.json`、`live-figures.json`、截圖與日誌。完整鍵盤、200% 文字與無 JavaScript 驗收在本機完成；正式站此次驗收範圍為上述回讀與圖解比對。
 
 本回執只補記已取得證據，不改教材。實體手機、完整螢幕閱讀器及讀者理解仍未驗證。
+
+## FIRST PRINCIPLE 與 Planning 接續
+
+稀缺資源為讀者注意力、編輯時間與可信證據。Kairos 保存供稿、舊稿、教材、圖解與詳細驗證；Planning 保存狀態、容量與下一關。Jason 提供來源、指定兩圖保留並授權部署；此次交付是教材維護，個人工時與理解狀態另行記錄。
+
+[11/03 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-03.md#kairos-m0302-arp-2026-11-03) · [網站專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-m0302-arp-2026-11-03) · [CEH 學習定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-07-ceh-cehp-certification-training.md#kairos-m0302-arp-2026-11-03) · [W45 容量](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#kairos-m0302-arp-2026-11-03) · [整合入口](https://github.com/JasonLn0711/planning-everything-track/blob/main/docs/14-local-integrations.md#kairos-m0302-arp-2026-11-03)。
+
+下一關由 Jason 下次閱讀提供措辭回饋與個人小檢核；維持既有容量，不自動開新掃描或實驗。此輪只增加文件連結，教材、圖解與測試結果沿用上述已完成證據，未重跑。
