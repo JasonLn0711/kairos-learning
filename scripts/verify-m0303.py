@@ -6,9 +6,13 @@ from m0303_svg import generate
 ROOT=Path(__file__).resolve().parents[1]
 lesson=json.loads((ROOT/'content/concepts/m03-03.json').read_text());bundle,labels=generate()
 class Text(HTMLParser):
- def __init__(self,s):super().__init__();self.parts=[];self.details=[];self.feed(s)
- def handle_data(self,s):self.parts.append(s)
+ def __init__(self,s):super().__init__();self.parts=[];self.details=[];self.hidden=False;self.feed(s)
+ def handle_data(self,s):
+  if not self.hidden:self.parts.append(s)
+ def handle_endtag(self,t):
+  if t in ['script','style']:self.hidden=False
  def handle_starttag(self,t,a):
+  if t in ['script','style']:self.hidden=True
   if t=='details':self.details.append(dict(a))
 def norm(s):return re.sub(r'\s+',' ',html.unescape(re.sub(r'\[([^\]]+)\]\(https://[^)]+\)',r'\1',s))).strip()
 for lang,prefix in [('zh',''),('en','en/')]:
@@ -19,19 +23,19 @@ for lang,prefix in [('zh',''),('en','en/')]:
   for u in units:
    u=norm(u);at=text.find(u,cursor);assert at>=0,(lang,u);cursor=at+len(u)
  assert len(page.details)==4 and all('open' not in d for d in page.details)
- assert [d['id'] for d in page.details]==['answer-connect-syn','answer-udp-silence','answer-application-check','answer-test-conditions']
- assert raw.count('data-reviewed-svg=')==4
+ assert [d['id'] for d in page.details]==['answer-connect-syn','answer-udp-silence','answer-test-conditions','answer-application-check']
+ assert raw.count('data-scan-diagram=')==4
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
  assert f'/{prefix}courses/ceh/v13/m03/concepts/m03-02/' in raw
  assert f'/{prefix}courses/ceh/v13/m03/concepts/m03-04/' in raw
  assert (ROOT/f'build/{prefix}courses/ceh/v13/m03/concepts/m03-04/index.html').exists()
  for b in [b for b in lesson['text'][lang]['sourceBody'] if b['kind']=='visual']:
-  assert bundle[b['src']] in raw
+  assert b['src'] in raw
   assert (ROOT/'site'/b['src'].lstrip('/')).read_bytes()==(ROOT/'build'/b['src'].lstrip('/')).read_bytes()
  idx=json.loads((ROOT/'build/search-index.json').read_text());entry=next(x for x in idx if x['id']=='M03-03' and x['lang']==lang)
  for label in labels[lang]:assert label in entry['text']
 p=ROOT/'site/downloads/ceh-m03-03-bilingual-svg.zip';assert p.read_bytes()==(ROOT/'build/downloads/ceh-m03-03-bilingual-svg.zip').read_bytes()
 with zipfile.ZipFile(p) as z:
- assert len(z.namelist())==8
+ assert len(z.namelist())==10
  for src in bundle:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
-print('PASS M03-03 bilingual full text order; 4 inline SVG per language; paired closed reference answers; search labels; exact assets/ZIP; published next M03-04. Browser/live checks NOT performed.')
+print('PASS M03-03 bilingual full text order; 4 responsive scan diagrams per language; paired closed reference answers; search labels; exact assets/ZIP; published next M03-04. Browser/live checks NOT performed.')

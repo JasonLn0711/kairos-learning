@@ -3,7 +3,7 @@ from pathlib import Path
 import json,re,sys,xml.etree.ElementTree as ET
 from m0903_svg import sanitized_svg,NS
 ROOT=Path(__file__).resolve().parents[1]
-NAMES=['01-connect-flow', '02-syn-flow', '03-udp-responses', '04-evidence-layers']
+NAMES=['01-connect-flow', '02-syn-flow', '03-udp-responses', '04-evidence-layers', '05-scan-positions']
 def generate():
  bundle={};labels={'zh':[],'en':[]}
  for lang,suffix in [('zh','zh-TW'),('en','en')]:
@@ -26,4 +26,12 @@ if __name__=='__main__':
  for target,value in targets.items():
   if '--check' in sys.argv:assert target.read_text()==value,str(target)
   else:target.write_text(value)
- print('8 M03-03 assets and inline/search bundles match strict serializer')
+ import zipfile,io
+ output=io.BytesIO()
+ with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
+  for src,markup in sorted(bundle.items()):
+   info=zipfile.ZipInfo(Path(src).name,(2026,11,3,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;z.writestr(info,markup)
+ target=ROOT/'site/downloads/ceh-m03-03-bilingual-svg.zip'
+ if '--check' in sys.argv:assert target.read_bytes()==output.getvalue()
+ else:target.write_bytes(output.getvalue())
+ print('10 M03-03 assets and inline/search bundles match strict serializer')

@@ -1,8 +1,8 @@
 {
   "id": "M03-03",
-  "revision": 1,
-  "contentVersion": "1.0.0",
-  "date": "2026-11-02",
+  "revision": 2,
+  "contentVersion": "1.1.0",
+  "date": "2026-11-03",
   "status": "published",
   "publishedOn": "2026-11-03",
   "qa": [],
@@ -18,19 +18,19 @@
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "1｜先記住這個結論"
+          "text": "1｜這次要確認的是哪個通訊入口？"
         },
         {
           "kind": "paragraph",
-          "text": "連接埠掃描（Port Scanning）是在已授權的範圍內，向指定的傳輸協定與連接埠送出探測，再依回應整理當時的狀態。TCP Connect 嘗試完成 TCP 連線；SYN 掃描觀察建立連線的起始回應；UDP 掃描則依 UDP 回覆、ICMP 錯誤或等待結果判讀。"
+          "text": "連接埠掃描（Port Scanning）像是在確認一棟大樓有哪些窗口受理服務。TCP Connect 完成報到；SYN 先問是否接受報到；UDP 送出申請資料，再觀察回覆。不同問法取得不同證據。"
         },
         {
           "kind": "paragraph",
-          "text": "上一課 M03-02 問「哪些位址有活動跡象」，這一課接著問「指定的 TCP 或 UDP 入口如何回應」。同一個數字，例如 53/tcp 與 53/udp，是兩個分開觀察的入口。"
+          "text": "M03-01 說明 IP、TCP、UDP 與 Port；M03-02 探索主機的活動跡象；這一課接著確認指定的 TCP／UDP 入口如何回應。讀完後，請能說明「送出什麼、收到什麼、能下什麼結論」，並完成最後三個情境題。"
         },
         {
           "kind": "paragraph",
-          "text": "想像你要確認一棟大樓的服務窗口：你可以完成報到，也可以先詢問是否接受報到，或投入一張特定格式的申請單等回覆。這三種方式會取得不同證據。今天全部用合成資料與紙上訊息流程，理解方法後再依授權環境選擇操作。"
+          "text": "文中的 192.0.2.20 是文件範例位址；帶有此位址的指令用來解讀選項。實作限定自己的 127.0.0.1，先確認測試連接埠未被其他服務占用；需要停止時按 Ctrl+C，完成後關閉測試程式。"
         },
         {
           "kind": "heading",
@@ -39,31 +39,64 @@
         },
         {
           "kind": "paragraph",
-          "text": "Port（連接埠）是 TCP 或 UDP 使用的數字欄位，協助作業系統把資料交給對應的通訊端點。Listener（監聽端點）表示程式已準備接收某個位址與連接埠的通訊。"
+          "text": "Port（連接埠）是通訊入口的編號。可以把 IP 想成大樓地址，Port 想成窗口號碼：TCP 22 常用於 SSH、TCP 80 常用於 HTTP、TCP 443 常用於 HTTPS、UDP 53 常用於 DNS。這些是慣例；服務可以改用其他編號。TCP 53 與 UDP 53 是分開觀察的入口。"
         },
         {
           "kind": "paragraph",
-          "text": "例如測試伺服器在 TCP 443 接受連線；建立 TCP 連線後，才可能繼續進行 TLS 加密協商與 HTTP 網頁請求。TLS 是保護通訊的傳輸層安全協定；HTTP 是網頁應用常用的請求與回應協定。登入與授權又是應用程式後續處理的工作。"
+          "text": "Connection（連線）表示雙方建立了通訊關係。對 HTTPS 而言，TCP 連線成功後，還要經過 TLS 加密協商、HTTP 請求、應用程式處理，才知道網站功能是否正常。"
+        },
+        {
+          "kind": "code",
+          "text": "TCP 443 可連線 → TLS 協商 → HTTP 請求 → 應用程式／資料庫"
         },
         {
           "kind": "paragraph",
-          "text": "掃描紀錄因此適合分成三層："
+          "text": "例如 TCP 可以連上，TLS 卻協商失敗；TLS 成功，HTTP 卻回傳 500；首頁正常，登入功能卻故障。每一步只證明該階段的結果。"
         },
         {
           "kind": "paragraph",
-          "text": "- 原始觀察：送了什麼、收到什麼、等了多久。"
+          "text": "Listener（監聽端點）表示程式準備在特定 IP、協定與 Port 接收通訊；Service（服務）是實際處理請求的軟體，例如 Nginx、OpenSSH、PostgreSQL。接收連線的也可能是反向代理或負載平衡器，後端另有程式處理。因此 TCP 443 開放還不能確定使用 Nginx，或確認後端健康。"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -p 443 127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "- 工具判讀：依該方法顯示 open、closed、filtered 等狀態。"
+          "text": "-sT 指 TCP Connect，-p 443 指定連接埠，127.0.0.1 指自己的電腦。假設輸出如下："
+        },
+        {
+          "kind": "code",
+          "text": "PORT     STATE  SERVICE\n443/tcp  open   https"
         },
         {
           "kind": "paragraph",
-          "text": "- 後續查核：確認實際服務、設定、用途與防護政策。"
+          "text": "443/tcp 是觀察入口；open 是工具判讀；未做服務辨識時，https 通常只是連接埠名稱資料庫的標籤。-sV 會嘗試辨識實際服務與版本，但仍需核對應用層回應。"
         },
         {
-          "kind": "paragraph",
-          "text": "本課先用 open 表示工具觀察到接受通訊的特徵，closed 表示收到對應的關閉／拒絕特徵，filtered 表示探測受過濾等因素影響而無法依該方法確定開放或關閉。下一課 M03-04 再完整整理狀態與觀察位置的關係。[Nmap 掃描方法與結果說明](https://nmap.org/book/man-port-scanning-techniques.html)"
+          "kind": "table",
+          "headers": [
+            "層次",
+            "要回答的問題",
+            "證據"
+          ],
+          "rows": [
+            [
+              "原始觀察",
+              "送了什麼、收到什麼？",
+              "SYN、SYN/ACK、RST、ICMP、等待時間"
+            ],
+            [
+              "工具判讀",
+              "依這種方法如何分類？",
+              "open、closed、filtered 等"
+            ],
+            [
+              "服務查核",
+              "實際服務是什麼、是否正常？",
+              "TLS、HTTP、服務指紋、應用程式回應"
+            ]
+          ]
         },
         {
           "kind": "heading",
@@ -72,55 +105,56 @@
         },
         {
           "kind": "paragraph",
-          "text": "TCP（Transmission Control Protocol，傳輸控制協定）建立一般連線時，常見流程是三向交握："
+          "text": "TCP 的一般新連線使用三向交握（Three-way Handshake）。SYN（Synchronize）提出連線並同步初始序號；ACK（Acknowledgment）確認收到對方的資訊；RST（Reset）重設連線或連線嘗試。"
         },
         {
           "kind": "paragraph",
-          "text": "1. 用戶端送 SYN，提出建立連線與同步序號的請求。"
+          "text": "1. 掃描端送 SYN：「我想建立連線，這是我的同步資訊。」"
         },
         {
           "kind": "paragraph",
-          "text": "2. 伺服器回 SYN＋ACK，提出自己的同步資訊並確認對方的請求。"
+          "text": "2. 目標回 SYN＋ACK：「收到你的請求，也提供我的同步資訊。」"
         },
         {
           "kind": "paragraph",
-          "text": "3. 用戶端送 ACK，完成這次交握。"
+          "text": "3. 掃描端回 ACK：「收到。」一般 TCP 交握完成，連線進入可交換資料的狀態。"
         },
         {
           "kind": "paragraph",
-          "text": "SYN 是 synchronize 的縮寫，ACK 是 acknowledgment 的縮寫，分別表示同步與確認。這裡討論的是典型的新連線流程。[RFC 9293：TCP](https://www.rfc-editor.org/rfc/rfc9293)"
+          "text": "TCP Connect Scan 呼叫作業系統的 connect()，由 TCP/IP 網路堆疊處理交握，Nmap 再讀取成功或錯誤結果。掃描通常隨即結束測試連線；連線建立不代表已傳送 HTTP 請求。"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -p 443 192.0.2.20"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "connect() 結果",
+            "常見判讀",
+            "如何理解"
+          ],
+          "rows": [
+            [
+              "連線成功",
+              "open",
+              "從此位置能建立 TCP 連線"
+            ],
+            [
+              "Connection refused",
+              "closed",
+              "明確拒絕，典型封包是目標回 RST"
+            ],
+            [
+              "等待、重試或其他錯誤",
+              "依錯誤判讀，可能 filtered",
+              "無法完成連線；不能把所有錯誤都當成 filtered"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "TCP Connect Scan（TCP 完整連線掃描）使用作業系統提供的 connect 呼叫，請系統嘗試連到指定 IP 與 TCP 連接埠，再讀取成功或錯誤結果。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "紙上例子："
-        },
-        {
-          "kind": "paragraph",
-          "text": "測試端 → 192.0.2.20:443：SYN"
-        },
-        {
-          "kind": "paragraph",
-          "text": "伺服器 → 測試端：SYN＋ACK"
-        },
-        {
-          "kind": "paragraph",
-          "text": "測試端 → 伺服器：ACK"
-        },
-        {
-          "kind": "paragraph",
-          "text": "作業系統回報連線成功；工具接著結束該測試連線。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "這種方式走一般應用程式也會使用的連線介面，適合理解「從目前位置是否能建立 TCP 連線」。掃描目的通常到此為止；服務內容、TLS 與網站功能可依任務另外檢查。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "Nmap 以 -sT 表示 TCP Connect 掃描。因為連線確實完成，服務端可能留下連線或隨即斷線的紀錄；關閉方式與細節依平台及服務行為而異。[Nmap TCP Connect 說明](https://nmap.org/book/scan-methods-connect-scan.html)"
+          "text": "這種方式通常不需要直接收送原始封包的特殊權限。因為完整建立連線，服務端可能留下連線或立即斷線的紀錄，大量連線也會增加負擔。[Nmap TCP Connect](https://nmap.org/book/scan-methods-connect-scan.html)"
         },
         {
           "kind": "visual",
@@ -128,12 +162,24 @@
           "downloadLabel": "下載 SVG 圖檔",
           "visual": {
             "kind": "cards",
-            "caption": "圖 1｜TCP Connect 的典型流程",
-            "description": "作業系統嘗試建立TCP連線，完成交握後回報結果，工具再結束測試連線。",
+            "caption": "TCP Connect：完成三向交握",
+            "description": "透過 connect() 完成 TCP 連線，然後結束測試。",
             "items": [
               {
-                "title": "讀圖重點",
-                "body": "作業系統嘗試建立TCP連線，完成交握後回報結果，工具再結束測試連線。"
+                "title": "SYN",
+                "body": "掃描端 → 目標：提出連線與同步資訊。"
+              },
+              {
+                "title": "SYN＋ACK",
+                "body": "目標 → 掃描端：接受請求，提供自己的同步資訊。"
+              },
+              {
+                "title": "ACK",
+                "body": "掃描端 → 目標：完成一般交握。"
+              },
+              {
+                "title": "判讀提醒",
+                "body": "TCP 連線成功還需另查 TLS、HTTP 與應用功能。"
               }
             ]
           }
@@ -145,43 +191,56 @@
         },
         {
           "kind": "paragraph",
-          "text": "SYN Scan（SYN 掃描）直接觀察 TCP 起始封包的回應。在典型開放情境中，測試端送 SYN，收到 SYN＋ACK，然後以 RST 結束這次嘗試，而不繼續完成一般連線交握。"
+          "text": "SYN Scan 先送 SYN。目標回 SYN＋ACK 時，已表明願意接受建立連線；掃描端以 RST 結束這次嘗試，不送完成一般交握的最後 ACK。因此也稱 Half-open Scan（半開式掃描），描述交握未完成，並非 Port 只開一半。"
+        },
+        {
+          "kind": "code",
+          "text": "掃描端 → 目標：SYN\n目標 → 掃描端：SYN＋ACK\n掃描端 → 目標：RST\n判讀 open；未完成一般三向交握"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "對 SYN 的回應",
+            "典型狀態",
+            "判讀重點"
+          ],
+          "rows": [
+            [
+              "目標回 SYN＋ACK",
+              "open",
+              "目標接受起始請求"
+            ],
+            [
+              "目標回 RST",
+              "closed",
+              "目標拒絕這次連線"
+            ],
+            [
+              "重試後無回覆，或特定 ICMP 無法到達",
+              "filtered",
+              "此方法無法確認開放或關閉"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "RST（Reset，重設）是 TCP 控制旗標，用來重設連線狀態。這種探索方式常被稱為 Half-open（半開式）掃描，名稱描述的是這個交握處理方式。"
+          "text": "讀 RST 時要看方向。目標回 RST 是拒絕；掃描端收到 SYN＋ACK 後送 RST 是結束已取得證據的探測。後者也可能由掃描端作業系統產生；實際 RST／ACK 組合依實作而異。"
         },
         {
           "kind": "paragraph",
-          "text": "紙上例子："
+          "text": "無回覆可能來自去程或回程被擋、封包遺失、設備異常。filtered 本身沒有證明一定存在防火牆。IPv4 SYN 掃描收到 ICMP Type 3、Code 1／2／3／9／10／13 也會判為 filtered。[Nmap SYN](https://nmap.org/book/synscan.html)"
+        },
+        {
+          "kind": "code",
+          "text": "sudo nmap -sS -p 443 192.0.2.20"
         },
         {
           "kind": "paragraph",
-          "text": "測試端 → 192.0.2.20:443：SYN"
+          "text": "-sS 通常需要原始封包操作權限；實際取決於作業系統、Capabilities 與封包驅動。Nmap 仍透過作業系統介面收送探測，與 -sT 請 connect() 完成交握的分工不同。"
         },
         {
           "kind": "paragraph",
-          "text": "伺服器 → 測試端：SYN＋ACK"
-        },
-        {
-          "kind": "paragraph",
-          "text": "測試端 → 伺服器：RST"
-        },
-        {
-          "kind": "paragraph",
-          "text": "工具依 SYN＋ACK 判讀此 TCP 入口為 open。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "如果對應的回覆是 RST，典型 SYN 掃描會判讀為 closed。若重試後仍無回應，或收到特定 ICMP 無法到達訊息，工具可能標為 filtered；判讀同時記錄探測方法與回應來源。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "Nmap 的 -sS 表示 SYN 掃描，通常需要平台提供直接收送原始封包的權限。實際權限依作業系統、封包驅動與執行環境決定。[Nmap SYN 掃描說明](https://nmap.org/book/synscan.html)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "有些教材使用 Stealth（隱蔽）這個歷史名稱。實務上把它理解為「與完整連線相比，交握與應用層紀錄可能不同」即可；防火牆與入侵偵測／防禦系統（IDS／IPS）仍能根據流量模式、來源與頻率偵測這類探測。選方法時優先考慮授權、相容性與要取得的證據。"
+          "text": "Stealth Scan（隱蔽掃描）是歷史名稱。某些只記錄完整連線的應用程式可能留下較少紀錄，但防火牆、IDS（入侵偵測系統）、IPS（入侵防禦系統）仍能觀察連續多 Port 的 SYN 與重設模式。SYN 掃描可被偵測。"
         },
         {
           "kind": "visual",
@@ -189,12 +248,24 @@
           "downloadLabel": "下載 SVG 圖檔",
           "visual": {
             "kind": "cards",
-            "caption": "圖 2｜SYN 掃描的典型開放回應",
-            "description": "SYN掃描觀察起始回應，典型開放案例收到SYN加ACK後以RST結束嘗試。",
+            "caption": "SYN Scan：取得起始回應後重設",
+            "description": "SYN＋ACK 已提供 open 證據；不送最後 ACK。",
             "items": [
               {
-                "title": "讀圖重點",
-                "body": "SYN掃描觀察起始回應，典型開放案例收到SYN加ACK後以RST結束嘗試。"
+                "title": "SYN",
+                "body": "掃描端 → 目標：提出連線與同步資訊。"
+              },
+              {
+                "title": "SYN＋ACK",
+                "body": "目標 → 掃描端：接受請求，提供自己的同步資訊。"
+              },
+              {
+                "title": "RST",
+                "body": "掃描端 → 目標：重設嘗試；未完成一般交握。"
+              },
+              {
+                "title": "判讀提醒",
+                "body": "目標回 RST 才是拒絕；掃描端送 RST 是結束嘗試。"
               }
             ]
           }
@@ -206,39 +277,49 @@
         },
         {
           "kind": "paragraph",
-          "text": "UDP（User Datagram Protocol，使用者資料報協定）以 Datagram（資料報）傳送訊息，本身沒有 TCP 那套 SYN、SYN＋ACK、ACK 交握。應用程式依自己的協定決定收到訊息後如何處理與回覆。[RFC 768：UDP](https://www.rfc-editor.org/rfc/rfc768)"
+          "text": "UDP 直接傳送 Datagram（資料報），沒有 TCP 三向交握。像寄出一封信：沒收到回信，可能是對方不需回覆、看不懂內容、去程遺失、遭到過濾，或回信途中遺失。"
         },
         {
           "kind": "paragraph",
-          "text": "例如 DNS（Domain Name System，網域名稱系統）服務可能對格式正確的查詢回覆，對不符合需求的資料採取不同處理。所以 UDP 掃描會受到 Payload（酬載，也就是訊息所攜帶的資料內容）影響；送什麼與等到什麼，需要一起記錄。"
+          "text": "Payload（酬載）是資料報攜帶的內容。DNS 可能回覆格式正確的查詢，卻忽略空白或無效內容；DNS、NTP、SNMP 各有自己的格式。Nmap 對部分常見 UDP Port 使用協定專屬酬載，其他探測未必是服務能理解的請求。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "收到的回應",
+            "Nmap 狀態",
+            "白話判讀"
+          ],
+          "rows": [
+            [
+              "對應的 UDP 回覆",
+              "open",
+              "有端點回應這次資料報"
+            ],
+            [
+              "IPv4 ICMP Type 3 / Code 3",
+              "closed",
+              "回報 Port Unreachable（連接埠無法到達）"
+            ],
+            [
+              "IPv4 ICMP Type 3 / Code 1、2、9、10、13",
+              "filtered",
+              "政策或路徑阻止確認"
+            ],
+            [
+              "重試後仍無回覆",
+              "open|filtered",
+              "無法區分開放但沉默與受到過濾"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "Nmap 以 -sU 表示 UDP 掃描。常見判讀包括："
+          "text": "ICMP 是傳達 IP 錯誤與狀態的控制訊息。UDP 沒有 TCP RST；主機收到送往無接收端點的 UDP 資料報時，典型情況可能回 ICMP Port Unreachable。分析時核對錯誤來源與內含的原始資料報；IPv4 Type／Code 不直接套用到 ICMPv6。"
         },
         {
           "kind": "paragraph",
-          "text": "- 收到目標連接埠的對應 UDP 回覆：open。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "- 收到 IPv4 ICMP Type 3、Code 3，也就是連接埠無法到達：closed。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "- 收到特定其他 ICMP 無法到達錯誤：filtered。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "- 重試後仍沒有收到回覆：open|filtered。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "open|filtered 的直線符號表示「仍保留開放或過濾兩種可能」，不是同時完成兩項確認。適合的應用層探測或設備設定紀錄，可以進一步縮小原因。[Nmap UDP 掃描說明](https://nmap.org/book/scan-methods-udp-scan.html)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "ICMP（Internet Control Message Protocol，網際網路控制訊息協定）是另一種控制訊息；UDP 探測引發的 ICMP 回報，屬於網路或主機的錯誤通知。分析時核對回報來源與所指向的原始探測。上面 Type／Code 數字適用 IPv4，本課不把它們套到 ICMPv6。[RFC 792：ICMP](https://www.rfc-editor.org/rfc/rfc792)"
+          "text": "open|filtered 的「|」表示「或」，保留兩種可能，不能當作確定開放，也不能直接斷言服務未啟動。適當的 -sV 服務探測可能取得回覆、將狀態縮小為 open；沒有回覆時仍需設定或日誌等證據。UDP 回覆也只證明該次通訊，未確認所有功能。[Nmap UDP](https://nmap.org/book/scan-methods-udp-scan.html)"
         },
         {
           "kind": "visual",
@@ -246,12 +327,28 @@
           "downloadLabel": "下載 SVG 圖檔",
           "visual": {
             "kind": "cards",
-            "caption": "圖 3｜UDP 回應的四種判讀",
-            "description": "四張並列卡片代表不同可能結果；UDP回覆、ICMP錯誤與逾時各自對應方法狀態。",
+            "caption": "UDP：送出資料報，分別判讀四種回應",
+            "description": "掃描端 → 目標：UDP 資料報。四張卡是替代結果，沒有先後順序。",
             "items": [
               {
-                "title": "讀圖重點",
-                "body": "四張並列卡片代表不同可能結果；UDP回覆、ICMP錯誤與逾時各自對應方法狀態。"
+                "title": "open",
+                "body": "收到對應 UDP 回覆；此路徑有端點回應。"
+              },
+              {
+                "title": "closed",
+                "body": "收到 IPv4 ICMP Type 3 / Code 3：Port Unreachable。"
+              },
+              {
+                "title": "filtered",
+                "body": "收到 IPv4 ICMP Type 3 / Code 1、2、9、10、13。"
+              },
+              {
+                "title": "open|filtered",
+                "body": "重試後仍無回覆：可能開放但沉默，也可能受到過濾。"
+              },
+              {
+                "title": "判讀提醒",
+                "body": "核對 ICMP 來源與原始資料報；IPv4 數字不套用 ICMPv6。"
               }
             ]
           }
@@ -263,169 +360,283 @@
         },
         {
           "kind": "paragraph",
-          "text": "同一個服務，從內網、訪客網路或外部測試位置觀察，可能經過不同政策。Firewall（防火牆）依規則處理流量；負載平衡器、代理或 NAT（Network Address Translation，網路位址轉換）也可能改變實際回應路徑。"
+          "text": "Timeout（逾時）是在指定時間內沒有收到預期回應；Retry（重試）是再送一次探測。假設只等 100 ms，回覆 300 ms 才抵達，就可能過早判定逾時。多次重試會增加時間、封包量與設備負擔，應按環境設定。"
         },
         {
           "kind": "paragraph",
-          "text": "把掃描結果想成「從這個觀察點拍到的一張快照」很有幫助。記錄來源、目的 IP、TCP／UDP、連接埠與時間，就能知道兩次測試是否在比較同一件事。"
+          "text": "掃描 1,000 個 Port，每秒 10 個與每秒 1,000 個的速度不同；過快可能引發限速或丟包，增加等待結果。這些數字只是比較範例。UDP 還受 ICMP Rate Limiting（錯誤回報速率限制）影響：即使多個 Port 都沒有監聽，主機也未必立刻為每次探測送出錯誤，因此 UDP 掃描可能較慢。"
+        },
+        {
+          "kind": "code",
+          "text": "sudo nmap -sU -p 53,123,161 --max-rate 10 192.0.2.20"
         },
         {
           "kind": "paragraph",
-          "text": "UDP 的等待常需要更多耐心：服務可能只回覆有效查詢，網路也可能遺失封包；主機還可能限制 ICMP 錯誤訊息的產生速率。工具需要等待與重試，才能依設定整理結果。Nmap 官方 UDP 教學也說明錯誤回報限速會影響掃描耗時。[Nmap UDP 判讀與耗時](https://nmap.org/book/scan-methods-udp-scan.html)"
+          "text": "--max-rate 10 限制 Nmap 探測封包的傳送速率上限為每秒 10 個；這不是所有環境的最佳值。實際測試先選少量已核定 Port，依設備承載能力、維護窗口與停止條件調整。"
         },
         {
           "kind": "paragraph",
-          "text": "因此，速度不是唯一目標。管理者可先選少量核定端點、訂好等待與停止條件，配合維護窗口和設備承載能力。結果需要比較時，保留工具版本、選項與測試條件。"
-        },
-        {
-          "kind": "heading",
-          "id": "section-7",
-          "text": "7｜完整案例：同一測試主機的三種觀察"
+          "text": "同一台伺服器的 TCP 22，從實驗室內網可能 open，從外網可能 filtered。兩者可以同時成立：來源、路由與防火牆政策不同。但要先確認 NAT、代理或負載平衡器沒有把兩次測試導向不同入口。"
         },
         {
           "kind": "paragraph",
-          "text": "以下是合成紀錄，非實際掃描輸出。假設已核准檢查隔離實驗室的 192.0.2.20："
+          "text": "NAT（Network Address Translation，網路位址轉換）可能把公開入口轉送到私有 IP，例如 192.168.1.100。外部通常連公開位址；缺少對應 Port Forwarding（連接埠轉送）時，探測可能無法抵達內部主機。內外結果不同未必是服務變了，也不能把所有 NAT 結果都預設為 filtered。"
         },
         {
           "kind": "paragraph",
-          "text": "紀錄 A：對 TCP 443 進行 Connect 測試，作業系統回報連線建立成功。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "紀錄 B：對 TCP 443 送 SYN，收到 SYN＋ACK，接著送 RST。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "紀錄 C：對 UDP 53 送出一次測試資料報，在核定的等待與重試設定下沒有收到回覆。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "A 可以寫成：「此時間、此來源位置可完成 TCP 443 的連線建立；後續網站服務檢查另列。」"
-        },
-        {
-          "kind": "paragraph",
-          "text": "B 可以寫成：「TCP 443 對 SYN 回覆 SYN＋ACK，按此方法記為 open；保留重設與結束嘗試的紀錄。」"
-        },
-        {
-          "kind": "paragraph",
-          "text": "C 可以寫成：「UDP 53 本次沒有收到對應回覆，按此方法列 open|filtered；接著核對允許的查詢格式、UDP 政策與服務設定。」"
-        },
-        {
-          "kind": "paragraph",
-          "text": "若 C 後來收到 IPv4 ICMP Type 3、Code 3，就追加新的觀察與時間，依該次回覆改記 closed。舊紀錄保留，方便看出改變來自不同回應、設定或時間。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "這個案例的重點是：相同位址有多個協定入口；相同 TCP 入口也能用不同方法觀察。把方法與證據寫清楚，團隊就能理解每一筆結論。"
+          "text": "比較報告時一起記錄：來源 IP、目的入口、時間、TCP／UDP、Port、方法、酬載、等待／重試、速率、工具版本與路徑政策。"
         },
         {
           "kind": "visual",
-          "src": "/images/ceh/m03-03-04-evidence-layers-zh.svg",
+          "src": "/images/ceh/m03-03-05-scan-positions-zh.svg",
           "downloadLabel": "下載 SVG 圖檔",
           "visual": {
             "kind": "cards",
-            "caption": "圖 4｜讓掃描狀態連回實際證據",
-            "description": "先記探測與回應，再記工具判讀；依目的查核服務及政策，保留測試條件與差異。",
+            "caption": "同一 TCP 443，不同觀察位置",
+            "description": "三條獨立路徑示例；實際政策必須查核，並非固定結果。",
             "items": [
               {
-                "title": "讀圖重點",
-                "body": "先記探測與回應，再記工具判讀；依目的查核服務及政策，保留測試條件與差異。"
+                "title": "內網測試端",
+                "body": "防火牆／路由政策 → 可能允許"
+              },
+              {
+                "title": "訪客網路",
+                "body": "防火牆／路由政策 → 可能限制"
+              },
+              {
+                "title": "外部網路",
+                "body": "防火牆／路由政策 → 可能阻擋"
+              },
+              {
+                "title": "判讀提醒",
+                "body": "先比對來源、時間、協定、Port、酬載、等待與速率；核對 NAT／代理後是否為同一入口。"
               }
             ]
           }
         },
         {
           "kind": "heading",
+          "id": "section-7",
+          "text": "7｜把三種掃描方法整合起來"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "比較項目",
+            "TCP Connect",
+            "SYN Scan",
+            "UDP Scan"
+          ],
+          "rows": [
+            [
+              "Nmap 選項",
+              "-sT",
+              "-sS",
+              "-sU"
+            ],
+            [
+              "通訊協定",
+              "TCP",
+              "TCP",
+              "UDP"
+            ],
+            [
+              "完成一般 TCP 交握",
+              "是",
+              "否",
+              "不適用"
+            ],
+            [
+              "open 證據",
+              "作業系統連線成功",
+              "收到 SYN＋ACK",
+              "收到對應 UDP 回覆"
+            ],
+            [
+              "closed 證據",
+              "明確拒絕連線",
+              "目標回 RST",
+              "IPv4 ICMP Type 3 / Code 3"
+            ],
+            [
+              "重試後無回覆",
+              "依錯誤判讀，可能 filtered",
+              "filtered",
+              "open|filtered"
+            ],
+            [
+              "原始封包特殊權限",
+              "通常不需要",
+              "通常需要",
+              "通常需要"
+            ],
+            [
+              "能否確認網站正常",
+              "不能",
+              "不能",
+              "不能"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "相同的「無回覆」，SYN 與 UDP 判讀不同，因為 UDP 服務可能正常接收卻保持沉默。記錄結論時寫出方法與觀察，例如：「此來源在此時間對 TCP 443 送 SYN，收到 SYN＋ACK，依 SYN 掃描記為 open；網站功能另行查核。」"
+        },
+        {
+          "kind": "heading",
           "id": "section-8",
-          "text": "8｜選擇方法與防護驗收"
+          "text": "8｜在自己的 Ubuntu 上觀察 TCP 與 UDP"
         },
         {
           "kind": "paragraph",
-          "text": "方法選擇可以用三個問題："
+          "text": "環境：Ubuntu、Python 3、Nmap；封包觀察另需 tcpdump 及相應權限。僅使用 127.0.0.1，不需掃描其他設備。先檢查 TCP 8000、8001 與 UDP 9999 是否已被使用；若占用，停止實驗並另選一致的測試埠，不關閉原服務。以下預期結果均為示例，實際狀態受本機政策影響。"
+        },
+        {
+          "kind": "code",
+          "text": "ss -ltnu\n# 尚未安裝工具時，由你決定是否在實驗機安裝：\nsudo apt update\nsudo apt install nmap tcpdump"
         },
         {
           "kind": "paragraph",
-          "text": "第一，想確認什麼？若要觀察一般 TCP 連線建立，可用 Connect 的概念；若要理解 TCP 起始回應，可用 SYN；若盤點 UDP 服務，則安排符合該服務的 UDP 觀察。"
+          "id": "section-8-1",
+          "text": "8.1｜TCP：同樣 open，不同交握"
         },
         {
           "kind": "paragraph",
-          "text": "第二，環境允許什麼？確認測試來源、目標清單、連接埠、權限、時段、速率、負責人與停止條件。完整連線或少量探測都可能留下紀錄、占用資源；測試計畫應配合設備特性。"
+          "text": "Terminal A 在空的實驗資料夾啟動 HTTP Server，避免提供自己的私人檔案："
+        },
+        {
+          "kind": "code",
+          "text": "mkdir -p /tmp/ceh-m0303-http\npython3 -m http.server 8000 --bind 127.0.0.1 --directory /tmp/ceh-m0303-http"
         },
         {
           "kind": "paragraph",
-          "text": "第三，如何驗收？把預期開放清單與觀察結果比對，核對服務監聽設定、網路政策與相關日誌。異常開放的入口交由負責人確認用途，再依核准變更處理與複測。"
+          "text": "Terminal B 執行兩種掃描，假設 TCP 8001 沒有程式監聽："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -p 8000,8001 127.0.0.1\nsudo nmap -sS -p 8000,8001 127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "例如合成的驗收紀錄可以寫：「測試網段到 TCP 443 的連線符合預期；UDP 53 的用途與政策由服務負責人核對；兩項皆保留原始回應、設定證據及複測時間。」"
+          "text": "預期兩次都可能得到 8000/tcp open、8001/tcp closed。SERVICE 名稱依 Nmap 資料庫而定；重點是狀態與封包流程。Terminal C 可先開啟擷取，再重跑掃描："
+        },
+        {
+          "kind": "code",
+          "text": "sudo tcpdump -i lo -nn 'tcp port 8000 or tcp port 8001'"
         },
         {
           "kind": "paragraph",
-          "text": "IDS（Intrusion Detection System，入侵偵測系統）可觀察掃描模式；IPS（Intrusion Prevention System，入侵防禦系統）則能依部署與政策執行阻擋。防護驗收把偵測告警與實際流量紀錄對照，確認系統如何辨識已核准測試。這也串連課堂 M12 的監測觀念，而不改變本課既有閱讀順序。"
+          "text": "觀察誰送 SYN、誰回 SYN＋ACK，以及 Connect 的最後 ACK 與 SYN Scan 的重設。實際 RST／ACK 組合及結束細節依作業系統與 Nmap 實作而異。完成後在 HTTP Server 與 tcpdump 視窗按 Ctrl+C；空資料夾可用 rmdir /tmp/ceh-m0303-http 移除。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2｜UDP：監聽中，也可以不回覆"
+        },
+        {
+          "kind": "paragraph",
+          "text": "將以下程式存成 udp_server.py，Terminal A 執行 python3 udp_server.py："
+        },
+        {
+          "kind": "code",
+          "text": "import socket\n\nwith socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:\n    sock.bind((\"127.0.0.1\", 9999))\n    print(\"UDP 9999 listening; no replies\")\n    while True:\n        data, addr = sock.recvfrom(4096)\n        print(f\"Received {len(data)} bytes from {addr}\")\n        # Add the reply here in the second run."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Terminal B 掃描這個入口："
+        },
+        {
+          "kind": "code",
+          "text": "sudo nmap -sU -p 9999 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若程式收到資料卻不回覆，預期可能顯示 9999/udp open|filtered。Nmap 只有等待結果；你另有程式監聽及收到資料的本機證據，所以知道此時存在接收端點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "按 Ctrl+C 停止伺服器，在 while 迴圈內的 print 後加入以下一行，保持相同縮排，再重新啟動："
+        },
+        {
+          "kind": "code",
+          "text": "        sock.sendto(b\"OK\", addr)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "重跑同一掃描。若 Nmap 收到對應 UDP 回覆，預期變成 open。監聽入口相同，但回覆行為改變了掃描證據。完成後按 Ctrl+C 關閉伺服器；確認程序已停止，再移除自己建立的 udp_server.py。若結果不同，保留程式輸出並核對本機防火牆與權限，不把示例當作保證。"
         },
         {
           "kind": "heading",
           "id": "section-9",
-          "text": "9｜小檢核與今天帶走的觀念"
+          "text": "9｜資安實務與三個情境題"
         },
         {
           "kind": "paragraph",
-          "text": "先用自己的話回答，參考答案隨網站教材提供。"
+          "text": "在已授權的實驗室，可盤點 NAS 的 TCP 5001／22／445、網站的 TCP 443／80、DNS 的 UDP 53 與 TCP 53。先問各入口用途與預期暴露範圍，再比對內外測試、監聽設定、防火牆政策與日誌；開放可能是業務需要，不等於有漏洞。"
         },
         {
           "kind": "paragraph",
-          "text": "1. Connect 與 SYN 掃描在收到 SYN＋ACK 後，典型處理有什麼差別？"
+          "text": "M03 掃描找出入口，M04 列舉補充服務資訊，M05 弱點分析評估設定與已知問題，M12 的防護觀念協助驗證偵測與阻擋。驗收時對照核准測試時間的 IDS 告警與實際封包，並保留複測結果。"
         },
         {
           "kind": "paragraph",
-          "text": "2. UDP 探測重試後沒有回覆，為什麼適合保留 open|filtered？請提出兩個可能原因。"
+          "text": "問題一：SYN Scan 觀察到掃描端送 SYN、目標回 SYN＋ACK、掃描端送 RST。Port 是什麼狀態？最後 RST 是誰送的？三向交握完成了嗎？"
         },
         {
           "kind": "paragraph",
-          "text": "3. 已能建立 TCP 443 連線；若要確認網站提供正確頁面，還需要補哪一層的證據？"
+          "text": "問題二：UDP 53 顯示 open|filtered。可以斷言 DNS 未啟動嗎？提出三個可能原因，並說明要補什麼證據。"
         },
         {
           "kind": "paragraph",
-          "text": "4. 兩份掃描報告對同一 IP 的結果不同，你會先核對哪些測試條件？至少列三項。"
+          "text": "問題三：NAS 的 TCP 22 從內網看是 open，外網看是 filtered。兩者矛盾嗎？哪些設備或政策會造成差異？要確認 SSH 未對外暴露，還要核對什麼？"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10｜把結論連回證據"
         },
         {
           "kind": "paragraph",
-          "text": "今天帶走三句話：Connect 嘗試完成 TCP 連線；SYN 從起始交握回應判讀；UDP 綜合資料報回覆、ICMP 與等待結果。"
+          "text": "TCP Connect 依作業系統連線結果判讀；SYN 依起始回應判讀；UDP 綜合資料報回覆、ICMP 與等待結果。沒有回覆需要保留不確定性，尤其 open|filtered。"
         },
         {
           "kind": "paragraph",
-          "text": "每筆狀態都連回「哪裡、何時、用什麼方法、收到什麼」。下一單元 M03-04，再深入整理 Open、Closed、Filtered 等狀態的意義與判讀。"
+          "text": "每筆結果都保留「哪裡、何時、用什麼方法、收到什麼」。下一課 M03-04 再整理 Open、Closed、Filtered 與觀察位置的關係。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Nmap 掃描方法](https://nmap.org/book/man-port-scanning-techniques.html) · [TCP 規範 RFC 9293](https://www.rfc-editor.org/rfc/rfc9293) · [UDP 規範 RFC 768](https://www.rfc-editor.org/rfc/rfc768) · [ICMP 規範 RFC 792](https://www.rfc-editor.org/rfc/rfc792)"
         },
         {
           "kind": "answer",
           "id": "answer-connect-syn",
-          "summary": "參考解答：小檢核一",
+          "summary": "參考解答：SYN 流程與 RST 方向",
           "paragraphs": [
-            "參考答案：Connect 由作業系統送出 ACK，完成典型三向交握，工具取得連線結果後結束測試連線。SYN 掃描收到 SYN＋ACK 後，通常送 RST 結束嘗試，並依這份起始回應記為 open。兩者都保留各自方法與實際封包／系統結果。"
+            "判為 open，依據是目標回覆 SYN＋ACK。最後的 RST 來自掃描端，作用是結束這次嘗試；沒有送出完成一般三向交握的最後 ACK。掃描端作業系統也可能產生這個 RST，不能只憑旗標斷言是目標拒絕。"
           ]
         },
         {
           "kind": "answer",
           "id": "answer-udp-silence",
-          "summary": "參考解答：小檢核二",
+          "summary": "參考解答：UDP 沉默的可能原因",
           "paragraphs": [
-            "參考答案：服務可能正在監聽，但只回覆格式合適的請求；防火牆也可能過濾探測或回程。封包遺失與錯誤訊息限速也是可查核的因素。因此先保留 open|filtered，再核對酬載、等待與重試設定、政策及服務紀錄。"
-          ]
-        },
-        {
-          "kind": "answer",
-          "id": "answer-application-check",
-          "summary": "參考解答：小檢核三",
-          "paragraphs": [
-            "參考答案：補上應用層服務證據；HTTPS 情境也核對 TLS 安全通道與憑證結果，再檢查 HTTP 回應及預定頁面內容。若任務涉及登入或操作權限，再依核准範圍檢查。每一層各記時間、方法與結果。"
+            "不能直接判斷 DNS 沒有啟動。可能是服務忽略不合格式的酬載、去程被防火牆丟棄、回覆在回程遺失；ICMP 錯誤限速也可能增加等待結果。保留 open|filtered，補上已授權的有效 DNS 查詢、對應 UDP 回覆、封包擷取，以及監聽設定或服務日誌。服務辨識可能縮小不確定性，沒有回覆仍不能直接確定關閉。"
           ]
         },
         {
           "kind": "answer",
           "id": "answer-test-conditions",
-          "summary": "參考解答：小檢核四",
+          "summary": "參考解答：內外觀察與 SSH 暴露",
           "paragraphs": [
-            "參考答案：至少比較觀察來源與網段、時間、TCP 或 UDP、目的埠、掃描方法、工具版本、等待與重試設定、速率及酬載。也可核對 NAT／代理路徑與當時的防火牆、監聽設定。先確認比較條件，再保留差異與原始回應追查。"
+            "兩個結果可以同時成立。來源政策、路由、NAT／連接埠轉送、代理或負載平衡器都可能改變路徑與回應。先確認兩次測試對應同一入口，記錄來源、時間、協定、Port 與方法，再核對公開位址及 IPv4／IPv6 入口、轉送規則、防火牆與 SSH 綁定位址。從核准的外部位置複測並比對日誌；單次 filtered 只支持該來源與時間的觀察，不能證明所有外部路徑都封閉。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-application-check",
+          "summary": "參考解答：網站功能查核（原有檢核）",
+          "paragraphs": [
+            "參考答案：補上應用層服務證據；HTTPS 情境也核對 TLS 安全通道與憑證結果，再檢查 HTTP 回應及預定頁面內容。若任務涉及登入或操作權限，再依核准範圍檢查。每一層各記時間、方法與結果。"
           ]
         }
       ]
@@ -436,24 +647,24 @@
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "CEH M03-03 | TCP Connect, SYN and UDP Scanning"
+          "text": "CEH M03-03 | TCP Connect, SYN and UDP scanning"
         },
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "1 | The core idea"
+          "text": "1 | Which communication endpoint are we checking?"
         },
         {
           "kind": "paragraph",
-          "text": "Port scanning sends probes to specified transport protocols and ports within an authorized scope, then interprets their responses as observations at that time. TCP Connect attempts to complete a TCP connection. SYN scanning examines the initial connection response. UDP scanning evaluates UDP replies, ICMP errors, and timeout results."
+          "text": "Port scanning resembles checking which service desks in a building accept requests. TCP Connect completes registration; SYN asks whether registration is accepted; UDP sends an application and observes the reply. Each method produces different evidence."
         },
         {
           "kind": "paragraph",
-          "text": "M03-02 asked which addresses show signs of activity. This lesson asks how particular TCP or UDP endpoints respond. The same number, such as 53/tcp and 53/udp, identifies two separately observed endpoints."
+          "text": "M03-01 introduced IP, TCP, UDP and ports; M03-02 looked for signs of host activity. This lesson asks how a specific TCP or UDP endpoint responds. Aim to explain what was sent, what came back and what conclusion the evidence supports, then answer the three scenarios at the end."
         },
         {
           "kind": "paragraph",
-          "text": "Imagine checking service desks in a building. You might complete registration, first ask whether registration is accepted, or submit a particular form and wait for a reply. Each method produces different evidence. All examples here use synthetic data and paper message flows. Choose actual operations later according to the authorized environment."
+          "text": "192.0.2.20 is a documentation address; commands containing it illustrate options. Run the practical exercises only against your own 127.0.0.1. Check that the test ports are unused first. Stop with Ctrl+C when necessary and close all test programs afterward."
         },
         {
           "kind": "heading",
@@ -462,88 +673,122 @@
         },
         {
           "kind": "paragraph",
-          "text": "A port is a numeric TCP or UDP field that helps the operating system deliver data to the appropriate communication endpoint. A listener indicates that a program is ready to receive communication at a particular address and port."
+          "text": "A port is an endpoint number. Think of the IP address as a building address and the port as a desk number: TCP 22 commonly carries SSH, TCP 80 HTTP, TCP 443 HTTPS and UDP 53 DNS. These are conventions; services can use other numbers. TCP 53 and UDP 53 are separate endpoints."
         },
         {
           "kind": "paragraph",
-          "text": "For example, a test server accepts TCP connections on port 443. After connection establishment, TLS negotiation and an HTTP request may follow. TLS is Transport Layer Security, protecting communication; HTTP is the request-and-response protocol commonly used by web applications. Login and authorization are subsequent application tasks."
+          "text": "A connection establishes a communication relationship. For HTTPS, successful TCP establishment precedes TLS encryption negotiation, an HTTP request and application processing. Each stage needs its own evidence."
+        },
+        {
+          "kind": "code",
+          "text": "TCP 443 reachable → TLS negotiation → HTTP request → application/database"
         },
         {
           "kind": "paragraph",
-          "text": "Keep scan records in three layers:"
+          "text": "TCP might connect while TLS fails; TLS might succeed while HTTP returns 500; the home page might work while login fails. Success at one stage establishes only that stage's result."
         },
         {
           "kind": "paragraph",
-          "text": "- Raw observation: what was sent, what was received, and how long the tool waited."
+          "text": "A listener is a program ready to receive traffic at a specific IP, protocol and port. A service is software that handles requests, such as Nginx, OpenSSH or PostgreSQL. A reverse proxy or load balancer may accept the connection and forward work to a backend. An open TCP 443 therefore does not identify Nginx or establish backend health."
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -p 443 127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "- Tool interpretation: the method's reported state, such as open, closed, or filtered."
+          "text": "-sT selects TCP Connect, -p 443 selects the port, and 127.0.0.1 is your own computer. Suppose the output is:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT     STATE  SERVICE\n443/tcp  open   https"
         },
         {
           "kind": "paragraph",
-          "text": "- Follow-up verification: actual service, configuration, purpose, and protection policy."
+          "text": "443/tcp identifies the endpoint; open is the tool's interpretation. Without service detection, https is usually a label from the port-name database. -sV attempts to identify the actual service and version, but application responses still require verification."
         },
         {
-          "kind": "paragraph",
-          "text": "For now, open means the tool observed characteristics of accepted communication; closed means a corresponding closed or rejection response; filtered means filtering or related conditions prevent that method from determining whether the endpoint is open or closed. M03-04 examines these states and observation points in more detail. [Nmap scan methods and results](https://nmap.org/book/man-port-scanning-techniques.html)"
+          "kind": "table",
+          "headers": [
+            "Layer",
+            "Question",
+            "Evidence"
+          ],
+          "rows": [
+            [
+              "Raw observation",
+              "What was sent and received?",
+              "SYN, SYN/ACK, RST, ICMP, waiting time"
+            ],
+            [
+              "Tool interpretation",
+              "How does this method classify it?",
+              "open, closed, filtered and other states"
+            ],
+            [
+              "Service verification",
+              "What runs here, and does it work?",
+              "TLS, HTTP, fingerprints, application responses"
+            ]
+          ]
         },
         {
           "kind": "heading",
           "id": "section-3",
-          "text": "3 | TCP Connect: ask the operating system to complete a connection"
+          "text": "3 | TCP Connect: ask the operating system to connect"
         },
         {
           "kind": "paragraph",
-          "text": "TCP, Transmission Control Protocol, commonly establishes a new connection through a three-way handshake:"
+          "text": "An ordinary new TCP connection uses a three-way handshake. SYN (Synchronize) requests a connection and synchronizes initial sequence numbers. ACK (Acknowledgment) confirms received information. RST (Reset) resets a connection or connection attempt."
         },
         {
           "kind": "paragraph",
-          "text": "1. The client sends SYN to request a connection and synchronize sequence information."
+          "text": "1. The scanner sends SYN: “I want to connect; here is my synchronization information.”"
         },
         {
           "kind": "paragraph",
-          "text": "2. The server returns SYN+ACK, supplying its own synchronization information and acknowledging the client."
+          "text": "2. The target returns SYN+ACK: “I received your request; here is my synchronization information.”"
         },
         {
           "kind": "paragraph",
-          "text": "3. The client sends ACK to complete the handshake."
+          "text": "3. The scanner returns ACK: “Received.” The ordinary handshake completes, allowing data exchange."
         },
         {
           "kind": "paragraph",
-          "text": "SYN abbreviates synchronize; ACK abbreviates acknowledgment. This describes a typical new connection. [RFC 9293: TCP](https://www.rfc-editor.org/rfc/rfc9293)"
+          "text": "TCP Connect Scan calls the operating system's connect(). The TCP/IP stack handles the handshake and Nmap reads success or an error. The scan normally ends the test connection shortly afterward; connection establishment does not mean an HTTP request was sent."
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -p 443 192.0.2.20"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "connect() result",
+            "Common interpretation",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "Connection succeeds",
+              "open",
+              "TCP establishment is possible from here"
+            ],
+            [
+              "Connection refused",
+              "closed",
+              "Explicit refusal, typically a target RST"
+            ],
+            [
+              "Waiting, retries or another error",
+              "Depends on the error; possibly filtered",
+              "Establishment failed; not every error means filtered"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "A TCP Connect scan uses the operating system's connect call to attempt a connection to the specified IP address and TCP port, then reads the success or error result."
-        },
-        {
-          "kind": "paragraph",
-          "text": "Paper example:"
-        },
-        {
-          "kind": "paragraph",
-          "text": "Test endpoint → 192.0.2.20:443: SYN"
-        },
-        {
-          "kind": "paragraph",
-          "text": "Server → test endpoint: SYN+ACK"
-        },
-        {
-          "kind": "paragraph",
-          "text": "Test endpoint → server: ACK"
-        },
-        {
-          "kind": "paragraph",
-          "text": "The operating system reports a successful connection; the tool then ends the test connection."
-        },
-        {
-          "kind": "paragraph",
-          "text": "This uses the same connection interface available to ordinary applications. It answers whether a TCP connection can be established from the current location. A scan often ends at this point; service content, TLS, and website functions can be checked separately if the task requires them."
-        },
-        {
-          "kind": "paragraph",
-          "text": "Nmap uses -sT for TCP Connect scanning. Because the connection completes, the service may log the connection or its immediate closure. Closure details vary by platform and service behavior. [Nmap TCP Connect](https://nmap.org/book/scan-methods-connect-scan.html)"
+          "text": "This method normally needs no special raw-packet privileges. A completed connection can leave connection or immediate-disconnection records on the service, and many connections can add load. [Nmap TCP Connect](https://nmap.org/book/scan-methods-connect-scan.html)"
         },
         {
           "kind": "visual",
@@ -551,12 +796,24 @@
           "downloadLabel": "Download SVG diagram",
           "visual": {
             "kind": "cards",
-            "caption": "1 | A typical TCP Connect scan",
-            "description": "The operating system attempts a TCP connection, completes the handshake and reports the result; the tool then ends the test connection.",
+            "caption": "TCP Connect: complete the handshake",
+            "description": "Use connect() to establish TCP, then end the test.",
             "items": [
               {
-                "title": "How to read the diagram",
-                "body": "The operating system attempts a TCP connection, completes the handshake and reports the result; the tool then ends the test connection."
+                "title": "SYN",
+                "body": "Scanner → target: request a connection and synchronize."
+              },
+              {
+                "title": "SYN+ACK",
+                "body": "Target → scanner: accept and supply synchronization information."
+              },
+              {
+                "title": "ACK",
+                "body": "Scanner → target: complete the ordinary handshake."
+              },
+              {
+                "title": "Interpretation",
+                "body": "TCP success still requires separate TLS, HTTP and application checks."
               }
             ]
           }
@@ -564,47 +821,60 @@
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "4 | SYN scanning: interpret the initial handshake response"
+          "text": "4 | SYN scanning: interpret the opening exchange"
         },
         {
           "kind": "paragraph",
-          "text": "A SYN scan directly examines the response to an initial TCP packet. In a typical open-port case, the test endpoint sends SYN, receives SYN+ACK, and ends the attempt with RST instead of completing the normal handshake."
+          "text": "SYN Scan sends SYN first. A target SYN+ACK already indicates willingness to accept establishment. The scanner side resets the attempt with RST instead of sending the final ACK of an ordinary handshake. Half-open Scan describes this incomplete handshake, not a port being halfway open."
+        },
+        {
+          "kind": "code",
+          "text": "Scanner → target: SYN\nTarget → scanner: SYN+ACK\nScanner → target: RST\nInterpretation: open; no ordinary three-way handshake completed"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Response to SYN",
+            "Typical state",
+            "Interpretation"
+          ],
+          "rows": [
+            [
+              "Target SYN+ACK",
+              "open",
+              "The target accepts the opening request"
+            ],
+            [
+              "Target RST",
+              "closed",
+              "The target refuses the attempt"
+            ],
+            [
+              "No response after retries, or certain ICMP unreachable errors",
+              "filtered",
+              "This method cannot establish open versus closed"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "RST, reset, is a TCP control flag used to reset connection state. This approach is often called half-open scanning, describing how it handles the handshake."
+          "text": "Read the direction of RST. A target RST refuses the connection; a scanner-side RST following SYN+ACK ends a probe that already obtained evidence. The scanner's operating system may generate that reset. Actual RST/ACK combinations depend on implementation."
         },
         {
           "kind": "paragraph",
-          "text": "Paper example:"
+          "text": "Silence can reflect blocked outbound or return traffic, packet loss or equipment problems. filtered alone does not prove a firewall exists. IPv4 SYN scanning also classifies ICMP Type 3, Code 1/2/3/9/10/13 as filtered. [Nmap SYN](https://nmap.org/book/synscan.html)"
+        },
+        {
+          "kind": "code",
+          "text": "sudo nmap -sS -p 443 192.0.2.20"
         },
         {
           "kind": "paragraph",
-          "text": "Test endpoint → 192.0.2.20:443: SYN"
+          "text": "-sS normally needs raw-packet privileges; requirements depend on the operating system, capabilities and packet driver. Nmap still uses operating-system interfaces to send and receive probes, rather than delegating the complete handshake to connect() as -sT does."
         },
         {
           "kind": "paragraph",
-          "text": "Server → test endpoint: SYN+ACK"
-        },
-        {
-          "kind": "paragraph",
-          "text": "Test endpoint → server: RST"
-        },
-        {
-          "kind": "paragraph",
-          "text": "The tool interprets SYN+ACK as an open TCP endpoint."
-        },
-        {
-          "kind": "paragraph",
-          "text": "A corresponding RST reply normally produces a closed result for a SYN scan. No response after retries, or certain ICMP unreachable messages, may produce filtered. Record the probe method and response source alongside the interpretation."
-        },
-        {
-          "kind": "paragraph",
-          "text": "Nmap uses -sS for SYN scanning. It normally requires facilities and privileges to send and receive raw packets. Actual requirements depend on the operating system, packet driver, and execution environment. [Nmap SYN scanning](https://nmap.org/book/synscan.html)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "Some materials use the historical term stealth. Interpret that as a difference in handshake and possible application-log behavior compared with a complete connection. Firewalls and intrusion detection/prevention systems (IDS/IPS) can still detect probe patterns, sources, and frequency. Prioritize authorization, compatibility, and the evidence required when selecting a method."
+          "text": "Stealth Scan is a historical name. Applications that log only completed connections may record less, but firewalls, intrusion detection systems (IDS) and intrusion prevention systems (IPS) can still observe SYN and reset patterns across ports. SYN scans are detectable."
         },
         {
           "kind": "visual",
@@ -612,12 +882,24 @@
           "downloadLabel": "Download SVG diagram",
           "visual": {
             "kind": "cards",
-            "caption": "2 | A typical open response to a SYN scan",
-            "description": "A SYN scan examines the initial response; in a typical open case, SYN+ACK is followed by RST to end the attempt.",
+            "caption": "SYN Scan: reset after the opening response",
+            "description": "SYN+ACK supplies open evidence; no final ACK is sent.",
             "items": [
               {
-                "title": "How to read the diagram",
-                "body": "A SYN scan examines the initial response; in a typical open case, SYN+ACK is followed by RST to end the attempt."
+                "title": "SYN",
+                "body": "Scanner → target: request a connection and synchronize."
+              },
+              {
+                "title": "SYN+ACK",
+                "body": "Target → scanner: accept and supply synchronization information."
+              },
+              {
+                "title": "RST",
+                "body": "Scanner → target: reset; the ordinary handshake is incomplete."
+              },
+              {
+                "title": "Interpretation",
+                "body": "A target RST refuses; a scanner-side RST ends this attempt."
               }
             ]
           }
@@ -625,43 +907,53 @@
         {
           "kind": "heading",
           "id": "section-5",
-          "text": "5 | UDP scanning: interpret datagrams and error reports"
+          "text": "5 | UDP scanning: use datagrams and error reports"
         },
         {
           "kind": "paragraph",
-          "text": "UDP, User Datagram Protocol, sends datagrams and has no TCP-style SYN, SYN+ACK, ACK handshake. Applications determine how to process and reply to received messages under their own protocols. [RFC 768: UDP](https://www.rfc-editor.org/rfc/rfc768)"
+          "text": "UDP sends datagrams directly, without a TCP handshake. Like sending a letter, receiving no reply leaves several possibilities: no reply was needed, the recipient could not understand the content, the request was lost or filtered, or the reply was lost."
         },
         {
           "kind": "paragraph",
-          "text": "For example, a DNS (Domain Name System) service may answer a correctly formatted query and handle unsuitable data differently. UDP results therefore depend on the payload—the data carried by the message. Record what was sent together with the response or waiting result."
+          "text": "Payload means the content carried in a datagram. DNS may answer a valid query while ignoring empty or invalid content; DNS, NTP and SNMP each define their own formats. Nmap uses protocol-specific payloads for some common UDP ports; other probes may not be meaningful requests for the service."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Response",
+            "Nmap state",
+            "Interpretation"
+          ],
+          "rows": [
+            [
+              "A corresponding UDP reply",
+              "open",
+              "An endpoint answered this datagram"
+            ],
+            [
+              "IPv4 ICMP Type 3 / Code 3",
+              "closed",
+              "Port Unreachable was reported"
+            ],
+            [
+              "IPv4 ICMP Type 3 / Code 1, 2, 9, 10, 13",
+              "filtered",
+              "Policy or the path prevents confirmation"
+            ],
+            [
+              "No response after retries",
+              "open|filtered",
+              "Cannot distinguish an open silent endpoint from filtering"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "Nmap uses -sU for UDP scanning. Common interpretations include:"
+          "text": "ICMP communicates IP errors and status. UDP has no TCP RST; a host receiving a datagram for an endpoint without a receiver may typically return ICMP Port Unreachable. Check the error's source and the original datagram quoted inside it. Do not transfer IPv4 type/code numbers directly to ICMPv6."
         },
         {
           "kind": "paragraph",
-          "text": "- A corresponding UDP reply from the target port: open."
-        },
-        {
-          "kind": "paragraph",
-          "text": "- IPv4 ICMP Type 3, Code 3, meaning port unreachable: closed."
-        },
-        {
-          "kind": "paragraph",
-          "text": "- Certain other ICMP unreachable errors: filtered."
-        },
-        {
-          "kind": "paragraph",
-          "text": "- No response after retries: open|filtered."
-        },
-        {
-          "kind": "paragraph",
-          "text": "The vertical bar in open|filtered preserves the alternatives of open or filtered. Appropriate application probes or device configuration records may narrow the explanation. [Nmap UDP scanning](https://nmap.org/book/scan-methods-udp-scan.html)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "ICMP, Internet Control Message Protocol, is a separate control-message protocol. An ICMP response triggered by a UDP probe is an error report from a network device or host. Check its source and the original probe it references. The type/code numbers above apply to IPv4; ICMPv6 has its own definitions. [RFC 792: ICMP](https://www.rfc-editor.org/rfc/rfc792)"
+          "text": "The “|” in open|filtered means “or”: two possibilities remain. It establishes neither definite openness nor a stopped service. Suitable -sV service probes may elicit a response and narrow the state to open. Otherwise, configuration or logs can add evidence. A UDP reply establishes only that exchange, not every application function. [Nmap UDP](https://nmap.org/book/scan-methods-udp-scan.html)"
         },
         {
           "kind": "visual",
@@ -669,12 +961,28 @@
           "downloadLabel": "Download SVG diagram",
           "visual": {
             "kind": "cards",
-            "caption": "3 | Four UDP response interpretations",
-            "description": "Four parallel cards show alternative outcomes: UDP replies, ICMP errors and timeouts map to method-specific states.",
+            "caption": "UDP: send a datagram, interpret four outcomes",
+            "description": "Scanner → target: UDP datagram. Cards are alternative outcomes, not a sequence.",
             "items": [
               {
-                "title": "How to read the diagram",
-                "body": "Four parallel cards show alternative outcomes: UDP replies, ICMP errors and timeouts map to method-specific states."
+                "title": "open",
+                "body": "A corresponding UDP reply: an endpoint responded on this path."
+              },
+              {
+                "title": "closed",
+                "body": "IPv4 ICMP Type 3 / Code 3: Port Unreachable."
+              },
+              {
+                "title": "filtered",
+                "body": "IPv4 ICMP Type 3 / Code 1, 2, 9, 10 or 13."
+              },
+              {
+                "title": "open|filtered",
+                "body": "No reply after retries: possibly open and silent, or filtered."
+              },
+              {
+                "title": "Interpretation",
+                "body": "Match ICMP to its source and original datagram; IPv4 codes do not apply to ICMPv6."
               }
             ]
           }
@@ -682,173 +990,287 @@
         {
           "kind": "heading",
           "id": "section-6",
-          "text": "6 | Why waiting time, rate and observation point matter"
+          "text": "6 | Why waiting time, rate and position matter"
         },
         {
           "kind": "paragraph",
-          "text": "Observing a service from an internal network, a guest network, or an external test location may traverse different policies. Firewalls handle traffic according to rules. Load balancers, proxies, and NAT—Network Address Translation—can also change the actual response path."
+          "text": "A timeout means no expected reply arrived within the configured interval; a retry sends another probe. If a scanner waits 100 ms but the response arrives after 300 ms, it may time out too early. More retries cost time, packets and equipment load, so choose them for the environment."
         },
         {
           "kind": "paragraph",
-          "text": "Think of a scan as a snapshot from a particular observation point. Record source, destination IP, TCP/UDP, port, and time to determine whether two tests are comparing the same conditions."
+          "text": "Testing 1,000 ports at 10 versus 1,000 ports per second changes the rate. Excessive rates may trigger limiting or packet loss, producing more timeouts; these numbers are examples. UDP also encounters ICMP rate limiting: even when several ports lack listeners, a host may not immediately report an error for every probe. This can make UDP scans slow."
+        },
+        {
+          "kind": "code",
+          "text": "sudo nmap -sU -p 53,123,161 --max-rate 10 192.0.2.20"
         },
         {
           "kind": "paragraph",
-          "text": "UDP often requires patience. A service may answer only valid queries, packets may be lost, and a host may rate-limit ICMP error messages. Tools wait and retry before interpreting the outcome under their settings. Nmap's UDP documentation discusses the effect of ICMP rate limiting on scan duration. [Nmap UDP interpretation and duration](https://nmap.org/book/scan-methods-udp-scan.html)"
+          "text": "--max-rate 10 caps Nmap's probe transmission rate at 10 packets per second. It is not universally optimal. Start with a few approved ports and adjust for device capacity, maintenance windows and stop conditions."
         },
         {
           "kind": "paragraph",
-          "text": "Speed is therefore one consideration among several. Start with a small set of approved endpoints, define waits and stopping conditions, and account for maintenance windows and device capacity. Retain tool versions, options, and test conditions when results will be compared."
-        },
-        {
-          "kind": "heading",
-          "id": "section-7",
-          "text": "7 | Worked example: three observations of one test host"
+          "text": "The same server's TCP 22 may appear open from the laboratory and filtered externally. Both observations can hold because sources, routes and firewall policies differ. First verify that NAT, proxies or load balancers did not direct the tests to different endpoints."
         },
         {
           "kind": "paragraph",
-          "text": "These are synthetic records, not actual scan output. Assume authorization to examine 192.0.2.20 in an isolated laboratory."
+          "text": "Network Address Translation (NAT) may forward a public endpoint to a private address such as 192.168.1.100. External clients usually contact the public address; without matching port forwarding, probes may not reach the internal host. Different internal and external results need not mean the service changed, and not all NAT outcomes are necessarily filtered."
         },
         {
           "kind": "paragraph",
-          "text": "Record A: a Connect test to TCP/443 returns an operating-system report of successful connection establishment."
-        },
-        {
-          "kind": "paragraph",
-          "text": "Record B: a SYN sent to TCP/443 receives SYN+ACK, followed by a test-endpoint RST."
-        },
-        {
-          "kind": "paragraph",
-          "text": "Record C: a test datagram sent to UDP/53 receives no reply within the approved waiting and retry configuration."
-        },
-        {
-          "kind": "paragraph",
-          "text": "For A, write: “At this time and source location, a TCP/443 connection could be established. Website-service checks are tracked separately.”"
-        },
-        {
-          "kind": "paragraph",
-          "text": "For B, write: “TCP/443 responded to SYN with SYN+ACK and is recorded as open under this method. Retain the reset and termination details.”"
-        },
-        {
-          "kind": "paragraph",
-          "text": "For C, write: “UDP/53 returned no corresponding reply in this test and is recorded as open|filtered under this method. Next, check approved query format, UDP policy, and service configuration.”"
-        },
-        {
-          "kind": "paragraph",
-          "text": "If C later receives IPv4 ICMP Type 3, Code 3, append the new observation and timestamp and record closed for that response. Retain the previous entry to show changes in response, configuration, or time."
-        },
-        {
-          "kind": "paragraph",
-          "text": "One address has multiple protocol endpoints, and the same TCP endpoint can be examined by different methods. Explicit methods and evidence make each conclusion understandable to the team."
+          "text": "When comparing reports, retain the source IP, destination endpoint, time, TCP/UDP, port, method, payload, timeout/retries, rate, tool version and path policies."
         },
         {
           "kind": "visual",
-          "src": "/images/ceh/m03-03-04-evidence-layers-en.svg",
+          "src": "/images/ceh/m03-03-05-scan-positions-en.svg",
           "downloadLabel": "Download SVG diagram",
           "visual": {
             "kind": "cards",
-            "caption": "4 | Connect scan states to observed evidence",
-            "description": "Record probes and responses, then tool interpretation; verify services and policy as needed and retain test conditions and differences.",
+            "caption": "The same TCP 443 from different positions",
+            "description": "Three independent example paths; verify actual policy rather than assuming these outcomes.",
             "items": [
               {
-                "title": "How to read the diagram",
-                "body": "Record probes and responses, then tool interpretation; verify services and policy as needed and retain test conditions and differences."
+                "title": "Internal test host",
+                "body": "Firewall / routing policy → may allow"
+              },
+              {
+                "title": "Guest network",
+                "body": "Firewall / routing policy → may restrict"
+              },
+              {
+                "title": "External network",
+                "body": "Firewall / routing policy → may block"
+              },
+              {
+                "title": "Interpretation",
+                "body": "Compare source, time, protocol, port, payload, timeout and rate; confirm the same endpoint behind NAT or proxies."
               }
             ]
           }
         },
         {
           "kind": "heading",
+          "id": "section-7",
+          "text": "7 | Compare the three methods"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Comparison",
+            "TCP Connect",
+            "SYN Scan",
+            "UDP Scan"
+          ],
+          "rows": [
+            [
+              "Nmap option",
+              "-sT",
+              "-sS",
+              "-sU"
+            ],
+            [
+              "Protocol",
+              "TCP",
+              "TCP",
+              "UDP"
+            ],
+            [
+              "Completes an ordinary TCP handshake",
+              "Yes",
+              "No",
+              "Not applicable"
+            ],
+            [
+              "Evidence for open",
+              "OS connection success",
+              "SYN+ACK received",
+              "Corresponding UDP reply"
+            ],
+            [
+              "Evidence for closed",
+              "Explicit connection refusal",
+              "Target RST",
+              "IPv4 ICMP Type 3 / Code 3"
+            ],
+            [
+              "No response after retries",
+              "Error-dependent; possibly filtered",
+              "filtered",
+              "open|filtered"
+            ],
+            [
+              "Special raw-packet privileges",
+              "Usually unnecessary",
+              "Usually needed",
+              "Usually needed"
+            ],
+            [
+              "Establishes website health",
+              "No",
+              "No",
+              "No"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The same silence produces different SYN and UDP classifications because a working UDP service can receive data without replying. Include method and observation in a conclusion: “At this time, from this source, TCP 443 returned SYN+ACK to SYN, so the SYN scan records open; website functionality needs a separate check.”"
+        },
+        {
+          "kind": "heading",
           "id": "section-8",
-          "text": "8 | Method selection and control validation"
+          "text": "8 | Observe TCP and UDP on your own Ubuntu machine"
         },
         {
           "kind": "paragraph",
-          "text": "Choose a method through three questions."
+          "text": "Environment: Ubuntu, Python 3 and Nmap; packet capture additionally needs tcpdump and suitable privileges. Use only 127.0.0.1. Check TCP 8000, TCP 8001 and UDP 9999 for existing use. If occupied, stop and choose consistent alternate test ports instead of closing another service. Expected results below are examples; local policy affects actual behavior."
+        },
+        {
+          "kind": "code",
+          "text": "ss -ltnu\n# If tools are missing, decide whether to install them on the lab machine:\nsudo apt update\nsudo apt install nmap tcpdump"
         },
         {
           "kind": "paragraph",
-          "text": "First, what needs confirming? Connect illustrates ordinary TCP connection establishment. SYN examines initial TCP responses. UDP service inventory requires an appropriate UDP observation for the service."
+          "id": "section-8-1",
+          "text": "8.1 | TCP: the same open state, different handshakes"
         },
         {
           "kind": "paragraph",
-          "text": "Second, what does the environment permit? Confirm sources, targets, ports, privileges, time window, rates, owner, and stopping conditions. Complete connections and small probe sets can both leave records and consume resources. Match the plan to device characteristics."
+          "text": "In Terminal A, serve an empty lab directory to avoid sharing private files:"
+        },
+        {
+          "kind": "code",
+          "text": "mkdir -p /tmp/ceh-m0303-http\npython3 -m http.server 8000 --bind 127.0.0.1 --directory /tmp/ceh-m0303-http"
         },
         {
           "kind": "paragraph",
-          "text": "Third, how will the result be validated? Compare observations with the intended open-port list, service listeners, network policy, and relevant logs. Assign unexpected exposure to the service owner to confirm its purpose, then use approved changes and retesting."
+          "text": "In Terminal B, run both scans, assuming TCP 8001 has no listener:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -p 8000,8001 127.0.0.1\nsudo nmap -sS -p 8000,8001 127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "A synthetic acceptance record could say: “The test network's TCP/443 connection matches expectations. The owner is verifying UDP/53 purpose and policy. Both retain raw responses, configuration evidence, and retest times.”"
+          "text": "Both may report 8000/tcp open and 8001/tcp closed. SERVICE names depend on Nmap's database; focus on states and packet flow. Start capture in Terminal C, then repeat the scans:"
+        },
+        {
+          "kind": "code",
+          "text": "sudo tcpdump -i lo -nn 'tcp port 8000 or tcp port 8001'"
         },
         {
           "kind": "paragraph",
-          "text": "An IDS, Intrusion Detection System, can observe scan patterns. An IPS, Intrusion Prevention System, can block according to its deployment and policy. Compare alerts with traffic records to determine how monitoring recognizes an approved test. This connects to M12's monitoring concepts while keeping the established reading order."
+          "text": "Observe who sends SYN, who returns SYN+ACK, the final Connect ACK and the SYN scan reset. RST/ACK combinations and teardown details depend on the OS and Nmap implementation. Stop the HTTP server and tcpdump with Ctrl+C. Remove the empty directory with rmdir /tmp/ceh-m0303-http."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 | UDP: listening without replying"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Save this as udp_server.py and run python3 udp_server.py in Terminal A:"
+        },
+        {
+          "kind": "code",
+          "text": "import socket\n\nwith socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:\n    sock.bind((\"127.0.0.1\", 9999))\n    print(\"UDP 9999 listening; no replies\")\n    while True:\n        data, addr = sock.recvfrom(4096)\n        print(f\"Received {len(data)} bytes from {addr}\")\n        # Add the reply here in the second run."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scan this endpoint in Terminal B:"
+        },
+        {
+          "kind": "code",
+          "text": "sudo nmap -sU -p 9999 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If the program receives data without replying, the result may be 9999/udp open|filtered. Nmap has only a waiting result. You separately have local evidence that a program is listening and receiving datagrams."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stop the server with Ctrl+C. Add the following line after print inside the while loop, preserving the indentation, then restart:"
+        },
+        {
+          "kind": "code",
+          "text": "        sock.sendto(b\"OK\", addr)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Repeat the same scan. If Nmap receives the corresponding UDP reply, expect open. The listener is the same, but its reply behavior changes the scan evidence. Stop the server with Ctrl+C, confirm the process has ended, then remove the udp_server.py you created. If results differ, keep program output and check local firewall rules and privileges rather than treating an example as a guarantee."
         },
         {
           "kind": "heading",
           "id": "section-9",
-          "text": "9 | Checks and the takeaway"
+          "text": "9 | Security practice and three scenarios"
         },
         {
           "kind": "paragraph",
-          "text": "Answer in your own words first. Reference answers accompany the website material."
+          "text": "An authorized laboratory inventory might include NAS TCP 5001/22/445, web TCP 443/80, and DNS UDP 53 plus TCP 53. Establish each endpoint's purpose and intended exposure, then compare internal/external observations, listener settings, firewall policies and logs. An open port can meet a business need and does not establish a vulnerability."
         },
         {
           "kind": "paragraph",
-          "text": "1. After receiving SYN+ACK, how do typical Connect and SYN scans differ?"
+          "text": "M03 scanning locates endpoints; M04 enumeration adds service information; M05 vulnerability analysis evaluates configurations and known issues; M12 protection concepts help verify detection and blocking. Compare IDS alerts with actual packets during the approved test window and retain retest results."
         },
         {
           "kind": "paragraph",
-          "text": "2. Why preserve open|filtered when a UDP probe receives no reply after retries? Give two possible explanations."
+          "text": "Question one: A SYN scan shows scanner SYN, target SYN+ACK, then scanner RST. What is the port state? Who sent the final RST? Did the three-way handshake complete?"
         },
         {
           "kind": "paragraph",
-          "text": "3. A TCP/443 connection succeeds. What additional layer of evidence is needed to confirm that the website serves the expected page?"
+          "text": "Question two: UDP 53 is open|filtered. Can you conclude DNS is stopped? Give three possible causes and identify the evidence needed next."
         },
         {
           "kind": "paragraph",
-          "text": "4. Two reports disagree about the same IP. Which test conditions would you compare first? List at least three."
+          "text": "Question three: NAS TCP 22 is open internally and filtered externally. Are those observations contradictory? Which equipment or policies can explain them? What else should you check to establish that SSH is not externally exposed?"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10 | Tie conclusions to evidence"
         },
         {
           "kind": "paragraph",
-          "text": "Take away three ideas: Connect attempts a complete TCP connection; SYN interprets the initial handshake response; UDP combines datagram replies, ICMP, and waiting results."
+          "text": "TCP Connect uses OS connection results; SYN uses opening responses; UDP combines datagram replies, ICMP and waiting results. Preserve uncertainty when nothing responds, especially for open|filtered."
         },
         {
           "kind": "paragraph",
-          "text": "Link every state to where, when, which method, and what response. M03-04 next examines the meaning and interpretation of open, closed, filtered, and related states."
+          "text": "Keep where, when, which method and which response with every result. M03-04 next examines Open, Closed, Filtered and observation position."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Nmap scan techniques](https://nmap.org/book/man-port-scanning-techniques.html) · [TCP RFC 9293](https://www.rfc-editor.org/rfc/rfc9293) · [UDP RFC 768](https://www.rfc-editor.org/rfc/rfc768) · [ICMP RFC 792](https://www.rfc-editor.org/rfc/rfc792)"
         },
         {
           "kind": "answer",
           "id": "answer-connect-syn",
-          "summary": "Reference answer: Check 1",
+          "summary": "Reference answer: SYN flow and RST direction",
           "paragraphs": [
-            "Connect lets the operating system send ACK and complete the typical handshake; the tool then ends the test connection after obtaining its result. A SYN scan normally sends RST after SYN+ACK, ending the attempt and interpreting that initial response as open. Retain the method and actual packet or system results for each."
+            "Classify it as open because the target returned SYN+ACK. The final RST comes from the scanner side and ends the attempt; the final ACK of an ordinary three-way handshake was not sent. The scanner's OS may generate this RST, so the flag alone does not establish target refusal."
           ]
         },
         {
           "kind": "answer",
           "id": "answer-udp-silence",
-          "summary": "Reference answer: Check 2",
+          "summary": "Reference answer: Possible causes of UDP silence",
           "paragraphs": [
-            "A listening service may reply only to suitable requests, or a firewall may filter the probe or return traffic. Packet loss and error-message rate limiting are additional factors to investigate. Preserve open|filtered and review payload, waits, retries, policy, and service records."
-          ]
-        },
-        {
-          "kind": "answer",
-          "id": "answer-application-check",
-          "summary": "Reference answer: Check 3",
-          "paragraphs": [
-            "Add application-service evidence. For HTTPS, check the TLS channel and certificate result, then the HTTP response and expected page content. Include login or authorization checks when the task requires and authorizes them. Record time, method, and result at each layer."
+            "You cannot conclude DNS is stopped. The service may ignore an invalid payload, a firewall may drop the request, or a reply may be lost on its return path; ICMP error rate limiting can also increase waiting results. Retain open|filtered and add an authorized valid DNS query, a corresponding UDP reply, packet capture, and listener settings or service logs. Service detection may narrow uncertainty, but further silence still does not establish closure."
           ]
         },
         {
           "kind": "answer",
           "id": "answer-test-conditions",
-          "summary": "Reference answer: Check 4",
+          "summary": "Reference answer: Internal/external observations and SSH exposure",
           "paragraphs": [
-            "Compare at least three of: source location/network, time, TCP versus UDP, destination port, scan method, tool version, wait/retry settings, rate, and payload. Also check NAT/proxy paths and contemporaneous firewall/listener settings. Establish comparable conditions and retain the differences and raw responses for investigation."
+            "Both results can hold. Source policies, routing, NAT/port forwarding, proxies or load balancers can change the path and response. Confirm both tests address the same endpoint, record source, time, protocol, port and method, then check public addresses and IPv4/IPv6 endpoints, forwarding rules, firewalls and SSH bind addresses. Retest from approved external positions and compare logs. A single filtered result supports only that source and time; it does not establish closure across all external paths."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-application-check",
+          "summary": "Reference answer: Website functionality (retained check)",
+          "paragraphs": [
+            "Add application-service evidence. For HTTPS, check the TLS channel and certificate result, then the HTTP response and expected page content. Include login or authorization checks when the task requires and authorizes them. Record time, method, and result at each layer."
           ]
         }
       ]

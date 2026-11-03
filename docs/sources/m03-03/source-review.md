@@ -15,3 +15,15 @@ Original synthesis: office service-window analogy; three evidence layers; synthe
 Technical review: TCP 53 and UDP 53 distinct; SYN typical half-open process vs full connect; state is viewpoint/method-specific; UDP silence retains uncertainty with next checks; port number not treated as service verification; permission, operational impact and diagnostic follow-up explicit. M03-04 state details remain the next unit.
 
 Privacy review: public manuscripts omit private chat IDs, learner-answer states, email addresses and actual targets. Unanswered checks remain materials, not learner evidence.
+
+## 2026-11-03 v1.1.0 replacement
+
+Primary input: [unchanged supplied text](supplied-2026-11-03/teaching-original.txt), image-1.png and image-2.png in the same directory, with SHA-256 manifest. Prior published teaching, answers, lesson JSON, models, figures and this review are retained under archive-v1.0.0 and compared byte-for-byte with 9ce47d1.
+
+Adoption: sections 2–6 are replaced with the supplied distinctions, mechanisms and uncertainty; sections 7–10 carry the comparison, loopback exercises, security application and three scenarios. Chinese prose is condensed without dropping the main technical branches; English follows the same section structure and numeric conditions. Repeated rhetorical lead-ins, inaccessible sandbox download references and ChatGPT reference markers are omitted from published prose. Original text remains intact in the archive.
+
+Corrections: specify UDP IPv4 filtered codes; distinguish scanner-side and target-side RST; keep NAT outcomes conditional; serve only an empty local directory; place sendto inside the receive loop; add process cleanup. Preserve the original application-check answer and anchor as a fourth reference answer. These are published teaching answers, not learner submissions.
+
+Live reference review on 2026-11-03: Nmap TCP Connect, SYN, UDP and timing/performance official pages confirm the selected mechanisms. Rate limit documentation: https://nmap.org/book/man-performance.html . The web fetcher could not access the learning URL; local source and subsequent deployment readback supply page evidence.
+
+Figures: image 1 becomes adjacent Connect, SYN and UDP figures; image 2 supplies the UDP alternative-state cards and independent source-position paths. HTML keeps selectable labels and reflows the UDP two-column grid on narrow columns. Download SVGs use vertically stacked cards for readable fixed geometry, rather than reproducing the supplied composite raster pixel-for-pixel. Arrow direction and all four UDP states are retained. The old evidence-layer figure remains downloadable, while the page presents the new position comparison. No image-generation or raster-editing step was used.

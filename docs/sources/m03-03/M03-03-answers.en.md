@@ -1,17 +1,17 @@
-# CEH M03-03 | Reference answers
+# M03-03 scenario reference answers
 
-## answer-connect-syn | Check 1
+## answer-connect-syn | SYN flow and RST direction
 
-Connect lets the operating system send ACK and complete the typical handshake; the tool then ends the test connection after obtaining its result. A SYN scan normally sends RST after SYN+ACK, ending the attempt and interpreting that initial response as open. Retain the method and actual packet or system results for each.
+Classify it as open because the target returned SYN+ACK. The final RST comes from the scanner side and ends the attempt; the final ACK of an ordinary three-way handshake was not sent. The scanner's OS may generate this RST, so the flag alone does not establish target refusal.
 
-## answer-udp-silence | Check 2
+## answer-udp-silence | Possible causes of UDP silence
 
-A listening service may reply only to suitable requests, or a firewall may filter the probe or return traffic. Packet loss and error-message rate limiting are additional factors to investigate. Preserve open|filtered and review payload, waits, retries, policy, and service records.
+You cannot conclude DNS is stopped. The service may ignore an invalid payload, a firewall may drop the request, or a reply may be lost on its return path; ICMP error rate limiting can also increase waiting results. Retain open|filtered and add an authorized valid DNS query, a corresponding UDP reply, packet capture, and listener settings or service logs. Service detection may narrow uncertainty, but further silence still does not establish closure.
 
-## answer-application-check | Check 3
+## answer-test-conditions | Internal/external observations and SSH exposure
+
+Both results can hold. Source policies, routing, NAT/port forwarding, proxies or load balancers can change the path and response. Confirm both tests address the same endpoint, record source, time, protocol, port and method, then check public addresses and IPv4/IPv6 endpoints, forwarding rules, firewalls and SSH bind addresses. Retest from approved external positions and compare logs. A single filtered result supports only that source and time; it does not establish closure across all external paths.
+
+## answer-application-check | Website functionality (retained check)
 
 Add application-service evidence. For HTTPS, check the TLS channel and certificate result, then the HTTP response and expected page content. Include login or authorization checks when the task requires and authorizes them. Record time, method, and result at each layer.
-
-## answer-test-conditions | Check 4
-
-Compare at least three of: source location/network, time, TCP versus UDP, destination port, scan method, tool version, wait/retry settings, rate, and payload. Also check NAT/proxy paths and contemporaneous firewall/listener settings. Establish comparable conditions and retain the differences and raw responses for investigation.

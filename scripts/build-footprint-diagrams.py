@@ -18,10 +18,10 @@ for module in ['m02-07','m02-08']:
   arrows=[n for n in root.iter(NS+'path') if 'marker-end' in n.attrib]
   assert len(arrows)==(3 if flow else 0),(p,len(arrows),flow)
   out['/images/ceh/'+p.name]={'flow':flow,'nodes':nodes,'footer':footer}
-for module in ['m03-02','m03-03','m03-04']:
+for module in ['m03-02','m03-04']:
  for key,value in json.loads((ROOT/f'docs/sources/{module}/diagram-models.json').read_text()).items():
   out[key.replace('-zh-TW.svg','-zh.svg')]={k:value[k] for k in ['flow','nodes','footer']}
 s=json.dumps(out,ensure_ascii=False,indent=2)+'\n';p=ROOT/'src/lib/footprint-diagrams.json'
 if '--check' in sys.argv:assert p.read_text()==s
 else:p.write_text(s)
-print('40 footprint diagram models match source labels and explicit arrow contracts')
+print('32 footprint diagram models match source labels and explicit arrow contracts')
