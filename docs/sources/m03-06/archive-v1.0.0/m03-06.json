@@ -1,0 +1,763 @@
+{
+  "id": "M03-06",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-03",
+  "status": "published",
+  "publishedOn": "2026-11-03",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從封包特徵、工具比對與網路位置，建立可查核的作業系統推測。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-06｜作業系統指紋：如何從網路回應推測對方的系統？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一句話結論：作業系統指紋辨識，是把多項網路回應特徵和已知樣本比較，提出有條件的系統推測，再用設備端資料確認。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上一單元從服務回應辨認軟體。這一課往下一層看：即使對方沒有直接說自己使用哪個系統，網路回應的細節仍可能提供線索。學完後，你要能分清楚「看到的封包特徵」「工具的系統推測」與「管理端確認的版本」。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1｜生活例子：從回話習慣辨認窗口"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你打電話到不同辦公室。大家都遵守接電話的基本禮貌，但有人先報單位、有人先問姓名，有人轉接前會再次確認。把幾種習慣放在一起，你可能推測是哪個窗口；若只有一句「您好」，資訊就太少。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路上的系統也會留下類似的實作習慣。Operating System，簡稱 OS（作業系統），負責管理電腦資源及提供程式執行環境。Protocol Stack（協定堆疊）則是處理不同層次網路通訊的一組實作，例如接收 IP 封包、管理 TCP 連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "各種系統都需遵循協定，但支援選項、預設值與部分回應細節可能不同。OS Fingerprinting（作業系統指紋辨識）就是收集這些特徵，再和已知系統樣本比較。「指紋」在這裡是特徵組合，不是每台電腦唯一、永不改變的身分證。多台設備可能有相似特徵，更新與網路環境也會影響觀察。[Nmap：遠端作業系統辨識](https://nmap.org/book/osdetect.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2｜主動與被動：你怎麼取得線索？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Active Fingerprinting（主動指紋辨識）會向已授權目標送出設計好的探測訊息，再分析回應。像是依約提出幾個固定問題，觀察回答方式。Nmap 的 -O 是這類方法，會產生網路流量。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passive Fingerprinting（被動指紋辨識）則觀察原本就經過、且已獲准分析的流量，不為辨識而另外向目標發送探測。像是在獲准的錄音中分析既有對話。p0f 是此類工具的例子；本課只介紹角色，不要求安裝或擷取任何人的流量。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主動方法能設計問題，被動方法只能利用現場已有的資料。若合法取得的紀錄沒有合適封包，被動方法就缺少辨識材料。能看見哪些流量也受觀察位置影響。兩種方式都需要明確的使用範圍與資料處理權限。[Nmap：被動辨識與其他方法](https://nmap.org/book/osdetect-other-methods.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3｜工具在看什麼？先認識三種線索"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Packet（封包）是網路傳送的一份資料；Header（標頭）是其中描述如何處理資料的欄位。工具會把多個欄位與多次回應合起來看，而不是只讀一個值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. IP 的 TTL：還能轉送多久"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP（Internet Protocol，網際網路協定）負責封包的位址與跨網路傳遞。IPv4 標頭中的 TTL（Time to Live，存活時間）用來限制封包在網路中的壽命，避免一直繞路。實際轉送時，路由器會扣減此值。因此，接收端看到的是沿途處理後的值，未必等於來源一開始設定的值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，合成案例中收到 TTL 61，假設起始值是 64、每站扣 1，才可推算經過 3 次扣減。起始值若未知，這個假設就不能當成已確認路徑，更不能直接推出「一定是某作業系統」。TTL 需要和其他線索一起判讀。[RFC 791：IPv4 標頭與 TTL（1981）](https://www.rfc-editor.org/rfc/rfc791.html#section-3.1)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. TCP 接收視窗與選項：如何協商通訊"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP（Transmission Control Protocol，傳輸控制協定）提供有連線狀態、可靠且有序的位元組傳輸。Receive Window（接收視窗）表達接收端願意接收的資料範圍，是流量控制的一部分；它不是整台電腦的記憶體容量，也不是網路頻寬。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 標頭還能帶選項，例如 MSS（Maximum Segment Size，最大區段大小），表達單一 TCP 區段可接收的最大資料量。辨識工具可以觀察初始視窗、選項是否存在及排列方式，將它們納入特徵組合。[RFC 9293：TCP 標頭與選項（2022）](https://www.rfc-editor.org/rfc/rfc9293.html#section-3.1)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 不同探測下的回應方式"
+        },
+        {
+          "kind": "paragraph",
+          "text": "工具也可能比較序號、時間戳記及錯誤回應等特徵。ICMP（Internet Control Message Protocol，網際網路控制訊息協定）提供網路狀態或錯誤回報；收到什麼、哪些欄位被保留，都能成為分析材料。Nmap 將多項測試組成指紋，再交給資料庫或分類方法比對。這一課掌握「多個線索共同判讀」即可，不需要背下全部封包欄位。[Nmap：指紋辨識方法](https://nmap.org/book/osdetect-methods.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-06-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "flow",
+            "caption": "作業系統辨識的查核順序",
+            "description": "箭頭表示證據查核的順序，不表示已取得權限或證實弱點。每一步保留來源與限制。",
+            "items": [
+              {
+                "title": "1｜封包特徵",
+                "body": "記錄 TTL、TCP 選項及視窗等實際觀察，不以單一值猜系統。"
+              },
+              {
+                "title": "2｜工具比對",
+                "body": "保存候選、原始分數、工具版本與警告；相符分數不是已校準機率。"
+              },
+              {
+                "title": "3｜網路位置",
+                "body": "核對誰終止連線、哪一層產生回應，避免把前端當後端。"
+              },
+              {
+                "title": "4｜管理端證據",
+                "body": "以同設備、同時點的版本、核心、套件及更新紀錄確認。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4｜為什麼希望同時找到 Open 和 Closed？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Open（開啟）表示這次測試看到連接埠有服務接收連線；Closed（關閉）表示這次測試得到可判定該入口沒有服務監聽的回應。Filtered（遭過濾）則表示受到過濾等因素影響，工具無法按該探測方式判定開或關。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對 Nmap 的 TCP/IP 指紋辨識而言，至少有一個開啟及一個關閉的 TCP 連接埠，通常能提供較完整的比較材料。這好比同時看到窗口「受理案件」與「不受理案件」時的回覆方式。若回應不足，應保留工具警告與辨識限制，不為了取得結果擅自擴大掃描範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "辨識參數 -O 是大寫英文字母 O。-sV偏向服務／版本辨識；兩者的證據來源不同。-A還會啟用其他功能，不能把它當作只做 OS 辨識的同義選項。[Nmap：OS 辨識選項](https://nmap.org/book/man-os-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課採紙上判讀，不執行掃描。實作前應另外確認授權的目標、允許探測方式、測試時段及停止條件；營運中的特殊設備應由負責人先評估可承受的測試。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5｜相符百分比應該怎麼讀？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設合成報告寫「系統家族 A：95%」。這表示工具依其比對方法得到很接近的候選結果；記錄時應保留原標籤、分數、工具版本及限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以 Nmap 官方說明的 IPv4 比對為例，分數來自各項特徵的加權符合程度。因此，不能直接把 95% 改寫成「這台電腦有 95% 的真實機率是 A」；它不是在所有實際環境都已校準的正確率。不同協定版本的分類方法也可能不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若出現「沒有精確匹配」，可能是特徵不足、資料庫缺少合適樣本，或封包受途中設備影響。適當結論是保留候選及待查原因。取得系統名稱，也尚未確認完整修補狀態或可利用弱點。[Nmap：OS 比對演算法](https://nmap.org/book/osdetect-guess.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6｜你辨認到的是前端，還是後端？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你打的是公司的總機，卻把總機的回話習慣當成某位工程師的習慣。網路也有類似情況。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reverse Proxy（反向代理）是代替後方服務接受用戶端連線的前端。Load Balancer（負載平衡器）把工作分配到後方服務。NAT（Network Address Translation，網路位址轉換）會改寫封包的位址等資訊。這些裝置的行為不同，對觀察的影響也需分開確認。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果前端終止 TCP 連線，外部 TCP/IP 指紋可能反映前端系統；應用服務回傳的文字則可能來自後端。單純位址轉換不代表所有回應必然都由閘道產生。防火牆可能丟棄、修改或代送部分回應，多個後端也可能讓同一公開入口呈現混合線索。[Nmap：辨識錯誤與網路位置](https://nmap.org/book/osdetect-unidentified.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，OS 指紋和服務資訊不一致時，先核對網路架構與連線終止位置，再判斷是哪一層的資料。Nmap 本身也把協定堆疊與服務辨識取得的系統線索分開呈現。[Nmap：輸出與代理案例](https://nmap.org/book/osdetect-usage.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-06-proxy-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "flow",
+            "caption": "連線終止位置決定查核對象",
+            "description": "箭頭表示此合成案例的連線方向；甲接受外部 TCP 連線，再建立到乙的連線。回傳方向省略。",
+            "items": [
+              {
+                "title": "1｜外部觀察者",
+                "body": "看見入口回應與工具候選，尚未確認後端系統。"
+              },
+              {
+                "title": "2｜前端甲：終止 TCP",
+                "body": "甲的協定堆疊可能產生外部指紋；優先用管理端資料核對甲。"
+              },
+              {
+                "title": "3｜後端乙：應用服務",
+                "body": "應用自述可能來自乙；另查執行中服務、系統版本與更新紀錄。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7｜完整合成案例：從「像什麼」走到「確認什麼」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是自行編寫的教學情境，不是實際設備掃描結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一個已授權的隔離環境，有前端甲及後端乙。外部觀察者取得："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- TCP 443 在這次測試中開啟；TCP 65000 在這次測試中關閉。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 回應封包 TTL 61，另有 TCP 選項與視窗紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 指紋工具提出「系統家族 A」候選。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 網頁回應含「應用程式 B」自述。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 架構文件記載：前端甲接受 TCP 連線，再連往後端乙。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一份有用的紀錄可以寫成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「在指定位置與時間，甲的公開入口回覆了上述 TCP 特徵；工具比對結果接近系統家族 A。架構文件顯示甲終止外部 TCP 連線，因此該指紋優先用來查核甲。應用程式 B 的自述另與乙的執行中服務核對；甲、乙的完整系統版本及修補狀態均待管理端資料確認。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一步由授權管理者提供兩台設備的系統版本、執行中的核心與套件、更新紀錄，以及前後端對應關係。資料要能對到同一設備及時間。這樣的紀錄同時保留「已觀察」「合理推測」與「仍待確認」，方便後續盤點與維護。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8｜防護與驗收：把識別結果用在維運"
+        },
+        {
+          "kind": "paragraph",
+          "text": "辨識的實務價值，是找出需要進一步核對的資產。例如清單上應該只有工作站，卻出現疑似網路設備的特徵，就請管理者核對設備身分與用途。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "管理者可依此採取四種工作："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 維護資產清單：核對設備、系統版本、負責人與用途；保留確認日期及來源。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 限制不必要的入口：依需求設計存取規則；驗收時比較核准來源與未核准來源的實際結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 更新與修補：用管理端資料核對供應商公告、安裝與重啟狀態；變更指紋或隱藏資訊不等於已完成修補。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 觀察異常探測：將防火牆及設備紀錄依時間、來源、目標對照。沒看到告警時，先確認紀錄範圍與偵測能力，再做判斷。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本章的證據界線仍然相同：連接埠狀態、系統推測、弱點適用性與取得存取權，是不同的判斷。能辨認系統家族，不代表已登入或成功入侵。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9｜安全練習與小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用第 7 節合成資料，以紙本或文字編輯器完成三步，不需連線到任何目標："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 列出直接取得的封包、工具輸出與文件，保留各自來源。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 寫出甲與乙各自能支持到哪一層結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 各列一項管理端證據，說明如何確認系統與修補狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "預期成果是一份能分清觀察、推論、待確認的短紀錄。練習沒有建立服務或變更設定，無需系統清理；只保存自己的答案即可。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先想四題，下一次也可以只回答你最想確認的一題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 看到 TTL 61，為什麼無法單憑這個數字確認作業系統？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 分析已獲授權的既有封包紀錄，與送出 Nmap -O 探測，取得證據的方式有何不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 指紋推測為家族 A、服務自述為應用程式 B，前方又有 TCP 反向代理。應如何安排查核？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 工具沒有精確匹配，或只顯示 95% 候選時，資產清單應如何記錄，還缺什麼資料？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天帶走的流程：收集特徵 → 保留比對結果 → 核對網路位置 → 用管理端資料確認。"
+        },
+        {
+          "kind": "heading",
+          "id": "sources",
+          "text": "來源與版本範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "沿用指定路線 M03-06「OS Fingerprinting」，並承接 M03 章後「Port State 是觀測結果」原則。技術查核日期為 2026-11-03；Nmap 文件屬持續更新的官方教材，不代表本課實際執行了某一版本工具。IPv4 與 TCP 的基礎規範分別引用 RFC 791（1981）及 RFC 9293（2022）。本課無真實掃描、無私人案例或已完成實驗宣稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "參考答案會放在網站的原生收合區，正式發布核驗後提供解答網址。公布答案與你實際作答、理解確認分開記錄。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ttl",
+          "summary": "參考解答：TTL 61 能確認系統嗎？",
+          "paragraphs": [
+            "TTL 61 是接收位置看到的剩餘值；來源初始值與沿途扣減都會影響它。假設從 64 開始、每站扣 1，才可得到 3 次扣減的合成推算。不同系統與設定可能呈現相同 TTL，因此還需其他回應特徵、網路位置及管理端資料。請把實際數值與假設分開記錄。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-active-passive",
+          "summary": "參考解答：主動與被動如何取得證據？",
+          "paragraphs": [
+            "分析已合法取得的既有封包，是利用當時已發生的流量；能分析什麼受紀錄內容及觀察位置限制。Nmap -O 則會另送探測、觀察回應，屬主動辨識。兩者都需要適當授權；被動不代表可以任意收集他人的流量。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-proxy",
+          "summary": "參考解答：前後端線索如何核對？",
+          "paragraphs": [
+            "先確認外部 TCP 連線在哪裡終止。若在前端，協定堆疊指紋優先用來查核前端；服務自述另核對其實際來源與後端執行中程式。保留各自的觀察位置、時間、工具與原始回應，再以架構設定、設備版本和更新紀錄確認。線索不同可以反映不同層的設備，不必先認定其中一個結果錯誤。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-confidence",
+          "summary": "參考解答：候選或無精確匹配如何記錄？",
+          "paragraphs": [
+            "寫明「工具推測／候選」、原始名稱與分數，以及缺少的回應或工具警告。95% 的特徵比對分數不自動等於真實正確率；無精確匹配也不等於沒有作業系統。接著請授權管理者核對目標設備、完整系統與核心版本、套件修補紀錄及前置設備關係。確認前不把候選直接填成已驗證版本或弱點成立。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Connect packet features, tool matches and network position to a verifiable operating-system assessment.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-06 | OS Fingerprinting: Inferring a System from Network Responses"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Core idea: OS fingerprinting compares a combination of network-response features with known samples, proposes a conditional identification, and uses device-side evidence for confirmation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The previous lesson identified software from service responses. This lesson examines a lower layer: response details can provide clues even when a host does not announce its operating system. The goal is to separate observed packet features, a tool's inference, and an administrator-confirmed version."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1 | A familiar example: recognizing a desk by its response habits"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine calling several offices. Everyone follows basic telephone etiquette, but some staff introduce their department first, others ask your name, and others confirm details before transferring you. A combination of habits may suggest which desk answered. A single “hello” tells you much less."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Network implementations also have recognizable habits. An operating system (OS) manages computer resources and provides an environment for programs. A protocol stack is the collection of implementations that handle network communication at different layers, such as processing IP packets and managing TCP connections."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Systems follow common protocols, while supported options, defaults and some response details can differ. OS fingerprinting collects these features and compares them with known systems. A fingerprint here is a feature combination, not a permanent identity unique to one device. Multiple devices can look alike, and updates and network conditions can affect observations. [Nmap: Remote OS Detection](https://nmap.org/book/osdetect.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2 | Active and passive: how are clues collected?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Active fingerprinting sends selected probes to an authorized target and analyzes its replies. It resembles asking agreed questions and observing the response style. Nmap's -O uses this approach and generates network traffic."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passive fingerprinting observes traffic already present and authorized for analysis, without sending additional probes for identification. It resembles analyzing an authorized recording. p0f is an example of this tool category; this lesson does not ask you to install it or capture anyone's traffic."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Active methods can select the questions; passive methods work with the evidence available. If an authorized recording lacks suitable packets, passive identification lacks the necessary material. Observation location also determines which traffic is visible. Both approaches need a defined scope and permission to handle the data. [Nmap: Passive Fingerprinting and Other Methods](https://nmap.org/book/osdetect-other-methods.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3 | What does the tool examine? Three kinds of clues"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A packet is a unit of transmitted network data. Its header contains fields describing how to handle that data. Tools combine multiple fields and responses rather than treating one value as an identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. IP TTL: limiting further forwarding"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Internet Protocol (IP) handles addressing and delivery across networks. The IPv4 header's Time to Live (TTL) limits a packet's lifetime so it cannot circulate indefinitely. Routers decrement it during forwarding. The receiving observer therefore sees a value after processing along the path, not necessarily the sender's initial value."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For a synthetic example, receiving TTL 61 supports three decrements only if we assume an initial value of 64 and a decrement of one at each hop. With an unknown initial value, that assumption does not establish a verified path, much less a definite operating system. Interpret TTL together with other clues. [RFC 791: IPv4 Header and TTL (1981)](https://www.rfc-editor.org/rfc/rfc791.html#section-3.1)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. TCP receive window and options: negotiating communication"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Transmission Control Protocol (TCP) provides connection state and reliable, ordered byte delivery. A receive window advertises the range of data a receiver is willing to accept as part of flow control. It is not the computer's total memory or its network bandwidth."
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP headers can carry options such as Maximum Segment Size (MSS), which indicates the maximum amount of data acceptable in one TCP segment. Identification tools can observe an initial window and the presence and order of options as part of a feature combination. [RFC 9293: TCP Header and Options (2022)](https://www.rfc-editor.org/rfc/rfc9293.html#section-3.1)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Responses to different probes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Tools may also compare sequence numbers, timestamps and error responses. Internet Control Message Protocol (ICMP) carries network status and error information. The responses and retained fields provide additional evidence. Nmap combines multiple tests into a fingerprint for database comparison or classification. For this lesson, understand the combined-evidence approach rather than memorize every field. [Nmap: Fingerprinting Methods](https://nmap.org/book/osdetect-methods.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-06-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "OS identification: evidence checks",
+            "description": "Arrows show the order of evidence checks, not access or a confirmed vulnerability. Preserve sources and limits.",
+            "items": [
+              {
+                "title": "1 | Packet features",
+                "body": "Record observed TTL, TCP options and windows. One value cannot identify an OS."
+              },
+              {
+                "title": "2 | Tool matching",
+                "body": "Keep candidates, scores, tool version and warnings. A match score is not a calibrated probability."
+              },
+              {
+                "title": "3 | Network position",
+                "body": "Check who terminates the connection and produces each response. Separate front end from back end."
+              },
+              {
+                "title": "4 | Management evidence",
+                "body": "Verify versions, kernel, packages and updates for the same device and observation time."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4 | Why look for both open and closed ports?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Open means the test observed a service accepting connections at the port. Closed means the test received a response supporting that no service was listening there. Filtered means filtering or related effects prevented the method from determining whether the port was open or closed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For Nmap TCP/IP fingerprinting, finding at least one open and one closed TCP port generally provides better comparison material. It resembles observing how a desk responds both when it accepts a request and when it does not. Preserve warnings and limitations when responses are insufficient; do not expand the authorized scan scope just to obtain a result."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The identification option -O uses a capital letter O. -sV concerns service/version detection and uses different evidence. -A enables additional functions, so it is not an OS-only equivalent. [Nmap: OS Detection Options](https://nmap.org/book/man-os-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson uses a tabletop exercise and runs no scans. Before a separate practical test, confirm authorized targets, permitted probes, the testing window and stop conditions. Responsible operators should assess whether sensitive operational devices can tolerate the proposed test."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5 | How should you read a match percentage?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a synthetic report lists “system family A: 95%.” The tool found a close candidate under its matching method. Preserve the original label, score, tool version and limitations in the record."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In Nmap's documented IPv4 matching method, the score comes from weighted feature matches. Therefore, do not rewrite 95% as a calibrated 95% real-world probability that the machine runs A. Classification methods may also differ between IP versions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "“No exact match” can reflect insufficient features, missing reference samples or packet changes along the path. Preserve the candidates and the reasons requiring investigation. Even a system identification does not establish complete patch status or an exploitable vulnerability. [Nmap: OS Matching Algorithms](https://nmap.org/book/osdetect-guess.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6 | Are you identifying the front end or the back end?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine calling a company's switchboard and attributing the operator's response habits to an engineer behind it. A similar mistake can occur on a network."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A reverse proxy accepts client connections on behalf of services behind it. A load balancer distributes work among back-end services. Network Address Translation (NAT) rewrites addresses and related information in packets. Their behavior differs, so assess each one's effect separately."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If a front end terminates TCP, the external TCP/IP fingerprint may describe that front end, while application text may come from a back end. Address translation alone does not mean the gateway generates every response. Firewalls may drop, modify or generate some responses, and multiple back ends can produce mixed clues at one public entry point. [Nmap: Misidentification and Network Location](https://nmap.org/book/osdetect-unidentified.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When stack fingerprints and service information differ, check the architecture and connection termination points before attributing each observation. Nmap reports system clues from stack fingerprinting separately from those obtained through service identification. [Nmap: Output and Proxy Examples](https://nmap.org/book/osdetect-usage.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-06-proxy-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Connection endpoints guide verification",
+            "description": "Arrows show connections in this synthetic case: A accepts external TCP, then connects to B. Return paths are omitted.",
+            "items": [
+              {
+                "title": "1 | External observer",
+                "body": "Sees endpoint responses and tool candidates, without confirming the back-end OS."
+              },
+              {
+                "title": "2 | Front end A: TCP endpoint",
+                "body": "A’s stack may produce the external fingerprint. Check A’s management records first."
+              },
+              {
+                "title": "3 | Back end B: application",
+                "body": "Application claims may come from B. Check its running service, OS version and update records separately."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7 | A complete synthetic example: from resemblance to confirmation"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following scenario was written for teaching. It is not a scan of a real device."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An authorized isolated environment has front end A and back end B. An external observer obtains:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- TCP 443 is open in this test; TCP 65000 is closed in this test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- A response has TTL 61, with additional TCP option and window records."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- The fingerprinting tool proposes “system family A.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- A web response identifies itself as “application B.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Architecture documentation says front end A accepts TCP connections and then connects to back end B."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A useful record can state:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“At the specified location and time, A's public entry point returned the recorded TCP features. The tool's comparison suggests system family A. Architecture documentation places external TCP termination at A, so this fingerprint is first used to investigate A. Application B's self-description is checked separately against B's running service. The complete system versions and patch status of both devices await administrator evidence.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, an authorized administrator supplies system versions, running kernels and packages, update records, and the mapping between front end and back end. The evidence must refer to the same devices and relevant time. Such a record preserves observations, reasonable inferences and unresolved checks for later inventory and maintenance."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8 | Defense and verification: using identification in operations"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The practical value of identification is finding assets that need further investigation. For example, if a segment expected to contain only workstations shows features of a network appliance, ask the administrator to confirm that device's identity and purpose."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Administrators can use these findings in four ways:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Maintain inventory: verify devices, system versions, owners and purposes, with evidence and confirmation dates."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Restrict unnecessary entry points: implement access rules based on need and compare actual results from approved and unapproved sources."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Update and patch: compare administrator evidence with vendor notices, installation records and restart status. Changing a fingerprint or concealing details does not complete patching."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Observe unusual probes: correlate firewall and device records by time, source and target. Before interpreting an absence of alerts, check logging scope and detection capabilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The chapter's evidence boundary still applies: a port state, an OS inference, vulnerability applicability and acquired access are separate judgments. Identifying a system family does not establish a login or successful intrusion."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9 | Safe exercise and short checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use the synthetic records in section 7 and a notebook or text editor. No target connection is needed:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. List the packets, tool output and documentation actually obtained, preserving their sources."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. State what the evidence supports for A and B separately."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Name one administrator-side evidence item for each device and explain how it helps confirm system and patch status."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The expected result is a short record separating observations, inferences and pending checks. The exercise creates no service and changes no settings, so no system cleanup is required. Save only your own answer."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider four questions. You can answer just the one you most want to clarify next:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Why does TTL 61 alone fail to identify an operating system?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. How do analyzing authorized existing packets and sending Nmap -O probes differ in evidence collection?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. A fingerprint suggests family A, a service announces application B, and a TCP reverse proxy is in front. How should you organize verification?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. When the tool has no exact match or only a 95% candidate, what should the inventory record say, and what evidence is still missing?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Takeaway: collect features → retain match results → verify network position → confirm with administrator evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "sources",
+          "text": "Sources and version scope"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson follows M03-06 “OS Fingerprinting” in the adopted route and the M03 principle that port state is an observation. Technical sources were checked on 2026-11-03. Nmap's official documentation is maintained over time; citing it does not claim that this lesson ran a particular installed version. The IPv4 and TCP references are RFC 791 (1981) and RFC 9293 (2022). No real scan, private case or completed experiment is claimed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reference answers will appear in native collapsed sections on the website, with a link after publication verification. Publishing answers is recorded separately from your actual responses and demonstrated understanding."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ttl",
+          "summary": "Reference answer: Does TTL 61 confirm the system?",
+          "paragraphs": [
+            "TTL 61 is the remaining value at the observation point; the initial value and decrements along the path affect it. An initial value of 64 with one decrement per hop supports three decrements only under those synthetic assumptions. Different systems and settings can produce the same TTL, so additional response features, network context and administrator evidence are needed. Record observations separately from assumptions."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-active-passive",
+          "summary": "Reference answer: How do active and passive collection differ?",
+          "paragraphs": [
+            "Analyzing authorized existing packets uses traffic that already occurred; the recording and observation location limit what can be learned. Nmap -O sends additional probes and observes responses, making it active identification. Both approaches require appropriate permission. Passive observation does not authorize collecting other people's traffic."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-proxy",
+          "summary": "Reference answer: How should front-end and back-end clues be checked?",
+          "paragraphs": [
+            "First determine where the external TCP connection terminates. If it terminates at the front end, investigate that device using the stack fingerprint. Check the service self-description against its actual source and the running back-end program. Preserve each observation's location, time, tool and raw response, then confirm using architecture settings, device versions and update records. Different clues can describe different layers rather than demonstrate that one result is necessarily wrong."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-confidence",
+          "summary": "Reference answer: How should a candidate or no exact match be recorded?",
+          "paragraphs": [
+            "Label the result as a tool inference or candidate, preserving the original name, score, missing responses and warnings. A 95% feature-match score is not automatically a real-world accuracy rate; no exact match does not mean that no operating system exists. An authorized administrator should verify the target device, complete system and kernel versions, package patch records and intermediary devices. Until then, do not record the candidate as a verified version or established vulnerability."
+          ]
+        }
+      ]
+    }
+  }
+}
