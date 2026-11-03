@@ -249,6 +249,8 @@ nmap -sT -sV -p 8000 127.0.0.1
 sudo nmap -O -p 8000,8001 127.0.0.1
 ```
 
+這是另行核准 OS 探測時的參數範例。`-p` 指定連接埠掃描清單；`-O` 仍可能增加 TCP、UDP 與 ICMP 探測，不能把它視為只檢查兩個 TCP 入口的原實驗。[Nmap：OS 探測方法](https://nmap.org/book/osdetect-methods.html)
+
 這個大寫 `O` 是 OS Detection。
 
 Nmap 會觀察不同網路探測的回應特徵，嘗試推測目標使用哪一類作業系統。

@@ -235,6 +235,8 @@ Without version probing, the `SERVICE` field may come from the common-port datab
 sudo nmap -O -p 8000,8001 127.0.0.1
 ```
 
+This parameter example requires separate authorization for OS probing. `-p` selects the port-scan list; `-O` may add TCP, UDP and ICMP probes, so this is not the original two-TCP-entry experiment. [Nmap: OS probing methods](https://nmap.org/book/osdetect-methods.html)
+
 The uppercase `O` means OS Detection.
 
 Nmap examines response characteristics from different probes to infer the target's operating-system family.
