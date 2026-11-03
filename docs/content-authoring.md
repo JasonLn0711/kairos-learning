@@ -309,3 +309,7 @@ M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 
 ### M03-04 v1.1.1 小節完整性
 
 依使用者更正，供稿各章內的小節必須完整呈現，不能用章級摘要取代。`detailed-section-map.json` 對應 64 個中英標題；中文全文以原供稿加上 `detailed-editorial-changes.json` 的明列修正核對。沿用既有 h2／h3 sourceBody，不改共用渲染器；33 個命令／ASCII 區塊保留可選取文字與鍵盤局部捲動。[本次回執](releases/2026-11-03-m03-04-detailed.md)取代上一版對教學深度的完成主張。
+
+## M03-05 完整服務辨識教材 v1.1.0
+
+供稿完整保存在 [來源目錄](sources/m03-05/README.md)，63 個雙語章節／小節以 detailed-section-map.json 對應；中文全文依原稿加明列技術修正核對。修改兩語 Markdown 後執行 `python3 scripts/m0305_content.py`，原有圖解僅以 `m0305_diagrams.py --check` 核對。完成內容、單元、型別、發布邊界及 release 檢查，再用 `npx playwright test --config playwright.m0305.config.ts` 驗收；正式站設定 CEH_BASE_URL。本機實測、四個答案、原圖保存與部署界線見[修訂回執](releases/2026-11-03-m03-05-replacement.md)。

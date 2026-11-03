@@ -1,7 +1,7 @@
 {
   "id": "M03-05",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.1.0",
   "date": "2026-11-03",
   "status": "published",
   "publishedOn": "2026-11-03",
@@ -13,15 +13,126 @@
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "CEH M03-05｜服務版本與 Banner：怎麼知道開著的入口在提供什麼服務？"
+          "text": "CEH v13｜M03-05：服務版本與橫幅蒐集（Service Version & Banner Grabbing）"
+        },
+        {
+          "kind": "heading",
+          "id": "section-introduction",
+          "text": "完整白話文教學：從 Port 掃描到服務辨識，再到漏洞判斷"
         },
         {
           "kind": "paragraph",
-          "text": "一句話結論：連接埠告訴你入口在哪，服務回應提供辨識線索；把回應、測試條件與設備端資料對起來，才能更可靠地確認服務及修補狀態。"
+          "text": "本章最重要的觀念：發現一個 Port 開著，不代表你知道它提供什麼服務；知道服務名稱，不代表你知道真正的軟體版本；知道版本，也不代表它一定有漏洞。"
         },
         {
           "kind": "paragraph",
-          "text": "上一單元的重點是 Open、Closed、Filtered：這次測試看到了什麼連接埠狀態。今天接著回答一個問題：入口開著之後，裡面究竟是什麼服務、什麼版本？"
+          "text": "這個章節承接前面學過的 M03-01 至 M03-04，開始進入真正的資安實務：我們要如何從網路上的回應，一步步確認伺服器正在提供什麼服務，以及是否存在資安風險？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課依原有章節順序逐節說明，補充 Ubuntu 本機操作、Nmap 指令與資安判斷方法。案例與示例輸出不代表實際目標的測量結果；本機練習限定自己的設備。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-overview",
+          "text": "一、先建立完整的觀念地圖"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你之前學過："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "章節",
+            "學習重點",
+            "我們在回答什麼問題？"
+          ],
+          "rows": [
+            [
+              "M03-01",
+              "IP、TCP、UDP、Port",
+              "網路上的電腦如何溝通？"
+            ],
+            [
+              "M03-02",
+              "ICMP、ARP、主機探索",
+              "要找的電腦在哪裡？能否取得回應？"
+            ],
+            [
+              "M03-03",
+              "TCP、SYN、UDP 掃描",
+              "哪些 Port 可能開著？"
+            ],
+            [
+              "M03-04",
+              "Open、Closed、Filtered",
+              "如何解讀 Port 掃描結果？"
+            ],
+            [
+              "**M03-05**",
+              "**Service Version、Banner Grabbing**",
+              "**開著的 Port 裡面，究竟是什麼服務？**"
+            ],
+            [
+              "M03-06",
+              "OS Fingerprinting",
+              "這台電腦可能使用什麼作業系統？"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你正在檢查一台自己管理的 Ubuntu 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先使用 Nmap 掃描，得到："
+        },
+        {
+          "kind": "code",
+          "text": "PORT      STATE    SERVICE\n22/tcp    open     ssh\n80/tcp    open     http\n443/tcp   open     https\n3306/tcp  filtered mysql"
+        },
+        {
+          "kind": "paragraph",
+          "text": "初學者可能會說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這台電腦有 SSH、HTTP、HTTPS、MySQL 四個服務。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這個說法需要修正。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你目前能確定的事情是："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "TCP 22、80、443 在這次掃描中呈現 `open`。",
+            "TCP 3306 呈現 `filtered`，無法直接判定它是否有服務正在接聽。",
+            "`SERVICE` 欄位可能只是 Nmap 根據 Port 編號提供的常見服務名稱。",
+            "你還沒有確認這些 Port 背後實際執行的軟體。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "M03-05，就是教你如何從「Port 的觀察結果」，進一步取得「服務身分的證據」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "整體流程可以想成："
+        },
+        {
+          "kind": "code",
+          "text": "                一台 Ubuntu 伺服器\n                        │\n                        ▼\n              ① 主機探索（M03-02）\n                 能取得回應嗎？\n                        │\n                        ▼\n              ② Port 掃描（M03-03）\n                 443/tcp open\n                        │\n                        ▼\n              ③ 服務辨識（M03-05）\n                 真的是 HTTPS 嗎？\n                        │\n                        ▼\n              ④ 版本辨識（M03-05）\n                 是哪一種伺服器軟體？\n                 能否辨識其版本？\n                        │\n                        ▼\n              ⑤ 內部核對\n                 實際套件版本？\n                 是否經過 Proxy？\n                 修補是否已套用？\n                        │\n                        ▼\n              ⑥ 弱點分析（M05）\n                 是否存在適用的漏洞？\n                 是否真的受到影響？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意：這是一條調查與驗證流程，不代表每個階段都一定能取得明確答案。"
         },
         {
           "kind": "heading",
@@ -30,35 +141,163 @@
         },
         {
           "kind": "paragraph",
-          "text": "想像同一條街上有一間店："
+          "id": "section-1-1",
+          "text": "1.1 為什麼 Port 不等於 Service？"
         },
         {
           "kind": "paragraph",
-          "text": "- 門牌是 443 號，這只是地址線索。"
+          "text": "想像你走在一條商店街上。"
         },
         {
           "kind": "paragraph",
-          "text": "- 你按門鈴，有人回應，表示這次能聯絡到這個入口。"
+          "text": "每一間店都有門牌號碼。"
         },
         {
           "kind": "paragraph",
-          "text": "- 對方說「這裡是晨光書店」，你取得店家自我介紹。"
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "                    一條商店街\n\n     ┌─────────────┐     ┌─────────────┐\n     │   22 號     │     │   80 號     │\n     │             │     │             │\n     │  遠端管理   │     │  網頁服務   │\n     └─────────────┘     └─────────────┘\n\n     ┌─────────────┐     ┌─────────────┐\n     │   443 號    │     │  8080 號    │\n     │             │     │             │\n     │  安全網頁   │     │  開發測試   │\n     └─────────────┘     └─────────────┘"
         },
         {
           "kind": "paragraph",
-          "text": "- 你依規則詢問營業項目，從回答方式辨認它提供哪些服務。"
+          "text": "這些門牌號碼，就是我們之前學過的 Port。"
         },
         {
           "kind": "paragraph",
-          "text": "- 最後，管理者出示登記資料與實際營業紀錄，你再核對是否一致。"
+          "text": "一般情況下："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "TCP 22：常見 SSH。",
+            "TCP 80：常見 HTTP。",
+            "TCP 443：常見 HTTPS。",
+            "TCP 8080：常見替代 HTTP 服務或代理服務。"
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "網路服務也類似。Port（連接埠）是網路程式接收通訊的入口編號；Service（服務）是入口提供的功能，例如網頁、郵件或遠端管理；Version（版本）是軟體的版本識別。三者有關聯，但不能只憑一個入口號碼，就把服務、產品及完整版本都填好。"
+          "text": "但是，門牌號碼不會強制決定店家必須經營什麼業務。"
         },
         {
           "kind": "paragraph",
-          "text": "例如 TCP 443 常用於 HTTPS。TCP（傳輸控制協定）提供有連線的可靠傳輸；HTTPS是經過 TLS（傳輸層安全性協定）保護的 HTTP 網頁通訊。自訂服務也可以使用 TCP 443；一般網頁服務也可以設在其他連接埠。"
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你在 443 號店面，預期找到一間提供 HTTPS 的商店。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是實際上，店家可能把這個入口拿來提供其他 TCP 服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "換成網路世界："
+        },
+        {
+          "kind": "code",
+          "text": "IP: 192.168.1.100\n\nPort: 443\n\n你預期：\n    HTTPS\n\n但實際可能：\n    HTTPS\n    自訂 TCP 應用程式\n    其他使用 TCP 的服務"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port 是入口編號；Service 才是入口背後真正提供的功能。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-2",
+          "text": "1.2 那 Version 又是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "繼續使用商店的例子。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你知道 443 號是一間書店。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這只能告訴你它提供什麼服務，還不知道它使用什麼管理系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你進一步知道："
+        },
+        {
+          "kind": "code",
+          "text": "門牌：443\n    │\n    ▼\n服務：HTTPS\n    │\n    ▼\n產品：Nginx\n    │\n    ▼\n版本：1.x.x"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`443` 是 Port。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`HTTPS` 是通訊服務或協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`Nginx` 是提供網頁服務的軟體產品。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`1.x.x` 是軟體版本的示意寫法，還不是已經確認的完整版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們把四者分開，就能避免很多常見的資安誤判。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-3",
+          "text": "1.3 為什麼這件事重要？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你負責管理一家醫院的伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資安掃描工具告訴你："
+        },
+        {
+          "kind": "code",
+          "text": "443/tcp open"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你立刻認定："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這台醫院伺服器正在執行某個版本的 Nginx。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是沒有足夠證據的推論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為它也可能使用 Apache、Caddy、其他 HTTP 伺服器，或透過負載平衡器及反向代理提供服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "正確的資安流程，是持續蒐集證據，而不是直接猜測。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：Port 告訴你入口在哪裡，但不能單靠 Port 確認服務、產品與版本。"
         },
         {
           "kind": "heading",
@@ -67,44 +306,309 @@
         },
         {
           "kind": "paragraph",
-          "text": "Banner（服務識別訊息）是服務對外回傳、可用來辨識自身的文字或資訊。Banner Grabbing（擷取服務識別訊息）就是取得這些回應，作為資產盤點與後續查核的線索。"
+          "id": "section-2-1",
+          "text": "2.1 Banner 就像店家的自我介紹"
         },
         {
           "kind": "paragraph",
-          "text": "它不是只指登入畫面的歡迎標語。常見例子包括："
+          "text": "繼續想像剛才的商店。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你走到 22 號店門口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "店員主動說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「您好！我們提供遠端管理服務。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這句自我介紹，就是 Banner 的概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在網路世界裡，當你與某些服務建立連線，伺服器可能會傳送一段資訊，告訴你："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我是誰、支援什麼協定，或者使用哪種軟體。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種能夠用來辨識服務身分的資訊，統稱為 Banner（服務識別資訊）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "取得這些資訊的過程，就是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Banner Grabbing（服務識別資訊擷取）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不是某一個特定的網路協定，而是資安人員取得服務識別線索的一類技術。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 範例一：SSH 的 Banner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你連上自己管理的 SSH 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器可能回傳："
+        },
+        {
+          "kind": "code",
+          "text": "SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一個格式示例，不是實際掃描結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們把它拆開："
         },
         {
           "kind": "table",
           "headers": [
-            "回應位置",
-            "可能看到的內容",
-            "可以先記錄什麼"
+            "資訊",
+            "白話文解釋"
           ],
           "rows": [
             [
-              "SSH 的識別行",
-              "`SSH-2.0-ExampleSSH_1.2`",
-              "宣告的 SSH 協定及軟體識別"
+              "`SSH`",
+              "這是 SSH 協定相關的識別字串"
             ],
             [
-              "郵件服務的開場回覆",
-              "`220 mail.example.test ...`",
-              "回應碼、主機名稱及服務自述"
+              "`2.0`",
+              "宣告的 SSH 協定版本"
             ],
             [
-              "HTTP 回應標頭",
-              "`Server: ExampleWeb/1.2`",
-              "這次回覆帶出的產品／版本字串"
+              "`OpenSSH`",
+              "宣告使用 OpenSSH 軟體"
+            ],
+            [
+              "`9.6p1`",
+              "宣告的 OpenSSH 軟體版本"
+            ],
+            [
+              "`Ubuntu-3ubuntu13`",
+              "Ubuntu 發行版的套件修訂字串"
             ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "以上字串是合成示例，不是實際掃描結果。SSH 是 Secure Shell，用來建立安全遠端連線；HTTP 是 Hypertext Transfer Protocol，網頁用來交換請求與回應的協定；標頭是描述請求或回應的欄位。"
+          "text": "這裡有一個很容易混淆的地方。"
         },
         {
           "kind": "paragraph",
-          "text": "Banner 的價值是讓你開始有依據地盤點：這個端點可能提供什麼、是否出現未預期的服務、要找哪位管理者核對。它也可能省略版本、被管理者修改，或出自前面的代理服務。因此，先保留原始回應，再標註它支持到哪一層結論。"
+          "text": "`SSH-2.0` 和 `OpenSSH_9.6p1` 並不是同一種版本資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前者描述 SSH 通訊協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "後者描述 OpenSSH 軟體版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我們使用 HTTP/1.1」與「我們使用 Nginx 1.24」是兩個不同層次的資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且，這一行是服務對外宣告的識別資訊，不是已經查核過的內部套件清單。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "2.3 範例二：HTTP 的 Banner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你使用瀏覽器開啟一個網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "瀏覽器向伺服器發出："
+        },
+        {
+          "kind": "code",
+          "text": "GET / HTTP/1.1\nHost: example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這可以理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我要讀取 example.test 網站的首頁。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器可能回傳："
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/1.1 200 OK\nServer: nginx/1.24.0\nContent-Type: text/html\nContent-Length: 1250"
+        },
+        {
+          "kind": "paragraph",
+          "text": "逐行解釋："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`HTTP/1.1 200 OK`：這次 HTTP 請求成功處理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`Server: nginx/1.24.0`：回應中宣告了伺服器產品及版本識別。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`Content-Type: text/html`：回傳內容是 HTML。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`Content-Length: 1250`：回應本文的大小為 1250 bytes。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最值得注意的是："
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx/1.24.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是可能被 Banner Grabbing 蒐集到的資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，HTTP 的 `Server` 標頭不是強制提供的資訊。它可能不存在，也可能被修改，或由反向代理產生。RFC 9110 也建議避免在此欄位揭露不必要的實作細節。[RFC Editor](https://www.rfc-editor.org/rfc/rfc9110.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-4",
+          "text": "2.4 範例三：郵件伺服器的 Banner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你連線到一個 SMTP 郵件伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能先回傳："
+        },
+        {
+          "kind": "code",
+          "text": "220 mail.example.test ESMTP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`220` 是 SMTP 回應碼，代表服務已準備好接受進一步的 SMTP 指令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`mail.example.test` 是伺服器宣告的主機名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`ESMTP` 表示它宣告支援 Extended SMTP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你不需要登入，就可能看見這段開場回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也說明為什麼服務識別資訊值得關注。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使攻擊者沒有登入帳號，某些網路服務仍可能對外提供識別線索。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-5",
+          "text": "2.5 為什麼資安人員要蒐集 Banner？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你是公司資安管理員，負責盤點 100 台伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能原本只知道："
+        },
+        {
+          "kind": "code",
+          "text": "伺服器 A：22、80、443 開啟\n伺服器 B：22、443 開啟\n伺服器 C：21、22、8080 開啟"
+        },
+        {
+          "kind": "paragraph",
+          "text": "經過服務辨識後，你可能獲得更多線索："
+        },
+        {
+          "kind": "code",
+          "text": "伺服器 A\n    22   → 可能是 OpenSSH\n    80   → 可能是 Nginx\n    443  → 可能是 Nginx\n\n伺服器 B\n    22   → 可能是 OpenSSH\n    443  → 可能是 Apache httpd\n\n伺服器 C\n    21   → 可能是 FTP 服務\n    22   → 可能是 OpenSSH\n    8080 → 可能是 HTTP 應用程式"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這可以協助你找出："
+        },
+        {
+          "kind": "paragraph",
+          "text": "哪些服務原本就應該存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "哪些服務可能是管理者忘記關閉的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "哪些服務需要確認版本與修補狀況。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "哪些入口不應該對一般網路使用者開放。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但還有一個重要限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Banner 代表某個端點「對外宣告」了什麼，不代表我們已經確認其真實身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，管理者可能把某個服務的 Banner 改成其他文字。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此不能只靠 Banner 就認定版本一定正確。"
         },
         {
           "kind": "heading",
@@ -113,19 +617,212 @@
         },
         {
           "kind": "paragraph",
-          "text": "取得識別資料時，有些服務會在連線建立後先傳送開場訊息；另一些服務要收到符合協定的請求，才會回答。"
+          "text": "這一節要理解兩種取得資訊的方式。"
         },
         {
           "kind": "paragraph",
-          "text": "Probe（探測訊息）是為了觀察服務行為而送出的資料。Service Detection（服務辨識）會分析回應內容；Version Detection（版本辨識）進一步嘗試辨認產品、版本及相關資訊。Banner 擷取是其中一種方法，不涵蓋所有辨識技術。"
+          "text": "它們的差別在於："
         },
         {
           "kind": "paragraph",
-          "text": "Nmap 是網路探索與安全稽核工具。它的服務辨識流程可能先建立 TCP 連線、等待服務自行回覆，再依服務情況送出探測。官方所稱的 NULL probe（空探測），在這個情境是連線建立後不先送應用層探測內容、先等回應。它仍然會建立網路連線，不能當成完全不接觸目標的被動蒐集。"
+          "text": "你建立連線之後，是等待對方主動介紹自己，還是主動送出問題讓對方回答？"
         },
         {
           "kind": "paragraph",
-          "text": "相較之下，分析一份原本已合法取得的封包紀錄，而不另外連到目標，是不同的觀察方式。無論採哪一種，都要遵守授權、資料使用與保留範圍。"
+          "id": "section-3-1",
+          "text": "3.1 第一種：等服務主動說話"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你走進一家商店。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你沒有主動提問，店員就說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「您好！歡迎光臨。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在網路世界中，也有類似的行為。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如某些 SSH、FTP、SMTP 伺服器，在 TCP 連線建立後，會先傳送識別資訊。"
+        },
+        {
+          "kind": "code",
+          "text": "       客戶端                        伺服器\n          │                            │\n          │ ─────── SYN ─────────────→ │\n          │                            │\n          │ ←────── SYN/ACK ────────── │\n          │                            │\n          │ ─────── ACK ─────────────→ │\n          │                            │\n          │      TCP 連線建立完成      │\n          │                            │\n          │ ←─────── Banner ────────── │\n          │                            │\n          │    SSH-2.0-OpenSSH_...     │\n          │                            │"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡要連結 M03-01 和 M03-03 的 TCP 三向交握。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你之前學過："
+        },
+        {
+          "kind": "code",
+          "text": "SYN → SYN/ACK → ACK"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三個步驟是在建立 TCP 連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 連線建立後，應用程式才開始透過這條連線交換資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，本例的 SSH Banner 是一般 TCP 連線建立後傳送的應用層資料；只收到 SYN/ACK 的掃描結果，不能當成已取得 SSH 識別行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個區別非常重要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port 掃描著重觀察網路連線狀態；Banner 擷取則進一步觀察應用程式的回應內容。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 第二種：主動送出探測訊息（Probe）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有些服務不像 SSH 一樣會主動自我介紹。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如一般 HTTP 伺服器，通常要等客戶端發出 HTTP 請求，才會回傳 HTTP 回應。"
+        },
+        {
+          "kind": "code",
+          "text": "       客戶端                        HTTP 伺服器\n          │                              │\n          │ ───── 建立 TCP 連線 ───────→ │\n          │                              │\n          │      等待對方說話            │\n          │                              │\n          │       沒有回應               │\n          │                              │\n          │ ───── GET / HTTP/1.1 ──────→ │\n          │                              │\n          │ ←──── HTTP/1.1 200 OK ────── │\n          │       Server: nginx/...     │\n          │                              │"
+        },
+        {
+          "kind": "paragraph",
+          "text": "客戶端送出的："
+        },
+        {
+          "kind": "code",
+          "text": "GET / HTTP/1.1\nHost: example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就可以視為一種符合 HTTP 協定的探測請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器收到後回傳資料，我們再根據回應判斷它的服務特性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是主動探測的基本原理。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 什麼是 Nmap 的 NULL Probe？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NULL Probe 容易讓初學者誤會。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為看到 NULL，有人會以為："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「是不是完全沒有傳送封包？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Nmap 的 TCP 服務辨識流程中，NULL Probe 指的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "先建立 TCP 連線，但不立即送出應用層的探測內容，而是等待伺服器自行回傳資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Nmap\n  │\n  ├─ 建立 TCP 連線\n  │\n  ├─ 等待伺服器回應\n  │\n  ├─ 有 Banner？\n  │      │\n  │      ├─ 有 → 嘗試辨識\n  │      │\n  │      └─ 無 → 考慮其他 Probe\n  │\n  └─ 分析服務身分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以 NULL Probe 的 NULL，並不是「完全沒有網路活動」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使沒有送出應用層資料，TCP 連線本身仍然會產生網路封包，也可能被伺服器記錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 Nmap 官方服務版本辨識文件明確描述的流程。[Nmap](https://nmap.org/book/vscan-technique.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "3.4 主動探測與被動觀察有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡可以進一步連結 CEH 的網路嗅探概念。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "方法",
+            "是否產生新的目標連線",
+            "白話文"
+          ],
+          "rows": [
+            [
+              "建立連線後等待 Banner",
+              "是",
+              "我走進商店，等待店員介紹"
+            ],
+            [
+              "發送 HTTP、SSH 等探測",
+              "是",
+              "我走進商店，主動詢問"
+            ],
+            [
+              "分析已取得的封包紀錄",
+              "不一定；純離線分析則不會",
+              "我看先前合法取得的監視紀錄"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "前兩者屬於主動與目標互動。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三者如果只是離線分析既有封包資料，沒有另外建立連線，就可以屬於被動觀察。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但被動不代表可以任意蒐集他人的通訊資料，仍然要符合授權及資料保護要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：服務辨識有時靠等待回應，有時靠主動發送符合協定的請求。兩者都可能取得 Banner，但不應把它們視為完全不接觸目標的蒐集方式。"
         },
         {
           "kind": "heading",
@@ -134,39 +831,374 @@
         },
         {
           "kind": "paragraph",
-          "text": "先分清楚兩種來源："
+          "text": "這一節非常重要，因為它直接影響你如何解讀 Nmap 的掃描結果。"
         },
         {
           "kind": "paragraph",
-          "text": "1. 依連接埠對照常見名稱：工具可能根據連接埠與協定的對照表，顯示常見服務名稱。這是分類線索，不是已驗證程式身分。"
+          "id": "section-4-1",
+          "text": "4.1 Nmap 為什麼知道 Port 22 是 SSH？"
         },
         {
           "kind": "paragraph",
-          "text": "2. 依實際回應辨識：啟用 Nmap 的 `-sV` 後，工具會嘗試使用回應與特徵資料庫判別服務及版本。這比只看入口號碼多了一層證據，但仍要檢查結果與測試條件。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "下列只供理解參數，不是要求掃描外部主機："
+          "text": "假設你執行："
         },
         {
           "kind": "code",
-          "text": "nmap -sV -p 8080 <已明確授權的隔離實驗主機>"
+          "text": "nmap -p 22,80,443 127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "`-sV` 表示服務／版本辨識；`-p 8080` 限定連接埠 8080。尖括號內容是說明文字，不能直接當成位址執行。要實作，應先確認目標、服務、測試時段、探測方式及停止條件都在授權內。"
+          "text": "假設得到："
+        },
+        {
+          "kind": "code",
+          "text": "PORT    STATE  SERVICE\n22/tcp  open   ssh\n80/tcp  open   http\n443/tcp open   https"
         },
         {
           "kind": "paragraph",
-          "text": "版本探測會和服務互動，不能保證零影響；部分設備可能把探測內容當成實際工作。初學練習不覆寫工具的預設排除設定，也不使用包含其他功能的 `-A` 來代替本課的 `-sV`。"
+          "text": "你可能會問："
         },
         {
           "kind": "paragraph",
-          "text": "工具可能得到完整匹配，也可能只有部分線索。Nmap 的 softmatch（初步服務匹配）可協助縮小後續探測範圍；它不等於確認了精確版本，也不是可自行換算成「九成正確」的分數。辨識不到時，保留「未能確認」比猜填版本更有用。"
+          "text": "「Nmap 怎麼知道 22 是 SSH、80 是 HTTP、443 是 HTTPS？」"
         },
         {
           "kind": "paragraph",
-          "text": "版本辨識與 OS Fingerprinting（作業系統指紋辨識）也要分開。前者主要看應用服務回應；後者如 Nmap 的 `-O`，會利用網路協定堆疊的回應特徵推測作業系統。服務回應中的平台線索可以保留，但不能直接代替作業系統查核。下一單元才會深入 OS 指紋。"
+          "text": "答案是：有時候它並沒有實際確認服務身分，而只是查詢常見 Port 與服務名稱的對照資料庫。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 有一份服務對照資料，稱為："
+        },
+        {
+          "kind": "code",
+          "text": "nmap-services"
+        },
+        {
+          "kind": "paragraph",
+          "text": "裡面有許多常見的對應關係。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "ssh      22/tcp\nhttp     80/tcp\nhttps    443/tcp"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 掃描後，可能先根據這份資料提供服務名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這和你用電話號碼的區碼判斷地區很像。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "看到某個區碼，你可以推測電話號碼的常見所屬地區。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，你不能光憑區碼，就知道接電話的是哪個人。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣的道理："
+        },
+        {
+          "kind": "code",
+          "text": "22/tcp open ssh"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能只代表："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「TCP 22 開著，而 22 通常是 SSH 的連接埠。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不一定代表 Nmap 已經和真正的 SSH 服務交換過識別資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是 Nmap 官方文件強調：Port 與服務名稱的慣例對照，不能取代真正的服務辨識。[Nmap](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 如何讓 Nmap 進一步確認服務？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候就會用到："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 8080 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 `127.0.0.1` 是你自己的電腦，適合做隔離練習。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "把指令拆開："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "指令",
+            "意義"
+          ],
+          "rows": [
+            [
+              "`nmap`",
+              "執行 Nmap"
+            ],
+            [
+              "`-sV`",
+              "啟用服務與版本辨識"
+            ],
+            [
+              "`-p 8080`",
+              "只檢查 Port 8080"
+            ],
+            [
+              "`127.0.0.1`",
+              "目標是本機"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中，最重要的是："
+        },
+        {
+          "kind": "code",
+          "text": "-sV"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是參數片段，不能單獨當成 shell 指令執行。它要求 Nmap 進一步嘗試辨識服務，超越只依埠號查詢常見名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，假設掃描結果是："
+        },
+        {
+          "kind": "code",
+          "text": "PORT     STATE SERVICE VERSION\n8080/tcp open  http    ExampleWeb 1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是合成示例。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們現在可以把它拆成四個層次："
+        },
+        {
+          "kind": "code",
+          "text": "8080/tcp\n    ↓\n入口：TCP Port 8080\n\nopen\n    ↓\n狀態：這次掃描觀察為開啟\n\nhttp\n    ↓\n服務：辨識結果為 HTTP\n\nExampleWeb 1.2\n    ↓\n產品與版本：工具辨識出的線索"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這比只有 Port 的資訊豐富許多。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但即使啟用了 `-sV`，仍然不保證能取得精確版本。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 Nmap 內部實際做了什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以把 `-sV` 想像成一名訓練有素的調查員。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "他不會只看門牌號碼，而是根據對方的回答，逐步辨認身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下示意 TCP 服務辨識流程；UDP 的探測不會建立 TCP 連線："
+        },
+        {
+          "kind": "code",
+          "text": "                    Nmap -sV\n                        │\n                        ▼\n                找到待辨識的 Port\n                        │\n                        ▼\n                嘗試與服務建立連線\n                        │\n                        ▼\n                等待服務自行回應\n                        │\n               ┌────────┴────────┐\n               │                 │\n          收到 Banner        沒有取得足夠資訊\n               │                 │\n               ▼                 ▼\n          特徵資料庫比對      發送適當 Probe\n               │                 │\n               │                 ▼\n               │             分析回應\n               │                 │\n               └────────┬────────┘\n                        │\n                        ▼\n                嘗試辨識服務與版本\n                        │\n               ┌────────┴────────┐\n               │                 │\n           足夠證據          證據不足\n               │                 │\n               ▼                 ▼\n            回報結果       保留未確認資訊"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 會使用另一份資料庫："
+        },
+        {
+          "kind": "code",
+          "text": "nmap-service-probes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中包含各種探測方法與回應特徵。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，Nmap 可能送出一段符合 HTTP 格式的請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當對方回覆："
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/1.1 200 OK\nServer: ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 便嘗試比對回應特徵，判斷服務與版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "官方文件進一步說明，Nmap 會依 Port、探測訊息的適用性及辨識結果決定後續探測流程。[Nmap](https://nmap.org/book/vscan-technique.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 什麼是 softmatch？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 CEH 學習時值得理解的概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你打電話給一家公司。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對方說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「您好，這裡是客服中心。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你現在知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "對方可能是客服部門。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你還不知道是哪家公司的客服。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 softmatch 可以幫助理解的情況。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 可能已經取得足夠線索，初步確認這是 HTTP、SSH 或其他類型的服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但還無法確認精確產品或版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候，它可能依照初步辨識結果，選擇後續更合適的探測方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "softmatch 不是百分比信心分數，而是初步服務匹配。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不能直接解讀成「90% 的機率是某種服務」。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-5",
+          "text": "4.5 `-sV`、`-O`、`-A` 有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三個參數很容易混淆。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "參數",
+            "功能",
+            "主要回答的問題"
+          ],
+          "rows": [
+            [
+              "`-sV`",
+              "Service/Version Detection",
+              "Port 裡面是什麼服務與產品版本？"
+            ],
+            [
+              "`-O`",
+              "OS Detection",
+              "這台主機可能使用什麼作業系統？"
+            ],
+            [
+              "`-A`",
+              "啟用多項進階辨識功能",
+              "同時取得多種主機與服務資訊"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 8080 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主要聚焦在 Port 8080 的服務與版本辨識。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而 `-O` 則是利用網路協定堆疊的回應特徵，嘗試推測作業系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它們的研究對象不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請特別注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-A` 不只是 `-sV` 的另一種寫法。它還會啟用其他功能，例如 OS 偵測、預設 NSE 腳本與 traceroute。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，初學時沒有必要直接使用 `-A`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，Nmap 預設會排除某些可能產生非預期影響的版本探測。典型例子是部分印表機使用的 TCP 9100；某些設備可能把探測資料直接當成列印內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是為什麼資安測試必須考慮目標設備的功能與承受能力。[Nmap](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：Nmap 可以根據 Port 名稱推測服務，也可以使用 `-sV` 主動辨識。兩者的證據強度不同。"
         },
         {
           "kind": "visual",
@@ -203,28 +1235,243 @@
         },
         {
           "kind": "paragraph",
-          "text": "Vulnerability（弱點）是可能被利用的安全缺陷。要確認某個弱點是否適用，除了版本線索，還需要核對產品、套件來源、修補紀錄、設定與成立條件。"
+          "text": "這是整個 M03-05 最重要的資安判斷能力。"
         },
         {
           "kind": "paragraph",
-          "text": "兩個常見原因："
+          "text": "你需要建立一個觀念："
+        },
+        {
+          "kind": "paragraph",
+          "text": "發現軟體版本，不等於證明軟體存在可利用的弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你掃描某台伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "得到："
+        },
+        {
+          "kind": "code",
+          "text": "PORT    STATE SERVICE VERSION\n80/tcp  open  http    ExampleWeb 1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "然後你在弱點資料庫中查到："
+        },
+        {
+          "kind": "code",
+          "text": "CVE-20XX-12345\n\n受影響產品：\nExampleWeb\n\n受影響版本：\n特定 1.x 版本\n\n漏洞類型：\n可能造成遠端程式碼執行"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些資訊都是合成示例。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "初學者可能會立刻認定："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這台伺服器存在 CVE-20XX-12345，可以遠端執行程式碼。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這樣的判斷存在問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你還沒有確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，Banner 宣告的是否是真正的後端軟體。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，實際安裝的軟體是否屬於受影響的套件版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，供應商是否已經回補修補程式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四，漏洞成立所需的設定與功能是否存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來的 A、B 兩個子章節，就是要解釋最容易發生的兩種誤判。"
         },
         {
           "kind": "heading",
           "id": "section-5-proxy",
-          "text": "A. 你看到的可能是前面的代理"
+          "text": "5-A｜你看到的可能是前面的代理（Reverse Proxy）"
         },
         {
           "kind": "paragraph",
-          "text": "Reverse Proxy（反向代理）是代替後端服務接收用戶端請求的前端。Backend／Origin（後端／來源伺服器）則是後方實際處理部分工作的服務。"
+          "id": "section-5-proxy-1",
+          "text": "5-A.1 什麼是反向代理？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 Reverse Proxy 想成醫院的服務櫃台。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設病人到醫院詢問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我要找心臟內科醫師。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "病人不會直接跑進醫師的辦公室。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "他會先到服務櫃台。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務櫃台確認需求後，再協助聯絡真正提供服務的部門。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在網路系統中也有類似架構。"
         },
         {
           "kind": "code",
-          "text": "用戶端 → 反向代理 → 後端應用程式\n          ↑ 這裡可能產生或調整回應標頭"
+          "text": "                網際網路使用者\n                       │\n                       │ HTTPS Request\n                       ▼\n             ┌───────────────────┐\n             │   Reverse Proxy   │\n             │                   │\n             │     Nginx         │\n             │   對外接收請求    │\n             └───────────────────┘\n                       │\n                       │ 轉送請求\n                       ▼\n             ┌───────────────────┐\n             │   Backend Server  │\n             │                   │\n             │  Python / Node.js │\n             │    真正的應用程式 │\n             └───────────────────┘\n                       │\n                       ▼\n                    Database"
         },
         {
           "kind": "paragraph",
-          "text": "因此，從外部看到的 `Server` 字串，可能描述前端，也可能是轉送或修改過的資訊。它不能單獨證明後端套件的精確版本。HTTP 規範也允許不提供 `Server` 欄位，並建議避免透露不必要的細節。"
+          "text": "這裡有三個角色。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Client（客戶端）：發出請求的使用者。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reverse Proxy（反向代理）：接收請求、決定如何轉送的前端服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Backend（後端）：實際執行應用程式業務邏輯的服務。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-proxy-2",
+          "text": "5-A.2 為什麼 Banner 可能讓我們誤判？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設後端實際使用："
+        },
+        {
+          "kind": "code",
+          "text": "Python FastAPI"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是前面有一個 Nginx 反向代理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "外部使用者透過 HTTP 取得："
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候，你能確認什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這次 HTTP 回應包含 nginx 的識別資訊。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你不能因此認定："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「整個網站的應用程式就是 Nginx，沒有其他後端服務。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 Nginx 可能只是負責接收請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正處理使用者登入、查詢資料、讀取資料庫的，是後端 FastAPI。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "反向代理也可能移除、覆寫或轉送原本的 `Server` 標頭。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "code",
+          "text": "外部看到的 Server Banner\n               ≠\n後端應用程式的完整身分"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-proxy-3",
+          "text": "5-A.3 與 Cloudflare 有什麼關係？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網站、子網域與 Cloudflare 的部署可用來說明這種分層觀察；以下是假設架構，不是特定網站的實際部署紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你的網站採用以下架構："
+        },
+        {
+          "kind": "code",
+          "text": "              Browser\n                 │\n                 │ HTTPS\n                 ▼\n        ┌─────────────────┐\n        │ Cloudflare Edge │\n        │                 │\n        │ DNS / CDN / WAF │\n        └─────────────────┘\n                 │\n                 │ Cloudflare Tunnel\n                 ▼\n        ┌─────────────────┐\n        │ Ubuntu Server   │\n        │                 │\n        │ Nginx           │\n        └─────────────────┘\n                 │\n                 ▼\n        ┌─────────────────┐\n        │ Web Application │\n        │                 │\n        │ Node.js / Python│\n        └─────────────────┘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當外部使用者存取網站時，可能先和 Cloudflare 的 Edge 建立連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這意味著："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你從外部觀察到的 TLS、HTTP 行為與標頭，不一定反映 Ubuntu 伺服器或後端應用程式的完整狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是為什麼："
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你的目的是資產盤點，只看外部掃描結果可能不夠，還需要對照內部部署架構。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另一方面，反向代理不一定是安全保證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它能夠提供存取控制、流量管理或其他防護功能，但仍需要正確設定，也不能替代後端的弱點修補。"
         },
         {
           "kind": "visual",
@@ -253,15 +1500,267 @@
         {
           "kind": "heading",
           "id": "section-5-backport",
-          "text": "B. 舊版號可能已回補安全修正"
+          "text": "5-B｜舊版號可能已回補安全修正（Backport）"
         },
         {
           "kind": "paragraph",
-          "text": "Backport（回補修正）是把新版中的特定修正帶回較舊的維護版本，而不一定改成相同的上游主版本號。Upstream（上游）可理解為原始軟體專案；作業系統供應商可能另外維護自己的套件版本與修補紀錄。"
+          "text": "這一節對 Ubuntu、Debian、Red Hat 等 Linux 系統的維運非常重要。"
         },
         {
           "kind": "paragraph",
-          "text": "所以，一個看似舊的字串，可能對應已修補的供應商套件。反過來，看不到版本也不代表安全。下一步是用設備端的完整套件版本及供應商公告核對，而不是單靠字串排序做結論。"
+          "id": "section-5-backport-1",
+          "text": "5-B.1 什麼是 Backport？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Backport 中文通常稱為「回補」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "用白話文來說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "把新版軟體裡面的某項修正，移植回原本正在使用的舊版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設有一套軟體。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "原始開發者推出："
+        },
+        {
+          "kind": "code",
+          "text": "ExampleApp 1.0\nExampleApp 1.1\nExampleApp 1.2\nExampleApp 2.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某一天，大家發現："
+        },
+        {
+          "kind": "code",
+          "text": "ExampleApp 1.2\n存在安全漏洞"
+        },
+        {
+          "kind": "paragraph",
+          "text": "開發團隊在 ExampleApp 2.0 修好了這個問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但有些企業不能直接升級到 2.0。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "原因可能是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "新版本改變了設定格式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某些 API 不相容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "原本的應用程式可能無法正常執行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時，作業系統供應商可能採取另一種做法。"
+        },
+        {
+          "kind": "code",
+          "text": "          原始開發團隊（Upstream）\n\n             ExampleApp 1.2\n                    │\n                    │ 發現漏洞\n                    ▼\n             ExampleApp 2.0\n                    │\n                    │ 漏洞修補程式\n                    │\n                    ▼\n         ┌──────────────────────┐\n         │   取出相關安全修正   │\n         └──────────────────────┘\n                    │\n                    │ Backport\n                    ▼\n            發行版維護版本\n\n          ExampleApp 1.2-vendor3\n                    │\n                    ▼\n             已套用安全修正"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "舊版本的主版本號可能沒有改變。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是軟體實際上已經包含修補程式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，舊版號不一定代表仍存在那個已知漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Red Hat 官方安全維護文件也說明，回補是一種常見的安全更新方式，並會透過安全公告和 CVE 資訊提供修補狀態的查核依據。[Red Hat Customer Portal](https://access.redhat.com/security/updates/backporting)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-backport-2",
+          "text": "5-B.2 為什麼這會影響資安掃描？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你掃描一台 Ubuntu 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "看到："
+        },
+        {
+          "kind": "code",
+          "text": "Server: ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "然後找到一份漏洞公告："
+        },
+        {
+          "kind": "code",
+          "text": "ExampleWeb 1.2 存在安全弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這台 Ubuntu 伺服器上的套件實際上是："
+        },
+        {
+          "kind": "code",
+          "text": "ExampleWeb 1.2-ubuntu5.3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 `ubuntu5.3` 是合成的發行版修訂字串。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 Ubuntu 維護者已經把修補程式回補至這個版本，那麼你就不能只根據："
+        },
+        {
+          "kind": "code",
+          "text": "ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "認定它仍然存在同一個漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正要做的是核對："
+        },
+        {
+          "kind": "code",
+          "text": "外部看到的 Banner\n        │\n        ▼\n管理端實際套件版本\n        │\n        ▼\n供應商安全公告\n        │\n        ▼\n漏洞修補是否已套用\n        │\n        ▼\n執行中的服務是否已更新\n        │\n        ▼\n確認漏洞是否仍然適用"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-backport-3",
+          "text": "5-B.3 在 Ubuntu 上如何查看套件版本？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你要檢查自己 Ubuntu 上的 OpenSSH。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以執行："
+        },
+        {
+          "kind": "code",
+          "text": "dpkg-query -W openssh-server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這會查詢已安裝套件的版本資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果想知道系統目前有哪些可用的套件版本："
+        },
+        {
+          "kind": "code",
+          "text": "apt policy openssh-server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能看到："
+        },
+        {
+          "kind": "code",
+          "text": "Installed: 1:9.6p1-3ubuntu13.x\nCandidate: 1:9.6p1-3ubuntu13.y"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡是格式示例，不是目前最新版的宣稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`Installed` 表示目前已安裝的套件版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`Candidate` 表示依目前 APT 套件來源設定，候選安裝的版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但請注意，`Installed` 與 `Candidate` 不同，不一定代表存在安全漏洞；相同也不保證所有弱點都已修補。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還必須根據發行版的安全公告與漏洞成立條件查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果要確認系統是否啟用了相關安全更新來源，也需要檢查 APT 的套件來源設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對於 Ubuntu，應優先參考 Ubuntu 官方安全公告，而不是直接將上游軟體版本與 CVE 範圍做字串比對。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-backport-4",
+          "text": "5-B.4 更新完成後，就代表問題解決了嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "也不一定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你已經更新某個伺服器套件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "磁碟上的檔案已經是新版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但正在記憶體中執行的服務程序，可能仍然載入舊版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候應依套件與服務的更新要求處理；設定重新載入不一定會替換舊程式碼，可能需要重新啟動服務，仍須確認實際執行版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，完整的修補驗證應包括："
+        },
+        {
+          "kind": "code",
+          "text": "確認修補公告\n      │\n      ▼\n安裝修補套件\n      │\n      ▼\n確認必要的服務重新載入\n      │\n      ▼\n確認實際執行版本\n      │\n      ▼\n確認原有功能正常\n      │\n      ▼\n確認相關弱點已不再適用"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中，重新啟動服務可能造成連線中斷，因此正式環境應依維護程序處理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節最重要的結論：Banner 不是修補證據；套件版本也必須連同供應商公告、回補紀錄與執行狀態一起判讀。"
         },
         {
           "kind": "heading",
@@ -270,27 +1769,222 @@
         },
         {
           "kind": "paragraph",
-          "text": "假設你受託盤點隔離教學環境中的 TCP 8080。以下全部是教學資料："
+          "text": "現在把前面學過的內容全部串起來。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "6.1 假設你正在進行資安盤點"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你受委託檢查一家企業的內部應用系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "測試對象："
         },
         {
           "kind": "code",
-          "text": "觀察一：8080/tcp open\n觀察二：HTTP 回應含 Server: ExampleWeb/1.2\n觀察三：架構文件顯示前方有反向代理\n管理端資料：後端套件為 example-app 4.0-vendor3\n修補狀態：尚待核對供應商公告與安裝紀錄"
+          "text": "IP: 192.0.2.10\nPort: TCP 8080"
         },
         {
           "kind": "paragraph",
-          "text": "比較兩種紀錄方式："
+          "text": "`192.0.2.10` 是文件示例位址，不是真實測試目標。"
         },
         {
           "kind": "paragraph",
-          "text": "- 跳太快：「後端使用 ExampleWeb 1.2，而且有漏洞。」這把前端回應、後端產品與漏洞三件事混在一起。"
+          "text": "假設在已授權的隔離環境中，Nmap 得到："
+        },
+        {
+          "kind": "code",
+          "text": "8080/tcp open http"
         },
         {
           "kind": "paragraph",
-          "text": "- 可查核：「在指定測試位置與時間，TCP 8080 接受連線；HTTP 回應自述 ExampleWeb/1.2。架構文件顯示有反向代理，這個字串尚不能用來確認後端版本。管理端列出 example-app 4.0-vendor3；下一步核對執行中服務與套件、供應商修補公告及設定。」"
+          "text": "這是第一筆證據。"
         },
         {
           "kind": "paragraph",
-          "text": "這裡也承接 M03 的章後重點：Port State（連接埠狀態）是觀測結果，不是入侵結果。`open`、可讀取 Banner、成功辨認產品，都不等於已取得登入權限或證明能利用弱點。"
+          "text": "代表："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「從指定測試位置與條件觀察，TCP 8080 呈現開啟狀態。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著，你取得 HTTP 回應："
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/1.1 200 OK\nServer: ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是第二筆證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這次 HTTP 回應宣告了 ExampleWeb/1.2。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "然後，你閱讀架構文件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "發現："
+        },
+        {
+          "kind": "code",
+          "text": "     外部用戶\n         │\n         ▼\n   Reverse Proxy\n   ExampleWeb/1.2\n         │\n         ▼\n     Backend\n   example-app 4.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是第三筆證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最後，管理者查詢設備上的套件資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "得到："
+        },
+        {
+          "kind": "code",
+          "text": "example-app 4.0-vendor3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是第四筆證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是供應商修補公告及實際執行版本，尚未確認。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候，你應該怎麼寫資安報告？"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 錯誤的報告方式"
+        },
+        {
+          "kind": "code",
+          "text": "發現：\n\n目標使用 ExampleWeb 1.2。\n\n該版本存在安全漏洞。\n\n判定為高風險弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼這樣寫有問題？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你把三個不同的概念混在一起。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，你只知道 HTTP 回應宣告了 ExampleWeb/1.2。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，後端實際執行的是另一個應用程式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，你沒有提出足夠證據證明特定漏洞適用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這類誤判會造成資安治理上的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，公司可能因此投入大量資源處理不存在的弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "反過來說，也可能因為只檢查反向代理，忽略真正有問題的後端程式。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 正確的報告方式"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以建立三個明確的欄位。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3-detail-1",
+          "text": "第一：Observation（觀察）"
+        },
+        {
+          "kind": "code",
+          "text": "在授權測試環境中：\n\nTCP 8080 呈現 open。\n\nHTTP 回應包含：\nServer: ExampleWeb/1.2\n\n架構文件顯示存在 Reverse Proxy。\n\n管理端套件紀錄：\nexample-app 4.0-vendor3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡只記錄實際取得的資訊，不加入超出證據範圍的推測。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3-detail-2",
+          "text": "第二：Inference（推論）"
+        },
+        {
+          "kind": "code",
+          "text": "HTTP 回應包含 ExampleWeb 產品識別資訊。\n\n由於前方存在 Reverse Proxy，\n該字串可能來自前端服務。\n\n因此無法僅靠該 Banner\n確認後端應用程式的精確版本。\n\n目前尚無充分證據確認\n特定 CVE 是否適用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡開始解釋證據的意義。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是每個推論，都要有相對應的依據。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3-detail-3",
+          "text": "第三：Pending Verification（待確認）"
+        },
+        {
+          "kind": "code",
+          "text": "1. 核對實際執行中的後端程序。\n\n2. 確認完整套件版本與來源。\n\n3. 查閱供應商安全公告。\n\n4. 確認是否已套用 Backport 修正。\n\n5. 核對漏洞成立所需的設定。\n\n6. 確認執行中的服務已使用修補版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如此才能形成可追查、可驗收的資安紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 這和 CEH M05 有什麼關係？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 CEH 的研究流程分成："
+        },
+        {
+          "kind": "code",
+          "text": "M03 Network Scanning\n        │\n        │ 找出可能開啟的入口\n        │ 辨識服務及版本線索\n        ▼\nM04 Enumeration\n        │\n        │ 在授權範圍內\n        │ 進一步取得服務與系統資訊\n        ▼\nM05 Vulnerability Analysis\n        │\n        │ 核對產品、版本、\n        │ 設定及弱點成立條件\n        ▼\n確認受影響範圍與風險\n        │\n        ▼\n制定修補與驗證計畫"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要注意：這不是每次測試都必須照順序執行的固定程序，而是方便學習的概念關係。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M03-05 主要幫助你建立服務身分與版本線索。M05 才會進一步分析這些資產是否受到特定弱點影響。"
         },
         {
           "kind": "heading",
@@ -299,50 +1993,352 @@
         },
         {
           "kind": "paragraph",
-          "text": "服務識別資訊的管理，應和實際維護一起做："
+          "text": "到這裡，我們已經學會如何觀察服務、辨識版本，以及避免過度推論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來要換個角色。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是醫院、企業或研究機構的資安管理者。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你要如何降低服務資訊暴露與相關風險？"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 第一層：先盤點真正需要的服務"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你有一台 Ubuntu 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它目前開啟："
+        },
+        {
+          "kind": "code",
+          "text": "22/tcp\n80/tcp\n443/tcp\n3306/tcp"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你需要先確認每個 Port 的用途。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 22 是否用於遠端管理？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 80 是否應該只負責 HTTP 轉址？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 443 是否提供對外網站？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 3306 是否應該只供內部應用程式連線？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 3306 是資料庫服務，就不一定有必要對整個網際網路開放。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要注意：不能單靠 Port 3306 就確認它一定是 MySQL；還是要核對內部設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Ubuntu 上，你可以先使用："
+        },
+        {
+          "kind": "code",
+          "text": "sudo ss -ltnp"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`ss`：檢視 Socket 相關資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-l`：只看正在 Listen 的 Socket。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-t`：檢視 TCP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-n`：以數字顯示 IP 與 Port。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-p`：顯示相關程序資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這可以幫助你回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「究竟是哪個程式正在我的伺服器上接聽連線？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，`ss` 顯示的是本機 Socket 狀態，不能直接代表外部網路一定能連進來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還需要考慮防火牆、路由、NAT 與其他網路存取控制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 第二層：減少不必要的 Banner 資訊"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你的網站回傳："
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx/1.24.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這會讓外部使用者取得較具體的版本線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在適當情況下，你可以調整伺服器設定，減少不必要的版本揭露。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，在 Nginx 中："
+        },
+        {
+          "kind": "code",
+          "text": "http {\n    server_tokens off;\n}"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這通常可以讓 Nginx 在其自行產生的相關回應中，不再揭露詳細版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不保證移除所有產品識別資訊，也不保證經過其他模組或代理後的標頭都會相同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "設定更改後，應先檢查設定是否有效："
+        },
+        {
+          "kind": "code",
+          "text": "sudo nginx -t"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通過後，再依照正式環境的變更程序重新載入服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "sudo systemctl reload nginx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在正式環境中，應先確認是否存在其他服務或設定相依性。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2-detail-1",
+          "text": "為什麼不能只靠隱藏 Banner？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設某個版本確實有安全弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你把："
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx/1.24.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "改成："
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "只代表外部能取得的版本識別資訊減少了。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不代表漏洞已經修補。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "攻擊者仍可能透過其他方式推測服務，也可能在不知道版本的情況下測試某些弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以要區分："
+        },
+        {
+          "kind": "code",
+          "text": "隱藏 Banner\n    │\n    ▼\n減少資訊揭露\n\n\n修補漏洞\n    │\n    ▼\n修正安全缺陷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是兩件不同的事情。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "7.3 第三層：限制管理服務的可存取範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你有一台供研究使用的 Ubuntu 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SSH 只需要讓特定管理者連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以透過防火牆、VPN、身分驗證或其他存取控制機制，限制管理入口的暴露範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "                 Internet\n                    │\n                    ▼\n               Firewall\n                    │\n        ┌───────────┴───────────┐\n        │                       │\n   未授權來源              已授權來源\n        │                       │\n        ▼                       ▼\n    阻擋存取                允許連線\n                                │\n                                ▼\n                          SSH Server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這和 M03-04 的 `filtered` 概念直接相關。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果防火牆沒有讓掃描封包取得足夠回應，Nmap 就可能回報："
+        },
+        {
+          "kind": "code",
+          "text": "22/tcp filtered ssh"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但仍然要注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`filtered` 是特定掃描條件下的觀察結果，不等於已經證明整個防護配置沒有漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-4",
+          "text": "7.4 第四層：保留可驗收的證據"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在真正的資安治理中，不能只說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我已經修好了。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而是要能回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你怎麼證明它已經修好了？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以建立以下驗收矩陣："
         },
         {
           "kind": "table",
           "headers": [
-            "工作",
-            "實際用途",
-            "可以保留的證據"
+            "防護工作",
+            "需要確認的事項",
+            "驗收證據"
           ],
           "rows": [
             [
-              "盤點必要服務與負責人",
-              "找出不需要或不明的入口",
-              "經確認的資產、用途及負責人清單"
+              "服務盤點",
+              "哪些服務正在執行",
+              "Socket、程序、資產清單"
             ],
             [
-              "移除不必要的詳細 Banner",
-              "減少對外透露內部細節",
-              "調整前後的回應與設定紀錄"
+              "Banner 管理",
+              "是否減少不必要資訊",
+              "調整前後 HTTP/SSH 回應"
             ],
             [
-              "依來源限制存取",
-              "讓管理入口只對核准來源開放",
-              "存取規則及相同條件下的驗證結果"
+              "存取控制",
+              "非授權來源是否被限制",
+              "防火牆規則、測試紀錄"
             ],
             [
-              "核對套件並修補",
-              "處理真正的安全缺陷",
-              "完整套件版本、供應商公告、安裝與重啟紀錄"
+              "版本修補",
+              "安全修正是否已套用",
+              "套件版本、安全公告、更新紀錄"
             ],
             [
-              "觀察異常探測",
-              "發現未預期的連線與辨識行為",
-              "服務、代理與防火牆日誌；時間與來源對照"
+              "執行狀態",
+              "服務是否已使用修補版本",
+              "程序、服務狀態與必要驗證"
+            ],
+            [
+              "異常監控",
+              "能否發現非預期探測",
+              "服務、代理與防火牆日誌"
             ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "隱藏 Banner 是資訊揭露管理，不是修補的替代品。另外，更新套件後仍應確認執行中的程序是否已使用新版本；只看到磁碟上有新套件，還不足以確認服務已重新載入。"
+          "text": "這些證據應保留測試時間、來源位置、目標與設定條件。"
         },
         {
           "kind": "paragraph",
-          "text": "一筆有用的辨識紀錄，至少包括：授權範圍、目標與傳輸協定／連接埠、來源位置、使用的主機名稱、時間與時區、工具版本及參數、原始回應、觀察到的產品字串、可支持的推論、內部核對資料，以及待確認事項。分享時移除帳密、工作階段資訊與不必要的個資。"
+          "text": "否則，即使兩份掃描結果不同，也不一定能知道差異是因為安全設定改變，還是因為測試環境不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：有效的資安管理，不只是降低資訊暴露，而是建立能夠確認服務身分、修補狀態與防護效果的證據鏈。"
         },
         {
           "kind": "heading",
@@ -351,80 +2347,624 @@
         },
         {
           "kind": "paragraph",
-          "text": "今天不需要對任何主機發送封包。用第 6 節的合成資料，自己寫三行："
+          "text": "原始教材的練習是使用合成案例，完成「觀察、推論、待確認」三行紀錄，不需要對任何主機送出封包。"
         },
         {
           "kind": "paragraph",
-          "text": "1. 觀察：我實際取得了哪些回應或文件？"
+          "text": "這裡另外補充一個可選的 Ubuntu 本機實驗，幫助你實際理解 Banner Grabbing。"
         },
         {
           "kind": "paragraph",
-          "text": "2. 推論：這些線索目前支持什麼？"
+          "id": "section-8-1",
+          "text": "8.1 實驗目標"
         },
         {
           "kind": "paragraph",
-          "text": "3. 待確認：還需要哪份管理端資料，才能完成版本與修補查核？"
+          "text": "在自己的 Ubuntu 上："
         },
         {
           "kind": "paragraph",
-          "text": "再試著回答四題："
+          "text": "建立一個 HTTP 服務。"
         },
         {
           "kind": "paragraph",
-          "text": "1. 掃描結果出現 `443/tcp open https`，在不知道服務名稱來源時，為什麼不能直接填上網頁伺服器產品與版本？"
+          "text": "觀察它正在使用哪個 Port。"
         },
         {
           "kind": "paragraph",
-          "text": "2. Nmap 建立 TCP 連線後，只等待服務開場訊息，為什麼仍不是完全不接觸目標的被動蒐集？"
+          "text": "取得它回傳的 HTTP Banner。"
         },
         {
           "kind": "paragraph",
-          "text": "3. 外部回應寫 `ExampleWeb/1.2`，但前方有反向代理、供應商又可能回補修正。確認後端是否受某弱點影響時，你至少要補哪三類證據？"
+          "text": "最後使用 Nmap 辨識服務。"
         },
         {
           "kind": "paragraph",
-          "text": "4. 管理者把版本 Banner 隱藏後，可以把「弱點已修復」標成完成嗎？應該如何分開驗收？"
+          "text": "整個實驗只使用："
+        },
+        {
+          "kind": "code",
+          "text": "127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "今天帶走的觀念：入口號碼 → 回應線索 → 內部核對 → 修補判定。每一步都保留證據與限制，就能把服務辨識用在真正的盤點與防護上。"
+          "text": "也就是自己的電腦，不需要掃描外部網路。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 步驟一：啟動 HTTP 服務"
+        },
+        {
+          "kind": "paragraph",
+          "text": "開啟第一個 Terminal，先進入自己建立、不含敏感檔案的練習目錄。確認 8080 未被其他服務占用；若已占用，選擇另一個未使用的埠，並同步修改本節所有命令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行："
+        },
+        {
+          "kind": "code",
+          "text": "python3 -m http.server 8080 --bind 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這會使用 Python 內建的 HTTP Server，在本機 Port 8080 提供簡單的網頁服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`python3`：執行 Python。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-m http.server`：啟用內建 HTTP Server 模組。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`8080`：指定 Port。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`--bind 127.0.0.1`：只綁定本機回送位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "成功後，應看到伺服器開始接聽的訊息。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個簡易服務會提供目前工作目錄中的檔案，因此不要在含有敏感文件的資料夾啟動它。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 步驟二：確認 Port 8080 是否開啟"
+        },
+        {
+          "kind": "paragraph",
+          "text": "開啟第二個 Terminal。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行："
+        },
+        {
+          "kind": "code",
+          "text": "ss -ltnp | grep ':8080'"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設看到："
+        },
+        {
+          "kind": "code",
+          "text": "LISTEN 0 5 127.0.0.1:8080 ..."
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`LISTEN` 表示有 TCP Socket 正在等待連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`127.0.0.1:8080` 表示它綁定在本機的 TCP 8080。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是主機內部觀察，不是 Nmap 從外部網路取得的掃描結果。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 步驟三：使用 curl 觀察 HTTP Banner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行："
+        },
+        {
+          "kind": "code",
+          "text": "curl -I http://127.0.0.1:8080"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-I` 表示要求取得 HTTP 回應標頭，curl 通常會送出 HEAD 請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能看到類似："
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/1.0 200 OK\nServer: SimpleHTTP/0.6 Python/3.12.x\nDate: ...\nContent-type: text/html; charset=utf-8"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際內容會隨 Python 版本與環境而異。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最重要的是："
+        },
+        {
+          "kind": "code",
+          "text": "Server: SimpleHTTP/0.6 Python/3.12.x"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們現在取得了什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，HTTP 回應成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，回應宣告了 SimpleHTTP 的識別資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，回應中提供了 Python 版本線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要注意，`SimpleHTTP/0.6` 是 Python HTTP Server 的識別字串，不是完整的作業系統版本，也不等於某個漏洞一定成立。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是本章所說的 Banner Grabbing。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5",
+          "text": "8.5 步驟四：使用 Nmap 比較有無 `-sV`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先執行："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 8080 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能得到："
+        },
+        {
+          "kind": "code",
+          "text": "PORT     STATE SERVICE\n8080/tcp open  http-proxy"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 在沒有實際確認服務的情況下，可能依照常見 Port 名稱，顯示 `http-proxy`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著執行："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 8080 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這次 Nmap 會嘗試辨識實際服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能得到包含 HTTP 服務及 Python HTTP Server 識別資訊的結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "精確輸出依 Nmap 版本、探測資料庫及 Python 回應而異，不需要強求與示例完全相同。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5-detail-1",
+          "text": "比較兩次掃描的差別"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "觀察項目",
+            "一般 Port 掃描",
+            "使用 `-sV`"
+          ],
+          "rows": [
+            [
+              "Port 是否開啟",
+              "可以觀察",
+              "可以觀察"
+            ],
+            [
+              "常見服務名稱",
+              "可能顯示",
+              "可能顯示"
+            ],
+            [
+              "實際服務辨識",
+              "不一定",
+              "會主動嘗試"
+            ],
+            [
+              "軟體版本資訊",
+              "通常沒有",
+              "可能取得"
+            ],
+            [
+              "是否能確認漏洞",
+              "不能",
+              "仍然不能"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 M03-05 最重要的實作差異。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-6",
+          "text": "8.6 步驟五：觀察伺服器端紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "回到第一個 Terminal。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能會看到："
+        },
+        {
+          "kind": "code",
+          "text": "127.0.0.1 - - [...] \"HEAD / HTTP/1.1\" 200 -"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這表示你的 HTTP 服務收到了請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果執行過 Nmap `-sV`，也可能看到其他探測請求或錯誤訊息。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這能幫助你理解："
+        },
+        {
+          "kind": "paragraph",
+          "text": "主動服務辨識可能會在伺服器上留下紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也能連結到未來學習的 IDS、網路流量監控與異常行為分析。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最後回到第一個 Terminal，按下："
+        },
+        {
+          "kind": "code",
+          "text": "Ctrl + C"
+        },
+        {
+          "kind": "paragraph",
+          "text": "停止 Python HTTP Server。再以 `ss -ltnp` 核對本次啟動的 127.0.0.1:8080 監聽已消失；若改過埠號，核對對應埠。保留觀察、推論與待確認三行紀錄，不把成功讀取 Banner 寫成弱點已證實。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、把 M03-05 放進完整的資安知識體系"
+        },
+        {
+          "kind": "paragraph",
+          "text": "學完本章後，應該知道它與其他資安技術的關係。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "技術",
+            "主要目的",
+            "和 Banner Grabbing 的關係"
+          ],
+          "rows": [
+            [
+              "Port Scanning",
+              "找出入口與狀態",
+              "提供後續辨識對象"
+            ],
+            [
+              "Banner Grabbing",
+              "蒐集服務識別資訊",
+              "提供服務身分線索"
+            ],
+            [
+              "Service Detection",
+              "辨識服務類型",
+              "Banner 是可能使用的方法之一"
+            ],
+            [
+              "Version Detection",
+              "嘗試辨認產品及版本",
+              "可能結合 Banner 與其他探測"
+            ],
+            [
+              "OS Fingerprinting",
+              "推測作業系統",
+              "與服務版本辨識不同"
+            ],
+            [
+              "Vulnerability Analysis",
+              "判斷弱點是否適用",
+              "使用辨識結果作為部分證據"
+            ],
+            [
+              "Asset Management",
+              "管理組織資產",
+              "需要把觀察結果與內部紀錄對照"
+            ],
+            [
+              "Detection Engineering",
+              "建立偵測規則與機制",
+              "可利用服務探測產生的日誌與流量特徵"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中，最值得你掌握的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "資安掃描不是一次就得到所有真相，而是透過不同層次的證據，逐步縮小不確定性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "發現 Port 443 開啟\n        │\n        ▼\n判斷可能是 HTTPS\n        │\n        ▼\n確認收到 HTTP 回應\n        │\n        ▼\n取得 Server 識別資訊\n        │\n        ▼\n辨認前方可能有 Reverse Proxy\n        │\n        ▼\n核對後端實際套件\n        │\n        ▼\n核對 CVE 與安全修補公告\n        │\n        ▼\n確認弱點適用性\n        │\n        ▼\n修補、驗證與保留證據"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是本章對資安研究與實務最大的價值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們不只是學會多一個 Nmap 參數，而是學會如何避免把「工具輸出」錯誤當成「已經證實的事實」。"
         },
         {
           "kind": "heading",
           "id": "sources",
-          "text": "來源與查核範圍"
+          "text": "十、來源與延伸閱讀"
         },
         {
           "kind": "paragraph",
-          "text": "本單元沿用指定主稿的 M03-05「Service Version & Banner Grabbing」與 M03 章後觀測結果原則；技術補充查核日期：2026-11-03。官方文件是持續更新頁面，未以網頁內容冒稱特定已安裝工具版本。"
+          "text": "本次教學主要依據 CS Kairos M03-05，並查核 Nmap、IETF 與 Red Hat 官方文件。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "來源",
+            "適合深入學習的內容"
+          ],
+          "rows": [
+            [
+              "[CS Kairos M03-05 教材](https://learn.cs-kairos.com/courses/ceh/v13/m03/concepts/m03-05/)",
+              "本章完整學習內容與案例"
+            ],
+            [
+              "[Nmap：Service and Version Detection](https://nmap.org/book/man-version-detection.html)",
+              "`-sV` 參數與服務辨識"
+            ],
+            [
+              "[Nmap：Version Detection Techniques](https://nmap.org/book/vscan-technique.html)",
+              "Probe、NULL Probe、softmatch 原理"
+            ],
+            [
+              "[RFC 9110：HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110.html)",
+              "HTTP `Server` 標頭與協定規範"
+            ],
+            [
+              "[Red Hat：Security Backporting](https://access.redhat.com/security/updates/backporting)",
+              "Linux 安全更新與 Backport"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "- [Nmap：服務與版本辨識](https://nmap.org/book/man-version-detection.html)"
+          "text": "本章的核心檢核題列於下一節，文末附有四個預設收合的參考答案。公布答案不代表讀者已作答或通過驗收。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "十一、學習理解檢核"
         },
         {
           "kind": "paragraph",
-          "text": "- [Nmap：版本辨識技術與探測流程](https://nmap.org/book/vscan-technique.html)"
+          "text": "以下四題對應主要理解重點。請先推理，再展開文末的參考答案核對。"
         },
         {
           "kind": "paragraph",
-          "text": "- [Nmap：探測資料庫與 softmatch](https://nmap.org/book/vscan-fileformat.html#vscan-db-softmatch)"
+          "id": "section-11-detail-1",
+          "text": "第一題：Port 與 Service"
         },
         {
           "kind": "paragraph",
-          "text": "- [Nmap：作業系統辨識](https://nmap.org/book/man-os-detection.html)"
+          "text": "你使用 Nmap 掃描某台主機，得到："
+        },
+        {
+          "kind": "code",
+          "text": "443/tcp open https"
         },
         {
           "kind": "paragraph",
-          "text": "- [RFC 9110：HTTP Server 欄位（2022，§10.2.4）](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.4)"
+          "text": "請問："
         },
         {
           "kind": "paragraph",
-          "text": "- [Red Hat：安全修正的 Backport 政策](https://access.redhat.com/security/updates/backporting)"
+          "text": "這是否代表你已經確認該伺服器使用 Nginx？"
         },
         {
           "kind": "paragraph",
-          "text": "參考答案會隨網站教材發布，正式頁核驗後再提供解答網址；這裡先保留題目供你練習。公布答案不代表你已作答或學會。"
+          "text": "為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-detail-2",
+          "text": "第二題：NULL Probe"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你使用 Nmap 的版本辨識功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 建立 TCP 連線後，先等待伺服器主動回傳 Banner。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種方式是否屬於完全不接觸目標的被動蒐集？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請從 TCP 三向交握的角度解釋。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-detail-3",
+          "text": "第三題：Reverse Proxy 與 Backport"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你掃描某個網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "得到："
+        },
+        {
+          "kind": "code",
+          "text": "Server: ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你查到網路上有一筆 CVE，指出 ExampleWeb 的某些 1.x 版本存在漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你也知道，這個網站使用了 Reverse Proxy，而且後端執行在 Ubuntu 上。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你還需要哪些證據，才能判斷這個網站是否真的受到該 CVE 影響？"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-detail-4",
+          "text": "第四題：Banner 與漏洞修補"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某位系統管理員發現，網站的 HTTP Header 會洩漏 Nginx 的詳細版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，他執行："
+        },
+        {
+          "kind": "code",
+          "text": "server_tokens off;"
+        },
+        {
+          "kind": "paragraph",
+          "text": "重新載入 Nginx 後，外部無法再從該欄位看到完整版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "管理員於是宣布："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我們已經修復 Nginx 的安全漏洞。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個結論正確嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你會如何分別驗收「資訊揭露減少」與「安全漏洞修補」？"
+        },
+        {
+          "kind": "heading",
+          "id": "section-summary",
+          "text": "本章最重要的五個觀念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，Port 不等於 Service。 開啟的 Port 只告訴你指定測試條件下的入口狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，Banner 是線索，不是身分證明。 伺服器可能宣告產品與版本，但資訊不一定完整或正確。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，`nmap -sV` 會嘗試進行真正的服務版本辨識。 它可能等待 Banner，也可能主動送出 Probe。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四，Reverse Proxy 與 Backport 會影響版本判斷。 外部看到的服務不一定是後端，而較舊的上游版本號也不一定代表未修補。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第五，漏洞判斷必須建立證據鏈。 從掃描結果到漏洞確認，還需要核對實際執行的套件、供應商安全公告、設定及修補狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一步建議：先在自己的 Ubuntu 執行第 8 節的本機實驗，親眼比較 `nmap -p 8080`、`nmap -sV -p 8080` 與 `curl -I` 的結果。當你能清楚區分「Port 狀態」、「服務辨識」與「版本證據」時，就已經掌握本章的核心能力。"
         },
         {
           "kind": "answer",
@@ -466,52 +3006,178 @@
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "CEH M03-05 | Service Versions and Banners: What Does an Open Entry Point Actually Provide?"
+          "text": "CEH v13 | M03-05: Service Version & Banner Grabbing"
+        },
+        {
+          "kind": "heading",
+          "id": "section-introduction",
+          "text": "A complete plain-language lesson: from ports to services and vulnerability assessment"
         },
         {
           "kind": "paragraph",
-          "text": "In one sentence: a port locates an entry point, while service responses provide identification clues; compare responses, test conditions and device-side records to establish the service and its patch status more reliably."
+          "text": "Finding an open port does not identify its service. Knowing a service name does not establish the software version. Knowing a version does not establish that a vulnerability applies."
         },
         {
           "kind": "paragraph",
-          "text": "The previous unit explained Open, Closed and Filtered: what port state this particular test observed. This unit asks the next question: once an entry point is open, what service and version are behind it?"
+          "text": "Building on M03-01 through M03-04, this lesson asks how network responses help identify a server's services and assess possible security risks. It follows the existing chapter sequence and adds Ubuntu localhost practice, Nmap commands and evidence-based interpretation. Cases and sample outputs are illustrations, not measurements of real targets. Local practice is limited to your own computer."
+        },
+        {
+          "kind": "heading",
+          "id": "section-overview",
+          "text": "First build the complete concept map"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The preceding units address different questions:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Unit",
+            "Focus",
+            "Question being answered"
+          ],
+          "rows": [
+            [
+              "M03-01",
+              "IP, TCP, UDP and ports",
+              "How do computers communicate?"
+            ],
+            [
+              "M03-02",
+              "ICMP, ARP and host discovery",
+              "Where is the target, and can a response be obtained?"
+            ],
+            [
+              "M03-03",
+              "TCP, SYN and UDP scanning",
+              "Which ports may be open?"
+            ],
+            [
+              "M03-04",
+              "Open, Closed and Filtered",
+              "How should scan results be interpreted?"
+            ],
+            [
+              "M03-05",
+              "Service version and banner grabbing",
+              "What service is behind an open port?"
+            ],
+            [
+              "M03-06",
+              "OS fingerprinting",
+              "Which operating system might the host use?"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you scan an Ubuntu server you administer and obtain this illustrative output:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT      STATE    SERVICE\n22/tcp    open     ssh\n80/tcp    open     http\n443/tcp   open     https\n3306/tcp  filtered mysql"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A beginner might describe four running services: SSH, HTTP, HTTPS and MySQL. The evidence does not support that conclusion yet."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "TCP 22, 80 and 443 presented open under these scan conditions.",
+            "TCP 3306 presented filtered; that does not establish whether a service is listening.",
+            "SERVICE may be a conventional name selected from the port number.",
+            "The software actually running behind those endpoints remains unconfirmed."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "M03-05 develops evidence about service identity beyond the initial port observation."
+        },
+        {
+          "kind": "code",
+          "text": "Ubuntu server\n      |\n      v\n1. Host discovery (M03-02): can a response be obtained?\n      |\n      v\n2. Port scan (M03-03): 443/tcp open\n      |\n      v\n3. Service identification (M03-05): is it actually HTTPS?\n      |\n      v\n4. Version identification (M03-05): which product and version?\n      |\n      v\n5. Internal cross-check: packages, proxy layers, installed fixes\n      |\n      v\n6. Vulnerability analysis (M05): does a specific issue apply?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is an investigation sequence. Each stage can leave unresolved questions rather than producing a definite answer."
         },
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "1 | Start with a shop sign"
+          "text": "1 | Understand the distinction through shop signs"
         },
         {
           "kind": "paragraph",
-          "text": "Imagine a shop on a street:"
+          "id": "section-1-1",
+          "text": "1.1 Why is a port different from a service?"
         },
         {
           "kind": "paragraph",
-          "text": "- Its street number is 443. That is an address clue."
+          "text": "Imagine a shopping street where each shop has a street number."
+        },
+        {
+          "kind": "code",
+          "text": "A shopping street\n+----------------+   +----------------+\n| Number 22      |   | Number 80      |\n| Remote access  |   | Web service    |\n+----------------+   +----------------+\n+----------------+   +----------------+\n| Number 443     |   | Number 8080    |\n| Secure web     |   | Development    |\n+----------------+   +----------------+"
         },
         {
           "kind": "paragraph",
-          "text": "- Someone answers the doorbell. You can reach this entrance on this occasion."
+          "text": "The numbers resemble ports. TCP 22 commonly carries SSH; TCP 80 commonly carries HTTP; TCP 443 commonly carries HTTPS; TCP 8080 often carries alternate HTTP or proxy services."
         },
         {
           "kind": "paragraph",
-          "text": "- They say, “This is Morning Light Bookshop.” You have a self-description."
+          "text": "A street number does not force a shop to conduct a particular business. Similarly, an administrator can place another TCP service on 443."
+        },
+        {
+          "kind": "code",
+          "text": "IP: 192.168.1.100\nPort: 443\nExpected: HTTPS\nPossible actual service:\n    HTTPS\n    A custom TCP application\n    Another TCP service"
         },
         {
           "kind": "paragraph",
-          "text": "- Following the agreed rules, you ask what it offers and identify its services from the replies."
+          "text": "The port is an endpoint number. The service is the function provided behind it. The address above illustrates the distinction; it is not a target you are being asked to scan."
         },
         {
           "kind": "paragraph",
-          "text": "- Finally, the manager provides registration and operating records, which you compare with what you observed."
+          "id": "section-1-2",
+          "text": "1.2 What does version mean?"
         },
         {
           "kind": "paragraph",
-          "text": "Network services are similar. A port is a numbered entry point through which a network program receives communications. A service provides a function, such as websites, email or remote administration. A version identifies a software release. These are related, but one entry-point number cannot establish the service, product and complete version by itself."
+          "text": "Knowing that the shop at number 443 is a bookstore describes its activity. It does not identify the management software it uses. Network identification likewise separates four layers:"
+        },
+        {
+          "kind": "code",
+          "text": "Port: 443\n    |\n    v\nService: HTTPS\n    |\n    v\nProduct: Nginx\n    |\n    v\nVersion: 1.x.x"
         },
         {
           "kind": "paragraph",
-          "text": "For example, TCP 443 commonly carries HTTPS. TCP (Transmission Control Protocol) provides reliable, connection-oriented transport. HTTPS is HTTP web communication protected by TLS (Transport Layer Security). A custom service can also use TCP 443, and a web service can use another port."
+          "text": "443 is the port. HTTPS describes the communication service or protocol. Nginx is a software product that can provide web services. The string 1.x.x is a version placeholder, not a confirmed full version."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keeping these layers separate prevents an endpoint observation from becoming an unsupported product or version claim."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-3",
+          "text": "1.3 Why does this matter?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you administer a hospital server and a scanner reports:"
+        },
+        {
+          "kind": "code",
+          "text": "443/tcp open"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This does not establish that the server runs a particular Nginx version. It might use Apache, Caddy, another HTTP implementation, a load balancer or a reverse proxy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Continue gathering evidence. The port locates the endpoint; responses and internal checks are needed to identify its service, product and version."
         },
         {
           "kind": "heading",
@@ -520,44 +3186,161 @@
         },
         {
           "kind": "paragraph",
-          "text": "A banner is text or information a service returns that can help identify it. Banner grabbing collects these responses as clues for asset inventory and further verification."
+          "id": "section-2-1",
+          "text": "2.1 A banner resembles a shop's introduction"
         },
         {
           "kind": "paragraph",
-          "text": "It is not limited to a welcome message on a login screen. Examples include:"
+          "text": "Imagine arriving at shop 22 and being greeted with “We provide remote administration.” Some network services likewise introduce themselves after a connection is established, providing information about their protocol or software."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Banner is a broad term for service-identifying information returned by an endpoint. Banner grabbing collects those responses as clues. It is a class of techniques, not a separate network protocol."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The information can help establish what an endpoint claims to be. It still needs corroboration."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 Example one: an SSH banner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An SSH server you administer might return:"
+        },
+        {
+          "kind": "code",
+          "text": "SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a format example, not a measured scan."
         },
         {
           "kind": "table",
           "headers": [
-            "Response location",
-            "Possible content",
-            "What to record initially"
+            "Component",
+            "Meaning"
           ],
           "rows": [
             [
-              "SSH identification line",
-              "`SSH-2.0-ExampleSSH_1.2`",
-              "The declared SSH protocol and software identification"
+              "`SSH`",
+              "An SSH protocol identification string"
             ],
             [
-              "Mail service greeting",
-              "`220 mail.example.test ...`",
-              "Response code, hostname and service self-description"
+              "`2.0`",
+              "Advertised SSH protocol version"
             ],
             [
-              "HTTP response header",
-              "`Server: ExampleWeb/1.2`",
-              "Product/version string in this particular response"
+              "`OpenSSH`",
+              "Advertised software product"
+            ],
+            [
+              "`9.6p1`",
+              "Advertised OpenSSH software version"
+            ],
+            [
+              "`Ubuntu-3ubuntu13`",
+              "Ubuntu package revision string"
             ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "These strings are synthetic examples, not actual scan results. SSH means Secure Shell and supports secure remote connections. HTTP means Hypertext Transfer Protocol, the protocol used to exchange web requests and responses. Headers are fields describing a request or response."
+          "text": "SSH-2.0 and OpenSSH_9.6p1 describe different versions: the first identifies the protocol, and the second identifies software. This resembles the distinction between HTTP/1.1 and Nginx 1.24."
         },
         {
           "kind": "paragraph",
-          "text": "A banner helps you begin an evidence-based inventory: what an endpoint might offer, whether an unexpected service is present, and which administrator should verify it. A banner may omit a version, be customized by an administrator, or come from a proxy in front of the application. Preserve the original response first, then identify how far it supports your conclusion."
+          "text": "The line is an externally advertised identification string. It is not an independently checked inventory of installed packages."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "2.3 Example two: an HTTP banner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A browser might request a site's home page with:"
+        },
+        {
+          "kind": "code",
+          "text": "GET / HTTP/1.1\nHost: example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The request means “retrieve the home page for example.test.” An illustrative response is:"
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/1.1 200 OK\nServer: nginx/1.24.0\nContent-Type: text/html\nContent-Length: 1250"
+        },
+        {
+          "kind": "paragraph",
+          "text": "HTTP/1.1 200 OK indicates successful handling of this request. The Server field advertises product/version information. Content-Type identifies HTML content. Content-Length gives a body length of 1250 bytes in this example."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The identifying field is:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx/1.24.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Banner grabbing may collect this field. However, Server is optional: it can be absent, modified or produced by a reverse proxy. RFC 9110 advises against exposing unnecessary implementation detail through it. [HTTP semantics](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.4)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-4",
+          "text": "2.4 Example three: a mail-server greeting"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An SMTP server may greet a connection with:"
+        },
+        {
+          "kind": "code",
+          "text": "220 mail.example.test ESMTP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "220 means the service is ready for further SMTP commands. mail.example.test is the advertised hostname. ESMTP advertises Extended SMTP support."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The greeting can be available before login. This illustrates why service-identification exposure matters: a visitor without an account may still obtain useful clues. Receiving the greeting does not grant access to a mailbox or establish a vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-5",
+          "text": "2.5 Why do security teams collect banners?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you inventory 100 servers. Initially you know only the port lists:"
+        },
+        {
+          "kind": "code",
+          "text": "Server A: 22, 80, 443 open\nServer B: 22, 443 open\nServer C: 21, 22, 8080 open"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Service identification can add hypotheses:"
+        },
+        {
+          "kind": "code",
+          "text": "Server A\n    22  -> possibly OpenSSH\n    80  -> possibly Nginx\n    443 -> possibly Nginx\nServer B\n    22  -> possibly OpenSSH\n    443 -> possibly Apache httpd\nServer C\n    21   -> possibly FTP\n    22   -> possibly OpenSSH\n    8080 -> possibly an HTTP application"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These clues help identify expected services, forgotten services, products requiring package/patch checks, and endpoints that should not be available to general users."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A banner records what an endpoint advertises. Administrators can change the text, and intermediaries can generate it. Preserve the original response and keep the claimed identity separate from a verified identity."
         },
         {
           "kind": "heading",
@@ -566,60 +3349,356 @@
         },
         {
           "kind": "paragraph",
-          "text": "Some services send a greeting after a connection is established. Others answer only after receiving a correctly formed protocol request."
+          "text": "After connecting, you can wait for the service to introduce itself or send a request that elicits a response. Both approaches can provide identifying information."
         },
         {
           "kind": "paragraph",
-          "text": "A probe is data sent to observe a service's behavior. Service detection analyzes responses. Version detection also attempts to identify a product, release and related information. Banner grabbing is one technique within this broader process, not the whole process."
+          "id": "section-3-1",
+          "text": "3.1 First approach: wait for the service to speak"
         },
         {
           "kind": "paragraph",
-          "text": "Nmap is a network exploration and security auditing tool. Its service-detection process may establish a TCP connection and wait for an initial response before sending probes appropriate to the service. In this context, its NULL probe means waiting after connection establishment without first sending application-layer probe data. It still establishes a network connection, so it is not passive collection that never contacts the target."
+          "text": "A shop assistant may greet you before you ask a question. Many SSH, FTP and SMTP services similarly send identification after TCP connection establishment."
+        },
+        {
+          "kind": "code",
+          "text": "Client                              Server\n   | -------- SYN -------------------> |\n   | <------- SYN/ACK ---------------- |\n   | -------- ACK -------------------> |\n   |       TCP connection established  |\n   | <------- Banner ----------------- |\n   |       SSH-2.0-OpenSSH_...          |"
         },
         {
           "kind": "paragraph",
-          "text": "By contrast, analyzing previously and lawfully collected packet records without making a new connection is a different observation method. Both approaches remain subject to authorization, data-use and retention limits."
+          "text": "Connect this to M03-01 and M03-03:"
+        },
+        {
+          "kind": "code",
+          "text": "SYN -> SYN/ACK -> ACK"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Those steps establish the TCP connection. The application then exchanges data through it. In this ordinary example, the SSH banner is application data after connection establishment; merely observing SYN/ACK is not evidence of having received an SSH identification line."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port scanning emphasizes endpoint state. Banner collection examines application response content beyond that state."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 Second approach: actively send a probe"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An ordinary HTTP server usually waits for a request before sending an HTTP response."
+        },
+        {
+          "kind": "code",
+          "text": "Client                              HTTP server\n   | ------ establish TCP -----------> |\n   |          wait for greeting        |\n   |          no HTTP response yet     |\n   | ------ GET / HTTP/1.1 -----------> |\n   | <----- HTTP/1.1 200 OK ----------- |\n   |        Server: nginx/...          |"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A protocol-shaped request might be:"
+        },
+        {
+          "kind": "code",
+          "text": "GET / HTTP/1.1\nHost: example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The service processes the request and returns data. An investigator interprets the response to identify service characteristics. This is the basic idea of an active probe: send a suitable question and examine the answer."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 What is Nmap's NULL probe?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NULL does not mean no packets are sent. In TCP service identification, Nmap establishes a TCP connection, then initially sends no application probe payload while waiting for the server's response."
+        },
+        {
+          "kind": "code",
+          "text": "Nmap\n  +-- Establish TCP connection\n  +-- Wait for server data\n  +-- Banner available?\n  |      +-- Yes: try identification\n  |      +-- No: consider another probe\n  +-- Analyze service identity"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even without application payload, connection establishment generates packets and can be logged. The “empty” part concerns probe data, not all network activity. [Nmap version-detection technique](https://nmap.org/book/vscan-technique.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "3.4 How does active probing differ from passive observation?"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Method",
+            "Creates a new target connection?",
+            "Analogy"
+          ],
+          "rows": [
+            [
+              "Connect and wait for a banner",
+              "Yes",
+              "Enter a shop and wait for the greeting"
+            ],
+            [
+              "Send HTTP, SSH or other probes",
+              "Yes",
+              "Enter a shop and ask questions"
+            ],
+            [
+              "Analyze an existing packet recording",
+              "Not necessarily; pure offline analysis does not",
+              "Review previously authorized recordings"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The first two interact with the target. Offline analysis of an already lawfully obtained capture can be passive if it creates no new connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passive observation still requires appropriate authorization and data handling. Waiting for a banner and sending a probe can both identify services, but neither is a completely non-contact collection method when a new connection is made."
         },
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "4 | Where does the evidence behind Nmap's SERVICE column come from?"
+          "text": "4 | Where does the SERVICE column get its evidence?"
         },
         {
           "kind": "paragraph",
-          "text": "Distinguish two sources:"
+          "text": "Understanding the source of a service name is essential to reading Nmap output."
         },
         {
           "kind": "paragraph",
-          "text": "1. A familiar name from a port table: the tool may show a common service name based on the transport protocol and port number. This is a classification clue, not verified program identity."
+          "id": "section-4-1",
+          "text": "4.1 How does Nmap know that port 22 is SSH?"
         },
         {
           "kind": "paragraph",
-          "text": "2. Identification from actual responses: with Nmap's `-sV`, the tool attempts to identify the service and version using responses and a signature database. This adds evidence beyond the entry-point number, but the result and test conditions still need review."
-        },
-        {
-          "kind": "paragraph",
-          "text": "The following only explains parameters; it is not an instruction to scan an external host:"
+          "text": "Suppose you run:"
         },
         {
           "kind": "code",
-          "text": "nmap -sV -p 8080 <explicitly-authorized-isolated-lab-host>"
+          "text": "nmap -p 22,80,443 127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "`-sV` requests service/version detection; `-p 8080` limits the port selection to 8080. The angle-bracket text is an explanatory placeholder, not an address to execute unchanged. Before a real exercise, confirm that the target, service, time window, probing method and stop conditions are authorized."
+          "text": "An illustrative result is:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT    STATE  SERVICE\n22/tcp  open   ssh\n80/tcp  open   http\n443/tcp open   https"
         },
         {
           "kind": "paragraph",
-          "text": "Version probes interact with the service and are not guaranteed to have no effect; some devices may treat probe content as real work. Beginner exercises should not override the tool's default exclusions or substitute the broader `-A` option for this unit's `-sV`."
+          "text": "Nmap may not have confirmed those services. It can consult the conventional port-name database:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap-services"
         },
         {
           "kind": "paragraph",
-          "text": "The tool may obtain a full match or only partial clues. Nmap's softmatch narrows the subsequent probes using a preliminary service-type match. It does not establish an exact version or provide a score you may independently translate into “90% certain.” If identification is incomplete, keeping “not confirmed” is more useful than inventing a version."
+          "text": "Common associations include:"
+        },
+        {
+          "kind": "code",
+          "text": "ssh      22/tcp\nhttp     80/tcp\nhttps    443/tcp"
         },
         {
           "kind": "paragraph",
-          "text": "Version detection and OS fingerprinting are separate tasks. OS means operating system. Service/version detection primarily uses application responses; OS fingerprinting, such as Nmap's `-O`, infers the operating system from network-stack response characteristics. Platform clues in service replies are useful to preserve, but do not replace operating-system verification. The next unit develops OS fingerprinting further."
+          "text": "This resembles inferring a region from a telephone area code. The code may suggest a location, but it does not identify the person answering."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Likewise:"
+        },
+        {
+          "kind": "code",
+          "text": "22/tcp open ssh"
+        },
+        {
+          "kind": "paragraph",
+          "text": "may mean only that TCP 22 is open and that 22 is commonly associated with SSH. It does not necessarily show that Nmap exchanged identification with an SSH service. [Nmap service/version detection](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 How can Nmap investigate the service further?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enable service and version identification:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 8080 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "127.0.0.1 is your own computer, suitable for isolated practice."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Argument",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "`nmap`",
+              "Run Nmap"
+            ],
+            [
+              "`-sV`",
+              "Enable service/version identification"
+            ],
+            [
+              "`-p 8080`",
+              "Check only port 8080"
+            ],
+            [
+              "`127.0.0.1`",
+              "Target localhost"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The option is:"
+        },
+        {
+          "kind": "code",
+          "text": "-sV"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is an option fragment, not a standalone shell command. It asks Nmap to investigate software identity beyond the conventional port name."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider this synthetic result:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT     STATE SERVICE VERSION\n8080/tcp open  http    ExampleWeb 1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Separate the layers:"
+        },
+        {
+          "kind": "code",
+          "text": "8080/tcp -> endpoint: TCP port 8080\nopen -> state observed under these conditions\nhttp -> identified service type\nExampleWeb 1.2 -> product/version clue reported by the tool"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This supplies more information than the port alone. It still does not guarantee a precise or independently verified version."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 What happens inside Nmap?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of -sV as an investigator who studies answers instead of identifying a shop solely by its address."
+        },
+        {
+          "kind": "code",
+          "text": "Nmap -sV\n    |\n    v\nSelect a port for identification\n    |\n    v\nFor TCP, attempt a connection\n    |\n    v\nWait for service data\n    +-- Banner received --> compare signatures\n    +-- Insufficient data --> send suitable probe\n                                  |\n                                  v\n                             analyze response\n    |                             |\n    +-------------+---------------+\n                  v\n        Attempt service/version identification\n                  |\n          +-------+--------+\n          |                |\n     Enough evidence    Insufficient evidence\n          |                |\n      Report match     Retain uncertainty"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The probe database is:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap-service-probes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It contains probes and response signatures. Nmap might send an HTTP-shaped request and receive:"
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/1.1 200 OK\nServer: ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It then compares response features to identify a service or version. Port associations, probe suitability and earlier matches influence subsequent probes. The diagram describes the TCP path; UDP service probing does not establish a TCP connection. [Nmap technique](https://nmap.org/book/vscan-technique.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 What is softmatch?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine calling an organization and hearing “Customer support.” You have a clue about the function, but not the exact organization or system."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap can similarly obtain a preliminary service-type match, such as HTTP or SSH, without a precise product/version match. It can then limit later probes to those associated with that service type."
+        },
+        {
+          "kind": "paragraph",
+          "text": "softmatch is a preliminary match, not a percentage confidence score. It cannot be translated into “90% likely” without a separate justified model."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-5",
+          "text": "4.5 How do -sV, -O and -A differ?"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Option",
+            "Function",
+            "Main question"
+          ],
+          "rows": [
+            [
+              "`-sV`",
+              "Service/version detection",
+              "What service, product and version are behind a port?"
+            ],
+            [
+              "`-O`",
+              "OS detection",
+              "Which operating system might the host use?"
+            ],
+            [
+              "`-A`",
+              "Enables several advanced identification features",
+              "What additional host and service information can be obtained?"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 8080 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "focuses on service/version identification at 8080. By contrast, -O examines network-stack response characteristics to infer an operating system."
+        },
+        {
+          "kind": "paragraph",
+          "text": "-A is not an alternative spelling of -sV: it also enables features such as OS detection, default NSE scripts and traceroute. This lesson does not need that broader option."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap also excludes certain version probes by default to avoid unintended behavior. TCP 9100 on some printers is a notable example: probe data can be treated as a print job. Keep default exclusions for this practice and consider the device's function and tolerance before authorized testing. [Nmap version-detection options](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A port-name lookup and active service identification support different levels of evidence. Record which produced the result."
         },
         {
           "kind": "visual",
@@ -652,32 +3731,131 @@
         {
           "kind": "heading",
           "id": "section-5",
-          "text": "5 | Why does a visible version not immediately confirm a vulnerability?"
+          "text": "5 | Why does a version not immediately prove a vulnerability?"
         },
         {
           "kind": "paragraph",
-          "text": "A vulnerability is a security weakness that may be exploitable. Determining whether a particular weakness applies requires more than a version clue: verify the product, package source, patch history, configuration and necessary conditions."
+          "text": "A software-version clue does not demonstrate an exploitable defect. Suppose a synthetic scan reports:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT    STATE SERVICE VERSION\n80/tcp  open  http    ExampleWeb 1.2"
         },
         {
           "kind": "paragraph",
-          "text": "Two common reasons follow."
+          "text": "A synthetic vulnerability entry says:"
+        },
+        {
+          "kind": "code",
+          "text": "CVE-20XX-12345\nProduct: ExampleWeb\nAffected versions: certain 1.x releases\nIssue: possible remote code execution"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Neither ExampleWeb nor this CVE entry is a claim about a real vulnerability. Concluding that the target is exploitable skips several checks:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Does the banner describe the actual backend software?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Is the installed package in the affected range?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Has the vendor backported the fix?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Are the required features and configuration present?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The next two subsections explain common reasons why version-only judgments fail."
         },
         {
           "kind": "heading",
           "id": "section-5-proxy",
-          "text": "A. You may be observing a front-end proxy"
+          "text": "5-A | You may be observing the reverse proxy"
         },
         {
           "kind": "paragraph",
-          "text": "A reverse proxy accepts client requests on behalf of services behind it. A backend/origin server is a service behind that front end that performs some of the actual processing."
+          "id": "section-5-proxy-1",
+          "text": "5-A.1 What is a reverse proxy?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a hospital reception desk. A patient asks for cardiology; reception routes the request to the department rather than sending the patient into an arbitrary office."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A reverse proxy similarly accepts client requests and forwards them to an appropriate backend."
         },
         {
           "kind": "code",
-          "text": "Client → Reverse proxy → Backend application\n          ↑ This layer may generate or modify response headers"
+          "text": "Internet user\n      |\n      | HTTPS request\n      v\n+-----------------------+\n| Reverse proxy: Nginx  |\n| Receives requests     |\n+-----------------------+\n      |\n      | Forward request\n      v\n+-----------------------+\n| Backend server        |\n| Python / Node.js app  |\n+-----------------------+\n      |\n      v\n   Database"
         },
         {
           "kind": "paragraph",
-          "text": "An externally visible `Server` string may therefore describe the front end or contain forwarded or modified information. It cannot establish an exact backend package version by itself. HTTP also permits omitting `Server` and recommends avoiding unnecessary detail."
+          "text": "The client initiates the request. The reverse proxy is the front-end service that receives and routes it. The backend executes application business logic."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-proxy-2",
+          "text": "5-A.2 How can a banner mislead us?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the backend uses:"
+        },
+        {
+          "kind": "code",
+          "text": "Python FastAPI"
+        },
+        {
+          "kind": "paragraph",
+          "text": "and an Nginx reverse proxy sits in front of it. The external response contains:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can record that this response contains nginx identification. You cannot conclude that the entire application is Nginx or that no backend exists."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nginx may receive the request while FastAPI handles login, queries and database access. A reverse proxy can remove, overwrite or forward Server headers."
+        },
+        {
+          "kind": "code",
+          "text": "Externally observed Server banner\n                  !=\nComplete backend application identity"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Determine where the response field was generated before treating it as an asset-inventory fact."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-proxy-3",
+          "text": "5-A.3 How does this relate to Cloudflare?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Websites, subdomains and Cloudflare deployments provide an example of layered observation. This is a hypothetical architecture, not a statement about a particular deployed site."
+        },
+        {
+          "kind": "code",
+          "text": "Browser\n   |\n   | HTTPS\n   v\n+-------------------+\n| Cloudflare edge   |\n| DNS / CDN / WAF   |\n+-------------------+\n   |\n   | Cloudflare Tunnel\n   v\n+-------------------+\n| Ubuntu server     |\n| Nginx             |\n+-------------------+\n   |\n   v\n+-------------------+\n| Web application   |\n| Node.js / Python  |\n+-------------------+"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An outside client may connect first to the Cloudflare edge. Externally visible TLS, HTTP behavior and headers may therefore describe a different layer from the Ubuntu host or application."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Asset inventory needs the internal deployment architecture as well as external observations. A proxy can provide access controls or traffic management, but requires correct configuration and does not replace backend patching."
         },
         {
           "kind": "visual",
@@ -706,178 +3884,931 @@
         {
           "kind": "heading",
           "id": "section-5-backport",
-          "text": "B. An older version number may include backported fixes"
+          "text": "5-B | An older version number may include a backported fix"
         },
         {
           "kind": "paragraph",
-          "text": "Backporting brings a specific fix from a newer release into an older maintained release without necessarily adopting the same upstream major version number. Upstream refers here to the original software project; operating-system vendors may maintain their own package revisions and patch records."
+          "text": "Backporting matters when maintaining Ubuntu, Debian, Red Hat and other distributions."
         },
         {
           "kind": "paragraph",
-          "text": "An apparently old string may therefore correspond to a patched vendor package. Conversely, the absence of a visible version does not establish security. Compare the complete device-side package version with vendor advisories instead of deciding solely by sorting version strings."
+          "id": "section-5-backport-1",
+          "text": "5-B.1 What is a backport?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A backport moves a particular fix from newer software into an older maintained release."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an upstream project releases:"
+        },
+        {
+          "kind": "code",
+          "text": "ExampleApp 1.0\nExampleApp 1.1\nExampleApp 1.2\nExampleApp 2.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Later, a defect is discovered:"
+        },
+        {
+          "kind": "code",
+          "text": "ExampleApp 1.2\ncontains a security vulnerability"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The upstream team fixes it in 2.0. Some organizations cannot immediately upgrade because configuration formats changed, APIs are incompatible, or existing applications would stop working."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A distribution maintainer can instead apply the relevant security change to the older line:"
+        },
+        {
+          "kind": "code",
+          "text": "Upstream project\nExampleApp 1.2 -> vulnerability found\n        |\n        v\nExampleApp 2.0 -> contains fix\n        |\n        v\nExtract the relevant security change\n        |\n        | Backport\n        v\nDistribution-maintained package\nExampleApp 1.2-vendor3\n        |\n        v\nContains the security fix"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The upstream version component may remain 1.2 even though the maintained package includes the fix. An old-looking version does not prove that the same vulnerability remains. Vendor advisories and CVE status provide the appropriate cross-check. [Red Hat security backporting](https://access.redhat.com/security/updates/backporting)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-backport-2",
+          "text": "5-B.2 Why does backporting affect scan interpretation?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an Ubuntu endpoint advertises:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "and an advisory says:"
+        },
+        {
+          "kind": "code",
+          "text": "ExampleWeb 1.2 has a security vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The installed package might instead be:"
+        },
+        {
+          "kind": "code",
+          "text": "ExampleWeb 1.2-ubuntu5.3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ubuntu5.3 is a synthetic distribution revision here. If a maintainer backported the relevant fix, the external string:"
+        },
+        {
+          "kind": "code",
+          "text": "ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "does not prove the package remains affected."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use this evidence sequence:"
+        },
+        {
+          "kind": "code",
+          "text": "External banner\n      |\n      v\nFull installed package version\n      |\n      v\nVendor security advisory\n      |\n      v\nWas the relevant fix installed?\n      |\n      v\nDoes the running service use the updated code?\n      |\n      v\nDoes the vulnerability still apply?"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-backport-3",
+          "text": "5-B.3 How do you inspect package versions on Ubuntu?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For OpenSSH on your own Ubuntu system:"
+        },
+        {
+          "kind": "code",
+          "text": "dpkg-query -W openssh-server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This queries installed package version information. To inspect available versions and repository priorities:"
+        },
+        {
+          "kind": "code",
+          "text": "apt policy openssh-server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A format example is:"
+        },
+        {
+          "kind": "code",
+          "text": "Installed: 1:9.6p1-3ubuntu13.x\nCandidate: 1:9.6p1-3ubuntu13.y"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is not a claim about the current latest version. Installed is the installed package version. Candidate is the version selected under the current APT sources and policy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Different Installed and Candidate versions do not by themselves prove a vulnerability. Matching versions do not prove that every issue is fixed. Check the distribution's security advisory and applicability conditions, and verify that the relevant security-update sources are configured."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For Ubuntu, prioritize Ubuntu security notices over a simple string comparison between the upstream banner and a CVE range."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-backport-4",
+          "text": "5-B.4 Does installing an update finish the job?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not necessarily. Files on disk can be updated while a running process still has older code loaded. Follow the package and service update requirements: reloading configuration may not replace executable code, so a service restart may be needed. Verify the actual running version."
+        },
+        {
+          "kind": "code",
+          "text": "Check the security advisory\n      |\n      v\nInstall the fixed package\n      |\n      v\nPerform required service reload/restart\n      |\n      v\nVerify the running version\n      |\n      v\nCheck normal application functions\n      |\n      v\nVerify that the relevant vulnerability no longer applies"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Restarting may interrupt connections and must follow production maintenance procedures. A banner is not patch evidence. Full package identity, backport records, vendor guidance and running state belong in the assessment."
         },
         {
           "kind": "heading",
           "id": "section-6",
-          "text": "6 | A complete synthetic case: turn an inference into a traceable record"
+          "text": "6 | A complete synthetic case: make the record traceable"
         },
         {
           "kind": "paragraph",
-          "text": "Suppose you are authorized to inventory TCP 8080 in an isolated teaching environment. All the following are teaching data:"
+          "text": "Combine the preceding ideas in an authorized inventory example."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "6.1 Suppose you are inventorying an internal application"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The hypothetical target is:"
         },
         {
           "kind": "code",
-          "text": "Observation 1: 8080/tcp open\nObservation 2: HTTP response includes Server: ExampleWeb/1.2\nObservation 3: Architecture records show a reverse proxy in front\nManagement record: Backend package is example-app 4.0-vendor3\nPatch status: Vendor advisories and installation records still need checking"
+          "text": "IP: 192.0.2.10\nPort: TCP 8080"
         },
         {
           "kind": "paragraph",
-          "text": "Compare two records:"
+          "text": "192.0.2.10 is a documentation address, not a real test target. In the hypothetical authorized environment, the scan reports:"
+        },
+        {
+          "kind": "code",
+          "text": "8080/tcp open http"
         },
         {
           "kind": "paragraph",
-          "text": "- A premature conclusion: “The backend runs ExampleWeb 1.2 and is vulnerable.” This conflates the front-end response, backend product and vulnerability determination."
+          "text": "Evidence one: TCP 8080 appeared open from the stated position and conditions. Next, an HTTP response contains:"
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/1.1 200 OK\nServer: ExampleWeb/1.2"
         },
         {
           "kind": "paragraph",
-          "text": "- A verifiable record: “At the specified source location and time, TCP 8080 accepted a connection; the HTTP response identified itself as ExampleWeb/1.2. Architecture records show a reverse proxy, so this string does not yet confirm the backend version. Management records list example-app 4.0-vendor3. Next, correlate the running service with its package, vendor patch advisories and configuration.”"
+          "text": "Evidence two: this response advertises ExampleWeb/1.2. Architecture documentation then shows:"
+        },
+        {
+          "kind": "code",
+          "text": "External user\n      |\n      v\nReverse proxy\nExampleWeb/1.2\n      |\n      v\nBackend\nexample-app 4.0"
         },
         {
           "kind": "paragraph",
-          "text": "This also applies the M03 chapter supplement: a port state is an observation, not evidence of compromise. An `open` state, a readable banner and a successful product identification do not establish login access or prove exploitability."
+          "text": "That is evidence three. An administrator's package query reports:"
+        },
+        {
+          "kind": "code",
+          "text": "example-app 4.0-vendor3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is evidence four. The vendor advisory and actual running version remain unverified. How should the report represent these layers?"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 An unsupported report"
+        },
+        {
+          "kind": "code",
+          "text": "Finding:\nThe target uses ExampleWeb 1.2.\nThat version has a vulnerability.\nClassified as a high-risk vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This conflates different claims. The response advertised ExampleWeb/1.2; the backend runs another application; no adequate evidence has established that a specific vulnerability applies."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Such mistakes can send an organization toward unnecessary remediation. They can also hide a genuine backend problem when assessment stops at the proxy. State what was observed before assigning product identity or risk."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 A supported report"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use three explicit fields."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3-detail-1",
+          "text": "First: Observation"
+        },
+        {
+          "kind": "code",
+          "text": "In the authorized test environment:\nTCP 8080 appeared open.\nHTTP response included:\nServer: ExampleWeb/1.2\nArchitecture documentation shows a reverse proxy.\nAdministrator package record:\nexample-app 4.0-vendor3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This field records obtained responses and documents without adding unsupported conclusions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3-detail-2",
+          "text": "Second: Inference"
+        },
+        {
+          "kind": "code",
+          "text": "The HTTP response contains ExampleWeb identification.\nA reverse proxy is documented in front of the application.\nThe string may describe the front-end service.\nThe banner alone cannot confirm the backend's exact version.\nEvidence is not yet sufficient to establish CVE applicability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This field explains what the observations support. Each inference should have an identifiable basis."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3-detail-3",
+          "text": "Third: Pending verification"
+        },
+        {
+          "kind": "code",
+          "text": "1. Identify the actual running backend process.\n2. Confirm the full package version and source.\n3. Read the vendor security advisory.\n4. Check whether a backported fix is included.\n5. Check the configuration required for the vulnerability.\n6. Confirm the running service uses the fixed version."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This produces a record that can be followed, checked and accepted by another engineer."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 How does this connect to CEH M05?"
+        },
+        {
+          "kind": "code",
+          "text": "M03 Network Scanning\n    Find candidate open endpoints\n    Identify service/version clues\n        |\n        v\nM04 Enumeration\n    Obtain further authorized service/system information\n        |\n        v\nM05 Vulnerability Analysis\n    Check product, version, configuration and applicability\n        |\n        v\nEstablish affected scope and risk\n        |\n        v\nPlan remediation and verification"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a conceptual learning relationship, not a mandatory order for every assessment. M03-05 establishes identity and version clues; M05 examines whether specific vulnerabilities affect those assets."
         },
         {
           "kind": "heading",
           "id": "section-7",
-          "text": "7 | How can administrators defend services and preserve validation evidence?"
+          "text": "7 | How should administrators protect services and retain acceptance evidence?"
         },
         {
           "kind": "paragraph",
-          "text": "Manage service-identification information alongside actual maintenance:"
+          "text": "Now switch from observation to administration. A hospital, business or research organization needs to reduce unnecessary exposure while checking actual security controls."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 First layer: inventory necessary services"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an Ubuntu server exposes these TCP ports:"
+        },
+        {
+          "kind": "code",
+          "text": "22/tcp\n80/tcp\n443/tcp\n3306/tcp"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ask what each is for. Is 22 for remote administration? Should 80 only redirect HTTP? Does 443 provide the public site? Should 3306 be available only to internal application hosts?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A database may not need Internet-wide access. Still, do not identify it as MySQL solely because of port 3306; check the configuration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "On Ubuntu:"
+        },
+        {
+          "kind": "code",
+          "text": "sudo ss -ltnp"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ss displays socket information. -l selects listeners; -t selects TCP; -n keeps addresses and ports numeric; -p requests process details."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This helps identify the process listening locally. Local socket state does not prove remote reachability: firewall policy, routing, NAT and other access controls remain relevant."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 Second layer: reduce unnecessary banner detail"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the response includes:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx/1.24.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Where appropriate, reduce unnecessary version disclosure. An Nginx configuration example is:"
+        },
+        {
+          "kind": "code",
+          "text": "http {\n    server_tokens off;\n}"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This generally suppresses detailed version information in relevant Nginx-generated responses. It does not guarantee removal of every product identifier or identical headers through all modules and proxy layers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check the configuration first:"
+        },
+        {
+          "kind": "code",
+          "text": "sudo nginx -t"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If validation succeeds, reload according to the environment's change procedure, for example:"
+        },
+        {
+          "kind": "code",
+          "text": "sudo systemctl reload nginx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check service dependencies and deployment-specific requirements before changing a production service."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2-detail-1",
+          "text": "Why is hiding the banner insufficient?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Changing:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx/1.24.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "to:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: nginx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "reduces the version information available in that field. It does not repair a software defect. Other fingerprints may remain, and some attacks do not require the attacker to know the precise version."
+        },
+        {
+          "kind": "code",
+          "text": "Hide detailed banner -> reduce information disclosure\nPatch vulnerability -> correct a security defect"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These actions need separate acceptance evidence."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "7.3 Third layer: restrict management access"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A research server's SSH endpoint may be needed only by designated administrators. Firewalls, VPNs, authentication and other access controls can limit its exposure."
+        },
+        {
+          "kind": "code",
+          "text": "Internet\n    |\n    v\nFirewall\n    +-- Unauthorized source --> deny access\n    +-- Authorized source --> allow connection --> SSH server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connects to M03-04. If a probe cannot obtain sufficient responses through the controls, Nmap may report:"
+        },
+        {
+          "kind": "code",
+          "text": "22/tcp filtered ssh"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Filtered is an observation under particular scan conditions. It is not proof that the entire protection configuration is free of weaknesses."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-4",
+          "text": "7.4 Fourth layer: retain acceptance evidence"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A statement that a problem is fixed needs evidence showing what changed and how it was checked."
         },
         {
           "kind": "table",
           "headers": [
             "Work",
-            "Purpose",
-            "Evidence to retain"
+            "What to confirm",
+            "Acceptance evidence"
           ],
           "rows": [
             [
-              "Inventory necessary services and owners",
-              "Identify unnecessary or unexplained entry points",
-              "Confirmed assets, purposes and owners"
+              "Service inventory",
+              "Which services run",
+              "Sockets, processes and asset inventory"
             ],
             [
-              "Remove unnecessarily detailed banners",
-              "Reduce exposure of internal details",
-              "Before/after responses and configuration records"
+              "Banner management",
+              "Unnecessary information was reduced",
+              "Before/after HTTP or SSH responses"
             ],
             [
-              "Restrict access by source",
-              "Expose administration entry points only to approved sources",
-              "Access rules and validation under comparable conditions"
+              "Access control",
+              "Unauthorized sources are restricted",
+              "Firewall rules and test records"
             ],
             [
-              "Verify and patch packages",
-              "Address actual security defects",
-              "Complete package versions, vendor advisories, installation and restart records"
+              "Patching",
+              "Relevant fixes are installed",
+              "Package versions, advisories and update records"
             ],
             [
-              "Observe unexpected probes",
-              "Detect unanticipated connections and identification activity",
-              "Service, proxy and firewall logs correlated by time and source"
+              "Running state",
+              "The service uses updated code",
+              "Process/service state and necessary verification"
+            ],
+            [
+              "Monitoring",
+              "Unexpected probes can be detected",
+              "Service, proxy and firewall logs"
             ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "Hiding a banner manages information disclosure; it does not replace patching. After updating a package, also confirm that the running process uses the new version. A new package on disk alone does not establish that the service has reloaded it."
+          "text": "Record time, source location, target and configuration conditions. Otherwise, different scan outputs may reflect different test environments rather than a security change."
         },
         {
           "kind": "paragraph",
-          "text": "A useful identification record includes authorization scope; target, transport protocol and port; source location; hostname used; time and time zone; tool version and parameters; original response; observed product string; supported inference; internal records; and outstanding questions. Remove passwords, session information and unnecessary personal data before sharing."
+          "text": "Effective administration connects verified identity, patch state and protection behavior. Reducing information disclosure is one part of that work."
         },
         {
           "kind": "heading",
           "id": "section-8",
-          "text": "8 | A safe exercise and understanding checks"
+          "text": "8 | Safe practice and understanding checks"
         },
         {
           "kind": "paragraph",
-          "text": "No network packets are required today. Using the synthetic records in section 6, write three lines:"
+          "text": "The original synthetic exercise needs no network traffic: use the case to write three lines labeled observation, inference and pending verification. The optional Ubuntu exercise below demonstrates banner collection locally."
         },
         {
           "kind": "paragraph",
-          "text": "1. Observation: which responses or documents did I actually obtain?"
+          "id": "section-8-1",
+          "text": "8.1 Exercise objective"
         },
         {
           "kind": "paragraph",
-          "text": "2. Inference: what do those clues currently support?"
+          "text": "On your own Ubuntu computer, start an HTTP service, inspect its listening port, obtain its HTTP banner and identify it with Nmap. The entire exercise uses:"
+        },
+        {
+          "kind": "code",
+          "text": "127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "3. Outstanding verification: which management-side records are still needed to verify versions and patches?"
+          "text": "This is your own computer; no external network scan is needed."
         },
         {
           "kind": "paragraph",
-          "text": "Then try four questions:"
+          "id": "section-8-2",
+          "text": "8.2 Step one: start the HTTP service"
         },
         {
           "kind": "paragraph",
-          "text": "1. A scan displays `443/tcp open https`. If you do not know how the service name was obtained, why should you not fill in a web-server product and version immediately?"
+          "text": "In the first terminal, enter a practice directory you created that contains no sensitive files. Check that 8080 is unused. If another service occupies it, choose an unused port and change every command in this exercise consistently."
         },
         {
           "kind": "paragraph",
-          "text": "2. Nmap establishes a TCP connection and only waits for a greeting. Why is that still not passive collection that never contacts the target?"
+          "text": "Run:"
+        },
+        {
+          "kind": "code",
+          "text": "python3 -m http.server 8080 --bind 127.0.0.1"
         },
         {
           "kind": "paragraph",
-          "text": "3. An external response says `ExampleWeb/1.2`, but there is a reverse proxy and the vendor may backport fixes. What three or more categories of evidence should you obtain to determine whether a particular weakness affects the backend?"
+          "text": "python3 runs Python. -m http.server starts its built-in HTTP server module. 8080 selects the port. --bind 127.0.0.1 restricts binding to loopback."
         },
         {
           "kind": "paragraph",
-          "text": "4. After hiding the version banner, may an administrator mark “vulnerability fixed” as complete? How should these two outcomes be validated separately?"
+          "text": "The server should report that it is listening. It serves files from the current directory, which is why the practice directory must not contain sensitive documents."
         },
         {
           "kind": "paragraph",
-          "text": "Takeaway: entry-point number → response clue → internal verification → patch assessment. Preserve evidence and limits at each step to use service identification for real inventory and defense."
+          "id": "section-8-3",
+          "text": "8.3 Step two: confirm the listener on 8080"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In a second terminal:"
+        },
+        {
+          "kind": "code",
+          "text": "ss -ltnp | grep ':8080'"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An illustrative result is:"
+        },
+        {
+          "kind": "code",
+          "text": "LISTEN 0 5 127.0.0.1:8080 ..."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LISTEN indicates a TCP socket waiting for connections. 127.0.0.1:8080 identifies its local binding. This is host-side evidence, not an external Nmap scan result."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 Step three: inspect the HTTP banner with curl"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Run:"
+        },
+        {
+          "kind": "code",
+          "text": "curl -I http://127.0.0.1:8080"
+        },
+        {
+          "kind": "paragraph",
+          "text": "-I requests response headers; for HTTP, curl uses HEAD. An illustrative response is:"
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/1.0 200 OK\nServer: SimpleHTTP/0.6 Python/3.12.x\nDate: ...\nContent-type: text/html; charset=utf-8"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Exact output varies with Python and the environment. Focus on:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: SimpleHTTP/0.6 Python/3.12.x"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You have observed a successful HTTP response, a SimpleHTTP identifier and a Python-version clue. SimpleHTTP/0.6 is the server identification string, not a complete OS version or proof of any specific vulnerability. Collecting this response is banner grabbing."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5",
+          "text": "8.5 Step four: compare Nmap with and without -sV"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First run:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 8080 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You might obtain:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT     STATE SERVICE\n8080/tcp open  http-proxy"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Without service confirmation, Nmap can display the conventional port name http-proxy. Now run:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 8080 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap will attempt service identification. It may report HTTP and Python HTTP-server information. The exact result depends on Nmap, its probe database and the server response; it need not match an example literally."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5-detail-1",
+          "text": "Compare the two scans"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Observation",
+            "Ordinary port scan",
+            "With -sV"
+          ],
+          "rows": [
+            [
+              "Whether the port is open",
+              "Can observe it",
+              "Can observe it"
+            ],
+            [
+              "Conventional service name",
+              "May display it",
+              "May display it"
+            ],
+            [
+              "Actual service identification",
+              "Not necessarily",
+              "Actively attempts it"
+            ],
+            [
+              "Software-version information",
+              "Usually absent",
+              "May obtain it"
+            ],
+            [
+              "Confirmation of a vulnerability",
+              "No",
+              "Still no"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The difference is the additional service-response evidence, not automatic vulnerability confirmation."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-6",
+          "text": "8.6 Step five: inspect server logs"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Return to the first terminal. You may see:"
+        },
+        {
+          "kind": "code",
+          "text": "127.0.0.1 - - [...] \"HEAD / HTTP/1.1\" 200 -"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This shows that the HTTP service received a request. After -sV, other probes or error responses may appear. Active service identification can leave server-side records, connecting this exercise to IDS, traffic monitoring and anomaly analysis."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stop your server in the first terminal:"
+        },
+        {
+          "kind": "code",
+          "text": "Ctrl + C"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use ss -ltnp again to confirm that the listener you started on 127.0.0.1:8080 has disappeared; check the corresponding port if you changed it. Keep the three-line observation/inference/pending record. Successfully reading a banner does not prove a vulnerability."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9 | Place M03-05 in the wider security knowledge map"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Technique",
+            "Main purpose",
+            "Relationship to banner grabbing"
+          ],
+          "rows": [
+            [
+              "Port scanning",
+              "Find endpoints and states",
+              "Supplies candidates for identification"
+            ],
+            [
+              "Banner grabbing",
+              "Collect service-identification data",
+              "Supplies identity clues"
+            ],
+            [
+              "Service detection",
+              "Identify service types",
+              "May use banners among other methods"
+            ],
+            [
+              "Version detection",
+              "Attempt product/version identification",
+              "May combine banners and other probes"
+            ],
+            [
+              "OS fingerprinting",
+              "Infer an operating system",
+              "Distinct from application-version detection"
+            ],
+            [
+              "Vulnerability analysis",
+              "Assess applicability",
+              "Uses identification as part of its evidence"
+            ],
+            [
+              "Asset management",
+              "Manage organizational assets",
+              "Cross-checks observations with internal records"
+            ],
+            [
+              "Detection engineering",
+              "Develop detection rules and mechanisms",
+              "Uses probe-related logs and traffic features"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Different evidence layers progressively reduce uncertainty:"
+        },
+        {
+          "kind": "code",
+          "text": "Observe TCP 443 open\n       |\n       v\nHypothesize HTTPS\n       |\n       v\nConfirm an HTTP response\n       |\n       v\nCollect Server identification\n       |\n       v\nRecognize a possible reverse proxy\n       |\n       v\nCheck actual backend packages\n       |\n       v\nCheck CVE conditions and vendor advisories\n       |\n       v\nEstablish applicability\n       |\n       v\nRemediate, verify and retain evidence"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The lesson develops more than familiarity with an Nmap option: it teaches how to keep tool output separate from independently established facts."
         },
         {
           "kind": "heading",
           "id": "sources",
-          "text": "Sources and verification scope"
+          "text": "10 | Sources and further reading"
         },
         {
           "kind": "paragraph",
-          "text": "This unit follows the designated source outline's M03-05 “Service Version & Banner Grabbing” and the M03 observation principle. Technical supplements were checked on 2026-11-03. Official web documentation is continuously updated; its contents are not presented as proof of a particular installed tool version."
+          "text": "The lesson follows M03-05 and uses official Nmap, IETF and vendor references."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Source",
+            "Further study"
+          ],
+          "rows": [
+            [
+              "[CS Kairos M03-05](https://learn.cs-kairos.com/en/courses/ceh/v13/m03/concepts/m03-05/)",
+              "Complete lesson and cases"
+            ],
+            [
+              "[Nmap: Service and Version Detection](https://nmap.org/book/man-version-detection.html)",
+              "-sV and service identification"
+            ],
+            [
+              "[Nmap: Version Detection Techniques](https://nmap.org/book/vscan-technique.html)",
+              "Probes, NULL probe and softmatch"
+            ],
+            [
+              "[RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110.html)",
+              "Server headers and HTTP semantics"
+            ],
+            [
+              "[Red Hat: Security Backporting](https://access.redhat.com/security/updates/backporting)",
+              "Distribution security maintenance and backports"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "- [Nmap: Service and Version Detection](https://nmap.org/book/man-version-detection.html)"
+          "text": "The core questions follow. Four reference answers are initially collapsed at the end. Publishing them does not establish that the reader attempted or passed an assessment."
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "11 | Understanding checks"
         },
         {
           "kind": "paragraph",
-          "text": "- [Nmap: Version Detection Technique](https://nmap.org/book/vscan-technique.html)"
+          "text": "Try to reason through each question before opening its reference answer."
         },
         {
           "kind": "paragraph",
-          "text": "- [Nmap: Probe Database and softmatch](https://nmap.org/book/vscan-fileformat.html#vscan-db-softmatch)"
+          "id": "section-11-detail-1",
+          "text": "Question one: port and service"
         },
         {
           "kind": "paragraph",
-          "text": "- [Nmap: OS Detection](https://nmap.org/book/man-os-detection.html)"
+          "text": "Nmap reports:"
+        },
+        {
+          "kind": "code",
+          "text": "443/tcp open https"
         },
         {
           "kind": "paragraph",
-          "text": "- [RFC 9110: HTTP Server field (2022, §10.2.4)](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.4)"
+          "text": "Does this establish that the server uses Nginx? Explain why or why not."
         },
         {
           "kind": "paragraph",
-          "text": "- [Red Hat: Backporting Security Fixes](https://access.redhat.com/security/updates/backporting)"
+          "id": "section-11-detail-2",
+          "text": "Question two: NULL probe"
         },
         {
           "kind": "paragraph",
-          "text": "Reference answers are published with the website lesson. The chat delivery leaves the questions first and provides the answer URL only after production verification. Publishing answers does not mean the reader has submitted an answer or mastered the unit."
+          "text": "Nmap's version-identification process establishes TCP, then waits for the server's banner. Is this completely non-contact passive collection? Explain using the TCP three-way handshake."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-detail-3",
+          "text": "Question three: reverse proxy and backport"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A website returns:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: ExampleWeb/1.2"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You find a CVE affecting some ExampleWeb 1.x versions. The site uses a reverse proxy, and its backend runs on Ubuntu."
+        },
+        {
+          "kind": "paragraph",
+          "text": "What additional evidence is needed to determine whether that CVE actually affects the site?"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-detail-4",
+          "text": "Question four: banner management and patching"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An administrator sees detailed Nginx identification in an HTTP response and configures:"
+        },
+        {
+          "kind": "code",
+          "text": "server_tokens off;"
+        },
+        {
+          "kind": "paragraph",
+          "text": "After reloading Nginx, the field no longer exposes the full version. The administrator announces that the Nginx security vulnerability has been fixed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Is that conclusion supported? How would you separately accept reduced information disclosure and vulnerability remediation?"
+        },
+        {
+          "kind": "heading",
+          "id": "section-summary",
+          "text": "The five concepts to retain"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, a port is not a service. An open-port result describes the endpoint under particular test conditions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second, a banner is a clue, not proof of identity. Advertised product/version information may be incomplete or inaccurate."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third, nmap -sV attempts service/version identification. It may wait for a banner or send probe data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fourth, reverse proxies and backports complicate interpretation. The observed endpoint may not be the backend, and an older upstream version may already contain a fix."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fifth, vulnerability assessment needs linked evidence: actual running packages, vendor advisories, configuration and patch status."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For practice, compare nmap -p 8080, nmap -sV -p 8080 and curl -I in section 8 on your own Ubuntu computer. Use the results to distinguish port state, service identification and version evidence; completing commands alone does not establish understanding."
         },
         {
           "kind": "answer",

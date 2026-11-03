@@ -1,34 +1,41 @@
 # M03-05 source-preserving edition
 
-The complete paired teaching manuscripts and four reference answers are preserved here. Initial content version: **1.0.0**; revision: **1**; content revision date and intended first publication date: **2026-11-03 (Asia/Taipei)**. Production publication is established separately by its deployment receipt, not by these fields alone.
+Current edition: **1.1.0**, revision **2**, revised **2026-11-03 (Asia/Taipei)**. Original publication date remains 2026-11-03. Added localhost practice and expanded teaching scope warrant a minor version. Deployment and live readback are recorded separately in the [release receipt](../../releases/2026-11-03-m03-05-replacement.md).
 
-The adopted route assigns **Service Version & Banner Grabbing** to M03-05. The M03 supplement—port state is an observation, not a compromise result—is included in section 6. This is one composite teaching unit, not an extra unit for each subtopic. No learner submissions or private progress appear here.
+## Source and adoption
 
-`M03-05-teaching.zh-TW.md` retains the complete chat teaching text. `M03-05-teaching.en.md` is its full English counterpart. The final paragraph describes the chat's delivery/answer-link convention; the website additionally displays the complete reference answers as four initially closed native disclosures. Body text, tables, code and diagrams are directly readable. Original sentences stay in order; diagrams and answers supplement them.
+The supplied [complete original](supplied-2026-11-03/teaching-original.txt) is preserved byte-for-byte with source.sha256.json. The previous paired teaching/answer documents, content JSON, models, four source SVGs, README and asset evidence are in archive-v1.0.0. The original four reference answers and two bilingual semantic diagrams are unchanged. Ten diagram/model/ZIP files have recorded SHA-256 checksums in supplied-2026-11-03/preserved-assets.sha256.json.
 
-## Technical sources checked 2026-11-03
+The Chinese manuscript is reconstructed from the original with only the exact changes in [detailed-editorial-changes.json](detailed-editorial-changes.json). The [63-heading bilingual map](detailed-section-map.json) includes all subsections and scenario branches, not merely chapter titles. Both languages contain nine tables and 87 code/output/ASCII blocks. The English counterpart retains each explanation, analogy, condition, example and exercise; prose paragraph lengths differ naturally. The four scenario questions retain stable reference-answer anchors; qa remains empty and no learner progress is claimed.
 
-- [Nmap service/version detection](https://nmap.org/book/man-version-detection.html): port-name mapping, `-sV`, probe behavior and effects.
-- [Nmap technique](https://nmap.org/book/vscan-technique.html): the NULL probe establishes TCP before waiting; some protocols require requests.
-- [Nmap probe format](https://nmap.org/book/vscan-fileformat.html#vscan-db-softmatch): softmatch narrows service probes, not numerical confidence.
-- [Nmap OS detection](https://nmap.org/book/man-os-detection.html): application service identification differs from stack fingerprinting.
-- [RFC 9110 §10.2.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.4), June 2022: optional Server information and disclosure limits. [§3.7](https://www.rfc-editor.org/rfc/rfc9110.html#section-3.7): intermediary/reverse-proxy roles.
-- [Red Hat backport policy](https://access.redhat.com/security/updates/backporting): complete vendor package revisions and patch records matter more than upstream version strings alone.
+Corrections remove personalized deployment assumptions, distinguish TCP application data from SYN-only evidence, scope the version-detection flow to TCP, distinguish configuration reload from replacing running code, mark an option fragment as non-executable, update the reference-answer wording, and add an isolated practice directory, port-conflict handling and cleanup verification. Raw source wording remains preserved. The synthetic CVE, package versions and scan output are illustrations, not verified vulnerabilities or claims about latest releases.
 
-Nmap/Red Hat pages are continuously maintained documentation, not an assertion of a specific installed tool version. All endpoints and products in the teaching case are synthetic. No scan was executed. The exercise analyzes provided text only; it requires no credentials, network activity or cleanup of system changes.
+## Technical review
 
-## Reproduction
+- [Nmap service/version detection](https://nmap.org/book/man-version-detection.html): conventional port names, -sV, default TCP 9100 exclusion and probe impact.
+- [Nmap technique](https://nmap.org/book/vscan-technique.html): TCP NULL probe, response matching and softmatch restrictions; UDP is a separate path.
+- [RFC 9110 §10.2.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.4): optional Server identification and disclosure limits.
+- [Nginx server_tokens](https://nginx.org/en/docs/http/ngx_http_core_module.html#server_tokens): version emission in Server fields and error responses; disabling it is not patching.
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/): layered edge/origin architecture. The teaching topology is hypothetical.
+- [Ubuntu security updates](https://documentation.ubuntu.com/security/security-updates/) and [Ubuntu notices](https://ubuntu.com/security/notices): backported updates and distribution-specific security evidence.
+- [Red Hat backport explanation](https://access.redhat.com/solutions/57665): a fix can be applied to an older maintained package. The original backport-policy URL remains in the supplied manuscript; direct retrieval of that URL failed during this review, so the official explanation and Ubuntu documentation were used to corroborate the concept.
+
+Review date: 2026-11-03. These references are documentation, not installed-version evidence. The local HTTP practice actually ran with Python 3.12.3 and Nmap 7.94SVN; exact observations and scope limits are in the release receipt. Nginx configuration changes, package updates, Cloudflare deployment and external-target scans were not executed.
+
+## Reproduction and acceptance
 
 ```sh
-python3 scripts/m0305_diagrams.py
 python3 scripts/m0305_content.py
-python3 scripts/m0305_diagrams.py --check
 python3 scripts/m0305_content.py --check
+python3 scripts/m0305_diagrams.py --check
 npm run validate:content
 npm test
 npm run check
 node scripts/check-publication-boundary.mjs
 npm run validate:release
+npx playwright test --config playwright.m0305.config.ts
 ```
 
-`diagram-models.json` is the single source for paired semantic HTML flow diagrams and standalone SVGs. The existing fail-closed SVG serializer checks generated downloads. No arbitrary HTML, new framework or new site is introduced. The ZIP is deterministic. Native HTML reflows; the downloaded SVG retains its original coordinate layout. See [acceptance record](../../releases/2026-11-03-m03-05.md).
+Set CEH_BASE_URL=https://learn.cs-kairos.com for production browser readback. Keep local evidence separately before the live run. Tests verify full source order, every mapped heading, complete code blocks, paired table structure, preserved answers/assets and source reconstruction; counts alone do not establish teaching completeness. Browser checks verify four widths, text enlargement, keyboard, no JavaScript and standalone SVG/downloads.
+
+Existing diagram-models.json continues to supply semantic HTML and deterministic standalone SVGs through the fail-closed serializer. No new renderer, framework or SVG trust exception is introduced. The only shared rendering edit enables the existing keyboard-scrollable code branch for M03-05. The M03-02 historical hash test excludes that exact added condition while retaining its original checksum contract.
