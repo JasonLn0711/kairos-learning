@@ -26,13 +26,32 @@ def wrap(text,limit):
  assert all(width(line)<=limit for line in lines),(text,lines)
  return lines
 
+def positions_svg(lang,block):
+ v=block['visual'];nodes=v['items'];assert len(nodes)==3
+ prefix=f'm0307-positions-{lang}-';desc=wrap(v['description'],61);start=100+len(desc)*23;height=start+390
+ out=[f'<svg xmlns="{NS}" viewBox="0 0 640 {height}" role="img" aria-labelledby="{prefix}title {prefix}desc">',f'<title id="{prefix}title">{escape(v["caption"])}</title>',f'<desc id="{prefix}desc">{escape(v["description"])}</desc>',f'<defs><marker id="{prefix}arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#41617b"/></marker></defs>',f'<rect x="1" y="1" width="638" height="{height-2}" rx="20" fill="#f8fafc" stroke="#7892a6"/>']
+ def text(x,y,value,size=16):out.append(f'<text x="{x}" y="{y}" font-family="Noto Sans CJK TC,sans-serif" font-size="{size}" fill="#172b3a">{escape(value)}</text>')
+ text(28,39,v['caption'],21)
+ for i,line in enumerate(desc):text(28,70+i*23,line)
+ out.append(f'<rect x="160" y="{start}" width="320" height="110" rx="12" fill="#eaf3ff" stroke="#77a2d6"/>')
+ text(182,start+29,nodes[0]['title'],19)
+ for i,line in enumerate(wrap(nodes[0]['body'],32)):text(182,start+56+i*23,line)
+ for i,node in enumerate(nodes[1:]):
+  x=20+i*310;y=start+220;color=['#287255','#995a45'][i];dash='' if i==0 else ' stroke-dasharray="7 5"'
+  out.append(f'<path d="M{x+145} {y-5}L{280+i*80} {start+115}" fill="none" stroke="{color}" stroke-width="2.5"{dash} marker-end="url(#{prefix}arrow)"/>')
+  out.append(f'<rect x="{x}" y="{y}" width="290" height="150" rx="12" fill="{["#edf7f0","#fff1ea"][i]}" stroke="{color}"/>')
+  lines=wrap(node['title'],29)+wrap(node['body'],29);assert len(lines)<=6
+  for j,line in enumerate(lines):text(x+14,y+25+j*22,line,15)
+ out.append('</svg>');result=sanitized_svg('\n'.join(out),prefix)+'\n';assert len(result.encode())<100000;return result.encode()
+
 def make_svg(name,lang,block):
  v=block['visual'];prefix=f'm0307-{name}-{lang}-';nodes=v['items']
  assert block['kind']=='visual' and v['kind'] in ('flow','cards')
- assert len(nodes)=={'workflow':4,'evidence':3,'positions':2,'layers':3}[name]
+ assert len(nodes)=={'workflow':4,'evidence':3,'positions':3,'layers':3}[name]
  assert list(block)==['kind','src','downloadLabel','visual']
  assert list(v)==['kind','caption','description','items']
  assert all(set(n)=={'title','body'} and all(isinstance(t,str) and '<' not in t for t in n.values()) for n in nodes)
+ if name=='positions':return positions_svg(lang,block)
  desc=wrap(v['description'],61);height=105+len(desc)*23+len(nodes)*145
  out=[f'<svg xmlns="{NS}" viewBox="0 0 640 {height}" role="img" aria-labelledby="{prefix}title {prefix}desc">',f'<title id="{prefix}title">{escape(v["caption"])}</title>',f'<desc id="{prefix}desc">{escape(v["description"])}</desc>',f'<defs><marker id="{prefix}arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#41617b"/></marker></defs>',f'<rect x="1" y="1" width="638" height="{height-2}" rx="20" fill="#f8fafc" stroke="#7892a6"/>']
  def text(x,y,s,size=16):

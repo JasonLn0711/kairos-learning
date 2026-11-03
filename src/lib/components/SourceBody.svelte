@@ -1,4 +1,5 @@
 <script lang="ts">
+  import NmapPositions from "./NmapPositions.svelte";
   import ScanDiagram from "./ScanDiagram.svelte";
   import scanDiagrams from "$lib/m0303-scan-diagrams.json";
   import DiscoveryDiagram from "./DiscoveryDiagram.svelte";
@@ -35,7 +36,7 @@
         <ReadableDiagramText src={block.src} {lang}/>
         <figcaption>{block.caption}</figcaption>
       </figure>
-    {:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>{:else if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual' && block.src in discoveryDiagrams}<DiscoveryDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in transportDiagrams}<TransportDiagram {block} {lang}/>{:else if block.kind === 'visual' && networkDiagram(block.src)}<NetworkDiagram {block} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
+    {:else if block.kind === 'visual' && ['/images/ceh/m03-07-positions-zh.svg','/images/ceh/m03-07-positions-en.svg'].includes(block.src)}<NmapPositions {block}/>{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>{:else if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual' && block.src in discoveryDiagrams}<DiscoveryDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in transportDiagrams}<TransportDiagram {block} {lang}/>{:else if block.kind === 'visual' && networkDiagram(block.src)}<NetworkDiagram {block} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
     {:else if block.kind === 'accessDiagram'}<AccessDiagram texts={block.texts} src={block.src} />
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>

@@ -7,6 +7,9 @@ for(const c of cases){
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(c.url);await expect(page.locator('.source-visual')).toHaveCount(4);await expect(page.locator('main details')).toHaveCount(4);await expect(page.locator('.article-metadata')).not.toContainText(/閱讀更新|Reading updated/);
   await expect(page.locator('.article-metadata')).toContainText('v'+c.source.contentVersion);
+  await expect(page.locator('.nmap-positions .target')).toHaveCount(1);
+  await expect(page.locator('.nmap-positions .sources section')).toHaveCount(2);
+  await expect(page.locator('.nmap-positions svg > path[stroke-dasharray]')).toHaveCount(1);
   const sections=JSON.parse(readFileSync('docs/sources/m03-07/detailed-section-map.json','utf8'));
   const headings=await page.locator('main h2[id^="section-"],main h3[id^="section-"],main h2#sources,main h3#sources').evaluateAll(es=>es.map(e=>({id:e.id,text:e.textContent})));
   expect(headings).toEqual(sections.map((s:any)=>({id:s.id,text:s[c.lang]})));

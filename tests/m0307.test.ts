@@ -13,7 +13,7 @@ test('M03-07 bilingual structure, source order, answers, searchable figures and 
  for(const [lang,suffix] of [['zh','zh-TW'],['en','en']] as const){
   const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,4);assert.equal(body.filter(b=>b.kind==='answer').length,4);
   assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-scope','answer-discovery','answer-features','answer-comparison']);
-  assert.equal(body.filter(b=>b.kind==='code').length,17);assert.deepEqual(body.filter(b=>b.kind==='visual').map(b=>b.visual.kind),['flow','cards','cards','cards']);
+  assert.equal(body.filter(b=>b.kind==='code').length,17);assert.deepEqual(body.filter(b=>b.kind==='visual').map(b=>b.visual.kind),['flow','cards','flow','cards']);
   const text=body.flatMap(flatten).join('\n');let cursor=0;
   for(let line of readFileSync(`docs/sources/m03-07/M03-07-teaching.${suffix}.md`,'utf8').split('\n')){
    line=line.trim();if(!line||line==='>'||line.startsWith('```')||/^[| :\-]+$/.test(line))continue;
@@ -46,6 +46,6 @@ test('M03-07 retains the entire supplied manuscript with only declared editorial
  assert.equal(actual.split('\n\n### 官方參考來源')[0],expected);
  const sections=JSON.parse(readFileSync('docs/sources/m03-07/detailed-section-map.json','utf8'));
  for(const lang of ['zh','en'] as const){
-  assert.deepEqual(lesson.text[lang].sourceBody!.filter(b=>'id'in b&&b.id&&(b.kind==='heading'||b.kind==='paragraph')).map(b=>({id:b.id,text:'text'in b?b.text:''})),sections.map((s:any)=>({id:s.id,text:s[lang]})));
+  assert.deepEqual(lesson.text[lang].sourceBody!.filter(b=>'id'in b&&b.id&&(b.kind==='heading'||b.kind==='paragraph')).map(b=>({id:'id'in b?b.id:undefined,text:'text'in b?b.text:''})),sections.map((s:any)=>({id:s.id,text:s[lang]})));
  }
 });
