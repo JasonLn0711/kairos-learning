@@ -5,9 +5,13 @@ from html.parser import HTMLParser
 ROOT=Path(__file__).resolve().parents[1]
 lesson=json.loads((ROOT/'content/concepts/m03-05.json').read_text())
 class Text(HTMLParser):
- def __init__(self,s):super().__init__();self.parts=[];self.details=[];self.feed(s)
- def handle_data(self,s):self.parts.append(s)
+ def __init__(self,s):super().__init__();self.parts=[];self.details=[];self.hidden=False;self.feed(s)
+ def handle_data(self,s):
+  if not self.hidden:self.parts.append(s)
+ def handle_endtag(self,t):
+  if t in ['script','style']:self.hidden=False
  def handle_starttag(self,t,a):
+  if t in ['script','style']:self.hidden=True
   if t=='details':self.details.append(dict(a))
 def norm(s):return re.sub(r'\s+',' ',html.unescape(re.sub(r'\[([^\]]+)\]\(https://[^)]+\)',r'\1',s))).strip()
 for lang,prefix in [('zh',''),('en','en/')]:

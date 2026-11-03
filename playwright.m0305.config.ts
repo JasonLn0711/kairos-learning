@@ -1,0 +1,3 @@
+import {existsSync} from 'node:fs';
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'tests/browser',testMatch:'m0305.spec.ts',workers:2,timeout:90000,outputDir:'.local/m0305/browser',reporter:[['list'],['json',{outputFile:'.local/m0305/results.json'}]],use:{baseURL:process.env.CEH_BASE_URL||'http://127.0.0.1:4205',headless:true,trace:'retain-on-failure',launchOptions:{executablePath:existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined}},webServer:process.env.CEH_BASE_URL?undefined:{command:'python3 -m http.server 4205 --bind 127.0.0.1 --directory build',url:'http://127.0.0.1:4205/',reuseExistingServer:false}});
