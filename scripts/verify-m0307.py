@@ -26,6 +26,6 @@ for lang,prefix in [('zh',''),('en','en/')]:
   assert (ROOT/'site'/b['src'].lstrip('/')).read_bytes()==(ROOT/'build'/b['src'].lstrip('/')).read_bytes()
 p=ROOT/'site/downloads/ceh-m03-07-bilingual-svg.zip';assert p.read_bytes()==(ROOT/'build/downloads/ceh-m03-07-bilingual-svg.zip').read_bytes()
 with zipfile.ZipFile(p) as z:
- assert len(z.namelist())==4
+ assert len(z.namelist())==8
  for name in z.namelist():assert z.read(name)==(ROOT/'site/images/ceh'/name).read_bytes()
 print('PASS M03-07 full bilingual text order, 4 closed answers, semantic figures, navigation, exact SVG/ZIP; browser/live pending')

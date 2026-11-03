@@ -1,11 +1,18 @@
-# M03-07 — complete paired source edition
+# M03-07｜Nmap 完整供稿替換
 
-Initial version 1.0.0, revision 1, 2026-11-03 Asia/Taipei. Complete Chinese and English manuscripts and four reference answers are preserved without replacing earlier units. The adopted composite unit is Nmap, Scan Settings and Result Interpretation.
+目前版本 v1.1.0、revision 2；原發布與版本修訂日期均為 2026-11-03（Asia/Taipei）。正文涵蓋十章、理解檢核及所有供稿小節，兩語各 31 個標題、17 個程式／輸出區塊，保留四個原生收合參考答案。
 
-The sourceBody uses the existing typed model. Two indented source examples become accessible, locally scrollable code blocks. They are a reading example and synthetic output, not an executed scan. The workflow figure explains authorized scope → minimal settings → raw results → verification; the evidence figure compares observation, tool inference and administrator verification as parallel cards rather than a false sequence. Both share their bilingual HTML, search text and downloadable SVG source model. Four reference answers start closed; the rest of the lesson remains directly readable.
+- `supplied-2026-11-03.zh-TW.md`：逐位元保留的使用者供稿。
+- `archive-v1.0.0/`：替換前的雙語正文與 JSON；原始 Git 歷史保留。
+- `editorial-changes.json`：逐項記錄來源頁面介面殘片、表頭、服務指紋課次、OS 掃描範圍及實驗步驟修正。單元測試依此重建全文，比對供稿是否遺漏。
+- `detailed-section-map.json`：31 個雙語章節／小節的標題與穩定錨點；h2 為 heading，h3 沿用帶 id 的 paragraph。
+- `M03-07-teaching.*.md`：目前完整雙語教材；`M03-07-answers.*.md` 保留四題答案。
+- `diagram-models.json`：四張雙語圖的共用資料。流程圖表達授權至核實順序；來源位置、掃描層次及證據類別各用比較卡，保留條件，不把獨立情境畫成流程。
 
-Official Nmap references linked in the manuscripts were reviewed on 2026-11-03. No installed version, external scan, learner response or mastery is asserted. Examples use a synthetic isolated target and are not instructions to inspect third parties.
+使用者提供的參考分享頁讀取失敗，截圖位於另一台主機的暫存路徑，未取得檔案。現有圖依供稿文字與既有原生重排規範製作；**參考圖外觀與節點關係比對仍待取得原圖**，不宣稱已忠實重製。私人暫存路徑與分享識別碼不寫入公開教材。
 
-Reproduce with scripts/m0307_content.py and scripts/m0307_diagrams.py, including --check. Tests verify full text order, both code examples, four paired answers, exact diagram model, sanitized deterministic SVG/ZIP, source privacy, stable IDs and pending M03-08 navigation.
+重製與驗證：依序執行 `python3 scripts/m0307_content.py`、`python3 scripts/m0307_diagrams.py`；兩者皆支援 `--check`。執行內容、單元、型別、發布邊界及 release 檢查後，以 `npx playwright test --config playwright.m0307.config.ts` 檢查雙語四尺寸、200% 文字、鍵盤、無 JavaScript、SVG 幾何及下載位元組。正式站使用 `CEH_BASE_URL=https://learn.cs-kairos.com`。
 
-See ../../releases/2026-11-03-m03-07.md for the per-page acceptance record. Passing static checks does not establish live deployment or manual viewport acceptance.
+官方 Nmap 文件於 2026-11-03 核對。網站範例輸出保留為示例；另在本機以 Ubuntu 套件的 Nmap 7.94SVN 執行 TCP 8000／8001 loopback smoke，觀察服務停止前後 open→closed，兩組原始文字／XML 與工具版本留於忽略的 `.local/m0307/lab/`。此檢查只證明本機範例，不代表 NAS、防火牆、Tunnel 驗收或學習完成。
+
+[本次修訂與驗收回執](../../releases/2026-11-03-m03-07-replacement.md)接續[初版回執](../../releases/2026-11-03-m03-07.md)。

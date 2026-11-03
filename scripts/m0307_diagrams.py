@@ -29,7 +29,7 @@ def wrap(text,limit):
 def make_svg(name,lang,block):
  v=block['visual'];prefix=f'm0307-{name}-{lang}-';nodes=v['items']
  assert block['kind']=='visual' and v['kind'] in ('flow','cards')
- assert len(nodes)==(4 if name=='workflow' else 3)
+ assert len(nodes)=={'workflow':4,'evidence':3,'positions':2,'layers':3}[name]
  assert list(block)==['kind','src','downloadLabel','visual']
  assert list(v)==['kind','caption','description','items']
  assert all(set(n)=={'title','body'} and all(isinstance(t,str) and '<' not in t for t in n.values()) for n in nodes)
@@ -53,7 +53,7 @@ def make_svg(name,lang,block):
  return result.encode()
 
 def generate():
- models=json.loads((SOURCE/'diagram-models.json').read_text());assert set(models)=={'workflow','evidence'}
+ models=json.loads((SOURCE/'diagram-models.json').read_text());assert set(models)=={'workflow','evidence','positions','layers'}
  targets={};assets={}
  for name,langs in models.items():
   assert set(langs)=={'zh','en'}

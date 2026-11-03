@@ -6,13 +6,10 @@ SRC=ROOT/'docs/sources/m03-07'
 models=json.loads((SRC/'diagram-models.json').read_text())
 def cells(s):return [c.strip().replace(r'\|','|') for c in re.split(r'(?<!\\)\|',s.strip('|'))]
 def parse(lang,suffix):
+ sections=iter(json.loads((SRC/'detailed-section-map.json').read_text())); heading_index=0
  blocks=[];lines=(SRC/f'M03-07-teaching.{suffix}.md').read_text().splitlines();i=0
  while i<len(lines):
-  raw=lines[i];s=raw.strip();i+=1
-  if raw.startswith('    '):
-   code=[raw[4:]]
-   while i<len(lines) and lines[i].startswith('    '):code.append(lines[i][4:]);i+=1
-   blocks.append(dict(kind='code',text='\n'.join(code)));continue
+  s=lines[i].strip();i+=1
   if not s:continue
   s=s.replace('**','')
   if s.startswith('```'):
@@ -26,21 +23,26 @@ def parse(lang,suffix):
     if re.fullmatch(r'[| :\-]+',row):continue
     rows.append(cells(row))
    blocks.append(dict(kind='table',headers=rows[0],rows=rows[1:]));continue
-  if s.startswith(('## ','### ')):
-   title=re.sub(r'^#{2,3} ','',s)
-   if re.match(r'^\d+',title):ident='section-'+re.match(r'^\d+',title)[0]
-   elif title.startswith('A.'):ident='section-5-proxy'
-   elif title.startswith('B.'):ident='section-5-backport'
-   else:ident='sources'
-   blocks.append(dict(kind='heading',id=ident,text=title));continue
-  blocks.append(dict(kind='paragraph',text=s.removeprefix('# ')))
- for before,key in [('section-3','workflow'),('section-8','evidence')]:
-  at=next(i for i,b in enumerate(blocks) if b.get('id')==before);blocks.insert(at,models[key][lang])
+  if s in ('---','>'):continue
+  if re.match(r'^#{1,3} ',s):
+   title=re.sub(r'^#{1,3} ', '', s)
+   if heading_index==0:
+    heading_index+=1;blocks.append(dict(kind='paragraph',text=title));continue
+   entry=next(sections);assert entry[lang]==title,(lang,title,entry)
+   blocks.append(dict(kind=entry['kind'],id=entry['id'],text=title));continue
+  if s.startswith('- '):
+   items=[s[2:]]
+   while i<len(lines) and lines[i].strip().startswith('- '):
+    items.append(lines[i].strip()[2:].replace('**',''));i+=1
+   blocks.append(dict(kind='list',items=items));continue
+  blocks.append(dict(kind='paragraph',text=s.removeprefix('> ')))
+ for before,key in [('section-1-1','workflow'),('section-3','positions'),('section-4-1','layers'),('section-7-3','evidence')]:
+  at=next(i for i,b in enumerate(blocks) if b.get('id')==before);blocks.insert(at if before in ('section-3','section-4-1') else at+1,models[key][lang])
  for chunk in (SRC/f'M03-07-answers.{suffix}.md').read_text().split('\n## ')[1:]:
   head,*paras=chunk.strip().split('\n\n');ident,title=re.split(r'｜|\s*\|\s*',head,maxsplit=1)
   blocks.append(dict(kind='answer',id=ident.strip(),summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title.strip(),paragraphs=paras))
- return dict(summary='把授權範圍、掃描設定與原始結果串成可查核的工作流程。' if lang=='zh' else 'Connect permission, scan settings and original results into a verifiable workflow.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-07',revision=1,contentVersion='1.0.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+ return dict(summary='從授權範圍、掃描設定與原始結果，練習可查核的 Nmap 判讀與本機實驗。' if lang=='zh' else 'Connect authorized scope, settings and original evidence to defensible Nmap interpretation and a local experiment.',sections=[],sourceBody=blocks)
+lesson=dict(id='M03-07',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 p=ROOT/'content/concepts/m03-07.json';data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n'
 if '--check' in sys.argv:assert p.read_text()==data
 else:p.write_text(data)

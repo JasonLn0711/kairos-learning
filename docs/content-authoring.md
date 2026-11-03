@@ -320,3 +320,7 @@ M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 
 ## M03-06 完整作業系統指紋教材 v1.1.0
 
 [來源紀錄](sources/m03-06/README.md)保留原供稿、v1.0.0 舊版、69 個雙語章節／小節對照及明列修正。編輯兩語 Markdown 後執行 `python3 scripts/m0306_content.py`；兩張既有圖及四題參考答案保留，圖檔以 `m0306_diagrams.py --check` 核對。來源全文對照、單元、型別、發布邊界與 release 通過後，執行 `npx playwright test --config playwright.m0306.config.ts`，正式站設定 `CEH_BASE_URL`。沿用 sourceBody 標題與原生局部捲動，不新增框架；[修訂回執](releases/2026-11-03-m03-06-replacement.md)區分本機與正式驗收。
+
+## M03-07 完整 Nmap 教材 v1.1.0
+
+[來源紀錄](sources/m03-07/README.md)保留完整供稿、v1.0.0 原版及逐項修正，31 個雙語章節／小節以 detailed-section-map.json 對應。修改兩語 Markdown 後執行 `python3 scripts/m0307_content.py`；四張共用模型圖以 `python3 scripts/m0307_diagrams.py` 產生，兩者皆支援 `--check`。完成內容、單元、型別、發布邊界及 release 驗證，再用 `npx playwright test --config playwright.m0307.config.ts` 驗收；正式站設定 `CEH_BASE_URL`。[修訂回執](releases/2026-11-03-m03-07-replacement.md)區分本機實測、發布回讀及尚待取得的參考圖比對。
