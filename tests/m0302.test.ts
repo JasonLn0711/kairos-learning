@@ -102,8 +102,8 @@ test('M03-02 ARP supplement preserves both named figures, prior ICMP, and all se
  for(const [path,hash] of Object.entries(hashes)){
   let data=readFileSync(path);
   if(path==='src/lib/components/SourceBody.svelte'){
-   // Preserve the ARP byte contract while allowing the explicit M03-03 through M03-05 additions.
-   const original=data.toString().replace('  import ScanDiagram from "./ScanDiagram.svelte";\n','').replace('  import scanDiagrams from "$lib/m0303-scan-diagrams.json";\n','').replace("{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>",'').replace("||conceptId==='M03-03'",'').replace("||conceptId==='M03-04'",'').replace("||conceptId==='M03-05'",'');
+   // Preserve the ARP byte contract while allowing the explicit M03-03 through M03-06 additions.
+   const original=data.toString().replace('  import ScanDiagram from "./ScanDiagram.svelte";\n','').replace('  import scanDiagrams from "$lib/m0303-scan-diagrams.json";\n','').replace("{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>",'').replace("||conceptId==='M03-03'",'').replace("||conceptId==='M03-04'",'').replace("||conceptId==='M03-05'",'').replace("||conceptId==='M03-06'",'');
    data=Buffer.from(original);
   }
   assert.equal(createHash('sha256').update(data).digest('hex'),hash,path);

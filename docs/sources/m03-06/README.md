@@ -25,3 +25,18 @@ Nmap documentation is continuously maintained; no specific installed version or 
 Run scripts/m0306_diagrams.py and scripts/m0306_content.py; their --check modes verify deterministic regeneration. Run npm run validate:content, npm test, npm run check, node scripts/check-publication-boundary.mjs and npm run validate:release in sequence.
 
 The existing sourceBody.visual model supplies both native HTML flows and sanitized SVG downloads. No arbitrary HTML, new framework or separate site is introduced. Native HTML reflows; downloadable SVGs preserve fixed original geometry. Full acceptance is recorded in ../../releases/2026-11-03-m03-06.md.
+
+
+## 2026-11-03 full supplied replacement — v1.1.0
+
+The [supplied manuscript](supplied-2026-11-03/teaching-original.txt) is preserved byte for byte with its [SHA-256](supplied-2026-11-03/source.sha256.json). The complete previous bilingual edition, answers, models and concept JSON remain in [archive-v1.0.0](archive-v1.0.0/README.md).
+
+The current edition replaces the body with all supplied chapters and subsections, including the overview, nine main sections, sources, extended teaching Q&A and review. The [69-entry bilingual map](detailed-section-map.json) connects each heading to a stable rendered anchor; the article title remains introductory text beneath the existing page title. The [editorial changes](detailed-editorial-changes.json) reconstruct the Chinese manuscript from the supplied original, retaining explanations, examples, tables and ASCII diagrams. The English edition follows every subsection with the same mechanisms, scenarios, values and limits; paragraph wrapping and explanatory phrasing differ.
+
+Corrections distinguish three feature groups, SACK Permitted, unscaled SYN/SYN-ACK windows, and TCP-based HTTPS from HTTP/3. LaTeX is rendered as equivalent searchable plain-text formulas. Extended teaching Q&A stays in the body; actual learner qa remains empty. No network scan or learner completion is claimed.
+
+The two existing native HTML diagrams, four downloadable SVGs, ZIP and four reference answers remain unchanged in content. The proxy figure now follows section 6 and the evidence figure follows section 7, adjacent to their explanations. [Preservation hashes](supplied-2026-11-03/preserved-assets.sha256.json) cover the diagram model and downloads. Existing section-1 through section-9 and sources anchors remain valid. New subheadings use the existing sourceBody paragraph-with-id contract; no new markup injection path is introduced.
+
+Source review on 2026-11-03 checked the Nmap and RFC references listed above, plus [RFC 7323 section 2.2](https://www.rfc-editor.org/rfc/rfc7323.html#section-2.2) for SYN window scaling and [RFC 9114](https://www.rfc-editor.org/rfc/rfc9114.html) for HTTP/3. These are documentation checks, not a live network experiment.
+
+Run the existing content generator and checks, then `npx playwright test --config playwright.m0306.config.ts`. Set `CEH_BASE_URL=https://learn.cs-kairos.com` for the same browser checks against production. [Replacement receipt](../../releases/2026-11-03-m03-06-replacement.md) records this version's validation and publication separately from historical v1.0.0 evidence.
