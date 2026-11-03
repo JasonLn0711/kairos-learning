@@ -266,3 +266,27 @@ npm run test:browser:m0206
 `python3 scripts/m0301_diagrams.py` 產生受限資料副本與來源 SVG；再依序執行 `m0301_svg.py`、`m0301_content.py`。SVG 沿用既有 fail-closed serializer，viewBox 維持 900×624，繪圖座標以等比 transform 保留參考圖比例。`TransportDiagram.svelte` 使用同一份資料輸出可選取 HTML，窄欄重排，不把縮小 SVG 當成手機正文。下載 SVG 與 ZIP 保留桌面關係；來源原版在 `archive-v1.0.0/`。
 
 驗收：內容、單元、型別、發布邊界、靜態輸出，加上 `npx playwright test --config playwright.footprints.config.ts`。圖解原生顯示，三題參考答案預設收合；`qa` 維持空陣列。原發布日不變，修訂與學習進度分開記錄。
+
+## M03-02 ICMP／ARP 白話教學與比較圖
+
+v1.1.0 依 2026-11-03 供稿替換主機探索、ICMP、ARP 說明，補充 Ubuntu 觀察練習與三題情境檢核；原發布日與 section-1 至 section-9 保留。兩語各七個原生參考答案預設收合，`qa` 仍為空。原稿與參考圖保存於 [來源紀錄](sources/m03-02/revision-2026-11-03.md)。
+
+[discovery-diagrams.json](sources/m03-02/discovery-diagrams.json)只提供兩種已知版型：outcomes 為三張卡，next-hop 為兩張卡；每卡含 2 或 3 個 endpoint（title、address）、相鄰節點的有向 edge（source、target、label、solid／dashed）、claim 與 notes。ICMP 前兩卡有去回兩條 edge，第三卡只有送出但未確認交付的虛線。ARP 本地卡去回兩條 edge，遠端卡依序交付閘道與遠端；後者是資料轉送，不是 ARP 跨路由器。
+
+產生器驗證關係與純資料，HTML 與 SVG 共用同一來源。`DiscoveryDiagram.svelte` 僅依四個已知資產路徑選取模型，以 Svelte 跳脫文字；不接受任意 SVG 或 HTML。650px 以上圖欄並排比較，較窄時按 DOM 順序重排；各卡寬度不足時 endpoint 與方向箭頭改成直向。原圖保留參考圖的桌面分組與雙向／轉送關係，採 852×600 viewBox 與內部等比例座標，沿用既有 SVG sanitizer，不放寬審核邊界。原圖下載可放大，HTML 節點保持正文大小。
+
+維護順序：
+
+```sh
+python3 scripts/m0302_discovery.py
+python3 scripts/m0302_svg.py
+python3 scripts/m0302_content.py
+npm run validate:content
+npm test
+npm run check
+node scripts/check-publication-boundary.mjs
+npm run validate:release
+npm run test:browser:m0302
+```
+
+新圖四份 SVG 可逐張下載；舊八份 SVG 與原 ZIP 保留。`m0302_discovery.py --check` 驗證來源 SVG 與 HTML 模型同步，`m0302_svg.py --check` 驗證受審核產物與搜尋標籤。瀏覽器驗收檢查雙語四尺寸、200% 文字、無 JavaScript、鍵盤操作、下載位元組與 SVG 文字邊界。依專案 AGENTS.md，文章修訂包含該次修改的提交與部署授權；完成驗證後接續發布，再執行正式站回讀。本機驗收不能代替正式站回讀。[修訂回執](releases/2026-11-03-m03-02-discovery.md)

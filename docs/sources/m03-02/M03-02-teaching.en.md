@@ -1,96 +1,171 @@
-# CEH M03-02 | Host Discovery: ICMP and ARP
+# CEH M03-02 | Host discovery: ICMP and ARP
 
-## 1 | The core idea
+## 1 | Find activity, interpret replies, and select the next hop
 
-Host discovery identifies which network addresses currently respond within an authorized scope, recording the response method, observation point, and time. ICMP helps observe responses related to IP communication. ARP helps find the MAC address of the next IPv4 hop on a local Ethernet network. They answer different questions; together they support clearer asset and connectivity records.
+Host discovery looks for activity at network addresses under a specified time, observation point, and probe configuration. After a reply arrives, identify who replied, which message it represents, and what it establishes.
 
-M03-01 separated IP, TCP/UDP, ports, and services. Today we take the preceding step: before investigating which services are available, how do we observe activity associated with an address?
+Imagine delivering a document to an office building. You call to check whether someone answers, then determine whether this leg of delivery goes to the recipient or a forwarding desk. An unanswered call has several possible explanations. A desk accepting the document does not establish that all the recipient's work is functioning.
 
-Imagine delivering documents to an office building. You might first call to see who answers, then ask on the same floor which office uses a particular extension. Calling and asking a local contact are two observation methods. Distinguish the person answering, the forwarding switchboard, and the intended recipient. The examples below use a synthetic network and involve no external-device operations.
+| Concept | Plain-language meaning | Question answered |
+|---|---|---|
+| Host Discovery | Look for signs of activity | Which addresses warrant further checks? |
+| ICMP | IP communication status messages | Was an echo or an error received? |
+| Timeout | No expected reply within the wait | What is known, and which evidence is missing? |
+| ARP | Ask for the local next hop's MAC | Who receives this Ethernet delivery? |
 
-## 2 | The output: an observation with context
+M03-01 explained IP, TCP, UDP, and ports. This lesson focuses on typical IPv4 Ethernet and separates address responses from service availability. Addresses, times, and outputs below are teaching examples; practical exercises start on the local computer.
 
-A host is a network endpoint such as a computer, server, or printer. Network devices such as routers may also respond to probes. A probe is a specific message sent to observe a condition; a response is the result received.
+## 2 | Discovery produces an observation with context
 
-A useful record includes:
-- Observation point: for example, the authorized test computer and its network segment.
-- Target: the specified IP address and asset scope.
-- Method: ICMP Echo, ARP, or another approved method.
-- Timing: date, time zone, timeout, and retry count.
-- Result: response source, type, content, and delay.
-- Next step: comparison with the asset register, device records, or an approved service check.
+A host is a network-capable device such as an Ubuntu computer, NAS, server, or printer. Routers and other network devices may also respond to probes. With management authorization, use a designated test computer to observe responses from approved devices.
 
-“At 08:00, an ICMP Echo Reply was received from this address from the test network” gives colleagues a more useful starting point than “this machine is definitely healthy.” Device communication, application availability, and login permissions belong to separate layers and separate record fields.
+A NAS can answer ICMP while its DSM interface is stopped. A printer can print successfully while policy suppresses Echo Replies. Discovery supplies evidence about particular communication. The [Nmap host discovery documentation](https://nmap.org/book/man-host-discovery.html) describes its role in narrowing the set of targets for subsequent checks.
 
-Nmap is a network-discovery tool. Its official documentation describes host discovery as narrowing the targets requiring further investigation and supports discovery across several protocols. [Nmap host discovery](https://nmap.org/book/man-host-discovery.html)
+Compare two illustrative records: “192.168.1.50 did not respond; possibly offline” and “2026-11-03 10:00 Taiwan time: from 192.168.1.10, sent 4 ICMP Echo Requests to 192.168.1.50, waiting 1 second for each; no expected Echo Reply arrived. Check ICMP policy, connectivity, and device state.” The second preserves conditions a colleague can investigate. It illustrates a record format, not a per-packet timing guarantee for the Linux ping command below.
 
-## 3 | ICMP: status reporting for IP networks
+- Record the source computer, network, and target IP.
+- Record protocol, tool and options, time and time zone, count, and waiting conditions.
+- Record the actual responder, Type/Code and content, or absence of an expected reply.
+- List possible causes, unknowns, and the next verification separately.
 
-ICMP, Internet Control Message Protocol, carries control and diagnostic messages related to IP communication. Think of it as status notifications during delivery.
+| Level | Illustrative wording | Supported? |
+|---|---|---|
+| Observation | No expected reply to 4 Echo probes | Yes; preserve the conditions |
+| Inference | A firewall may restrict ICMP | Check policy |
+| Inference | The device may be powered off | Check device state |
+| Conclusion | The device certainly does not exist | Insufficient evidence |
 
-Three common message types are:
-- Echo Request/Echo Reply: a request and corresponding reply used to observe round-trip communication.
-- Destination Unreachable: reports a particular delivery problem.
-- Time Exceeded: reports an exceeded time limit, such as an exhausted TTL. TTL is the field limiting how many router hops a packet can traverse.
+## 3 | ICMP reports IP communication status
 
-ICMP describes status with message types and codes. TCP and UDP have their own port fields. Read the protocol together with its fields to choose the appropriate interpretation. [RFC 792: ICMP](https://www.rfc-editor.org/rfc/rfc792)
+ICMP, Internet Control Message Protocol, carries IP control and diagnostic messages. IP provides best-effort delivery without guaranteeing success. Like delivery-status notices, ICMP can report some problems, but does not guarantee notification of every error.
 
-The ping program commonly uses Echo Request and Echo Reply. For IPv4, an Echo Request has Type 8 and an Echo Reply has Type 0. The identifier, sequence number, and data help match replies with requests.
+### 3.1 ping, Echo messages, and round-trip time
 
-The following is a paper example, not an actual execution result:
+ping is a diagnostic tool that commonly uses ICMP Echo Request and Echo Reply to observe round-trip communication. Host 192.168.1.10 sends a request; 192.168.1.20 may reply if it receives and permits it. The sender associates the reply using fields such as identifier and sequence number. RTT, Round-Trip Time, measures the interval from sending the request to receiving its matching reply.
 
-Test endpoint → 192.0.2.20: Echo Request, sequence 1
-192.0.2.20 → test endpoint: Echo Reply, sequence 1
-Round-trip time: 2 milliseconds
+The following is illustrative output, not a measured result:
 
-RTT, round-trip time, includes sending the message, processing at the other endpoint, and returning the response. A series of results can reveal delay and loss at that time; other times and routes may yield different results. Ping output format also depends on the operating system.
+```text
+64 bytes from 192.168.1.20: icmp_seq=1 ttl=64 time=2.15 ms
+```
+
+| Field | Meaning |
+|---|---|
+| 192.168.1.20 | Source IP shown in the reply |
+| icmp_seq=1 | Sequence number of this Echo probe |
+| ttl=64 | Remaining TTL at arrival, not 64 routers already traversed |
+| time=2.15 ms | RTT of this request and reply |
+
+Several probes describe latency and loss at that time. A small sample cannot establish overall network performance or website quality.
+
+### 3.2 Read Type/Code rather than TCP/UDP ports
+
+ICMPv4 is carried directly in IPv4 packets and has no TCP/UDP source or destination port fields. Type and Code identify the message; Echo also has an identifier and sequence number. When reading a capture in Wireshark, identify the protocol before selecting the fields to interpret.
+
+| ICMPv4 Type | Message | Interpretation |
+|---|---|---|
+| 8 | Echo Request | Echo request, Code 0 |
+| 0 | Echo Reply | Echo reply, Code 0 |
+| 3 | Destination Unreachable | Code distinguishes causes such as network, host, or port unreachable |
+| 11 | Time Exceeded | Code 0: TTL exhausted in transit; Code 1: fragment reassembly timeout |
+
+See [RFC 792](https://www.rfc-editor.org/rfc/rfc792) for these types and fields. ICMP supplies IP control messages; applications such as HTTP, SSH, and DNS communicate through their respective transport protocols.
 
 ## 4 | Interpret replies and timeouts
 
-A corresponding Echo Reply supports the observation that Echo communication with the address was reachable from this location at this time. If a router returns an unreachable message, record its address and the reported type, then examine routing or policy.
+Group observations into three categories: Echo Reply received, ICMP error received, and no expected reply received. Destination Unreachable and Time Exceeded both belong to the error category.
 
-A timeout means the expected response was not received within the configured waiting period. Investigate the relevant possibilities: device sleep, link or route availability, packet loss, and device or firewall response policy. The asset register, endpoint-management records, and other authorized observations help narrow the cause.
+![Three ICMP observations](figures/05-icmp-outcomes.en.svg)
 
-For example, a company printer may be printing while management policy disables Echo Replies. Record both “print-service job records are present” and “this Echo probe timed out.” Each describes a different observation.
+### 4.1 An Echo Reply arrives
 
-This is a practical security-analysis habit: record received evidence first, then choose the next verification step. ICMP error generation and delivery have their own conditions. Preserving the timeout status makes subsequent investigation more precise. [RFC 1122: host communication requirements](https://www.rfc-editor.org/rfc/rfc1122)
+If ping -c 4 192.168.1.20 against an approved NAS receives four matching Echo Replies, record successful Echo round trips from this source at that time. The operating system may still reply when DSM is broken. Use the task's service checks to verify DSM, SSH, or a database separately.
 
-## 5 | ARP: find the next hop's MAC address locally
+### 4.2 Destination Unreachable arrives
 
-Ethernet delivers frames on a local link. A frame carries source and destination MAC addresses. MAC means Media Access Control; a MAC address identifies a network interface on the link.
+Illustrative output:
 
-ARP, Address Resolution Protocol, maps a next-hop IPv4 address to a MAC address in a typical IPv4 Ethernet environment. It resembles asking within a local delivery area: which interface uses this IP address, and what is its delivery address?
+```text
+From 192.168.1.1: Destination Host Unreachable
+```
 
-Synthetic setting: A and B share a local Ethernet network. A is 192.0.2.10 and B is 192.0.2.20.
+Read From 192.168.1.1 first. If that is the gateway, the gateway reported a delivery problem. A local network stack or another device can also produce the message. Record source, Type, and Code, then investigate routing, links, or policy. This message alone does not confirm that the remote host is powered off.
 
-1. A needs to deliver data to B and first checks for an existing local mapping.
-2. When resolution is needed, A sends an ARP Request asking who uses 192.0.2.20.
-3. A typical request is broadcast within the broadcast domain. A device matching the target responds with an ARP Reply.
-4. Once A obtains the MAC mapping, it can fill in the Ethernet frame's destination address.
+### 4.3 Time Exceeded arrives
 
-IP addresses inside ARP are query and response fields. ARP itself is carried directly by Ethernet. This differs from carrying ICMP inside an IP packet. [RFC 826: ARP](https://www.rfc-editor.org/rfc/rfc826)
+IPv4 TTL, Time To Live, limits packet lifetime. Normal routing reduces it by at least 1 per hop. On exhaustion, the packet is discarded and Type 11, Code 0 may be returned. This is one mechanism used by traceroute/tracepath tools to observe paths. It does not mean the test tool waited 5 or 10 seconds. Type 11 also includes fragment reassembly timeout as Code 1, so read the Code.
 
-An ARP cache temporarily stores IP-to-MAC mappings. A cache entry may come from earlier communication. A newly received reply and an existing entry represent observations at different times. Device movement, address changes, and cache updates can change the mapping.
+### 4.4 Timeout: the expected reply did not arrive
 
-## 6 | Local and remote networks: whose address does ARP resolve?
+```text
+4 packets transmitted, 0 received, 100% packet loss
+```
 
-This section connects the previous lesson's IP concepts with ARP.
+This illustrative summary shows no expected Echo Replies to four requests. Preserve command options and full output to check for additional error messages. Possible causes include power-off, sleep, Echo filtering, routing problems, lost requests or replies, ICMP rate limits, and a broken return path.
 
-Assume A is configured as 192.0.2.10/24. Its routing table treats 192.0.2.0/24 as directly connected, and its default gateway is 192.0.2.1. The /24 indicates a 24-bit network prefix. All addresses in this example are planned documentation data for paper-based teaching.
+Timeout is a tool's waiting outcome. Time Exceeded is a received ICMP error type. Keeping these observations separate directs the next investigation.
 
-Scenario 1: A sends to 192.0.2.20.
+### 4.5 ping can fail while a website works
 
-Routing selects the local destination. A resolves the MAC address for 192.0.2.20 and delivers the frame to it.
+Suppose policy on 192.168.1.50 silently drops ICMP Echo Requests, allows TCP/443, and limits TCP/22 to designated management sources. ping may time out while HTTPS serves requests successfully. A policy that returns errors instead would produce a different observation.
 
-Scenario 2: A sends to remote address 198.51.100.20.
+Host discovery looks for activity; service-availability checks test whether a specified service performs the required function. The next lesson on port scanning examines responses from service endpoints.
 
-Routing selects the default gateway as the next hop. A resolves the MAC address for 192.0.2.1. The IP packet still targets the remote destination; the local frame targets the gateway interface. The gateway then forwards according to its routes.
+## 5 | ARP finds the local next hop's MAC address
 
-Remember: the destination IP describes where this IP delivery is going; the local destination MAC describes whom this link hands the frame to. Actual next-hop selection follows routing tables, interfaces, and network configuration. [RFC 1122: local/remote decision](https://www.rfc-editor.org/rfc/rfc1122)
+### 5.1 Why is a MAC needed when the IP is known?
 
-Direct ARP discovery therefore applies to the local link. Discovery across routed networks requires an approved method that can reach the target. A VLAN, Virtual LAN, can divide Layer 2 broadcast domains. With proxy ARP, a device answers on behalf of other addresses; verify the responder and the target asset separately when that configuration is present.
+IP describes the packet's network destination. Ethernet delivers frames locally, with source and destination MAC addresses in each frame. Think of IP as the postal destination and the destination MAC as the desk receiving this leg of delivery.
 
-IPv6 uses Neighbor Discovery, or ND, with ICMPv6 for functions including neighbor-address resolution. It has its own messages and operating rules. For now, retain the distinction between common IPv4 ARP and IPv6 ND. [RFC 4861: IPv6 Neighbor Discovery](https://www.rfc-editor.org/rfc/rfc4861)
+A MAC, Media Access Control, address is 48 bits in common Ethernet networks; 02:00:00:00:00:20 is an illustrative value. Ethernet and Wi-Fi interfaces on one computer may have different MAC addresses. Addresses may be randomized, changed, or spoofed, so a MAC alone is not an unforgeable device identity.
+
+ARP, Address Resolution Protocol, resolves a local next-hop IPv4 address to a MAC address. Ethernet carries ARP directly. Its fields include IPv4 addresses, but ARP is not inside an IPv4 packet. [RFC 826](https://www.rfc-editor.org/rfc/rfc826) describes the resolution process.
+
+### 5.2 Four steps in a local Request/Reply exchange
+
+Assume A is 192.168.1.10 with MAC 02:00:00:00:00:10, and B is 192.168.1.20 with MAC 02:00:00:00:00:20, on the same local Ethernet link.
+
+- A checks its ARP cache and may use an available mapping directly.
+- When resolution is needed, A sends an ARP Request asking who uses 192.168.1.20. A typical resolution request uses destination MAC ff:ff:ff:ff:ff:ff, broadcasting within that broadcast domain.
+- B sends an ARP Reply containing its IPv4/MAC mapping. A reply to a typical request is usually sent directly back to A.
+- A puts B's MAC in the Ethernet destination field to deliver the enclosed IP packet.
+
+### 5.3 A cached entry may reflect an earlier observation
+
+On Ubuntu, ip -4 neigh show displays IPv4 neighbor information. Illustrative output:
+
+```text
+192.168.1.1 dev enp3s0 lladdr 02:00:00:00:00:01 REACHABLE
+```
+
+192.168.1.1 is the neighbor IPv4 address; dev enp3s0 names the local interface; lladdr introduces the link-layer address. Linux manages the final state:
+
+| State | Meaning |
+|---|---|
+| REACHABLE | The kernel considers the neighbor reachable during the reachability validity period |
+| STALE | The mapping remains valid, but reachability needs confirmation on subsequent use; not proof of being offline |
+| INCOMPLETE | Resolution has not completed |
+| FAILED | This resolution or reachability check failed |
+
+Record when a cache entry was read separately from when a new ARP Reply arrived. Neighbor states do not establish the health of every device service. [ip-neighbour manual](https://man7.org/linux/man-pages/man8/ip-neighbour.8.html)
+
+### 5.4 ARP's trust boundary
+
+Basic ARP supplies no cryptographic identity authentication. If a forged mapping is accepted, such as mapping 192.168.1.1 to an unexpected device's MAC, traffic may be directed to that device. This is the basic risk of ARP spoofing. Corroborate identity using switch records, asset information, and network access controls.
+
+IPv6 uses Neighbor Discovery, ND, through ICMPv6 for functions including neighbor-address resolution, rather than IPv4 ARP. [RFC 4861](https://www.rfc-editor.org/rfc/rfc4861)
+
+## 6 | Local and remote delivery: whose MAC does ARP resolve?
+
+Assume A is 192.168.1.10/24; its routing table treats 192.168.1.0/24 as directly connected and selects 192.168.1.1 as the default gateway. /24 means a 24-bit network prefix. This example uses ordinary IPv4 Ethernet without added NAT or tunnels.
+
+![ARP local next hop](figures/06-arp-next-hop.en.svg)
+
+For 192.168.1.20 on the same link, routing selects direct delivery. A resolves B's MAC. The destination IP is 192.168.1.20; the frame's destination MAC is B's MAC.
+
+For remote 203.0.113.20, if routing selects the default gateway, A resolves the MAC for 192.168.1.1. The destination IP remains 203.0.113.20, while the first frame targets the gateway's MAC. The gateway then forwards according to its routes. Obtaining its MAC only completes local next-hop resolution; the remote host's reachability remains unverified.
+
+203.0.113.20 is a documentation address. Actual next hops follow routing tables and interfaces. VLANs, Virtual LANs, can divide broadcast domains. With proxy ARP, another device may answer on an address's behalf. Ordinary ARP broadcasts do not cross routers, so they cannot directly request an arbitrary remote device's MAC. [RFC 1122](https://www.rfc-editor.org/rfc/rfc1122)
 
 ## 7 | Worked example: turn three observations into next steps
 
@@ -123,6 +198,72 @@ An acceptable result might be: “All three authorized test addresses have curre
 
 This connects back to M02-08: keep observations, interpretations, and actions separate, and repeat checks under comparable conditions after policy changes.
 
+### 8.1 Ubuntu exercises: loopback, neighbor records, and routes
+
+Environment: Ubuntu with iputils ping and iproute2 ip. Confirm the tools are available. Loopback and table inspection require no external test host. The gateway ping in the second exercise is only for a device you administer and are authorized to test. Confirm its actual IP, send only 2 probes, and stop on unexpected impact. Do not copy an example address into a test of an unfamiliar network.
+
+Step one: test local loopback.
+
+```bash
+ping -4 -c 4 -W 1 127.0.0.1
+```
+
+-4 selects IPv4; -c 4 sends 4 probes; -W 1 sets the response-timeout parameter to 1 second. The iputils manual states that -W affects waiting when there are no responses; after responses arrive, waiting is adjusted using RTT. It is neither a fixed one-second wait for every packet nor a one-second limit for the whole program. Normally, local Echo Replies and a summary appear. If none arrive, record errors and local policy. 127.0.0.1 tests only local IPv4/ICMP loopback, requires no Ethernet ARP, and does not verify an external network. [ping manual](https://man7.org/linux/man-pages/man8/ping.8.html)
+
+Step two: inspect addresses, routes, and neighbor records in order.
+
+```bash
+ip -br -4 addr
+ip -4 route
+ip -4 neigh show
+```
+
+You might see the following illustrative routes. Actual addresses and interfaces vary.
+
+```text
+default via 192.168.1.1 dev enp3s0
+192.168.1.0/24 dev enp3s0 proto kernel scope link
+```
+
+The first selects the default next hop; the second is a directly connected network. An empty neighbor table alone is not a fault. If your administered gateway is confirmed to be 192.168.1.1 and a low-volume test is authorized, run the following and compare neighbor records before and after:
+
+```bash
+ping -4 -c 2 -W 1 192.168.1.1
+ip -4 neigh show
+```
+
+When local Ethernet delivery is needed, ARP resolution may succeed even if ICMP receives no reply. An existing cache entry also means a new ARP exchange is not guaranteed during this test. Record Echo results and neighbor states separately.
+
+Step three: inspect a remote destination's route without probing it.
+
+```bash
+ip -4 route get 203.0.113.20
+```
+
+This asks the kernel to select a route; it does not send ping to the target. With a default route, the illustrative output below is possible. Without a usable route, an error may appear instead. Preserve the actual result.
+
+```text
+203.0.113.20 via 192.168.1.1 dev enp3s0 src 192.168.1.10
+```
+
+The destination is 203.0.113.20; 192.168.1.1 after via is the local next hop. [ip-route manual](https://man7.org/linux/man-pages/man8/ip-route.8.html)
+
+Check: for each exercise, write what was observed and what it cannot establish. Route lookup does not prove the remote host is online; a cache entry does not prove a fresh reply; loopback success does not prove the external network interface works. Cleanup: these commands do not change configuration. ping ends after the specified count, or Ctrl+C stops it. Do not flush ARP records; the system manages their states naturally.
+
+### 8.2 Connect observations to CEH scanning
+
+Confirm authorization, discover hosts, record observations and uncertainties, select targets needing further checks, then proceed to port scanning and service detection. Each stage uses its own evidence to answer its own question.
+
+| Question | ICMP | ARP |
+|---|---|---|
+| Main job | IP control and diagnostics | Resolve the local IPv4 next hop |
+| Main information | IP, Type/Code | IPv4, MAC |
+| Common messages | Echo Request/Reply | ARP Request/Reply |
+| Routing scope | IP can route it to a remote destination | Ordinary broadcasts remain local |
+| Reply establishes | Particular IP communication evidence | A reported IPv4/MAC mapping |
+| No response | Does not directly prove power-off | Does not directly prove power-off |
+| Ubuntu tools | ping | ip neigh |
+
 ## 9 | Checks and the takeaway
 
 Answer in your own words first. Reference answers accompany the formal website material.
@@ -135,3 +276,11 @@ Answer in your own words first. Reference answers accompany the formal website m
 The key idea: establish the observation point and next hop before choosing a probe. Record the state represented by a response. Preserve timeout conditions and arrange verification. ICMP helps observe IP communication; ARP performs local IPv4 address resolution.
 
 Next, M03-03 introduces TCP Connect, SYN, and UDP scanning, connecting addresses with activity indications to the responses of their individual ports.
+
+### 9.1 Check understanding with three scenarios
+
+5. Ubuntu receives Echo Replies to all four NAS ping probes, but a browser cannot open DSM. Are these outcomes contradictory? Why?
+
+6. A printer's ping summary reads 4 packets transmitted, 0 received, 100% packet loss, yet colleagues can still print. What could explain this, and how would you record the observation?
+
+7. A computer is 192.168.1.10/24, its gateway is 192.168.1.1, and it wants to reach 203.0.113.20. Assume routing selects the default gateway on ordinary IPv4 Ethernet. A. What is the final destination IP? B. Whose MAC is the first frame's destination? C. Why not directly ARP for the remote MAC?

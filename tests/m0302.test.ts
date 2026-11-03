@@ -10,12 +10,12 @@ import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M03-02')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
 test('M03-02 complete bilingual lesson, four diagrams, paired closed-answer data records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.0.0');assert.equal(lesson.revision,1);assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,2);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-03');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
   assert.equal(body.filter(b=>b.kind==='heading'&&/^section-\d+$/.test(b.id??'')).length,9);
-  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-arp-timeout','answer-next-hop','answer-cache-time','answer-service-check']);
+  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-arp-timeout','answer-next-hop','answer-cache-time','answer-service-check','answer-nas-dsm','answer-printer-policy','answer-remote-frame']);
   const text=body.flatMap(flatten).join('\n');
   for(const term of ['ICMP','ARP','IP'])assert.ok(text.toLowerCase().includes(term.toLowerCase()));
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
@@ -44,7 +44,7 @@ test('M03-02 reviewed inline bundle and search labels match deterministic allowl
  const result=spawnSync('python3',['scripts/m0302_svg.py','--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stdout+result.stderr);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-03');
  for(const lang of ['zh','en'] as const){
-  const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,4);
+  const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,3);
   for(const b of body.filter(b=>b.kind==='visual')){
    const svg=readFileSync('site'+b.src,'utf8');assert.equal(reviewedSvgMarkup(b.src),svg);assert.ok(Buffer.byteLength(svg)<100000);
    assert.ok(!/<(?:script|foreignObject|image|use)\b|\bon\w+=|\bhref=/i.test(svg));
@@ -67,6 +67,7 @@ test('M03-02 SVG labels stay at or below inherited body size',()=>{
  const component=readFileSync('src/lib/components/ReviewedSvgVisual.svelte','utf8');
  assert.ok(component.includes('.diagram-canvas.compact-text{width:min(100%,33.333333em)}'));
  for(const lang of ['zh','en'] as const)for(const b of lesson.text[lang].sourceBody!.filter(b=>b.kind==='visual')){
+  if(b.src.includes('-05-')||b.src.includes('-06-'))continue;
   const svg=readFileSync('site'+b.src,'utf8');const sizes=[...svg.matchAll(/font-size="([0-9.]+)"/g)].map(m=>Number(m[1]));
   assert.equal(Math.max(...sizes),18);assert.ok(/viewBox="0 0 600 (700|750)"/.test(svg));assert.ok(33.333333*18/600<=1);
  }
@@ -80,3 +81,17 @@ test('M03-02 HTML/SVG sources share one constrained bilingual model',()=>{
  const models=JSON.parse(readFileSync('docs/sources/m03-02/diagram-models.json','utf8'));assert.equal(Object.keys(models).length,8);
  for(const m of Object.values(models) as any[]){assert.equal(m.nodes.length,4);assert.equal(typeof m.flow,'boolean');for(const n of m.nodes)assert.equal(n.body.length,2);}
 });
+
+ test('M03-02 supplied-source custody and discovery relation model',()=>{
+ const result=spawnSync('python3',['scripts/m0302_discovery.py','--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stdout+result.stderr);
+ const root='docs/sources/m03-02/supplied-2026-11-03/';const hashes=JSON.parse(readFileSync(root+'sha256.json','utf8'));
+ for(const [name,hash] of Object.entries(hashes))assert.equal(createHash('sha256').update(readFileSync(root+name)).digest('hex'),hash);
+ const models=JSON.parse(readFileSync('src/lib/m0302-discovery-diagrams.json','utf8'));
+ for(const lang of ['zh','en']){
+ const outcomes=models[`/images/ceh/m03-02-05-icmp-outcomes-${lang}.svg`];
+ const arp=models[`/images/ceh/m03-02-06-arp-next-hop-${lang}.svg`];
+ assert.deepEqual(outcomes.panels.map((p:any)=>p.edges.map((e:any)=>[e.source,e.target,e.style])),[[[0,1,'solid'],[1,0,'solid']],[[0,1,'solid'],[1,0,'solid']],[[0,1,'dashed']]]);
+ assert.deepEqual(arp.panels.map((p:any)=>p.nodes.map((n:any)=>n.address)),[['192.168.1.10','192.168.1.20'],['192.168.1.10','192.168.1.1','203.0.113.20']]);
+ assert.deepEqual(arp.panels[1].edges.map((e:any)=>[e.source,e.target]),[[0,1],[1,2]]);
+ }
+ });

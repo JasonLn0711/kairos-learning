@@ -3,7 +3,7 @@ from pathlib import Path
 import json,re,sys,xml.etree.ElementTree as ET
 from m0903_svg import sanitized_svg,NS
 ROOT=Path(__file__).resolve().parents[1]
-NAMES=['01-icmp-echo', '02-local-arp', '03-remote-next-hop', '04-observe-verify-record']
+NAMES=['01-icmp-echo', '02-local-arp', '03-remote-next-hop', '04-observe-verify-record', '05-icmp-outcomes', '06-arp-next-hop']
 def generate():
  bundle={};labels={'zh':[],'en':[]}
  for lang,suffix in [('zh','zh-TW'),('en','en')]:
@@ -26,4 +26,4 @@ if __name__=='__main__':
  for target,value in targets.items():
   if '--check' in sys.argv:assert target.read_text()==value,str(target)
   else:target.write_text(value)
- print('8 M03-02 assets and inline/search bundles match strict serializer')
+ print(f'{len(bundle)} M03-02 assets and inline/search bundles match strict serializer')
