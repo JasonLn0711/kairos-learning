@@ -10,7 +10,7 @@ import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M03-04')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
 test('M03-04 complete bilingual lesson, four diagrams, paired closed-answer data records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,2);assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.1.1');assert.equal(lesson.revision,3);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-03');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
@@ -32,9 +32,15 @@ test('M03-04 complete bilingual lesson, four diagrams, paired closed-answer data
 test('M03-04 source teaching text is retained in order with formatting-only normalization',()=>{
  for(const [lang,suffix] of [['zh','zh-TW'],['en','en']] as const){
   const text=lesson.text[lang].sourceBody!.flatMap(flatten).join('\n');let cursor=0;
-  for(let line of readFileSync(`docs/sources/m03-04/M03-04-teaching.${suffix}.md`,'utf8').split('\n')){
-   line=line.trim();if(!line||line.startsWith('```')||line.startsWith('![')||/^[| :\-]+$/.test(line))continue;
-   const values=line.startsWith('|')?line.slice(1,-1).split(/(?<!\\)\|/).map(s=>s.replaceAll('\\|','|')):[line.replace(/^#{1,3} /,'').replace(/^- /,'')];
+  const lines=readFileSync(`docs/sources/m03-04/M03-04-teaching.${suffix}.md`,'utf8').split('\n');
+  for(let i=0;i<lines.length;i++){
+   let line=lines[i].trim();
+   if(!line||line.startsWith('![')||/^[| :\-]+$/.test(line))continue;
+   let values:string[];
+   if(line.startsWith('```')){
+    const code:string[]=[];while(++i<lines.length&&!lines[i].startsWith('```'))code.push(lines[i]);
+    values=[code.join('\n')];
+   }else values=line.startsWith('|')?line.slice(1,-1).split(/(?<!\\)\|/).map(s=>s.replaceAll('\\|','|')):[line.replace(/^#{1,3} /,'').replace(/^(?:- |> )/,'')];
    for(let value of values){value=value.replaceAll('**','').trim();const at=text.indexOf(value,cursor);assert.ok(at>=0,`${lang}: missing or reordered ${value}`);cursor=at+value.length;}
   }
  }
@@ -82,7 +88,7 @@ test('M03-04 HTML/SVG sources share one constrained bilingual model',()=>{
 });
 
 test('M03-04 escaped pipes remain one table cell with complete state tokens',()=>{
- for(const lang of ['zh','en'] as const){const tables=lesson.text[lang].sourceBody!.filter(b=>b.kind==='table');assert.equal(tables.length,9);for(const t of tables)for(const row of t.rows)assert.equal(row.length,t.headers.length);assert.ok(tables.flatMap(t=>t.rows.flat()).includes('open|filtered'));assert.ok(!tables.flatMap(t=>t.rows.flat()).some(t=>t.includes('\\|')));}
+ for(const lang of ['zh','en'] as const){const tables=lesson.text[lang].sourceBody!.filter(b=>b.kind==='table');assert.equal(tables.length,15);for(const t of tables)for(const row of t.rows)assert.equal(row.length,t.headers.length);assert.ok(tables.flatMap(t=>t.rows.flat()).some(s=>s.toLowerCase()==='open|filtered'));assert.ok(!tables.flatMap(t=>t.rows.flat()).some(t=>t.includes('\\|')));}
 });
 
 test('M03-04 replacement retains original diagrams and covers supplied evidence distinctions',()=>{
@@ -97,7 +103,25 @@ test('M03-04 replacement retains original diagrams and covers supplied evidence 
   const body=lesson.text[lang].sourceBody!;
   assert.deepEqual(body.filter(b=>b.kind==='visual'),old.text[lang].sourceBody.filter((b:SourceBlock)=>b.kind==='visual'));
   const text=body.flatMap(flatten).join('\n');
-  for(const term of ['open|filtered','closed|filtered','unfiltered','--reason','ss -lnt','127.0.0.1:8443','0.0.0.0:8443','2026-11-03 10:30 UTC+08:00','dig @192.0.2.53 example.com A','TCP','UDP'])assert.ok(text.includes(term),term);
+  for(const term of ['open|filtered','closed|filtered','unfiltered','--reason','ss -lnt','127.0.0.1:8443','0.0.0.0:8443','2026-11-03 10:30 UTC+08:00','dig @192.0.2.53 example.com A','TCP','UDP'])assert.ok(text.toLowerCase().includes(term.toLowerCase()),term);
   for(let i=1;i<=5;i++)assert.ok(body.some(b=>'id' in b&&b.id===`section-10-${i}`));
+ }
+});
+
+
+test('M03-04 retains every supplied subsection and full Chinese source with only listed corrections',()=>{
+ const root='docs/sources/m03-04/';
+ let expected=readFileSync(root+'supplied-2026-11-03/teaching-original.txt','utf8');
+ for(const [before,after] of JSON.parse(readFileSync(root+'detailed-editorial-changes.json','utf8'))){assert.ok(expected.includes(before));expected=expected.replaceAll(before,after);}
+ assert.equal(readFileSync(root+'M03-04-teaching.zh-TW.md','utf8'),expected);
+ const map=JSON.parse(readFileSync(root+'detailed-section-map.json','utf8'));
+ const sourceHeadings=[...expected.matchAll(/^#{1,3} (.+)$/gm)].slice(1).map(m=>m[1]);
+ assert.equal(map.length,64);assert.deepEqual(map.map((s:any)=>s.zh),sourceHeadings);
+ for(const lang of ['zh','en'] as const){
+  const body=lesson.text[lang].sourceBody!;
+  assert.deepEqual(body.filter(b=>b.kind==='heading'||b.kind==='paragraph'&&b.id).map(b=>({id:'id'in b?b.id:undefined,text:'text'in b?b.text:''})),map.map((s:any)=>({id:s.id,text:s[lang]})));
+  for(const section of map){const index=body.findIndex(b=>'id'in b&&b.id===section.id);assert.ok(index>=0);const end=body.findIndex((b,i)=>i>index&&(b.kind==='heading'||b.kind==='paragraph')&&!!b.id&&!b.id.startsWith(section.id+'-'));const segment=body.slice(index+1,end<0?undefined:end);assert.ok(segment.some(b=>b.kind==='code'||b.kind==='table'||b.kind==='list'||b.kind==='paragraph'&&!b.id),section.id+' requires explanatory content');}
+  const sourceCodes=[...readFileSync(root+`M03-04-teaching.${lang==='zh'?'zh-TW':'en'}.md`,'utf8').matchAll(/```[^\n]*\n([\s\S]*?)\n```/g)].map(m=>m[1]);
+  assert.equal(sourceCodes.length,33);assert.deepEqual(body.flatMap(b=>b.kind==='code'?[b.text]:[]),sourceCodes);
  }
 });

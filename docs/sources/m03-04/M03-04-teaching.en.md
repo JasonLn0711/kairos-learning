@@ -1,252 +1,895 @@
-# CEH M03-04 | Open, Closed and Filtered: interpret responses as port states
+# CEH M03-04 | Open, Closed, Filtered: understanding port scan results from the beginning
 
-Port scanning sends probes and interprets responses to describe an endpoint at that time. Start with three ideas: open has evidence of accepting communication; closed has an explicit closed-port response; filtered means this probe cannot establish whether the endpoint is open. The scanning method determines the actual classification.
+Port scanning sends network probes and examines responses to determine the state presented by a service endpoint. It involves more than checking whether a port number is enabled.
 
-M03-01 introduced IP, TCP, UDP and ports; M03-02 explored hosts, ICMP and ARP; M03-03 compared Connect, SYN and UDP scans. This lesson connects method → response → state → verification → security judgment. Use the four scenarios at the end to practice stating evidence and a next step.
+Start with three ideas:
 
-## 1 | Start with an office extension
+- Open: there is evidence that this endpoint accepts the corresponding communication.
+- Closed: there is an explicit response indicating that the endpoint is not accepting that connection.
+- Filtered: the probe encounters filtering or insufficient evidence to determine whether the endpoint is open.
 
-Imagine a computer as an office building: an IP address resembles a switchboard number, a port an extension, a service the person answering, and a firewall a gate controlling calls. This analogy separates responsibilities; an actual endpoint requires an IP address, transport protocol and port together.
+These are starting points. To understand a result, ask how the scanner obtained it: what packet did it send, what response arrived, and which interpretation rule applied?
 
-| Common endpoint | Common purpose | Interpretation limit |
-| --- | --- | --- |
-| TCP 22 | SSH administration | A number does not identify the actual service |
-| TCP 80 | HTTP | Application verification is still needed |
-| TCP 443 | HTTPS | TCP success does not establish TLS/website health |
-| TCP 3306 | MySQL | A service can use another number |
+This lesson covers sections 1–10, official Nmap references, a synthetic case, and connections to M03-01 through M03-03. Four final scenarios have reference answers. The conceptual Q&A explains the material; it is not a record of learner submissions.
 
-192.0.2.10:443/TCP and 192.0.2.10:443/UDP are separate endpoints. TCP 443 may provide HTTPS; UDP 443 may provide HTTP/3 over QUIC. Open TCP 443 does not establish open UDP 443, or vice versa.
+## First build the whole picture: what does a scanner do?
 
-192.0.2.10 and the other 192.0.2.x addresses are documentation examples, not evidence of real services. Ask the full question: “From where, when, using which protocol and method, against which endpoint, and with what response?” Practical work is restricted to your own local machine or separately approved devices.
+The preceding lessons supply different parts of the same investigation.
 
-## 2 | Separate the three core states
+| Unit | Material | How it is used here |
+|---|---|---|
+| M03-01 | IP, TCP, UDP, ports | Identify the destination and program endpoint |
+| M03-02 | ICMP, ARP, network discovery | Discover targets and interpret network error reports |
+| M03-03 | TCP Connect, SYN and UDP scans | Choose a method for probing a port |
+| M03-04 | Open, Closed, Filtered | Interpret port states from packet responses |
 
-Nmap is a network discovery and security auditing tool that classifies responses according to the probe method. An extension might accept a call, explicitly refuse it, or remain unobservable because calls are restricted. Those situations supply different evidence.
-
-| State | Typical TCP SYN evidence | What it supports and what remains |
-| --- | --- | --- |
-| open | Target SYN/ACK | The endpoint accepts an opening request; functionality and security need separate checks |
-| closed | RST in response to SYN | The tool classifies it as closed; verify listeners and whether an intermediary generated the reply |
-| filtered | No response after retries or certain ICMP errors | This method cannot distinguish open from closed; check policy, path and logs |
-
-Open does not establish a vulnerability or a working application. After TCP 443 accepts a request, TLS certificates, HTTP errors, login or permissions can still prevent use. Service/version identification connects to M03-05; vulnerability analysis needs additional evidence.
-
-Closed usually depends on receiving an explicit response. It does not mean the entire computer is powered off or the network is wholly unreachable. TCP 8443 may be closed because a service is stopped, uses another port or binds another interface; a firewall or intermediary may also generate RST. The tool's classification does not independently establish the host's internal state.
-
-Filtered describes missing decisive open/closed evidence or an error matching the method's rules. Dedicated firewalls, router rules and host firewalls are common causes; packet loss, device failures and path problems also affect probes. Filtered alone cannot identify a particular firewall.
-
-The same port can appear different from different positions. “TCP 443 was open from the management network” is easier to reproduce than “443 is open.” [Nmap: six states](https://nmap.org/book/man-port-scanning-basics.html)
-
-## 3 | TCP SYN scanning: interpret the response
-
-An ordinary new TCP connection uses a three-way handshake: client SYN, server SYN/ACK, client ACK. SYN (Synchronize) synchronizes initial sequence numbers; ACK (Acknowledgment) confirms received information; RST (Reset) resets a connection or attempt. These are control flags in the TCP header.
+Connect these lessons into one sequence:
 
 ```text
-Ordinary TCP: scanner → SYN → target
-              scanner ← SYN/ACK ← target
-              scanner → ACK → target
-Open SYN scan: after SYN/ACK, the scanner side ends the attempt with RST
+A server needs checking
+        |
+        v
+1. Identify its IP address
+        |
+        v
+2. Select the port
+        |
+        v
+3. Select TCP or UDP
+        |
+        v
+4. Send probes with Nmap
+        |
+        v
+5. Observe the response
+        |
+        +-- acceptance response --> Open
+        +-- explicit rejection --> Closed
+        +-- silence/filtering error --> Filtered
+                                        |
+                          UDP and other methods may instead
+                          report Open|Filtered
 ```
 
-Connect delegates connection establishment to the OS. SYN scanning already has evidence of an accepted opening request after SYN/ACK, without sending the final ACK. Half-open describes an incomplete ordinary handshake, not a port being halfway open; it also does not imply undetectability.
+This diagram simplifies the decision. The method matters: silence after TCP SYN probes normally leads to filtered; silence after UDP probes normally leads to open|filtered. The same observation does not always produce the same state. [Nmap SYN scan](https://nmap.org/book/synscan.html)
 
-| Probe | Response | Common Nmap classification |
-| --- | --- | --- |
-| SYN | SYN/ACK | open |
-| SYN | RST | closed |
-| SYN | No response after retries | filtered |
-| SYN | IPv4 ICMP Type 3, Code 1, 2, 3, 9, 10, 13 | filtered |
+# 1 | Start with extensions in an office building
 
-RST in response to SYN differs in direction and purpose from a scanner-side reset after SYN/ACK. The former is typical closed evidence; the latter ends an open-port probe. Retain source, destination and surrounding packets.
+### 1.1 Imagine a computer as an office building
 
-ICMP (Internet Control Message Protocol) conveys network errors and other control information. Only type/code values matching this method's rules map to filtered; not every ICMP message means filtering. The table uses IPv4 values, not ICMPv6 values. [Nmap: SYN interpretation](https://nmap.org/book/synscan.html)
+Suppose you want to call a company's IT department. You need the company's main telephone number and the department's extension. Network communication requires a similar distinction between finding a computer and selecting an endpoint on it.
 
-Put “received TCP RST” in the observation field, “Nmap classified closed” in the interpretation field, and “check listeners and firewall logs” in the next-step field. Separating responses from classifications makes the reasoning inspectable.
+| Office-building analogy | Computer network |
+|---|---|
+| Company address | IP address |
+| Extension number | Port |
+| Person answering an extension | Service program receiving communication |
+| Making a call | Sending a network packet |
+| Someone accepts the call | A response accepting communication |
+| Reception or access rules limit calls | Firewall and other access controls |
 
-## 4 | UDP silence leaves two possibilities
-
-UDP sends datagrams without a TCP handshake. Think of sending an application form: the recipient might receive but ignore an invalid format, or the form or reply might be blocked or lost along the way.
-
-Silence therefore does not directly establish closed. The “|” in open|filtered means “or”: an open silent service and filtering remain indistinguishable. It is neither half-open nor proof of both states at once.
-
-| Observation after UDP | Classification | Next check |
-| --- | --- | --- |
-| Corresponding UDP reply | open | Verify response content and service settings |
-| IPv4 ICMP Type 3 / Code 3 (Port Unreachable) | closed | Verify the receiver and error source |
-| IPv4 ICMP Type 3 / Code 1, 2, 9, 10, 13 | filtered | Verify path and policy |
-| No reply after retries | open\|filtered | Add valid service queries, listener settings and logs |
-
-ICMP Port Unreachable reports an unreachable destination port. Match the reporting source and quoted original probe so unrelated errors do not enter the result. Hosts can also rate-limit ICMP errors, making the scanner wait and retry.
-
-Consider this illustrative output:
+For example:
 
 ```text
-PORT    STATE          SERVICE
-53/udp  open|filtered  domain
+Server IP: 192.0.2.10
++-----------------------------+
+| Server 192.0.2.10            |
+| Port 22   --> SSH            |
+| Port 80   --> HTTP           |
+| Port 443  --> HTTPS          |
+| Port 3306 --> MySQL          |
++-----------------------------+
 ```
 
-53/udp means UDP 53; open|filtered preserves uncertainty. Without service detection, domain is usually a conventional port label and does not establish that DNS is running.
+These are common port associations. They do not claim that this hypothetical server actually runs every listed service.
 
-For a device you manage or are authorized to test, a valid DNS query can add evidence:
+- IP answers: which computer am I contacting?
+- Port answers: which endpoint on that computer?
+- TCP or UDP answers: which transport protocol am I using?
+
+The notation `192.0.2.10:443` identifies an address and port. A complete endpoint description also gives the transport, such as `192.0.2.10:443/TCP`.
+
+### 1.2 Why are TCP 443 and UDP 443 different?
+
+Imagine an office that can be contacted by telephone or radio. The destination office may be the same, but the communication mechanisms differ. TCP and UDP likewise have separate transport behavior and separate port spaces.
+
+```text
+192.0.2.10
+   +-- TCP 443 --> may provide HTTPS
+   +-- UDP 443 --> may provide HTTP/3 over QUIC
+```
+
+The number 443 is shared, but each transport must be checked independently. TCP 443 being open does not establish that UDP 443 is open. The reverse inference is equally unsupported.
+
+### 1.3 The question to carry through this lesson
+
+“Is port 443 open?” leaves out information needed to interpret or reproduce a result. Ask: “From which network location, using which protocol and scan method, did I probe which server's port 443, and what response arrived?”
+
+The location, protocol, method, destination and observed response will matter throughout M03-04.
+
+# 2 | Separate the three core states
+
+Open, Closed and Filtered describe different evidence. Consider each state before comparing them.
+
+## 2.1 Open: the endpoint accepts communication
+
+Imagine asking reception to connect extension 101. Reception replies that the extension can accept the call. In a TCP SYN scan, a SYN/ACK response provides the corresponding evidence, and Nmap classifies the port as open.
+
+```text
+Scanner                         Server
+   | ---- SYN: request --------> |
+   | <--- SYN/ACK: accepted ---- |
+   v
+OPEN
+```
+
+The endpoint has accepted the initial TCP connection request. This does not establish that the service has a vulnerability, or that every application function works.
+
+An HTTPS endpoint may accept TCP connections while users encounter a TLS certificate error, application failure, or authentication problem. Open answers only the transport question tested by the probe.
+
+Next determine the service, its version, whether it functions, who may access it, and whether there is evidence of a vulnerability. Service identification connects to M03-05; vulnerability analysis needs additional evidence in M05.
+
+## 2.2 Closed: an explicit response declining the connection
+
+Suppose reception answers a request for extension 888 by saying it currently has no service. With TCP SYN scanning, a TCP RST normally leads Nmap to classify the endpoint as closed.
+
+RST means Reset: it resets a connection or ends this connection attempt.
+
+```text
+Scanner                         Server
+   | ---- SYN: request --------> |
+   | <--- RST: not accepted ---- |
+   v
+CLOSED
+```
+
+Closed does not mean the network is completely unreachable. An explicit response is usually the evidence that allows this classification.
+
+If TCP 8443 is closed, investigate possible causes:
+
+- The web service has not started.
+- The program is not listening on 8443.
+- It is listening only on another interface.
+- A firewall or another intermediary generated the TCP RST.
+
+The classification guides the investigation; the architecture and device evidence establish the cause.
+
+## 2.3 Filtered: the probe cannot establish whether a service is listening
+
+Imagine reception blocking an outside call under company policy. From outside, you cannot tell whether anyone is present in the department.
+
+```text
+Scanner             Firewall           Server
+   | ---- SYN ------> |                   |
+   |                 DROP                 |
+   |                  X                   |
+   |                                      |
+   |       No response after waiting      |
+   v
+FILTERED
+```
+
+A firewall may silently discard a packet or return a specific ICMP error. From the scanner's position, the available evidence does not establish open or closed, and Nmap classifies the result as filtered.
+
+Separate two layers:
+
+- Observation: the expected response did not arrive, or a particular network error arrived.
+- Possible cause: firewall policy, router rules, host filtering, packet loss, or other network conditions.
+
+The diagram illustrates a possible drop point. A filtered result alone does not prove that a particular firewall exists or dropped the probe.
+
+## 2.4 Compare the three states
+
+| State | Plain meaning | Typical TCP SYN response | What can be established? |
+|---|---|---|---|
+| Open | The endpoint accepts the request | SYN/ACK | The initial connection request received an acceptance response |
+| Closed | The attempt is explicitly declined | RST | The tool classifies it as closed; check listening state and whether an intermediary sent the RST |
+| Filtered | The probe is limited or inconclusive | Silence or particular ICMP errors | Whether the service is open remains uncertain |
+
+These states are observations under particular methods and locations, not permanent properties of a server. The same port can appear differently from different networks. [Nmap's six states](https://nmap.org/book/man-port-scanning-basics.html)
+
+Remember: open has acceptance evidence; closed has explicit rejection evidence; filtered lacks sufficient evidence to establish whether the endpoint is open.
+
+# 3 | Read three states from TCP SYN responses
+
+Now connect the classifications to the TCP packets that produce them.
+
+## 3.1 Review the TCP three-way handshake
+
+A normal new TCP connection generally uses three steps. A client sends SYN, a server responds with SYN/ACK, and the client sends ACK.
+
+```text
+Client                              Web server
+   | -------- SYN --------------------> |
+   |          Request a connection      |
+   | <------- SYN/ACK ----------------- |
+   |          Acknowledge the request   |
+   | -------- ACK --------------------> |
+   |          Confirm receipt           |
+   |          TCP connection established|
+```
+
+This is the TCP Three-Way Handshake.
+
+| Flag | Name | Plain explanation |
+|---|---|---|
+| SYN | Synchronize | Begin connection establishment |
+| ACK | Acknowledgment | Acknowledge received information |
+| RST | Reset | Reset the connection or attempt |
+
+These descriptions are teaching shorthand. SYN, ACK and RST are control flags in the TCP header; they are not literal messages containing those sentences.
+
+## 3.2 Why can SYN scanning stop before the full handshake?
+
+M03-03 introduced TCP Connect and TCP SYN scanning. Connect scanning normally asks the operating system to establish a TCP connection. SYN scanning uses the initial handshake response to classify the port.
+
+When the server returns SYN/ACK, the scanner has evidence that the initial request was accepted. It does not need to send the final ACK to obtain that evidence. For an open endpoint, the scanning side normally ends the unfinished attempt with RST.
+
+This is why SYN scanning is called half-open scanning. “Half-open” describes the incomplete handshake, not a port that is somehow half available. [Nmap SYN scan](https://nmap.org/book/synscan.html)
+
+## 3.3 Three outcomes of a SYN scan
+
+### Case A: SYN/ACK arrives
+
+```text
+Scanner -- SYN -----> Server
+Scanner <- SYN/ACK -- Server
+Nmap: OPEN
+```
+
+The response accepts the initial TCP connection request, supporting open.
+
+### Case B: RST arrives
+
+```text
+Scanner -- SYN -----> Server
+Scanner <- RST ------ Server
+Nmap: CLOSED
+```
+
+The probe received a reset response, supporting closed. This incoming RST is different from the scanner's outgoing RST used to end an open-port SYN scan.
+
+### Case C: no response arrives
+
+```text
+Scanner -- SYN -----> Firewall
+                         |
+                        DROP
+                         X
+Scanner waits, retries, and still receives nothing.
+Nmap: FILTERED
+```
+
+An ICMP unreachable error matching the method's rules can also result in filtered. This connects to M03-02: ICMP reports errors and limitations, but Type and Code determine the meaning. Do not classify every ICMP response as filtering evidence.
+
+## 3.4 How does the scanner turn packets into a result?
+
+Treat Nmap as an observer: it sends a probe, collects evidence, then applies interpretation rules.
+
+```text
+Send TCP SYN
+     |
+     v
+What arrived?
+     +-- SYN/ACK ------------------> OPEN
+     +-- RST ----------------------> CLOSED
+     +-- silence/specific ICMP ----> FILTERED
+```
+
+The packet response is evidence. Open, Closed and Filtered are classifications derived from that evidence. Record both layers: “Received TCP RST; Nmap classified the port as closed” is more informative than “closed” alone.
+
+This allows another engineer to check whether the method and response support the conclusion. [Official SYN scan reference](https://nmap.org/book/synscan.html)
+
+# 4 | Keep both possibilities when UDP is silent
+
+UDP does not establish a connection through TCP's three-way handshake. Its scan results therefore need different interpretation rules.
+
+## 4.1 Why is UDP harder to interpret?
+
+TCP resembles making a call: the other side may accept or explicitly decline it. UDP resembles delivering a note. The recipient may receive the note without sending anything back.
+
+Suppose a department processes only documents in a prescribed format. A note asking “Is anyone there?” may be ignored even though staff are present. A UDP service can likewise ignore data that does not match its protocol.
+
+No reply does not establish that nothing was received.
+
+```text
+Send UDP packet
+       |
+       v
+No response
+       |
+       +-- Open service received it but did not reply
+       |
+       +-- Filtering discarded the packet
+       |
+       v
+Both possibilities produce the same observation
+OPEN|FILTERED
+```
+
+Nmap lacks the evidence needed to choose between those possibilities. The vertical bar means “or”: open or filtered. It is an uncertainty label, not a special kind of half-open port.
+
+## 4.2 Four outcomes of UDP scanning
+
+| Observation | Nmap state | Plain meaning |
+|---|---|---|
+| A UDP response from the target port | Open | The endpoint replied |
+| ICMP Port Unreachable | Closed | The response reports that the port is unreachable |
+| Particular other ICMP unreachable errors | Filtered | The reported error matches a filtering classification |
+| No reply after repeated probes | Open\|Filtered | The service may be silent, or the probe may be blocked |
+
+These are the basic UDP interpretation rules. [Nmap UDP scanning](https://nmap.org/book/scan-methods-udp-scan.html)
+
+### Case A: a UDP response arrives
+
+```text
+Client                          DNS server
+   | ------ DNS Query -----------> |
+   | <----- DNS Response --------- |
+   v
+OPEN
+```
+
+A correctly formatted query to your own DNS server can produce a DNS answer. If the exchange is over UDP, it supports that UDP 53 can respond to that service request.
+
+### Case B: ICMP Port Unreachable arrives
+
+```text
+Scanner                         Server
+   | ------ UDP probe ------------> |
+   | <----- ICMP Port Unreachable - |
+   v
+CLOSED
+```
+
+ICMP does more than support ping: it also reports network errors. In IPv4, `ICMP Type 3 / Code 3` means Destination Unreachable — Port Unreachable. These IPv4 numbers must not be applied to ICMPv6.
+
+In plain language, the reply says that this destination port is unreachable. For a normal UDP scan, this response supports closed.
+
+### Case C: a particular ICMP filtering error arrives
+
+A network device may respond that administrative policy does not permit the communication. Nmap can classify a matching response as filtered.
+
+The exact Type and Code matter. For IPv4 UDP scans, Type 3 with Code 1, 2, 9, 10 or 13 leads to filtered; Type 3 with Code 3 leads to closed. Not every ICMP message means filtered.
+
+### Case D: nothing arrives
+
+If no UDP response arrives and no ICMP response establishes closed or filtered, the normal result is `open|filtered`.
+
+Neither “the service is definitely running” nor “the firewall definitely blocked it” follows from silence alone. Preserve the uncertainty and choose additional evidence.
+
+## 4.3 A DNS example on UDP 53
+
+Suppose a laboratory DNS server produces this illustrative result:
+
+```text
+PORT     STATE          SERVICE
+53/udp   open|filtered  domain
+```
+
+Read each field separately. `53/udp` identifies UDP port 53. `open|filtered` says the probe did not distinguish the two states. `domain` is the conventional service name associated with the port; this field alone does not prove a DNS server is running.
+
+If you administer the device, send a correctly formatted DNS query:
 
 ```bash
 dig @192.0.2.53 example.com A
 ```
 
-192.0.2.53 is a documentation address; replace it with an approved DNS server for actual use. A valid DNS response supports that service answering this query. dig can switch to TCP in some circumstances, so verify the output or capture actually used UDP before counting it as UDP evidence.
+The address 192.0.2.53 is reserved for documentation. Replace it with a DNS server you own or are authorized to test.
 
-Service/version detection can also be used within the approved scope. This is command syntax: replace the angle-bracket target instead of pasting it literally into a shell.
+A valid response over confirmed UDP provides stronger evidence that UDP 53 answers queries. However, dig can switch to TCP in some circumstances, such as a truncated response. Check the actual transport; a successful TCP query is not proof of UDP reachability.
+
+Another option is the following template:
 
 ```text
 sudo nmap -sU -sV -p 53 --reason <authorized-host>
 ```
 
--sU selects UDP, -sV attempts service identification, -p 53 restricts the port, and --reason displays classification reasons. Service probes can elicit replies and reduce uncertainty, but cannot guarantee resolution of every open|filtered result. [Nmap: UDP](https://nmap.org/book/scan-methods-udp-scan.html)
+Replace `<authorized-host>` with an owned or authorized target before use. Do not paste the angle brackets literally into a shell. The command combines UDP scanning with service detection to seek more evidence. It does not guarantee that every open|filtered result can be resolved. [Nmap UDP service detection](https://nmap.org/book/scan-methods-udp-scan.html)
 
-## 5 | Two more labels: identify the question being asked
+Remember the method-dependent difference: silence during SYN scanning normally means filtered; silence during UDP scanning normally means open|filtered. The protocols provide different response expectations.
 
-ACK Scan (-sA) sends probes with the ACK flag to observe filtering of that traffic. SYN Scan asks whether an endpoint accepts a new connection. The interpretation rules differ.
+# 5 | Two more labels: identify the question being answered
+
+We have covered Open, Closed, Filtered and Open|Filtered. Nmap defines two additional labels: Unfiltered and Closed|Filtered. Their meaning follows from what the particular scan method measures.
+
+## 5.1 Unfiltered: the probe is reachable, but service availability is unknown
+
+Imagine asking a guard whether a certain type of delivery passes the entrance rules, rather than calling an office to see whether anyone answers. The guard's answer that this delivery is not blocked does not establish that staff are present in the office.
+
+Unfiltered similarly says that the tested probe did not present a filtering result. It does not by itself establish a listening service.
+
+### What is an ACK scan?
+
+A SYN scan sends SYN to test acceptance of a new connection. An ACK scan sends TCP packets with ACK set to observe how filtering devices or targets handle that class of traffic.
 
 ```text
-Scanner → target/path: ACK
-Scanner ← target/path: RST
-ACK Scan classification: unfiltered
+Scanner                      Firewall/target
+   | ------ TCP ACK -------------> |
+   | <----- TCP RST -------------- |
+   v
+UNFILTERED
 ```
 
-Unfiltered means this ACK probe obtained a response, without distinguishing open from closed. In unfiltered systems, both open and closed ports can return RST to ACK. No response after retries or certain ICMP errors maps to filtered. Use an approved SYN or Connect scan to check acceptance of new connections. [Nmap: ACK Scan](https://nmap.org/book/scan-methods-ack-scan.html)
+In an ordinary ACK scan, RST supports unfiltered. Open and closed endpoints may both return RST to this kind of probe, so it does not distinguish them.
 
-Closed|filtered is the candidate classification used by IP ID Idle Scan when it cannot distinguish closure from filtering. This lesson explains the label without expanding into idle-scan operations.
+| Method | Main question |
+|---|---|
+| SYN scan | Does the endpoint accept an initial TCP connection request? |
+| ACK scan | Does this class of ACK probe appear to be filtered? |
 
-| State | What it says | What it does not establish |
-| --- | --- | --- |
-| open | Evidence of accepting corresponding communication | Every function works, or a vulnerability exists |
-| closed | An explicit closed-port characteristic | The whole host is offline, or every refusal cause is known |
-| filtered | This method cannot establish openness | A particular firewall must be responsible |
-| unfiltered | An ACK probe obtained a response | The service accepts new TCP connections |
-| open\|filtered | Open versus filtered remains unresolved | Either one has been established |
-| closed\|filtered | Closed versus filtered remains unresolved | Either one has been established |
+An ACK result can help investigate filtering rules. To check whether an endpoint accepts a new connection, use an authorized SYN or TCP Connect scan, or another appropriate test. Unfiltered is not synonymous with open. [Nmap state definitions](https://nmap.org/book/man-port-scanning-basics.html)
 
-The same RST typically means closed for SYN scanning and unfiltered for ACK scanning. Ask what was sent before interpreting what came back. [Nmap: state definitions](https://nmap.org/book/man-port-scanning-basics.html)
+## 5.2 Closed|Filtered: closed or filtered
 
-## 6 | Work through a synthetic acceptance case
+This less common label occurs in the IP ID idle-scan method. It means that the method cannot distinguish closed from filtered.
 
-Suppose server 192.0.2.10 has a management interface on TCP 443, allowed only from the management network; TCP 8443 is a spare endpoint that should currently be disabled; UDP 53 should provide DNS. Observation is approved from management and ordinary networks. These are synthetic records, not measured results.
+| State | Alternatives still unresolved |
+|---|---|
+| Open\|Filtered | Open or filtered |
+| Closed\|Filtered | Closed or filtered |
 
-| Source/method | Endpoint | Response/classification | Administrator's next step |
-| --- | --- | --- | --- |
-| Management/SYN | TCP 443 | SYN/ACK → open | Opening acceptance matches initial expectations; check TLS, login and permissions |
-| Ordinary network/SYN | TCP 443 | Silence after retries → filtered | Match restriction rules and contemporaneous logs; exclude unintended path failure |
-| Management/SYN | TCP 8443 | RST → closed | Compare with the plan to leave it disabled |
-| Management/UDP | UDP 53 | Silence after retries → open\|filtered | Add valid DNS queries, listener settings and logs |
+Understanding the six-state vocabulary does not require conducting an idle scan. Here the purpose is to recognize the uncertainty label and its method-specific context.
 
-Both TCP 443 results can hold because sources, paths and access conditions differ. SYN/ACK establishes acceptance of the opening request. This case did not complete the handshake, so it does not establish a completed TCP connection.
+## 5.3 A complete map of the six states
 
-If TCP 8443 should have a service, investigate whether the program started, selected the correct port, bound the intended address, or whether an intermediary returned RST. On Ubuntu, inspect TCP listeners with:
+| Nmap state | Plain meaning | Interpretation |
+|---|---|---|
+| Open | A service accepts the corresponding communication | The endpoint accepts what the probe tests |
+| Closed | A reachable endpoint is not accepting the connection | An explicit closed response was observed |
+| Filtered | The probe presents filtering conditions | Whether the service is open remains unknown |
+| Unfiltered | The probe can receive a response | This alone cannot distinguish open from closed |
+| Open\|Filtered | Open or filtered | Those alternatives remain unresolved |
+| Closed\|Filtered | Closed or filtered | Those alternatives remain unresolved |
+
+These are Nmap's six defined states. Always interpret the state alongside its scan method. [Nmap port states](https://nmap.org/book/man-port-scanning-basics.html)
+
+# 6 | Work through a complete synthetic case
+
+Combine the preceding ideas in a hypothetical laboratory network. The addresses, results and diagrams below are teaching examples, not measurements of a real server.
+
+## 6.1 Accepting a laboratory server
+
+You administer a server at `192.0.2.10` with this intended deployment:
+
+| Port | Intended use |
+|---|---|
+| TCP 443 | Management interface |
+| TCP 8443 | Spare management service; currently should not be enabled |
+| UDP 53 | DNS service |
+
+There are two network areas. The management network is for authorized administrators. The general network contains ordinary test computers.
+
+The security policy says that the TCP 443 management interface must be accessible only from the management network. Your task is to check whether the implementation satisfies that policy.
+
+## 6.2 First result: open from the management network
+
+Probe TCP 443 from the management network:
+
+```text
+Management computer             Server
+      | ------ SYN --------------> |
+      | <----- SYN/ACK ----------- |
+      v
+     OPEN
+```
+
+This matches the initial expectation if administrators are allowed to connect. It does not prove that every security control is correct.
+
+The SYN received SYN/ACK, showing acceptance of the initial connection request. This probe has not demonstrated completion of the three-way handshake. Authentication, application permissions and TLS configuration still need checking.
+
+## 6.3 Second result: filtered from the general network
+
+Now probe the same TCP 443 endpoint from the general test network:
+
+```text
+General computer         Firewall          Server
+      | ----- SYN -------> |                  |
+      |                   DROP                |
+      |                    X                  |
+      v
+   FILTERED
+```
+
+This can also match expectations because the general network should not directly reach the management interface. The firewall location shown is a hypothetical cause that requires rule and log confirmation.
+
+The same server and port can present open and filtered from different sources without contradiction. A state is a result from a particular location, method and time; it is not independent of the surrounding network.
+
+## 6.4 Third result: TCP 8443 is closed
+
+From the management network, suppose Nmap reports:
+
+```text
+8443/tcp closed
+```
+
+Whether this is desirable depends on the deployment plan. If 8443 should be unused, closed may match expectations. If it should provide a service, investigate:
+
+- Has the service started?
+- Is it listening on 8443?
+- Is it bound only to `127.0.0.1`?
+- Is another device actively returning RST?
+
+On the server, use:
 
 ```bash
-ss -lnt
 sudo ss -lntp
 ```
 
-The first command displays listeners; the second adds process information when permitted. 127.0.0.1:8443 listens only on loopback, so other computers generally cannot directly reach that listener via the server's external IP. 0.0.0.0:8443 listens on all local IPv4 addresses, but remote reachability still depends on routing, firewalls and other conditions; it does not automatically include IPv6.
+This lists TCP listening sockets and available process information. Without sudo access, start with `ss -lnt`; process details may be unavailable.
 
-For UDP 53, check whether DNS started, a UDP listener exists, the query reached the service, and either direction was blocked. A program listening and a remote client being able to reach it are separate verification questions.
+For example:
 
-## 7 | Write a record another engineer can reproduce
+```text
+127.0.0.1:8443
+```
 
-| Layer | Example |
-| --- | --- |
-| Observation | Received TCP SYN/ACK |
-| Tool classification | Nmap records open under SYN scan rules |
-| Next step | Verify service purpose, TLS, permissions and allowed sources |
+This listener is bound to the loopback address. Other computers generally cannot connect directly to that listener through the server's external IP address.
 
-On your own Ubuntu machine, check the tool version, then examine only three local TCP ports:
+By contrast:
+
+```text
+0.0.0.0:8443
+```
+
+This means the process listens on all local IPv4 interfaces. Remote access can still be limited by firewall or routing rules. A listening socket and remote reachability are separate layers of evidence.
+
+## 6.5 Fourth result: UDP 53 is open|filtered
+
+Suppose the UDP result is:
+
+```text
+53/udp open|filtered
+```
+
+The responses have not distinguished an open service from filtering. If DNS is expected, send a properly formatted DNS query and check:
+
+- Whether the DNS service is running.
+- Whether it listens on UDP 53.
+- Whether the query appears in service logs.
+- Whether a firewall blocks the query or its response.
+
+Correlate the query, response and device records rather than treating the label as proof of a cause.
+
+## 6.6 Conclusions from the case
+
+| Source | Target | Result | Administrator's next action |
+|---|---|---|---|
+| Management network | TCP 443 | Open | Confirm the allow policy and test application controls |
+| General network | TCP 443 | Filtered | Correlate firewall rules and logs |
+| Management network | TCP 8443 | Closed | Check the intended service deployment |
+| Management network | UDP 53 | Open\|Filtered | Obtain more evidence with a valid DNS query |
+
+The investigation uses scan results to check the intended security design. The usefulness of a state depends on the policy and service it is being compared with.
+
+# 7 | Write a scan record another person can reproduce
+
+After an authorized penetration test or acceptance check, telling an administrator “443 is open” leaves important questions unanswered. Where did the scan originate? When? Was it TCP or UDP? Which method was used? What evidence supports the classification?
+
+Those details determine whether another engineer can reproduce and assess the result.
+
+## 7.1 Separate observation from inference
+
+Suppose a TCP 443 probe receives SYN/ACK and Nmap displays open. Record three layers:
+
+| Layer | Content |
+|---|---|
+| Observed fact | TCP SYN/ACK was received |
+| Tool classification | Nmap reported open |
+| Follow-up inference | The endpoint accepts the initial TCP request; service and security settings need further checks |
+
+The SYN/ACK is network-response evidence. Open is the tool's classification. Whether the service is secure requires other evidence. Keeping these separate makes the reasoning reviewable.
+
+## 7.2 Practice on your own Ubuntu computer
+
+Start locally if you are learning Nmap. Check whether the tool is installed and record its version:
 
 ```bash
 nmap --version
+```
+
+Then run:
+
+```bash
 nmap -sT -p 22,80,443 --reason 127.0.0.1
 ```
 
--sT selects TCP Connect, -p 22,80,443 restricts scope, --reason displays reasons, and 127.0.0.1 connects to your own machine. Ports without services may be closed; results depend on local settings. This does not traverse the external network and cannot validate an external firewall. A local firewall can still affect replies.
+| Argument | Purpose |
+|---|---|
+| `nmap` | Run Nmap |
+| `-sT` | Use TCP Connect scanning |
+| `-p 22,80,443` | Check only the three specified TCP ports |
+| `--reason` | Show the state classification reason |
+| `127.0.0.1` | Check this computer |
 
-With raw-packet privileges, compare a SYN scan:
+127.0.0.1 is the loopback address: the computer connects back to itself. If no service listens on 80 or 443, those ports may be closed. Your actual result depends on the current system configuration.
+
+Loopback traffic does not traverse an external firewall, although the host's own filtering rules can still affect it.
+
+### To observe SYN scanning
 
 ```bash
 sudo nmap -sS -p 22,80,443 --reason 127.0.0.1
 ```
 
-Record the method and result, then use approved Wireshark or tcpdump capture to inspect handshake differences. Stop with Ctrl+C when needed. This exercise starts no service and changes no firewall rules. End any capture and retain or remove the records you created; do not stop existing services.
+`-sS` selects TCP SYN scanning. It normally requires raw-packet privileges, commonly obtained with sudo on Linux.
 
-This is simplified SYN scan output, not a measured result:
+Compare -sT and -sS on the same local ports. If you also capture authorized local traffic with Wireshark or tcpdump, compare their handshake behavior. This connects the methods in M03-03 with the classifications in M03-04.
+
+## 7.3 Why use --reason?
+
+Consider this simplified SYN-scan output:
 
 ```text
-PORT      STATE   SERVICE    REASON
-443/tcp   open    https      syn-ack
-8443/tcp  closed  https-alt  reset
+PORT      STATE    SERVICE  REASON
+443/tcp   open     https    syn-ack
+8443/tcp  closed   https-alt reset
 ```
 
-Read it as “TCP 443 is classified open because SYN/ACK was received.” Connect reasons may instead be conn-accepted or conn-refused, depending on method and version. Do not treat SYN examples as fixed -sT output. --reason reports the tool's reason; packet capture is needed to verify the precise sequence. [Nmap: output options](https://nmap.org/book/man-output.html)
+This is illustrative output, not a measured run. Reason strings vary by method, platform and Nmap version; Connect scanning may show conn-refused, for example. Preserve what your actual run reports.
 
-| Record category | Information to retain |
-| --- | --- |
-| Scope | Target IP, protocol, port, authorized purpose |
-| Conditions | Source network, time and timezone, tool version, options, waits and retries |
-| Raw observation | Packets, system errors, silence or original output |
-| Interpretation | State and reason tied to the method |
-| Follow-up | Expected/actual difference, settings and logs, owner, retest plan |
+Read `443/tcp open syn-ack` as: “TCP 443 was classified as open because the scan received SYN/ACK.” This provides more analytical value than recording only “443 open.”
 
-For example, record 2026-11-03 10:30 UTC+08:00 (illustrative) so administrators can locate matching logs. A record can say: “From management, SYN-probed TCP 443, received SYN/ACK, recorded open; verify service and source policy against the change request.”
+`--reason` is an official Nmap output option. [Nmap output reference](https://nmap.org/book/man-output.html)
 
-## 8 | Align protection with acceptance checks
+## 7.4 What belongs in a reproducible scan record?
 
-Open alone cannot determine safe versus unsafe. Public HTTPS and an internal database have different access requirements. Protection aims to align exposed endpoints with business purpose and trust boundaries.
+Retain at least these five categories:
 
-| Layer | Question | Action and verification |
-| --- | --- | --- |
-| Service | Why does this endpoint exist? | Confirm purpose, owner and updates; disable unnecessary services through approved changes |
-| Access | Who needs it? | Restrict necessary sources/purposes, with authentication, encryption and application permissions |
-| Acceptance | Did the configuration achieve its purpose? | Test from allowed and restricted positions and compare settings/logs |
+| Category | Information to record |
+|---|---|
+| Scope | Target IP, port, transport and authorization scope |
+| Conditions | Time, timezone, source network, Nmap version and arguments |
+| Raw observation | SYN/ACK, RST, ICMP, or no response |
+| Interpretation | State and the reason supporting it |
+| Follow-up | Whether it matches the design, evidence still needed, and responsible reviewer |
 
-In a synthetic AI inference server example, HTTPS 443 serves approved users, SSH 22 is restricted to management, PostgreSQL 5432 to designated application hosts, and Prometheus 9090 to monitoring. This illustrates policy, not a prescription for a real device. Ports and source IPs do not replace authentication or authorization.
+Include the timezone, for example `2026-11-03 10:30 UTC+08:00`, so administrators can locate corresponding firewall logs.
 
-Firewalls, security groups and network access control lists (ACLs) can restrict traffic. SSH appearing open from management and filtered elsewhere is an indication of possible policy effect. Compare rules, actual connections and logs to exclude causes such as routing failure. This connects to M12 network protection concepts.
+The purpose is to let another engineer understand what you did, what you observed and why you reached the conclusion. Preserve the original output alongside the record.
 
-## 9 | Checks: translate a state into a next step
+# 8 | Match protection decisions with acceptance checks
 
-Follow method → TCP/UDP/ICMP or waiting evidence → classification → record → configuration check → policy comparison. The six states are method-dependent outcomes, not stages that every scan traverses in order.
+An open port alone does not answer whether a system is secure. A public HTTPS website may need an open endpoint; an internal database administration interface may not belong on an untrusted network.
 
-Three common errors are treating filtered as proof of a firewall, open as proof of a vulnerability, or closed and filtered as interchangeable. States guide follow-up; security judgments require purpose and policy.
+The goal is to align service access with operational requirements and security policy. Evaluate the service, access controls and acceptance evidence together.
 
-Question one: A SYN scan of TCP 443 receives RST. A. What is the typical state? B. Does it establish that the server is powered off? C. If HTTPS was expected, what would you check next?
+## 8.1 First layer: the service
 
-Question two: A DNS server's UDP 53 is open|filtered. A. Is DNS definitely running? B. Is a firewall definitely blocking it? C. How would you add evidence?
+Ask why this port needs to exist. A hypothetical medical AI inference server might have an HTTPS API, SSH administration, a database and monitoring.
 
-Question three: SSH 22 is open from management and filtered from an ordinary network. A. Are these contradictory? B. Does this match initial expectations if policy allows management only? C. What remains for full acceptance?
+Those services do not all need the same audience. A database may need access only from the backend API. SSH may be restricted to administrators on a management network.
 
-Question four: ACK Scan reports unfiltered. A. Can you directly call it open? B. What does this method mainly examine? C. Which method would check acceptance of new TCP connections?
+Confirm which services are necessary and disable unnecessary ones. This reduces the attack surface: fewer unnecessary services remain exposed to interaction.
 
-Retain the original recording exercise as well: if a report says only “UDP 53 open|filtered,” add at least four fields so another engineer can continue. Reference answers are in the final disclosures; their publication does not establish learner completion.
+## 8.2 Second layer: access controls
 
-## 10 | Concept questions: connect the distinctions
+Ask who should use each endpoint.
 
-### 10.1 | Does open mean I can use the service?
+| Service | Intended allowed sources |
+|---|---|
+| HTTPS 443 | Approved website users |
+| SSH 22 | Management network |
+| PostgreSQL 5432 | Designated application hosts |
+| Prometheus 9090 | Monitoring network |
 
-Open supplies evidence about the corresponding communication endpoint. TLS, application errors, login and permissions can still prevent use. Verify TCP 443 probe success separately from working HTTPS.
+Source restrictions work alongside authentication, encryption and application permissions. A port number or source IP alone does not replace those controls.
 
-### 10.2 | Why can people see different results for the same port?
+Firewalls, security groups and network ACLs can implement network restrictions. This connects to the later CEH M12 material on IDS, firewalls and honeypots.
 
-Source networks, paths, NAT/proxies, access policies, time and methods can differ. Confirm the same actual endpoint before comparing management and ordinary-user observations. Both can be correct under the intended design.
+## 8.3 Third layer: acceptance
 
-### 10.3 | Why does UDP silence not establish closed?
+Ask whether the configured policy actually works. If the management network should reach SSH while the general network should not, test from both locations.
 
-A service may answer only particular formats or may receive without needing to reply; path drops also cause silence. Preserve open|filtered when evidence cannot distinguish these cases, then add valid queries and device records.
+```text
+Management network
+       |
+     allowed
+       v
+  +----------+
+  | SSH: 22  |
+  +----------+
+       ^
+     blocked
+       X
+       |
+General network
+```
 
-### 10.4 | How does unfiltered differ from open?
+Open from management and filtered from the general network can support the initial expectation. A complete acceptance check still compares firewall rules, device logs and application-level connection results.
 
-ACK Scan's unfiltered means this probe obtained a response, without establishing acceptance of new connections. Open reflects acceptance characteristics under an appropriate method. Interpret the same RST differently for SYN and ACK probes according to what was originally sent.
+Filtered could also arise from an unintended network fault. The classification alone does not prove that the intended rule caused it.
 
-### 10.5 | Where should investigation of filtered begin?
+## 8.4 Use the three layers together
 
-Compare intended source policy, then inspect source position, routes, firewall rules, contemporaneous logs and listeners. If needed, retest from another approved position. The goal is to explain the observation and verify design, not to turn every result into open.
+```text
+Protection objective
+        |
+        v
+1. Is the service necessary?
+        |
+        v
+Remove unnecessary services
+        |
+        v
+2. Who should have access?
+        |
+        v
+Configure the access policy
+        |
+        v
+3. Does the policy work?
+        |
+        v
+Test from different locations
+        |
+        v
+Compare logs and expectations
+        |
+        v
+Complete acceptance with supporting evidence
+```
 
-Keep position, method, response, state and next step in the same record. M03-05 next examines service versions and banners to gather more evidence about software behind an open endpoint.
+This develops the ability to use scanning to verify an intended security design. The result becomes useful when it is connected to service requirements, access policy and corroborating evidence.
+
+# 9 | Turn each state into a next step
+
+Before the final scenarios, connect the methods, responses and decisions in a single map.
+
+## 9.1 A complete M03-04 knowledge map
+
+```text
+Port scanning
+      |
+      +-- TCP Connect: attempt connection establishment
+      +-- TCP SYN: send SYN
+      +-- UDP: send UDP data
+      |
+      v
+Collect responses
+      +-- TCP response
+      +-- UDP response
+      +-- ICMP / silence
+      |
+      v
+Classify according to the method
+      +-- Open
+      +-- Closed
+      +-- Filtered
+      |
+      v
+Other possible state labels
+      +-- Open|Filtered
+      +-- Unfiltered
+      +-- Closed|Filtered
+      |
+      v
+Record evidence
+      |
+      v
+Cross-check configuration
+      |
+      v
+Security acceptance
+```
+
+Use the chain “method → packet response → state → cross-check → security judgment.” Do not jump directly from a state name to a secure/insecure verdict; intended use and policy are still needed.
+
+## 9.2 Three common misconceptions
+
+### Misconception one: filtered proves there is a firewall
+
+Filtered is a classification based on the method and response. Firewalls are common causes, but packet loss, offline equipment and routing problems can also affect observations. Combine the scan with other observations and device-side evidence.
+
+### Misconception two: open means vulnerable
+
+A public HTTPS endpoint may be intentionally open. Open means the corresponding communication was accepted. Assessing vulnerabilities requires service-version, configuration and program-behavior evidence.
+
+### Misconception three: closed means the firewall blocked the packet
+
+In a normal SYN scan, closed typically follows an explicit RST response. Filtered follows silence or particular errors under the method's rules. These are different observations and cannot simply be equated. An intermediary can generate RST, so investigate its origin when relevant.
+
+# 10 | Conceptual Q&A: questions beginners often ask
+
+These five explanations clarify the limits of scan evidence. Read them alongside the packets and cases above.
+
+### Q1: if a port is open, can I immediately use the service?
+
+Not necessarily. The endpoint accepts the corresponding network communication, but authentication, application errors, TLS configuration or permissions can still prevent use.
+
+For example, TCP 443 open provides TCP-layer evidence. It does not guarantee that HTTPS functions correctly.
+
+### Q2: why do different people get different results for the same port?
+
+Their source networks, paths, access policies, times and scan methods can differ.
+
+```text
+Administrator --> SSH 22 --> Open
+General user  --> SSH 22 --> Filtered
+```
+
+If these results match the intended policy, both can be correct observations.
+
+### Q3: why not call silent UDP closed?
+
+UDP has no TCP-style connection establishment, and some services answer only properly formatted requests. A silent service may still exist. A normal UDP scan therefore generally retains open|filtered when it receives no distinguishing response.
+
+### Q4: what is the main difference between unfiltered and open?
+
+Open indicates that the endpoint accepts the corresponding communication. In ACK scanning, unfiltered indicates that the probe receives a response without presenting the method's filtering result.
+
+It does not establish acceptance of a new TCP connection. The same RST must be interpreted differently after SYN and ACK probes.
+
+### Q5: what should I investigate after filtered?
+
+First compare the result with the intended access policy. Within authorization, examine the source location, route, firewall rules, same-time logs and target listening configuration. If needed, repeat from another approved network.
+
+The objective is to identify the cause and verify the security design. Making every filtered endpoint open is not the acceptance criterion.
+
+# Final review: five abilities developed in M03-04
+
+| Ability | What to understand |
+|---|---|
+| 1. Interpret port states | What Open, Closed and Filtered mean |
+| 2. Interpret packet responses | How SYN/ACK, RST, ICMP and silence differ |
+| 3. Distinguish protocols | Why TCP and UDP use different interpretation rules |
+| 4. Identify observation conditions | How source, method and time affect results |
+| 5. Perform security acceptance | How scan evidence helps evaluate policy conformance |
+
+A scan result is evidence derived from network responses. Combine it with service configuration and security policy to reach a supported judgment.
+
+## Further learning resources
+
+Read these official references alongside the lesson:
+
+1. [Nmap: six port states](https://nmap.org/book/man-port-scanning-basics.html)
+2. [Nmap: TCP SYN packets and classification](https://nmap.org/book/synscan.html)
+3. [Nmap: UDP scanning and open|filtered](https://nmap.org/book/scan-methods-udp-scan.html)
+
+The four retained diagrams can also be opened at their original size:
+
+[Core states](https://learn.cs-kairos.com/images/ceh/m03-04-01-core-states-en.svg), [SYN responses](https://learn.cs-kairos.com/images/ceh/m03-04-02-syn-responses-en.svg), [UDP responses](https://learn.cs-kairos.com/images/ceh/m03-04-03-udp-responses-en.svg), [Evidence recording](https://learn.cs-kairos.com/images/ceh/m03-04-04-evidence-record-en.svg).
+
+## Understanding check: four scenarios
+
+Try each question before opening its reference answer. The original report-fields exercise is retained as a fifth reference answer.
+
+Question one: TCP SYN scan
+
+You scan TCP 443 on a server and receive RST.
+
+A. Which state would Nmap normally report?
+
+B. Does this establish that the server is powered off?
+
+C. If HTTPS was expected, what would you check next?
+
+Question two: UDP scan
+
+A DNS server's UDP 53 is reported as `open|filtered`.
+
+A. Does that prove DNS is running?
+
+B. Does that prove a firewall blocked it?
+
+C. What could provide additional evidence?
+
+Question three: results from different networks
+
+The same server's SSH 22 is open from management and filtered from the general network.
+
+A. Do the two observations contradict each other?
+
+B. Does this match the initial expectation if only management should access SSH?
+
+C. What evidence is still needed for acceptance?
+
+Question four: ACK scan
+
+An ACK scan reports `unfiltered`.
+
+A. Can you conclude that the port is open?
+
+B. What does ACK scanning primarily examine?
+
+C. Which method would you use to check acceptance of a new TCP connection?

@@ -7,6 +7,17 @@ for(const c of cases){
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(c.url);await expect(page.locator('[data-reviewed-svg]')).toHaveCount(4);await expect(page.locator('main details')).toHaveCount(5);await expect(page.locator('.article-metadata')).not.toContainText(/閱讀更新|Reading updated/);
   await expect(page.locator('.article-metadata')).toContainText('v'+c.source.contentVersion);
+  const sections=JSON.parse(readFileSync('docs/sources/m03-04/detailed-section-map.json','utf8'));
+  const headings=await page.locator('main h2[id^="section-"],main h3[id^="section-"]').evaluateAll(es=>es.map(e=>({id:e.id,text:e.textContent})));
+  expect(headings).toEqual(sections.map((s:any)=>({id:s.id,text:s[c.lang]})));
+  const norm=(s:string)=>s.replace(/\[([^\]]+)\]\(https:\/\/[^)]+\)/g,'$1').replace(/\s+/g,' ').trim();
+  const visibleSource=norm((await page.locator('main').textContent())!);let cursor=0;
+  for(const b of c.source.text[c.lang].sourceBody){
+   const units=b.kind==='visual'?[]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:[b.text];
+   for(const unit of units){const value=norm(unit);const at=visibleSource.indexOf(value,cursor);expect(at,`Full source order: ${value.slice(0,80)}`).toBeGreaterThanOrEqual(cursor);cursor=at+value.length;}
+  }
+  await expect(page.locator('main pre')).toHaveCount(33);
+
   await expect(page.locator('.article-metadata')).toContainText(c.source.publishedOn);
   await expect(page.locator('.article-metadata')).toContainText((c.lang==='zh'?'版本修訂':'Version revised')+' '+c.source.date);
   for(const width of [320,390,768,1280]){

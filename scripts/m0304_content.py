@@ -10,6 +10,7 @@ def table_cells(s):
 def parse(lang,suffix):
  path=SRC/f'M03-04-teaching.{suffix}.md'
  ap=SRC/f'M03-04-answers.{suffix}.md'
+ sections={x[lang]:x for x in json.loads((SRC/'detailed-section-map.json').read_text())}
  blocks=[];lines=path.read_text().splitlines();i=0
  while i<len(lines):
   s=lines[i].strip();i+=1
@@ -30,9 +31,18 @@ def parse(lang,suffix):
     if re.fullmatch(r'[| :\-]+',row):continue
     rows.append(table_cells(row))
    blocks.append(dict(kind='table',headers=rows[0],rows=rows[1:]));continue
-  if s.startswith(('## ','### ')):
-   title=re.sub(r'^#{2,3} ', '', s); number=re.search(r'\d+(?:\.\d+)*',title)[0];blocks.append(dict(kind='heading' if s.startswith('## ') else 'paragraph',id='section-'+number.replace('.','-'),text=title));continue
-  blocks.append(dict(kind='paragraph',text=s.removeprefix('# ')))
+  if s=='---':continue
+  if re.match(r'^#{1,3} ',s):
+   title=re.sub(r'^#{1,3} ', '', s)
+   if title in sections:
+    entry=sections[title];blocks.append(dict(kind=entry['kind'],id=entry['id'],text=title));continue
+   blocks.append(dict(kind='paragraph',text=title));continue
+  if s.startswith('- '):
+   items=[s[2:]]
+   while i<len(lines) and lines[i].strip().startswith('- '):
+    items.append(lines[i].strip()[2:].replace('**',''));i+=1
+   blocks.append(dict(kind='list',items=items));continue
+  blocks.append(dict(kind='paragraph',text=s.removeprefix('> ')))
  answers=[]
  for chunk in ap.read_text().split('\n## ')[1:]:
   heading,*paras=chunk.strip().split('\n\n');ident,title=re.split(r'｜|\s*\|\s*',heading,maxsplit=1);ident=ident.strip();title=title.strip()
@@ -43,5 +53,5 @@ def parse(lang,suffix):
   at=next(i for i,b in enumerate(blocks) if b.get('id')==f'section-{section+1}');blocks.insert(at,block)
  blocks.extend(answers)
  return dict(summary='把 Open、Closed、Filtered 與其他狀態連回觀察位置、方法及回應，選擇下一步查核。' if lang=='zh' else 'Connect Open, Closed, Filtered and other states to observation location, method and response, then choose the next check.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-04',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-04',revision=3,contentVersion='1.1.1',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m03-04.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')
