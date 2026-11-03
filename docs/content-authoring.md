@@ -290,3 +290,8 @@ npm run test:browser:m0302
 ```
 
 新圖四份 SVG 可逐張下載；舊八份 SVG 與原 ZIP 保留。`m0302_discovery.py --check` 驗證來源 SVG 與 HTML 模型同步，`m0302_svg.py --check` 驗證受審核產物與搜尋標籤。瀏覽器驗收檢查雙語四尺寸、200% 文字、無 JavaScript、鍵盤操作、下載位元組與 SVG 文字邊界。依專案 AGENTS.md，文章修訂包含該次修改的提交與部署授權；完成驗證後接續發布，再執行正式站回讀。本機驗收不能代替正式站回讀。[修訂回執](releases/2026-11-03-m03-02-discovery.md)
+
+
+### M03-02 ARP 補充 v1.2.0
+
+[ARP 補充回執](releases/2026-11-03-m03-02-arp-supplement.md)記錄 5–6 節旁文、8.3–8.4 查詢／學習路線及 9.2 四題整合檢核；兩語各十一題參考答案。圖 1／2 及全部 visual 區塊、ICMP 第 1–4 節、原七題答案保留，以來源目錄的雜湊與 v1.1.0 JSON 比對。此次只需執行 `m0302_content.py` 產生教材；圖解產生器以 `--check` 驗證，無需改寫既有圖檔。

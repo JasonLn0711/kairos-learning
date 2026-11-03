@@ -9,13 +9,13 @@ import {createConceptCatalog,type SourceBlock} from '../src/lib/concepts.ts';
 import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M03-02')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
-test('M03-02 complete bilingual lesson, four diagrams, paired closed-answer data records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,2);assert.deepEqual(lesson.qa,[]);
+test('M03-02 complete bilingual lesson, three diagrams, paired closed-answer data records and next linked unit',()=>{
+ assert.equal(lesson.contentVersion,'1.2.0');assert.equal(lesson.revision,3);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-03');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
   assert.equal(body.filter(b=>b.kind==='heading'&&/^section-\d+$/.test(b.id??'')).length,9);
-  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-arp-timeout','answer-next-hop','answer-cache-time','answer-service-check','answer-nas-dsm','answer-printer-policy','answer-remote-frame']);
+  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-arp-timeout','answer-next-hop','answer-cache-time','answer-service-check','answer-nas-dsm','answer-printer-policy','answer-remote-frame','answer-arp-lab-timeout','answer-arp-lab-reply','answer-arp-lab-route','answer-arp-lab-frame']);
   const text=body.flatMap(flatten).join('\n');
   for(const term of ['ICMP','ARP','IP'])assert.ok(text.toLowerCase().includes(term.toLowerCase()));
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
@@ -95,3 +95,23 @@ test('M03-02 HTML/SVG sources share one constrained bilingual model',()=>{
  assert.deepEqual(arp.panels[1].edges.map((e:any)=>[e.source,e.target]),[[0,1],[1,2]]);
  }
  });
+
+test('M03-02 ARP supplement preserves both named figures, prior ICMP, and all seven existing answers',()=>{
+ const root='docs/sources/m03-02/arp-supplement-2026-11-03/';
+ const hashes=JSON.parse(readFileSync(root+'preserved-figures.sha256.json','utf8'));
+ for(const [path,hash] of Object.entries(hashes))assert.equal(createHash('sha256').update(readFileSync(path)).digest('hex'),hash,path);
+ const supplied=JSON.parse(readFileSync(root+'source.sha256.json','utf8'));
+ assert.equal(createHash('sha256').update(readFileSync(root+'supplied.txt')).digest('hex'),supplied['supplied.txt']);
+ const old=JSON.parse(readFileSync('docs/sources/m03-02/archive-v1.1.0/m03-02.json','utf8'));
+ for(const lang of ['zh','en'] as const){
+  const body=lesson.text[lang].sourceBody!;const previous=old.text[lang].sourceBody as SourceBlock[];
+  const beforeArp=(bs:SourceBlock[])=>bs.slice(0,bs.findIndex(b=>b.kind==='heading'&&b.id==='section-5'));
+  assert.deepEqual(beforeArp(body),beforeArp(previous));
+  assert.deepEqual(body.filter(b=>b.kind==='visual'),previous.filter(b=>b.kind==='visual'));
+  assert.deepEqual(body.filter(b=>b.kind==='answer').slice(0,7),previous.filter(b=>b.kind==='answer'));
+  const prose=body.flatMap(flatten).join('\n');
+  for(const term of ['255.255.255.0','192.168.10.0/24','10.20.30.40','ip -4 route get 10.20.30.40','02:00:00:00:00:01','VLAN','Proxy ARP','NAT'])assert.ok(prose.includes(term),`${lang}: ${term}`);
+  assert.ok(!/BB:BB:BB|bb:bb:bb|XX:XX/.test(prose));
+  for(const id of ['section-6-1','section-6-2','section-6-3','section-6-4','section-6-5','section-8-3','section-8-4','section-9-2'])assert.ok(body.some(b=>'id' in b&&b.id===id),`${lang}: ${id}`);
+ }
+});

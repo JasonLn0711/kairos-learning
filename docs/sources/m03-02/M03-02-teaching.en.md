@@ -121,6 +121,18 @@ A MAC, Media Access Control, address is 48 bits in common Ethernet networks; 02:
 
 ARP, Address Resolution Protocol, resolves a local next-hop IPv4 address to a MAC address. Ethernet carries ARP directly. Its fields include IPv4 addresses, but ARP is not inside an IPv4 packet. [RFC 826](https://www.rfc-editor.org/rfc/rfc826) describes the resolution process.
 
+Think of an Ethernet frame as the envelope used on this leg, carrying an IP packet inside. For an ICMP Echo Request from A to B on the same link, read the layers as follows. This field comparison omits other header fields.
+
+| Location | Field or contents | Meaning in this exchange |
+|---|---|---|
+| Outer Ethernet frame | Source MAC: A’s interface | Who sends on this link |
+| Outer Ethernet frame | Destination MAC: B’s interface | Who receives on this link |
+| Enclosed IPv4 packet | Source IP: 192.168.1.10 | Source of the IP communication |
+| Enclosed IPv4 packet | Destination IP: 192.168.1.20 | Destination of the IP communication |
+| Inside the IP packet | ICMP Echo Request | The echo request carried here |
+
+Thus “Ethernet frame → IPv4 packet → ICMP” is one encapsulation. ARP uses “Ethernet frame → ARP message.” IP addresses inside ARP are data fields; they do not mean an additional IPv4 packet surrounds ARP.
+
 ### 5.2 Four steps in a local Request/Reply exchange
 
 Assume A is 192.168.1.10 with MAC 02:00:00:00:00:10, and B is 192.168.1.20 with MAC 02:00:00:00:00:20, on the same local Ethernet link.
@@ -129,6 +141,12 @@ Assume A is 192.168.1.10 with MAC 02:00:00:00:00:10, and B is 192.168.1.20 with 
 - When resolution is needed, A sends an ARP Request asking who uses 192.168.1.20. A typical resolution request uses destination MAC ff:ff:ff:ff:ff:ff, broadcasting within that broadcast domain.
 - B sends an ARP Reply containing its IPv4/MAC mapping. A reply to a typical request is usually sent directly back to A.
 - A puts B's MAC in the Ethernet destination field to deliver the enclosed IP packet.
+
+A broadcast resembles asking a classroom, “Who uses 192.168.1.20?” B, C, and D within the broadcast domain may receive it if that traffic is permitted. Normally, B, using the requested IP, answers. Broadcasting distributes the question within that domain; it does not make every device the final destination of the subsequent data.
+
+Unicast sends a frame to one specified interface. A typical ARP Request already carries A’s IPv4 and MAC information, so B knows where to send its Reply directly. In this example, B reports that 192.168.1.20 maps to 02:00:00:00:00:20. With a usable mapping, A has the information needed for the destination MAC of this link’s data frame. This describes an ordinary request/reply exchange; proxy responses need separate interpretation.
+
+Subsequent IP packets do not each require another broadcast. The system can reuse a valid mapping or confirm neighbor reachability when its cache state requires it. ARP resolves an address needed for delivery; ICMP, TCP, or UDP communication still has its own work to do.
 
 ### 5.3 A cached entry may reflect an earlier observation
 
@@ -149,11 +167,15 @@ On Ubuntu, ip -4 neigh show displays IPv4 neighbor information. Illustrative out
 
 Record when a cache entry was read separately from when a new ARP Reply arrived. Neighbor states do not establish the health of every device service. [ip-neighbour manual](https://man7.org/linux/man-pages/man8/ip-neighbour.8.html)
 
+The neighbor table is temporary communication information, not a live inventory of online devices. Running ip -4 neigh show only reads existing records. An entry does not imply that reading it just triggered an ARP Request or received a fresh ARP Reply. Whether later traffic reuses the mapping, resolves it again, or confirms reachability depends on its state.
+
 ### 5.4 ARP's trust boundary
 
 Basic ARP supplies no cryptographic identity authentication. If a forged mapping is accepted, such as mapping 192.168.1.1 to an unexpected device's MAC, traffic may be directed to that device. This is the basic risk of ARP spoofing. Corroborate identity using switch records, asset information, and network access controls.
 
 IPv6 uses Neighbor Discovery, ND, through ICMPv6 for functions including neighbor-address resolution, rather than IPv4 ARP. [RFC 4861](https://www.rfc-editor.org/rfc/rfc4861)
+
+ARP poisoning emphasizes the resulting incorrect mapping in the neighbor cache. If gateway 192.168.1.1 is mistakenly mapped to another device’s MAC, subsequent frames may go to the wrong recipient. Record the reported IP/MAC, reception time, and source, then corroborate management records to distinguish a normal gateway, a proxy response, or an anomalous mapping. This explains the risk without treating receipt of ARP as identity authentication.
 
 ## 6 | Local and remote delivery: whose MAC does ARP resolve?
 
@@ -166,6 +188,55 @@ For 192.168.1.20 on the same link, routing selects direct delivery. A resolves B
 For remote 203.0.113.20, if routing selects the default gateway, A resolves the MAC for 192.168.1.1. The destination IP remains 203.0.113.20, while the first frame targets the gateway's MAC. The gateway then forwards according to its routes. Obtaining its MAC only completes local next-hop resolution; the remote host's reachability remains unverified.
 
 203.0.113.20 is a documentation address. Actual next hops follow routing tables and interfaces. VLANs, Virtual LANs, can divide broadcast domains. With proxy ARP, another device may answer on an address's behalf. Ordinary ARP broadcasts do not cross routers, so they cannot directly request an arbitrary remote device's MAC. [RFC 1122](https://www.rfc-editor.org/rfc/rfc1122)
+
+### 6.1 Understand the subnet with its mask
+
+This supplementary exercise uses a separate synthetic address set from Figure 2: A is 192.168.10.10/24, B is 192.168.10.20/24, and the gateway is 192.168.10.1/24. All share a local Ethernet link that permits direct communication. /24 corresponds to mask 255.255.255.0 and network prefix 192.168.10.0/24.
+
+In this /24 example, the first 24 bits identify the network and the remaining 8 identify the host portion. Addresses ending in .10, .20, and .1 belong to the same subnet; remote 10.20.30.40 does not. Comparing the first three dotted numbers works under this /24 assumption, not for every prefix length.
+
+The operating system ultimately selects the next hop using routes and applicable routing policy. Addresses that appear to share a subnet also need a link permitting direct communication for local delivery to work.
+
+### 6.2 Routing selects the next hop before ARP resolves its MAC
+
+For B, if A selects the directly connected 192.168.10.0/24 route, B itself is the next hop. When resolution is needed, A asks for 192.168.10.20. Delivery in this case does not go through the default gateway first.
+
+For remote C, 10.20.30.40, if no better applicable route exists and A selects the default route through 192.168.10.1, it resolves the gateway’s MAC. Crossing a subnet does not always mean using the default gateway: a selected more-specific route determines its own next hop.
+
+| Destination for A | Selected local next hop | Which IP does ARP query when needed? |
+|---|---|---|
+| B: 192.168.10.20 | B’s interface, direct delivery | 192.168.10.20 |
+| C: 10.20.30.40 | Gateway 192.168.10.1 | 192.168.10.1 |
+
+### 6.3 The first frame and the next frame
+
+Assume A’s MAC is 02:00:00:00:00:10, the gateway’s local interface MAC is 02:00:00:00:00:01, and routing selects that gateway. Read the first leg toward C as follows:
+
+| Encapsulation layer | Source | Destination |
+|---|---|---|
+| Outer Ethernet frame | A’s MAC: 02:00:00:00:00:10 | Gateway MAC: 02:00:00:00:00:01 |
+| Inner IPv4 packet | A’s IP: 192.168.10.10 | C’s IP: 10.20.30.40 |
+
+The IP and MAC destinations differ because they answer questions at different scopes: IP targets remote C, while this frame goes to the gateway first.
+
+After receiving the packet, the router selects a next hop and output interface from its own routes. If the next link is Ethernet too, it re-encapsulates with the source and destination MAC addresses appropriate to that link. A’s original MAC fields do not travel unchanged all the way to C. In this simplified example without NAT, the IP source and destination addresses remain the same during forwarding, but fields such as TTL change. NAT, Network Address Translation, may also rewrite IP addresses. A non-Ethernet next link uses its corresponding link-layer encapsulation.
+
+### 6.4 Broadcast scope and two common pitfalls
+
+Calling out inside an office in Yilan reaches people in that local space; saying a Taipei address does not carry your voice to Taipei. Ordinary ARP broadcasts similarly stay within their Layer 2 broadcast domain. Routers do not forward them across the Internet as they forward IP packets.
+
+VLANs divide Layer 2 broadcast domains. Even if two devices both use 192.168.10.x/24, A’s ordinary ARP broadcast cannot directly reach B when they occupy different VLANs that are not bridged together. Check interfaces, VLANs, and routes rather than inferring direct reachability from similar-looking addresses.
+
+With proxy ARP, a router may answer for another address using its own MAC, allowing packets to reach it for forwarding. Such a Reply shows that someone supplied a mapping; it does not authenticate the responder as the final target. Corroborate proxy configuration with assets, routes, and management records. [RFC 1027: Proxy ARP](https://www.rfc-editor.org/rfc/rfc1027)
+
+### 6.5 Connect the delivery steps
+
+- Start with the destination IP; consult routes to select an output interface and local next hop.
+- Check that next hop’s neighbor record. Reuse a usable mapping where appropriate; let the system handle state-dependent reachability confirmation.
+- When resolution is needed, send an ARP Request on the applicable local link. After obtaining a usable mapping, fill in the frame’s destination MAC.
+- Encapsulate the IP packet in the Ethernet frame for this leg and deliver it to the next hop. Preserve resolution failures as failures rather than recording delivery as completed.
+
+This is a simplified sequence for ordinary IPv4 Ethernet. ARP resolution, IP delivery, ICMP response, and application success each need their own observations.
 
 ## 7 | Worked example: turn three observations into next steps
 
@@ -264,6 +335,62 @@ Confirm authorization, discover hosts, record observations and uncertainties, se
 | No response | Does not directly prove power-off | Does not directly prove power-off |
 | Ubuntu tools | ping | ip neigh |
 
+### 8.3 Four read-only commands: connect routes with neighbor records
+
+Use the supplementary Section 6 example with 192.168.10.0/24 and remote 10.20.30.40. This is a separate illustrative environment, not an instruction to change your network configuration. These Ubuntu iproute2 commands read local information without sending test traffic to the remote destination.
+
+```bash
+ip -br -4 addr
+ip -4 route
+ip -4 route get 10.20.30.40
+ip -4 neigh show
+```
+
+First identify the interface and IPv4 address in the first command’s output. Illustrative output:
+
+```text
+lo       UNKNOWN  127.0.0.1/8
+enp3s0   UP       192.168.10.10/24
+```
+
+Next, read the routing table together with the route lookup. These lines are also illustrative:
+
+```text
+default via 192.168.10.1 dev enp3s0
+192.168.10.0/24 dev enp3s0
+
+10.20.30.40 via 192.168.10.1 dev enp3s0 src 192.168.10.10
+```
+
+| Field | Meaning in this route result |
+|---|---|
+| 10.20.30.40 | Destination queried |
+| via 192.168.10.1 | Selected next hop |
+| dev enp3s0 | Output interface |
+| src 192.168.10.10 | Selected source IP |
+
+Finally, look for that next hop, shown after via, in the neighbor records for the same interface. An entry like this connects the routing decision to first-link delivery information:
+
+```text
+192.168.10.1 dev enp3s0 lladdr 02:00:00:00:00:01 REACHABLE
+```
+
+Record: “Route lookup selected enp3s0 and next hop 192.168.10.1 for the remote IP. At the time of reading, the neighbor table listed MAC 02:00:00:00:00:01 in REACHABLE state.” This describes table inspection, not a remote communication test. ip route get does not probe C or guarantee a corresponding neighbor entry. [ip-route manual](https://man7.org/linux/man-pages/man8/ip-route.8.html)
+
+Check: identify destination IP, via, dev, src, lladdr, and state in your own output. If via is absent, no route exists, or the cache is empty, record that result instead of forcing the example. These queries change no settings and need no cleanup. Do not flush the cache to obtain a desired output. Later, direct observation of Request/Reply messages can use Wireshark or tcpdump on an administered, authorized laboratory link with a separately defined capture scope.
+
+### 8.4 Place ARP within the CEH learning route
+
+| Learning stage | Question answered |
+|---|---|
+| M02 reconnaissance | Which addresses, domains, and public information are known? |
+| M03 routing and ARP | Where is the packet going, who is the local next hop, and how is its MAC obtained? |
+| M03 ICMP and TCP/UDP probes | Which replies arrived, and which endpoints need further checks? |
+| M04 enumeration | What additional information can authorized service queries obtain? |
+| M08 sniffing | Which protocol exchanges actually appear in captured traffic? |
+
+IP identifies the destination, routing selects the next hop, ARP helps obtain a local delivery address, and ICMP supplies particular replies or errors. Separating their evidence explains how an ARP Reply can coexist with a ping timeout and which service check is still needed.
+
 ## 9 | Checks and the takeaway
 
 Answer in your own words first. Reference answers accompany the formal website material.
@@ -284,3 +411,17 @@ Next, M03-03 introduces TCP Connect, SYN, and UDP scanning, connecting addresses
 6. A printer's ping summary reads 4 packets transmitted, 0 received, 100% packet loss, yet colleagues can still print. What could explain this, and how would you record the observation?
 
 7. A computer is 192.168.1.10/24, its gateway is 192.168.1.1, and it wants to reach 203.0.113.20. Assume routing selects the default gateway on ordinary IPv4 Ethernet. A. What is the final destination IP? B. Whose MAC is the first frame's destination? C. Why not directly ARP for the remote MAC?
+
+### 9.2 Integrated scenario: a silent printer and a remote destination
+
+Synthetic environment: computer A is 192.168.10.10/24, printer B is 192.168.10.20/24, the default gateway is 192.168.10.1, and remote server C is 10.20.30.40. Assume A, B, and the gateway’s local interface share an Ethernet link permitting direct communication, and the route to C selects that gateway.
+
+Observation: all pings to B time out, but you receive an ARP Reply claiming a mapping for B. You then prepare to connect to C. Use this same scenario for all four questions; write your explanation before opening the reference answers.
+
+8. Do B’s ping timeouts prove that it is powered off? What further evidence would you need?
+
+9. Why might an ARP Reply arrive despite no ping reply? Does it authenticate B’s identity?
+
+10. Which IP must A resolve with ARP to reach C? Why not directly ask for C’s MAC?
+
+11. Who owns the destination IP and destination MAC in the first frame toward C? Does that establish that C received the data?

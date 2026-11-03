@@ -5,7 +5,7 @@ const screenshots='.local/m0302/screenshots';mkdirSync(screenshots,{recursive:tr
 for(const c of cases){
  test(`${c.id} ${c.lang}: four viewports, text resize, original downloads`,async({page,request})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(c.url);await expect(page.locator('[data-discovery-diagram]')).toHaveCount(2);await expect(page.locator('main details')).toHaveCount(7);await expect(page.locator('.article-metadata')).not.toContainText(/閱讀更新|Reading updated/);
+  await page.goto(c.url);await expect(page.locator('[data-discovery-diagram]')).toHaveCount(2);await expect(page.locator('main details')).toHaveCount(11);await expect(page.locator('.article-metadata')).not.toContainText(/閱讀更新|Reading updated/);
   await expect(page.locator('.article-metadata')).toContainText('v'+c.source.contentVersion);
   await expect(page.locator('.article-metadata')).toContainText(c.source.publishedOn);
   await expect(page.locator('.article-metadata')).toContainText((c.lang==='zh'?'版本修訂':'Version revised')+' '+c.source.date);
@@ -33,7 +33,7 @@ for(const c of cases){
   expect(errors).toEqual([]);
  });
  test(`${c.id} ${c.lang}: keyboard and no JavaScript`,async({page,browser,baseURL})=>{
-  await page.setViewportSize({width:320,height:900});await page.goto(c.url);await expect(page.locator('[data-discovery-diagram]')).toHaveCount(2);await expect(page.locator('main details')).toHaveCount(7);
+  await page.setViewportSize({width:320,height:900});await page.goto(c.url);await expect(page.locator('[data-discovery-diagram]')).toHaveCount(2);await expect(page.locator('main details')).toHaveCount(11);
   // The first Tab must follow initial client startup, which may restore body focus.
   await page.waitForLoadState('networkidle');
   await page.keyboard.press('Tab');await expect(page.locator('.skip')).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#main')).toBeFocused();

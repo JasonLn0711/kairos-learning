@@ -46,5 +46,5 @@ def parse(lang,suffix):
   at=next(i for i,b in enumerate(blocks) if b.get('id')==f'section-{section+1}');blocks.insert(at,block)
  blocks.extend(answers)
  return dict(summary='從 ICMP 與 ARP 的分工，建立有位置、時間與下一步的主機探索紀錄。' if lang=='zh' else 'Use ICMP and ARP observations to record host discovery with location, time and a justified next step.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-02',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-02',revision=3,contentVersion='1.2.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m03-02.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

@@ -1,7 +1,7 @@
 {
   "id": "M03-02",
-  "revision": 2,
-  "contentVersion": "1.1.0",
+  "revision": 3,
+  "contentVersion": "1.2.0",
   "date": "2026-11-03",
   "status": "published",
   "publishedOn": "2026-11-03",
@@ -330,6 +330,49 @@
         },
         {
           "kind": "paragraph",
+          "text": "把乙太網路訊框想成這一段使用的信封，裡面裝著 IP 封包。以 A 傳送 ICMP Echo Request 給同一鏈路上的 B 為例，封裝關係如下；這是欄位對照，省略其他標頭欄位。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "所在位置",
+            "欄位或內容",
+            "這次的意思"
+          ],
+          "rows": [
+            [
+              "外層 Ethernet Frame",
+              "來源 MAC：A 的介面",
+              "這一段由誰送出"
+            ],
+            [
+              "外層 Ethernet Frame",
+              "目的 MAC：B 的介面",
+              "這一段交給誰"
+            ],
+            [
+              "訊框裡的 IPv4 Packet",
+              "來源 IP：192.168.1.10",
+              "IP 通訊的來源"
+            ],
+            [
+              "訊框裡的 IPv4 Packet",
+              "目的 IP：192.168.1.20",
+              "IP 通訊的目的地"
+            ],
+            [
+              "IP 封包裡",
+              "ICMP Echo Request",
+              "本次承載的回音請求"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，「Ethernet 訊框 → IPv4 封包 → ICMP」是一種封裝；傳送 ARP 時則是「Ethernet 訊框 → ARP 訊息」。看到 ARP 裡也有 IP 位址，仍要分清楚它是 ARP 的資料欄位，不是外面多包了一層 IPv4。"
+        },
+        {
+          "kind": "paragraph",
           "id": "section-5-2",
           "text": "5.2 本地 Request／Reply 的四個步驟"
         },
@@ -345,6 +388,18 @@
             "B 回覆 ARP Reply，提供自己的 IPv4／MAC 對應資訊；對一般請求的回覆通常直接送回 A。",
             "A 取得對應後，把 B 的 MAC 填入乙太網路訊框目的欄位，交付其中的 IP 封包。"
           ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "廣播像在同一間教室問：「誰使用 192.168.1.20？」同一廣播範圍內、允許接收這類流量的 B、C、D 都可能收到，但一般由使用該 IP 的 B 回答。廣播是把詢問送到這個範圍，不是把每一台設備都當成資料的最終目的地。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "單播（Unicast）則是把訊框送到一個指定介面。一般 ARP Request 已帶有 A 的 IPv4 與 MAC 資訊，所以 B 知道要把 Reply 直接送回誰。B 的回覆在本例中表示：「192.168.1.20 對應 02:00:00:00:00:20。」A 取得可用對應後，才具備填寫這一段資料訊框目的 MAC 的資訊。這是一般請求／回覆情境；代理回覆等情況還需另行判讀。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著送出 IP 資料時，不必每送一個封包都重新廣播。系統可以重用仍有效的對應，也可能因快取狀態需要重新確認鄰居。ARP 協助完成交付前的位址解析；它不會取代後續的 ICMP、TCP 或 UDP 通訊。"
         },
         {
           "kind": "paragraph",
@@ -394,6 +449,10 @@
         },
         {
           "kind": "paragraph",
+          "text": "鄰居表是系統暫存的通訊資訊，不是即時在線設備清冊。只執行 ip -4 neigh show 是查看已有紀錄；表內有一筆 MAC，不能推定這次讀取剛剛觸發了 ARP Request，也不能推定剛剛收到 ARP Reply。後續通訊是否會使用快取、重新解析或確認可達性，取決於當時狀態。"
+        },
+        {
+          "kind": "paragraph",
           "id": "section-5-4",
           "text": "5.4 ARP 的信任限制"
         },
@@ -404,6 +463,10 @@
         {
           "kind": "paragraph",
           "text": "IPv6 使用 Neighbor Discovery（ND，鄰居探索），透過 ICMPv6 完成鄰居位址解析等工作，不使用 IPv4 的 ARP。[RFC 4861](https://www.rfc-editor.org/rfc/rfc4861)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ARP Poisoning（ARP 毒化）強調錯誤對應進入鄰居快取的結果。例如，把閘道 192.168.1.1 誤記成另一台設備的 MAC，後續訊框就可能交錯對象。記錄回覆中的 IP／MAC、接收時間與來源，再對照管理資料，才能分清正常閘道、代理回覆或異常對應；這裡只說明風險，不把收到 ARP 當成身分驗證。"
         },
         {
           "kind": "heading",
@@ -441,6 +504,128 @@
         {
           "kind": "paragraph",
           "text": "203.0.113.20 是文件示範位址。實際下一站依路由表與介面決定；VLAN（虛擬區域網路）可劃分廣播範圍，Proxy ARP（代理 ARP）可能由其他設備代答。一般 ARP 廣播不跨越路由器，因此不能直接詢問任意遠端設備的 MAC。[RFC 1122](https://www.rfc-editor.org/rfc/rfc1122)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "6.1 用子網路遮罩理解「同網段」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下補充練習改用另一組合成位址，與圖 2 的示例分開閱讀：A 為 192.168.10.10/24、B 為 192.168.10.20/24、閘道為 192.168.10.1/24；三者位於同一條允許直接通訊的本地乙太網路。/24 對應子網路遮罩 255.255.255.0，網路前綴是 192.168.10.0/24。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在這個 /24 例子裡，前 24 位元是網路部分，後 8 位元是主機部分，所以 .10、.20、.1 屬於同一個子網路。遠端 10.20.30.40 不在這個前綴內。這是以 /24 為條件的判讀；其他前綴長度不能直接套用「看前三段數字」的方法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "作業系統最後仍會依路由表與相關路由政策決定下一站。IP 看起來屬於同一子網路，也要有可直接通訊的鏈路，才能完成本地交付。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 路由先選下一站，ARP 再找 MAC"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A 要送給 B 時，若選到 192.168.10.0/24 的直接相連路由，下一站就是 B；需要解析時詢問 192.168.10.20。這個案例不用先交給預設閘道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A 要送給遠端 C（10.20.30.40）時，若沒有其他較適合的路由，並選到經 192.168.10.1 的預設路由，就解析閘道的 MAC。跨網段不代表永遠使用預設閘道：若選中更具體的路由，應依該路由指定的下一站處理。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "這次 A 要送給誰",
+            "路由選到的本地下一站",
+            "需要解析時，ARP 問哪個 IP？"
+          ],
+          "rows": [
+            [
+              "B：192.168.10.20",
+              "B 的介面，直接交付",
+              "192.168.10.20"
+            ],
+            [
+              "C：10.20.30.40",
+              "閘道 192.168.10.1",
+              "192.168.10.1"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 第一段訊框與下一段訊框"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 A 的 MAC 為 02:00:00:00:00:10、閘道本地介面的 MAC 為 02:00:00:00:00:01，且路由選擇上述閘道。送往 C 的第一段資料可這樣讀："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "封裝層次",
+            "來源",
+            "目的地"
+          ],
+          "rows": [
+            [
+              "外層 Ethernet Frame",
+              "A 的 MAC：02:00:00:00:00:10",
+              "閘道的 MAC：02:00:00:00:00:01"
+            ],
+            [
+              "內層 IPv4 Packet",
+              "A 的 IP：192.168.10.10",
+              "C 的 IP：10.20.30.40"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 目的地與 MAC 目的地不同，因為它們回答不同尺度的問題：IP 指向遠端 C，這一段訊框先交給閘道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "路由器收到後，依自己的路由表決定下一站與輸出介面。若下一段也是乙太網路，會使用適合那一段的來源與目的 MAC 重新封裝；MAC 不是由 A 一路原封不動帶到 C。在這個沒有 NAT 的簡化例子中，轉送時 IP 來源與目的位址維持原值，但 TTL 等欄位會改變。若使用 NAT（網路位址轉換），IP 位址也可能被改寫；若下一段不是乙太網路，則採用相應的鏈路層封裝。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 本地廣播的範圍與兩個常見陷阱"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在宜蘭的一間辦公室裡喊話，能聽見的是當地範圍內的人，不會因為喊了台北地址就傳到台北。一般 ARP 廣播也只在對應的第二層廣播範圍內傳遞，路由器不會像轉送 IP 封包那樣，把它送遍網際網路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VLAN 是劃分第二層廣播範圍的一種方式。兩台設備即使都設定成 192.168.10.x/24，若位於彼此未橋接的不同 VLAN，A 的一般 ARP 廣播也不會直接抵達 B。這時要核對介面、VLAN 與路由設定，不能只因 IP 看起來相近就認定可直接通訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Proxy ARP（代理 ARP）則可能由路由器代替另一個位址回覆，提供自己的 MAC，讓封包先交給它再轉送。收到這筆 Reply，證明的是有人提供對應資訊，並未確認回覆者就是最終目標。代理配置要與資產、路由及管理紀錄一起核對。[RFC 1027：Proxy ARP](https://www.rfc-editor.org/rfc/rfc1027)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-5",
+          "text": "6.5 把封裝流程串起來"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "先知道 IP 目的地，再查路由，決定輸出介面與本地下一站。",
+            "查該下一站的鄰居紀錄；有可用對應時可重用，狀態需要確認時由系統處理。",
+            "需要解析時，在適用的本地鏈路送出 ARP Request；取得可用對應後，填入訊框目的 MAC。",
+            "把 IP 封包封裝成這一段的乙太網路訊框，再交給下一站。解析失敗時，應保留失敗結果，不能直接當成已完成交付。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一般 IPv4 乙太網路的簡化流程。ARP 解析、IP 交付、ICMP 回覆與應用服務成功，分別需要自己的觀察證據。"
         },
         {
           "kind": "heading",
@@ -653,6 +838,114 @@
           ]
         },
         {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 四個純查詢命令：把路由與鄰居紀錄對起來"
+        },
+        {
+          "kind": "paragraph",
+          "text": "沿用第 6 節補充案例的 192.168.10.0/24 與遠端 10.20.30.40。這是另一組示意環境，不是要求你更改自己的網路設定。以下在 Ubuntu 使用 iproute2，只讀取本機資訊；不發送測試流量給遠端。"
+        },
+        {
+          "kind": "code",
+          "text": "ip -br -4 addr\nip -4 route\nip -4 route get 10.20.30.40\nip -4 neigh show"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先從第一個命令找介面與 IPv4。可能看到下列示意輸出："
+        },
+        {
+          "kind": "code",
+          "text": "lo       UNKNOWN  127.0.0.1/8\nenp3s0   UP       192.168.10.10/24"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著把路由表與路由查詢一起讀。以下亦為示意："
+        },
+        {
+          "kind": "code",
+          "text": "default via 192.168.10.1 dev enp3s0\n192.168.10.0/24 dev enp3s0\n\n10.20.30.40 via 192.168.10.1 dev enp3s0 src 192.168.10.10"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "在這個路由結果中的意思"
+          ],
+          "rows": [
+            [
+              "10.20.30.40",
+              "查詢的目的地"
+            ],
+            [
+              "via 192.168.10.1",
+              "選到的下一站"
+            ],
+            [
+              "dev enp3s0",
+              "輸出介面"
+            ],
+            [
+              "src 192.168.10.10",
+              "系統選用的來源 IP"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "最後到同一介面的鄰居紀錄，查的是 via 後的下一站。若看到以下示意紀錄，就能把路由決策與第一段交付資訊接起來："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.10.1 dev enp3s0 lladdr 02:00:00:00:00:01 REACHABLE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "把結果寫成：「查詢到遠端 IP 走 enp3s0，下一站為 192.168.10.1；讀取時鄰居表列出的 MAC 為 02:00:00:00:00:01，狀態為 REACHABLE。」這句話只描述當次查表，不能替代遠端通訊實測。ip route get 不會替你探測 C，也不保證鄰居表一定有該項目。[ip-route 手冊](https://man7.org/linux/man-pages/man8/ip-route.8.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "檢核：在自己的輸出中標出目的 IP、via、dev、src、lladdr 與狀態；若未顯示 via、沒有路由或快取為空，照實記錄，不硬套示例。這些查詢不改設定、不需清理，也不要為了得到指定輸出而清空快取。日後若要直接觀察 Request／Reply，可在自己管理且獲准的實驗鏈路使用 Wireshark 或 tcpdump，另行設定擷取範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 ARP 在 CEH 學習路線中的位置"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "學習階段",
+            "要回答的問題"
+          ],
+          "rows": [
+            [
+              "M02 偵察",
+              "已知哪些位址、網域及公開資訊？"
+            ],
+            [
+              "M03 路由與 ARP",
+              "封包要到哪裡，本地下一站是誰，如何取得所需 MAC？"
+            ],
+            [
+              "M03 ICMP 與 TCP／UDP 探測",
+              "收到哪種回覆，哪些通訊端點值得進一步查核？"
+            ],
+            [
+              "M04 列舉",
+              "在授權下，能向服務查到哪些更詳細資訊？"
+            ],
+            [
+              "M08 網路嗅探",
+              "封包擷取中實際出現哪些協定互動？"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 指定目的地，路由選擇下一站，ARP 協助取得本地交付位址，ICMP 則提供特定通訊的回覆或錯誤資訊。把各自的證據分開，就能理解為何 ping 逾時時仍可能有 ARP 回覆，也能判斷還需要補哪種服務檢查。"
+        },
+        {
           "kind": "heading",
           "id": "section-9",
           "text": "9｜小檢核與今天帶走的觀念"
@@ -701,6 +994,35 @@
         {
           "kind": "paragraph",
           "text": "7. 電腦為 192.168.1.10/24，Gateway 為 192.168.1.1，準備連線 203.0.113.20。假設路由選擇預設閘道，並使用一般 IPv4 乙太網路：A. 最終目的 IP 是多少？B. 第一段訊框目的 MAC 屬於誰？C. 為何不直接 ARP 查遠端 MAC？"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "9.2 整合情境：印表機沒回音，遠端資料交給誰？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "合成環境：電腦 A 是 192.168.10.10/24，印表機 B 是 192.168.10.20/24，預設閘道是 192.168.10.1，遠端伺服器 C 是 10.20.30.40。假設 A、B、閘道的本地介面位於可直接通訊的乙太網路，且送往 C 的路由選到上述閘道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "觀察：B 的 ping 全部逾時，但你收到聲稱對應 B 的 ARP Reply；接著準備連線 C。以下四題使用同一情境，先寫自己的解釋，再看參考答案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "8. B 的 ping 全部逾時，是否代表它已關機？還需要什麼證據？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "9. B 沒有回覆 ping，為什麼仍可能有 ARP Reply？收到回覆就能確認 B 的身分嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "10. 送往 C 時，A 需要 ARP 查詢哪個 IP？為什麼不直接詢問 C 的 MAC？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "11. 送往 C 的第一段訊框中，IP 目的地與 MAC 目的地分別屬於誰？能否因此確認 C 已收到資料？"
         },
         {
           "kind": "answer",
@@ -756,6 +1078,38 @@
           "summary": "參考解答：理解檢核 7",
           "paragraphs": [
             "A. IP 目的地為 203.0.113.20。B. 第一段訊框的目的 MAC 是閘道 192.168.1.1 對應的 MAC。C. 路由已選擇閘道作為本地下一站，ARP 只需解析這個下一站；一般 ARP 廣播不跨路由器。取得閘道 MAC 不能單獨證明遠端可達。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-lab-timeout",
+          "summary": "參考解答：整合情境 8：逾時的證據",
+          "paragraphs": [
+            "不能只憑 ping 逾時認定 B 已關機。記錄來源、目標、時間、參數與未收到預期 Echo Reply 的結果；再查印表機實際列印／管理紀錄、ICMP 政策、路由與鏈路狀態。聲稱對應 B 的 ARP Reply 是另一筆本地位址資訊，還要核對來源與設備歸屬。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-lab-reply",
+          "summary": "參考解答：整合情境 9：ARP 與 Echo 分別判讀",
+          "paragraphs": [
+            "ARP 處理本地 IPv4／MAC 解析，ICMP Echo 是 IP 診斷訊息；政策或設備行為可能允許 ARP 卻不回覆 Echo。兩者同時出現並不矛盾。Proxy ARP 或偽造回覆也可能提供聲稱對應 B 的資訊，因此仍要查核交換器、資產與代理設定，不能只靠回覆確認 B 的身分。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-lab-route",
+          "summary": "參考解答：整合情境 10：先看選到哪條路由",
+          "paragraphs": [
+            "題目已指定送往 C 的路由選到 192.168.10.1，所以需要解析的是 192.168.10.1 的 MAC；有可用快取時可能直接重用。C（10.20.30.40）在遠端，一般 ARP 廣播不會跨路由器去問 C。若實際路由選擇不同，就應依該結果重新判斷，不能固定套用預設閘道。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-lab-frame",
+          "summary": "參考解答：整合情境 11：兩層目的地與交付證據",
+          "paragraphs": [
+            "IP 目的地是 C 的 10.20.30.40；第一段訊框目的 MAC 屬於路由選到的閘道本地介面，也就是 192.168.10.1 的對應 MAC。這些資訊足以描述如何封裝第一段，但不能證明 C 已收到資料。路由器會繼續選路並依下一段鏈路重新封裝，遠端到達與服務成功仍需各自的觀察證據。"
           ]
         }
       ]
@@ -1083,6 +1437,49 @@
         },
         {
           "kind": "paragraph",
+          "text": "Think of an Ethernet frame as the envelope used on this leg, carrying an IP packet inside. For an ICMP Echo Request from A to B on the same link, read the layers as follows. This field comparison omits other header fields."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Location",
+            "Field or contents",
+            "Meaning in this exchange"
+          ],
+          "rows": [
+            [
+              "Outer Ethernet frame",
+              "Source MAC: A’s interface",
+              "Who sends on this link"
+            ],
+            [
+              "Outer Ethernet frame",
+              "Destination MAC: B’s interface",
+              "Who receives on this link"
+            ],
+            [
+              "Enclosed IPv4 packet",
+              "Source IP: 192.168.1.10",
+              "Source of the IP communication"
+            ],
+            [
+              "Enclosed IPv4 packet",
+              "Destination IP: 192.168.1.20",
+              "Destination of the IP communication"
+            ],
+            [
+              "Inside the IP packet",
+              "ICMP Echo Request",
+              "The echo request carried here"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Thus “Ethernet frame → IPv4 packet → ICMP” is one encapsulation. ARP uses “Ethernet frame → ARP message.” IP addresses inside ARP are data fields; they do not mean an additional IPv4 packet surrounds ARP."
+        },
+        {
+          "kind": "paragraph",
           "id": "section-5-2",
           "text": "5.2 Four steps in a local Request/Reply exchange"
         },
@@ -1098,6 +1495,18 @@
             "B sends an ARP Reply containing its IPv4/MAC mapping. A reply to a typical request is usually sent directly back to A.",
             "A puts B's MAC in the Ethernet destination field to deliver the enclosed IP packet."
           ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A broadcast resembles asking a classroom, “Who uses 192.168.1.20?” B, C, and D within the broadcast domain may receive it if that traffic is permitted. Normally, B, using the requested IP, answers. Broadcasting distributes the question within that domain; it does not make every device the final destination of the subsequent data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Unicast sends a frame to one specified interface. A typical ARP Request already carries A’s IPv4 and MAC information, so B knows where to send its Reply directly. In this example, B reports that 192.168.1.20 maps to 02:00:00:00:00:20. With a usable mapping, A has the information needed for the destination MAC of this link’s data frame. This describes an ordinary request/reply exchange; proxy responses need separate interpretation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Subsequent IP packets do not each require another broadcast. The system can reuse a valid mapping or confirm neighbor reachability when its cache state requires it. ARP resolves an address needed for delivery; ICMP, TCP, or UDP communication still has its own work to do."
         },
         {
           "kind": "paragraph",
@@ -1147,6 +1556,10 @@
         },
         {
           "kind": "paragraph",
+          "text": "The neighbor table is temporary communication information, not a live inventory of online devices. Running ip -4 neigh show only reads existing records. An entry does not imply that reading it just triggered an ARP Request or received a fresh ARP Reply. Whether later traffic reuses the mapping, resolves it again, or confirms reachability depends on its state."
+        },
+        {
+          "kind": "paragraph",
           "id": "section-5-4",
           "text": "5.4 ARP's trust boundary"
         },
@@ -1157,6 +1570,10 @@
         {
           "kind": "paragraph",
           "text": "IPv6 uses Neighbor Discovery, ND, through ICMPv6 for functions including neighbor-address resolution, rather than IPv4 ARP. [RFC 4861](https://www.rfc-editor.org/rfc/rfc4861)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ARP poisoning emphasizes the resulting incorrect mapping in the neighbor cache. If gateway 192.168.1.1 is mistakenly mapped to another device’s MAC, subsequent frames may go to the wrong recipient. Record the reported IP/MAC, reception time, and source, then corroborate management records to distinguish a normal gateway, a proxy response, or an anomalous mapping. This explains the risk without treating receipt of ARP as identity authentication."
         },
         {
           "kind": "heading",
@@ -1194,6 +1611,128 @@
         {
           "kind": "paragraph",
           "text": "203.0.113.20 is a documentation address. Actual next hops follow routing tables and interfaces. VLANs, Virtual LANs, can divide broadcast domains. With proxy ARP, another device may answer on an address's behalf. Ordinary ARP broadcasts do not cross routers, so they cannot directly request an arbitrary remote device's MAC. [RFC 1122](https://www.rfc-editor.org/rfc/rfc1122)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "6.1 Understand the subnet with its mask"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This supplementary exercise uses a separate synthetic address set from Figure 2: A is 192.168.10.10/24, B is 192.168.10.20/24, and the gateway is 192.168.10.1/24. All share a local Ethernet link that permits direct communication. /24 corresponds to mask 255.255.255.0 and network prefix 192.168.10.0/24."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In this /24 example, the first 24 bits identify the network and the remaining 8 identify the host portion. Addresses ending in .10, .20, and .1 belong to the same subnet; remote 10.20.30.40 does not. Comparing the first three dotted numbers works under this /24 assumption, not for every prefix length."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The operating system ultimately selects the next hop using routes and applicable routing policy. Addresses that appear to share a subnet also need a link permitting direct communication for local delivery to work."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 Routing selects the next hop before ARP resolves its MAC"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For B, if A selects the directly connected 192.168.10.0/24 route, B itself is the next hop. When resolution is needed, A asks for 192.168.10.20. Delivery in this case does not go through the default gateway first."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For remote C, 10.20.30.40, if no better applicable route exists and A selects the default route through 192.168.10.1, it resolves the gateway’s MAC. Crossing a subnet does not always mean using the default gateway: a selected more-specific route determines its own next hop."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Destination for A",
+            "Selected local next hop",
+            "Which IP does ARP query when needed?"
+          ],
+          "rows": [
+            [
+              "B: 192.168.10.20",
+              "B’s interface, direct delivery",
+              "192.168.10.20"
+            ],
+            [
+              "C: 10.20.30.40",
+              "Gateway 192.168.10.1",
+              "192.168.10.1"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 The first frame and the next frame"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Assume A’s MAC is 02:00:00:00:00:10, the gateway’s local interface MAC is 02:00:00:00:00:01, and routing selects that gateway. Read the first leg toward C as follows:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Encapsulation layer",
+            "Source",
+            "Destination"
+          ],
+          "rows": [
+            [
+              "Outer Ethernet frame",
+              "A’s MAC: 02:00:00:00:00:10",
+              "Gateway MAC: 02:00:00:00:00:01"
+            ],
+            [
+              "Inner IPv4 packet",
+              "A’s IP: 192.168.10.10",
+              "C’s IP: 10.20.30.40"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The IP and MAC destinations differ because they answer questions at different scopes: IP targets remote C, while this frame goes to the gateway first."
+        },
+        {
+          "kind": "paragraph",
+          "text": "After receiving the packet, the router selects a next hop and output interface from its own routes. If the next link is Ethernet too, it re-encapsulates with the source and destination MAC addresses appropriate to that link. A’s original MAC fields do not travel unchanged all the way to C. In this simplified example without NAT, the IP source and destination addresses remain the same during forwarding, but fields such as TTL change. NAT, Network Address Translation, may also rewrite IP addresses. A non-Ethernet next link uses its corresponding link-layer encapsulation."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 Broadcast scope and two common pitfalls"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Calling out inside an office in Yilan reaches people in that local space; saying a Taipei address does not carry your voice to Taipei. Ordinary ARP broadcasts similarly stay within their Layer 2 broadcast domain. Routers do not forward them across the Internet as they forward IP packets."
+        },
+        {
+          "kind": "paragraph",
+          "text": "VLANs divide Layer 2 broadcast domains. Even if two devices both use 192.168.10.x/24, A’s ordinary ARP broadcast cannot directly reach B when they occupy different VLANs that are not bridged together. Check interfaces, VLANs, and routes rather than inferring direct reachability from similar-looking addresses."
+        },
+        {
+          "kind": "paragraph",
+          "text": "With proxy ARP, a router may answer for another address using its own MAC, allowing packets to reach it for forwarding. Such a Reply shows that someone supplied a mapping; it does not authenticate the responder as the final target. Corroborate proxy configuration with assets, routes, and management records. [RFC 1027: Proxy ARP](https://www.rfc-editor.org/rfc/rfc1027)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-5",
+          "text": "6.5 Connect the delivery steps"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Start with the destination IP; consult routes to select an output interface and local next hop.",
+            "Check that next hop’s neighbor record. Reuse a usable mapping where appropriate; let the system handle state-dependent reachability confirmation.",
+            "When resolution is needed, send an ARP Request on the applicable local link. After obtaining a usable mapping, fill in the frame’s destination MAC.",
+            "Encapsulate the IP packet in the Ethernet frame for this leg and deliver it to the next hop. Preserve resolution failures as failures rather than recording delivery as completed."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a simplified sequence for ordinary IPv4 Ethernet. ARP resolution, IP delivery, ICMP response, and application success each need their own observations."
         },
         {
           "kind": "heading",
@@ -1406,6 +1945,114 @@
           ]
         },
         {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 Four read-only commands: connect routes with neighbor records"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use the supplementary Section 6 example with 192.168.10.0/24 and remote 10.20.30.40. This is a separate illustrative environment, not an instruction to change your network configuration. These Ubuntu iproute2 commands read local information without sending test traffic to the remote destination."
+        },
+        {
+          "kind": "code",
+          "text": "ip -br -4 addr\nip -4 route\nip -4 route get 10.20.30.40\nip -4 neigh show"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First identify the interface and IPv4 address in the first command’s output. Illustrative output:"
+        },
+        {
+          "kind": "code",
+          "text": "lo       UNKNOWN  127.0.0.1/8\nenp3s0   UP       192.168.10.10/24"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, read the routing table together with the route lookup. These lines are also illustrative:"
+        },
+        {
+          "kind": "code",
+          "text": "default via 192.168.10.1 dev enp3s0\n192.168.10.0/24 dev enp3s0\n\n10.20.30.40 via 192.168.10.1 dev enp3s0 src 192.168.10.10"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Field",
+            "Meaning in this route result"
+          ],
+          "rows": [
+            [
+              "10.20.30.40",
+              "Destination queried"
+            ],
+            [
+              "via 192.168.10.1",
+              "Selected next hop"
+            ],
+            [
+              "dev enp3s0",
+              "Output interface"
+            ],
+            [
+              "src 192.168.10.10",
+              "Selected source IP"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finally, look for that next hop, shown after via, in the neighbor records for the same interface. An entry like this connects the routing decision to first-link delivery information:"
+        },
+        {
+          "kind": "code",
+          "text": "192.168.10.1 dev enp3s0 lladdr 02:00:00:00:00:01 REACHABLE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record: “Route lookup selected enp3s0 and next hop 192.168.10.1 for the remote IP. At the time of reading, the neighbor table listed MAC 02:00:00:00:00:01 in REACHABLE state.” This describes table inspection, not a remote communication test. ip route get does not probe C or guarantee a corresponding neighbor entry. [ip-route manual](https://man7.org/linux/man-pages/man8/ip-route.8.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check: identify destination IP, via, dev, src, lladdr, and state in your own output. If via is absent, no route exists, or the cache is empty, record that result instead of forcing the example. These queries change no settings and need no cleanup. Do not flush the cache to obtain a desired output. Later, direct observation of Request/Reply messages can use Wireshark or tcpdump on an administered, authorized laboratory link with a separately defined capture scope."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 Place ARP within the CEH learning route"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Learning stage",
+            "Question answered"
+          ],
+          "rows": [
+            [
+              "M02 reconnaissance",
+              "Which addresses, domains, and public information are known?"
+            ],
+            [
+              "M03 routing and ARP",
+              "Where is the packet going, who is the local next hop, and how is its MAC obtained?"
+            ],
+            [
+              "M03 ICMP and TCP/UDP probes",
+              "Which replies arrived, and which endpoints need further checks?"
+            ],
+            [
+              "M04 enumeration",
+              "What additional information can authorized service queries obtain?"
+            ],
+            [
+              "M08 sniffing",
+              "Which protocol exchanges actually appear in captured traffic?"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP identifies the destination, routing selects the next hop, ARP helps obtain a local delivery address, and ICMP supplies particular replies or errors. Separating their evidence explains how an ARP Reply can coexist with a ping timeout and which service check is still needed."
+        },
+        {
           "kind": "heading",
           "id": "section-9",
           "text": "9 | Checks and the takeaway"
@@ -1454,6 +2101,35 @@
         {
           "kind": "paragraph",
           "text": "7. A computer is 192.168.1.10/24, its gateway is 192.168.1.1, and it wants to reach 203.0.113.20. Assume routing selects the default gateway on ordinary IPv4 Ethernet. A. What is the final destination IP? B. Whose MAC is the first frame's destination? C. Why not directly ARP for the remote MAC?"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "9.2 Integrated scenario: a silent printer and a remote destination"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Synthetic environment: computer A is 192.168.10.10/24, printer B is 192.168.10.20/24, the default gateway is 192.168.10.1, and remote server C is 10.20.30.40. Assume A, B, and the gateway’s local interface share an Ethernet link permitting direct communication, and the route to C selects that gateway."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Observation: all pings to B time out, but you receive an ARP Reply claiming a mapping for B. You then prepare to connect to C. Use this same scenario for all four questions; write your explanation before opening the reference answers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8. Do B’s ping timeouts prove that it is powered off? What further evidence would you need?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "9. Why might an ARP Reply arrive despite no ping reply? Does it authenticate B’s identity?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "10. Which IP must A resolve with ARP to reach C? Why not directly ask for C’s MAC?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "11. Who owns the destination IP and destination MAC in the first frame toward C? Does that establish that C received the data?"
         },
         {
           "kind": "answer",
@@ -1509,6 +2185,38 @@
           "summary": "Reference answer: Check 7",
           "paragraphs": [
             "A. The destination IP is 203.0.113.20. B. The first frame targets the MAC mapped to gateway 192.168.1.1. C. Routing selected that gateway as the local next hop, so ARP resolves it; ordinary ARP broadcasts do not cross routers. Obtaining the gateway's MAC alone does not prove remote reachability."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-lab-timeout",
+          "summary": "Reference answer: Integrated scenario 8: timeout evidence",
+          "paragraphs": [
+            "Ping timeouts alone do not establish that B is powered off. Record source, target, time, options, and the absence of expected Echo Replies. Corroborate printing or management records, ICMP policy, routes, and link state. An ARP Reply claiming a mapping for B is separate local-address information whose source and device ownership still need verification."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-lab-reply",
+          "summary": "Reference answer: Integrated scenario 9: interpret ARP and Echo separately",
+          "paragraphs": [
+            "ARP resolves local IPv4/MAC mappings; ICMP Echo carries IP diagnostic messages. Policy or device behavior can allow ARP while suppressing Echo Replies, so the observations can coexist. Proxy ARP or forged replies can also claim a mapping for B. Check switch records, assets, and proxy configuration rather than authenticating B from that reply alone."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-lab-route",
+          "summary": "Reference answer: Integrated scenario 10: read the selected route first",
+          "paragraphs": [
+            "The question specifies a route to C through 192.168.10.1, so resolve the MAC for 192.168.10.1. A usable cached mapping may be reused. C, 10.20.30.40, is remote; ordinary ARP broadcasts do not cross routers to ask C. If the actual selected route differs, reason from that result rather than always assuming the default gateway."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-lab-frame",
+          "summary": "Reference answer: Integrated scenario 11: two destinations and delivery evidence",
+          "paragraphs": [
+            "The destination IP is C’s 10.20.30.40. The first frame’s destination MAC belongs to the selected gateway’s local interface, mapped to 192.168.10.1. Those fields describe first-link encapsulation but do not prove that C received the data. Routers continue selecting routes and re-encapsulating for subsequent links; remote delivery and service success require their own observations."
           ]
         }
       ]

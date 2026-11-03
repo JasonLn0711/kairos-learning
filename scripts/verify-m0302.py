@@ -21,8 +21,8 @@ for lang,prefix in [('zh',''),('en','en/')]:
   units=([b['text']] if k in ['heading','paragraph','code'] else b['items'] if k=='list' else b['headers']+[v for r in b['rows'] for v in r] if k=='table' else [b['summary']]+b['paragraphs'] if k=='answer' else [b['visual']['caption'],b['visual']['description']]+[v for item in b['visual']['items'] for v in [item['title'],item['body']]] )
   for u in units:
    u=norm(u);at=text.find(u,cursor);assert at>=0,(lang,u);cursor=at+len(u)
- assert len(page.details)==7 and all('open' not in d for d in page.details)
- assert [d['id'] for d in page.details]==['answer-arp-timeout','answer-next-hop','answer-cache-time','answer-service-check','answer-nas-dsm','answer-printer-policy','answer-remote-frame']
+ assert len(page.details)==11 and all('open' not in d for d in page.details)
+ assert [d['id'] for d in page.details]==['answer-arp-timeout','answer-next-hop','answer-cache-time','answer-service-check','answer-nas-dsm','answer-printer-policy','answer-remote-frame','answer-arp-lab-timeout','answer-arp-lab-reply','answer-arp-lab-route','answer-arp-lab-frame']
  assert raw.count('data-reviewed-svg=')==1
  assert raw.count('data-discovery-diagram=')==2
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
@@ -40,4 +40,4 @@ with zipfile.ZipFile(p) as z:
  for src in bundle:
   if any(n in src for n in ['-05-','-06-']):continue
   assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
-print('PASS M03-02 bilingual full text order; 2 responsive diagrams and 1 retained inline SVG per language; 7 closed reference answers; search labels; exact assets/ZIP; published next M03-03. Browser/live checks NOT performed.')
+print('PASS M03-02 bilingual full text order; 2 responsive diagrams and 1 retained inline SVG per language; 11 closed reference answers; search labels; exact assets/ZIP; published next M03-03. Browser/live checks NOT performed.')
