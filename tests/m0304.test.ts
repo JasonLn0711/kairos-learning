@@ -10,12 +10,12 @@ import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M03-04')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
 test('M03-04 complete bilingual lesson, four diagrams, paired closed-answer data records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.0.0');assert.equal(lesson.revision,1);assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,2);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-03');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
-  assert.equal(body.filter(b=>b.kind==='heading'&&/^section-\d+$/.test(b.id??'')).length,9);
-  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-observation-location','answer-response-states','answer-ack-followup','answer-report-fields']);
+  assert.equal(body.filter(b=>b.kind==='heading'&&/^section-\d+$/.test(b.id??'')).length,10);
+  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-response-states','answer-udp-uncertainty','answer-observation-location','answer-ack-followup','answer-report-fields']);
   const text=body.flatMap(flatten).join('\n');
   for(const term of ['open','closed','filtered'])assert.ok(text.toLowerCase().includes(term.toLowerCase()));
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
@@ -82,5 +82,22 @@ test('M03-04 HTML/SVG sources share one constrained bilingual model',()=>{
 });
 
 test('M03-04 escaped pipes remain one table cell with complete state tokens',()=>{
- for(const lang of ['zh','en'] as const){const tables=lesson.text[lang].sourceBody!.filter(b=>b.kind==='table');assert.equal(tables.length,4);for(const t of tables)for(const row of t.rows)assert.equal(row.length,t.headers.length);assert.ok(tables.flatMap(t=>t.rows.flat()).includes('open|filtered'));assert.ok(!tables.flatMap(t=>t.rows.flat()).some(t=>t.includes('\\|')));}
+ for(const lang of ['zh','en'] as const){const tables=lesson.text[lang].sourceBody!.filter(b=>b.kind==='table');assert.equal(tables.length,9);for(const t of tables)for(const row of t.rows)assert.equal(row.length,t.headers.length);assert.ok(tables.flatMap(t=>t.rows.flat()).includes('open|filtered'));assert.ok(!tables.flatMap(t=>t.rows.flat()).some(t=>t.includes('\\|')));}
+});
+
+test('M03-04 replacement retains original diagrams and covers supplied evidence distinctions',()=>{
+ const root='docs/sources/m03-04/supplied-2026-11-03/';
+ const hashes=JSON.parse(readFileSync(root+'preserved-figures.sha256.json','utf8'));
+ for(const [path,hash] of Object.entries(hashes))assert.equal(createHash('sha256').update(readFileSync(path)).digest('hex'),hash,path);
+ const source=JSON.parse(readFileSync(root+'source.sha256.json','utf8'));
+ assert.equal(createHash('sha256').update(readFileSync(root+'teaching-original.txt')).digest('hex'),source['teaching-original.txt']);
+ const old=JSON.parse(readFileSync('docs/sources/m03-04/archive-v1.0.0/m03-04.json','utf8'));
+ assert.equal(lesson.publishedOn,old.publishedOn);
+ for(const lang of ['zh','en'] as const){
+  const body=lesson.text[lang].sourceBody!;
+  assert.deepEqual(body.filter(b=>b.kind==='visual'),old.text[lang].sourceBody.filter((b:SourceBlock)=>b.kind==='visual'));
+  const text=body.flatMap(flatten).join('\n');
+  for(const term of ['open|filtered','closed|filtered','unfiltered','--reason','ss -lnt','127.0.0.1:8443','0.0.0.0:8443','2026-11-03 10:30 UTC+08:00','dig @192.0.2.53 example.com A','TCP','UDP'])assert.ok(text.includes(term),term);
+  for(let i=1;i<=5;i++)assert.ok(body.some(b=>'id' in b&&b.id===`section-10-${i}`));
+ }
 });

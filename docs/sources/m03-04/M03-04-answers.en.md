@@ -1,17 +1,21 @@
-# M03-04 | Quick-check reference answers
+# M03-04 scenario reference answers
 
-## answer-observation-location | 1. One entry point, different locations
+## answer-response-states | 1. RST in response to SYN
 
-The two results describe access conditions for different sources: the management subnet's SYN probe receives a response accepting a connection, while probes from the other subnet show filtering. If policy permits only the management subnet, this is a lead for further validation. Add two categories of evidence: first, the service's listening and binding settings; second, firewall allow/deny rules and logs from the same period. Compare the source, time, and method together to check whether the results match the design.
+A. Typically closed. B. It does not establish that the server is powered off; the scanner received an explicit reply, whose host or intermediary source still needs verification. C. Check whether HTTPS started, its actual listening port and bind address, firewall rules and contemporaneous logs. Retain the method, source and RST. By comparison, UDP silence after retries typically remains open|filtered.
 
-## answer-response-states | 2. RST and UDP silence
+## answer-udp-uncertainty | 2. Two candidates for UDP 53
 
-A TCP SYN probe receiving RST is commonly classified as **closed**. A UDP probe still receiving no response after retries is commonly classified as **open|filtered**: the service may respond only to correctly formatted data, while path filtering can also produce silence. Preserve the original response evidence and test conditions, then check service and firewall records.
+A. DNS is not definitely running. B. A blocking firewall is not established either. The service might ignore invalid content; request/reply filtering, loss or error rate limiting can also contribute. C. Send an authorized valid DNS query, confirm it actually uses UDP, and compare responses, listeners, DNS logs and firewall logs. -sV can improve identification but may leave uncertainty.
 
-## answer-ack-followup | 3. The next step after unfiltered
+## answer-observation-location | 3. Management and ordinary networks
 
-An ACK scan's unfiltered result means that this probe receives a response; its focus is filtering behavior. Next, within the approved scope, use an appropriate method such as TCP SYN or Connect to observe whether a service accepts connections, and compare the device's listening settings. To establish the application's purpose, follow with an approved application-layer check.
+A. There is no contradiction: the results describe different sources and paths. B. They match initial expectations if policy allows only management. C. Confirm the same endpoint, time and method, and compare service binding, firewall allow/deny rules and contemporaneous logs. Use actual connections and application permissions to establish usable access. One filtered result does not prove every restriction works.
 
-## answer-report-fields | 4. Complete the verification record
+## answer-ack-followup | 4. ACK Scan unfiltered
 
-Add at least four items, such as the target IP address and approved purpose, source subnet, time and time zone, UDP scan method and tool version, waiting/retry settings, probe data format, original no-response output and classification reason, listening settings and DNS logs, or firewall rules and logs. Retain UDP 53's transport protocol and port number, and identify the next approved service-format query and responsible person so others can reproduce the test and continue the work.
+A. You cannot directly classify it as open. B. ACK scanning examines filtering of that probe; both open and closed endpoints can return RST. C. Use an approved SYN or TCP Connect scan to observe acceptance of new connections, then compare listeners. Application functionality requires a separate check.
+
+## answer-report-fields | Retained exercise: complete the record
+
+Add at least four items, such as target IP and authorized purpose, source network, time and timezone, UDP method and tool version, waits/retries, payload format, raw output and reasons. Retain UDP 53's protocol and port, and add service/DNS/firewall records, an approved next query and an owner so another engineer can reproduce and continue the work.

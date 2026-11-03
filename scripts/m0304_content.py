@@ -31,7 +31,7 @@ def parse(lang,suffix):
     rows.append(table_cells(row))
    blocks.append(dict(kind='table',headers=rows[0],rows=rows[1:]));continue
   if s.startswith(('## ','### ')):
-   title=re.sub(r'^#{2,3} ', '', s); number=re.search(r'\d+(?:\.\d+)*',title)[0];blocks.append(dict(kind='heading',id='section-'+number.replace('.','-'),text=title));continue
+   title=re.sub(r'^#{2,3} ', '', s); number=re.search(r'\d+(?:\.\d+)*',title)[0];blocks.append(dict(kind='heading' if s.startswith('## ') else 'paragraph',id='section-'+number.replace('.','-'),text=title));continue
   blocks.append(dict(kind='paragraph',text=s.removeprefix('# ')))
  answers=[]
  for chunk in ap.read_text().split('\n## ')[1:]:
@@ -43,5 +43,5 @@ def parse(lang,suffix):
   at=next(i for i,b in enumerate(blocks) if b.get('id')==f'section-{section+1}');blocks.insert(at,block)
  blocks.extend(answers)
  return dict(summary='把 Open、Closed、Filtered 與其他狀態連回觀察位置、方法及回應，選擇下一步查核。' if lang=='zh' else 'Connect Open, Closed, Filtered and other states to observation location, method and response, then choose the next check.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-04',revision=1,contentVersion='1.0.0',date='2026-11-02',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-04',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m03-04.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')
