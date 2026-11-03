@@ -234,6 +234,8 @@ user markup. Unregistered `visual` assets retain the existing semantic renderer.
 
 ## M02-06 網路角色圖與 CIDR 模擬器
 
+此實作已採納為共用圖解參考模式；設計選擇、復用邊界與新互動驗收依[FIG-06／INT-01](diagram-design-system.md#m02-06-網路圖解與互動準則)。以下保留 M02-06 專屬資料及生成流程。
+
 M02-06 v1.1.0 直接替換第 2–4 節，第 8 節承接查詢練習與整合案例；第 5–7、9 節及原始 SVG／ZIP 保留。[修訂驗收](releases/2026-11-01-m02-06-network-revision.md)記錄採用範圍與來源差異。
 
 六張新圖沿用 `sourceBody.visual`，以已知 `/images/ceh/m02-06-<layout>-<lang>.svg` 路徑選取 [雙語圖解資料](../src/lib/m0206-network-diagrams.json)。版型只接受 network-map、prefix-bits、private-network、bgp-routing、cdn-origin、proxy-modes；節點數依序為 4、4、4、3、4、5。資料含 caption、description、nodes（title／body／tone）、labels、footer；兩語節點順序一致，IP、ASN 與位元數一致。任意路徑不會啟用新渲染器，文字由 Svelte 跳脫，不接收任意 HTML 或 SVG 標記。
