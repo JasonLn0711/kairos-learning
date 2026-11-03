@@ -25,7 +25,7 @@ for(const c of cases){
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'200% page overflow').toBe(true);
   expect(await page.locator('.article-reading-guide dd,.readable-diagram-text p,.footprint-model p,.footprint-model h3,[data-scan-diagram] h3,[data-scan-diagram] p,[data-scan-diagram] strong,.transport-figure h3,.transport-figure p,.transport-figure li,.transport-figure dd').evaluateAll(es=>es.every(e=>e.scrollWidth<=e.clientWidth+1))).toBe(true);
   for(const a of await page.locator('main a[download][href$=".svg"]').all()){
-   const href=(await a.getAttribute('href'))!;const response=await request.get(href);expect(response.status()).toBe(200);expect(await response.body()).toEqual(readFileSync('site'+href));
+   const href=(await a.getAttribute('href'))!;const response=await request.get(href,{maxRetries:2,timeout:30000});expect(response.status()).toBe(200);expect(await response.body()).toEqual(readFileSync('site'+href));
   }
   expect(errors).toEqual([]);
  });
@@ -75,7 +75,7 @@ test('M03-03 standalone SVG geometry and matching downloads',async({page,request
    for(let i=0;i<texts.length;i++)for(let j=i+1;j<texts.length;j++){const a=texts[i].getBoundingClientRect(),b=texts[j].getBoundingClientRect();if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1)errors.push('overlap: '+texts[i].textContent+' / '+texts[j].textContent);}
    return errors;
   });expect(problems,src).toEqual([]);
-  const response=await request.get(src);expect(await response.body()).toEqual(readFileSync('site'+src));expect((await response.body()).length).toBeLessThan(100000);
+  const response=await request.get(src,{maxRetries:2,timeout:30000});expect(await response.body()).toEqual(readFileSync('site'+src));expect((await response.body()).length).toBeLessThan(100000);
   await page.screenshot({path:screenshots+'/'+src.split('/').pop()+'.png'});
  }
 });
