@@ -21,7 +21,7 @@ test('new C01 preserves every supplied paragraph, list item, command and final q
    line=line.replace(/^## /,'').replace(/^- /,'').replaceAll('**','');const at=text.indexOf(line,cursor);assert.ok(at>=cursor,`${lang} missing/reordered: ${line}`);cursor=at+line.length;
   }
   const answer=body.at(-1)!;assert.equal(answer.kind,'answer');if(answer.kind==='answer')assert.deepEqual(answer.paragraphs,[readFileSync(`docs/sources/ceh26-m04-c01/answer.${suffix}.md`,'utf8').trim()]);
-  const entry=searchEntries.find(e=>e.id===id&&e.lang===lang)!;for(const b of body)for(const value of flatten(b))assert.ok(entry.text.includes(value));
+  const entry=searchEntries.find(e=>e.id===id&&e.lang===lang)!;assert.ok(entry.text.includes(id));for(const b of body)for(const value of flatten(b))assert.ok(entry.text.includes(value));
   assert.ok(!/deliveryId|Sentinel_|libfile_|sandbox:|11:14:26/.test(JSON.stringify(t)));
  }
  assert.deepEqual(t.text.zh.sourceBody!.map(b=>({kind:b.kind,id:'id'in b?b.id:null,count:b.kind==='list'?b.items.length:0})),t.text.en.sourceBody!.map(b=>({kind:b.kind,id:'id'in b?b.id:null,count:b.kind==='list'?b.items.length:0})));

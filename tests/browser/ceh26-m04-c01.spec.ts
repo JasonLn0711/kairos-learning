@@ -27,7 +27,7 @@ for(const lang of ['zh','en']){
   await answer.locator('summary').focus();await page.keyboard.press('Enter');await expect(answer).toHaveAttribute('open','');await expect(answer.locator('p')).toBeVisible();await page.keyboard.press('Space');await expect(answer).not.toHaveAttribute('open','');
   const pre=page.locator('article pre').first();await pre.focus();await page.keyboard.press('ArrowRight');await expect.poll(()=>pre.evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);expect(await pre.evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
   const links=page.locator('.next-links a');await expect(links.first()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m03/concepts/m03-08/`);await expect(links.last()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/#ceh26-m04-c02`);
-  await page.goto(`${prefix}/search/`);await Promise.all([page.waitForResponse(r=>r.url().endsWith('/search-index.json')),page.locator('input[type=search]').fill('labreader')]);await expect(page.locator(`.reading-list a[href="${url}"]`)).toBeVisible();
+  await page.goto(`${prefix}/search/`);await Promise.all([page.waitForResponse(r=>r.url().endsWith('/search-index.json')),page.locator('input[type=search]').fill('labreader')]);await expect(page.locator(`.reading-list a[href="${url}"]`)).toBeVisible();await page.locator('input[type=search]').fill('CEH26-M04-C01');await expect(page.locator(`.reading-list a[href="${url}"]`)).toBeVisible();
   expect(errors).toEqual([]);
  });
  test(`${lang}: no JavaScript preserves complete lesson, sources and answer disclosure`,async({browser})=>{
