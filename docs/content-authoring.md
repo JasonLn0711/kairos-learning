@@ -338,3 +338,7 @@ M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 
 ## 新版 M04 第二課 DNS（2026-11-04）
 
 `CEH26-M04-C02` 顯示為 `CEH M04-02`，公開路徑固定 `concepts/m04-02/`，不公開 ceh26 前綴 slug。完整繁中原稿 SHA-256 為 `744c93e7d07c7a82131aaae007957decd1dccf4a6339c2322feda45d67c9471d`，與英譯及參考答案保存在[來源目錄](sources/ceh26-m04-c02/README.md)。執行 `python3 scripts/ceh26_m04_c02_content.py --check` 核對既有 sourceBody 產物。十一節正文直接顯示，唯一參考答案預設收合；qa 為空。C01 不變，C03–C10 保持待發布，舊 DNS 原稿／Q&A／SVG 留在非輸出歸檔。
+
+### M04-02 完整供稿與兩張參考圖 v1.1.0
+
+[修訂來源](sources/ceh26-m04-c02/revision-2026-11-04/README.md)保留本次完整供稿、兩張PNG及v1.0.0原版；75個雙語章／小節錨點承接完整教學，舊section-1至section-11繼續有效。先修改完整雙語稿、逐節對照與圖解資料，再執行ceh26_m04_c02_diagrams.py及ceh26_m04_c02_content.py；兩者支援--check。verify-ceh26-m04-c02.py逐行核對中文採用界線與雙語來源至資料的順序。圖解使用既有visual模型，只有四個dns-*-v1-1-0.svg已知路徑啟用DnsEvidenceDiagram；文字由Svelte跳脫並納入既有搜尋。主文與圖解直接顯示，四題編輯參考解答沿answer-dns-evidence原生收合，qa維持空陣列。新版公開slug、C01與C03–C10發布閘門保留。驗收與發布見[v1.1.0回執](releases/2026-11-04-ceh26-m04-c02-full-replacement.md)。
