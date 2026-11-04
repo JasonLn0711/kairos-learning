@@ -1,0 +1,1 @@
+So far, we have confirmed only that labreader discovered the Projects share name under these test conditions and successfully read the specified readme.txt. Reading other files and creating, modifying or deleting content have not been tested, so we cannot claim full read and write permissions for all of Projects.
