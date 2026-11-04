@@ -1,0 +1,813 @@
+{
+  "id": "CEH26-M04-C01",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-04",
+  "status": "published",
+  "publishedOn": "2026-11-04",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "Enumeration vs. Scanning · 新版第一課",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "M03 關心的是「哪台主機有回應、哪些服務入口開著、可能跑什麼服務」。從這一課開始，我們把問題往前推一步：服務願意告訴我哪些具體資訊？這些資訊又能證明什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天先把列舉的共同原理學清楚。SMB 只是示範案例，不需要同時背完 DNS、LDAP、SNMP 的工具與連接埠。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先想像：看見文件櫃，不等於能打開抽屜"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你受公司委託，檢查一台用來共用文件的伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能依序得到幾種不同結果："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 找到這台設備的網路位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 發現它的某個服務入口會接受連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 確認這個入口提供檔案共用服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 問到共用資料夾的名稱，例如 Public、Finance。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 實際讀取一個事先約定的測試檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這五件事不是同一件事。知道有一個叫 Finance 的文件櫃，不代表你看過裡面的文件，更不代表你能修改文件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一課的核心：知道資源的資訊、能讀取資源、能修改資源，要分開確認。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "大樓和文件櫃只是幫助理解的比喻。實際網路中的身分、查詢和權限判斷可能交錯進行，不是每次都照上述順序走。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、掃描與列舉，問的是不同問題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先認識三個基本名詞："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "IP 位址：在網路上定位設備所用的位址。",
+            "通訊埠（Port）：讓同一台設備區分不同網路服務的編號。描述時要一起看傳輸協定，例如 TCP 445，而不只看 445。",
+            "協定（Protocol）：雙方溝通時使用的規則，例如怎麼提出要求、如何表示成功或失敗。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "掃描（Scanning）比較像檢查入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它會問：「這台設備有回應嗎？TCP 445 是開放、關閉，還是目前無法確定？」這些結果描述的是這次測試所觀察到的網路狀態。從公司內網測與從外部測，可能得到不同結果。[Nmap：通訊埠狀態](https://nmap.org/book/man-port-scanning-basics.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "列舉（Enumeration）則是透過服務查詢，取得具體項目或屬性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如：「有哪些共用名稱？有哪些帳號或群組？目錄中的物件有哪些屬性？」在本課的檔案伺服器案例裡，取得 Public、Finance 這些名稱，就是列舉的結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外還有兩個相關階段："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "偵察（Reconnaissance）：蒐集背景與目標線索，例如網域、主機名稱與系統用途。可以採主動或被動方式。",
+            "弱點分析（Vulnerability Analysis）：根據證據，判斷是否有設定、版本或權限上的問題，以及可能造成的影響。這會在 M05 深入學。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是「按下掃描工具」就永遠只在掃描。工具可能同時做服務辨識、取得版本，或查詢資源清單。分類時要看你提出的問題和取得的證據，不只看工具名稱。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、第一個容易誤判的地方：445 open 到底證明什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下全是教學用合成情境，沒有對任何真實設備執行測試。IP 僅代表假設的隔離練習環境；私有 IP 不等於你已獲得測試許可。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設練習主機是 192.168.56.10，你在核准的測試範圍內執行："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 445 192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "合成輸出如下："
+        },
+        {
+          "kind": "code",
+          "text": "PORT      STATE   SERVICE\n445/tcp   open    microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "逐項看："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "445/tcp：這次關注的是 TCP 445。",
+            "open：Nmap 判斷這個入口有程式接受 TCP 連線。",
+            "microsoft-ds：在這種未加服務版本偵測的基本掃描裡，通常是依埠號對照出來的服務名稱，不能單憑這個標籤就當作已完成 SMB 協定驗證。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB（Server Message Block）是網路資源共用協定，常見用途是讓用戶端存取伺服器上的檔案。傳統直接透過 TCP 的現代 SMB 常用 445；這不是「任何環境中的 SMB 一定只能走 445」。本課只使用這個常見情境。[Microsoft：SMB 概觀](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，目前合理的下一步，是在核准範圍內辨識實際服務回應，不是直接宣布「拿到了檔案」。Nmap 的服務版本偵測會向服務送出探測並分析回應，但即使辨識出服務，也仍未證明可讀取某個檔案。[Nmap：服務與版本偵測](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、真正進入列舉：問服務「你有哪些共用資源？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設現在已經從協定回應確認這台主機提供 SMB。公司也給了測試帳號 labuser，允許我們查詢共用名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們提出的問題是：「這個身分可以查到哪些共用資源？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 上常用的 SMB 用戶端工具叫 smbclient。這裡先看懂指令的角色，不要求你現在安裝或操作："
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.10 -p 445 -U labuser"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "smbclient：和 SMB 伺服器溝通的用戶端程式。",
+            "-L：查詢伺服器提供的資源清單。",
+            "-p 445：指定這次練習使用的 TCP 連接埠。",
+            "-U labuser：指定要使用的測試帳號。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果工具需要密碼，讓它在提示時要求輸入，不把密碼直接寫進指令、筆記或截圖。實際成功與否仍取決於帳號、網域、登入方式及服務設定；本例不是保證所有環境都能直接使用的登入方式。[Samba：smbclient 官方手冊](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設得到這份簡化的合成輸出："
+        },
+        {
+          "kind": "code",
+          "text": "Sharename    Type\n---------    ----\nPublic       Disk\nFinance      Disk\nArchive      Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sharename 是共用名稱；Disk 表示這些是檔案儲存類型的共用資源。這張清單列的是共用名稱，不是裡面的全部檔案，也不是權限清單。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Windows 的 NetShareEnum 就是取得 SMB 共用資源資訊的一個官方介面。它有不同資訊層級：有的只回傳名稱，有的包含類型與說明；較詳細的查詢可能需要額外權限。這也說明了「能取得資訊」不是只有全有或全無兩種情況。[Microsoft：NetShareEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還要注意，查到的清單可能受身分、查詢方式與設定限制。沒有出現在這次清單裡，不代表資源一定不存在。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、身分驗證、存取權限、測試許可，要分開"
+        },
+        {
+          "kind": "paragraph",
+          "text": "身分驗證（Authentication）處理「你是誰」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如伺服器接受測試帳號的登入資訊，建立對應的工作階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "存取授權（Authorization）處理「這個身分能做什麼」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如可以列出資源名稱，但只能讀取其中一部分檔案，不能修改。[Microsoft：身分驗證與授權](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有些資訊可以不登入就查詢；有些必須先完成身分驗證。不要把「先列舉、後登入」背成固定流程，也不要把「不需登入」直接等同於漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而公司給你的測試許可，是另一件事。它決定你能測哪些主機、用哪些帳號、做哪些動作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就算系統允許某個操作，也不代表委託範圍允許你做。反過來，即使你有合法測試許可，系統仍可能依帳號權限拒絕操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課假設只核准查詢清單，以及讀取指定測試檔。不做密碼猜測、不換用未核准帳號，也不為了「證明可以寫」就建立、修改或刪除檔案。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、同一個案例，四種結果要分開記"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們使用同一個 labuser，從同一個練習網路取得以下結果："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Public：名稱已列出，讀取事先約定的 demo.txt 成功。",
+            "Finance：名稱已列出，讀取事先約定路徑時遭拒。",
+            "Archive：名稱已列出，沒有測試讀取。",
+            "所有資源：都沒有測試寫入、修改或刪除。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡不是一條「成功一格就全部解鎖」的進度條，而是四項分開的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Public 讀取成功，只支持「這個身分在這次條件下讀到了指定檔案」。不能延伸成其他人都能讀、整個 Public 都能讀，或可以修改。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finance 讀取遭拒，支持「這次對指定路徑的讀取要求被拒絕」。不能推論 Finance 沒有資料、所有帳號都會被拒，也不能只憑錯誤文字就確認拒絕原因。若拒絕發生在進入資料夾之前，甚至不能單靠這次失敗證明裡面那個檔案存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Archive 未測試，就是不知道。不能用「應該也一樣」補成成功或失敗。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "寫入未測試，也是不知道。讀取成功不是寫入成功的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Windows 檔案伺服器上，經由 SMB 存取 NTFS 檔案時，共用權限與檔案系統權限都可能影響結果。看到 Access Denied，應保留原始錯誤、確認實際身分，再由核准的管理或稽核方式查明原因，不要直接把安全設定關掉。Microsoft 的疑難排解也要求先辨識原因，並核對共用與 NTFS 權限。[Microsoft：SMB 存取遭拒的判讀](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、查到資訊，是不是就找到漏洞？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。資源清單本來就可能是正常功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，公司希望一般員工知道有哪些部門的共用資料夾，但仍限制實際檔案存取。名稱可見，不會自動等於「財務資料外洩」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要判斷風險，需要把三件事放在一起："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 揭露了什麼：只有一般名稱，還是敏感專案、帳號或內部結構？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 向誰揭露：預期的員工、訪客，還是本來不該取得資訊的身分？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 是否符合需求：業務是否需要這種可見性，組織政策是否允許？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若發現普通帳號能讀到原本不應取得的測試資料，才有更具體的權限問題證據。但仍要說清楚哪個帳號、哪份資料、哪個操作，不把局部結果誇大成整台伺服器已遭控制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務開放、資訊可見、設定有問題、漏洞可利用、已取得資料，是不同結論。每往前一步，都要有相應證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、防護要保護資訊與操作，不只是把名稱藏起來"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以從三個層次思考："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "網路範圍：只讓需要的設備與網段連到服務。對一般企業 SMB 場景，不應任意把 TCP 445 暴露在網際網路。修改網路規則前，要先確認合法業務需求並測試影響。[Microsoft：保護 SMB 流量](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic)",
+            "資訊與存取權限：按工作需求決定哪些身分能查到資訊、讀取檔案或修改檔案。隱藏名稱可以降低曝光，真正的資料保護仍需正確的存取控制。[Microsoft：存取控制](https://learn.microsoft.com/en-us/windows/security/identity-protection/access-control/access-control)",
+            "紀錄與驗證：配置適合的稽核，再用已核准身分確認「該能做的仍能做、不該能做的被限制」。沒有看到日誌，不一定表示沒有發生查詢，也可能是稽核未啟用或紀錄範圍不對。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，若目標是「一般帳號不應讀取財務檔案」，驗證就應針對一般帳號的讀取結果，以及合法財務帳號的正常使用。只檢查名稱消失了，還沒有驗證實際資料受到保護。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、把結果寫成別人看得懂、能核對的一句話"
+        },
+        {
+          "kind": "paragraph",
+          "text": "比較不好的寫法是：「找到 Finance，已經攻破財務共享。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "比較精確的寫法是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「在本次核准的練習中，以 labuser 從指定測試網路向 192.168.56.10 查詢，取得 Public、Finance、Archive 三個共用名稱；Public 的指定測試檔讀取成功，Finance 的指定路徑讀取遭拒，Archive 與所有寫入操作均未測試。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際紀錄再補上時間、工具與版本、完整指令、原始輸出，以及測試限制。不要把密碼或無關的敏感資料放進報告。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種寫法的重點是：哪個身分，在什麼條件下，對哪個目標做了什麼，得到了什麼結果，哪些還不知道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "之後學 DNS、LDAP 或 SNMP 時，我們會反覆使用相同的判斷方式，只是查詢的對象換成名稱記錄、目錄物件或設備管理資訊。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "十、今天只做一個小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在另一個已授權的練習案例中，你使用 labreader 查到了 Projects 共用名稱，也成功讀取 Projects 裡指定的 readme.txt。你沒有測試其他檔案，也沒有測試修改。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同事因此說：「所以我們已經拿到 Projects 裡所有檔案的讀寫權限。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你會怎麼用自己的話修正這句話，說明目前確認了什麼、還不知道什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "簡單說清楚就好。這題只確認今天的核心觀念，不代表整章已精熟，也不需要現在操作任何主機。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-projects",
+          "summary": "參考答案：目前確認與尚未測試的範圍",
+          "paragraphs": [
+            "目前只確認 labreader 在這次測試條件下查到了 Projects 共用名稱，並且讀取指定的 readme.txt 成功。其他檔案是否可讀、能否建立／修改／刪除內容，仍未測試，不能因此宣稱有整個 Projects 的完整讀寫權限。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Enumeration vs. Scanning · First lesson of the new route",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "M03 asks which hosts respond, which service entry points are open, and what services might be running. From this lesson onward, we take the question one step further: What specific information will the service disclose, and what can that information actually prove?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, we will understand the principles shared by enumeration tasks. SMB is only our example; you do not need to memorize the tools and ports for DNS, LDAP and SNMP at the same time."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Imagine a filing cabinet: seeing it does not mean you can open its drawers"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a company commissions you to assess a server used to share documents."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You might obtain several different results in sequence:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Find the device's network address."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Discover that one of its service entry points accepts connections."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Confirm that this entry point provides a file-sharing service."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Obtain shared-folder names, such as Public and Finance."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. Actually read a test file agreed upon in advance."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These five observations are different things. Knowing about a filing cabinet named Finance does not mean you have seen its documents, and certainly does not mean you can modify them."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The central idea of this lesson: information about a resource, permission to read it, and permission to modify it require separate verification."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The building and filing cabinet are only explanatory analogies. In real networks, identity checks, queries and permission decisions may be interleaved; they do not always follow the sequence above."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Scanning and enumeration ask different questions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Start with three basic terms:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "IP address: an address used to locate a device on a network.",
+            "Port: a number that lets one device distinguish different network services. Include the transport protocol when describing it, such as TCP 445 rather than just 445.",
+            "Protocol: the rules used by both parties to communicate, including how to make a request and indicate success or failure."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scanning is like checking an entry point."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It asks, “Does this device respond? Is TCP 445 open, closed, or currently indeterminate?” These results describe the network state observed in this particular test. Testing from inside the company network and from outside may produce different results. [Nmap: port states](https://nmap.org/book/man-port-scanning-basics.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration queries a service to obtain specific items or attributes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example: “What share names are available? What accounts or groups exist? What attributes do directory objects have?” In this lesson's file-server example, obtaining the names Public and Finance is an enumeration result."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two other related activities are:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Reconnaissance: collecting background information and target clues, such as domains, hostnames and system purposes. It can be active or passive.",
+            "Vulnerability analysis: using evidence to assess configuration, version or permission problems and their potential impact. We will study this more deeply in M05."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Using a scanning tool does not mean every action is only scanning. A tool may also identify a service, obtain a version, or query a resource list. Classify the activity by the question you ask and the evidence you obtain, rather than by the tool's name alone."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. The first common mistake: what does 445 open actually prove?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Everything below is a synthetic teaching scenario. No tests were performed against real devices. The IP represents a hypothetical isolated practice environment; a private IP address does not mean you have permission to test it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the practice host is 192.168.56.10 and you run the following within the approved test scope:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 445 192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The synthetic output is:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT      STATE   SERVICE\n445/tcp   open    microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read each part:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "445/tcp: this test concerns TCP 445.",
+            "open: Nmap determines that a program accepts TCP connections at this entry point.",
+            "microsoft-ds: in a basic scan without service/version detection, this is usually a service name looked up by port number. This label alone does not establish that the SMB protocol has been verified."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB (Server Message Block) is a network resource-sharing protocol, commonly used to let clients access files on a server. Modern SMB carried directly over conventional TCP commonly uses 445; this does not mean SMB can only use 445 in every environment. This lesson uses that common scenario only. [Microsoft: SMB overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The reasonable next step is therefore to identify actual service responses within the approved scope, rather than announce that you have obtained files. Nmap service/version detection sends probes to services and analyzes their responses. Even identifying a service, however, does not establish that a particular file can be read. [Nmap: service and version detection](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Starting enumeration: ask the service what shares it provides"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose protocol responses have now confirmed that the host provides SMB. The company has also supplied a test account, labuser, and authorized queries for share names."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Our question is: “Which shared resources can this identity discover?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A commonly used SMB client on Linux is smbclient. For now, understand what each part of the command does; you do not need to install or run it:"
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.10 -p 445 -U labuser"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "smbclient: a client program that communicates with an SMB server.",
+            "-L: query the list of resources provided by the server.",
+            "-p 445: specify the TCP port used in this practice scenario.",
+            "-U labuser: specify the test account to use."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "If the tool needs a password, let it request one at the prompt. Do not put the password directly in the command, notes or screenshots. Success still depends on the account, domain, login method and service configuration; this example is not a login method guaranteed to work unchanged in every environment. [Samba: official smbclient manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose this simplified synthetic output is returned:"
+        },
+        {
+          "kind": "code",
+          "text": "Sharename    Type\n---------    ----\nPublic       Disk\nFinance      Disk\nArchive      Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sharename is the share name; Disk indicates a file-storage share. This list contains share names, rather than all the files inside them or a list of permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Windows NetShareEnum is an official interface for retrieving information about SMB shares. Its information levels differ: some return only names, while others include types and descriptions. More detailed queries may require additional privileges. This also shows that access to information is not simply an all-or-nothing choice. [Microsoft: NetShareEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember that the returned list may be limited by identity, query method and configuration. A resource missing from this particular list does not necessarily mean the resource does not exist."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Separate authentication, access authorization and permission to test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication answers “Who are you?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, the server accepts the test account's login information and establishes a corresponding session."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Access authorization answers “What can this identity do?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, it may list resource names but read only some of the files, without modifying them. [Microsoft: authentication and authorization](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Some information can be queried without logging in; other information requires authentication first. Do not memorize “enumerate first, log in later” as a fixed sequence, or equate “no login required” directly with a vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The company's permission to test is separate. It determines which hosts you may test, which accounts you may use, and which actions you may perform."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A system permitting an operation does not mean the assessment scope authorizes you to perform it. Conversely, even with legitimate permission to test, the system may reject an operation based on account permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson assumes that only list queries and reading specified test files are approved. We do not guess passwords, switch to unapproved accounts, or create, modify or delete files merely to prove that writing is possible."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Record four outcomes separately in the same example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the same labuser, from the same practice network, obtains these results:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Public: its name was listed, and reading the agreed demo.txt succeeded.",
+            "Finance: its name was listed, but a read request for the agreed path was denied.",
+            "Archive: its name was listed, but reading was not tested.",
+            "All resources: writing, modification and deletion were not tested."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are four separate pieces of evidence, rather than a progress bar where one successful step unlocks everything."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A successful Public read supports only that this identity read the specified file under these test conditions. It cannot establish that everyone can read it, that all of Public is readable, or that modification is possible."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A denied Finance read supports that this read request for the specified path was rejected. It cannot establish that Finance contains no data or that all accounts would be denied. The error text alone also cannot establish the reason for denial. If rejection occurred before entering the folder, this failed attempt alone cannot even prove that the file inside exists."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Archive was not tested, so the result is unknown. “It should be the same” cannot substitute for success or failure."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Writing was not tested, so that result is unknown too. Successful reading is not evidence of successful writing."
+        },
+        {
+          "kind": "paragraph",
+          "text": "On a Windows file server, both share permissions and file-system permissions can affect SMB access to NTFS files. When you see Access Denied, preserve the original error, confirm the actual identity, and use approved administration or auditing methods to establish the cause. Do not simply disable security settings. Microsoft's troubleshooting guidance also calls for identifying the cause and checking share and NTFS permissions. [Microsoft: interpreting denied SMB access](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Does obtaining information mean you found a vulnerability?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not necessarily. Providing a resource list may be normal functionality."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a company may want employees to know which departmental shares exist while restricting access to their files. Visible names do not automatically establish a financial-data leak."
+        },
+        {
+          "kind": "paragraph",
+          "text": "To assess risk, consider three things together:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. What was disclosed: only ordinary names, or sensitive projects, accounts or internal structure?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. To whom: expected employees, guests, or an identity that should not receive the information?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Whether it fits the requirements: does the business need this visibility, and does organizational policy permit it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An ordinary account reading test data it should not access provides more specific evidence of a permission problem. You must still identify the account, data and operation, rather than exaggerate a limited result into control of the entire server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An open service, visible information, a configuration problem, an exploitable vulnerability, and obtained data are different conclusions. Each further conclusion needs corresponding evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Protect information and operations, rather than only hiding names"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider three levels:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Network scope: allow only the devices and networks that need to connect to the service. In ordinary enterprise SMB scenarios, TCP 445 should not be exposed arbitrarily to the Internet. Confirm legitimate business needs and test the impact before changing network rules. [Microsoft: securing SMB traffic](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic)",
+            "Information and access permissions: decide which identities may obtain information, read files or modify files according to their work needs. Hiding names can reduce exposure; actual data protection still requires correct access control. [Microsoft: access control](https://learn.microsoft.com/en-us/windows/security/identity-protection/access-control/access-control)",
+            "Logging and verification: configure appropriate auditing, then use approved identities to verify that required actions still work and prohibited actions are restricted. Missing log entries do not necessarily mean no query occurred; auditing may not be enabled or may cover the wrong scope."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, if the goal is that ordinary accounts must not read financial files, verify their read results alongside normal use by authorized finance accounts. Checking only that a name disappeared has not verified protection of the actual data."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Write a result that others can understand and verify"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A poor statement is: “We found Finance and have compromised the financial share.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A more precise statement is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“In this approved practice scenario, labuser queried 192.168.56.10 from the specified test network and obtained the share names Public, Finance and Archive. Reading the specified Public test file succeeded, reading the specified Finance path was denied, and Archive and all write operations were not tested.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In an actual record, also include the time, tool and version, complete command, original output and test limitations. Keep passwords and unrelated sensitive data out of the report."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The key is: which identity, under which conditions, performed which action against which target, what happened, and what remains unknown."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When we later study DNS, LDAP or SNMP, we will reuse the same reasoning. The objects queried will change to name records, directory objects or device-management information."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10. One small check for today"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In another authorized practice scenario, you use labreader to discover the Projects share name and successfully read the specified readme.txt inside Projects. You have not tested other files or modification."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A colleague concludes: “So we now have read and write permission for every file in Projects.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "How would you correct this statement in your own words, explaining what is confirmed and what remains unknown?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep the explanation simple. This question checks today's central idea; it does not establish mastery of the entire module, and you do not need to operate any host now."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-projects",
+          "summary": "Reference answer: confirmed and untested scope",
+          "paragraphs": [
+            "So far, we have confirmed only that labreader discovered the Projects share name under these test conditions and successfully read the specified readme.txt. Reading other files and creating, modifying or deleting content have not been tested, so we cannot claim full read and write permissions for all of Projects."
+          ]
+        }
+      ]
+    }
+  }
+}
