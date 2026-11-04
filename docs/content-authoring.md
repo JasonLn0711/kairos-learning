@@ -40,7 +40,7 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
-Current M04 contract (2026-11-04): ten new stable IDs, all pending publication; old source and renderer examples below are historical references stored outside the build. The old article/image URLs are retired. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
+Current M04 contract (2026-11-04): ten new stable IDs; C01 is published and C02–C10 remain pending; old source and renderer examples below are historical references stored outside the build. The old article/image URLs are retired. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
 
 `content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
@@ -55,7 +55,7 @@ Shortest update workflow:
 3. Run `npm run validate:content`, `npm test`, `npm run check`, `node scripts/check-publication-boundary.mjs` and `npm run validate:release`. The boundary check renders an isolated second-concept fixture, removes it, tests draft/future exclusion, then rebuilds clean production output. Reserved fixture IDs M04-98 and M04-99 are never production curriculum.
 4. Check mobile/desktop, bilingual body and Q&A, previous/next links, search and missing IDs. Publish through the existing PR/Pages workflow; read back the exact public URL and record the deployment commit/run in private progress and the thin daily index.
 
-Routes, search and navigation resolve by concept ID. Pending neighbors link to their module-index anchor. Registry order determines adjacency across modules, so add later modules in the intended editorial sequence. Each module retains its own concept count; M04 now has ten pending units identified as `CEH26-M04-C01` through `CEH26-M04-C10`, followed by M05. The historical twelve-page route is retired; see [migration and recovery](releases/2026-11-04-m04-route-reset.md). A registry entry without teaching has no article route or search entry. To publish a reviewed unit, add its bilingual teaching JSON with the exact new ID and use the existing status/date gate. Never reuse legacy M04 IDs for new meanings.
+Routes, search and navigation resolve by concept ID. Pending neighbors link to their module-index anchor. Registry order determines adjacency across modules, so add later modules in the intended editorial sequence. Each module retains its own concept count; M04 now has ten units identified as `CEH26-M04-C01` through `CEH26-M04-C10`, followed by M05. The historical twelve-page route is retired; see [migration and recovery](releases/2026-11-04-m04-route-reset.md). A registry entry without teaching has no article route or search entry. To publish a reviewed unit, add its bilingual teaching JSON with the exact new ID and use the existing status/date gate. Never reuse legacy M04 IDs for new meanings.
 
 Sections may include `blocks`: semantic `table` (caption, headers, rows), `step` (heading, paragraphs, optional code), or `details` (legacy data kind, rendered as an ordinary visible section). Keep bilingual structure aligned. Optional `checks` contains teaching tests, each with a stable ID, zero-based answer, and bilingual prompt, four options and four rationales. Tests and their directly visible explanations are distinct from `qa`; reading an answer neither submits a learner response nor confirms understanding.
 
@@ -326,3 +326,7 @@ M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 
 ## M03-07 完整 Nmap 教材 v1.1.0
 
 [來源紀錄](sources/m03-07/README.md)保留完整供稿、v1.0.0 原版及逐項修正，31 個雙語章節／小節以 detailed-section-map.json 對應。修改兩語 Markdown 後執行 `python3 scripts/m0307_content.py`；四張共用模型圖以 `python3 scripts/m0307_diagrams.py` 產生，兩者皆支援 `--check`。完成內容、單元、型別、發布邊界及 release 驗證，再用 `npx playwright test --config playwright.m0307.config.ts` 驗收；正式站設定 `CEH_BASE_URL`。[修訂回執](releases/2026-11-03-m03-07-replacement.md)區分本機實測、發布回讀及參考圖結構比對。
+
+## 新版 M04 第一課（2026-11-04）
+
+`CEH26-M04-C01` 使用新網址 `concepts/ceh26-m04-c01/`，顯示別名為 `CEH M04-01`；舊 M04-01 不恢復。完整雙語原稿、單題參考答案與雜湊在 [來源目錄](sources/ceh26-m04-c01/README.md)。以 `python3 scripts/ceh26_m04_c01_content.py --check` 核對原稿產物。沿既有 sourceBody 與 publication gate，qa 為空；參考答案不代表學員回答。C02–C10 仍只有目錄。當前目錄公開數量依 catalog 計算；歷史全待發布狀態保留在遷移回執。
