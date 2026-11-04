@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DnsEvidenceDiagram from "./DnsEvidenceDiagram.svelte";
   import ProtectionDiagram from "./ProtectionDiagram.svelte";
   import NmapPositions from "./NmapPositions.svelte";
   import ScanDiagram from "./ScanDiagram.svelte";
@@ -18,7 +19,7 @@
   import InlineText from './InlineText.svelte';
   let { blocks, conceptId='', lang='zh' }: {blocks: SourceBlock[];conceptId?:string;lang?:string} = $props();
 </script>
-<div class="source-body">
+<div class="source-body" class:dns={conceptId==='CEH26-M04-C02'}>
   {#each blocks as block,i}
     {#if block.kind === 'sourceImage'}
       <figure class="original-image">
@@ -27,7 +28,7 @@
         <ReadableDiagramText src={block.src} {lang}/>
         <figcaption>{block.caption}</figcaption>
       </figure>
-    {:else if block.kind === 'visual' && ['/images/ceh/m03-08-roles-zh-v1-1-0.svg','/images/ceh/m03-08-roles-en-v1-1-0.svg','/images/ceh/m03-08-evidence-zh-v1-1-0.svg','/images/ceh/m03-08-evidence-en-v1-1-0.svg'].includes(block.src)}<ProtectionDiagram {block} {lang}/>{:else if block.kind === 'visual' && ['/images/ceh/m03-07-positions-zh.svg','/images/ceh/m03-07-positions-en.svg'].includes(block.src)}<NmapPositions {block}/>{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in discoveryDiagrams}<DiscoveryDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in transportDiagrams}<TransportDiagram {block} {lang}/>{:else if block.kind === 'visual' && networkDiagram(block.src)}<NetworkDiagram {block} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
+    {:else if block.kind === 'visual' && ['/images/ceh/dns-overview-zh-v1-1-0.svg','/images/ceh/dns-overview-en-v1-1-0.svg','/images/ceh/dns-security-zh-v1-1-0.svg','/images/ceh/dns-security-en-v1-1-0.svg'].includes(block.src)}<DnsEvidenceDiagram {block} {lang}/>{:else if block.kind === 'visual' && ['/images/ceh/m03-08-roles-zh-v1-1-0.svg','/images/ceh/m03-08-roles-en-v1-1-0.svg','/images/ceh/m03-08-evidence-zh-v1-1-0.svg','/images/ceh/m03-08-evidence-en-v1-1-0.svg'].includes(block.src)}<ProtectionDiagram {block} {lang}/>{:else if block.kind === 'visual' && ['/images/ceh/m03-07-positions-zh.svg','/images/ceh/m03-07-positions-en.svg'].includes(block.src)}<NmapPositions {block}/>{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in discoveryDiagrams}<DiscoveryDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in transportDiagrams}<TransportDiagram {block} {lang}/>{:else if block.kind === 'visual' && networkDiagram(block.src)}<NetworkDiagram {block} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
 
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>
@@ -49,6 +50,7 @@
 
   .reference-answer{border:1px solid var(--line);border-radius:8px;padding:1rem;margin:1.5rem 0;background:var(--soft)}
   .reference-answer summary{cursor:pointer;font-weight:600}
+  .dns table{font-size:1rem;line-height:1.8}
   .table-scroll{max-width:100%;overflow-x:auto;margin:1.5rem 0}
   table{border-collapse:collapse;width:100%;font-size:.9rem;line-height:1.65}
   th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:.65rem;min-width:7rem}
