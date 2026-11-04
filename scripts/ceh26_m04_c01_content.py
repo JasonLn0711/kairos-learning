@@ -22,7 +22,7 @@ def parse(suffix):
  assert section==10
  blocks.append(dict(kind='answer',id='answer-projects',summary='參考答案：目前確認與尚未測試的範圍' if suffix=='zh-TW' else 'Reference answer: confirmed and untested scope',paragraphs=[(S/f'answer.{suffix}.md').read_text().strip()]))
  return dict(summary=summary,sections=[],sourceBody=blocks)
-lesson=dict(id='CEH26-M04-C01',revision=1,contentVersion='1.0.0',date='2026-11-04',status='published',publishedOn='2026-11-04',qa=[],text={lang:parse(suffix) for lang,suffix in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='CEH26-M04-C01',revision=2,contentVersion='1.0.1',date='2026-11-04',status='published',publishedOn='2026-11-04',qa=[],text={lang:parse(suffix) for lang,suffix in [('zh','zh-TW'),('en','en')]})
 data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n';path=R/'content/concepts/ceh26-m04-c01.json'
 if '--check' in sys.argv:assert path.read_text()==data
 else:path.write_text(data)

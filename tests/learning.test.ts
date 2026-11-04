@@ -72,7 +72,8 @@ test('new M04 route publishes only taught C01 and no legacy teaching',()=>{
  const page=getPage('/courses/ceh/v13/m04/')!;
  const units=page.concepts.filter(c=>c.module==='m04');
  assert.equal(units.length,10);assert.equal(units.filter(c=>c.href).length,1);assert.equal(units[0].id,'CEH26-M04-C01');assert.ok(units.slice(1).every(c=>c.href===null));
- assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-01/'),null);
+ assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-01/')?.conceptTeaching?.id,'CEH26-M04-C01');
+ assert.equal(getPage('/courses/ceh/v13/m04/concepts/ceh26-m04-c01/'),null);
  assert.equal(getPage('/courses/ceh/v13/m04/quiz/'),null);
  assert.equal(getPage('/courses/ceh/v13/m04/labs/'),null);
  assert.deepEqual([...new Set(searchEntries.filter(e=>e.label==='CEH M04').map(e=>e.id))],['CEH26-M04-C01']);

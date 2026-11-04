@@ -37,16 +37,22 @@ export function compareContentVersions(a: string, b: string): number {
 }
 export const conceptVersionLabel = (t: Pick<ConceptTeaching,'revision'|'contentVersion'>) => `v${t.contentVersion ?? t.revision}`;
 export const conceptModule = (id: string) => id.startsWith('CEH26-') ? id.slice(6,9).toLowerCase() : id.slice(0,3).toLowerCase();
-export const conceptPath = (id: string, lang: Locale) => localized(`/courses/ceh/v13/${conceptModule(id)}/concepts/${id.toLowerCase()}/`,lang);
+// Public locators follow the module numbering; internal curriculum IDs remain immutable.
+export const conceptSlug = (id: string) => /^CEH26-M04-C(?:0[1-9]|10)$/.test(id) ? `m04-${id.slice(-2)}` : id.toLowerCase();
+export const conceptPath = (id: string, lang: Locale) => localized(`/courses/ceh/v13/${conceptModule(id)}/concepts/${conceptSlug(id)}/`,lang);
 // One catalog controls routes, search, navigation and serialized public teaching.
 export function createConceptCatalog(entries: ConceptEntry[], teachings: ConceptTeaching[], today: string) {
   const fail = (message: string): never => { throw new Error(`Concept content: ${message}`); };
   const nonempty = (s: unknown) => typeof s === 'string' && s.trim().length > 0;
   const ids = new Set<string>();
+  const paths = new Set<string>();
   for (const c of entries) {
     if (!(/^(?:M\d{2}-\d{2}|CEH26-M04-C(?:0[1-9]|10))$/.test(c.id)) || c.module !== conceptModule(c.id) || ids.has(c.id)) fail(`invalid or duplicate ID ${c.id}`);
     for (const lang of ['zh','en'] as const) if (!nonempty(c.title?.[lang])) fail(`${c.id}: missing ${lang} title`);
     if(c.displayId !== undefined && (c.id !== 'CEH26-M04-C01' || c.displayId !== 'CEH M04-01')) fail(`${c.id}: invalid display identity`);
+    const path=conceptPath(c.id,'zh');
+    if(paths.has(path)) fail(`duplicate public path ${path}`);
+    paths.add(path);
     ids.add(c.id);
   }
   const seen = new Set<string>();
