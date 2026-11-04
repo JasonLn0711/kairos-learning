@@ -43,10 +43,10 @@ test('new C01 and C02 are published; eight pending units and reused C01 slug res
   assert.equal(getPage(route)?.conceptTeaching?.id,id);const page=conceptCatalog.get(id,lang)!;assert.equal(page.navigation.previous?.id,'M03-08');assert.equal(page.navigation.next?.id,'CEH26-M04-C02');assert.equal(page.navigation.next?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-02/`);
   assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c01/`),null);
   for(let i=3;i<=10;i++)assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c${String(i).padStart(2,'0')}/`),null);
-  for(let i=3;i<=12;i++)assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(i).padStart(2,'0')}/`),null);
+  for(let i=4;i<=12;i++)assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(i).padStart(2,'0')}/`),null);
  }
  assert.equal(concepts.find(c=>c.id===id)?.displayId,'CEH M04-01');
- assert.equal(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')).length,2);
+ assert.equal(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')).length,3);
 });
 
 test('all ten new M04 IDs map to conventional public slugs without exposing pending content or colliding with legacy IDs',()=>{

@@ -19,7 +19,7 @@
   import InlineText from './InlineText.svelte';
   let { blocks, conceptId='', lang='zh' }: {blocks: SourceBlock[];conceptId?:string;lang?:string} = $props();
 </script>
-<div class="source-body" class:dns={conceptId==='CEH26-M04-C02'} class:enumeration={conceptId==='CEH26-M04-C01'}>
+<div class="source-body" class:ftpsmtp={conceptId==='CEH26-M04-C03'} class:dns={conceptId==='CEH26-M04-C02'} class:enumeration={conceptId==='CEH26-M04-C01'}>
   {#each blocks as block,i}
     {#if block.kind === 'sourceImage'}
       <figure class="original-image">
@@ -33,7 +33,7 @@
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>
     {:else if block.kind === 'paragraph'}<p><InlineText text={block.text} /></p>
-    {:else if block.kind === 'code'}{#if conceptId==='CEH26-M04-C01'||conceptId==='CEH26-M04-C02'||readingGuide(conceptId,lang)||conceptId==='M03-02'||conceptId==='M03-03'||conceptId==='M03-04'||conceptId==='M03-05'||conceptId==='M03-06'||conceptId==='M03-08'}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontally scrolling code.) --><pre tabindex="0" role="region" aria-label={lang==='zh'?'可捲動程式碼或文字範例':'Scrollable code or text example'}><code>{block.text}</code></pre>{:else}<pre><code>{block.text}</code></pre>{/if}
+    {:else if block.kind === 'code'}{#if conceptId==='CEH26-M04-C03'||conceptId==='CEH26-M04-C01'||conceptId==='CEH26-M04-C02'||readingGuide(conceptId,lang)||conceptId==='M03-02'||conceptId==='M03-03'||conceptId==='M03-04'||conceptId==='M03-05'||conceptId==='M03-06'||conceptId==='M03-08'}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontally scrolling code.) --><pre tabindex="0" role="region" aria-label={lang==='zh'?'可捲動程式碼或文字範例':'Scrollable code or text example'}><code>{block.text}</code></pre>{:else}<pre><code>{block.text}</code></pre>{/if}
     {:else if block.kind === 'answer'}<details class="reference-answer" id={block.id}><summary><InlineText text={block.summary}/></summary>{#each block.paragraphs as paragraph}<p><InlineText text={paragraph}/></p>{/each}</details>
     {:else if block.kind === 'list'}<ul>{#each block.items as item}<li><InlineText text={item} /></li>{/each}</ul>
     {:else if block.kind === 'table'}
@@ -50,6 +50,7 @@
 
   .reference-answer{border:1px solid var(--line);border-radius:8px;padding:1rem;margin:1.5rem 0;background:var(--soft)}
   .reference-answer summary{cursor:pointer;font-weight:600}
+  .ftpsmtp :global(figure p),.ftpsmtp :global(figure li p),.ftpsmtp table,.ftpsmtp h3,.ftpsmtp pre{font-size:1rem;line-height:1.75}
   .dns table{font-size:1rem;line-height:1.8}
   .table-scroll{max-width:100%;overflow-x:auto;margin:1.5rem 0}
   .enumeration h3,.enumeration pre{font-size:1rem;line-height:1.75}

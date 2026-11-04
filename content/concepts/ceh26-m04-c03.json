@@ -1,0 +1,805 @@
+{
+  "id": "CEH26-M04-C03",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-04",
+  "publishedOn": "2026-11-04",
+  "status": "published",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "FTP／SMTP 列舉：分開服務回答、已完成操作與尚待取得的證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M04-03｜FTP／SMTP 列舉：讀懂回覆，分清資訊與權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP / SMTP Enumeration · 新版第三課"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一課把檔案服務與郵件服務放在一起，練習同一個判斷：對方願意回答什麼、目前讓你做了什麼，以及還缺哪些證據。 我們先用生活例子建立概念，再讀兩份合成紀錄，最後只做一個小檢核。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、服務像櫃檯，回答問題和允許辦事是不同層次"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你走進辦公大樓。櫃檯會告訴你這裡有哪些部門，也可能提供公開的資料目錄。知道某份資料的名稱，不表示你能翻閱內容；有訪客證，也不表示能修改所有文件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "電腦服務也有這些區別："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "服務辨識：這個入口是否回應？它宣告提供哪種服務？",
+            "資訊列舉（Enumeration）：進一步整理它提供的名稱、功能、目錄或帳號線索。",
+            "身分驗證（Authentication）：服務如何確認你用哪個身分連線。",
+            "存取授權（Authorization）：這個身分可對哪些資源執行哪些操作。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外還有一層「測試授權」：管理者同意你測試的範圍。服務技術上接受某個要求，不會自動擴大你被允許測試的範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課使用原創、虛構的文字紀錄；沒有連線、登入、下載檔案或寄送郵件。名稱與帳號只表示教學角色，請不要拿它們去測試真實服務。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、FTP 做什麼？先分開指令與資料"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP（File Transfer Protocol，檔案傳輸協定）讓用戶端和伺服器交換檔案。用戶端是發出要求的軟體，伺服器則處理這些要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 通常有兩類連線："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "控制連線：傳送要求與回應，常用 TCP 21。例如告知帳號、詢問功能、要求列出目錄。",
+            "資料連線：傳送檔案內容或目錄清單，與控制連線分開。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像你先打電話向倉庫訂資料，再由另一條運送路線拿到資料。電話接通，運送路線仍可能不通。因此，「已登入，但列目錄失敗」值得先查資料連線與政策，不宜立刻認定帳號錯誤。[FTP 基本連線與命令](https://www.rfc-editor.org/rfc/rfc959.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資料連線又有兩種常見安排："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "主動模式（Active Mode）：用戶端告知接收位置，伺服器發起資料連線。",
+            "被動模式（Passive Mode）：伺服器提供資料連線的接收位置，用戶端再連過去。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "EPSV 是被動模式的延伸命令，回覆資料連接埠，資料連線使用控制連線所連的伺服器位址。防火牆或網路位址轉換（NAT，讓不同位址範圍之間轉換連線位址的機制）會影響這些連線。因此不要把所有 FTP 資料傳輸都背成「一定走 TCP 20」。[FTP 的 IPv6 與 NAT 延伸](https://www.rfc-editor.org/rfc/rfc2428.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/ftp-smtp-connections-zh.svg",
+          "downloadLabel": "下載圖解 SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜FTP 的兩類連線",
+            "description": "控制與資料各自有責任。兩張卡是平行分類，不表示一條連線自動保證另一條成功。",
+            "items": [
+              {
+                "title": "控制連線",
+                "body": "承接登入、功能詢問與操作要求，常用 TCP 21；登入成功仍須另外確認資料連線。"
+              },
+              {
+                "title": "資料連線",
+                "body": "承接目錄清單或檔案內容；主動／被動模式改變發起方向與接收位置。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、FTP 能列舉哪些資訊？每個要求都有範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Banner（服務招呼文字）是連線後看到的歡迎或識別訊息。它可能提供產品名稱，但文字可被設定、隱藏或由前置服務提供，應記成「端點宣告的資訊」，不能只靠它判定完整版本或漏洞適用性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FEAT 詢問伺服器支援哪些延伸功能。看到某個功能名稱，只能證明該次對話宣告它；登入狀態、設定與政策仍會影響能否使用。[FTP 功能協商](https://www.rfc-editor.org/rfc/rfc2389.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "檔案清單也有不同表示法：MLSD 可列出目錄項目與標準化欄位，例如檔案類型、大小、修改時間；MLST 用於提供單一項目的資訊。這些是檔案的描述資料，稱為 Metadata（中繼資料）。讀到名稱或大小，與讀到檔案內容是兩件事。[FTP 機器可讀目錄延伸](https://www.rfc-editor.org/rfc/rfc3659.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳統 LIST 常提供人類閱讀的目錄清單，RETR 要求取得檔案，STOR 要求儲存上傳資料。它們代表不同操作。檢查時應分別記錄「列目錄、讀取、寫入」的結果，不能因為其中一項成功，就替其他項目填上成功。[FTP 操作定義](https://www.rfc-editor.org/rfc/rfc959.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、匿名登入代表使用共同身分，權限仍要另外確認"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Anonymous FTP（匿名 FTP）通常提供不具個人專屬帳號的存取方式。管理者可能刻意用它公開下載資料，因此「匿名登入可用」本身不是漏洞結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "風險要對照原定用途："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "只供下載的區域是否意外允許上傳或刪除？",
+            "不該公開的備份、設定或其他資料是否出現在可見範圍？",
+            "匿名使用者能看到的目錄與可讀檔案是否超過政策？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "匿名帳號取得的權限應受到限制；若業務不需要匿名服務，就應關閉。傳統 FTP 的明文密碼與資料傳輸也需要納入風險評估。[FTP 安全考量](https://www.rfc-editor.org/rfc/rfc2577.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "安全的報告會把「觀察」和「政策」放在一起。例如：「指定測試身分可列出公開目錄；依政策，此目錄允許列出。財務目錄未測，不能列為已通過檢查。」這樣比直接寫「FTP 安全」更有用。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、讀一份 FTP 合成紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下只模擬已獲准實驗室中的幾個步驟，省略連線建立、登入與資料通道協商細節。每行旁的「用戶端／伺服器／資料」說明資料來源，不是要貼到終端機執行的指令稿。"
+        },
+        {
+          "kind": "code",
+          "text": "伺服器：230 Session established\n用戶端：MLSD\n伺服器：150 Data transfer starting\n資料：type=file;size=640; notice.txt\n資料：type=file;size=8192; draft.txt\n伺服器：226 Transfer complete\n用戶端：RETR draft.txt\n伺服器：550 Access denied"
+        },
+        {
+          "kind": "paragraph",
+          "text": "逐步讀取："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 230 表示伺服器回報目前已登入。這裡沒有提供登入過程，因此不能自行補寫成「匿名登入成功」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. MLSD 的兩筆資料讓我們知道該次清單列出 notice.txt 與 draft.txt，以及伺服器回報的大小。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 226 對應前面的清單傳輸完成，不代表後面的檔案下載也完成。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. RETR draft.txt 後收到拒絕；這份紀錄沒有取得 draft.txt 的內容，也沒有測試寫入。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個例子的重點是：名稱可見、內容可讀、檔案可寫，必須分別留下證據。 若看到 425 資料連線無法建立，調查方向又與這裡明示的 Access denied 不同。[FTP 回應與狀態順序](https://www.rfc-editor.org/rfc/rfc959.html)、[MLSD 清單欄位](https://www.rfc-editor.org/rfc/rfc3659.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/ftp-smtp-permissions-zh.svg",
+          "downloadLabel": "下載圖解 SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜三項權限分開找證據",
+            "description": "以下是三個獨立判斷，沒有必然先後或相互保證。",
+            "items": [
+              {
+                "title": "名稱可見",
+                "body": "清單出現檔名與大小，支持看見中繼資料。"
+              },
+              {
+                "title": "內容可讀",
+                "body": "需要該檔案內容取得成功的證據；清單成功不等於下載成功。"
+              },
+              {
+                "title": "檔案可寫",
+                "body": "需要獲准的寫入驗證；本課範例沒有測試寫入。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、FTP、FTPS、SFTP，名稱相近但不能混用"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TLS（Transport Layer Security，傳輸層安全協定）用來保護連線上的資料。FTPS是在 FTP 上加入 TLS；控制連線與資料連線的保護需要分別確認。控制連線完成 TLS，不代表資料連線就已加密。PROT P 表示要求以 TLS 保護資料連線；仍要核對實際協商與設定。[FTP 使用 TLS](https://www.rfc-editor.org/rfc/rfc4217.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SFTP（SSH File Transfer Protocol）則是透過 SSH 安全連線提供檔案操作的另一種協定。SSH 是安全遠端連線協定；OpenSSH 的 sftp 用戶端使用它傳輸資料。SFTP 不是「把 FTP 換成另一個連接埠」，也不是 FTPS 的另一個拼法。[OpenSSH sftp 手冊](https://man.openbsd.org/sftp.1)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "選用加密傳輸後，仍要驗證對端身分與檔案權限。加密保護傳輸，並不決定某個帳號應該能讀哪些檔案。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、SMTP 是郵件收送櫃檯，先區分投遞與寄件提交"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMTP（Simple Mail Transfer Protocol，簡易郵件傳輸協定）處理郵件傳送；它不是拿來瀏覽收件匣的協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先分清兩個角色："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "郵件伺服器之間轉送郵件，通常使用 TCP 25。",
+            "使用者把要寄的信交給寄件服務，稱為 Message Submission（郵件提交），常用 TCP 587，依服務政策驗證使用者身分。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩種角色的存取政策不同。外部郵件伺服器投遞給本網域收件人，與替任意來源轉寄給任意外部網域，不應混為一談。[郵件提交與轉送分工](https://www.rfc-editor.org/rfc/rfc6409.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 465 也用於一開始就建立 TLS 的郵件提交。587 常搭配 STARTTLS，將既有 SMTP 連線升級為 TLS；實際保護要看協商與驗證，不靠埠號猜測。[加密郵件提交的建議](https://www.rfc-editor.org/rfc/rfc8314.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、SMTP 回覆能透露功能，但帳號線索要審慎判讀"
+        },
+        {
+          "kind": "paragraph",
+          "text": "EHLO 是用戶端自我介紹並取得延伸功能清單的要求。伺服器可能宣告 STARTTLS 或 AUTH 等功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AUTH 是 SMTP 身分驗證延伸。看到 AUTH，代表伺服器在當時宣告相關機制，不表示你已登入；未看到它，也要先確認是否需完成 TLS 才會提供。不要把支援某種登入機制寫成登入成功。[SMTP 身分驗證延伸](https://www.rfc-editor.org/rfc/rfc4954.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VRFY 用於查詢使用者或郵件地址資訊，EXPN 用於展開郵件名單。伺服器可能基於資訊揭露風險限制它們。判讀時保留完整命令、回應碼與文字："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "252：伺服器未確認所問使用者，不能當成帳號存在或不存在的證明。",
+            "550：要求未被接受，可能涉及信箱不存在、權限或政策；要連同當時要求與文字判讀。",
+            "250：某個要求成功，意義取決於它回應的是哪一步。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如接受一個收件者，不等於信件已完成傳送；伺服器也可能延後驗證收件人。更不能因此推論有人已讀信，或某個郵件地址一定對應可互動登入的作業系統帳號。[SMTP 驗證命令與回應](https://www.rfc-editor.org/rfc/rfc5321.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有些回覆還會帶 5.1.1、5.7.1 這種 Enhanced Status Code（增強狀態碼），提供更細的分類，例如地址或政策問題。保存它們能協助查核，但仍需對照伺服器實作與日誌。[郵件增強狀態碼](https://www.rfc-editor.org/rfc/rfc3463.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、讀一份 SMTP 合成紀錄：功能清單不是測試結果"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是另一份紙上範例，沒有發信："
+        },
+        {
+          "kind": "code",
+          "text": "伺服器：220 mail.training.example ESMTP\n用戶端：EHLO client.training.example\n伺服器：250-mail.training.example\n伺服器：250-STARTTLS\n伺服器：250 SIZE 10485760\n用戶端：VRFY learner\n伺服器：252 Cannot verify this user"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們能記下：端點有 SMTP 回覆，宣告 STARTTLS 及 SIZE，對這次 VRFY 沒有確認使用者。250 後的連字號表示同一份多行回覆尚未結束，最後一行使用空格。這裡沒有 TLS 交握、登入或郵件提交紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "STARTTLS 出現在清單中，只表示它被宣告。成功升級 TLS 後，先前取得的 SMTP 功能資訊必須重新建立；用戶端應再次 EHLO，因為加密前後的清單可能不同。TLS 還只保護這一段連線，並不自動證明整封信從寄件者到收件者都受到端對端加密。[SMTP STARTTLS 的狀態重設](https://www.rfc-editor.org/rfc/rfc3207.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若要調查 Open Relay（開放式郵件轉送），問題應是「未獲准的來源能否透過這台服務，把信轉送到政策不允許的目的地」。只看到 220、250 或 VRFY 的回覆，無法完成這個判斷。本課不安排真實轉寄測試；需要另有測試帳號、收件端與操作範圍的授權。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "十、防護與驗證：讓業務正常，讓多餘權限消失"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對 FTP，先確認是否仍需要服務、哪些身分可用、目錄與讀寫權限如何分配；選擇合適的安全傳輸，限制不必要的匿名存取。對 SMTP，分開管理提交與轉送政策，限制不必要的帳號查詢資訊，要求適當驗證與傳輸保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者都適用一個做法：用指定測試身分，對照「應允許」與「應拒絕」的操作，再以日誌和設定佐證。驗證範圍要寫到資源與動作，不能只寫「有登入，所以通過」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如預定政策是「訪客可以看到公開說明檔，但不能讀取草稿」。驗收應分開確認公開說明檔是否可正常讀取，以及草稿是否受限制。若草稿名稱也應保密，目錄清單能看到它就是另一個需要處理的資訊揭露問題；即使內容讀取被拒絕，名稱曝光仍值得核對。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "日誌建議保留：時間與時區、測試來源、身分、協定及加密狀態、要求的資源／操作、完整回應、預定政策、可支持的結論及待查項目。分享時遮蔽真實密碼、驗證資料與不必要的個資。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "exercise",
+          "text": "安全紙上練習"
+        },
+        {
+          "kind": "paragraph",
+          "text": "環境只需本課文字與一張紙，或離線筆記；不安裝軟體、不發出網路要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 在兩份紀錄旁標出每個結果回應的是哪個要求，避免把前一步成功套到下一步。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 分成「已取得的資訊」「已完成的操作」「尚未確認」三欄整理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 寫出下一步需要哪種證據，例如檔案權限設定、TLS 協商紀錄或伺服器日誌；先不執行測試。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "預期產物是一張有界線的證據表，不是一份已通過的系統稽核報告。練習沒有改動系統，不需還原環境；保留筆記即可。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "十一、最後只做一個小確認"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同事讀到「FTP 已登入，MLSD 列出 draft.txt，但 RETR 回覆拒絕」和「SMTP 的 VRFY 回覆 252」，便寫下："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我們已取得草稿內容，而且已確認 learner 帳號不存在。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你會怎麼用一兩句話修正這兩個結論？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課把兩種協定放在同一單元，是為了練習同一條證據界線：知道什麼、做成什麼、還沒證明什麼。下一課接 SMB，繼續把共享資源與實際存取權限拆開看。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ftp-smtp-evidence",
+          "summary": "參考解答：FTP 權限與 SMTP 未確認的界線",
+          "paragraphs": [
+            "FTP 紀錄只顯示清單中有 draft.txt，取得內容的要求遭拒，因此沒有證據說已取得草稿。SMTP 的 252 表示未確認該使用者，不能據此判定帳號不存在。",
+            "兩個共同原則是「把回覆對回它的要求」與「未確認不等於不存在」。若另要查明原因，應在授權範圍內對照伺服器設定與日誌；不要為了證明推論而自行嘗試其他帳號、下載或寄信。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "FTP/SMTP enumeration: separate service replies, completed operations, and evidence still needed.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M04-03 | FTP/SMTP enumeration: interpret replies and separate information from permissions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP / SMTP Enumeration · New curriculum, lesson three"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson brings file and mail services together to practise one judgment: what a service answers, what it has actually allowed you to do, and what evidence is still missing. We begin with an everyday analogy, read two synthetic records, and finish with one check."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. A service is a reception desk: answering questions and allowing actions are separate"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine entering an office building. Reception can tell you which departments are there and provide a public document catalogue. Knowing a document's name does not let you read its contents; a visitor badge does not let you edit every document."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Computer services have similar distinctions:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Service identification: does the endpoint respond, and what service does it advertise?",
+            "Enumeration: organize the names, capabilities, directories, or account clues it exposes.",
+            "Authentication: how the service establishes the identity used for the connection.",
+            "Authorization: which actions that identity may perform on which resources."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "There is also authorization to test: the scope approved by the administrator. A service technically accepting a request does not expand your approved testing scope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson uses original, fictional text records. No connection, login, download, or email transmission takes place. Names and accounts are teaching roles, not targets to test on real services."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. What does FTP do? Separate commands from data first"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP (File Transfer Protocol) lets a client exchange files with a server. The client is the software making requests; the server handles them."
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP commonly uses two kinds of connection:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Control connection: carries requests and replies, commonly on TCP 21. Examples include supplying an account name, asking about capabilities, and requesting a directory listing.",
+            "Data connection: carries file contents or directory listings, separately from the control connection."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of calling a warehouse to request material and then receiving it over a separate delivery route. The call can work while delivery fails. Thus, a successful login followed by a failed listing calls for checking the data connection and policy, rather than immediately blaming the account. [FTP connections and commands](https://www.rfc-editor.org/rfc/rfc959.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two common arrangements exist for the data connection:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Active mode: the client provides a receiving endpoint, and the server initiates the data connection.",
+            "Passive mode: the server provides a receiving endpoint, and the client connects to it."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "EPSV extends passive mode: its reply provides the data port, and the data connection uses the server address used by the control connection. Firewalls and NAT (Network Address Translation), a mechanism that translates connection addresses between address realms, affect these connections. Do not memorize all FTP data transfers as “always TCP 20.” [FTP extensions for IPv6 and NAT](https://www.rfc-editor.org/rfc/rfc2428.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/ftp-smtp-connections-en.svg",
+          "downloadLabel": "Download diagram SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 1 | Two FTP connection roles",
+            "description": "These are parallel responsibilities, not a guarantee that success on one connection makes the other succeed.",
+            "items": [
+              {
+                "title": "Control connection",
+                "body": "Carries login, capability queries, and operation requests, commonly on TCP 21. A successful login still needs a working data connection."
+              },
+              {
+                "title": "Data connection",
+                "body": "Carries directory listings or file contents. Active/passive modes change the initiator and receiving endpoint."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. What information can FTP enumerate? Each request has a scope"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A banner is the welcome or identification text seen after connecting. It may name a product, but the text can be configured, hidden, or supplied by a front-end service. Record it as information advertised by the endpoint, not sufficient proof of the complete version or vulnerability applicability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "FEAT asks which extensions the server supports. A listed capability establishes what was advertised in that conversation; authentication state, settings, and policy still affect whether it can be used. [FTP feature negotiation](https://www.rfc-editor.org/rfc/rfc2389.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "File listings have different representations. MLSD lists directory entries with standardized facts such as type, size, and modification time; MLST provides information about a single entry. Such descriptive information is metadata. Reading a name or size is distinct from reading file contents. [Machine-readable FTP directory extensions](https://www.rfc-editor.org/rfc/rfc3659.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Traditional LIST commonly provides a human-readable directory listing, RETR requests a file, and STOR requests storage of uploaded data. These are different operations. Record listing, reading, and writing separately; success in one is not evidence of success in the others. [FTP operation definitions](https://www.rfc-editor.org/rfc/rfc959.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Anonymous login uses a shared identity; permissions still need checking"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Anonymous FTP commonly offers access without an individual personal account. An administrator may deliberately provide public downloads, so anonymous login availability alone is not a vulnerability conclusion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Evaluate risk against the intended purpose:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Does a download-only area unexpectedly allow uploads or deletion?",
+            "Are backups, configuration, or other nonpublic material visible?",
+            "Do the directories and readable files exposed to anonymous users exceed policy?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Limit anonymous permissions; disable anonymous service when it is unnecessary. Traditional FTP's plaintext passwords and data transmission also belong in the risk assessment. [FTP security considerations](https://www.rfc-editor.org/rfc/rfc2577.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A useful report combines observation with policy. For example: “The designated test identity can list the public directory; policy allows that listing. The finance directory was not tested and cannot be marked as passed.” This is more useful than simply declaring FTP secure."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Read a synthetic FTP record"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following simulates a few steps in an authorized lab and omits connection establishment, login, and data-channel negotiation. Client/server/data labels identify the source of each line; this is not a script to paste into a terminal."
+        },
+        {
+          "kind": "code",
+          "text": "Server: 230 Session established\nClient: MLSD\nServer: 150 Data transfer starting\nData: type=file;size=640; notice.txt\nData: type=file;size=8192; draft.txt\nServer: 226 Transfer complete\nClient: RETR draft.txt\nServer: 550 Access denied"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read it step by step:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 230 reports that the session is logged in. The login exchange is absent, so do not invent a successful anonymous login."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. The two MLSD records list notice.txt and draft.txt, with the sizes reported by the server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 226 completes the preceding listing transfer. It does not complete the subsequent file download."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. RETR draft.txt is rejected. This record does not obtain draft.txt's contents and does not test writing."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The lesson is that a visible name, readable contents, and writable files require separate evidence. A 425 failure to establish the data connection would point to a different investigation than the explicit Access denied shown here. [FTP replies and sequencing](https://www.rfc-editor.org/rfc/rfc959.html), [MLSD listing facts](https://www.rfc-editor.org/rfc/rfc3659.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/ftp-smtp-permissions-en.svg",
+          "downloadLabel": "Download diagram SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 2 | Separate three permissions",
+            "description": "These are independent judgments, not an inevitable sequence or mutual guarantees.",
+            "items": [
+              {
+                "title": "Visible name",
+                "body": "A listing reveals a file name and size: evidence of visible metadata."
+              },
+              {
+                "title": "Readable contents",
+                "body": "Requires evidence that the file content was obtained. A successful listing is not a successful download."
+              },
+              {
+                "title": "Writable file",
+                "body": "Requires an authorized write check. This lesson does not test writing."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. FTP, FTPS, and SFTP have similar names but are not interchangeable"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TLS (Transport Layer Security) protects data on a connection. FTPS adds TLS to FTP; control-channel and data-channel protection need separate checks. TLS on the control connection does not establish that the data connection is encrypted. PROT P requests TLS protection for the data connection; actual negotiation and settings still need verification. [Securing FTP with TLS](https://www.rfc-editor.org/rfc/rfc4217.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SFTP (SSH File Transfer Protocol) is a different protocol providing file operations over SSH. SSH provides secure remote connections; the OpenSSH sftp client uses it to transfer data. SFTP is not FTP moved to another port and is not another spelling of FTPS. [OpenSSH sftp manual](https://man.openbsd.org/sftp.1)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "After choosing encrypted transport, still verify the peer's identity and file permissions. Encryption protects transmission; it does not decide which files an account should read."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. SMTP is a mail delivery desk: distinguish transfer from submission"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMTP (Simple Mail Transfer Protocol) handles email transmission; it is not a protocol for browsing an inbox."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Separate two roles:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Mail servers transfer messages between servers, commonly over TCP 25.",
+            "A user hands an outgoing message to a sending service through message submission, commonly on TCP 587, with user authentication according to service policy."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These roles have different access policies. An external server delivering to a recipient in the local domain is different from forwarding arbitrary senders' mail to arbitrary external domains. [Mail submission and relay roles](https://www.rfc-editor.org/rfc/rfc6409.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 465 is also used for mail submission with TLS from the start. TCP 587 commonly uses STARTTLS to upgrade an existing SMTP connection. Determine protection from negotiation and verification, not from a port number alone. [Encrypted mail submission recommendations](https://www.rfc-editor.org/rfc/rfc8314.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. SMTP replies disclose capabilities; interpret account clues carefully"
+        },
+        {
+          "kind": "paragraph",
+          "text": "EHLO introduces the client and requests an extension list. A server may advertise STARTTLS or AUTH."
+        },
+        {
+          "kind": "paragraph",
+          "text": "AUTH is the SMTP authentication extension. Seeing AUTH means mechanisms were advertised at that point, not that you logged in. If it is absent, check whether TLS must first be established before it is offered. Supporting an authentication mechanism is not successful authentication. [SMTP authentication extension](https://www.rfc-editor.org/rfc/rfc4954.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VRFY queries user or mail-address information, while EXPN expands a mailing list. Servers may restrict them to reduce disclosure. Keep the complete request, reply code, and text:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "252: the server has not verified the requested user; this proves neither existence nor nonexistence.",
+            "550: the request was not accepted; possible causes include a missing mailbox, access restrictions, or policy. Interpret the request and text together.",
+            "250: a request succeeded; its meaning depends on which step it answers."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, accepting a recipient does not complete message transmission. A server may also defer recipient validation. It certainly does not establish that someone read the message or that an address maps to an interactive operating-system account. [SMTP verification commands and replies](https://www.rfc-editor.org/rfc/rfc5321.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Replies may include an enhanced status code, such as 5.1.1 or 5.7.1, providing a more specific address or policy classification. Preserve these codes for investigation, alongside the implementation and logs. [Enhanced mail status codes](https://www.rfc-editor.org/rfc/rfc3463.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Read a synthetic SMTP record: advertised features are not test outcomes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is another tabletop example; it sends no mail:"
+        },
+        {
+          "kind": "code",
+          "text": "Server: 220 mail.training.example ESMTP\nClient: EHLO client.training.example\nServer: 250-mail.training.example\nServer: 250-STARTTLS\nServer: 250 SIZE 10485760\nClient: VRFY learner\nServer: 252 Cannot verify this user"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record that the endpoint responded with SMTP, advertised STARTTLS and SIZE, and did not verify the user in this VRFY exchange. A hyphen after 250 indicates a continuing multiline reply; the final line uses a space. There is no TLS handshake, login, or mail-submission record here."
+        },
+        {
+          "kind": "paragraph",
+          "text": "STARTTLS in the list establishes only that it was advertised. After a successful TLS upgrade, previous SMTP feature information must be re-established: the client should issue EHLO again because the list may differ. TLS protects this connection segment; it does not automatically establish end-to-end encryption of the entire message from sender to recipient. [SMTP STARTTLS state reset](https://www.rfc-editor.org/rfc/rfc3207.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For open relay investigation, ask whether an unauthorized source can use the service to forward mail to a destination forbidden by policy. A 220, 250, or VRFY response alone cannot answer that. This lesson does not perform a real forwarding test; that needs separate authorization for test accounts, receiving endpoints, and operations."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10. Protection and verification: preserve business use and remove excess permissions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For FTP, establish whether the service is needed, which identities may use it, and how directory and read/write permissions are assigned. Choose appropriate secure transport and limit unnecessary anonymous access. For SMTP, manage submission and relay policies separately, restrict unnecessary account-query disclosures, and require appropriate authentication and transport protection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For both, use designated test identities to compare allowed and denied operations against policy, corroborated by logs and configuration. Define the resource and action in the verification scope rather than writing “login worked, therefore passed.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, policy may allow visitors to read a public notice but deny draft access. Verify successful reading of the public notice and restrictions on the draft separately. If draft names must also be confidential, their appearance in a listing is another disclosure issue. Denied content access does not erase the need to investigate an exposed name."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Useful records include time and time zone, test source, identity, protocol and encryption state, requested resource/action, complete replies, intended policy, supported conclusions, and unresolved points. Before sharing, redact real passwords, authentication material, and unnecessary personal data."
+        },
+        {
+          "kind": "paragraph",
+          "id": "exercise",
+          "text": "Safe tabletop exercise"
+        },
+        {
+          "kind": "paragraph",
+          "text": "All you need is this lesson and paper or an offline note. Install no software and issue no network requests."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Label which request each result answers in the two records; do not apply success in one step to another."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Organize three columns: information obtained, operations completed, and facts not yet established."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. State the next kind of evidence needed, such as permission configuration, TLS negotiation records, or server logs. Do not perform the tests yet."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The expected output is a bounded evidence table, not a passed system audit. No system was changed, so no restoration is needed; retain your notes."
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "11. One final check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A colleague reads “FTP is logged in, MLSD lists draft.txt, but RETR is denied” and “SMTP VRFY returns 252,” then writes:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“We obtained the draft's contents and confirmed that the learner account does not exist.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "How would you correct both conclusions in one or two sentences?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The two protocols share this unit to practise one evidence boundary: what is known, what succeeded, and what remains unproven. The next lesson covers SMB and continues separating shared resources from actual access permissions."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ftp-smtp-evidence",
+          "summary": "Reference answer: FTP permissions and an unverified SMTP user",
+          "paragraphs": [
+            "The FTP record only lists draft.txt; the request for its contents was denied, so it provides no evidence that the draft was obtained. SMTP 252 says the user was not verified, which does not establish that the account is absent.",
+            "Match each reply to its request, and distinguish unverified from nonexistent. To investigate further, compare server settings and logs within the authorized scope; do not independently try other accounts, downloads, or mail delivery to prove a hypothesis."
+          ]
+        }
+      ]
+    }
+  }
+}
