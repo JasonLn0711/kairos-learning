@@ -41,4 +41,10 @@ PR驗證期間遠端main新增M04-01完整小節替換（6e59361、8aae30a、c45
 
 ## 發布狀態
 
-待本次PR、CI與Pages完成後補上實際提交、部署與正式站同套驗收。不得以本機通過代替正式上線證據。恢復採新revert提交保留歷史，不恢復退役legacy DNS課程或force-push。
+[PR #75](https://github.com/JasonLn0711/kairos-learning/pull/75)已合併。來源保存3704356、正文／圖解7c6c22a、保留遠端C01整合f9cd5da；合併提交a7a0145ac6df3085b07751419b3e965b05310649。[整合後CI 41811976135](https://github.com/JasonLn0711/kairos-learning/actions/runs/41811976135)及[正式Pages 41812098089](https://github.com/JasonLn0711/kairos-learning/actions/runs/41812098089)皆成功。
+
+正式站以CEH_BASE_URL=https://learn.cs-kairos.com執行相同套件，22/22通過（43.1秒）。中英全文、v1.1.0／日期、75個章／小節內容順序、四尺寸／200%文字、無JS、原生答案、程式碼捲動、搜尋、導覽、canonical／hreflang、sitemap、page JSON及404均依當前資料驗證。四份SVG由正式HTTPS下載，與本機受審核產物逐位元組相同，文字邊界與無重疊檢查通過。目視正式站桌面與手機圖解，分組、流向及文字保持可讀。
+
+首輪正式站21/22，中文overview下載連結的Tab／Shift+Tab焦點未保持；在鍵盤測試前等待頁面networkidle後重新執行，仍完整測試Tab、Shift+Tab、Enter與下載，22/22通過。沒有略過失敗測項或修改頁面來隱藏結果。首輪紀錄保存在live/initial-results.json與initial-run.log；最終結果在live/results.json，正式站與本機截圖分開。
+
+發布回讀未執行DNS查詢／掃描或修改解析設定。恢復採新revert提交保留歷史，不恢復退役legacy DNS課程或force-push。本回執後續提交只更新測試載入時序與發布證據，不改已驗收教材或圖檔。

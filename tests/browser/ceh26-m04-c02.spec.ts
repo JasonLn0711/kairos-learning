@@ -31,7 +31,7 @@ for(const lang of ['zh','en']){
 
 for(const lang of ['zh','en']) for(const name of ['overview','security']) {
  test(`${lang}: ${name} generated SVG download, label bounds and keyboard link`,async({page,request})=>{
-  const prefix=lang==='en'?'/en':'';await page.goto(`${prefix}/courses/ceh/v13/m04/concepts/m04-02/`);
+  const prefix=lang==='en'?'/en':'';await page.goto(`${prefix}/courses/ceh/v13/m04/concepts/m04-02/`);await page.waitForLoadState('networkidle');
   const fig=page.locator(`[data-dns-evidence=${name}]`);const link=fig.locator('a[download]');await link.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');await expect(link).toBeFocused();expect(await link.evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
   const download=page.waitForEvent('download');await page.keyboard.press('Enter');const dl=await download;expect(dl.suggestedFilename()).toBe(`dns-${name}-${lang}-v1-1-0.svg`);
   const path=await link.getAttribute('href');const r=await request.get(path!);expect(r.status()).toBe(200);const bytes=await r.body();expect(bytes.equals(readFileSync('site'+path))).toBe(true);expect(bytes.length).toBeLessThan(100000);
