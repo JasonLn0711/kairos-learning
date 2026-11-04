@@ -1,0 +1,597 @@
+{
+  "id": "M03-08",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-04",
+  "status": "published",
+  "publishedOn": "2026-11-04",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "分開掃描狀態、告警與阻擋證據，核對防火牆及 IDS／IPS 的實際效果。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "M03-08｜防火牆與 IDS／IPS 如何影響掃描：用證據確認防護"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先記住今天的結論"
+        },
+        {
+          "kind": "paragraph",
+          "text": "掃描結果、設備告警與真正擋下連線，是三種不同證據。看到 filtered，只能先記錄這次掃描無法確定入口是否開啟；看到告警，要核對是否實際阻擋；沒有告警，則要先確認監測設備看得到這段流量。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本單元回答一個問題：當掃描結果受到網路防護影響時，怎麼分辨「被觀察到」「被阻擋」與「還不知道」？前一單元學會保存掃描設定與輸出，這次把掃描端的紀錄接到防護端及服務端，建立可以交叉核對的說明。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、從大樓的門禁、監視器與保全理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你獲准檢查一棟大樓。大門門禁決定哪些人能進入；監視器記錄有人接近門口；保全發現異常時，可以攔下訪客。這是三種工作，不是每棟大樓都一定依同一順序配置三台設備。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Firewall（防火牆）：依政策控制網路流量能否通過，像門禁。政策可能看來源、目的地、通訊協定、連接埠或連線狀態，實際能力依產品與設定而定。",
+            "IDS，Intrusion Detection System（入侵偵測系統）：分析它看得到的活動並產生告警，像監視器加異常提醒。單純被動監測不等於流量一定經過它，也不等於它能直接攔截。",
+            "IPS，Intrusion Prevention System（入侵防禦系統）：具備採取防護動作的能力，例如在流量通過的位置丟棄符合阻擋條件的封包，像能攔人的保全。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Packet（封包）是網路傳送的一小單位資料。Inline（串接式）表示流量需要經過設備；流量鏡像則是把副本送去監看。產品可以整合多種功能，所以要看部署位置、運作模式及規則動作，不能只看盒子上寫 IDS 或 IPS。[NIST 防火牆指南](https://csrc.nist.gov/pubs/sp/800/41/r1/final)、[NIST IDPS 指南](https://csrc.nist.gov/pubs/sp/800/94/final)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-08-roles-zh.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "三種防護角色",
+            "description": "角色平行比較，不代表固定設備順序。",
+            "items": [
+              {
+                "title": "防火牆",
+                "body": "依政策決定是否讓流量通過。"
+              },
+              {
+                "title": "IDS 入侵偵測",
+                "body": "分析可見活動並產生告警。"
+              },
+              {
+                "title": "IPS 入侵防禦",
+                "body": "依部署模式與規則執行防護動作。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、防火牆如何改變你看到的入口狀態"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先把 TCP 想成建立連線前需要交換確認訊息的通訊方式。SYN 是要求開始連線的旗標；RST 是重設或拒絕連線的訊號。掃描器根據收到的回覆、沒有收到回覆及掃描方式，推論連接埠狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防火牆常見處理包括 Allow（允許）、Drop（直接丟棄）與 Reject（拒絕並回覆）。若封包被無聲丟棄，掃描器可能只看到等待逾時；若設備回覆拒絕訊息，掃描器就多了一項可觀察證據。但逾時也可能來自丟包或回程問題，因此不能只憑一行輸出指定是哪台設備擋住。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "open（開啟）：依這次方法與回覆，掃描器判定該入口可接受對應通訊；不代表已登入或取得權限。",
+            "closed（關閉）：掃描器收到支持「此入口未接受該連線」的回覆；仍須注意中間設備可能代送 TCP RST。",
+            "filtered（受過濾影響）：掃描器無法確定入口是否開啟；不是「服務已關閉」的同義詞。",
+            "open|filtered（開啟或受過濾）：兩種狀態仍無法區分；中間的直線表示「或」，不是兩項結論都成立。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "同一服務從內網看是 open，從外網看是 filtered，兩份紀錄可以同時成立，因為來源與路徑不同。只有外網 filtered，也不能直接證明防火牆整體設定正確。[Nmap 狀態定義](https://nmap.org/book/man-port-scanning-basics.html)、[中間設備回覆的判讀限制](https://nmap.org/book/determining-firewall-rules.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、偵測到、發出告警、阻擋成功，分別怎麼確認"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Signature（特徵規則）可理解為「已知行為的比對條件」；Anomaly（異常）則是「偏離預期模式」。比對規則與觀察基準不同，就可能對同一活動做出不同判斷。告警是調查的起點，還不是入侵成功的證明。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "False Positive（誤報）是把正常活動判為需要處理的異常；False Negative（漏報）是該偵測的異常沒有被報出。獲准掃描也可能符合掃描特徵，因此「這是授權活動」不會自動讓告警消失。應拿核准的來源、時段與範圍核對，而不是為了測試方便關掉監測。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "具體讀規則時，要找 Action（動作）。以 Suricata 官方文件為例，alert 表示產生告警，drop 表示丟棄並告警，reject 會發送拒絕訊息；真正效果仍取決於運作模式與部署。畫面出現「掃描偵測」標題，不足以推斷已執行 drop。[Suricata 規則動作](https://docs.suricata.io/en/latest/rules/intro.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Threshold（門檻）與告警頻率設定，也會影響你看到的通知。為避免重複通知而限制告警數量，不一定等於停止封包處理。要分別查規則條件、告警限制及阻擋動作，不拿「只有一則告警」推論「只有一個封包」。本文只解釋判讀，不提供規避門檻的操作。[Suricata 門檻說明](https://docs.suricata.io/en/latest/rules/thresholding.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩份 Suricata 頁面查核時標示 9.0.0-dev，屬開發版文件；本文沒有假定你的設備使用該版本，實際規則語法與行為必須回查已安裝版本。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、沒有告警時，先找可見範圍與紀錄缺口"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Visibility（可見範圍）就是感測器實際看得到哪些活動。例如監視器只拍大門，不能用「大門畫面沒人」證明後門沒有活動。網路也是如此：流量可能走另一條路，鏡像可能缺少部分封包，感測器或紀錄傳送可能異常，加密也可能使它無法直接檢視應用內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "調查可以從四個問題開始：這段流量經過哪裡？該處是否真的有感測器資料？規則是否啟用且適用這段活動？告警是否成功送到你正在看的介面？每一個回答都應附時間及來源，而不是看到空畫面就填「沒有攻擊」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在正式環境，補足觀測應經過管理者確認，不為了看流量而自行解密他人通訊、變更網路路徑或停用防護。NIST 的 IDPS 指南可用來理解監測位置與偵測限制；其正式版為 2007 年，2012 年修訂草案後來撤回，並不是新的正式版本。[NIST 文件狀態與適用背景](https://csrc.nist.gov/pubs/sp/800/94/final)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、完整例子：同一台測試服務，兩種來源"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下全部是原創、人工編寫的桌上演練紀錄，不是你的設備、不是真實掃描輸出，也沒有操作第三方目標。假設管理者核准在隔離實驗環境比對測試服務 TCP 8443；事先政策是「管理網段可用，測試外網不可用」。兩次測試採相同方法，時間相近；不提供可直接套到真實目標的命令。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "09:00：管理網段的測試電腦 A 回報 open；服務端有對應連線紀錄。",
+            "09:02：測試外網的電腦 B 回報 filtered；邊界防火牆記錄 B 到該服務的封包遭 Drop，並附規則代號 FW-17。",
+            "09:02：監測介面出現「疑似連接埠探查」告警，規則動作是 alert。",
+            "09:02：服務端沒有找到 B 的對應連線紀錄；已核對本次查詢時間與紀錄來源，但仍保留紀錄完整性的限制。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "先分開寫觀察：A 看得到服務，B 沒取得可判定入口的回覆；防火牆記錄了拒絕通過；監測介面告警了。再寫推論：這些相互對得上的紀錄，支持本次 B 的測試流量由 FW-17 阻擋，而不是因 IDS 的 alert 才被擋。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個例子的合理結論是：「在本次來源、時間、方法及 TCP 8443 的範圍內，結果符合內部允許、外部限制的預期。」不能擴大寫成「所有連接埠都安全」「IPS 完全有效」或「沒有入侵」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果只有 B 的 filtered，沒有防火牆紀錄，也沒有服務端證據，就把原因寫成待確認。若防火牆時間差了幾分鐘、來源位址經過轉換，還要先核對時區、校時與 NAT（網路位址轉換），才知道是不是同一段流量。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、防護工作的重點：降低暴露、保留偵測、驗證效果"
+        },
+        {
+          "kind": "paragraph",
+          "text": "掃描防護不是把結果藏起來就結束。可以先盤點哪些服務有業務需求、哪些來源真的需要連入，再由管理者關閉不必要服務、限制必要入口、維持修補與身分驗證。可用性也要保留，不能只確認外部被擋，卻讓合法使用者無法工作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一份可採用的驗證計畫，應包含核准來源、目的服務、時間窗、允許的測試方式、預期允許與拒絕結果、停止條件、責任人及復原方式。若目的是驗證偵測，就保留正常偵測設定；若刻意加入測試例外，應另記條件，不能拿例外下的結果代表一般防護能力。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "建議把證據依序整理：核准範圍與預期政策 → 掃描端原始結果 → 防護端規則與動作 → 服務端紀錄 → 有範圍限制的結論。這是調查整理順序，不是封包一定走過的設備順序。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可用一份簡單紀錄留下：測試時間與時區、來源與目的、協定與連接埠、工具版本與設定、實際回覆、防護規則及動作、服務紀錄、缺口與下一步。去識別化後再分享；真實位址、帳號與日誌細節依授權範圍保存。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-08-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "從範圍到結論",
+            "description": "調查整理順序，不是封包經過設備的路徑。",
+            "items": [
+              {
+                "title": "核准與預期",
+                "body": "確認來源、服務、時段與預期政策。"
+              },
+              {
+                "title": "掃描端觀察",
+                "body": "保存設定與原始回覆，記下限制。"
+              },
+              {
+                "title": "交叉核對",
+                "body": "對照防護動作與服務紀錄。"
+              },
+              {
+                "title": "有限度結論",
+                "body": "說明證據支持的範圍及待確認缺口。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、安全練習：只讀上面的人工紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "環境是這份教材與空白筆記，不需安裝工具、掃描設備或更改設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一步，將第六節各行標記為掃描端、防護端或服務端證據。第二步，找出哪一行支持「阻擋動作」，哪一行只支持「發出告警」。第三步，寫一句包含來源、時間、服務與限制條件的結論，再列一項仍需核對的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "預期成果是一段能追溯到紀錄的說明，而不是宣告整個系統安全。完成後保留你的練習筆記即可；因為沒有建立服務或更動環境，沒有系統清理步驟，也不需刪除任何正式紀錄。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. B 回報 filtered，同時 IDS 顯示 alert。這兩項是否已足以證明「IDS 把連線擋掉」？你還會找哪一項證據？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 同一個 TCP 入口，A 看是 open、B 看是 filtered。為什麼不必先認定其中一份結果錯誤？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 沒有任何告警時，請提出兩個應先檢查的觀測或紀錄問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 若測試計畫寫「對所有測試流量停用防護，再證明防護有效」，這個設計哪裡有問題？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先選第 1 題用自己的話回答就好。其餘題目與參考解答會保留在教材；參考解答不是你的作答，未回答也不標示已理解。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "來源查核日期：2026-11-04。Nmap 線上手冊沒有在上述頁面給出本文環境的已安裝版號；本文沒有實際執行掃描。NIST 800-41 Rev.1 為 2009 年，800-94 正式版為 2007 年，作為原理背景，不冒稱最新產品設定指南。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-blocking",
+          "summary": "參考解答：告警與阻擋",
+          "paragraphs": [
+            "不夠。filtered 是掃描端無法確定入口的結果，alert 是偵測規則的通知動作。應找相同時間、來源、目的與連接埠的防護動作紀錄，例如規則 FW-17 的 Drop，再與服務端及路徑資料核對。這樣才有證據支持是哪個控制阻擋；仍不擴大成所有流量都受保護。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-viewpoint",
+          "summary": "參考解答：不同來源的結果",
+          "paragraphs": [
+            "掃描狀態依來源、路徑、時間及方法而定。內部來源可能被允許、外部來源被限制，兩者可以同時正確。先確認目標、方法與時間可比較，再對照來源政策，不能拿其中一份取代另一份。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-visibility",
+          "summary": "參考解答：沒有告警",
+          "paragraphs": [
+            "可以先查流量有沒有經過感測器可見的位置，以及告警是否成功傳到查詢介面；也可核對規則啟用狀態、時間窗、鏡像資料完整性及感測器健康。沒有告警只描述目前查到的紀錄，不證明沒有掃描或沒有入侵。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-exception",
+          "summary": "參考解答：測試條件改變",
+          "paragraphs": [
+            "停用防護會改變待驗證的條件。這種測試或許只能協助確認服務本身能否連線，不能證明原本防護有效。應另行保留正常設定下的核准測試，包含預期允許與預期拒絕案例，並記錄例外、影響與復原確認。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Separate scan states, alerts and blocking evidence to verify firewall and IDS/IPS outcomes.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "M03-08｜How firewalls and IDS/IPS affect scans: verifying protection with evidence"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Today's conclusion"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A scan result, a device alert, and evidence that a connection was actually blocked are different things. A filtered result initially tells you that this scan could not determine whether the port was open. An alert needs a separate action check. No alert calls for checking whether the sensor could see the traffic at all."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson answers one question: when network defenses affect a scan, how do you distinguish observation, blocking, and uncertainty? The previous lesson covered preserving scan settings and output. Here we connect the scanner's record with protection and service records to construct a verifiable explanation."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Think of access control, cameras, and security staff"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine you are authorized to inspect a building. Door access control determines who may enter. Cameras record people approaching. Security staff can stop a visitor when something is wrong. These are three functions, not a requirement that every building put three devices in a fixed sequence."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A firewall controls traffic according to policy, like door access control. Policy can consider source, destination, protocol, port, or connection state; capabilities depend on the product and configuration.",
+            "An Intrusion Detection System, or IDS, analyzes activities visible to it and produces alerts, like a camera with notifications. Passive monitoring does not require traffic to pass through the sensor and does not itself establish blocking ability.",
+            "An Intrusion Prevention System, or IPS, can take protective action, such as dropping packets that meet blocking conditions at a point through which traffic passes, like staff who can stop entry."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A packet is a small unit of transmitted network data. Inline means traffic passes through the device; traffic mirroring sends a copy for observation. A product may combine functions. Check placement, operating mode, and rule actions rather than relying on an IDS or IPS label. [NIST firewall guidance](https://csrc.nist.gov/pubs/sp/800/41/r1/final), [NIST IDPS guidance](https://csrc.nist.gov/pubs/sp/800/94/final)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-08-roles-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Three protective roles",
+            "description": "Parallel roles, not a mandatory device sequence.",
+            "items": [
+              {
+                "title": "Firewall",
+                "body": "Apply policy to traffic admission."
+              },
+              {
+                "title": "IDS detection",
+                "body": "Analyze visible activity and raise alerts."
+              },
+              {
+                "title": "IPS prevention",
+                "body": "Take protective action according to mode and rules."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. How a firewall changes the port state you observe"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of TCP as communication that exchanges acknowledgments to establish a connection. SYN is a flag requesting connection establishment; RST signals a reset or rejection. A scanner infers port states from replies, missing replies, and the scan method."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Common firewall decisions include Allow, Drop, and Reject. Dropping silently can leave the scanner observing only a timeout. Rejecting with a response provides another observable clue. A timeout may also involve packet loss or a return-path problem, so one output line does not identify the device responsible."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "open: under this method and response, the scanner identifies an endpoint accepting the relevant communication. This does not establish a login or access privileges.",
+            "closed: the response supports a conclusion that the endpoint did not accept that connection; remember that an intermediate device can send a TCP RST on its behalf.",
+            "filtered: the scanner cannot determine whether the port is open. It is not a synonym for the service being shut down.",
+            "open|filtered: the two possibilities remain unresolved. The vertical bar means “or,” not that both conclusions have been established."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "An internal scan can report open while an external scan of the same service reports filtered. Both records may be correct because their sources and paths differ. An external filtered result alone does not validate the entire firewall configuration. [Nmap port states](https://nmap.org/book/man-port-scanning-basics.html), [Limits of interpreting intermediate responses](https://nmap.org/book/determining-firewall-rules.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Detection, notification, and successful blocking need different checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A signature is a condition matching a known pattern; an anomaly is a departure from expected behavior. Different rules and baselines may classify the same activity differently. An alert starts an investigation; it does not prove a successful intrusion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A false positive treats normal activity as an anomaly requiring attention. A false negative misses an anomaly that should have been detected. An authorized scan can still match a scan signature. Authorization does not automatically suppress alerts. Compare the approved source, time, and scope instead of turning off monitoring for convenience."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When reading a rule, find its action. Suricata documentation, for example, describes alert as notification, drop as dropping and alerting, and reject as sending a rejection. Actual effects still depend on operating mode and deployment. A notification titled “scan detected” does not prove that drop occurred. [Suricata rule actions](https://docs.suricata.io/en/latest/rules/intro.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Thresholds and notification frequency settings also affect what you see. Limiting repetitive alerts does not necessarily stop packet processing. Check detection conditions, alert limits, and blocking actions separately. One notification does not establish that there was only one packet. This lesson addresses interpretation, not ways to evade thresholds. [Suricata threshold documentation](https://docs.suricata.io/en/latest/rules/thresholding.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Both Suricata pages were labeled 9.0.0-dev when checked: development documentation. This lesson does not assume that your device runs that version. Verify actual syntax and behavior against the installed version."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. With no alert, check visibility and recording gaps first"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Visibility means the activities a sensor can actually observe. A camera watching the front entrance cannot establish that nothing happened at the rear entrance. Similarly, traffic can take a different path, mirrored traffic can be incomplete, sensors or log delivery can fail, and encryption can prevent direct inspection of application content."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Start with four questions: which path did the traffic take? Is sensor data actually available there? Was the relevant rule enabled and applicable? Did its alerts reach the interface you are inspecting? Attach a time and source to each answer rather than recording “no attack” from an empty screen."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In production, coordinate visibility improvements with the administrator. Do not independently decrypt others' communications, change routing, or disable protection to gain visibility. NIST's IDPS guide provides background on sensor placement and detection limits. Its final edition is from 2007; the later 2012 revision draft was retired, not issued as a new final standard. [NIST publication status and context](https://csrc.nist.gov/pubs/sp/800/94/final)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Worked example: one test service, two sources"
+        },
+        {
+          "kind": "paragraph",
+          "text": "All records below are original synthetic tabletop material, not your devices or actual scan output. No third-party target was tested. Suppose an administrator approves comparing TCP 8443 on a test service in an isolated lab. The expected policy is “management network allowed; test external network denied.” Both tests use the same method at nearby times. No commands for real targets are supplied."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "09:00: test computer A in the management network reports open; the service has a corresponding connection record.",
+            "09:02: computer B on the test external network reports filtered; the boundary firewall records dropping B's packets to the service and identifies rule FW-17.",
+            "09:02: the monitoring console reports “suspected port probing,” with action alert.",
+            "09:02: no corresponding connection from B is found in the service records. The query period and record source have been checked, while the limits of record completeness remain noted."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Write observations first: A can reach the service; B did not receive a response resolving the port state; the firewall logged denying passage; the console raised an alert. Then write the inference: these matching records support FW-17 blocking B's test traffic, rather than the IDS alert itself doing so."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A defensible conclusion is: “For these sources, times, method, and TCP 8443, the results match the expected internal permission and external restriction.” Do not expand it into “all ports are safe,” “the IPS is fully effective,” or “there was no intrusion.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If B's filtered result is all you have, with no firewall or service evidence, leave the cause unresolved. If firewall time differs by minutes or source addresses have been translated, check time zones, clock synchronization, and Network Address Translation (NAT) before concluding that records concern the same traffic."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Defensive work: reduce exposure, preserve detection, verify outcomes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scan protection is more than hiding results. First inventory services with a business purpose and sources that need them. Administrators can then disable unnecessary services, restrict required entry points, and maintain patching and authentication. Preserve availability too: checking that external traffic is blocked is insufficient if legitimate users cannot work."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A usable verification plan specifies approved sources, destination services, time window, allowed methods, expected allow and deny outcomes, stop conditions, responsible people, and recovery. If the goal is detection validation, retain normal detection settings. If a deliberate test exception is introduced, record it separately rather than treating its results as normal protection capability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Organize the evidence in this order: approved scope and expected policy → original scanner results → protection rules and actions → service records → bounded conclusion. This is an investigative workflow, not an assertion about the order of devices on the packet path."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A simple record can capture test time and zone, source and destination, protocol and port, tool version and settings, actual responses, protection rule and action, service records, gaps, and next steps. De-identify before sharing; retain real addresses, accounts, and detailed logs within their authorized scope."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-08-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "From scope to conclusion",
+            "description": "Investigation order, not a packet path through devices.",
+            "items": [
+              {
+                "title": "Scope and expectation",
+                "body": "Confirm source, service, time and expected policy."
+              },
+              {
+                "title": "Scanner observations",
+                "body": "Preserve settings, responses and limitations."
+              },
+              {
+                "title": "Cross-check records",
+                "body": "Compare protective actions and service records."
+              },
+              {
+                "title": "Bounded conclusion",
+                "body": "State supported scope and remaining evidence gaps."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Safe exercise: read the synthetic records only"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your environment is this lesson and a blank note. No tool installation, device scan, or configuration change is needed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, label each record in section 6 as scanner, protection, or service evidence. Second, identify which record supports a blocking action and which supports only notification. Third, write a conclusion bounded by source, time, service, and conditions, then name one item still needing verification."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The expected outcome is an explanation traceable to records, not a claim that the entire system is secure. Keep your exercise note afterward. Because no service or environment was changed, there is no system cleanup step and no reason to delete production records."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Quick checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. B reports filtered and the IDS shows alert. Do these establish that “the IDS blocked the connection”? What additional evidence would you seek?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. A reports open and B reports filtered for the same TCP endpoint. Why need neither record be wrong?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. With no alerts, name two observation or logging issues to check first."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. What is wrong with a test plan that disables protection for all test traffic and then claims to validate protection?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Start by answering question 1 in your own words. The remaining questions and reference answers stay with the lesson. Reference answers are not your submitted answers, and unanswered checks do not establish understanding."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sources checked: 2026-11-04. The cited Nmap online pages do not establish an installed version for this lesson's environment; no scan was executed. NIST 800-41 Rev.1 dates to 2009 and the final 800-94 to 2007. They provide principles, not a claim to be current product configuration guides."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-blocking",
+          "summary": "Reference answer: Alerts and blocking",
+          "paragraphs": [
+            "No. Filtered is the scanner's unresolved port-state result; alert is a notification action. Seek protection-action records matching the time, source, destination, and port, such as Drop under rule FW-17, and compare service and path evidence. This can support which control blocked the traffic, without claiming protection for all traffic."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-viewpoint",
+          "summary": "Reference answer: Different observation points",
+          "paragraphs": [
+            "Scan states depend on source, path, time, and method. An internal source may be allowed while an external one is restricted, so both results can be correct. Check comparable targets, methods, and times before comparing source policies. Neither record substitutes for the other."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-visibility",
+          "summary": "Reference answer: No alerts",
+          "paragraphs": [
+            "Check whether the traffic passed a location visible to the sensor and whether alerts reached the queried console. Other valid checks include rule enablement, time window, mirrored-data completeness, and sensor health. No alert describes the records currently found; it does not prove no scan or intrusion occurred."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-exception",
+          "summary": "Reference answer: Changed test conditions",
+          "paragraphs": [
+            "Disabling protection changes the conditions being evaluated. It may help establish service connectivity, but cannot validate the original protection. Retain separately approved testing under normal settings, including expected allow and deny cases, and document exceptions, impact, and verified recovery."
+          ]
+        }
+      ]
+    }
+  }
+}
