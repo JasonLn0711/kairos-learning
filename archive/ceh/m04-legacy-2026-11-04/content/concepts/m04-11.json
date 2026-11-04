@@ -1,0 +1,383 @@
+{
+  "id": "M04-11",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-10-26",
+  "status": "published",
+  "publishedOn": "2026-10-26",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "先記住一句：查到 RPC 服務的介面與端點，不等於能呼叫它的所有功能，更不等於取得管理權限。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "10/26 晚間：一次學一個核心概念"
+        },
+        {
+          "kind": "heading",
+          "id": "definition",
+          "text": "1. RPC 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC（Remote Procedure Call，遠端程序呼叫）讓程式把參數送給另一個程序，請對方執行指定功能，再接收結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "像打電話到機關辦事：你要辦的業務是「程序」，提供業務的單位是「服務」，查號臺則告訴你該找哪個分機。知道分機號碼，不等於有權辦理所有業務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "用戶端提出呼叫，伺服器端處理要求；角色取決於這次互動，不是電腦永遠固定的身分。RPC 是一類通訊方式，不能把所有 RPC 都當成同一套協定。[RFC 5531](https://www.rfc-editor.org/info/rfc5531/)"
+        },
+        {
+          "kind": "heading",
+          "id": "enumeration",
+          "text": "2. 列舉在查什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某些服務端點會動態分配，因此需要映射服務協助查找。RPC 列舉就是整理「有哪些服務或介面、哪個版本、使用什麼傳輸、登記在哪個端點」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在授權的資產盤點、資訊揭露檢查與連線排錯中，這些線索很有用。但查詢之前仍須確認目標、來源與允許範圍；唯讀也可能產生日誌或負載。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "介面描述可提供哪些操作，端點則是連到服務的位置。端點可能是網路連接埠，也可能是其他形式，不能一律當成 TCP 埠號。"
+        },
+        {
+          "kind": "heading",
+          "id": "families",
+          "text": "3. 111 與 135 不是同一套查號臺"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ONC RPC："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "program number 識別服務。",
+            "version 識別服務協定版本。",
+            "procedure number 識別要呼叫的功能。",
+            "在 TCP／UDP 上，rpcbind／portmapper 使用 111 埠協助查找，實際服務可能在其他端點。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 version 不是軟體產品版本，不能直接拿來判定特定漏洞。[RFC 1833](https://www.rfc-editor.org/info/rfc1833/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft RPC："
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見的 TCP 情境先向 135 埠的 Endpoint Mapper 查詢，再連到對應服務端點，後者可能是動態埠。也有經由 SMB 具名管道傳輸的方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，「看到 135」不等於已列出全部 RPC 功能，也不能說每一次 RPC 呼叫都會經過 135。ONC RPC 的 111 與 Microsoft RPC 的 135，不能混為一談。[Microsoft 服務與連接埠說明](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "4. 一個純合成例子"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設授權實驗室回傳這筆映射："
+        },
+        {
+          "kind": "paragraph",
+          "text": "主機 Lab-A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務編號 536870912"
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務協定版本 1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳輸 TCP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "端點 35001"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它只表示：查得的登記資料把這個服務版本對應到 Lab-A 的 TCP 35001。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來仍是不同問題："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "從目前網段能不能連到端點？",
+            "服務是否接受這個身分？",
+            "這個身分能不能執行特定功能？",
+            "該功能是否真的存在可利用的弱點？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "防火牆可能擋住端點，服務也可能拒絕驗證或授權。知道地址不能替代這些證據。本例沒有連線查詢任何實際目標。"
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "cards",
+            "caption": "網頁補充：四種不同的 RPC 證據",
+            "description": "每一項分別驗證；前一項成立不會自動證明其他項。",
+            "items": [
+              {
+                "title": "查到登記",
+                "body": "Lab-A / TCP 35001：映射資料。"
+              },
+              {
+                "title": "端點可連線",
+                "body": "目前來源到端點的連線證據。"
+              },
+              {
+                "title": "身分驗證成功",
+                "body": "服務接受本次使用的身分。"
+              },
+              {
+                "title": "獲准執行功能",
+                "body": "這個身分獲准執行特定操作。"
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-11-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖解"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "5. 防護與證據判讀"
+        },
+        {
+          "kind": "paragraph",
+          "text": "把「查到登記」「端點可連線」「身分驗證成功」「獲准執行功能」分開記錄。保留時間、來源網段、查詢身分條件與必要原始回應，不保存秘密或不必要個資。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查不到映射，也不一定代表服務不存在，可能是過濾、權限或設定限制；查得到映射，也不能直接宣稱可存取資料、有漏洞或有管理權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防守時移除不需要的服務，限制可信來源，並同時檢查映射服務與實際端點的暴露。不應為了關閉埠號，就直接停用 Windows 核心 RPC 服務。"
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "小檢核："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你查到某服務登記於 TCP 35001，但從目前網段連線失敗。你能確定什麼？哪些關於權限或漏洞的結論，現在還不能下？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "用一兩句回答即可。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Remember: discovering an RPC service's interfaces and endpoints does not establish permission to call every function, much less administrator privileges.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "October 26 evening: one core concept at a time"
+        },
+        {
+          "kind": "heading",
+          "id": "definition",
+          "text": "1. What is RPC?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC (Remote Procedure Call) lets a program send parameters to another process, ask it to execute a particular function, and receive the result."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of calling a public office: the task you want performed is a procedure, the unit providing it is a service, and directory assistance tells you which extension to call. Knowing the extension does not authorize every transaction."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The client initiates a call and the server processes it. These roles depend on the interaction; they are not permanent identities of computers. RPC is a category of communication mechanisms, so not all RPC implementations use the same protocol. [RFC 5531](https://www.rfc-editor.org/info/rfc5531/)"
+        },
+        {
+          "kind": "heading",
+          "id": "enumeration",
+          "text": "2. What does enumeration discover?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Some service endpoints are assigned dynamically, so mapping services help locate them. RPC enumeration organizes which services or interfaces exist, their versions and transports, and the endpoints where they are registered."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These clues support authorized asset inventories, information-disclosure reviews, and connection troubleshooting. Confirm the target, source, and permitted scope before querying; even read-only activity may generate logs or load."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An interface describes available operations; an endpoint identifies where to reach a service. Endpoints may be network ports or other forms, so they are not always TCP port numbers."
+        },
+        {
+          "kind": "heading",
+          "id": "families",
+          "text": "3. Ports 111 and 135 serve different mapping systems"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ONC RPC:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A program number identifies a service.",
+            "A version identifies the service protocol version.",
+            "A procedure number identifies the function to call.",
+            "Over TCP/UDP, rpcbind/portmapper uses port 111 for lookup; actual services may use other endpoints."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This version is not a software product version and cannot directly establish a particular vulnerability. [RFC 1833](https://www.rfc-editor.org/info/rfc1833/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft RPC:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A common TCP scenario queries the Endpoint Mapper on port 135, then connects to the corresponding service endpoint, which may be a dynamic port. Transport over SMB named pipes is also possible."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Seeing port 135 does not establish that all RPC functions have been enumerated, and not every RPC call passes through port 135. ONC RPC's port 111 and Microsoft RPC's port 135 must be distinguished. [Microsoft service and port guidance](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "4. A purely synthetic example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an authorized laboratory returns this mapping:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Host Lab-A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Program number 536870912"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Service protocol version 1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Transport TCP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Endpoint 35001"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This establishes only that the retrieved registration maps this service version to TCP 35001 on Lab-A."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following remain separate questions:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Can the endpoint be reached from the current network segment?",
+            "Does the service accept this identity?",
+            "May this identity execute a specific function?",
+            "Does that function actually have an exploitable weakness?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A firewall may block the endpoint, and the service may reject authentication or authorization. Knowing the address does not replace this evidence. No real target was queried for this example."
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "cards",
+            "caption": "Web supplement: four distinct RPC observations",
+            "description": "Verify each separately; one observation does not establish the others.",
+            "items": [
+              {
+                "title": "Registration found",
+                "body": "Lab-A / TCP 35001: mapping data."
+              },
+              {
+                "title": "Endpoint reachable",
+                "body": "Connection evidence from this source."
+              },
+              {
+                "title": "Authentication succeeds",
+                "body": "The service accepts this identity."
+              },
+              {
+                "title": "Operation authorized",
+                "body": "This identity may perform a specific operation."
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-11-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "5. Defenses and evidence interpretation"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record registration discovery, endpoint connectivity, successful authentication, and permission to execute a function separately. Preserve the time, source network segment, query identity conditions, and necessary original responses, without secrets or unnecessary personal data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "No mapping does not necessarily mean no service: filtering, permissions, or configuration may restrict visibility. A discovered mapping does not establish data access, a vulnerability, or administrator rights."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remove unnecessary services, restrict access to trusted sources, and review exposure of both the mapping service and actual endpoints. Do not simply disable core Windows RPC services to close a port."
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "Quick check:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A service is registered on TCP 35001, but a connection from your current network segment fails. What can you establish, and which conclusions about permissions or vulnerabilities are still unsupported?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reply in one or two sentences."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,262 @@
+{
+  "id": "M04-05",
+  "revision": 1,
+  "date": "2026-10-24",
+  "status": "published",
+  "publishedOn": "2026-10-24",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "先記住一句：NetBIOS 名稱表提供電腦名稱與服務用途的線索；共享內容和檔案權限，要另外查核。",
+      "sections": [
+        {
+          "id": "purpose",
+          "heading": "NetBIOS 是什麼？",
+          "paragraphs": [
+            "想像公司裡有一份內部分機表，記著各部門的名稱與用途。找到「財務部」之後，進門、閱讀文件仍各有規則。",
+            "NetBIOS（Network Basic Input/Output System）原本是一套讓區域網路程式使用名稱、交換資料的介面。把這些功能放到 TCP/IP 網路上運作，稱為 NetBIOS over TCP/IP，常簡稱 NBT 或 NetBT。",
+            "NetBIOS 列舉就是查詢這類名稱與狀態資訊，協助盤點舊系統、辨識服務線索，以及檢查資訊開放的範圍。\n[NetBIOS 運作概念](https://www.rfc-editor.org/rfc/rfc1001)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "ports",
+          "heading": "137、138、139，分別做什麼？",
+          "paragraphs": [
+            "- 名稱服務：137 埠。處理名稱註冊與查詢，常見 UDP，也有 TCP。\n- 資料報服務：UDP 138。傳送不必先建立工作階段的訊息。\n- 工作階段服務：TCP 139。建立連線，供程式持續交換資料；傳統 SMB 可透過它運作。",
+            "接回上一課：直接透過 TCP 的 SMB 使用 445，可以不依賴 NetBIOS。因此，NetBIOS 查詢沒有回應時，SMB 是否可用仍要另外確認。\n[Microsoft：NetBIOS 與直接 SMB 傳輸](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/direct-hosting-of-smb-over-tcpip)"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "網頁補充：分開看通訊用途",
+              "description": "名稱查詢與SMB檔案存取，各自保留查核結果。",
+              "items": [
+                {
+                  "title": "137｜名稱",
+                  "body": "UDP常見，TCP也有定義；名稱註冊與查詢。"
+                },
+                {
+                  "title": "138｜資料報",
+                  "body": "UDP；傳送不先建立工作階段的訊息。"
+                },
+                {
+                  "title": "139｜工作階段",
+                  "body": "TCP；傳統SMB可透過此連線。"
+                },
+                {
+                  "title": "445｜直接SMB",
+                  "body": "TCP；可不依賴NetBIOS，另外查核。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "names",
+          "heading": "名稱是怎麼找到的？",
+          "paragraphs": [
+            "NetBIOS 名稱解析，就是把名稱對應到網路位址。依設定，電腦可能透過區域網路廣播，或向集中管理名稱的伺服器查詢；Windows 的 WINS 就是這類名稱服務。",
+            "它與 DNS 使用不同的名稱系統。兩邊顯示的電腦名稱可能相似，查詢方式與紀錄仍要分開確認。",
+            "Windows 的名稱顯示還常帶有十六進位尾碼，例如 <00> 或 <20>，表示該名稱的用途。判讀時要一起看：\n- 名稱：例如 LAB-FS。\n- 尾碼：例如 <20>。\n- 類型：例如 UNIQUE 或 GROUP。",
+            "UNIQUE 表示唯一名稱，GROUP 表示群組名稱。這裡的群組是 NetBIOS 名稱類型，與檔案權限群組要分開理解。\n[Microsoft 名稱與尾碼說明](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nbte/6dbf0972-bb15-4f29-afeb-baaae98416ed)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "example",
+          "heading": "用一個合成案例讀名稱表",
+          "paragraphs": [
+            "以下是假想的授權實驗室資料，這裡沒有執行真實查詢。",
+            "Windows 的 nbtstat 可以查看 NetBIOS 名稱表。在已取得許可的練習環境，可於命令提示字元輸入：",
+            "nbtstat /A 192.0.2.10",
+            "/A 是依 IP 查遠端名稱表；小寫 /a 是依遠端名稱查詢，參數大小寫有差別。192.0.2.10 是文件示範位址，實作時替換成約定的實驗主機。\n[nbtstat 官方說明](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/nbtstat)｜[文件示範位址](https://www.rfc-editor.org/rfc/rfc5737)",
+            "假設回應有以下三筆：\n- LAB-FS <00> UNIQUE：電腦名稱線索，對應工作站服務使用的名稱。\n- LAB-FS <20> UNIQUE：伺服器服務註冊的名稱，可作為檔案分享服務的查核線索。\n- LABGROUP <00> GROUP：機器群組名稱線索；實際工作群組或網域設定，再與管理端資料核對。\n[Microsoft 尾碼定義](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-brws/0c773bdd-78e2-4d8b-8b3d-b7506849847b)",
+            "目前取得的是名稱與用途線索。共享名稱、登入條件、指定檔案的讀寫結果，接著沿用 SMB 那一課的方法，依授權範圍分別確認。",
+            "另外，nbtstat /n 看本機名稱表，/c 看本機名稱快取；這兩者與當次遠端查詢回應，應分開記錄。"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "evidence",
+          "heading": "查不到，或查到了，要怎麼記？",
+          "paragraphs": [
+            "查詢逾時時，先記「這次查詢在等待期間未收到回覆」。可能原因包括服務未啟用、防火牆阻擋、網路路徑或目標狀態，再用其他證據定位。",
+            "取得上述名稱表時，可以寫：\n在約定的網路位置，向指定實驗主機查詢 NetBIOS 名稱表，取得 LAB-FS 的 <00>、<20> 與 LABGROUP 的群組名稱紀錄。共享與檔案操作留待另行驗證。",
+            "保存時間、來源網路位置、目標、工具與參數、完整回應。名稱表可以和資產清冊、服務設定交叉核對；產品版本、漏洞與實際存取權限，各自需要對應證據。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "網頁補充：從線索走向指定檔案的證據",
+              "description": "每一步都在約定的授權範圍內；名稱表本身描述名稱資訊。",
+              "items": [
+                {
+                  "title": "名稱表",
+                  "body": "保存名稱、尾碼、類型與完整回應。"
+                },
+                {
+                  "title": "服務查核",
+                  "body": "確認實際SMB連線與協定回應。"
+                },
+                {
+                  "title": "身分與共享",
+                  "body": "記錄使用身分、共享名稱與條件。"
+                },
+                {
+                  "title": "指定檔案",
+                  "body": "記錄完整路徑、實際操作與結果。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "defense",
+          "heading": "防護從實際用途出發",
+          "paragraphs": [
+            "先確認哪些舊設備或應用還依賴 NetBIOS，再安排調整：\n- 仍有需要的系統：限制可連線的網路與來源。\n- 已無依賴的系統：經相容性測試後停用 NetBIOS over TCP/IP。\n- 邊界防火牆：讓名稱服務與檔案分享只對預期範圍開放。\n- 異常查詢：搭配資產設定與日誌查核。",
+            "停用 NetBIOS 後，直接透過 TCP 445 的 SMB 仍可能運作；它的網路存取、身分驗證、共享與檔案權限，繼續各自管理。"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "check",
+          "heading": "小檢核",
+          "paragraphs": [
+            "你查到 LAB-FS <20> UNIQUE，同事說：「這表示我們已經可以讀取它的共享檔案。」",
+            "請用兩三句話說明：目前取得了什麼線索？接下來需要哪些查核，才能確認指定檔案的讀取權限？",
+            "這是待回答的小檢核。網站不會自動送出答案或更新理解；Q&A待實際問題與討論。下一核心為M04-06 SMTP列舉。"
+          ],
+          "blocks": []
+        }
+      ]
+    },
+    "en": {
+      "summary": "A NetBIOS name table provides clues about computer names and service roles. Check share contents and file permissions separately.",
+      "sections": [
+        {
+          "id": "purpose",
+          "heading": "What is NetBIOS?",
+          "paragraphs": [
+            "Imagine an internal office directory that lists departments and what they do. Finding Finance tells you where to start. Entering the office and reading its documents each require permission.",
+            "NetBIOS (Network Basic Input/Output System) began as an interface that lets local-network programs use names and exchange data. NetBIOS over TCP/IP, often called NBT or NetBT, carries those functions over TCP/IP networks.",
+            "NetBIOS enumeration queries name and status information. It helps inventory older systems, identify service clues, and check who can obtain that information. [NetBIOS concepts](https://www.rfc-editor.org/rfc/rfc1001)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "ports",
+          "heading": "What do ports 137, 138, and 139 do?",
+          "paragraphs": [
+            "• Name service, port 137: registers and queries names, commonly over UDP, with TCP also defined.\n• Datagram service, UDP 138: sends messages without first establishing a session.\n• Session service, TCP 139: establishes a connection for ongoing data exchange. Traditional SMB can use it.",
+            "Connect this to the previous lesson: directly hosted SMB uses TCP 445 and can work without NetBIOS. If a NetBIOS query gets no reply, check SMB availability separately. [Microsoft: NetBIOS and directly hosted SMB](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/direct-hosting-of-smb-over-tcpip)"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Website supplement: separate communication roles",
+              "description": "Keep separate results for name queries and SMB file access.",
+              "items": [
+                {
+                  "title": "137 | Names",
+                  "body": "Commonly UDP; TCP is also defined. Name registration and queries."
+                },
+                {
+                  "title": "138 | Datagrams",
+                  "body": "UDP messages without first establishing a session."
+                },
+                {
+                  "title": "139 | Sessions",
+                  "body": "TCP sessions; traditional SMB can use this connection."
+                },
+                {
+                  "title": "445 | Direct SMB",
+                  "body": "TCP, without requiring NetBIOS. Check separately."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "names",
+          "heading": "How are names found?",
+          "paragraphs": [
+            "NetBIOS name resolution maps names to network addresses. Depending on configuration, a computer may broadcast on the local network or query a central name server. Windows WINS provides this kind of name service.",
+            "NetBIOS and DNS use different name systems. A computer may have similar names in both, but verify the queries and records separately.",
+            "Windows name displays often include a hexadecimal suffix, such as <00> or <20>, that describes the name’s purpose. Read three fields together:\n• Name, such as LAB-FS.\n• Suffix, such as <20>.\n• Type, such as UNIQUE or GROUP.",
+            "UNIQUE identifies a unique name; GROUP identifies a group name. A NetBIOS group name is distinct from a group used to grant file permissions. [Microsoft names and suffixes](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nbte/6dbf0972-bb15-4f29-afeb-baaae98416ed)"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "example",
+          "heading": "Read a made-up name table",
+          "paragraphs": [
+            "This is a synthetic authorized-lab example. We did not run a query.",
+            "On Windows, nbtstat can display NetBIOS name tables. Within an approved practice environment, enter this in Command Prompt:",
+            "nbtstat /A 192.0.2.10",
+            "/A queries the remote name table by IP address. Lowercase /a queries by remote name; letter case matters. 192.0.2.10 is a documentation address. Replace it with the agreed lab host when practicing. [nbtstat manual](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/nbtstat) · [Documentation addresses](https://www.rfc-editor.org/rfc/rfc5737)",
+            "Assume the reply contains these three entries:\n• LAB-FS <00> UNIQUE: a computer-name clue associated with the Workstation service.\n• LAB-FS <20> UNIQUE: a name registered by the Server service, useful as a clue for checking file sharing.\n• LABGROUP <00> GROUP: a machine-group name clue. Confirm the actual workgroup or domain configuration with administrative records. [Microsoft suffix definitions](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-brws/0c773bdd-78e2-4d8b-8b3d-b7506849847b)",
+            "You have obtained names and clues about their purpose. Check share names, sign-in requirements, and reads or writes to specific files separately, using the SMB lesson within the agreed test boundaries.",
+            "Also distinguish data sources: nbtstat /n shows the local name table; /c shows the local name cache. Record these separately from a fresh reply to a remote query."
+          ],
+          "blocks": []
+        },
+        {
+          "id": "evidence",
+          "heading": "How should you record the result?",
+          "paragraphs": [
+            "For a timeout, record that no reply arrived during the waiting period. Possible causes include a disabled service, firewall filtering, the network path, or the target’s state. Use additional evidence to locate the cause.",
+            "For the example table, a useful record says: “From the agreed network location, the query to the specified lab host returned LAB-FS <00>, LAB-FS <20>, and the LABGROUP group-name entry. Share and file operations await separate checks.”",
+            "Save the time, source network location, target, tool and arguments, and full response. Compare the name table with the asset inventory and service settings. Product versions, vulnerabilities, and actual access permissions each need their own evidence."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Website supplement: from a clue to file-access evidence",
+              "description": "Keep every step within the agreed authorization. The name table itself describes names.",
+              "items": [
+                {
+                  "title": "Name table",
+                  "body": "Save names, suffixes, types, and the full reply."
+                },
+                {
+                  "title": "Service check",
+                  "body": "Confirm the SMB connection and protocol response."
+                },
+                {
+                  "title": "Identity and share",
+                  "body": "Record the identity, share name, and conditions."
+                },
+                {
+                  "title": "Specific file",
+                  "body": "Record the full path, action, and result."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "defense",
+          "heading": "Protect the service according to its purpose",
+          "paragraphs": [
+            "First identify older devices or applications that still depend on NetBIOS. Then plan changes:\n• Systems that need it: limit the networks and sources that can connect.\n• Systems without dependencies: test compatibility before disabling NetBIOS over TCP/IP.\n• Boundary firewalls: expose name services and file sharing only to the intended networks.\n• Unusual queries: review them alongside asset settings and logs.",
+            "After NetBIOS is disabled, directly hosted SMB on TCP 445 may still work. Continue managing its network access, authentication, share permissions, and file permissions separately."
+          ],
+          "blocks": []
+        },
+        {
+          "id": "check",
+          "heading": "One small check",
+          "paragraphs": [
+            "You find LAB-FS <20> UNIQUE. A colleague says, “That means we can already read its shared files.”",
+            "In two or three sentences, what clue do you have? What checks would establish whether you can read a particular file?",
+            "This check awaits your answer. The site does not submit answers or update understanding. Q&A awaits actual questions and discussion. Next is M04-06 SMTP enumeration."
+          ],
+          "blocks": []
+        }
+      ]
+    }
+  }
+}

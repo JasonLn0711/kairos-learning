@@ -1,0 +1,243 @@
+{
+  "id": "ceh-m04-enumeration",
+  "course": "ceh",
+  "module": "m04",
+  "slug": "service-responses-and-enumeration",
+  "revision": 1,
+  "status": "published",
+  "publishedOn": "2026-10-23",
+  "reviewedOn": "2026-10-23",
+  "sourceIds": [
+    "smb",
+    "nmap"
+  ],
+  "terms": [
+    "enumeration",
+    "authorization",
+    "evidence"
+  ],
+  "prerequisites": [
+    "ceh-m03-port-states"
+  ],
+  "related": [
+    "ceh-m06-privilege",
+    "ceh-m05-priority"
+  ],
+  "text": {
+    "zh": {
+      "title": "列舉需要服務回應：445 開啟之後呢？",
+      "summary": "列舉把服務互動轉成具名資源或屬性的證據。從埠狀態到共用清單，中間還有服務識別、身分與存取控制。",
+      "objectives": [
+        "區分掃描、服務識別與列舉結果。",
+        "解釋存取遭拒與空清單各自的限制。"
+      ],
+      "sections": [
+        {
+          "id": "definition",
+          "heading": "從有服務到知道服務提供什麼",
+          "paragraphs": [
+            "列舉（Enumeration）是在有授權的條件下，透過協定回應取得具名資源或屬性，例如共用名稱、目錄項目或服務能力。埠狀態只告訴你該探測看到什麼，還沒列出這些物件。",
+            "SMB 提供網路檔案共享等功能。常見 TCP 445 與 SMB 有關，但看到埠號仍需確認服務及實際回應。服務也可能要求驗證，且不同帳號看到的資源與可執行動作可能不同。"
+          ],
+          "sourceIds": [
+            "smb",
+            "nmap"
+          ]
+        },
+        {
+          "id": "interpret",
+          "heading": "回應是帶條件的證據",
+          "paragraphs": [
+            "若取得 shares=[public, reports]，可描述「在此時間，以此身分，服務回傳兩個共用名稱」。尚未測試讀取或寫入，就不能聲稱每個共用都可讀寫，更不能聲稱取得管理員權限。",
+            "access denied 代表這次請求遭拒，不能證明沒有共用。空清單也應保留帳號、篩選條件與回應狀態；它可能只描述目前身分可見的結果。好的報告會把已取得清單、已驗證權限與未知事項分欄。"
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "例子：三張不同的證據卡",
+        "scenario": "A 卡寫 445/tcp open；B 卡寫 SMB negotiation successful；C 卡寫 authenticated user=lab-reader, shares=[public, reports]。三張卡都來自虛構環境。",
+        "reasoning": "A 支持埠狀態；B 增加協定互動證據；C 才提供具名資源清單。即使 C 存在，讀寫權限仍需另外驗證。",
+        "conclusion": "把 C 記為該身分下的共用列舉結果；讀寫能力保持未知。"
+      },
+      "lab": {
+        "title": "紙上練習：建立列舉證據表",
+        "environment": "只使用本文 A、B、C 卡及 access denied 合成回應，不連接 SMB 主機。",
+        "steps": [
+          "建立四欄：觀察、身分、可以下的結論、仍未知。",
+          "將四個回應各放一列；未提供身分時明列未知。",
+          "為 C 卡寫一句可放進報告的結論，不使用「全面控制」等超出證據的詞。"
+        ],
+        "expected": "只有 C 提供共用名稱；B 提供服務互動；access denied 沒有證明資源不存在。",
+        "check": "若 C 列出 reports，你能否直接說該檔案夾可寫？請說明缺少哪個驗證。",
+        "cleanup": "保留表格作為學習紀錄；沒有登入或網路連線需要清理。"
+      }
+    },
+    "en": {
+      "title": "Enumeration needs service evidence: what follows an open 445?",
+      "summary": "Enumeration turns service interaction into evidence about named resources or attributes. Port state, service identification, identity and access controls are distinct steps.",
+      "objectives": [
+        "Distinguish scanning, service identification and enumeration.",
+        "Explain the limits of access-denied responses and empty lists."
+      ],
+      "sections": [
+        {
+          "id": "definition",
+          "heading": "From detecting a service to identifying resources",
+          "paragraphs": [
+            "Enumeration uses protocol responses within authorized scope to identify named resources or attributes, such as shares, directory entries or service capabilities. A port state describes the probe’s observation; it has not listed those objects.",
+            "SMB supports network file sharing and related functions. TCP 445 is commonly associated with SMB, but a port number still needs service and response confirmation. The service may require authentication, and visible resources or permitted actions can differ by account."
+          ],
+          "sourceIds": [
+            "smb",
+            "nmap"
+          ]
+        },
+        {
+          "id": "interpret",
+          "heading": "A response is conditional evidence",
+          "paragraphs": [
+            "If the service returns shares=[public, reports], report that it returned two share names at that time for that identity. Without testing authorized read or write operations, do not claim those permissions or administrator access.",
+            "Access denied means that request was rejected; it does not prove no shares exist. An empty list also needs identity, filters and response status because it may describe only what that identity can see. Separate returned names, verified permissions and unknowns in the report."
+          ],
+          "sourceIds": []
+        }
+      ],
+      "example": {
+        "title": "Example: three different evidence cards",
+        "scenario": "Card A says 445/tcp open. Card B says SMB negotiation successful. Card C says authenticated user=lab-reader, shares=[public, reports]. All three describe a fictional environment.",
+        "reasoning": "A supports a port-state observation. B adds protocol interaction evidence. C supplies named resources. Even with C, read and write permissions remain separate questions.",
+        "conclusion": "Record C as share enumeration for that identity, leaving read and write capability unknown."
+      },
+      "lab": {
+        "title": "Tabletop exercise: build an enumeration evidence table",
+        "environment": "Use only cards A, B and C and the synthetic access-denied response. Do not connect to an SMB host.",
+        "steps": [
+          "Create columns for observation, identity, supported conclusion and unknowns.",
+          "Add one row per response; explicitly mark missing identity unknown.",
+          "Write a report sentence for C without unsupported claims such as full control."
+        ],
+        "expected": "Only C provides share names. B supports service interaction. Access denied does not establish resource absence.",
+        "check": "If C lists reports, can you claim it is writable? Identify the missing verification.",
+        "cleanup": "Keep the table as your learning artifact. No login or network cleanup is needed."
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "ceh-m04-enum-q1",
+      "concept": "enumeration",
+      "revision": 1,
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "一台主機的 TCP 445 Port 顯示 open。這個結果能否直接證明已列舉出 SMB 共用資料夾？",
+          "options": [
+            "可以，445 開啟就代表已取得共用清單",
+            "不可以，尚須確認服務與實際回應",
+            "可以，代表目前使用者已有管理員權限",
+            "不可以，因為 SMB 一律無法進行列舉"
+          ],
+          "rationales": [
+            "埠狀態沒有包含具名資源清單。",
+            "列舉需要服務層的具體回應證據。",
+            "開埠不證明使用者身分或權限。",
+            "SMB 資源可依授權與設定被列舉；不是一律不能。"
+          ]
+        },
+        "en": {
+          "prompt": "TCP port 445 is open on a host. Does this directly prove that SMB shares have been enumerated?",
+          "options": [
+            "Yes; open 445 means the share list was obtained",
+            "No; the service and actual response still need confirmation",
+            "Yes; the current user has administrator rights",
+            "No; SMB never supports enumeration"
+          ],
+          "rationales": [
+            "The port state contains no named-resource list.",
+            "Enumeration needs concrete service-level response evidence.",
+            "An open port establishes neither identity nor privilege.",
+            "SMB resources can be enumerated subject to permission and configuration."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ceh-m04-enum-q2",
+      "concept": "enumeration",
+      "revision": 1,
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "收到 access denied，最準確的結論是？",
+          "options": [
+            "伺服器上沒有任何共用",
+            "伺服器一定已關機",
+            "這次請求遭拒，資源是否存在仍未知",
+            "已成功列出全部資源"
+          ],
+          "rationales": [
+            "拒絕不等於不存在。",
+            "已收到應用回應，不支持關機結論。",
+            "這保留了回應的條件與限制。",
+            "拒絕沒有提供完整清單。"
+          ]
+        },
+        "en": {
+          "prompt": "What is the most accurate conclusion from access denied?",
+          "options": [
+            "The server has no shares",
+            "The server must be off",
+            "This request was denied; resource existence remains unknown",
+            "All resources were successfully listed"
+          ],
+          "rationales": [
+            "Denial does not mean absence.",
+            "An application response does not support that conclusion.",
+            "This preserves the response’s condition and limit.",
+            "Denial supplies no complete list."
+          ]
+        }
+      }
+    },
+    {
+      "id": "ceh-m04-enum-q3",
+      "concept": "authorization",
+      "revision": 1,
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "共用清單包含 reports，尚未測試任何檔案操作。可聲稱什麼？",
+          "options": [
+            "該回應列出 reports，讀寫權限未知",
+            "reports 一定可寫",
+            "所有使用者都能讀取",
+            "已取得伺服器管理權"
+          ],
+          "rationales": [
+            "名稱與動作權限是不同證據。",
+            "列出名稱不證明寫入權限。",
+            "當前身分結果不能推廣到所有使用者。",
+            "資源清單不證明管理權限。"
+          ]
+        },
+        "en": {
+          "prompt": "The share list includes reports; no file operation was tested. What can be claimed?",
+          "options": [
+            "The response lists reports; read/write permissions are unknown",
+            "reports is necessarily writable",
+            "Every user can read it",
+            "Server administration was obtained"
+          ],
+          "rationales": [
+            "A name and action permissions are different evidence.",
+            "Listing a name does not prove write access.",
+            "One identity’s view cannot be generalized to every user.",
+            "A resource list does not establish administration."
+          ]
+        }
+      }
+    }
+  ],
+  "order": 40
+}

@@ -1,0 +1,357 @@
+{
+  "id": "M04-10",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-10-26",
+  "status": "published",
+  "publishedOn": "2026-10-26",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "先記住一句：LDAP 查到的是「這個身分，在這些搜尋條件下看得到的目錄資料」，不等於能修改物件或取得管理權限。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "10/26 午間：一次學一個核心概念"
+        },
+        {
+          "kind": "heading",
+          "id": "definition",
+          "text": "1. LDAP 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP（Lightweight Directory Access Protocol，輕量型目錄存取協定）讓程式查詢與操作目錄服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目錄像公司的組織通訊錄，依階層整理使用者、群組與資源。它可以用資料庫儲存，但「目錄服務」「底層資料庫」與「LDAP 協定」不是同一件事。Active Directory Domain Services（AD DS）是支援 LDAP 的目錄服務，不是 LDAP 的另一個名字。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 不只支援讀取，也支援修改；本課只談授權範圍內的唯讀列舉。[OpenLDAP 概覽](https://www.openldap.org/doc/admin26/intro.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "uses",
+          "text": "2. 什麼時候用？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在已授權的帳號盤點、故障排除或安全檢查中，用來確認哪些帳號、群組與組織資訊可見。事前要確認目標、使用帳號、可查範圍及資料保存方式，不是能連上就能任意蒐集。"
+        },
+        {
+          "kind": "heading",
+          "id": "search",
+          "text": "3. 看懂目錄與搜尋條件"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Entry（項目）：目錄中的一個物件，例如一位使用者。",
+            "Attribute（屬性）：物件的欄位，例如 cn（常用名稱）、mail（電子郵件）。",
+            "DN（辨別名稱）：項目在目錄中的完整名稱，例如 cn=Mei,ou=People,dc=example,dc=test。ou 是組織單位，dc 是網域名稱的組成部分。",
+            "Base DN：搜尋從哪個項目開始，像先指定要查哪個部門。",
+            "Scope（範圍）：base 只查起點；one 只查直接下一層；sub 查起點及其所有下層。",
+            "Filter（篩選條件）：哪些項目符合要求，例如 (cn=Mei)。",
+            "回傳屬性：找到之後，要取回哪些欄位，不必把所有資料都拿走。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，找到某個名稱，不代表已查完整個組織。結果還會受存取權限、數量及時間等限制。[RFC 4511 搜尋規格](https://www.rfc-editor.org/rfc/rfc4511.html#section-4.5)"
+        },
+        {
+          "kind": "heading",
+          "id": "security",
+          "text": "4. Bind、查詢權限與加密要分開"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Bind 用來建立連線的身分／授權狀態，不是「一成功就有全部讀寫權限」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "匿名 Bind 成功，不代表匿名能列出人員；具名帳號認證成功，也不代表可以修改使用者或群組。實際可做什麼，要看存取控制。[RFC 4513](https://www.rfc-editor.org/rfc/rfc4513.html#section-4)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見的 TCP 389 可以用 StartTLS，在既有 LDAP 連線中啟用 TLS；TCP 636 的 LDAPS 則先建立 TLS，再交換 LDAP 訊息。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以不能把「389」直接當成未加密，也不能只看到「636」就認定安全。要確認 TLS 確實成功、憑證與伺服器身分驗證正確；使用帳號密碼的 simple bind 不應在缺乏適當保護的連線上傳送。[Microsoft LDAP over TLS 說明](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/enable-ldap-over-ssl-3rd-certification-authority)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "5. 一個純合成、唯讀例子"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你獲准用唯讀帳號查詢實驗室通訊錄："
+        },
+        {
+          "kind": "paragraph",
+          "text": "搜尋起點：ou=People,dc=example,dc=test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "範圍：one，只查 People 的直接下一層"
+        },
+        {
+          "kind": "paragraph",
+          "text": "條件：(cn=Mei)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要求欄位：cn、mail"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設回傳："
+        },
+        {
+          "kind": "paragraph",
+          "text": "名稱 Mei，電子郵件 mei@example.test。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這只能證明：在這次身分、範圍與條件下，伺服器回傳了這個項目的指定資料。不能因此說已查完所有帳號、能讀密碼，或擁有網域管理權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使讀到群組成員關係，也還要確認特定資源的授權規則，不能直接當成實際有效權限。這是紙上例子，沒有連線查詢任何設備。"
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "flow",
+            "caption": "網頁補充：一次受限的 LDAP 搜尋",
+            "description": "合成讀取結果；不代表完整盤點或修改權限。",
+            "items": [
+              {
+                "title": "用戶端 → 目錄｜搜尋條件",
+                "body": "Base: ou=People,dc=example,dc=test; one; (cn=Mei); cn, mail"
+              },
+              {
+                "title": "目錄｜依授權與限制處理",
+                "body": "搜尋範圍、條件、讀取權限與查詢限制。"
+              },
+              {
+                "title": "目錄 → 用戶端｜本次回覆",
+                "body": "Mei / mei@example.test"
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-10-search-zh.svg",
+          "downloadLabel": "下載 SVG 圖解"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "6. 防護與證據判讀"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防護重點是限制不必要的匿名讀取、採最小權限、保護連線與認證資訊，並依需要限制查詢來源及範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "紀錄查詢時間、實際身分、Base DN、Scope、Filter、要求欄位、完成狀態與筆數；不要保存密碼或不必要的個資。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要證明匿名資料暴露，應指出「匿名身分實際讀到了哪些資料」，不能只寫 Bind 成功。回傳零筆也不等於資料不存在，可能是範圍、條件、權限或查詢限制的影響。"
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "小檢核："
+        },
+        {
+          "kind": "paragraph",
+          "text": "匿名搜尋回傳零筆結果，為什麼不能直接寫「這個目錄沒有使用者」？請說出兩個還需要確認的因素。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一兩句即可。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Remember: LDAP returns directory data visible to this identity under these search conditions. That does not establish permission to modify objects or administrator privileges.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "October 26 midday: one core concept at a time"
+        },
+        {
+          "kind": "heading",
+          "id": "definition",
+          "text": "1. What is LDAP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP (Lightweight Directory Access Protocol) lets programs query and operate on directory services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A directory resembles an organizational contact list, arranging users, groups, and resources hierarchically. It may store data in a database, but a directory service, its underlying database, and the LDAP protocol are different things. Active Directory Domain Services (AD DS) is a directory service that supports LDAP, not another name for LDAP."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP supports modifications as well as reads; this lesson covers only read-only enumeration within an authorized scope. [OpenLDAP introduction](https://www.openldap.org/doc/admin26/intro.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "uses",
+          "text": "2. When is it useful?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authorized account inventories, troubleshooting, and security reviews use LDAP to determine which accounts, groups, and organizational information are visible. Confirm the target, account, permitted search scope, and data-retention arrangements beforehand. Connectivity alone does not authorize arbitrary collection."
+        },
+        {
+          "kind": "heading",
+          "id": "search",
+          "text": "3. Understanding directories and search conditions"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Entry: an object in the directory, such as a user.",
+            "Attribute: an object's field, such as cn (common name) or mail (email).",
+            "DN (Distinguished Name): the entry's full name in the directory, for example cn=Mei,ou=People,dc=example,dc=test. ou means organizational unit; dc represents a domain component.",
+            "Base DN: the entry where a search begins, like specifying a department to examine first.",
+            "Scope: base examines only the starting entry; one examines only its immediate children; sub examines the starting entry and all descendants.",
+            "Filter: conditions that entries must match, such as (cn=Mei).",
+            "Returned attributes: the fields requested for matching entries; there is no need to collect everything."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finding a name does not establish that the entire organization has been searched. Access rights, size limits, and time limits also affect results. [RFC 4511 search specification](https://www.rfc-editor.org/rfc/rfc4511.html#section-4.5)"
+        },
+        {
+          "kind": "heading",
+          "id": "security",
+          "text": "4. Separate Bind, query permissions, and encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Bind establishes the connection's identity/authorization state. Success does not grant all read and write permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A successful anonymous Bind does not establish anonymous access to personnel listings. Successful named-account authentication does not establish permission to modify users or groups. Access controls determine permitted operations. [RFC 4513](https://www.rfc-editor.org/rfc/rfc4513.html#section-4)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The common TCP 389 service can use StartTLS to enable TLS within an existing LDAP connection. LDAPS on TCP 636 establishes TLS before exchanging LDAP messages."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port 389 alone does not establish unencrypted traffic, and port 636 alone does not establish safety. Confirm successful TLS, certificate validation, and server identity verification. A simple bind using an account name and password should not transmit them over a connection lacking appropriate protection. [Microsoft LDAP over TLS guidance](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/enable-ldap-over-ssl-3rd-certification-authority)"
+        },
+        {
+          "kind": "heading",
+          "id": "example",
+          "text": "5. A purely synthetic, read-only example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are authorized to query a laboratory directory with a read-only account:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Search base: ou=People,dc=example,dc=test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scope: one, only the immediate children of People"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Filter: (cn=Mei)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Requested attributes: cn, mail"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the response contains:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Name Mei, email mei@example.test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This establishes only that the server returned the specified data for this entry under this identity, scope, and filter. It does not establish a complete account inventory, password access, or domain administrator privileges."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even visible group membership requires checking a particular resource's authorization rules before concluding effective access. This is a paper example; no device was queried."
+        },
+        {
+          "kind": "visual",
+          "visual": {
+            "kind": "flow",
+            "caption": "Web supplement: one scoped LDAP search",
+            "description": "Synthetic read result; not a complete inventory or write access.",
+            "items": [
+              {
+                "title": "Client → Directory | Search",
+                "body": "Base: ou=People,dc=example,dc=test; one; (cn=Mei); cn, mail"
+              },
+              {
+                "title": "Directory | Apply access and limits",
+                "body": "Scope, filter, read access, and query limits."
+              },
+              {
+                "title": "Directory → Client | This response",
+                "body": "Mei / mei@example.test"
+              }
+            ]
+          },
+          "src": "/images/ceh/m04-10-search-en.svg",
+          "downloadLabel": "Download SVG diagram"
+        },
+        {
+          "kind": "heading",
+          "id": "defense",
+          "text": "6. Defenses and evidence interpretation"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Restrict unnecessary anonymous reads, apply least privilege, protect connections and authentication information, and restrict query sources and scope as appropriate."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record the query time, actual identity, Base DN, Scope, Filter, requested attributes, completion status, and result count. Do not retain passwords or unnecessary personal data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "To establish anonymous data exposure, identify the data actually read anonymously, rather than merely recording a successful Bind. Zero results do not establish that data does not exist: scope, filters, permissions, or query limits may affect the response."
+        },
+        {
+          "kind": "heading",
+          "id": "check",
+          "text": "Quick check:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Why does an anonymous search returning zero results not justify saying that the directory has no users? Name two factors that still need checking."
+        },
+        {
+          "kind": "paragraph",
+          "text": "One or two sentences are enough."
+        }
+      ]
+    }
+  }
+}
