@@ -51,8 +51,9 @@ for prefix in ['', 'en/']:
  assert (B/f'{prefix}courses/ceh/v13/m04/concepts/m04-02/index.html').is_file()
  assert len(list((B/f'{prefix}courses/ceh/v13/m04/concepts').glob('*/index.html')))==2
  assert f'/{prefix}courses/ceh/v13/m04/concepts/m04-01/' in (B/f'{prefix}courses/ceh/v13/m03/concepts/m03-08/index.html').read_text()
-current=json.loads((R/'content/concepts/ceh26-m04-c01.json').read_text())
-assert hashlib.sha256(json.dumps(dict(text=current['text'],qa=current['qa']),ensure_ascii=False,separators=(',',':')).encode()).hexdigest()=='0b34af70e3490bc8c406a70c8ce380d2920fd57eda756bb0d3e4b0ef5ce2b6e0'
+# Preserve the prior edition guard while allowing the authorized C01 replacement.
+previous=json.loads((R/'docs/sources/ceh26-m04-c01/archive-v1.0.1/concept.json').read_text())
+assert hashlib.sha256(json.dumps(dict(text=previous['text'],qa=previous['qa']),ensure_ascii=False,separators=(',',':')).encode()).hexdigest()=='0b34af70e3490bc8c406a70c8ce380d2920fd57eda756bb0d3e4b0ef5ce2b6e0'
 # Compare unrelated current teaching to this release baseline, preserving newer M03 revisions.
 unchangedBaseline='d8406915d4140574882a08efedda4a84fe98e6be'
 for path in subprocess.check_output(['git','ls-tree','-r','--name-only',unchangedBaseline],cwd=R,text=True).splitlines():

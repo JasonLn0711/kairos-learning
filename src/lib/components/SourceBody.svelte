@@ -18,7 +18,7 @@
   import InlineText from './InlineText.svelte';
   let { blocks, conceptId='', lang='zh' }: {blocks: SourceBlock[];conceptId?:string;lang?:string} = $props();
 </script>
-<div class="source-body">
+<div class="source-body" class:enumeration={conceptId==='CEH26-M04-C01'}>
   {#each blocks as block,i}
     {#if block.kind === 'sourceImage'}
       <figure class="original-image">
@@ -50,6 +50,8 @@
   .reference-answer{border:1px solid var(--line);border-radius:8px;padding:1rem;margin:1.5rem 0;background:var(--soft)}
   .reference-answer summary{cursor:pointer;font-weight:600}
   .table-scroll{max-width:100%;overflow-x:auto;margin:1.5rem 0}
+  .enumeration h3,.enumeration pre{font-size:1rem;line-height:1.75}
+  .enumeration table{font-size:1rem;line-height:1.75}
   table{border-collapse:collapse;width:100%;font-size:.9rem;line-height:1.65}
   th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:.65rem;min-width:7rem}
   th{background:var(--soft)}
