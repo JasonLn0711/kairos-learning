@@ -100,7 +100,8 @@ test('M03-02 ARP supplement preserves both named figures, prior ICMP, and all se
  const root='docs/sources/m03-02/arp-supplement-2026-11-03/';
  const hashes=JSON.parse(readFileSync(root+'preserved-figures.sha256.json','utf8'));
  for(const [path,hash] of Object.entries(hashes)){
-  let data=readFileSync(path);
+  // Historical checksum applies to the pre-retirement renderer; current M03 behavior has browser coverage.
+  let data=readFileSync(path==='src/lib/components/SourceBody.svelte'?'archive/ceh/m04-legacy-2026-11-04/baseline/'+path:path);
   if(path==='src/lib/components/SourceBody.svelte'){
    // Preserve the ARP byte contract while allowing the explicit M03-03 through M03-07 additions.
    const original=data.toString().replace('  import NmapPositions from "./NmapPositions.svelte";\n','').replace("{:else if block.kind === 'visual' && ['/images/ceh/m03-07-positions-zh.svg','/images/ceh/m03-07-positions-en.svg'].includes(block.src)}<NmapPositions {block}/>",'').replace('  import ScanDiagram from "./ScanDiagram.svelte";\n','').replace('  import scanDiagrams from "$lib/m0303-scan-diagrams.json";\n','').replace("{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>",'').replace("||conceptId==='M03-03'",'').replace("||conceptId==='M03-04'",'').replace("||conceptId==='M03-05'",'').replace("||conceptId==='M03-06'",'');

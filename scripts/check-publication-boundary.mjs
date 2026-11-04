@@ -25,7 +25,7 @@ try {
     const path=`content/perspectives/boundary-${i}.json`;
     if(existsSync(path)) throw Error('Reserved perspective fixture exists');
     const p=JSON.parse(readFileSync('tests/fixtures/perspectives/example.json','utf8'));
-    p.id=p.slug=`perspective-boundary-${i}`;p.status=i===0?'draft':'published';p.publishedOn=p.updatedOn=i===0?'2026-01-01':'2099-01-01';
+    p.related=[];p.id=p.slug=`perspective-boundary-${i}`;p.status=i===0?'draft':'published';p.publishedOn=p.updatedOn=i===0?'2026-01-01':'2099-01-01';
     p.text.zh.title=p.text.en.title=markers[i];
     writeFileSync(path,JSON.stringify(p));files.push(path);
   }
@@ -36,7 +36,7 @@ try {
     registry.push({id,module:'m04',title:{zh:'邊界測試',en:'Boundary fixture'}});
     const path=`content/concepts/m04-${98+i}.json`;
     if(existsSync(path)) throw new Error(`Refusing to replace ${path}`);
-    const t=JSON.parse(readFileSync('content/concepts/m04-01.json','utf8'));
+    const t=JSON.parse(readFileSync('tests/fixtures/concept-teaching.json','utf8'));
     t.id=id;t.status=i===0?'draft':'published';t.publishedOn=i===0?'2026-01-01':'2099-01-01';
     t.text.zh.summary=markers[i];t.text.en.summary=markers[i];
     writeFileSync(path,JSON.stringify(t));files.push(path);
