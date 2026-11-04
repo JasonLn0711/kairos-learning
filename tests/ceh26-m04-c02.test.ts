@@ -20,9 +20,9 @@ test('DNS replacement preserves original edition, complete supplied prose, paire
 });
 test('only new C01 and C02 are public and their neighboring publication gates stay intact',()=>{
  assert.equal(concepts.find(c=>c.id===id)?.displayId,'CEH M04-02');
- for(const lang of ['zh','en'] as const){const prefix=lang==='en'?'/en':'';const page=getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-02/`)!;assert.equal(page.conceptTeaching?.id,id);assert.equal(page.conceptNavigation?.previous?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);assert.equal(page.conceptNavigation?.next?.id,'CEH26-M04-C03');assert.equal(page.conceptNavigation?.next?.href,null);assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c02/`),null);
-  for(let i=3;i<=12;i++)assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(i).padStart(2,'0')}/`),null);
+ for(const lang of ['zh','en'] as const){const prefix=lang==='en'?'/en':'';const page=getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-02/`)!;assert.equal(page.conceptTeaching?.id,id);assert.equal(page.conceptNavigation?.previous?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);assert.equal(page.conceptNavigation?.next?.id,'CEH26-M04-C03');assert.equal(page.conceptNavigation?.next?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-03/`);assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c02/`),null);
+  for(let i=4;i<=12;i++)assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(i).padStart(2,'0')}/`),null);
   assert.equal(conceptCatalog.get('M04-02',lang),null);assert.ok(!JSON.stringify(page.conceptTeaching).includes('11774'));
  }
- assert.deepEqual(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')).map(t=>t.id).sort(),['CEH26-M04-C01','CEH26-M04-C02']);
+ assert.deepEqual(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')).map(t=>t.id).sort(),['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03']);
 });
