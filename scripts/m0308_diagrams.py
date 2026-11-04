@@ -5,7 +5,7 @@ HTML flow and these standalone SVGs. No arbitrary runtime SVG is accepted.
 """
 from pathlib import Path
 from html import escape
-import json,sys,unicodedata,zipfile,io,xml.etree.ElementTree as ET
+import json,re,sys,unicodedata,zipfile,io,xml.etree.ElementTree as ET
 from m0903_svg import sanitized_svg,NS
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=ROOT/'docs/sources/m03-08'
@@ -15,8 +15,9 @@ def width(text):
 
 def wrap(text,limit):
  # Chinese may wrap between characters; English stays at spaces.
- tokens=list(text) if any(unicodedata.east_asian_width(c) in 'WF' for c in text) else text.split(' ')
- join='' if tokens==list(text) else ' '
+ mixed=any(unicodedata.east_asian_width(c) in 'WF' for c in text)
+ tokens=re.findall(r'[A-Za-z0-9_./:|\-]+|.',text) if mixed else text.split(' ')
+ join='' if mixed else ' '
  lines=[];current=''
  for token in tokens:
   candidate=current+join+token if current else token
@@ -69,6 +70,8 @@ def make_svg(name,lang,block):
  return result.encode()
 
 def generate():
+ assert wrap('核對NAT',6)==['核對','NAT']
+ assert wrap('match FW-17 rule',11)==['match FW-17','rule']
  models=json.loads((SOURCE/'diagram-models.json').read_text());assert set(models)=={'roles','evidence'}
  targets={};assets={}
  for name,langs in models.items():
