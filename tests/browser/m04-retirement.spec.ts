@@ -26,6 +26,19 @@ for(const lang of ['zh','en']){
   await page.goto(`${prefix}/search/`);await Promise.all([page.waitForResponse(r=>r.url().endsWith('/search-index.json')),page.locator('input[type=search]').fill('M04')]);await expect(page.locator('.reading-list a[href*="/m04/"]')).toHaveCount(0);
   expect(errors).toEqual([]);
  });
+ test(`${lang}: CEH overview distinguishes published lessons and pending M04`,async({page})=>{
+  await page.goto(`${prefix}/courses/ceh/v13/`);
+  const main=page.locator('main');
+  await expect(main.locator('.lead')).toContainText(lang==='zh'?'已發布的章節提供雙語入門閱讀':'Published modules offer bilingual introductory reading');
+  await expect(main.locator('.lead')).toContainText(lang==='zh'?'目前全數待發布':'all units pending publication');
+  await expect(main.locator('p.notice')).toContainText(lang==='zh'?'隨實際教學逐步發布':'will be released as teaching proceeds');
+  await expect(main.locator('p.notice')).toContainText(lang==='zh'?'待發布項目尚無正文':'pending topics have no teaching body');
+  await expect(main.locator('.notice').first()).toContainText(lang==='zh'?'不是 EC-Council 官方教材':'not official EC-Council courseware');
+  await expect(main).not.toContainText(lang==='zh'?'每章都有完整雙語閱讀':'Each module includes complete bilingual reading');
+  await expect(main).not.toContainText(lang==='zh'?'目前從 M04 開始':'starting with M04');
+  const m04=main.locator('.module-list > li').filter({has:page.locator('a[href="'+prefix+'/courses/ceh/v13/m04/"]')});
+  await expect(m04).toContainText(lang==='zh'?'10 個目錄項目，0 篇已整理':'10 topics, 0 available');
+ });
  test(`${lang}: no JavaScript route and neighboring module`,async({browser})=>{
   const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:320,height:900}});const page=await context.newPage();
   await page.goto(`${prefix}/courses/ceh/v13/m04/`);await expect(page.locator('.concept-map li')).toHaveCount(10);
