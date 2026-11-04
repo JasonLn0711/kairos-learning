@@ -1623,3 +1623,4 @@ IDS 可以在防火牆丟棄封包之前，先觀察到對應的流量副本。
 - [NIST SP 800-94](https://csrc.nist.gov/pubs/sp/800/94/final)：入侵偵測與防禦系統的基礎原理。這是較早期的正式指南，適合作為概念參考，而非最新部署指南。
 
 建議先回答第九節的題目一，再用參考解答核對證據與限制；閱讀或展開答案不代表已完成學習驗收。
+[下載本版中英 SVG 圖解 ZIP](https://learn.cs-kairos.com/downloads/ceh-m03-08-v1.1.0-bilingual-svg.zip)

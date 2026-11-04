@@ -77,7 +77,7 @@ def generate():
  for name,langs in models.items():
   assert set(langs)=={'zh','en'}
   for lang,block in langs.items():
-   assert block['src']==f'/images/ceh/m03-08-{name}-{lang}.svg'
+   assert block['src']==f'/images/ceh/m03-08-{name}-{lang}-v1-1-0.svg'
    value=make_svg(name,lang,block);filename=Path(block['src']).name
    assets[filename]=value
    targets[ROOT/'site'/block['src'].lstrip('/')]=value
@@ -86,7 +86,7 @@ def generate():
  with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
   for name,value in sorted(assets.items()):
    info=zipfile.ZipInfo(name,date_time=(2026,11,4,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=0o644<<16;z.writestr(info,value)
- targets[ROOT/'site/downloads/ceh-m03-08-bilingual-svg.zip']=archive.getvalue()
+ targets[ROOT/'site/downloads/ceh-m03-08-v1.1.0-bilingual-svg.zip']=archive.getvalue()
  return targets
 
 if __name__=='__main__':

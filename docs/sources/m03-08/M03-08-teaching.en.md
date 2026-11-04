@@ -1092,3 +1092,5 @@ M03 builds a method for network security analysis: understand packet generation,
 - [NIST SP 800-94](https://csrc.nist.gov/pubs/sp/800/94/final): IDPS fundamentals. This older final guide supports concepts rather than serving as current deployment guidance.
 
 Begin with question 1 in section 9 and compare your reasoning with the reference answer. Reading or opening an answer does not establish learner completion.
+
+[Download this edition’s bilingual SVG ZIP](https://learn.cs-kairos.com/downloads/ceh-m03-08-v1.1.0-bilingual-svg.zip)
