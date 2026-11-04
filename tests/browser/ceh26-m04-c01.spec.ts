@@ -32,7 +32,7 @@ for(const lang of ['zh','en']){
   await page.setViewportSize({width:320,height:900});await page.addStyleTag({content:'html{font-size:200% !important}'});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await answer.locator('summary').focus();await page.keyboard.press('Enter');await expect(answer).toHaveAttribute('open','');await expect(answer.locator('p')).toBeVisible();await page.keyboard.press('Space');await expect(answer).not.toHaveAttribute('open','');
   const pre=page.locator('article pre').first();await pre.focus();await page.keyboard.press('ArrowRight');await expect.poll(()=>pre.evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);expect(await pre.evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
-  const links=page.locator('.next-links a');await expect(links.first()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m03/concepts/m03-08/`);await expect(links.last()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/#ceh26-m04-c02`);
+  const links=page.locator('.next-links a');await expect(links.first()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m03/concepts/m03-08/`);await expect(links.last()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/m04-02/`);
   await page.goto(`${prefix}/search/`);await Promise.all([page.waitForResponse(r=>r.url().endsWith('/search-index.json')),page.locator('input[type=search]').fill('labreader')]);await expect(page.locator(`.reading-list a[href="${url}"]`)).toBeVisible();await page.locator('input[type=search]').fill('CEH26-M04-C01');await expect(page.locator(`.reading-list a[href="${url}"]`)).toBeVisible();
   expect(errors).toEqual([]);
  });
@@ -45,8 +45,8 @@ for(const lang of ['zh','en']){
 }
 
 for(const prefix of ['', '/en'])test(`${prefix||'zh'}: former stable-ID URL is a real 404, public data and sitemap use one canonical`,async({request})=>{
- for(const path of ['ceh26-m04-c01','ceh26-m04-c02','m04-02','m04-09','m04-10','m04-11','m04-12']){const response=await request.get(`${prefix}/courses/ceh/v13/m04/concepts/${path}/`);expect(response.status()).toBe(404);expect(await response.text()).not.toContain('reference-answer');}
+ for(const path of ['ceh26-m04-c01','ceh26-m04-c02','m04-03','m04-09','m04-10','m04-11','m04-12']){const response=await request.get(`${prefix}/courses/ceh/v13/m04/concepts/${path}/`);expect(response.status()).toBe(404);expect(await response.text()).not.toContain('reference-answer');}
  const response=await request.get(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/__data.json`);expect(response.status()).toBe(200);const data=await response.text();expect(data).toContain('CEH26-M04-C01');expect(data).toContain('readme.txt');expect(data).not.toContain('concepts/ceh26-m04-c01/');
- const index=await (await request.get('/search-index.json')).json();const entries=index.filter((e:any)=>e.label==='CEH M04');expect(entries).toHaveLength(2);expect(entries.map((e:any)=>e.id)).toEqual(['CEH26-M04-C01','CEH26-M04-C01']);expect(entries.find((e:any)=>e.lang===(prefix?'en':'zh')).href).toBe(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);
- const sitemap=await (await request.get('/sitemap.xml')).text();expect(sitemap).toContain(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);expect(sitemap).not.toContain('/concepts/ceh26-m04-c');expect(sitemap).not.toMatch(/m04\/concepts\/m04-(?:0[2-9]|1[0-2])\//);
+ const index=await (await request.get('/search-index.json')).json();const entries=index.filter((e:any)=>e.label==='CEH M04');expect(entries).toHaveLength(4);expect(entries.map((e:any)=>e.id)).toEqual(['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C01','CEH26-M04-C02']);expect(entries.find((e:any)=>e.lang===(prefix?'en':'zh')).href).toBe(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);
+ const sitemap=await (await request.get('/sitemap.xml')).text();expect(sitemap).toContain(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);expect(sitemap).not.toContain('/concepts/ceh26-m04-c');expect(sitemap).not.toMatch(/m04\/concepts\/m04-(?:0[3-9]|1[0-2])\//);
 });

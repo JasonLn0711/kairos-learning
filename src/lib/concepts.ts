@@ -49,7 +49,7 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   for (const c of entries) {
     if (!(/^(?:M\d{2}-\d{2}|CEH26-M04-C(?:0[1-9]|10))$/.test(c.id)) || c.module !== conceptModule(c.id) || ids.has(c.id)) fail(`invalid or duplicate ID ${c.id}`);
     for (const lang of ['zh','en'] as const) if (!nonempty(c.title?.[lang])) fail(`${c.id}: missing ${lang} title`);
-    if(c.displayId !== undefined && (c.id !== 'CEH26-M04-C01' || c.displayId !== 'CEH M04-01')) fail(`${c.id}: invalid display identity`);
+    if(c.displayId !== undefined && (!/^CEH26-M04-C(?:0[1-9]|10)$/.test(c.id) || c.displayId !== `CEH M04-${c.id.slice(-2)}`)) fail(`${c.id}: invalid display identity`);
     const path=conceptPath(c.id,'zh');
     if(paths.has(path)) fail(`duplicate public path ${path}`);
     paths.add(path);
