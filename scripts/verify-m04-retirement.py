@@ -13,12 +13,13 @@ with tempfile.TemporaryDirectory(prefix='m04-restore-') as tmp:
 registry=json.loads((R/'content/concepts.json').read_text());units=[c for c in registry if c['module']=='m04']
 assert [c['id'] for c in units]==M['newIds']
 assert not list((R/'content/concepts').glob('m04-*.json'))
-assert not any(json.loads(p.read_text())['id'] in M['newIds'] for p in (R/'content/concepts').glob('*.json'))
-search=json.loads((B/'search-index.json').read_text());assert not any(e['label']=='CEH M04' for e in search)
+assert [json.loads(p.read_text())['id'] for p in (R/'content/concepts').glob('ceh26-m04-*.json')]==['CEH26-M04-C01']
+search=json.loads((B/'search-index.json').read_text());assert {e['id'] for e in search if e['label']=='CEH M04'}=={'CEH26-M04-C01'}
 # Exact retired identifiers/URLs and full unique teaching summaries, Q&A prompts and answers.
 markers=set()
 for item in M['legacyConcepts']:
- markers.update(item['urls']);markers.add(item['id'])
+ markers.update(item['urls'])
+ if item['id']!='M04-01':markers.add(item['id']) # New display alias CEH M04-01 is intentional; legacy URL remains excluded.
  t=json.loads((R/item['archivePath']).read_text())
  for lang in ['zh','en']:
   markers.add(t['text'][lang]['summary'])
@@ -45,10 +46,11 @@ for prefix in ['', 'en/']:
  assert '待發布' in raw if not prefix else 'Pending publication' in raw
  assert not (B/f'{prefix}courses/ceh/v13/m04/quiz').exists()
  assert not (B/f'{prefix}courses/ceh/v13/m04/labs').exists()
- assert not (B/f'{prefix}courses/ceh/v13/m04/concepts').exists()
- assert f'/{prefix}courses/ceh/v13/m04/#ceh26-m04-c01' in (B/f'{prefix}courses/ceh/v13/m03/concepts/m03-08/index.html').read_text()
+ assert (B/f'{prefix}courses/ceh/v13/m04/concepts/ceh26-m04-c01/index.html').is_file()
+ assert len(list((B/f'{prefix}courses/ceh/v13/m04/concepts').glob('*/index.html')))==1
+ assert f'/{prefix}courses/ceh/v13/m04/concepts/ceh26-m04-c01/' in (B/f'{prefix}courses/ceh/v13/m03/concepts/m03-08/index.html').read_text()
 # All other teaching sources and MATLAB static assets retain exact baseline bytes.
 for path in subprocess.check_output(['git','ls-tree','-r','--name-only',M['baselineCommit']],cwd=R,text=True).splitlines():
  if (path.startswith('content/concepts/') and not path.startswith('content/concepts/m04-')) or path.startswith('site/courses/matlab-practice/'):
   assert (R/path).read_bytes()==subprocess.check_output(['git','show',M['baselineCommit']+':'+path],cwd=R),path
-print(f"PASS: {len(M['files'])} archived originals restored byte-for-byte; 10 pending units; {len(outputs)} outputs exclude {len(markers)} retired markers; other concepts and MATLAB unchanged.")
+print(f"PASS: {len(M['files'])} archived originals restored byte-for-byte; 1 published + 9 pending units; {len(outputs)} outputs exclude {len(markers)} retired markers; other concepts and MATLAB unchanged.")

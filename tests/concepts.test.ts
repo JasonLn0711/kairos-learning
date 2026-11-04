@@ -6,7 +6,7 @@ import { compareContentVersions, conceptVersionLabel, createConceptCatalog, type
 import { concepts as currentConcepts, allConceptTeachings as currentTeachings, getPage } from '../src/lib/server/catalog.ts';
 const archived=JSON.parse(readFileSync('archive/ceh/m04-legacy-2026-11-04/registry.json','utf8'));
 const concepts=[...currentConcepts.filter(c=>c.module!=='m04'),...archived];
-const allConceptTeachings: ConceptTeaching[]=[...currentTeachings,...archived.map((c:{id:string})=>JSON.parse(readFileSync(`archive/ceh/m04-legacy-2026-11-04/content/concepts/${c.id.toLowerCase()}.json`,'utf8')))];
+const allConceptTeachings: ConceptTeaching[]=[...currentTeachings.filter(t=>!t.id.startsWith('CEH26-M04-')),...archived.map((c:{id:string})=>JSON.parse(readFileSync(`archive/ceh/m04-legacy-2026-11-04/content/concepts/${c.id.toLowerCase()}.json`,'utf8')))];
 const first=allConceptTeachings.find(t=>t.id==='M04-01')!;
 function second(): ConceptTeaching {
   const t=structuredClone(first);t.id='M04-02';delete t.checks;
