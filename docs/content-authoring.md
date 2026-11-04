@@ -40,7 +40,7 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
-Current M04 contract (2026-11-04): ten new stable IDs; C01 is published and C02–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01 is currently the sole published unit. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
+Current M04 contract (2026-11-04): ten new stable IDs; C01–C02 are published and C03–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C02 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
 
 `content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
@@ -329,8 +329,12 @@ M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 
 
 ## 新版 M04 第一課（2026-11-04）
 
-`CEH26-M04-C01` 使用正式網址 `concepts/m04-01/`，顯示別名為 `CEH M04-01`；內部 stable ID 與舊教材分開，舊正文不恢復。完整雙語原稿、單題參考答案與雜湊在 [來源目錄](sources/ceh26-m04-c01/README.md)。以 `python3 scripts/ceh26_m04_c01_content.py --check` 核對原稿產物。沿既有 sourceBody 與 publication gate，qa 為空；參考答案不代表學員回答。C02–C10 仍只有目錄。當前目錄公開數量依 catalog 計算；歷史全待發布狀態保留在遷移回執。
+`CEH26-M04-C01` 使用正式網址 `concepts/m04-01/`，顯示別名為 `CEH M04-01`；內部 stable ID 與舊教材分開，舊正文不恢復。完整雙語原稿、單題參考答案與雜湊在 [來源目錄](sources/ceh26-m04-c01/README.md)。以 `python3 scripts/ceh26_m04_c01_content.py --check` 核對原稿產物。沿既有 sourceBody 與 publication gate，qa 為空；參考答案不代表學員回答。C03–C10 仍只有目錄。當前目錄公開數量依 catalog 計算；歷史全待發布狀態保留在遷移回執。
 
 ### M04 公開 slug 契約
 
 依使用者明確要求，`conceptSlug` 將內部 `CEH26-M04-C01…C10` 對應到 `m04-01…m04-10`，`conceptPath` 是路由、目錄、導覽、搜尋與 sitemap 的共用入口。不要以公開 slug 反推 stable ID，也不要建立 legacy teaching ID。catalog 檢查公開路徑碰撞；沒有公開 teaching 的項目仍只有目錄錨點。中英相同規則；原 `/concepts/ceh26-m04-c01/` 明確 404，不產生第二份正文或另設 client-only redirect。canonical／hreflang／page JSON 均指向目前正式 slug。網址修正以 C01 v1.0.1 記錄，原發布日保留，正文／原稿與 qa 不變；[遷移回執](releases/2026-11-04-m04-public-slugs.md)保留先前網址歷史。
+
+## 新版 M04 第二課 DNS（2026-11-04）
+
+`CEH26-M04-C02` 顯示為 `CEH M04-02`，公開路徑固定 `concepts/m04-02/`，不公開 ceh26 前綴 slug。完整繁中原稿 SHA-256 為 `744c93e7d07c7a82131aaae007957decd1dccf4a6339c2322feda45d67c9471d`，與英譯及參考答案保存在[來源目錄](sources/ceh26-m04-c02/README.md)。執行 `python3 scripts/ceh26_m04_c02_content.py --check` 核對既有 sourceBody 產物。十一節正文直接顯示，唯一參考答案預設收合；qa 為空。C01 不變，C03–C10 保持待發布，舊 DNS 原稿／Q&A／SVG 留在非輸出歸檔。

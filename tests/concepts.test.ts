@@ -68,7 +68,7 @@ test('visuals have searchable text and reject missing descriptions',()=>{
   assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'),/invalid visual/);
 });
 
-test('retired DNS route is absent',()=>assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-02/'),null));
+test('reused DNS URL resolves only the new stable ID',()=>assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-02/')?.conceptTeaching?.id,'CEH26-M04-C02'));
 
 test('semantic content versions preserve legacy revisions and sort numerically',()=>{
  assert.equal(first.revision,10);assert.equal(first.contentVersion,'2.0.2');
