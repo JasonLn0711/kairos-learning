@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ProtectionDiagram from "./ProtectionDiagram.svelte";
   import NmapPositions from "./NmapPositions.svelte";
   import ScanDiagram from "./ScanDiagram.svelte";
   import scanDiagrams from "$lib/m0303-scan-diagrams.json";
@@ -26,12 +27,12 @@
         <ReadableDiagramText src={block.src} {lang}/>
         <figcaption>{block.caption}</figcaption>
       </figure>
-    {:else if block.kind === 'visual' && ['/images/ceh/m03-07-positions-zh.svg','/images/ceh/m03-07-positions-en.svg'].includes(block.src)}<NmapPositions {block}/>{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in discoveryDiagrams}<DiscoveryDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in transportDiagrams}<TransportDiagram {block} {lang}/>{:else if block.kind === 'visual' && networkDiagram(block.src)}<NetworkDiagram {block} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
+    {:else if block.kind === 'visual' && ['/images/ceh/m03-08-roles-zh.svg','/images/ceh/m03-08-roles-en.svg','/images/ceh/m03-08-evidence-zh.svg','/images/ceh/m03-08-evidence-en.svg'].includes(block.src)}<ProtectionDiagram {block} {lang}/>{:else if block.kind === 'visual' && ['/images/ceh/m03-07-positions-zh.svg','/images/ceh/m03-07-positions-en.svg'].includes(block.src)}<NmapPositions {block}/>{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in discoveryDiagrams}<DiscoveryDiagram {block} {lang}/>{:else if block.kind === 'visual' && block.src in transportDiagrams}<TransportDiagram {block} {lang}/>{:else if block.kind === 'visual' && networkDiagram(block.src)}<NetworkDiagram {block} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
 
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>
     {:else if block.kind === 'paragraph'}<p><InlineText text={block.text} /></p>
-    {:else if block.kind === 'code'}{#if readingGuide(conceptId,lang)||conceptId==='M03-02'||conceptId==='M03-03'||conceptId==='M03-04'||conceptId==='M03-05'||conceptId==='M03-06'}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontally scrolling code.) --><pre tabindex="0" role="region" aria-label={lang==='zh'?'可捲動程式碼或文字範例':'Scrollable code or text example'}><code>{block.text}</code></pre>{:else}<pre><code>{block.text}</code></pre>{/if}
+    {:else if block.kind === 'code'}{#if readingGuide(conceptId,lang)||conceptId==='M03-02'||conceptId==='M03-03'||conceptId==='M03-04'||conceptId==='M03-05'||conceptId==='M03-06'||conceptId==='M03-08'}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to horizontally scrolling code.) --><pre tabindex="0" role="region" aria-label={lang==='zh'?'可捲動程式碼或文字範例':'Scrollable code or text example'}><code>{block.text}</code></pre>{:else}<pre><code>{block.text}</code></pre>{/if}
     {:else if block.kind === 'answer'}<details class="reference-answer" id={block.id}><summary><InlineText text={block.summary}/></summary>{#each block.paragraphs as paragraph}<p><InlineText text={paragraph}/></p>{/each}</details>
     {:else if block.kind === 'list'}<ul>{#each block.items as item}<li><InlineText text={item} /></li>{/each}</ul>
     {:else if block.kind === 'table'}
