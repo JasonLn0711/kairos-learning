@@ -1,3 +1,3 @@
 import {defineConfig} from '@playwright/test';
-const evidence='.local/ceh26-m04-c01/'+(process.env.CEH_BASE_URL?'live':'local');
+const evidence='.local/m04-public-slugs/'+(process.env.CEH_BASE_URL?'live':'local');
 export default defineConfig({testDir:'tests/browser',testMatch:['ceh26-m04-c01.spec.ts','m04-retirement.spec.ts'],workers:2,timeout:60000,outputDir:evidence+'/browser',reporter:[['list'],['json',{outputFile:evidence+'/results.json'}]],use:{baseURL:process.env.CEH_BASE_URL||'http://127.0.0.1:4199',headless:true,trace:'retain-on-failure'},webServer:process.env.CEH_BASE_URL?undefined:{command:'python3 -m http.server 4199 --bind 127.0.0.1 --directory build',url:'http://127.0.0.1:4199/',reuseExistingServer:false}});

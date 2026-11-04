@@ -19,11 +19,11 @@ for(const lang of ['zh','en']){
   await page.keyboard.press('Tab');expect(await page.locator(':focus').count()).toBe(1);
   expect(await page.locator(':focus').evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
   await page.goto(`${prefix}/courses/ceh/v13/m03/concepts/m03-08/`);
-  const next=page.locator('.next-links a').last();await expect(next).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c01/`);await next.click();await expect(page.locator('h1')).toContainText('CEH M04-01');
-  for(const path of ['concepts/m04-01/','concepts/m04-12/','concepts/ceh26-m04-c02/','service-responses-and-enumeration/','quiz/','labs/'])expect((await request.get(`${prefix}/courses/ceh/v13/m04/${path}`)).status()).toBe(404);
+  const next=page.locator('.next-links a').last();await expect(next).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);await next.click();await expect(page.locator('h1')).toContainText('CEH M04-01');
+  for(const path of ['concepts/ceh26-m04-c01/','concepts/m04-12/','concepts/ceh26-m04-c02/','service-responses-and-enumeration/','quiz/','labs/'])expect((await request.get(`${prefix}/courses/ceh/v13/m04/${path}`)).status()).toBe(404);
   expect((await request.get('/images/ceh/m04-01-access-results.svg')).status()).toBe(404);
   expect((await request.get('/archive/ceh/m04-legacy-2026-11-04/manifest.json')).status()).toBe(404);
-  await page.goto(`${prefix}/search/`);await Promise.all([page.waitForResponse(r=>r.url().endsWith('/search-index.json')),page.locator('input[type=search]').fill('M04')]);await expect(page.locator('.reading-list a[href*="/m04/"]')).toHaveCount(1);await expect(page.locator('.reading-list a[href*="/m04/"]')).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c01/`);
+  await page.goto(`${prefix}/search/`);await Promise.all([page.waitForResponse(r=>r.url().endsWith('/search-index.json')),page.locator('input[type=search]').fill('M04')]);await expect(page.locator('.reading-list a[href*="/m04/"]')).toHaveCount(1);await expect(page.locator('.reading-list a[href*="/m04/"]')).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);
   expect(errors).toEqual([]);
  });
  test(`${lang}: CEH overview distinguishes published lessons and pending M04`,async({page})=>{

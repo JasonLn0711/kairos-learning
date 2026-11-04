@@ -249,7 +249,7 @@ test('new-route IDs use the shared publication gate without reusing historical I
  fixture.id='CEH26-M04-C01';fixture.status='draft';
  assert.equal(createConceptCatalog(currentConcepts,[fixture],'2026-11-04').get(fixture.id,'zh'),null);
  fixture.status='published';const published=createConceptCatalog(currentConcepts,[fixture],'2026-11-04');
- assert.equal(published.list('en').find(c=>c.id===fixture.id)?.href,'/en/courses/ceh/v13/m04/concepts/ceh26-m04-c01/');
+ assert.equal(published.list('en').find(c=>c.id===fixture.id)?.href,'/en/courses/ceh/v13/m04/concepts/m04-01/');
  assert.equal(published.get(fixture.id,'en')?.navigation.next?.id,'CEH26-M04-C02');
  assert.equal(published.get('M04-01','en'),null);
  fixture.publishedOn='2099-01-01';assert.equal(createConceptCatalog(currentConcepts,[fixture],'2026-11-04').get(fixture.id,'en'),null);
