@@ -1,199 +1,1117 @@
-# CEH M04-01 | Scanning finds an entry point; enumeration asks for information
+# CEH M04-01 | Scanning finds the entrance; enumeration asks for information
 
-Enumeration vs. Scanning · First lesson of the new route
+Enumeration vs. Scanning | A complete plain-language lesson
 
-M03 asks which hosts respond, which service entry points are open, and what services might be running. From this lesson onward, we take the question one step further: **What specific information will the service disclose, and what can that information actually prove?**
+Course: CEH 2026 · Module 04 — Enumeration
 
-First, we will understand the principles shared by enumeration tasks. SMB is only our example; you do not need to memorize the tools and ports for DNS, LDAP and SNMP at the same time.
+Lesson: [CS Kairos Learn — M04-01](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-01/)
 
-## 1. Imagine a filing cabinet: seeing it does not mean you can open its drawers
+Scope: complete sections 1–10, conceptual Q&A, and understanding checks.
 
-Suppose a company commissions you to assess a server used to share documents.
+The hosts, accounts, paths, and outputs below are hypothetical teaching scenarios, not records of tests performed against real equipment in this revision.
 
-You might obtain several different results in sequence:
+## Before you begin | The central distinction
 
-1. Find the device's network address.
-2. Discover that one of its service entry points accepts connections.
-3. Confirm that this entry point provides a file-sharing service.
-4. Obtain shared-folder names, such as Public and Finance.
-5. Actually read a test file agreed upon in advance.
+The lesson develops one idea:
 
-These five observations are different things. Knowing about a filing cabinet named Finance does not mean you have seen its documents, and certainly does not mean you can modify them.
+> Discovering an available network service does not establish what resources it contains or whether you may use them.
 
-**The central idea of this lesson: information about a resource, permission to read it, and permission to modify it require separate verification.**
+Think of the CEH modules as investigating an office building:
 
-The building and filing cabinet are only explanatory analogies. In real networks, identity checks, queries and permission decisions may be interleaved; they do not always follow the sequence above.
+| Learning stage | Everyday question | Technical activity |
+|---|---|---|
+| M02 Reconnaissance | Where is the building, and which company owns it? | Reconnaissance |
+| M03 Scanning | Which entrances exist, and which doors receive an answer? | Scanning |
+| M04 Enumeration | Which departments, rooms, and resources are available? | Enumeration |
+| M05 Vulnerability analysis | Is information or access exposed contrary to policy? | Vulnerability Analysis |
+| M06 System hacking | Can an authorized test demonstrate the impact of a weakness? | System Hacking |
 
-## 2. Scanning and enumeration ask different questions
+This is a concept map, not a mandatory order for every engagement.
 
-Start with three basic terms:
-
-- IP address: an address used to locate a device on a network.
-- Port: a number that lets one device distinguish different network services. Include the transport protocol when describing it, such as TCP 445 rather than just 445.
-- Protocol: the rules used by both parties to communicate, including how to make a request and indicate success or failure.
-
-**Scanning is like checking an entry point.**
-
-It asks, “Does this device respond? Is TCP 445 open, closed, or currently indeterminate?” These results describe the network state observed in this particular test. Testing from inside the company network and from outside may produce different results. [Nmap: port states](https://nmap.org/book/man-port-scanning-basics.html)
-
-**Enumeration queries a service to obtain specific items or attributes.**
-
-For example: “What share names are available? What accounts or groups exist? What attributes do directory objects have?” In this lesson's file-server example, obtaining the names Public and Finance is an enumeration result.
-
-Two other related activities are:
-
-- Reconnaissance: collecting background information and target clues, such as domains, hostnames and system purposes. It can be active or passive.
-- Vulnerability analysis: using evidence to assess configuration, version or permission problems and their potential impact. We will study this more deeply in M05.
-
-Using a scanning tool does not mean every action is only scanning. A tool may also identify a service, obtain a version, or query a resource list. **Classify the activity by the question you ask and the evidence you obtain, rather than by the tool's name alone.**
-
-## 3. The first common mistake: what does 445 open actually prove?
-
-Everything below is a synthetic teaching scenario. No tests were performed against real devices. The IP represents a hypothetical isolated practice environment; a private IP address does not mean you have permission to test it.
-
-Suppose the practice host is 192.168.56.10 and you run the following within the approved test scope:
+For example, M03 introduced Nmap. You find:
 
 ```text
+192.168.56.10
+
+PORT      STATE    SERVICE
+445/tcp   open     microsoft-ds
+```
+
+You know TCP 445 is open. You might next ask:
+
+1. Does this endpoint actually provide SMB file sharing?
+2. Which shares does the server provide?
+3. Can I discover their names?
+4. Can I read their files?
+5. Can I modify their files?
+
+These questions can have different answers. M04 teaches you to query services and judge exactly what their responses establish.
+
+---
+
+# Section 1 | Seeing a filing cabinet does not mean opening its drawers
+
+## 1.1 Understand it through a company records room
+
+Suppose you are a security engineer asked to examine a company file server. Think of the server as a records room containing several cabinets:
+
+```text
+                   Company file server
+                     192.168.56.10
+                            │
+                   SMB file service
+                       TCP 445
+                            │
+             ┌──────────────┼──────────────┐
+             │              │              │
+           Public         Finance        Archive
+         Public share   Finance data  Historical data
+```
+
+Consider five progressively different observations.
+
+First: you know where the records room is.
+
+You know the server's IP address, `192.168.56.10`, but not which services it provides.
+
+Second: you find an entrance.
+
+Nmap reports TCP 445 open. An application accepts TCP connections at that port. No folder has yet been demonstrated.
+
+Third: you identify the entrance as a file-sharing service.
+
+Protocol identification confirms SMB. This is like confirming that the building actually provides a records room.
+
+Fourth: you learn cabinet names.
+
+A query returns:
+
+```text
+Public
+Finance
+Archive
+```
+
+This is enumeration. You have learned three share names; you have not established permission to read their contents.
+
+Fifth: you read a specific file.
+
+Using a company-provided test account, you successfully read:
+
+```text
+Public/demo.txt
+```
+
+This establishes that the identity and conditions used at that time allowed reading this particular file. It does not establish access to other files or permission to modify anything.
+
+### 1.2 What this section establishes
+
+Separate four capabilities:
+
+| Capability | Meaning | Does it establish the next capability? |
+|---|---|---|
+| Discover a service | An endpoint responds | No |
+| List resource names | Learn which share names are returned | No |
+| Read a particular file | Successfully obtain its contents | No |
+| Modify a particular file | Demonstrate modification of that file | Not permission to modify other files |
+
+The same distinction applies elsewhere. Seeing a folder name in a NAS interface does not establish that you can enter it. Entering a folder does not establish permission to delete files. Distinguish visibility, entry, reading, and modification in a security test.
+
+---
+
+# Section 2 | Scanning and enumeration ask different questions
+
+## 2.1 Review three foundations
+
+This section connects directly with M03.
+
+### IP address: which device are you contacting?
+
+An IP address acts like a device's network address:
+
+```text
+192.168.56.10
+```
+
+It identifies the device to contact in this scenario. Knowing an IP does not identify the services it provides.
+
+### Port: which service endpoint are you contacting?
+
+One computer can provide several services:
+
+| Port | Common use |
+|---|---|
+| TCP 22 | SSH remote administration |
+| TCP 80 | HTTP website |
+| TCP 443 | HTTPS website |
+| TCP 445 | SMB file sharing |
+| TCP 3389 | RDP remote desktop |
+
+These are common associations, not guarantees. A port is a transport-layer endpoint number, not proof of an application's identity. An application listening on TCP 443 is not necessarily an HTTPS server.
+
+### Protocol: which communication rules do both sides use?
+
+A protocol defines communication rules. In a bank, speaking arbitrary numbers at a counter does not cause a transfer; you must make a request in the required form.
+
+Likewise, querying an SMB server requires an SMB-compatible request:
+
+- Nmap can help determine endpoint state.
+- `smbclient` can make specific requests to an SMB server.
+
+These activities ask different questions.
+
+## 2.2 Scanning versus enumeration
+
+Imagine an auditor authorized by the company.
+
+### Scanning: check the service endpoint
+
+You ask whether anyone answers at the door. A reply supports:
+
+```text
+TCP 445: open
+```
+
+### Enumeration: query service information
+
+You then ask which shares are available. The service returns:
+
+```text
+Public
+Finance
+Archive
+```
+
+You now have specific service-provided information in addition to an open endpoint. That is enumeration.
+
+### 2.3 A common source of confusion
+
+Does Nmap always mean scanning, while another tool always means enumeration? No. Classify the activity by the question you ask and the evidence returned.
+
+Nmap can also perform service detection and run scripts that obtain detailed information. When a tool queries specific resources or attributes, that portion of its work has an enumeration purpose. CEH module names organize concepts; they do not confine each tool to one phase.
+
+The [Nmap state documentation](https://nmap.org/book/man-port-scanning-basics.html) also explains that a result describes an observation from a particular position, rather than an unchanging conclusion for all network positions.
+
+---
+
+# Section 3 | What does 445 open actually establish?
+
+This section develops evidence interpretation.
+
+## 3.1 Start with the command
+
+In an authorized isolated practice environment:
+
+```bash
 nmap -p 445 192.168.56.10
 ```
 
-The synthetic output is:
+| Component | Meaning |
+|---|---|
+| `nmap` | Run the network scanning tool |
+| `-p` | Select ports to scan |
+| `445` | Check TCP 445 in this example |
+| `192.168.56.10` | Target IP address |
+
+Suppose the output is:
 
 ```text
-PORT      STATE   SERVICE
-445/tcp   open    microsoft-ds
+PORT      STATE    SERVICE
+445/tcp   open     microsoft-ds
 ```
 
-Read each part:
+Read each field separately.
 
-- 445/tcp: this test concerns TCP 445.
-- open: Nmap determines that a program accepts TCP connections at this entry point.
-- microsoft-ds: in a basic scan without service/version detection, this is usually a service name looked up by port number. This label alone does not establish that the SMB protocol has been verified.
+### 445/tcp
 
-SMB (Server Message Block) is a network resource-sharing protocol, commonly used to let clients access files on a server. Modern SMB carried directly over conventional TCP commonly uses 445; this does not mean SMB can only use 445 in every environment. This lesson uses that common scenario only. [Microsoft: SMB overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)
-
-The reasonable next step is therefore to identify actual service responses within the approved scope, rather than announce that you have obtained files. Nmap service/version detection sends probes to services and analyzes their responses. Even identifying a service, however, does not establish that a particular file can be read. [Nmap: service and version detection](https://nmap.org/book/man-version-detection.html)
-
-## 4. Starting enumeration: ask the service what shares it provides
-
-Suppose protocol responses have now confirmed that the host provides SMB. The company has also supplied a test account, labuser, and authorized queries for share names.
-
-Our question is: “Which shared resources can this identity discover?”
-
-A commonly used SMB client on Linux is smbclient. For now, understand what each part of the command does; you do not need to install or run it:
+The probe concerns:
 
 ```text
+Transport protocol: TCP
+Port: 445
+```
+
+### open
+
+Nmap interprets the response as an application accepting connections at this port. It does not establish:
+
+- Successful login.
+- Permission to read files.
+- An exploitable vulnerability.
+
+### microsoft-ds
+
+A beginner might read this label as confirmed SMB identification. In this basic scan, which does not enable service/version detection, it is normally the common service name associated with port 445 in Nmap's database.
+
+A door labeled “Library” is a clue; it does not establish what service is actually operating inside. Keep the label separate from protocol evidence.
+
+## 3.2 How can you investigate further?
+
+Nmap provides:
+
+```bash
+-sV
+```
+
+This enables service/version detection. For example:
+
+```bash
+nmap -sV -p 445 192.168.56.10
+```
+
+It sends probes to the service and analyzes replies to identify the application and possibly its version. Even successfully identifying SMB does not establish file-read permission. See [Nmap service/version detection](https://nmap.org/book/man-version-detection.html).
+
+## 3.3 What is SMB?
+
+SMB means Server Message Block. It is a protocol for sharing network resources, commonly folders and files on another computer:
+
+```text
+Your Windows computer
+       │ SMB protocol
+       ▼
+Company file server
+       └── \\fileserver\Public
+```
+
+Entering this path in Windows File Explorer may access a remote SMB share:
+
+```text
+\\fileserver\Public
+```
+
+Linux can also use SMB. The protocol is not confined to Windows or exclusively to TCP 445; modern Windows supports other SMB transports too. See the [Microsoft SMB overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview).
+
+## 3.4 The basic SMB exchange
+
+A simplified exchange is:
+
+```text
+SMB Client — your computer
+          │
+          │ SMB Request: list shares
+          ▼
+SMB Server — company file server
+          │ Check identity and access permissions
+          │
+          │ SMB Response: information permitted for disclosure
+          ▼
+SMB Client
+    Public
+    Finance
+    Archive
+```
+
+Real SMB may involve protocol negotiation, authentication, session establishment, and separate resource permission checks. The diagram omits these details to explain the request/response relationship.
+
+An open port is a transport-level connection observation. Confirming specific service behavior requires additional protocol-level evidence.
+
+---
+
+# Section 4 | Enumeration asks the service which shares it provides
+
+This section applies enumeration to SMB.
+
+## 4.1 Meet smbclient
+
+`smbclient` is an SMB client supplied by the Samba project. It communicates with an SMB server from a terminal, much as File Explorer provides a graphical way to interact with shares in Windows.
+
+Its capabilities include:
+
+- Querying the server's shares.
+- Connecting to a particular share.
+- Listing folder contents when permitted.
+- Transferring files when permitted.
+
+See the [official Samba manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html) for options and behavior.
+
+## 4.2 Read the command one parameter at a time
+
+The company provides this test account:
+
+```text
+labuser
+```
+
+You are authorized to query share information:
+
+```bash
 smbclient -L 192.168.56.10 -p 445 -U labuser
 ```
 
-- smbclient: a client program that communicates with an SMB server.
-- -L: query the list of resources provided by the server.
-- -p 445: specify the TCP port used in this practice scenario.
-- -U labuser: specify the test account to use.
+| Parameter | Meaning |
+|---|---|
+| `smbclient` | Run the SMB client |
+| `-L` | Request a list of the server's shares |
+| `192.168.56.10` | Server to query |
+| `-p 445` | Use TCP 445 |
+| `-U labuser` | Make the request using labuser |
 
-If the tool needs a password, let it request one at the prompt. Do not put the password directly in the command, notes or screenshots. Success still depends on the account, domain, login method and service configuration; this example is not a login method guaranteed to work unchanged in every environment. [Samba: official smbclient manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)
+If a password is required, enter it at the interactive prompt. Do not append it to the command, where it could be exposed in shell history or process information.
 
-Suppose this simplified synthetic output is returned:
+### 4.3 What might the server return?
+
+Suppose it returns:
 
 ```text
-Sharename    Type
----------    ----
-Public       Disk
-Finance      Disk
-Archive      Disk
+Sharename       Type
+---------       ----
+Public          Disk
+Finance         Disk
+Archive         Disk
 ```
 
-Sharename is the share name; Disk indicates a file-storage share. **This list contains share names, rather than all the files inside them or a list of permissions.**
+Sharename is a resource name, not a list of the files inside it. For example:
 
-Windows NetShareEnum is an official interface for retrieving information about SMB shares. Its information levels differ: some return only names, while others include types and descriptions. More detailed queries may require additional privileges. This also shows that access to information is not simply an all-or-nothing choice. [Microsoft: NetShareEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)
+```text
+Finance
+```
 
-Remember that the returned list may be limited by identity, query method and configuration. **A resource missing from this particular list does not necessarily mean the resource does not exist.**
+This may name a departmental share.
 
-## 5. Separate authentication, access authorization and permission to test
+Type describes the resource category:
 
-**Authentication answers “Who are you?”**
+```text
+Disk
+```
 
-For example, the server accepts the test account's login information and establishes a corresponding session.
+Here it indicates a file-storage share; it does not grant access to the whole disk.
 
-**Access authorization answers “What can this identity do?”**
+### 4.4 What does seeing Finance establish?
 
-For example, it may list resource names but read only some of the files, without modifying them. [Microsoft: authentication and authorization](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)
+Given:
 
-Some information can be queried without logging in; other information requires authentication first. Do not memorize “enumerate first, log in later” as a fixed sequence, or equate “no login required” directly with a vulnerability.
+```text
+Finance    Disk
+```
 
-The company's **permission to test** is separate. It determines which hosts you may test, which accounts you may use, and which actions you may perform.
+A defensible statement is that the server returned a share named Finance under this query's conditions. It does not establish that you obtained financial reports.
 
-A system permitting an operation does not mean the assessment scope authorizes you to perform it. Conversely, even with legitimate permission to test, the system may reject an operation based on account permissions.
+You obtained:
 
-This lesson assumes that only list queries and reading specified test files are approved. We do not guess passwords, switch to unapproved accounts, or create, modify or delete files merely to prove that writing is possible.
+```text
+A share name
+```
 
-## 6. Record four outcomes separately in the same example
+Not:
 
-Suppose the same labuser, from the same practice network, obtains these results:
+```text
+File contents
+```
 
-- Public: its name was listed, and reading the agreed demo.txt succeeded.
-- Finance: its name was listed, but a read request for the agreed path was denied.
-- Archive: its name was listed, but reading was not tested.
-- All resources: writing, modification and deletion were not tested.
+Or:
 
-These are four separate pieces of evidence, rather than a progress bar where one successful step unlocks everything.
+```text
+Modification permission
+```
 
-**A successful Public read** supports only that this identity read the specified file under these test conditions. It cannot establish that everyone can read it, that all of Public is readable, or that modification is possible.
+A server may tailor its response to the account identity. Another account may receive a different result.
 
-**A denied Finance read** supports that this read request for the specified path was rejected. It cannot establish that Finance contains no data or that all accounts would be denied. The error text alone also cannot establish the reason for denial. If rejection occurred before entering the folder, this failed attempt alone cannot even prove that the file inside exists.
+### 4.5 Understand the system-design purpose
 
-**Archive was not tested**, so the result is unknown. “It should be the same” cannot substitute for success or failure.
+Listing shares is often normal functionality. A company might want employees to discover:
 
-**Writing was not tested**, so that result is unknown too. Successful reading is not evidence of successful writing.
+```text
+Public
+HR
+Finance
+Engineering
+```
 
-On a Windows file server, both share permissions and file-system permissions can affect SMB access to NTFS files. When you see Access Denied, preserve the original error, confirm the actual identity, and use approved administration or auditing methods to establish the cause. Do not simply disable security settings. Microsoft's troubleshooting guidance also calls for identifying the cause and checking share and NTFS permissions. [Microsoft: interpreting denied SMB access](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)
+It need not let every employee enter every department's share. Permitting a name query and refusing a subsequent read are compatible policies.
 
-## 7. Does obtaining information mean you found a vulnerability?
+Microsoft's [NetShareEnum interface](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum) also queries share information, with permissions varying by information level.
 
-Not necessarily. Providing a resource list may be normal functionality.
+Enumeration obtains concrete service information. Information visibility and resource access remain separate questions.
 
-For example, a company may want employees to know which departmental shares exist while restricting access to their files. Visible names do not automatically establish a financial-data leak.
+---
 
-To assess risk, consider three things together:
+# Section 5 | Authentication, resource authorization, and test permission are different
 
-1. What was disclosed: only ordinary names, or sensitive projects, accounts or internal structure?
-2. To whom: expected employees, guests, or an identity that should not receive the information?
-3. Whether it fits the requirements: does the business need this visibility, and does organizational policy permit it?
+The three concepts are:
 
-An ordinary account reading test data it should not access provides more specific evidence of a permission problem. You must still identify the account, data and operation, rather than exaggerate a limited result into control of the entire server.
+1. Authentication: confirming identity.
+2. Authorization: permitting an action on a resource.
+3. Testing authorization: the engagement's permission to perform a test.
 
-**An open service, visible information, a configuration problem, an exploitable vulnerability, and obtained data are different conclusions. Each further conclusion needs corresponding evidence.**
+They answer different questions.
 
-## 8. Protect information and operations, rather than only hiding names
+## 5.1 Authentication: who are you?
 
-Consider three levels:
+An employee badge lets the entrance system check that you are a registered employee. A successful identity check is authentication.
 
-- **Network scope:** allow only the devices and networks that need to connect to the service. In ordinary enterprise SMB scenarios, TCP 445 should not be exposed arbitrarily to the Internet. Confirm legitimate business needs and test the impact before changing network rules. [Microsoft: securing SMB traffic](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic)
-- **Information and access permissions:** decide which identities may obtain information, read files or modify files according to their work needs. Hiding names can reduce exposure; actual data protection still requires correct access control. [Microsoft: access control](https://learn.microsoft.com/en-us/windows/security/identity-protection/access-control/access-control)
-- **Logging and verification:** configure appropriate auditing, then use approved identities to verify that required actions still work and prohibited actions are restricted. Missing log entries do not necessarily mean no query occurred; auditing may not be enabled or may cover the wrong scope.
+A computer system similarly may verify:
 
-For example, if the goal is that ordinary accounts must not read financial files, verify their read results alongside normal use by authorized finance accounts. Checking only that a name disappeared has not verified protection of the actual data.
+```text
+Username: labuser
+Password: ********
+```
 
-## 9. Write a result that others can understand and verify
+It can then process subsequent requests under a particular identity. Successful login does not grant every permission. You may log into a company NAS while still being unable to read a manager's private folder.
 
-A poor statement is: “We found Finance and have compromised the financial share.”
+## 5.2 Authorization: what may you do?
 
-A more precise statement is:
+After entering the office, you still may not enter every area:
 
-“In this approved practice scenario, labuser queried 192.168.56.10 from the specified test network and obtained the share names Public, Finance and Archive. Reading the specified Public test file succeeded, reading the specified Finance path was denied, and Archive and all write operations were not tested.”
+```text
+Company office
+    ├── General work area
+    ├── Meeting room
+    ├── Finance room
+    └── Server room
+```
 
-In an actual record, also include the time, tool and version, complete command, original output and test limitations. Keep passwords and unrelated sensitive data out of the report.
+For example:
 
-The key is: **which identity, under which conditions, performed which action against which target, what happened, and what remains unknown.**
+| Resource | General employee | Finance employee | Administrator |
+|---|---|---|---|
+| Public documents | Read | Read | Read |
+| Finance documents | No read access | Read/write | According to job requirements |
+| System configuration | No modification | No modification | Administer |
 
-When we later study DNS, LDAP or SNMP, we will reuse the same reasoning. The objects queried will change to name records, directory objects or device-management information.
+This is a hypothetical permission design, not a universal company standard. Authentication identifies the requester; authorization determines which operations that identity may perform on a particular resource. See [Microsoft's explanation](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization).
 
-## 10. One small check for today
+## 5.3 Testing authorization: does the engagement permit this test?
 
-In another authorized practice scenario, you use labreader to discover the Projects share name and successfully read the specified readme.txt inside Projects. You have not tested other files or modification.
+A security engineer must also establish the commissioning organization's permission. Suppose your NAS test scope is:
 
-A colleague concludes: “So we now have read and write permission for every file in Projects.”
+```text
+Target:
+192.168.56.10
 
-**How would you correct this statement in your own words, explaining what is confirmed and what remains unknown?**
+Allowed:
+✓ Scan specified ports
+✓ Query SMB share names
+✓ Log in as labuser
+✓ Read a specified test file
 
-Keep the explanation simple. This question checks today's central idea; it does not establish mastery of the entire module, and you do not need to operate any host now.
+Not allowed:
+✗ Guess other employees' passwords
+✗ Download non-test data
+✗ Modify production files
+✗ Delete data
+```
+
+Even if the system technically permits reading a sensitive file, the engagement may prohibit that action. Technical capability and test permission are separate.
+
+### 5.4 Consider the three questions together
+
+```text
+A proposed access request
+          ▼
+Authentication
+Who are you?
+          ▼
+Authorization
+What does the system permit?
+          ▼
+Test Permission
+Is this within the approved test scope?
+```
+
+The first two are normally system security mechanisms. Test permission must be checked before executing the security test; it is not a third automatic SMB protocol verification step. The diagram organizes the questions rather than prescribing protocol timing.
+
+### 5.5 A common exam distinction
+
+Suppose a user successfully authenticates to an SMB server but cannot read Finance. If authentication succeeded and a permission policy refused the read, the issue concerns authorization.
+
+In practice, investigate the actual failure. The words Access Denied alone do not identify a particular incorrect permission setting.
+
+Authentication establishes identity, authorization checks an operation's permissions, and test permission defines what the engineer is allowed to test.
+
+---
+
+# Section 6 | Record different outcomes separately in the same scenario
+
+This section practices evidence interpretation.
+
+## 6.1 Suppose these are the results
+
+The company supplies:
+
+```text
+labuser
+```
+
+An approved NAS query returns:
+
+```text
+Public
+Finance
+Archive
+```
+
+Authorized, specified read tests then produce:
+
+| Resource | Name returned | Specified file read | Write test |
+|---|---|---|---|
+| Public | Success | Success | Not tested |
+| Finance | Success | Denied | Not tested |
+| Archive | Success | Not tested | Not tested |
+
+Read each outcome independently.
+
+## 6.2 Public: successful read
+
+Suppose you successfully read:
+
+```text
+Public/demo.txt
+```
+
+This establishes that labuser read this file under the current network, identity, and test conditions. It does not establish:
+
+- Read access to every file in Public.
+- The same access for another account.
+- Permission to modify files in Public.
+- Permission to create or delete files.
+
+Different files may have different permissions. One successful operation supports only its tested scope.
+
+## 6.3 Finance: denied read
+
+A request against the specified test path returns:
+
+```text
+NT_STATUS_ACCESS_DENIED
+```
+
+This establishes that the request was refused. Several causes are possible.
+
+Situation A: insufficient share permissions.
+
+A NAS might apply:
+
+```text
+Finance
+
+Allow:
+FinanceGroup
+
+Deny:
+General employees
+```
+
+An ordinary employee would then lack access.
+
+Situation B: insufficient file-system permissions.
+
+On Windows, access may depend on NTFS permissions as well as share permissions:
+
+```text
+SMB share layer
+    │ Connection allowed
+    ▼
+NTFS file-system layer
+    │ Reading not allowed
+    ▼
+Access Denied
+```
+
+A share-layer permission need not imply that the underlying file system permits the read. Microsoft's [SMB Access Denied troubleshooting guidance](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share) calls for checking identity, relevant security settings, and permissions rather than immediately disabling protections.
+
+Situation C: a refusal need not establish file existence.
+
+Suppose a request for:
+
+```text
+Finance/salary.xlsx
+```
+
+is denied. Does `salary.xlsx` necessarily exist? No. If access was refused while connecting to the share, the test never established the file's existence. Record the actual operation and the point of refusal without inventing internal files.
+
+## 6.4 Archive: not tested
+
+You discovered Archive but did not test further:
+
+```text
+Name visible: yes
+Read permission: unknown
+Write permission: unknown
+```
+
+Public's successful read does not establish Archive read access. Finance's refusal does not establish Archive refusal. An unperformed test is neither a failed test nor a successful test.
+
+## 6.5 Why record the distinctions?
+
+Security assessment draws inferences from evidence. Mixing operations can overstate risk:
+
+```text
+Observation:
+The Finance share name is visible.
+
+Unsupported conclusion:
+Financial data has been obtained.
+
+Supported conclusion:
+This query returned the share name;
+reading its contents has not been established.
+```
+
+The same reasoning applies to Web APIs, LDAP, DNS, cloud storage, and identity systems. Record success, refusal, or not tested separately for every operation; a local outcome does not establish a whole-system conclusion.
+
+---
+
+# Section 7 | Does queryable information mean a vulnerability was found?
+
+Not necessarily. Queryable information may be normal functionality or an information-disclosure risk. Its content, recipients, and business purpose determine the assessment.
+
+## 7.1 An everyday example
+
+A hospital lobby shows:
+
+```text
+1F: Registration
+2F: Outpatient clinics
+3F: Laboratory
+4F: Administrative offices
+```
+
+The public can read it. This is normally intentional assistance, not a vulnerability.
+
+If the public display instead includes:
+
+```text
+Internal administration account names
+Employees' personal information
+Confidential server login information
+```
+
+it may be inappropriate disclosure. Judge which information is given to which people and whether that matches organizational security requirements.
+
+## 7.2 A simple assessment framework
+
+```text
+Information can be queried
+          ▼
+① What is the information?
+Names? Personal data? Secrets?
+          ▼
+② Who can obtain it?
+Employees? Guests? External users?
+          ▼
+③ Does it meet business needs?
+Is disclosure allowed by policy?
+          ▼
+Assess risk
+```
+
+### First question: what information is it?
+
+Compare:
+
+```text
+Public
+```
+
+with:
+
+```text
+Confidential_Merger_Project
+```
+
+The names reveal different kinds of information. A name alone still does not establish the contents or their actual sensitivity.
+
+### Second question: who can obtain it?
+
+Finance staff seeing a finance-share name may be expected. An unrelated guest discovering substantial sensitive internal-system information warrants further assessment.
+
+### Third question: does it serve a business need?
+
+Some information must be public for a service to work. Patients need to discover clinical departments; they do not need internal database accounts or confidential document paths. Evaluate disclosure in its operational context.
+
+## 7.3 From enumeration to vulnerability analysis
+
+```text
+Enumeration
+    │ Discover:
+    │ An ordinary user can query the Finance share name
+    ▼
+Vulnerability Analysis
+    │ Investigate:
+    │ Does visibility match policy?
+    │ Does the account have unintended permissions?
+    ▼
+Risk Assessment
+    │ Evaluate:
+    │ Which assets could be affected?
+    │ What are the business consequences?
+    ▼
+Remediation
+    └── Correct inappropriate settings and verify
+```
+
+M04 and M05 activities can overlap. M04 helps discover specific information; M05 investigates weaknesses and potential consequences. Assess information alongside asset sensitivity, identity, and intended policy before labeling it a vulnerability.
+
+---
+
+# Section 8 | Protect information and operations, rather than only hiding names
+
+Suppose ordinary employees can discover:
+
+```text
+Finance
+```
+
+Would hiding the name make the system secure? It may reduce exposure, but security still depends on access control.
+
+## 8.1 First layer: network access control
+
+Determine which devices may connect to SMB:
+
+```text
+                     Company network
+                      /           \
+            Employee computer    External network
+                     │                │
+                Firewall check   Firewall check
+                     │                │
+                 Rule permits       Not allowed
+                     │                ✕
+                 NAS TCP 445
+```
+
+This limits unnecessary direct access to file services. Set actual policy according to users, devices, business needs, and network architecture. Ordinary internal enterprise SMB should not be exposed arbitrarily on public TCP 445. See [Microsoft's SMB network hardening guidance](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic).
+
+## 8.2 Second layer: resource access control
+
+Passing the firewall and reaching the NAS does not permit reading everything:
+
+```text
+NAS
+ ├── Public
+ │    └── General employees may read
+ ├── Finance
+ │    └── Authorized finance staff only
+ └── Admin
+      └── Authorized administrators only
+```
+
+Apply least privilege: grant only permissions needed for the work. Reading an announcement need not include modifying or deleting it. This can limit the capabilities available through a compromised account, but least privilege alone does not prevent every attack.
+
+## 8.3 Third layer: logging and auditing
+
+If an account repeatedly queries SMB resources or requests unauthorized files, an investigator may need:
+
+```text
+Which account?
+At what time?
+From which device?
+Which resource?
+Did the operation succeed or fail?
+```
+
+Suitable logging and audit settings provide that evidence. An absent log does not establish that nothing happened; the relevant logging may simply have been disabled.
+
+## 8.4 An integrated protection model
+
+```text
+User / device
+      ▼
+Layer 1: network controls
+Which sources may connect?
+      ▼
+Layer 2: authentication
+Confirm identity
+      ▼
+Layer 3: authorization
+Read? Write? Delete?
+      ▼
+Layer 4: logging and auditing
+Record relevant operations and outcomes
+```
+
+This simplified model organizes controls. Real logs may be generated at every layer, and permission checks may recur.
+
+SMB signing and SMB encryption can protect message integrity or confidentiality. These transport protections do not replace file-access permissions.
+
+### 8.5 A useful counterexample
+
+Suppose Finance is hidden, but an unauthorized account can still read a financial document through a known path. The problem remains: removing a room's nameplate does not stop everyone from opening its door.
+
+Hiding names manages information exposure. Effective access control must restrict the operations that should not be permitted.
+
+---
+
+# Section 9 | Report the result so others can understand and verify it
+
+A security engineer must turn tool results into a checkable report.
+
+## 9.1 An unsupported report
+
+You execute:
+
+```bash
+smbclient -L 192.168.56.10 -p 445 -U labuser
+```
+
+and obtain:
+
+```text
+Public
+Finance
+Archive
+```
+
+Reporting “We broke into the company's Finance folder” makes an unsupported jump. You obtained:
+
+```text
+A successfully listed name
+```
+
+The report instead claims:
+
+```text
+A successfully compromised system
+```
+
+The second statement is not established by the first observation.
+
+## 9.2 A more defensible report
+
+You could write:
+
+> In this authorized test, labuser queried SMB shares on 192.168.56.10 from the designated test network and received Public, Finance, and Archive. A subsequent specified test file in Public was readable. The specified Finance-path read was denied. Archive access and all write operations were not tested.
+
+This states:
+
+- The identity used.
+- The target.
+- The operations performed.
+- The results obtained.
+- The remaining unknowns.
+
+It keeps the recipient from mistaking an untested risk for an established outcome.
+
+## 9.3 A reusable reporting framework
+
+Use the following reasoning in M04, M05, and authorized professional tests:
+
+| Element | Question | Example |
+|---|---|---|
+| Scope | What was in scope? | 192.168.56.10 |
+| Identity | Which identity was used? | labuser |
+| Action | What was done? | Query SMB shares |
+| Observation | What was observed? | Three share names returned |
+| Evidence | What supports the observation? | Command and original output |
+| Limitation | What remains unconfirmed? | Writes were not tested |
+| Assessment | What risk does this represent? | Evaluate against permission policy |
+
+Observation and assessment are different:
+
+```text
+Observation:
+labuser can discover the Finance share name.
+```
+
+```text
+Assessment:
+Check whether Finance-name visibility is intended for labuser.
+```
+
+Without additional evidence, do not turn the observation into a claim of major data leakage.
+
+## 9.4 Further professional practice
+
+Retain the date and time, source position, tool version, exact commands, relevant output, scope limits, and reasons for the risk assessment. When a problem needs correction, propose remediation and verification:
+
+```text
+Finding:
+An unintended account can read a specified sensitive test file.
+
+Possible cause:
+Share or file-system permissions do not match policy.
+
+Remediation:
+Review relevant groups and resource permissions.
+
+Verification:
+Repeat the specified read with the original account;
+also verify that legitimate users can still work normally.
+```
+
+A folder name disappearing after a change does not establish that the original improper operation was blocked. Retest that operation. A useful report lets someone understand, verify, and reproduce an observation while separating confirmed results from unknowns.
+
+---
+
+# Section 10 | One small conceptual check
+
+The purpose is evidence interpretation rather than memorizing commands. First organize the lesson into a model.
+
+## 10.1 Build this concept map
+
+```text
+Target host
+      ▼
+① Discover endpoint
+TCP 445 open
+      ▼
+② Identify protocol
+Confirm SMB service
+      ▼
+③ Query resource information
+Public / Finance
+      ▼
+④ Test a specified operation
+Read / modify, as authorized
+      ▼
+⑤ Analyze evidence
+Does the outcome match policy?
+```
+
+This is a learning and reasoning route, not a fixed communication sequence. Match each observation to the conclusion it actually supports:
+
+```text
+Observation A:
+445 open
+
+Supports:
+An endpoint accepted this probe.
+
+Observation B:
+Finance share name returned
+
+Supports:
+The name can be queried under these conditions.
+
+Observation C:
+Specified test-file read succeeded
+
+Further supports:
+The identity used could read that file at that time.
+```
+
+Other untested behavior remains unknown.
+
+## 10.2 The final distinctions
+
+Remember:
+
+First: a service existing does not permit use of all its resources.
+
+Second: a visible resource name does not establish readable contents.
+
+Third: reading one specified file does not establish full read/write permissions over the folder.
+
+These distinctions organize the lesson.
+
+---
+
+# Supplement | Conceptual Q&A
+
+These are supplementary teaching questions, separate from actual learner-submitted Q&A records.
+
+### Q1: how does enumeration differ from scanning?
+
+Scanning primarily discovers hosts and port/service states. Enumeration queries concrete information such as shares, users, groups, or directory objects. They overlap: one tool can perform both activities.
+
+### Q2: does TCP 445 open establish a vulnerability?
+
+No. It normally establishes that the endpoint is reachable from the current position. Evaluate the actual service, version, configuration, permissions, and exposure before identifying a vulnerability.
+
+### Q3: must you log in before enumeration?
+
+Not always. Some services offer unauthenticated queries; others require authentication for particular information. An unauthenticated query is not automatically a vulnerability.
+
+### Q4: how do smbclient -L and Nmap differ?
+
+For example:
+
+```bash
+nmap -p 445 192.168.56.10
+```
+
+checks TCP 445's state, while:
+
+```bash
+smbclient -L 192.168.56.10 -p 445 -U labuser
+```
+
+attempts to query SMB shares using the specified identity. The first observes an endpoint; the second asks for application-protocol information.
+
+### Q5: are SMB and NAS the same thing?
+
+No. Network Attached Storage (NAS) is a device or system providing storage over a network. SMB is one protocol for network file sharing:
+
+```text
+NAS
+ ├── SMB
+ │    └── Network file sharing
+ ├── NFS
+ │    └── Another network file-access protocol
+ └── HTTPS
+      └── Web administration interface
+```
+
+A NAS may provide SMB alongside other services. NAS is not limited to SMB, and SMB is not limited to NAS devices.
+
+### Q6: why begin M04 with SMB?
+
+The first lesson establishes enumeration principles. DNS, LDAP, and SNMP later repeat the same questions: what information is queried, under which identity, with what result, and what does that result establish? This framework makes subsequent techniques easier to interpret.
+
+---
+
+# Lesson summary | A knowledge framework
+
+| Topic | Central knowledge | Practical purpose |
+|---|---|---|
+| Reconnaissance | Gather target background | Develop investigative leads |
+| Scanning | Identify endpoints and states | Understand observable services |
+| Enumeration | Query concrete resources and attributes | Understand exposed information |
+| SMB | Network file-sharing protocol | Recognize a common file service |
+| Authentication | Confirm identity | Identify the requester |
+| Authorization | Control permitted operations | Protect resources |
+| Information Disclosure | Assess inappropriate disclosure | Identify potential risk |
+| Access Control | Restrict unintended operations | Reduce unauthorized access |
+| Evidence | Preserve checkable observations | Avoid unsupported conclusions |
+| Reporting | State operations and limits | Support remediation and decisions |
+
+### Further reading
+
+These official documents connect the concepts with real systems:
+
+- [Nmap — Port Scanning Basics](https://nmap.org/book/man-port-scanning-basics.html): the meaning of port states.
+- [Microsoft — SMB Overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview): SMB operation and client/server roles.
+- [Samba — smbclient Manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html): client options and commands.
+- [Microsoft — SMB Secure Traffic](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic): network protection and security settings.
+
+---
+
+## Understanding check | Try answering
+
+In an authorized laboratory test environment, you execute:
+
+```bash
+nmap -p 445 192.168.56.20
+```
+
+and receive:
+
+```text
+445/tcp open microsoft-ds
+```
+
+You then use the test account:
+
+```bash
+smbclient -L 192.168.56.20 -U student
+```
+
+and obtain:
+
+```text
+Sharename      Type
+---------      ----
+Public         Disk
+Research       Disk
+Admin          Disk
+```
+
+You have not connected to these shares or read any files.
+
+Question 1: which operation is scanning and which is enumeration? Explain why.
+
+Question 2: can you claim that student has read access to Research and Admin? Explain your reasoning.
+
+Question 3: as the reporting engineer, how would you describe confirmed facts and remaining unknowns?
+
+Answer first, then compare your reasoning and limits with the reference answer. This check connects with M04-02: DNS Enumeration. Reading or opening an answer does not establish learner completion.
