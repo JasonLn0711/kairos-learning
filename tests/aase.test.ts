@@ -9,7 +9,7 @@ const lessons=readdirSync('content/aase/lessons').map(f=>read('content/aase/less
 const sources=read('content/aase/sources.json') as AaseSource[];
 const catalog=(ls=lessons,c=course)=>createAaseCatalog(c,ls,sources,'2026-11-05');
 test('AASE has independent 49 IDs, nine modules and exact workshop allocation',()=>{
- const c=catalog();assert.equal(c.concepts.length,49);assert.equal(c.lessons.length,7);
+ const c=catalog();assert.equal(c.concepts.length,49);assert.equal(c.lessons.length,13);
  assert.equal(course.modules.reduce((n,m)=>n+m.minutes,0),600);
  assert.equal(course.modules.reduce((n,m)=>n+m.practiceMinutes,0),150);
  for(const mutate of [(c:AaseCourse)=>{c.modules[0].minutes++;},(c:AaseCourse)=>{c.modules[0].concepts[0].id='M01-01';},(c:AaseCourse)=>{c.modules[0].concepts.pop();}]){const c=structuredClone(course);mutate(c);assert.throws(()=>catalog(lessons,c));}
@@ -43,7 +43,7 @@ test('only published AASE routes exist; pending neighbors land on directory anch
 test('AASE adopts CEH field names without losing original teaching, examples or answer keys',()=>{
  for(const l of lessons.filter(l=>['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id))){
   const old=read('docs/sources/aase/layout-2026-11-05/'+l.id.toLowerCase()+'.json');
-  assert.equal(l.publishedOn,old.publishedOn);assert.equal(l.date,'2026-11-05');assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,old.revision+1);
+  assert.equal(l.publishedOn,old.publishedOn);assert.equal(l.date,'2026-11-05');const codeScrollPatched=['AASE-M03-C01','AASE-M05-C03'].includes(l.id);assert.equal(l.contentVersion,codeScrollPatched?'1.0.2':'1.0.1');assert.equal(l.revision,old.revision+(codeScrollPatched?2:1));
   assert.equal(l.text.zh.summary,old.summary);assert.deepEqual(l.text.zh.objectives,old.objectives);assert.deepEqual(l.text.zh.exercise,old.exercise);assert.deepEqual(l.qa,[]);
   assert.equal(l.text.zh.sections.length,old.sections.length);assert.equal(l.checks.length,old.checks.length);
   for(const [i,s] of l.text.zh.sections.entries()){

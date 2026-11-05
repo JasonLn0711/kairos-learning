@@ -19,7 +19,7 @@
   {:else if block.kind === 'details'}
     <section class="concept-detail"><h4>{block.heading}</h4>{#each block.paragraphs as p}<p><InlineText text={p} /></p>{/each}</section>
   {:else if block.kind === 'step'}
-    <section><h3 id={block.id}>{block.heading}</h3>{#each block.paragraphs as p}<p><InlineText text={p} /></p>{/each}{#if block.code}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable code needs keyboard access.) --><div class="code-region" role="region" aria-label={block.heading+' code'} tabindex="0"><pre><code>{block.code}</code></pre></div>{/if}</section>
+    <section><h3 id={block.id}>{block.heading}</h3>{#each block.paragraphs as p}<p><InlineText text={p} /></p>{/each}{#if block.code}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable code needs keyboard access.) --><div class="code-region" role="region" aria-label={block.heading+' code'} tabindex="0"><pre style="max-width:none;overflow:visible;min-width:max-content"><code>{block.code}</code></pre></div>{/if}</section>
   {/if}
 {/each}
 <style>
