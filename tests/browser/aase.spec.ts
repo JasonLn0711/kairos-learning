@@ -45,7 +45,7 @@ test('registry, search, directory gates, CEH regression and download bytes',asyn
  const data=await (await request.get('/search-index.json')).json();
  const list=Array.isArray(data)?data:data.entries;expect(list.filter((e:any)=>e.id.startsWith('AASE-M'))).toHaveLength(lessons.length);
  await page.goto('/search/');await page.locator('#search-query').fill('結果過期');await page.getByRole('button',{name:'搜尋',exact:true}).click();await expect(page.locator('.reading-list a[href="/courses/aase/v1/m05/concepts/m05-03/"]')).toBeVisible();
- const pending=await request.get('/courses/aase/v1/m07/concepts/m07-01/');expect(pending.status()).toBe(404);
+ const pending=await request.get('/courses/aase/v1/m08/concepts/m08-01/');expect(pending.status()).toBe(404);
  expect((await request.get('/en/courses/aase/v1/')).status()).toBe(404);
  await page.goto('/courses/ceh/v13/m01/concepts/m01-01/');await expect(page.locator('.module-rail')).toBeVisible();
  for(const name of ['aase-v1-workshop.zip','SHA256SUMS.txt']){const res=await request.get('/downloads/aase/'+name);expect(res.status()).toBe(200);expect(await res.body()).toEqual(readFileSync('site/downloads/aase/'+name));}
