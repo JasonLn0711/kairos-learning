@@ -1,5 +1,6 @@
-import {createAaseCatalog,aaseModulePath,type AaseLesson,type AaseSource} from '../aase.ts';
+import {createAaseCatalog,aaseModulePath,type AaseCourseTranslation,type AaseLesson,type AaseSource} from '../aase.ts';
 import aase from '../../../content/aase/course.json' with { type: 'json' };
+import aaseEnglish from '../../../content/aase/course.en.json' with { type: 'json' };
 import {readingText} from '../article-reading.ts';
 import {diagramText} from '../perspective-diagrams.ts';
 import {validatePerspectives, type Perspective} from '../perspectives.ts';
@@ -27,8 +28,8 @@ export const perspectives = allPerspectives.filter(p=>isPublic(p,new Intl.DateTi
 searchEntries.push(...perspectives.flatMap(p=>(['zh','en'] as Locale[]).map(lang=>({id:p.id,lang,title:p.text[lang].title,summary:p.text[lang].summary,text:p.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.list??[]),s.code??'',...(s.diagram?diagramText(s.diagram):[]),...(s.table?[...s.table.headers,...s.table.rows.flat()]:[])]).join(' '),href:localized(`/perspectives/${p.slug}/`,lang),label:lang==='zh'?'觀點':'Perspectives'}))));
 const aaseSources=JSON.parse(readFileSync(join(root,'aase/sources.json'),'utf8')) as AaseSource[];
 const allAaseLessons=readdirSync(join(root,'aase/lessons')).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(readFileSync(join(root,'aase/lessons',f),'utf8')) as AaseLesson);
-export const aaseCatalog=createAaseCatalog(aase,allAaseLessons,aaseSources,new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));
-searchEntries.push(...aaseCatalog.searchEntries);
+export const aaseCatalog=createAaseCatalog(aase,allAaseLessons,aaseSources,new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),aaseEnglish as AaseCourseTranslation);
+searchEntries.push(...aaseCatalog.searchEntries,...(aaseCatalog.forLanguage('en')?.searchEntries??[]));
 export type Kind = 'aase' | 'aase-concept' | 'aase-workshop' | 'perspectives' | 'perspective' | 'concept' | 'home' | 'ceh' | 'module' | 'lesson' | 'quiz' | 'lab' | 'course' | 'glossary' | 'search' | 'review' | 'standards';
 export type Route = { path: string; kind: Kind; lang: Locale; lessonId?: string; moduleId?: string; courseId?: string; perspectiveId?: string; conceptId?: string };
 export const routes: Route[] = (['zh','en'] as Locale[]).flatMap(lang => [
@@ -46,9 +47,12 @@ export const routes: Route[] = (['zh','en'] as Locale[]).flatMap(lang => [
   ...['ai-ml','networking'].map(courseId=>({path:localized(`/courses/${courseId}/`,lang),kind:'course' as Kind,lang,courseId})),
   ...(['glossary','search','review','standards'] as const).map(kind => ({path:localized(`/${kind}/`,lang),kind,lang}))
 ]);
-routes.push({path:'/courses/aase/v1/',kind:'aase',lang:'zh',courseId:'aase'}, ...aase.modules.map(m=>({path:`/courses/aase/v1/${m.id}/`,kind:'aase' as Kind,lang:'zh' as Locale,courseId:'aase',moduleId:m.id})));
-routes.push({path:'/courses/aase/v1/workshop/',kind:'aase-workshop',lang:'zh',courseId:'aase'},...aaseCatalog.concepts.filter(c=>c.lesson).map(c=>({path:c.href,kind:'aase-concept' as Kind,lang:'zh' as Locale,courseId:'aase',moduleId:c.module,conceptId:c.id})));
-searchEntries.push({id:'AASE',lang:'zh',title:aase.title,summary:aase.subtitle,text:aase.modules.map(m=>m.title).join(' '),href:'/courses/aase/v1/',label:'AASE · 課程規劃'});
+for(const lang of ['zh','en'] as const){
+  const catalog=aaseCatalog.forLanguage(lang);if(!catalog)continue;
+  routes.push({path:localized('/courses/aase/v1/',lang),kind:'aase',lang,courseId:'aase'},...catalog.modules.map(m=>({path:aaseModulePath(m.id,lang),kind:'aase' as Kind,lang,courseId:'aase',moduleId:m.id})));
+  routes.push({path:localized('/courses/aase/v1/workshop/',lang),kind:'aase-workshop',lang,courseId:'aase'},...catalog.concepts.filter(c=>c.lesson).map(c=>({path:c.href,kind:'aase-concept' as Kind,lang,courseId:'aase',moduleId:c.module,conceptId:c.id})));
+  searchEntries.push({id:'AASE',lang,title:catalog.title,summary:catalog.subtitle,text:catalog.modules.map(m=>m.title).join(' '),href:localized('/courses/aase/v1/',lang),label:lang==='zh'?'AASE · 課程規劃':'AASE · Course map'});
+}
 export function getPage(path: string) {
   const route = routes.find(r => r.path === path);
   if (!route) return null;
@@ -60,9 +64,10 @@ export function getPage(path: string) {
   const activePerspective=perspectives.find(p=>p.id===route.perspectiveId);
   const relatedLearning=(activePerspective?.related??[]).flatMap(r=>{if(r.kind==='lesson'){const l=index.find(l=>l.id===r.id);return l?[{title:l.title,href:l.href}]:[];}const c=conceptCatalog.list(lang).find(c=>c.id===r.id&&c.href);return c?[{title:c.title[lang],href:c.href!}]:[];});
   const relatedPerspectives=perspectiveLinks.filter(p=>perspectives.find(x=>x.id===p.id)!.related.some(r=>r.kind==='lesson'?r.id===route.lessonId:r.id===route.conceptId));
-  const aaseConcept=aaseCatalog.concepts.find(c=>c.id===route.conceptId);
-  const aaseAt=aaseCatalog.concepts.findIndex(c=>c.id===route.conceptId);
-  const aaseNavigation=(route.kind==='aase-concept'?(['previous','next'] as const).flatMap((side,i)=>{const c=aaseCatalog.concepts[aaseAt+(i===0?-1:1)];return c?[{side,displayId:'AASE '+c.slug.toUpperCase(),title:c.title,href:c.lesson?c.href:aaseModulePath(c.module)+'#'+c.slug,pending:!c.lesson}]:[]}):[]);
-  return { aaseModules:route.kind.startsWith('aase')?aase.modules.map(m=>({id:m.id,title:m.title})):[],aaseLinks:route.kind==='search'?aaseCatalog.searchEntries.map(({title,href})=>({title,href})):[],aaseConcept:route.kind==='aase-concept'?aaseConcept:null,aaseConcepts:(route.kind==='aase'?aaseCatalog.concepts:[]).map(({lesson,...c})=>({...c,available:Boolean(lesson)})),aaseSources:aaseSources.filter(s=>aaseConcept?.lesson?.sourceIds.includes(s.id)),aaseNavigation,route, perspectiveLinks, relatedLearning, relatedPerspectives, perspectives:route.kind==='perspectives'?perspectives:[], perspective:perspectives.find(p=>p.id===route.perspectiveId), module, selected, index, modules, conceptTeaching: route.conceptId ? conceptCatalog.get(route.conceptId,lang)?.teaching ?? null : null, conceptNavigation: route.conceptId ? conceptCatalog.get(route.conceptId,lang)?.navigation ?? null : null, concepts: conceptCatalog.list(lang), sources: sources.filter(s => selected.some(l => l.sourceIds.includes(s.id))), terms: ['glossary','lesson'].includes(route.kind) ? terms : [], questions: route.kind === 'review' ? lessons.flatMap(l => l.questions) : [] };
+  const currentAase=aaseCatalog.forLanguage(lang);
+  const aaseConcept=currentAase?.concepts.find(c=>c.id===route.conceptId);
+  const aaseAt=currentAase?.concepts.findIndex(c=>c.id===route.conceptId)??-1;
+  const aaseNavigation=(route.kind==='aase-concept'?(['previous','next'] as const).flatMap((side,i)=>{const c=currentAase?.concepts[aaseAt+(i===0?-1:1)];return c?[{side,displayId:'AASE '+c.slug.toUpperCase(),title:c.title,href:c.lesson?c.href:aaseModulePath(c.module,lang)+'#'+c.slug,pending:!c.lesson}]:[]}):[]);
+  return { aaseHomeHref:currentAase?localized('/courses/aase/v1/',lang):'/courses/aase/v1/',aaseCourse:route.kind==='aase'||route.kind==='aase-workshop'?{title:currentAase!.title,subtitle:currentAase!.subtitle,modules:currentAase!.modules}:null,aaseTitle:currentAase?.title??aase.title,aaseCounterpart:route.kind.startsWith('aase')?routes.find(r=>r.path===(lang==='zh'?'/en'+route.path:route.path.replace(/^\/en/,'')))?.path??null:null,aaseModules:route.kind.startsWith('aase')?currentAase!.modules.map(m=>({id:m.id,title:m.title})):[],aaseLinks:route.kind==='search'?(currentAase?.searchEntries??[]).map(({title,href})=>({title,href})):[],aaseConcept:route.kind==='aase-concept'?aaseConcept:null,aaseConcepts:(route.kind==='aase'?currentAase!.concepts:[]).map(({lesson,...c})=>({...c,available:Boolean(lesson)})),aaseSources:aaseSources.filter(s=>aaseConcept?.lesson?.sourceIds.includes(s.id)),aaseNavigation,route, perspectiveLinks, relatedLearning, relatedPerspectives, perspectives:route.kind==='perspectives'?perspectives:[], perspective:perspectives.find(p=>p.id===route.perspectiveId), module, selected, index, modules, conceptTeaching: route.conceptId ? conceptCatalog.get(route.conceptId,lang)?.teaching ?? null : null, conceptNavigation: route.conceptId ? conceptCatalog.get(route.conceptId,lang)?.navigation ?? null : null, concepts: conceptCatalog.list(lang), sources: sources.filter(s => selected.some(l => l.sourceIds.includes(s.id))), terms: ['glossary','lesson'].includes(route.kind) ? terms : [], questions: route.kind === 'review' ? lessons.flatMap(l => l.questions) : [] };
 }
 export type Page = NonNullable<ReturnType<typeof getPage>>;

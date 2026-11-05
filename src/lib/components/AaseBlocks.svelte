@@ -2,6 +2,6 @@
  import type {AaseBlock} from '$lib/aase';
  import ConceptBlocks from './ConceptBlocks.svelte';
  import ArchitectureDiagram from './ArchitectureDiagram.svelte';
- let {blocks}:{blocks:AaseBlock[]}=$props();
+ let {blocks,lang='zh'}:{blocks:AaseBlock[];lang?:'zh'|'en'}=$props();
 </script>
-{#each blocks as block}{#if block.kind==='architecture'}<ArchitectureDiagram diagram={block}/>{:else}<ConceptBlocks blocks={[block]}/>{/if}{/each}
+{#each blocks as block}{#if block.kind==='architecture'}<ArchitectureDiagram diagram={block} {lang}/>{:else}<ConceptBlocks blocks={[block]}/>{/if}{/each}

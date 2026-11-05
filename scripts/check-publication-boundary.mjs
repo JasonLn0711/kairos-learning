@@ -10,7 +10,7 @@ const aaseOriginals=new Map();
 const registryPath='content/concepts.json';
 const originalRegistry=readFileSync(registryPath,'utf8');
 const markers=['KAIROS_UNPUBLISHED_DRAFT_4fc21','KAIROS_UNPUBLISHED_FUTURE_4fc21','CONCEPT_SECOND_FIXTURE','ZH_FIXTURE_QUESTION','EN_FIXTURE_ANSWER'];
-markers.push('AASE_UNPUBLISHED_DRAFT_4fc21','AASE_UNPUBLISHED_FUTURE_4fc21');
+markers.push('AASE_UNPUBLISHED_DRAFT_4fc21','AASE_UNPUBLISHED_FUTURE_4fc21','AASE_EN_DRAFT_4fc21','AASE_EN_FUTURE_4fc21','AASE_EN_COURSE_CLOSED_4fc21');
 const started=Date.now();
 function walk(dir) {return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(join(dir,e.name)):[join(dir,e.name)]);}
 try {
@@ -21,6 +21,15 @@ try {
     const lesson=JSON.parse(original);lesson.status=i===0?'draft':'published';
     lesson.publishedOn=lesson.date=i===0?'2026-01-01':'2099-01-01';
     lesson.text.zh.summary=i===0?'AASE_UNPUBLISHED_DRAFT_4fc21':'AASE_UNPUBLISHED_FUTURE_4fc21';
+    writeFileSync(path,JSON.stringify(lesson));
+  }
+
+  for(const [i,name] of ['aase-m01-c02','aase-m01-c03'].entries()){
+    const path=`content/aase/lessons/${name}.json`,original=readFileSync(path,'utf8');aaseOriginals.set(path,original);
+    const lesson=JSON.parse(original);lesson.text.en=structuredClone(lesson.text.zh);
+    lesson.text.en.summary=i===0?'AASE_EN_DRAFT_4fc21':'AASE_EN_FUTURE_4fc21';
+    lesson.translations={en:{status:i===0?'draft':'published',publishedOn:i===0?'2026-11-05':'2099-01-01'}};
+    for(const q of lesson.checks)q.text.en=structuredClone(q.text.zh);
     writeFileSync(path,JSON.stringify(lesson));
   }
 
@@ -60,7 +69,23 @@ try {
     const text=readFileSync(path,'utf8');
     if(markers.some(m=>text.includes(m)) || text.includes('/boundary-0/') || text.includes('/boundary-1/')) throw new Error(`Unpublished content leaked to ${path}`);
   }
+  for(const slug of ['m01-01','m01-02','m01-03'])if(existsSync(`build/en/courses/aase/v1/m01/concepts/${slug}/index.html`))throw Error('Closed English article route exists: '+slug);
   console.log(`PASS: draft/future markers absent from ${outputs.length} deployed text artifacts; ${((Date.now()-started)/1000).toFixed(1)}s.`);
+  const englishPath='content/aase/course.en.json',englishOriginal=readFileSync(englishPath,'utf8');aaseOriginals.set(englishPath,englishOriginal);
+  for(const state of ['draft','future']){
+    const gateStarted=Date.now();console.error('Checking English course '+state+' gate: building and validating static output.');
+    const profile=JSON.parse(englishOriginal);profile.title='AASE_EN_COURSE_CLOSED_4fc21';
+    if(state==='draft')profile.status='draft';else profile.publishedOn='2099-01-01';
+    writeFileSync(englishPath,JSON.stringify(profile));
+    const build=spawnSync('npm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
+    if(build.status!==0)throw Error((build.stdout+build.stderr).slice(-5000));
+    if(existsSync('build/en/courses/aase/v1/index.html'))throw Error('Closed English course route exists');
+    for(const path of walk('build').filter(f=>/\.(html|json|js|xml)$/.test(f)))if(markers.some(m=>readFileSync(path,'utf8').includes(m)))throw Error('Closed English data leaked: '+path);
+    const validate=spawnSync('python3',['scripts/validate_release.py'],{encoding:'utf8',maxBuffer:8*1024*1024});
+    if(validate.status!==0)throw Error((validate.stdout+validate.stderr).slice(-5000));
+    console.log('PASS: English course '+state+' gate closes routes, search, payloads and language alternates; '+((Date.now()-gateStarted)/1000).toFixed(1)+'s.');
+  }
+
 } catch(error) { console.error(String(error)); process.exitCode=1; }
 finally {
   for(const path of files) unlinkSync(path);

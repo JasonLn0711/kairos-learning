@@ -1,8 +1,12 @@
 import {test,expect} from '@playwright/test';
 import {readFileSync,readdirSync,mkdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {isPublic} from '../../src/lib/model';
 const course=JSON.parse(readFileSync('content/aase/course.json','utf8'));
 const lessons=readdirSync('content/aase/lessons').map(f=>JSON.parse(readFileSync('content/aase/lessons/'+f,'utf8')));
+const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const english=JSON.parse(readFileSync('content/aase/course.en.json','utf8'));
+const translated=lessons.filter(l=>isPublic(english,today)&&isPublic(l,today)&&l.translations?.en&&isPublic(l.translations.en,today));
 const conceptPaths=lessons.map(l=>{const m=course.modules.find((m:any)=>m.concepts.some((c:any)=>c.id===l.id));const c=m.concepts.find((c:any)=>c.id===l.id);return {path:`/courses/aase/v1/${m.id}/concepts/${c.slug}/`,lesson:l};});
 const paths=['/courses/aase/v1/','/courses/aase/v1/workshop/',...course.modules.map((m:any)=>`/courses/aase/v1/${m.id}/`),...conceptPaths.map(c=>c.path)];
 mkdirSync('.local/aase/screenshots',{recursive:true});
@@ -10,7 +14,7 @@ for(const path of paths){
  test(`${path}: readable, responsive, keyboard, static`,async({page,browser,baseURL})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(path);await expect(page.locator('h1')).toHaveCount(1);await expect(page.locator('html')).toHaveAttribute('lang','zh-Hant');
-  await expect(page.locator('link[rel=alternate]')).toHaveCount(0);await expect(page.locator('a.language')).toHaveCount(0);await expect(page.locator('.module-rail')).toBeVisible();await expect(page.locator('.module-rail nav a')).toHaveCount(10);
+  const counterpartAvailable=!path.includes('/concepts/')||translated.some(l=>path.endsWith(l.id.slice(5,8).toLowerCase()+'-'+l.id.slice(-2)+'/'));await expect(page.locator('link[rel=alternate]')).toHaveCount(counterpartAvailable?3:0);await expect(page.locator('a.language')).toHaveCount(counterpartAvailable?1:0);await expect(page.locator('.module-rail')).toBeVisible();await expect(page.locator('.module-rail nav a')).toHaveCount(10);
   const data=conceptPaths.find(c=>c.path===path);
   if(data){await expect(page.locator('.toc')).toHaveCount(1);await expect(page.locator('article.prose')).toHaveCount(1);await expect(page.locator('.article-reading-guide')).toHaveCount(1);await expect(page.locator('#discussion')).toHaveText('概念 Q&A');await expect(page.locator('.next-links a')).toHaveCount(2);for(const s of data.lesson.text.zh.sections){await expect(page.locator('h2#'+s.id)).toHaveText(s.heading);for(const p of s.paragraphs)await expect(page.locator('h2#'+s.id).locator('..')).toContainText(p);}
    await expect(page.locator('.article-metadata')).toContainText('v'+data.lesson.contentVersion);
@@ -43,11 +47,11 @@ for(const path of paths){
 test('registry, search, directory gates, CEH regression and download bytes',async({page,request})=>{
  await page.goto('/courses/aase/v1/');await expect(page.locator('main li[id^=m]')).toHaveCount(49);await expect(page.locator('main li[id^=m] a')).toHaveCount(lessons.length);
  const data=await (await request.get('/search-index.json')).json();
- const list=Array.isArray(data)?data:data.entries;expect(list.filter((e:any)=>e.id.startsWith('AASE-M'))).toHaveLength(lessons.length);
+ const list=Array.isArray(data)?data:data.entries;expect(list.filter((e:any)=>e.id.startsWith('AASE-M')&&e.lang==='zh')).toHaveLength(lessons.length);
  await page.goto('/search/');await page.locator('#search-query').fill('結果過期');await page.getByRole('button',{name:'搜尋',exact:true}).click();await expect(page.locator('.reading-list a[href="/courses/aase/v1/m05/concepts/m05-03/"]')).toBeVisible();
  for(const m of course.modules)for(const c of m.concepts)if(!lessons.some(l=>l.id===c.id)){const pending=await request.get(`/courses/aase/v1/${m.id}/concepts/${c.slug}/`);expect(pending.status()).toBe(404);}
  const missing=await request.get('/courses/aase/v1/m09/concepts/m09-99/');expect(missing.status()).toBe(404);
- expect((await request.get('/en/courses/aase/v1/')).status()).toBe(404);
+ expect((await request.get('/en/courses/aase/v1/')).status()).toBe(200);expect((await request.get('/en/courses/aase/v1/m01/concepts/m01-02/')).status()).toBe(404);
  await page.goto('/courses/ceh/v13/m01/concepts/m01-01/');await expect(page.locator('.module-rail')).toBeVisible();
  for(const name of ['aase-v1-workshop.zip','SHA256SUMS.txt']){const res=await request.get('/downloads/aase/'+name);expect(res.status()).toBe(200);expect(await res.body()).toEqual(readFileSync('site/downloads/aase/'+name));}
  const bytes=await (await request.get('/downloads/aase/aase-v1-workshop.zip')).body();expect(readFileSync('site/downloads/aase/SHA256SUMS.txt','utf8')).toContain(createHash('sha256').update(bytes).digest('hex'));
