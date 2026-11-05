@@ -66,3 +66,16 @@ test('English AASE retains CEH teaching fields and computed frame styles',async(
   expect(frames[1]).toEqual(frames[0]);
  }
 });
+
+test('home language wording and AASE entry reflect partial translation availability',async({page,browser,baseURL})=>{
+ for(const lang of ['zh','en']){
+  const path=lang==='en'?'/en/':'/';await page.goto(path);
+  const description=lang==='en'?'Choose available Traditional Chinese or English materials. Completed language pairs include a language switch, with clear routes for reading, practice and review.':'依課程與篇目提供繁體中文或英文教材；已完成對應翻譯的頁面可切換語言，閱讀、練習與複習各有清楚入口。';
+  await expect(page.locator('.home-intro p')).toHaveText(description);
+  const coursePath=(lang==='en'?'/en':'')+'/courses/aase/v1/';const entry=page.locator('a.course-row').first();await expect(entry).toHaveAttribute('href',coursePath);
+  for(const width of [320,390,768,1280])for(const scale of [1,2]){await page.setViewportSize({width,height:900});await page.evaluate(scale=>document.documentElement.style.setProperty('font-size',`${scale*100}%`,'important'),scale);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);expect(await page.locator('.course-row').evaluateAll(es=>es.every(e=>{const rects=[...e.children].map(n=>n.getBoundingClientRect());return rects.every((a,i)=>rects.slice(i+1).every(b=>a.right<=b.left+1||b.right<=a.left+1||a.bottom<=b.top+1||b.bottom<=a.top+1))&&rects[0].top<=rects[1].top&&rects[1].top<=rects[2].top;}))).toBe(true);}
+  await page.setViewportSize({width:320,height:900});await page.screenshot({path:`.local/aase/bilingual/home-${lang}-320-200.png`,fullPage:true});
+  await entry.focus();await expect(entry).toBeFocused();await entry.press('Enter');await expect(page).toHaveURL(coursePath);
+  const context=await browser.newContext({baseURL,javaScriptEnabled:false});try{const p=await context.newPage();await p.goto(path);await expect(p.locator('.home-intro p')).toHaveText(description);await p.setViewportSize({width:320,height:900});await p.evaluate(()=>document.documentElement.style.setProperty('font-size','200%','important'));expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBe(320);await p.locator('a.course-row').first().press('Enter');await expect(p).toHaveURL(coursePath);}finally{await context.close();}
+ }
+});
