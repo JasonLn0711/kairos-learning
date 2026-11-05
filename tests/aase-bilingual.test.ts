@@ -76,7 +76,7 @@ test('AASE bilingual code and graph identity remain invariant, and search uses l
 test('AASE English first lesson preserves Chinese teaching, publication, sources and answer semantics',()=>{
  const before=read('docs/sources/aase/bilingual-2026-11-05/aase-m01-c01.before.json');const l=first(lessons);
  assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,[]);
- assert.equal(l.revision,before.revision+1);assert.equal(l.contentVersion,'1.0.2');
+ assert.equal(l.revision,before.revision+2);assert.equal(l.contentVersion,'1.0.3');
  for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
  const en=build().forLanguage('en')!.lessons.find(x=>x.id===l.id)!;assert.equal(en.publishedOn,l.publishedOn);assert.equal(en.date,l.date);assert.equal(en.contentVersion,l.contentVersion);
 });
@@ -85,7 +85,7 @@ test('M01 English additions preserve all Chinese teaching and original acceptanc
  for(const number of ['02','03','04']){
   const before=read(`docs/sources/aase/m01-en/aase-m01-c${number}.before.json`),l=lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
-  assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   assert.equal(l.text.en!.sections.length,before.text.zh.sections.length);assert.equal(l.checks.length,3);
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
  }
@@ -99,7 +99,7 @@ test('M03 English preserves Chinese sources, synthetic records, checks and versi
  for(let n=1;n<=5;n++){
   const before=read(`docs/sources/aase/m03-en/aase-m03-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
-  assert.equal(l.contentVersion,n===1?'1.0.3':'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  assert.equal(l.contentVersion,n===1?'1.0.4':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
   const en=getPage('/en/courses/aase/v1/m03/concepts/m03-0'+n+'/')!.aaseConcept!.lesson!;
   assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual(en.text.en.sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
@@ -110,7 +110,7 @@ test('M04 English preserves Chinese evidence boundaries, original diagrams, chec
  for(let n=1;n<=6;n++){
   const before=read(`docs/sources/aase/m04-en/aase-m04-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
-  assert.equal(l.contentVersion,n===5?'1.0.2':'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  assert.equal(l.contentVersion,n===5?'1.0.3':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
   const en=getPage('/en/courses/aase/v1/m04/concepts/m04-0'+n+'/')!.aaseConcept!.lesson!;
   assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual(en.text.en.sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
@@ -121,7 +121,7 @@ test('M05 English preserves Chinese rules, candidate status, answer keys and tem
  for(let n=1;n<=5;n++){
   const before=read(`docs/sources/aase/m05-en/aase-m05-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
-  assert.equal(l.contentVersion,n===3?'1.0.3':'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  assert.equal(l.contentVersion,n===3?'1.0.4':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
   const en=getPage('/en/courses/aase/v1/m05/concepts/m05-0'+n+'/')!.aaseConcept!.lesson!;
   assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual(en.text.en.sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
@@ -133,7 +133,7 @@ test('M06 English preserves Chinese architecture, graph identities, code and ans
  for(let n=1;n<=6;n++){
   const before=read(`docs/sources/aase/m06-en/aase-m06-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
-  assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
   const shape=(t:any)=>t.sections.flatMap((s:any)=>(s.blocks??[]).map((b:any)=>b.kind==='architecture'?{kind:b.kind,level:b.level,nodes:b.nodes.map(({id,kind,inside}:any)=>({id,kind,inside})),relations:b.relations.map(({from,to}:any)=>({from,to}))}:b.kind==='step'?{kind:b.kind,code:b.code}:{kind:b.kind}));
   assert.deepEqual(shape(l.text.en),shape(before.text.zh));
@@ -146,7 +146,7 @@ test('M07 English preserves Chinese slices, executable examples, sources and ans
  for(let n=1;n<=7;n++){
   const before=read(`docs/sources/aase/m07-en/aase-m07-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
-  assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
   const codes=(t:any)=>t.sections.flatMap((s:any)=>(s.blocks??[]).filter((b:any)=>'code'in b).map((b:any)=>b.code));
   assert.deepEqual(codes(l.text.en),codes(before.text.zh));codeCount+=codes(l.text.en).length;
@@ -160,7 +160,7 @@ test('M08 English preserves Chinese verification layers, executable examples and
  for(let n=1;n<=6;n++){
   const before=read(`docs/sources/aase/m08-en/aase-m08-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
-  assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
   const codes=(t:any)=>t.sections.flatMap((s:any)=>(s.blocks??[]).filter((b:any)=>'code'in b).map((b:any)=>b.code));assert.deepEqual(codes(l.text.en),codes(before.text.zh));codeCount+=codes(l.text.en).length;
  }
@@ -173,7 +173,7 @@ test('M09 English preserves Chinese handoff, Git examples and actual assessment 
  for(let n=1;n<=4;n++){
   const before=read(`docs/sources/aase/m09-en/aase-m09-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
-  assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
   const codes=(t:any)=>t.sections.flatMap((s:any)=>(s.blocks??[]).filter((b:any)=>'code'in b).map((b:any)=>b.code));assert.deepEqual(codes(l.text.en),codes(before.text.zh));codeCount+=codes(l.text.en).length;
  }

@@ -45,7 +45,7 @@ test('only published AASE routes exist; pending neighbors land on directory anch
 test('AASE adopts CEH field names without losing original teaching, examples or answer keys',()=>{
  for(const l of lessons.filter(l=>['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id))){
   const old=read('docs/sources/aase/layout-2026-11-05/'+l.id.toLowerCase()+'.json');
-  assert.equal(l.publishedOn,old.publishedOn);assert.equal(l.date,'2026-11-05');const secondPatch=['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id);const patch=['AASE-M03-C01','AASE-M05-C03'].includes(l.id)?3:secondPatch?2:1;assert.equal(l.contentVersion,`1.0.${patch}`);assert.equal(l.revision,old.revision+patch);
+  assert.equal(l.publishedOn,old.publishedOn);assert.equal(l.date,'2026-11-05');const secondPatch=['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id);const patch=['AASE-M03-C01','AASE-M05-C03'].includes(l.id)?3:secondPatch?2:1;assert.equal(l.contentVersion,`1.0.${patch+1}`);assert.equal(l.revision,old.revision+patch+1);
   assert.equal(l.text.zh.summary,old.summary);assert.deepEqual(l.text.zh.objectives,old.objectives);assert.deepEqual(l.text.zh.exercise,old.exercise);assert.deepEqual(l.qa,[]);
   assert.equal(l.text.zh.sections.length,old.sections.length);assert.equal(l.checks.length,old.checks.length);
   for(const [i,s] of l.text.zh.sections.entries()){
@@ -65,7 +65,7 @@ test('AASE Q&A uses the CEH localized discussion fields without invented transla
 
 test('AASE M01 has four published lessons with substantive evidence and original checks',()=>{
  const m01=catalog().concepts.filter(c=>c.module==='m01');assert.equal(m01.length,4);assert.ok(m01.every(c=>c.lesson));
- for(const c of m01.slice(1)){const l=c.lesson!;assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,2);assert.ok(l.text.zh.sections.length>=6);assert.ok(l.checks.length>=3);assert.deepEqual(l.qa,[]);assert.ok(l.text.zh.sections.some(s=>s.blocks?.some(b=>b.kind==='flow'||b.kind==='cards')));}
+ for(const c of m01.slice(1)){const l=c.lesson!;assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,3);assert.ok(l.text.zh.sections.length>=6);assert.ok(l.checks.length>=3);assert.deepEqual(l.qa,[]);assert.ok(l.text.zh.sections.some(s=>s.blocks?.some(b=>b.kind==='flow'||b.kind==='cards')));}
  const m03=m01.find(c=>c.id==='AASE-M01-C03')!.lesson!;assert.ok(m03.text.zh.sections.flatMap(s=>s.paragraphs).join(' ').includes('待實作'));
  const m04=m01.find(c=>c.id==='AASE-M01-C04')!.lesson!;assert.ok(m04.text.zh.sections.flatMap(s=>s.paragraphs).join(' ').includes('虛構示範回答'));
 });

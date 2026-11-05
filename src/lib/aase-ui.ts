@@ -1,7 +1,7 @@
 export const aaseUI = {
  zh:{
   lead:'從問題定義到可驗證的軟體交付。以合成收件資料檢核案例，練習需求、設計、規格、Agent 協作、驗證與交接。',
-  allocation:'9 個模組 · 49 個核心概念 · 10 小時淨授課，包含 150 分鐘實作。',available:'篇教材已開放，其餘概念逐篇準備。',workshop:'工作坊資源',resources:'提供合成資料與練習骨架。',
+  allocation:'9 個模組 · 49 個核心概念 · 10 小時淨授課，包含 150 分鐘實作。',available:'篇教材已開放。',preparing:'其餘概念逐篇準備。',workshop:'工作坊資源',resources:'提供合成資料與練習骨架。',
   journeyTitle:'沿著同一個問題累積作品',journey:['問題 → 理解 AI → 需求 → 設計 → 規格 → 架構 → 實作 → 驗證 → 交付。UX 與安全邊界在每個階段都要檢查。','線上系列供逐篇自學；工作坊選擇 26 個深講、20 個概覽與 3 個線上延伸節點。閱讀目錄不代表完成實作。','共用案例使用合成資料。Python／Streamlit 在學員本機或受控教學環境執行；本站提供靜態教材。'],
   chapters:'課程章節',minutes:'分鐘',concepts:'個概念',practiceMinutes:'分鐘實作',including:'含',evidence:'學習證據',objective:'學習目標',practice:'練習',assessment:'驗收',ready:'教材已開放',pending:'準備中',depth:{deep:'現場深講',overview:'現場概覽',extension:'線上延伸'},
   acceptanceTitle:'如何驗收自己的成果',acceptance:['以 problem.md 記錄角色、流程與不做清單；以 wireframe.svg 呈現正常、處理中、失敗與完成狀態；在 spec.md 寫至少四條可觀察的驗收情境。architecture.md 標示資料流及信任邊界，再用三次垂直切片完成 app.py。','交接時保留 tests/、真實測試結果、同儕試用紀錄、README.md 與 Git 紀錄。能啟動原型與通過組織正式上線審查是不同的驗收層次。'],
@@ -13,7 +13,7 @@ export const aaseUI = {
  },
  en:{
   lead:'From problem definition to verifiable software delivery. Use synthetic intake checking to practice requirements, design, specifications, agent collaboration, verification and handoff.',
-  allocation:'9 modules · 49 core concepts · 10 teaching hours, including 150 minutes of practice.',available:'lessons available in English; the remaining concepts are in preparation.',workshop:'Workshop resources',resources:'provide synthetic data and a project skeleton.',
+  allocation:'9 modules · 49 core concepts · 10 teaching hours, including 150 minutes of practice.',available:'lessons available in English.',preparing:'Remaining concepts are in preparation.',workshop:'Workshop resources',resources:'provide synthetic data and a project skeleton.',
   journeyTitle:'Build Artifacts Around One Problem',journey:['Problem → understanding AI → requirements → design → specifications → architecture → implementation → verification → delivery. Check UX and security boundaries at every stage.','Study the online series concept by concept. The workshop selects 26 detailed, 20 overview and 3 online-extension nodes. Reading the directory does not establish practical completion.','The shared case uses synthetic data. Run Python/Streamlit locally or in a controlled teaching environment; this site serves static learning materials.'],
   chapters:'Course Modules',minutes:'minutes',concepts:'concepts',practiceMinutes:'minutes of practice',including:'including',evidence:'Learning evidence',objective:'Learning objective',practice:'Practice',assessment:'Acceptance',ready:'Lesson available',pending:'In preparation',depth:{deep:'Workshop detail',overview:'Workshop overview',extension:'Online extension'},
   acceptanceTitle:'Check Your Own Deliverables',acceptance:['Record roles, flows and exclusions in problem.md. Show normal, processing, failed and complete states in wireframe.svg. Write at least four observable acceptance scenarios in spec.md. Mark data flows and trust boundaries in architecture.md, then complete app.py in three vertical slices.','Retain tests/, actual test results, peer task observations, README.md and Git history for handoff. Starting a prototype and passing an organization’s production-release review are different acceptance levels.'],

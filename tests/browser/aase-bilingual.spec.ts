@@ -30,11 +30,16 @@ for(const path of paths)test(`${path}: English teaching, reflow, keyboard and no
  await expect(page.locator('link[rel=alternate][hreflang=zh-Hant]')).toHaveAttribute('href','https://learn.cs-kairos.com'+path.replace(/^\/en/,''));
  const module=english.modules.find((m:any)=>path===`/en/courses/aase/v1/${m.id}/`);
  if(module){
+  await expect(page.locator('.course-availability')).toContainText(module.concepts.length+' lessons available in English.');
+  await expect(page.locator('.course-availability')).not.toContainText('in preparation');
+  for (const map of await page.locator('.concept-map').all()) await expect(map).not.toContainText('AASE-M');
   await expect(page.locator('h1')).toContainText(module.title);
   for(const c of module.concepts){const row=page.locator('#'+module.id+'-'+c.id.slice(-2));await expect(row).toContainText(c.title);await expect(row).toContainText(c.objective);await expect(row).toContainText(c.practice);await expect(row).toContainText(c.assessment);}
  }
  const lesson=lessons.find(l=>path.endsWith(`${l.id.slice(5,8).toLowerCase()}-${l.id.slice(-2)}/`));
  if(lesson){
+  const entry=english.modules.flatMap((m:any)=>m.concepts).find((c:any)=>c.id===lesson.id);const code=lesson.id.slice(5,8)+'-'+lesson.id.slice(-2);
+  await expect(page.locator('h1')).toHaveText(code+' · '+entry.title);await expect(page.locator('.article-metadata>span').first()).toHaveText(code);await expect(page.locator('.next-links')).not.toContainText('AASE M');
   await checkArchitecture(page,lesson);
   for(const s of lesson.text.en.sections){await expect(page.locator('h2#'+s.id)).toHaveText(s.heading);for(const p of s.paragraphs)await expect(page.locator('h2#'+s.id).locator('..')).toContainText(p);}
   await expect(page.locator('.article-reading-guide')).toContainText(lesson.text.en.readingGuide.goal);
@@ -57,7 +62,7 @@ for(const path of paths)test(`${path}: English teaching, reflow, keyboard and no
  if(lesson)for(const width of [390,1280]){await page.setViewportSize({width,height:900});for(const [i,figure] of (await page.locator('article figure').all()).entries())await figure.screenshot({path:`.local/aase/bilingual/${lesson.id}-figure-${i===0?'':i+'-'}${width}.png`});}
  await page.goto(path);await page.keyboard.press('Tab');await expect(page.locator('a.skip')).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#main')).toBeFocused();
  await page.locator('a.language').focus();await page.keyboard.press('Enter');await expect(page).toHaveURL(path.replace(/^\/en/,''));await page.locator('a.language').press('Enter');await expect(page).toHaveURL(path);
- const context=await browser.newContext({baseURL,javaScriptEnabled:false});try{const p=await context.newPage();await p.goto(path);await expect(p.locator('h1')).toHaveCount(1);await p.locator('a.language').press('Enter');await expect(p).toHaveURL(path.replace(/^\/en/,''));if(lesson){await p.goto(path);await checkArchitecture(p,lesson);await expect(p.locator('#practice').locator('..')).toContainText(lesson.text.en.exercise.expected);const summary=p.locator('main summary').first();await summary.focus();await summary.press('Enter');await expect(p.locator('main details').first()).toHaveAttribute('open','');await summary.press('Space');await expect(p.locator('main details').first()).not.toHaveAttribute('open','');}}finally{await context.close();}
+ const context=await browser.newContext({baseURL,javaScriptEnabled:false});try{const p=await context.newPage();await p.goto(path);await expect(p.locator('h1')).toHaveCount(1);await p.locator('a.language').press('Enter');await expect(p).toHaveURL(path.replace(/^\/en/,''));if(lesson){await p.goto(path);await expect(p.locator('h1')).not.toContainText('AASE ');await checkArchitecture(p,lesson);await expect(p.locator('#practice').locator('..')).toContainText(lesson.text.en.exercise.expected);const summary=p.locator('main summary').first();await summary.focus();await summary.press('Enter');await expect(p.locator('main details').first()).toHaveAttribute('open','');await summary.press('Space');await expect(p.locator('main details').first()).not.toHaveAttribute('open','');}}finally{await context.close();}
  expect(errors).toEqual([]);
 });
 test('English directory, search, publication gates and downloads use actual locale availability',async({page,request})=>{
@@ -65,6 +70,8 @@ test('English directory, search, publication gates and downloads use actual loca
  const index=await(await request.get('/search-index.json')).json();const entries=Array.isArray(index)?index:index.entries;
  expect(entries.filter((e:any)=>e.id.startsWith('AASE-M')&&e.lang==='en')).toHaveLength(lessons.length);
  expect(entries.filter((e:any)=>e.id.startsWith('AASE-M')&&e.lang==='zh')).toHaveLength(49);
+ for(const e of entries.filter((e:any)=>e.id.startsWith('AASE-M')))expect(e.title).toMatch(/^M\d{2}-\d{2} · /);
+ await expect(page.locator('.course-availability')).toContainText('49 lessons available in English.');await expect(page.locator('.course-availability')).not.toContainText('in preparation');for (const map of await page.locator('.concept-map').all()) await expect(map).not.toContainText('AASE-M');
  await page.goto('/en/search/');await page.locator('#search-query').fill('production release');await page.getByRole('button',{name:'Search',exact:true}).click();await expect(page.locator('.reading-list a[href="/en/courses/aase/v1/m01/concepts/m01-01/"]')).toBeVisible();
  for(const m of english.modules)for(const c of m.concepts)if(!lessons.some(l=>l.id===c.id)){
   const slug=m.id+'-'+c.id.slice(-2),path=`/en/courses/aase/v1/${m.id}/concepts/${slug}/`;expect((await request.get(path)).status(),path).toBe(404);

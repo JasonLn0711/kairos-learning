@@ -1,3 +1,4 @@
+import {aaseConceptTitle} from './aase-labels.ts';
 import {assertArchitectureDiagram,architectureDiagramText,type ArchitectureDiagramModel} from './architecture-diagram.ts';
 import {parseQA} from './qa-markdown.ts';
 import type {ConceptBlock,ConceptCheck,ConceptDiscussion} from './concepts.ts';
@@ -96,7 +97,7 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
       return {...metadata,text:{[lang]:text[lang]!} as Record<L,AaseText>,checks:checks.map(q=>({...q,text:{[lang]:q.text[lang]}})),qa:qa.filter(q=>q.text[lang]).map(q=>({...q,text:{[lang]:q.text[lang]}}))} satisfies AasePublishedLesson<L>;
     });
     const publicConcepts=modules.flatMap(m=>m.concepts.map(c=>({...c,module:m.id,href:aaseConceptPath(m.id,c.slug,lang),lesson:publicLessons.find(l=>l.id===c.id)??null})));
-    const searchEntries:SearchEntry[]=publicConcepts.filter(c=>c.lesson).map(c=>{const l=c.lesson!,t=l.text[lang];return {id:c.id,lang,title:c.title,summary:t.summary,text:[...t.objectives,...Object.values(t.readingGuide),...t.sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>blockText(b,lang))]),...Object.values(t.exercise).flat(),...l.checks.flatMap(q=>[q.text[lang]!.prompt,...q.text[lang]!.options,...q.text[lang]!.rationales]),...l.qa.flatMap(q=>[q.text[lang]!.question,q.text[lang]!.originalQuestion??'',...q.text[lang]!.answer,...(q.text[lang]!.explanation??[]),...(q.text[lang]!.editorial??[])])].join(' '),href:c.href,label:`AASE ${c.module.toUpperCase()}`};});
+    const searchEntries:SearchEntry[]=publicConcepts.filter(c=>c.lesson).map(c=>{const l=c.lesson!,t=l.text[lang];return {id:c.id,lang,title:aaseConceptTitle(c),summary:t.summary,text:[...t.objectives,...Object.values(t.readingGuide),...t.sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>blockText(b,lang))]),...Object.values(t.exercise).flat(),...l.checks.flatMap(q=>[q.text[lang]!.prompt,...q.text[lang]!.options,...q.text[lang]!.rationales]),...l.qa.flatMap(q=>[q.text[lang]!.question,q.text[lang]!.originalQuestion??'',...q.text[lang]!.answer,...(q.text[lang]!.explanation??[]),...(q.text[lang]!.editorial??[])])].join(' '),href:c.href,label:`AASE ${c.module.toUpperCase()}`};});
     return {title,subtitle,modules,concepts:publicConcepts,lessons:publicLessons,searchEntries};
   }
   const chinese=forLanguage('zh')!;
