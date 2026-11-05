@@ -403,3 +403,7 @@ forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，�
 ## 新版 M04 第四課 SMB 複習與診斷（2026-11-05）
 
 `CEH26-M04-C04` 使用短網址 `concepts/m04-04/`；完整中英公開稿、單題答案、六個雙語錨點與雜湊在 [來源目錄](sources/ceh26-m04-c04/README.md)。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對全文。沿用 sourceBody，本文直接閱讀、參考答案預設收合、qa 為空。以文字及清單呈現拒絕階段、實際身分與傳輸保護；本次無新增圖解或互動。C01–C03 與 C05 正文保留，C06–C10 待發布，舊版歸檔不公開。[驗收與發布紀錄](releases/2026-11-05-ceh26-m04-c04.md)。
+
+### M04-05 完整 NetBIOS／RPC 教學 v1.1.0
+
+[替換來源](sources/ceh26-m04-c05/replacement-2026-11-05/README.md)保存完整供稿、三張參考 PNG、前版與明列公開稿調整。38 個中英章／小節、9 表、37 個程式／文字區塊均沿 sourceBody；公開課次 M04-05，stable ID 與 slug 保留。三張圖由 diagram-models.json 提供 HTML、搜尋與 SVG 文字；RpcEvidenceDiagram 只接六個已知圖檔路徑，rpc-diagram-groups.json 定義平行三卡／兩卡、五階段流程與底部界線，窄欄直向重排。SVG 產生器沿既有 sanitizer。先執行 ceh26_m04_c05_content.py、ceh26_m04_c05_diagrams.py，再以 verify-ceh26-m04-c05.py 核對完整來源、錨點、雜湊及產物。三題編輯參考答案沿既有原生收合，qa=[]。驗收與發布見 [回執](releases/2026-11-05-ceh26-m04-c05-full-replacement.md)。
