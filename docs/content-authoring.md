@@ -351,7 +351,7 @@ M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 
 
 AASE 使用 `content/aase/course.json` 的九模組、49 概念目錄及獨立 `AASE-Mxx-Cyy` 識別碼，不共用 CEH 的 Mxx-yy 正本。教材寫於 `content/aase/lessons/`，來源位於 `content/aase/sources.json`。`src/lib/aase.ts` 驗證欄位、日期、情境答案與課程總量，沿用 `isPublic` 的狀態／日期閘門；目錄的 `pending` 是規劃狀態，是否可閱讀由通過閘門的教材決定。
 
-本版明確為繁體中文先行；沒有英文路由、語言切換或虛構英文 alternates。未發布正文不進頁面資料、導覽或搜尋。概念前後篇尚未完成時，連到對應模組錨點；不產生空白教材頁。既有 CEH 雙語及 SVG 邊界保持原契約。
+初批明確為繁體中文先行；該批沒有英文路由、語言切換或虛構英文 alternates。後續雙語能力依下方「AASE 雙語出版」契約；未完成的概念仍不產生英文頁。未發布正文不進頁面資料、導覽或搜尋。概念前後篇尚未完成時，連到對應模組錨點；不產生空白教材頁。既有 CEH 雙語及 SVG 邊界保持原契約。
 
 `AaseLesson.svelte` 沿共用 `TeachingArticle` 呈現結構化文字與程式碼，圖解使用 CEH 的 flow／cards 與 `ConceptBlocks`；不接受原始 HTML／SVG 注入。圖解的節點與搜尋文字來自同一教材資料，手機重排，答案用原生 details。讀者自我檢核不記錄成績，不冒充互動測驗或實作通過。
 
@@ -365,7 +365,7 @@ AASE 使用 `content/aase/course.json` 的九模組、49 概念目錄及獨立 `
 
 AASE 四篇資料升為 v1.0.1，對齊 CEH 的 `id`、`revision`、`contentVersion`、`date`、`publishedOn`、`status`、`text.zh.summary`、`text.zh.sections`、`checks[].text.zh`、`qa[].text.zh`。段落沿 `id`／`heading`／`paragraphs`，圖解與步驟使用同一 `ConceptBlock` 型別及 `ConceptBlocks.svelte`；檢核題沿零起算 answer、四選項與四解析。AASE 額外保留 `text.zh.objectives`、`exercise`、`readingGuide` 與來源欄位，讓原有學習證據仍可編輯及搜尋。`revisedOn` 改為 CEH 的 `date`，正文不再放在頂層。遷移前原稿見 [保存紀錄](sources/aase/layout-2026-11-05/README.md)。
 
-`qa` 代表收到的實際問題，與編輯理解檢核 `checks` 分開；目前四篇均為 `[]`，顯示與 CEH 相同的待補訊息。單語 Q&A 由共用元件依現有語言顯示，支持 question、originalQuestion、answer、explanation、editorial 及既有受限 Markdown 格式；不產生假英文。CEH 原有雙語驗證不放寬，AASE 驗證目前只接受已確認的繁中欄位。
+`qa` 代表收到的實際問題，與編輯理解檢核 `checks` 分開；目前四篇均為 `[]`，顯示與 CEH 相同的待補訊息。單語 Q&A 由共用元件依現有語言顯示，支持 question、originalQuestion、answer、explanation、editorial 及既有受限 Markdown 格式；不產生假英文。CEH 原有雙語驗證不放寬，該批 AASE 驗證只接受已確認的繁中欄位；後續英文欄位與逐語言閘門見下方雙語契約。
 
 維護時執行既有內容、型別、單元與發布邊界；AASE 瀏覽器測試比對兩課程的共用欄位、實際計算樣式與側欄目的地。因觸及共用教材元件，另執行 `npx playwright test --config playwright.ceh26-m04-c02.config.ts`，確認 CEH 雙語、Q&A、SVG 下載及短網址保留。[本次回執](releases/2026-11-05-aase-ceh-layout.md)
 
@@ -380,7 +380,7 @@ AASE章節正文可使用受限`architecture`區塊，外層教材欄位及CEH�
 
 正式模型與驗證在src/lib/architecture-diagram.ts：level限定context／container；caption、description、boundary為文字；nodes為2–8個唯一id／title／body／kind／inside；relations為1–12條from／to／label。kind限定person、software-system、container、data-store；拒絕多餘欄位、未知端點、自連、重複及未連結節點。Context恰有一個系統內software-system，每條關係都連到該主系統；Container內只接受應用容器或資料儲存，不以檔名自動視為服務。
 
-HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查詢重排雙欄與箭頭，文字與搜尋由同一資料產生。沒有任意HTML／SVG、座標、事件或圖片路徑，也沒有新增SVG匯出。圖例需明說系統範圍不代表安全信任邊界，關係列不表示時序。標籤元件支持zh／en，當前AASE正文仍僅已確認繁中，不產生英文路由。
+HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查詢重排雙欄與箭頭，文字與搜尋由同一資料產生。沒有任意HTML／SVG、座標、事件或圖片路徑，也沒有新增SVG匯出。圖例需明說系統範圍不代表安全信任邊界，關係列不表示時序。標籤元件支持zh／en，該批AASE正文僅已確認繁中；後續英譯由雙語契約逐篇開放，不因元件有英文標籤就產生路由。
 
 執行architecture-diagram.test.ts的資料拒絕與搜尋／發布測試、既有內容／型別／發布邊界／release及AASE瀏覽器檢查。瀏覽器逐節核對節點分組、關係端點與標籤，四尺寸、200%文字、無JavaScript及手機／桌面圖解；同時保留原教材與CEH回歸。[發布回執](releases/2026-11-05-aase-m06.md)記錄實際影響及未驗事項。
 
@@ -388,4 +388,14 @@ HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查�
 
 英文 .with-rail 側欄與前後篇連結使用 overflow-wrap:anywhere；900px 以下 rail-content 高度上限為 10rem，540px 以下前後篇直向排列。維持完整標題、目的地及局部捲動，不以隱藏文字或省略號解決溢出。中文不匹配本次樣式。修改後執行 `npx playwright test --config playwright.course-rail.config.ts`，正式站設定 RAIL_BASE_URL；涵蓋 CEH 中英、AASE 中文、有／無 JavaScript、四尺寸及 200% 根字級。
 
-53 筆 CEH 資料依 WRITE-06 提升 patch，原發布日及非版本內容雜湊保留；17 筆舊式 lesson 的語意版號遷移基準另記。[回執](releases/2026-11-05-english-course-navigation.md)及[逐筆清單](releases/2026-11-05-course-navigation-versions.json)保留版本來源。M03-02 歷史 CSS 雜湊核對修訂前保存檔，不改寫原雜湊。AASE 英文全文與路由仍未開啟。
+53 筆 CEH 資料依 WRITE-06 提升 patch，原發布日及非版本內容雜湊保留；17 筆舊式 lesson 的語意版號遷移基準另記。[回執](releases/2026-11-05-english-course-navigation.md)及[逐筆清單](releases/2026-11-05-course-navigation-versions.json)保留版本來源。M03-02 歷史 CSS 雜湊核對修訂前保存檔，不改寫原雜湊。該次導覽修正未開啟 AASE 英文全文或路由；後續開放狀態依下方契約及回執。
+
+### AASE 雙語出版（2026-11-05）
+
+中文課綱仍在 course.json；course.en.json 提供相同九模組／49 stable ID 的英文目錄文字，依 ID 與順序核對，不能覆寫分鐘、深度或 slug。英文課程本身有 status／publishedOn；各篇 AaseLesson 的 text.en 及 checks[].text.en 完整後，另附 translations.en.status／publishedOn，並受原文章全域狀態／日期約束。translations.en.publishedOn 控制英文開放時機；資訊列仍以兩語共用的原 publishedOn、contentVersion 及 date 呈現，不把翻譯閘門日期冒充版本修訂日。
+
+forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，不以中文代填英文。課程關閉時沒有英文路由／搜尋；翻譯缺件、draft 或 future 時只有目錄項目，前後篇落至該語言模組錨點。真正成對的頁面才有 language link 與三個 alternates，canonical／sitemap／搜尋共用 catalog。qa 可保留尚未翻譯的實際中文問題，英文只呈現已翻譯者；無問題就保留空陣列。
+
+兩語章節 ID、順序、段落數、目標與練習步數、區塊形狀、程式碼、來源 ID、圖解節點／關係及答案鍵對應。驗證器的結構核對不取代編輯語意核對。ArchitectureDiagram 與搜尋文字接收同一語言參數。來源與前版保存依 WRITE-04／06；目前 M01-01 v1.0.2 的中文正文及檢核不改，新增完整英譯，其他 48 篇英文仍待編。
+
+先跑內容、單元、型別，再執行 publication-boundary（含英文課程與翻譯 draft／future 的真正建置）及 release；接續 `npx playwright test --config playwright.aase-bilingual.config.ts`、完整 AASE 及 CEH 共用版型回歸。正式站以 AASE_BASE_URL 執行新套件。測試輸出與建置不可同時改寫同一產物目錄；先等建置結束再啟動瀏覽器。英文工作坊 HTML 與 ZIP 內語言分開核對，未翻譯 ZIP 必須明示。[發布回執](releases/2026-11-05-aase-bilingual-foundation.md)記錄實際範圍。
