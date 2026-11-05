@@ -40,7 +40,7 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
-Current M04 contract (2026-11-04): ten new stable IDs; C01–C03 are published and C04–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C03 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
+Current M04 contract (2026-11-05): ten new stable IDs; C01–C05 are published and C06–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C05 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
 
 `content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
@@ -372,7 +372,7 @@ AASE 四篇資料升為 v1.0.1，對齊 CEH 的 `id`、`revision`、`contentVers
 
 ## 新版 M04 第五課 NetBIOS／RPC（2026-11-05）
 
-`CEH26-M04-C05` 使用 `concepts/m04-05/`，完整雙語、兩份原始輸入與 SHA-256 在[來源目錄](sources/ceh26-m04-c05/README.md)。執行 `python3 scripts/ceh26_m04_c05_content.py --check` 核對全文；七節正文直接可讀，一題原生參考答案預設收合，qa 空陣列。此發布集合為 C01–C03、C05；C04 及 C06–C10 仍 pending，不要求連續發布前五篇。C05 前後項連至待發布目錄錨點，舊 stable-ID URL 與舊教學歸檔不公開。[回執](releases/2026-11-05-ceh26-m04-c05.md)區分本機驗收、已知共用側欄200%文字差距及正式發布。
+`CEH26-M04-C05` 使用 `concepts/m04-05/`，完整雙語、兩份原始輸入與 SHA-256 在[來源目錄](sources/ceh26-m04-c05/README.md)。執行 `python3 scripts/ceh26_m04_c05_content.py --check` 核對全文；七節正文直接可讀，一題原生參考答案預設收合，qa 空陣列。C05 初次發布集合為 C01–C03、C05；C04 同步後目前為 C01–C05，C06–C10 仍 pending。C05 前一項連至 C04 正文，後一項連至 C06 待發布目錄錨點，舊 stable-ID URL 與舊教學歸檔不公開。[回執](releases/2026-11-05-ceh26-m04-c05.md)區分本機驗收、已知共用側欄200%文字差距及正式發布。
 
 ### AASE 架構圖區塊（2026-11-05）
 
@@ -399,3 +399,7 @@ forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，�
 兩語章節 ID、順序、段落數、目標與練習步數、區塊形狀、程式碼、來源 ID、圖解節點／關係及答案鍵對應。驗證器的結構核對不取代編輯語意核對。ArchitectureDiagram 與搜尋文字接收同一語言參數。來源與前版保存依 WRITE-04／06；初批 M01-01 v1.0.2 保留中文正文與檢核並新增英譯；後續 M01-02–04 各升 v1.0.1，原中文同樣不改，M01 四篇英文齊備，其他 45 篇仍待編。詳細範圍見 [M01 英文回執](releases/2026-11-05-aase-m01-en.md)。
 
 先跑內容、單元、型別，再執行 publication-boundary（含英文課程與翻譯 draft／future 的真正建置）及 release；接續 `npx playwright test --config playwright.aase-bilingual.config.ts`、完整 AASE 及 CEH 共用版型回歸。正式站以 AASE_BASE_URL 執行新套件。測試輸出與建置不可同時改寫同一產物目錄；先等建置結束再啟動瀏覽器。英文工作坊 HTML 與 ZIP 內語言分開核對，未翻譯 ZIP 必須明示。[發布回執](releases/2026-11-05-aase-bilingual-foundation.md)記錄實際範圍。
+
+## 新版 M04 第四課 SMB 複習與診斷（2026-11-05）
+
+`CEH26-M04-C04` 使用短網址 `concepts/m04-04/`；完整中英公開稿、單題答案、六個雙語錨點與雜湊在 [來源目錄](sources/ceh26-m04-c04/README.md)。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對全文。沿用 sourceBody，本文直接閱讀、參考答案預設收合、qa 為空。以文字及清單呈現拒絕階段、實際身分與傳輸保護；本次無新增圖解或互動。C01–C03 與 C05 正文保留，C06–C10 待發布，舊版歸檔不公開。[驗收與發布紀錄](releases/2026-11-05-ceh26-m04-c04.md)。
