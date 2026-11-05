@@ -421,3 +421,11 @@ forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，�
 ### AASE 公開課次與模組篇數（2026-11-05）
 
 依 WRITE-08，`aase-labels.ts` 共用讀者課次與標題；stable ID、URL 與 readingId 保留。主標題、資訊列、目錄、前後篇及搜尋使用 `Mxx-yy`，課程名稱仍在導覽與站點資訊。`AaseCourse` 依目前模組篩選可用概念，僅存在未開放概念時顯示準備中。49 筆各升 patch，正文、圖解、來源、原發布日期及翻譯閘門不變；[本批回執](releases/2026-11-05-aase-short-titles.md)記錄實測及發布狀態。
+
+### M04-03 完整白話教學 v1.1.0（2026-11-05）
+
+[抽換來源](sources/ceh26-m04-c03/replacement-2026-11-05/README.md)保存完整供稿、兩張 PNG、修訂前 JSON 與明列公開稿調整。公開 displayId 為 M04-03，stable ID／slug 與 2026-11-04 原發布日保留；十一章之外完整保留第二部分、重點整理與理解檢核。中英各 330 區塊、6 表、22 段命令／文字範例，五段編輯解答沿單一原生收合，qa=[]。
+
+兩圖沿 visual 模型，只在四個 m04-03-{protocols|evidence}-{zh|en}-v1-1-0.svg 固定路徑啟用 FtpSmtpDiagram。第一圖保留 FTP 雙通道及 SMTP 三角色／兩段連線；第二圖三張卡並列判讀。手機按相同分組重排，不將平行通道／證據分類轉成先後流程。兩語同一模型供 HTML、搜尋及 SVG，SVG 經既有 sanitizer；原有圖檔與 ZIP 保留歷史，不覆寫。
+
+執行 ceh26_m04_c03_content.py、ceh26_m04_c03_diagrams.py 的 --check，再依內容、單元、型別、publication-boundary、release、C03 瀏覽器與 C02 共用元件回歸順序驗證。正式站設定 CEH_BASE_URL，回讀兩語正文與四個 SVG；實測與未驗界線見[本次回執](releases/2026-11-05-ceh26-m04-c03-replacement.md)。
