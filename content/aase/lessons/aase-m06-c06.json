@@ -1,8 +1,8 @@
 {
   "id": "AASE-M06-C06",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -159,6 +159,154 @@
         "check": "不把TLS當授權、.env當完整秘密管理或C4外框當防火牆；未執行不宣稱通過。",
         "cleanup": "僅保留合成標籤，移除誤貼的真實秘密並按實際情況處理失效，不以公開Git刪字取代撤銷。"
       }
+    },
+    "en": {
+      "summary": "Mark transport protection, secret custody and trust boundaries on the data flow, identifying security responsibilities beyond HTTPS.",
+      "objectives": [
+        "Explain TLS channel and identity scope and locate termination points.",
+        "Separate custody of public certificates, private keys and application secrets.",
+        "Mark trust boundaries and unverified controls for input, export and external dependencies."
+      ],
+      "readingGuide": {
+        "goal": "Explain TLS channel and identity scope and locate termination points.",
+        "startingPoint": "architecture.md and a synthetic architecture; request no certificates, create no external accounts and enter no real keys.",
+        "route": "Read the situation and principles, compare examples, then expand architecture.md and review the checks.",
+        "output": "An architecture.md appendix covering each transport hop, secret responsibilities and trust boundaries, distinguishing current from hypothetical deployment."
+      },
+      "sections": [
+        {
+          "id": "channel",
+          "heading": "TLS Protects a Channel, Not a Data Permission Decision",
+          "paragraphs": [
+            "With correct configuration and verification, TLS (Transport Layer Security) provides communication confidentiality and integrity and lets clients verify the server’s identity. Ordinary HTTPS does not verify the end user’s identity; mutual TLS introduces different client-certificate responsibilities.",
+            "TLS protects communication between its two endpoints. If it terminates at a reverse proxy, the proxy-to-application connection is a separate hop whose protection needs explanation. An HTTPS URL does not establish correct protection for every internal channel, retention rule or authorization decision."
+          ],
+          "sourceIds": [
+            "owasp-tls"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Locked Transport and Permission to Receive",
+          "paragraphs": [
+            "A locked shipping box can reduce exposure or tampering in transit. Who opens it at arrival, who should receive its contents and where the key is kept remain separate responsibilities. Attaching the key outside the box undermines protection.",
+            "This analogy separates channels, endpoints and access; a physical lock is not TLS. Software still needs endpoint verification, secret custody, input validation and data authorization."
+          ]
+        },
+        {
+          "id": "hops",
+          "heading": "Mark Termination and Questions for Each Hop",
+          "paragraphs": [
+            "This table analyzes a hypothetical shared deployment, not an architecture already deployed by the course. For each hop, identify source, recipient, protection and configuration owner. An intermediary that decrypts content also carries data and secret responsibilities.",
+            "The practical project remains local teaching on 127.0.0.1. This table adds neither TLS nor production network controls. Moving remotely or into an organization requires revisiting identity, authorization, network and retention needs."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Per-hop Review of a Hypothetical Deployment",
+              "headers": [
+                "Data hop",
+                "Pending or candidate protection",
+                "Evidence needed"
+              ],
+              "rows": [
+                [
+                  "Browser → reverse proxy",
+                  "Candidate HTTPS; TLS terminates at the proxy.",
+                  "Certificate/hostname verification, actual configuration and connection checks."
+                ],
+                [
+                  "Reverse proxy → application process",
+                  "Decide TLS and other network controls separately; do not assume an internal network is trusted.",
+                  "The actual protocol, configuration and access restrictions for this hop."
+                ],
+                [
+                  "Application → storage or external service",
+                  "If introduced later, specify transport and credential/secret responsibilities separately.",
+                  "Data scope, secret custody, permissions and failure handling."
+                ],
+                [
+                  "Report → operator’s download",
+                  "After download, channel protection no longer covers file retention.",
+                  "Separate decisions about device access, retention and sharing."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "secrets",
+          "heading": "Distinguish Public Information from Secrets",
+          "paragraphs": [
+            "A server certificate is generally public; its matching private key needs protection. API keys, database passwords and session tokens must not enter teaching material, repositories, frontend assets or public logs. This course requests no actual secrets.",
+            "OWASP secret-management guidance covers storage, authorization, audit, rotation and lifecycle. Environment variables or .env are injection/storage mechanisms, not automatic solutions to read permissions, log leaks or revocation. Deleting leaked text does not invalidate a secret; handle revocation/rotation and impact investigation through the actual service."
+          ],
+          "sourceIds": [
+            "owasp-secrets"
+          ]
+        },
+        {
+          "id": "boundaries",
+          "heading": "Locate Changes in Trust and Control Responsibility",
+          "paragraphs": [
+            "A trust boundary occurs where data or actions cross different trust, permission or control responsibilities. At browser-to-process, application-to-external-service and process-to-download transitions, ask whether input is trusted, who validates it and what may leave. Such boundaries need not match C4 scope or machine boundaries.",
+            "OWASP threat modeling examines data flows, stores, external entities and trust boundaries together. This course identifies control questions first; it does not complete a threat assessment or security certification. A dashed line implements neither a sandbox nor a firewall."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Responsibilities to Review Separately",
+              "description": "These cards compare control questions. Passing one does not establish security for all three.",
+              "items": [
+                {
+                  "title": "Transport and termination",
+                  "body": "Which endpoints does TLS protect? Where does an intermediary decrypt, and how is the next hop protected?"
+                },
+                {
+                  "title": "Secrets and identity",
+                  "body": "Who holds private keys, tokens and API keys, who can read them and how are they invalidated?"
+                },
+                {
+                  "title": "Data and permissions",
+                  "body": "Who validates cross-boundary input, which fields may be exported and who may read or retain them?"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-threat-model"
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "Record Controls and Unverified Scope Beside Architecture",
+          "paragraphs": [
+            "A browser padlock does not establish a secure system. Channel indicators do not replace authorization, data minimization, dependency or operations checks. Link each claim to actual settings, tests or a responsible person who must still confirm it.",
+            "Trace synthetic data and mark at least three boundary questions, preserving the difference between the current single-user local project and hypothetical shared design. With no TLS configuration or secrets, write conditions and pending controls; creating real services or certificates is unnecessary."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Security-boundary Appendix",
+              "paragraphs": [
+                "The unchanged Traditional Chinese template records current local execution without new TLS, browser/process type/blank/length validation, allowlisted exports revalidated before download, hypothetical proxy and application hops reviewed separately, future secret custody/authorization/revocation, missing formal identity/storage/operations controls and design-only evidence. Adapt it in architecture.md using synthetic information."
+              ],
+              "code": "# 信任與傳輸（合成分析）\n目前：127.0.0.1單人本機，沒有因本文新增TLS\n輸入邊界：瀏覽器 → 程序；程式端核對型別、空白與長度\n輸出邊界：程序 → 下載；只含允許欄位，匯出前重驗證\n假想共用：瀏覽器 → TLS代理 → 應用；兩段分別確認\n秘密：本課不需要真實key；未來另定保管、授權及撤銷\n尚缺：正式身分、授權、儲存、備份與維運驗證\n證據狀態：設計分析；未執行的控制保持待驗"
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "architecture.md and a synthetic architecture; request no certificates, create no external accounts and enter no real keys.",
+        "steps": [
+          "Mark at least three data or responsibility boundaries along browser, process and downloads; identify validation and management owners.",
+          "Draw a separate hypothetical TLS proxy chain with each channel and termination point; mark undecided protection pending confirmation.",
+          "Distinguish public certificates, private keys and application secrets; record custody/revocation responsibilities and unimplemented course scope."
+        ],
+        "expected": "An architecture.md appendix covering each transport hop, secret responsibilities and trust boundaries, distinguishing current from hypothetical deployment.",
+        "check": "Do not equate TLS with authorization, .env with complete secret management or a C4 frame with a firewall. Report no passing control without execution.",
+        "cleanup": "Keep synthetic labels only. Remove accidentally pasted real secrets and arrange invalidation as appropriate; deleting public Git text does not replace revocation."
+      }
     }
   },
   "checks": [
@@ -179,6 +327,21 @@
             "傳輸保護不代替存取權限。",
             "下載後有不同保存責任。",
             "按通道與端點分開判斷。"
+          ]
+        },
+        "en": {
+          "prompt": "What follows when TLS terminates at a reverse proxy?",
+          "options": [
+            "The proxy-to-application hop is necessarily encrypted.",
+            "Data authorization is complete.",
+            "Every download is permanently encrypted.",
+            "Only that TLS endpoint span is established; check later connections and data controls separately."
+          ],
+          "rationales": [
+            "The subsequent hop is a separate connection.",
+            "Transport protection does not replace permissions.",
+            "Downloads have different retention responsibilities.",
+            "Assess each channel and endpoint separately."
           ]
         }
       }
@@ -201,6 +364,21 @@
             "合成欄位名稱不是秘密。",
             "公開教學圖例不是秘密。"
           ]
+        },
+        "en": {
+          "prompt": "Which information generally needs secrecy?",
+          "options": [
+            "Every word of a public server certificate.",
+            "The matching private key, API keys and session tokens.",
+            "Synthetic field names in a lesson.",
+            "The C4 diagram key."
+          ],
+          "rationales": [
+            "Certificates are generally public; distinguish their private keys.",
+            "These can convey identity or capability and need custody and lifecycle controls.",
+            "Synthetic field names are not secrets.",
+            "A public teaching diagram key is not secret."
+          ]
         }
       }
     },
@@ -222,8 +400,29 @@
             "系統範圍與信任是不同面向。",
             "通道加密不會消除所有邊界與權限責任。"
           ]
+        },
+        "en": {
+          "prompt": "How should you identify a trust boundary?",
+          "options": [
+            "Analyze changes in data, permissions and control responsibility; it need not match a system frame.",
+            "A dashed line means isolation is implemented.",
+            "It is identical to every C4 frame.",
+            "HTTPS eliminates every trust boundary."
+          ],
+          "rationales": [
+            "Cross-check diagrams against actual controls.",
+            "Drawing a line executes no configuration.",
+            "System scope and trust describe different concerns.",
+            "Channel encryption does not remove all boundary and permission responsibilities."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

@@ -1,8 +1,8 @@
 {
   "id": "AASE-M06-C04",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -129,6 +129,125 @@
         "check": "能指出驗證與匯出在哪裡處理；沒有把HTTP 200或框架重跑當成業務、安全或真人任務完成。",
         "cleanup": "不公開原始cookie、token或真實資料；未做網路觀察不填封包結果。"
       }
+    },
+    "en": {
+      "summary": "Trace browser actions through communication, processing and responses, separating general HTTP/API concepts from Streamlit’s actual framework communication.",
+      "objectives": [
+        "Explain the different roles of the browser, HTTP and APIs in data exchange.",
+        "Trace one synthetic record through validation, response, preview and download.",
+        "Separate HTTP status, business outcomes and unobserved communication details."
+      ],
+      "readingGuide": {
+        "goal": "Explain the different roles of the browser, HTTP and APIs in data exchange.",
+        "startingPoint": "architecture.md and reference/ source; reading alone is sufficient initially. Observe network activity only in your own local synthetic prototype.",
+        "route": "Read the situation and principles, compare examples, then expand architecture.md and review the checks.",
+        "output": "A data-flow record that separates transport from business outcomes without inventing endpoints."
+      },
+      "sections": [
+        {
+          "id": "roles",
+          "heading": "A Click Also Involves Data Exchange",
+          "paragraphs": [
+            "A browser presents pages, executes client-side code and communicates with servers. HTTP is a request/response protocol commonly used on the Web. An API (Application Programming Interface) defines software interaction; it need not use a network or REST.",
+            "For example, functions in rules.py can be called within the same process. A separately designed HTTP API would need endpoints, methods, inputs, responses and errors. This course creates no /api/check endpoint; a check button does not establish that such a URL exists."
+          ],
+          "sourceIds": [
+            "mdn-http"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "A Counter, Message Exchange and Service Agreement",
+          "paragraphs": [
+            "Think of the browser as a service counter, HTTP as a way to exchange messages with a processing office, and the API as an agreement about accepted requests, required data and responses. The analogy separates responsibilities; actual systems can involve multiple protocols and intermediaries.",
+            "A button is just a trigger. Trace input, communication, processing, results and retention to understand destinations. A green completion message alone does not show that server-side code actually rejects incomplete exports."
+          ]
+        },
+        {
+          "id": "http",
+          "heading": "Read the Parts of an HTTP Request",
+          "paragraphs": [
+            "MDN describes a client sending a request and a server producing a response. The method, target, headers and optional body convey the request; the response includes a status code, headers and optional content. HTTP is stateless, while applications can maintain sessions through additional mechanisms.",
+            "HTTP 200 usually indicates successful handling of that HTTP request. It does not establish complete fields, official acceptance or correct authorization. Inspect the contract and content for business and security outcomes; network success also does not establish that the user received or understood the final report."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Conceptual Trace of One Data Check",
+              "description": "This is an analysis sequence, not a Streamlit packet format. It specifies no nonexistent REST endpoint.",
+              "items": [
+                {
+                  "title": "Current input",
+                  "body": "Identify the current synthetic fields and requested action; avoid reusing a stale snapshot."
+                },
+                {
+                  "title": "Communication and processing",
+                  "body": "Identify the transport mechanism and validating process; interface limits alone are insufficient."
+                },
+                {
+                  "title": "Response and status",
+                  "body": "Separate transport/framework success, business omissions and technical failures."
+                },
+                {
+                  "title": "Preview and download",
+                  "body": "Match results to current input; downloaded files have separate device-retention responsibilities."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mdn-http"
+          ]
+        },
+        {
+          "id": "streamlit",
+          "heading": "Check Streamlit Instead of Assuming Endpoints",
+          "paragraphs": [
+            "Streamlit’s architecture documentation explains HTTP and WebSocket use between frontend and server. WebSocket maintains a two-way connection for updates and session interaction. This course uses framework mechanisms; do not describe every button as a POST to a custom REST API.",
+            "Calling validate and export_report within Python is a different relationship. Label the diagram “framework-managed events and results.” If finer detail is needed, inspect your own synthetic environment with browser developer tools rather than inventing uncaptured packets or responses."
+          ],
+          "sourceIds": [
+            "streamlit-architecture"
+          ]
+        },
+        {
+          "id": "validation",
+          "heading": "Ask Who Rechecks at Each Boundary",
+          "paragraphs": [
+            "The interface’s max_chars helps input, but program-side code still checks types, blanks and length. Export must validate current data rather than trusting an earlier complete result. Make rule responsibilities explicit at each entry point.",
+            "After an edit, identify which snapshot is invalid and which preview/download paths become unavailable. Rerendering and reauthorization are separate concerns. This prototype has no formal multiuser access control, so this flow does not demonstrate completed authorization."
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "Separate Document Reasoning from Observation",
+          "paragraphs": [
+            "A successful entry in the Network panel does not establish that the whole task passed. Record which resource, connection or exchange you observed, then check business and download results. Do not publish credentials, cookies or real data from network records.",
+            "Without starting the prototype, you can trace documents and mark protocol detail as documented or awaiting observation. This differs from capturing an actual request; keep those evidence levels in the record."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Data-flow Trace Record",
+              "paragraphs": [
+                "The unchanged Traditional Chinese template records current three-field input and events, the browser frontend, Streamlit-managed HTTP/WebSocket communication, Python validation/export, omission feedback or current JSON, session/download retention, no custom /api/check backend and the difference between document/code review and unobserved traffic. Adapt it in architecture.md with synthetic information."
+              ],
+              "code": "# 本課資料流（合成）\n輸入：三個目前欄位與操作事件\n用戶端：瀏覽器內Streamlit前端\n通訊：由Streamlit管理HTTP／WebSocket等機制\n處理：Python程序呼叫驗證及匯出函式\n結果：缺漏回饋，或當次JSON預覽與下載\n保存：工作階段記憶體；下載檔另由操作者管理\n未建立：自訂/api/check或REST後端\n證據：文件與程式核對；未擷取的通訊保持待觀察"
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "architecture.md and reference/ source; reading alone is sufficient initially. Observe network activity only in your own local synthetic prototype.",
+        "steps": [
+          "Choose one incomplete and one complete synthetic record; locate data from input through process, result and download.",
+          "Check actual in-process functions and framework communication without inventing REST endpoints; separate HTTP status from business outcomes.",
+          "Record document evidence, code observations and unobserved details in architecture.md. Keep only necessary secret-free summaries of any Network observations."
+        ],
+        "expected": "A data-flow record that separates transport from business outcomes without inventing endpoints.",
+        "check": "Locate validation and export processing. Do not treat HTTP 200 or a framework rerun as business, security or human-task acceptance.",
+        "cleanup": "Publish no raw cookies, tokens or real data. Do not report packet results without observing traffic."
+      }
     }
   },
   "checks": [
@@ -149,6 +268,21 @@
             "本課沒有自行建立該REST端點。",
             "名稱與機制要有依據。",
             "仍可能由框架傳遞事件與結果。"
+          ]
+        },
+        "en": {
+          "prompt": "Does the course’s check button establish an /api/check endpoint?",
+          "options": [
+            "Yes; every form is the same.",
+            "Yes; Streamlit is a REST framework.",
+            "No; inspect the actual framework and code without inventing an endpoint.",
+            "No; therefore no data is exchanged."
+          ],
+          "rationales": [
+            "Communication contracts vary by system.",
+            "The course creates no such REST endpoint.",
+            "Names and mechanisms need evidence.",
+            "The framework can still exchange events and results."
           ]
         }
       }
@@ -171,6 +305,21 @@
             "不是業務核定證據。",
             "授權需另外檢查。"
           ]
+        },
+        "en": {
+          "prompt": "What can HTTP 200 directly indicate?",
+          "options": [
+            "The data is true.",
+            "Usually successful handling of that HTTP request; inspect the contract and content for business outcomes.",
+            "Official intake acceptance.",
+            "Correct authorization for every user."
+          ],
+          "rationales": [
+            "It does not verify truth.",
+            "Keep protocol status separate from business commitments.",
+            "It is not acceptance evidence.",
+            "Authorization requires separate checks."
+          ]
         }
       }
     },
@@ -192,8 +341,29 @@
             "視覺狀態不等於程式規則。",
             "會失去完整性保證。"
           ]
+        },
+        "en": {
+          "prompt": "Is limiting input length only in the UI sufficient?",
+          "options": [
+            "No; processing and export entry points must still check current data.",
+            "Yes; users cannot bypass the interface.",
+            "Yes, if the button is gray.",
+            "No data validation is needed."
+          ],
+          "rationales": [
+            "Interface and program-side responsibilities differ.",
+            "Do not assume all inputs passed through that interface.",
+            "Visual state does not enforce program rules.",
+            "That would remove integrity guarantees."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

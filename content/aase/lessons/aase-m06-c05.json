@@ -1,8 +1,8 @@
 {
   "id": "AASE-M06-C05",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -125,6 +125,121 @@
         "check": "能分開登入與授權，不把session_state或按鈕隱藏當隔離；沒有宣稱本機原型已支援多人安全。",
         "cleanup": "只用合成代號，保留未實作狀態；不輸入或分享實際cookie、token與密碼。"
       }
+    },
+    "en": {
+      "summary": "Separate identity, access permissions and sessions, then specify access-point controls and negative scenarios for a candidate ten-user architecture.",
+      "objectives": [
+        "Distinguish authentication, authorization and session responsibilities.",
+        "Specify server-side authorization checks for reading and exporting data.",
+        "Record the single-user prototype separately from unimplemented multiuser security needs."
+      ],
+      "readingGuide": {
+        "goal": "Distinguish authentication, authorization and session responsibilities.",
+        "startingPoint": "architecture.md and synthetic A/B role cards; create no real accounts and store no real data.",
+        "route": "Read the situation and principles, compare examples, then expand architecture.md and review the checks.",
+        "output": "A separate candidate shared-version control and negative-scenario section in architecture.md."
+      },
+      "sections": [
+        {
+          "id": "three",
+          "heading": "Establish Identity, Then Check Permission",
+          "paragraphs": [
+            "Authentication verifies a claimed identity. Authorization decides whether that identity may perform an action on particular data. A session maintains related state across interactions. They interact but carry different responsibilities.",
+            "Sessions can also maintain anonymous preferences and need not imply login. st.session_state retains this course’s interaction state; it does not establish formal accounts, permission management or complete session security. The local prototype has not implemented those multiuser responsibilities."
+          ],
+          "sourceIds": [
+            "owasp-session"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Identification, Floor Access and a Temporary Pass",
+          "paragraphs": [
+            "Checking identification establishes identity; permitted floors express authorization. A temporary pass also needs issuance, expiry and revocation management. Receiving a pass does not grant access to every room or make it valid forever.",
+            "Likewise, after identifying user A, each read or export still needs a permission decision. Hiding the button for A’s record cannot prevent B from directly requesting it. Enforce the rule where access actually occurs."
+          ]
+        },
+        {
+          "id": "controls",
+          "heading": "Assign Controls to the Same Data",
+          "paragraphs": [
+            "OWASP recommends denying by default, applying least privilege and checking permissions on every request. For the candidate ten-user version, assign an owner or explicit relationship to records and check rules server-side for both reads and exports. Rejection must return no record content.",
+            "This is not an adopted organizational permission model. Appropriate roles must still confirm reviewer scope, delegated handover and permission expiry. Do not assume an administrator may see everything."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Three Separate Shared-version Controls",
+              "description": "The cards compare responsibilities. One login does not complete every later check; the prototype implements none of these formal controls.",
+              "items": [
+                {
+                  "title": "Authentication",
+                  "body": "Identify who is requesting access; choose an identity source and verification mechanism, then check security needs."
+                },
+                {
+                  "title": "Data authorization",
+                  "body": "Check identity, record relationship and action for reads, changes or exports; return no content when denying access."
+                },
+                {
+                  "title": "Session governance",
+                  "body": "Manage credential/token creation, renewal, timeout and invalidation; retained state is not permanent trust."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization"
+          ]
+        },
+        {
+          "id": "session",
+          "heading": "Continuing Interaction Needs a Lifecycle",
+          "paragraphs": [
+            "OWASP explains that leaked session identifiers can enable impersonation. Design protection, expiry and logout invalidation rather than assuming a closed browser tab ends a session. Changes in permissions or risk also require reconsidering whether interactions remain valid.",
+            "This lesson prescribes neither a universal token format nor arbitrary timeout seconds. Define idle and absolute expiry, revocation and reauthentication for the future shared context, then verify the actual framework. Saving a user code in session_state does not create these controls."
+          ],
+          "sourceIds": [
+            "owasp-session"
+          ]
+        },
+        {
+          "id": "negative",
+          "heading": "Specify Rejection Before Shared Deployment",
+          "paragraphs": [
+            "Use synthetic accounts A and B: if B requests data authorized only for A, both read and export must reject without including that content. Also specify unauthenticated requests, invalid sessions and revoked permissions, with explicit outcomes and verification locations.",
+            "This course has no login or database. Write candidate requirements and control locations first; do not fabricate passing prototype results. Keep them “not implemented / not verified” until architecture, code and tests provide actual evidence."
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "Place Controls on the Data Path",
+          "paragraphs": [
+            "HTTPS and a login screen alone do not establish ten-user readiness. Transport protection, identity verification, data authorization and retention need distinct responsibilities linked to the actual data path.",
+            "Add a candidate shared-version section to architecture.md while retaining the current single-user architecture. Ask readers to locate execution points, rule owners and missing evidence."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Candidate Ten-user Controls",
+              "paragraphs": [
+                "The unchanged Traditional Chinese template records an unimplemented shared version: undecided identity source, role-confirmed read/change/export relationships, server-side access/export checks, denial of B reading A-only data without content, session lifecycle still to design, absent formal prototype controls and no executed results. Adapt it with synthetic roles; it is not organizational policy or research evidence."
+              ],
+              "code": "# 共用版候選（未實作）\n身分：來源與驗證方式待確認\n資料關係：誰能讀取／修改／匯出哪些資料，待角色確認\n檢查位置：伺服器資料存取與匯出處，不能只藏按鈕\n負向情境：B讀取只授權A的資料 → 拒絕且無資料內容\n工作階段：逾時、登出、撤銷與重新驗證待設計\n目前原型：無正式登入、資料授權及Session安全治理\n執行與結果：未執行，保持待實作／待驗證"
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "architecture.md and synthetic A/B role cards; create no real accounts and store no real data.",
+        "steps": [
+          "List identity, authorization and session questions separately, marking each formal control absent from the current prototype.",
+          "Draw the candidate shared data path; mark server-side authorization at read/export and specify B requesting A-only data.",
+          "List undecided unauthenticated, expired-session and revoked-permission behavior, with responsible roles and missing evidence; invent no passing results."
+        ],
+        "expected": "A separate candidate shared-version control and negative-scenario section in architecture.md.",
+        "check": "Separate login from authorization. Neither session_state nor hidden buttons establish isolation or multiuser security.",
+        "cleanup": "Use synthetic labels and retain unimplemented status. Enter or share no actual cookies, tokens or passwords."
+      }
     }
   },
   "checks": [
@@ -145,6 +260,21 @@
             "直接請求仍可能到達資料處。",
             "控制位置與禁止結果都明確。",
             "不能由口頭保證取代存取控制。"
+          ]
+        },
+        "en": {
+          "prompt": "B is logged in and requests data authorized only for A. What should happen?",
+          "options": [
+            "Allow it because B is logged in.",
+            "Only hide the interface button.",
+            "Check authorization at data access and reject without A’s content.",
+            "Ask B to promise not to read it."
+          ],
+          "rationales": [
+            "Identity verification does not grant every data permission.",
+            "A direct request may still reach data access.",
+            "Both enforcement location and prohibited outcome are explicit.",
+            "A promise cannot replace access control."
           ]
         }
       }
@@ -167,6 +297,21 @@
             "需明確實作及驗證生命週期。",
             "不把框架功能提升為未具備的安全能力。"
           ]
+        },
+        "en": {
+          "prompt": "What does using st.session_state directly establish?",
+          "options": [
+            "Complete login governance.",
+            "Isolation of all data.",
+            "Implemented logout and permission revocation.",
+            "Use of framework interaction state; formal security controls need separate design and verification."
+          ],
+          "rationales": [
+            "State retention is not authentication.",
+            "Authorization needs actual rules and checks.",
+            "Lifecycle controls need explicit implementation and testing.",
+            "Do not infer absent security capabilities from a framework feature."
+          ]
         }
       }
     },
@@ -188,8 +333,29 @@
             "名稱不是執行結果。",
             "練習只使用合成資料。"
           ]
+        },
+        "en": {
+          "prompt": "How should the single-user course prototype record multiuser negative scenarios?",
+          "options": [
+            "As candidate requirements and control locations awaiting implementation and verification.",
+            "Mark all of them passed.",
+            "Use test filenames as proof of verification.",
+            "Enter production credentials."
+          ],
+          "rationales": [
+            "Keep design distinct from executed evidence.",
+            "The prototype lacks those features and evidence.",
+            "A name is not an execution result.",
+            "The exercise uses synthetic data only."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }
