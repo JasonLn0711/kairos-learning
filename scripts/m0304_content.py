@@ -53,5 +53,5 @@ def parse(lang,suffix):
   at=next(i for i,b in enumerate(blocks) if b.get('id')==f'section-{section+1}');blocks.insert(at,block)
  blocks.extend(answers)
  return dict(summary='把 Open、Closed、Filtered 與其他狀態連回觀察位置、方法及回應，選擇下一步查核。' if lang=='zh' else 'Connect Open, Closed, Filtered and other states to observation location, method and response, then choose the next check.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-04',revision=3,contentVersion='1.1.1',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-04',revision=4,contentVersion='1.1.2',date='2026-11-05',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m03-04.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

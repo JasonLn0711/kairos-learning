@@ -42,7 +42,7 @@ def parse(lang,suffix):
   head,*paras=chunk.strip().split('\n\n');ident,title=re.split(r'｜|\s*\|\s*',head,maxsplit=1)
   blocks.append(dict(kind='answer',id=ident.strip(),summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title.strip(),paragraphs=paras))
  return dict(summary='從授權範圍、掃描設定與原始結果，練習可查核的 Nmap 判讀與本機實驗。' if lang=='zh' else 'Connect authorized scope, settings and original evidence to defensible Nmap interpretation and a local experiment.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-07',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-07',revision=3,contentVersion='1.1.1',date='2026-11-05',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 p=ROOT/'content/concepts/m03-07.json';data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n'
 if '--check' in sys.argv:assert p.read_text()==data
 else:p.write_text(data)

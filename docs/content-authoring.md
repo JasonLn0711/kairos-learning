@@ -40,7 +40,7 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
-Current M04 contract (2026-11-05): ten new stable IDs; C01–C04 are published and C05–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C04 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
+Current M04 contract (2026-11-05): ten new stable IDs; C01–C05 are published and C06–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C05 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
 
 `content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
@@ -347,6 +347,59 @@ M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 
 
 `CEH26-M04-C03` 沿用短網址 `concepts/m04-03/`；完整中英原稿、答案與雜湊在 [來源目錄](sources/ceh26-m04-c03/README.md)。執行 ceh26_m04_c03_content.py 與 ceh26_m04_c03_diagrams.py 的 --check 核對全文、兩組平行角色／權限圖及下載。十一節正文直接呈現，一題答案預設收合，qa 維持空陣列。C01、C02 正文不變，C04–C10 待發布，舊版歸檔不公開。[發布紀錄](releases/2026-11-04-ceh26-m04-c03.md)。
 
+## AASE v1 獨立系列（2026-11-05）
+
+AASE 使用 `content/aase/course.json` 的九模組、49 概念目錄及獨立 `AASE-Mxx-Cyy` 識別碼，不共用 CEH 的 Mxx-yy 正本。教材寫於 `content/aase/lessons/`，來源位於 `content/aase/sources.json`。`src/lib/aase.ts` 驗證欄位、日期、情境答案與課程總量，沿用 `isPublic` 的狀態／日期閘門；目錄的 `pending` 是規劃狀態，是否可閱讀由通過閘門的教材決定。
+
+初批明確為繁體中文先行；該批沒有英文路由、語言切換或虛構英文 alternates。後續雙語能力依下方「AASE 雙語出版」契約；未完成的概念仍不產生英文頁。未發布正文不進頁面資料、導覽或搜尋。概念前後篇尚未完成時，連到對應模組錨點；不產生空白教材頁。既有 CEH 雙語及 SVG 邊界保持原契約。
+
+`AaseLesson.svelte` 沿共用 `TeachingArticle` 呈現結構化文字與程式碼，圖解使用 CEH 的 flow／cards 與 `ConceptBlocks`；不接受原始 HTML／SVG 注入。圖解的節點與搜尋文字來自同一教材資料，手機重排，答案用原生 details。讀者自我檢核不記錄成績，不冒充互動測驗或實作通過。
+
+工作坊正本在 `resources/aase/`；起始骨架與教師參考解答分開。`npm run package:aase` 產生固定時間戳 ZIP 與 SHA256；`python3 scripts/package-aase.py --check` 核對每個檔案與位元組。修改工作坊後重新封裝。新增產業案例只用合成資料及核實的規則，不複製整套工程教材。
+
+驗證：內容、單元、型別、`node scripts/check-publication-boundary.mjs`、`npm run validate:release`；另執行工作坊 pytest 與 `npm run test:browser:aase`。瀏覽器設定會啟動本機靜態網站與 Streamlit，需先依資源 README 安裝 `.local/aase-venv`。正式站以 `AASE_BASE_URL=https://learn.cs-kairos.com` 回讀網站與下載；遠端模式明確跳過本機 Streamlit 測試，不把靜態代管視為 Python 後端。
+
+### AASE 與 CEH 共用版型、欄位（2026-11-05）
+
+依使用者要求，兩套教材透過 `TeachingArticle.svelte` 共用摘要、資訊列、閱讀導引、本文目錄、`article.prose`、概念 Q&A 及 `.next-links`，透過 `CourseRail.svelte` 共用章節側欄。版型不硬寫課程名稱或 CEH 路徑；AASE 以自己的模組、stable ID 與網址傳入，CEH 原識別碼及內容保留。
+
+AASE 四篇資料升為 v1.0.1，對齊 CEH 的 `id`、`revision`、`contentVersion`、`date`、`publishedOn`、`status`、`text.zh.summary`、`text.zh.sections`、`checks[].text.zh`、`qa[].text.zh`。段落沿 `id`／`heading`／`paragraphs`，圖解與步驟使用同一 `ConceptBlock` 型別及 `ConceptBlocks.svelte`；檢核題沿零起算 answer、四選項與四解析。AASE 額外保留 `text.zh.objectives`、`exercise`、`readingGuide` 與來源欄位，讓原有學習證據仍可編輯及搜尋。`revisedOn` 改為 CEH 的 `date`，正文不再放在頂層。遷移前原稿見 [保存紀錄](sources/aase/layout-2026-11-05/README.md)。
+
+`qa` 代表收到的實際問題，與編輯理解檢核 `checks` 分開；版型遷移的四篇均為 `[]`，顯示與 CEH 相同的待補訊息。單語 Q&A 由共用元件依現有語言顯示，支持 question、originalQuestion、answer、explanation、editorial 及既有受限 Markdown 格式；不產生假英文。CEH 原有雙語驗證不放寬，該批 AASE 驗證只接受已確認的繁中欄位；後續英文欄位與逐語言閘門見下方雙語契約。
+
+維護時執行既有內容、型別、單元與發布邊界；AASE 瀏覽器測試比對兩課程的共用欄位、實際計算樣式與側欄目的地。因觸及共用教材元件，另執行 `npx playwright test --config playwright.ceh26-m04-c02.config.ts`，確認 CEH 雙語、Q&A、SVG 下載及短網址保留。[本次回執](releases/2026-11-05-aase-ceh-layout.md)
+
+
+## 新版 M04 第五課 NetBIOS／RPC（2026-11-05）
+
+`CEH26-M04-C05` 使用 `concepts/m04-05/`，完整雙語、兩份原始輸入與 SHA-256 在[來源目錄](sources/ceh26-m04-c05/README.md)。執行 `python3 scripts/ceh26_m04_c05_content.py --check` 核對全文；七節正文直接可讀，一題原生參考答案預設收合，qa 空陣列。C05 初次發布集合為 C01–C03、C05；C04 同步後目前為 C01–C05，C06–C10 仍 pending。C05 前一項連至 C04 正文，後一項連至 C06 待發布目錄錨點，舊 stable-ID URL 與舊教學歸檔不公開。[回執](releases/2026-11-05-ceh26-m04-c05.md)區分本機驗收、已知共用側欄200%文字差距及正式發布。
+
+### AASE 架構圖區塊（2026-11-05）
+
+AASE章節正文可使用受限`architecture`區塊，外層教材欄位及CEH版型不變。`AaseBlocks`只將新區塊交給`ArchitectureDiagram`，原flow／cards／table／step仍交給未修改的ConceptBlocks；CEH資料型別、驗證與渲染器不放寬。
+
+正式模型與驗證在src/lib/architecture-diagram.ts：level限定context／container；caption、description、boundary為文字；nodes為2–8個唯一id／title／body／kind／inside；relations為1–12條from／to／label。kind限定person、software-system、container、data-store；拒絕多餘欄位、未知端點、自連、重複及未連結節點。Context恰有一個系統內software-system，每條關係都連到該主系統；Container內只接受應用容器或資料儲存，不以檔名自動視為服務。
+
+HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查詢重排雙欄與箭頭，文字與搜尋由同一資料產生。沒有任意HTML／SVG、座標、事件或圖片路徑，也沒有新增SVG匯出。圖例需明說系統範圍不代表安全信任邊界，關係列不表示時序。標籤元件支持zh／en，該批AASE正文僅已確認繁中；後續英譯由雙語契約逐篇開放，不因元件有英文標籤就產生路由。
+
+執行architecture-diagram.test.ts的資料拒絕與搜尋／發布測試、既有內容／型別／發布邊界／release及AASE瀏覽器檢查。瀏覽器逐節核對節點分組、關係端點與標籤，四尺寸、200%文字、無JavaScript及手機／桌面圖解；同時保留原教材與CEH回歸。[發布回執](releases/2026-11-05-aase-m06.md)記錄實際影響及未驗事項。
+
+### 英文共用課程導覽（2026-11-05）
+
+英文 .with-rail 側欄與前後篇連結使用 overflow-wrap:anywhere；900px 以下 rail-content 高度上限為 10rem，540px 以下前後篇直向排列。維持完整標題、目的地及局部捲動，不以隱藏文字或省略號解決溢出。中文不匹配本次樣式。修改後執行 `npx playwright test --config playwright.course-rail.config.ts`，正式站設定 RAIL_BASE_URL；涵蓋 CEH 中英、AASE 中文、有／無 JavaScript、四尺寸及 200% 根字級。
+
+53 筆 CEH 資料依 WRITE-06 提升 patch，原發布日及非版本內容雜湊保留；17 筆舊式 lesson 的語意版號遷移基準另記。[回執](releases/2026-11-05-english-course-navigation.md)及[逐筆清單](releases/2026-11-05-course-navigation-versions.json)保留版本來源。M03-02 歷史 CSS 雜湊核對修訂前保存檔，不改寫原雜湊。該次導覽修正未開啟 AASE 英文全文或路由；後續開放狀態依下方契約及回執。
+
+### AASE 雙語出版（2026-11-05）
+
+中文課綱仍在 course.json；course.en.json 提供相同九模組／49 stable ID 的英文目錄文字，依 ID 與順序核對，不能覆寫分鐘、深度或 slug。英文課程本身有 status／publishedOn；各篇 AaseLesson 的 text.en 及 checks[].text.en 完整後，另附 translations.en.status／publishedOn，並受原文章全域狀態／日期約束。translations.en.publishedOn 控制英文開放時機；資訊列仍以兩語共用的原 publishedOn、contentVersion 及 date 呈現，不把翻譯閘門日期冒充版本修訂日。
+
+forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，不以中文代填英文。課程關閉時沒有英文路由／搜尋；翻譯缺件、draft 或 future 時只有目錄項目，前後篇落至該語言模組錨點。真正成對的頁面才有 language link 與三個 alternates，canonical／sitemap／搜尋共用 catalog。qa 可保留尚未翻譯的實際中文問題，英文只呈現已翻譯者；無問題就保留空陣列。
+
+兩語章節 ID、順序、段落數、目標與練習步數、區塊形狀、程式碼、來源 ID、圖解節點／關係及答案鍵對應。驗證器的結構核對不取代編輯語意核對。ArchitectureDiagram 與搜尋文字接收同一語言參數。來源與前版保存依 WRITE-04／06；目前 M01-01 v1.0.2 的中文正文及檢核不改，新增完整英譯，其他 48 篇英文仍待編。
+
+先跑內容、單元、型別，再執行 publication-boundary（含英文課程與翻譯 draft／future 的真正建置）及 release；接續 `npx playwright test --config playwright.aase-bilingual.config.ts`、完整 AASE 及 CEH 共用版型回歸。正式站以 AASE_BASE_URL 執行新套件。測試輸出與建置不可同時改寫同一產物目錄；先等建置結束再啟動瀏覽器。英文工作坊 HTML 與 ZIP 內語言分開核對，未翻譯 ZIP 必須明示。[發布回執](releases/2026-11-05-aase-bilingual-foundation.md)記錄實際範圍。
+
 ## 新版 M04 第四課 SMB 複習與診斷（2026-11-05）
 
-`CEH26-M04-C04` 使用短網址 `concepts/m04-04/`；完整中英公開稿、單題答案、六個雙語錨點與雜湊在 [來源目錄](sources/ceh26-m04-c04/README.md)。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對全文。沿用 sourceBody，本文直接閱讀、參考答案預設收合、qa 為空。以文字及清單呈現拒絕階段、實際身分與傳輸保護；本次無新增圖解或互動。C01–C03 正文保留，C05–C10 待發布，舊版歸檔不公開。[驗收與發布紀錄](releases/2026-11-05-ceh26-m04-c04.md)。
+`CEH26-M04-C04` 使用短網址 `concepts/m04-04/`；完整中英公開稿、單題答案、六個雙語錨點與雜湊在 [來源目錄](sources/ceh26-m04-c04/README.md)。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對全文。沿用 sourceBody，本文直接閱讀、參考答案預設收合、qa 為空。以文字及清單呈現拒絕階段、實際身分與傳輸保護；本次無新增圖解或互動。C01–C03 與 C05 正文保留，C06–C10 待發布，舊版歸檔不公開。[驗收與發布紀錄](releases/2026-11-05-ceh26-m04-c04.md)。

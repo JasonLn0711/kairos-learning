@@ -35,7 +35,7 @@ def parse(lang,suffix):
  assert next(headings,None) is None
  blocks.append(dict(kind='answer',id='answer-projects',summary='參考解答：Scanning、Enumeration 與尚未測試的權限' if lang=='zh' else 'Reference answer: scanning, enumeration, and untested permissions',paragraphs=[(S/f'answer.{suffix}.md').read_text().strip()]))
  return dict(summary='Enumeration vs. Scanning｜從服務入口、資源名稱到可核對的權限證據。' if lang=='zh' else 'Enumeration vs. Scanning | From service endpoints and share names to checkable permission evidence.',sections=[],sourceBody=blocks)
-lesson=dict(id='CEH26-M04-C01',revision=3,contentVersion='1.1.0',date='2026-11-04',status='published',publishedOn='2026-11-04',qa=[],text={lang:parse(lang,suffix) for lang,suffix in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='CEH26-M04-C01',revision=4,contentVersion='1.1.1',date='2026-11-05',status='published',publishedOn='2026-11-04',qa=[],text={lang:parse(lang,suffix) for lang,suffix in [('zh','zh-TW'),('en','en')]})
 data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n';path=R/'content/concepts/ceh26-m04-c01.json'
 if '--check' in sys.argv:assert path.read_text()==data
 else:path.write_text(data)

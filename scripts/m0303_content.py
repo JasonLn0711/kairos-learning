@@ -42,5 +42,5 @@ def parse(lang,suffix):
   at=next(i for i,b in enumerate(blocks) if b.get('id')==f'section-{section+1}');blocks.insert(at,block)
  blocks.extend(answers)
  return dict(summary='比較 TCP Connect、SYN 與 UDP 的探測方式，依回應建立有條件的連接埠觀察。' if lang=='zh' else 'Compare TCP Connect, SYN and UDP probes and interpret their responses as contextual port observations.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-03',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-03',revision=3,contentVersion='1.1.1',date='2026-11-05',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m03-03.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

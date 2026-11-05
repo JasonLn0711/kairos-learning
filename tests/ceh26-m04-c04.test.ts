@@ -22,7 +22,7 @@ test('SMB review retains complete paired public manuscripts, one reference answe
   const entry=searchEntries.find(e=>e.id===id&&e.lang===lang)!;for(const block of blocks)for(const value of flatten(block))assert.ok(entry.text.includes(value));
   for(const token of ['LAB/labreader','Training','Finance','readme.txt','draft.txt','3.1.1','445','-N','-L','ACCESS_DENIED'])assert.ok(text.includes(token),token);
   const prefix=lang==='en'?'/en':'';const page=getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-04/`)!;
-  assert.equal(page.conceptTeaching?.id,id);assert.equal(page.conceptNavigation?.previous?.id,'CEH26-M04-C03');assert.equal(page.conceptNavigation?.next?.id,'CEH26-M04-C05');assert.equal(page.conceptNavigation?.next?.href,null);
+  assert.equal(page.conceptTeaching?.id,id);assert.equal(page.conceptNavigation?.previous?.id,'CEH26-M04-C03');assert.equal(page.conceptNavigation?.next?.id,'CEH26-M04-C05');assert.equal(page.conceptNavigation?.next?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-05/`);
   assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c04/`),null);
  }
  assert.ok(!/Sentinel_|libfile_|deliveryId|learner_answers_received|你先前已收到|教材已交付不代表你已經理解|先前學過/.test(JSON.stringify(t)));

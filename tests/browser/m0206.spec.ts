@@ -1,12 +1,13 @@
 import {test,expect} from '@playwright/test';
 import {readFileSync,mkdirSync} from 'node:fs';
+const source=JSON.parse(readFileSync('content/concepts/m02-06.json','utf8'));
 const dir='.local/m0206-revision/screenshots';mkdirSync(dir,{recursive:true});
 const route=(lang:string)=>`${lang==='en'?'/en':''}/courses/ceh/v13/m02/concepts/m02-06/`;
 const ids=['network-map','prefix-bits','private-network','bgp-routing','cdn-origin','proxy-modes'];
 for(const lang of ['zh','en']){
  for(const width of [320,390,768,1280])test(`${lang} ${width}: replacement text, diagram layout and exports`,async({page,request})=>{
   await page.setViewportSize({width,height:900});await page.goto(route(lang));await page.waitForLoadState('networkidle');
-  await expect(page.locator('.article-metadata')).toContainText('v1.1.0');
+  await expect(page.locator('.article-metadata')).toContainText('v'+source.contentVersion);
   await expect(page.locator('.network-diagram')).toHaveCount(6);await expect(page.locator('[data-reviewed-svg]')).toHaveCount(2);await expect(page.locator('.reference-answer')).toHaveCount(9);
   await expect(page.locator('#section-2-4')).toBeVisible();await expect(page.locator('#section-3-2')).toBeVisible();await expect(page.locator('#section-4-4')).toBeVisible();await expect(page.locator('#section-8-6')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

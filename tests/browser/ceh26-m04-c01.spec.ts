@@ -14,8 +14,8 @@ for(const lang of ['zh','en']){
   await expect(page.locator('link[hreflang=en]')).toHaveAttribute('href',base+'/en'+zhPath);
   await expect(page.locator('link[hreflang=x-default]')).toHaveAttribute('href',base+zhPath);
   await expect(page.locator('article')).toContainText('Finance');await expect(page.locator('article')).toContainText('demo.txt');await expect(page.locator('article')).not.toContainText('SMB/Kafka');
-  await expect(page.locator('h1')).toContainText('CEH M04-01');await expect(page.locator('.article-metadata')).toContainText('v1.1.0');
-  const dates=page.locator('.article-metadata time');await expect(dates).toHaveCount(2);for(const date of await dates.all())await expect(date).toHaveAttribute('datetime','2026-11-04');
+  await expect(page.locator('h1')).toContainText('CEH M04-01');await expect(page.locator('.article-metadata')).toContainText('v'+source.contentVersion);
+  const dates=page.locator('.article-metadata time');await expect(dates).toHaveCount(2);await expect(dates.nth(0)).toHaveAttribute('datetime',source.publishedOn);await expect(dates.nth(1)).toHaveAttribute('datetime',source.date);
   await expect(page.locator('article h2[id^=section-]')).toHaveCount(10);await expect(page.locator('article details')).toHaveCount(1);const answer=page.locator('#answer-projects');await expect(answer).not.toHaveAttribute('open','');
   await expect(page.locator('.source-body h2[id]')).toHaveCount(14);await expect(page.locator('.source-body table')).toHaveCount(9);
   const headings=JSON.parse(readFileSync('docs/sources/ceh26-m04-c01/detailed-section-map.json','utf8'));
@@ -51,8 +51,8 @@ for(const lang of ['zh','en']){
 }
 
 for(const prefix of ['', '/en'])test(`${prefix||'zh'}: former stable-ID URL is a real 404, public data and sitemap use one canonical`,async({request})=>{
- for(const path of ['ceh26-m04-c01','ceh26-m04-c02','ceh26-m04-c03','ceh26-m04-c04','m04-05','m04-09','m04-10','m04-11','m04-12']){const response=await request.get(`${prefix}/courses/ceh/v13/m04/concepts/${path}/`);expect(response.status()).toBe(404);expect(await response.text()).not.toContain('reference-answer');}
+ for(const path of ['ceh26-m04-c01','ceh26-m04-c02','m04-09','m04-10','m04-11','m04-12']){const response=await request.get(`${prefix}/courses/ceh/v13/m04/concepts/${path}/`);expect(response.status()).toBe(404);expect(await response.text()).not.toContain('reference-answer');}
  const response=await request.get(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/__data.json`);expect(response.status()).toBe(200);const data=await response.text();expect(data).toContain('CEH26-M04-C01');expect(data).toContain('demo.txt');expect(data).not.toContain('concepts/ceh26-m04-c01/');
- const index=await (await request.get('/search-index.json')).json();const entries=index.filter((e:any)=>e.label==='CEH M04');expect(entries).toHaveLength(8);expect(entries.map((e:any)=>e.id)).toEqual(['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04','CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04']);expect(entries.find((e:any)=>e.lang===(prefix?'en':'zh')).href).toBe(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);
- const sitemap=await (await request.get('/sitemap.xml')).text();expect(sitemap).toContain(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);expect(sitemap).not.toContain('/concepts/ceh26-m04-c');expect(sitemap).not.toMatch(/m04\/concepts\/m04-(?:0[5-9]|1[0-2])\//);
+ const index=await (await request.get('/search-index.json')).json();const entries=index.filter((e:any)=>e.label==='CEH M04');expect(entries).toHaveLength(10);expect(entries.map((e:any)=>e.id)).toEqual(['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04','CEH26-M04-C05','CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04','CEH26-M04-C05']);expect(entries.find((e:any)=>e.lang===(prefix?'en':'zh')).href).toBe(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);
+ const sitemap=await (await request.get('/sitemap.xml')).text();expect(sitemap).toContain(`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);expect(sitemap).not.toContain('/concepts/ceh26-m04-c');expect(sitemap).not.toMatch(/\/courses\/ceh\/v13\/m04\/concepts\/m04-(?:0[6-9]|1[0-2])\//);
 });

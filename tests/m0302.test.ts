@@ -10,7 +10,7 @@ import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M03-02')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
 test('M03-02 complete bilingual lesson, three diagrams, paired closed-answer data records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.2.0');assert.equal(lesson.revision,3);assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.2.1');assert.equal(lesson.revision,4);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-03');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
@@ -101,7 +101,7 @@ test('M03-02 ARP supplement preserves both named figures, prior ICMP, and all se
  const hashes=JSON.parse(readFileSync(root+'preserved-figures.sha256.json','utf8'));
  for(const [path,hash] of Object.entries(hashes)){
   // Historical checksum applies to the pre-retirement renderer; current M03 behavior has browser coverage.
-  let data=readFileSync(path==='src/lib/components/SourceBody.svelte'?'archive/ceh/m04-legacy-2026-11-04/baseline/'+path:path);
+  let data=readFileSync(path==='src/app.css'?'docs/sources/course-navigation-2026-11-05/app.before.css':path==='src/lib/components/SourceBody.svelte'?'archive/ceh/m04-legacy-2026-11-04/baseline/'+path:path);
   if(path==='src/lib/components/SourceBody.svelte'){
    // Preserve the ARP byte contract while allowing the explicit M03-03 through M03-07 additions.
    const original=data.toString().replace('  import NmapPositions from "./NmapPositions.svelte";\n','').replace("{:else if block.kind === 'visual' && ['/images/ceh/m03-07-positions-zh.svg','/images/ceh/m03-07-positions-en.svg'].includes(block.src)}<NmapPositions {block}/>",'').replace('  import ScanDiagram from "./ScanDiagram.svelte";\n','').replace('  import scanDiagrams from "$lib/m0303-scan-diagrams.json";\n','').replace("{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>",'').replace("||conceptId==='M03-03'",'').replace("||conceptId==='M03-04'",'').replace("||conceptId==='M03-05'",'').replace("||conceptId==='M03-06'",'');

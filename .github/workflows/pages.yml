@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 concurrency:
@@ -16,6 +17,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
@@ -36,5 +39,19 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
+      - name: Confirm uploaded artifact is visible
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const {pathToFileURL} = require('node:url');
+            const {waitForPagesArtifact} = await import(pathToFileURL(process.env.GITHUB_WORKSPACE + '/scripts/pages-artifact.mjs').href);
+            await waitForPagesArtifact({
+              name: process.env.PAGES_ARTIFACT_NAME,
+              list: async () => (await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId})).data.artifacts,
+              log: message => core.info(message)
+            });
       - uses: actions/deploy-pages@v4
         id: deployment
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}

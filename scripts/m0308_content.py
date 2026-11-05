@@ -42,7 +42,7 @@ def parse(lang,suffix):
   head,*paras=chunk.strip().split('\n\n');ident,title=re.split(r'｜|\s*\|\s*',head,maxsplit=1)
   blocks.append(dict(kind='answer',id=ident.strip(),summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title.strip(),paragraphs=paras))
  return dict(summary='分開掃描狀態、告警與阻擋證據，核對防火牆及 IDS／IPS 的實際效果。' if lang=='zh' else 'Separate scan states, alerts and blocking evidence to verify firewall and IDS/IPS outcomes.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-08',revision=2,contentVersion='1.1.0',date='2026-11-04',status='published',publishedOn='2026-11-04',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-08',revision=3,contentVersion='1.1.1',date='2026-11-05',status='published',publishedOn='2026-11-04',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 p=ROOT/'content/concepts/m03-08.json';data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n'
 if '--check' in sys.argv:assert p.read_text()==data
 else:p.write_text(data)

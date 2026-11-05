@@ -56,7 +56,15 @@ def main():
             if page.h1 != 1: errors.append(f'{rel}: expected one h1, got {page.h1}')
             path = '/' + rel.removesuffix('index.html')
             if page.canonical != 'https://learn.cs-kairos.com' + path: errors.append(f'{rel}: incorrect canonical')
-            if not all(k in page.alternates for k in ('en','zh-Hant','x-default')): errors.append(f'{rel}: missing language alternates')
+            # Only actual published pairs may advertise a language switch.
+            is_aase = rel.startswith(('courses/aase/v1/', 'en/courses/aase/v1/'))
+            counterpart = rel.removeprefix('en/') if rel.startswith('en/') else 'en/' + rel
+            if is_aase and counterpart not in pages:
+                if page.alternates: errors.append(f'{rel}: alternates point to an unavailable AASE translation')
+            else:
+                zh_rel = rel.removeprefix('en/')
+                expected_alternates = {'zh-Hant': 'https://learn.cs-kairos.com/' + zh_rel.removesuffix('index.html'), 'en': 'https://learn.cs-kairos.com/en/' + zh_rel.removesuffix('index.html'), 'x-default': 'https://learn.cs-kairos.com/' + zh_rel.removesuffix('index.html')}
+                if page.alternates != expected_alternates: errors.append(f'{rel}: incorrect language alternates')
             if 'script-src' not in page.csp or 'sha256-' not in page.csp: errors.append(f'{rel}: missing hashed script CSP')
         for href in page.links:
             u = urlsplit(urljoin('https://learn.cs-kairos.com/' + rel, href))
