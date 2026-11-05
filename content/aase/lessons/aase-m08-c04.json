@@ -1,8 +1,8 @@
 {
   "id": "AASE-M08-C04",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -150,6 +150,145 @@
         "check": "每次操作有明確重跑；過期結果與下載消失受到檢查，不把模擬元件當真實下載證據。",
         "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
       }
+    },
+    "en": {
+      "summary": "Replay omissions, correction and input changes with AppTest to inspect Streamlit components and state; verify real downloads and keyboard behavior separately.",
+      "objectives": [
+        "Create and rerun Streamlit scenarios with AppTest.",
+        "Check errors, success, retained input and download-component state.",
+        "Separate simulation coverage from real-browser verification."
+      ],
+      "readingGuide": {
+        "goal": "Create and rerun Streamlit scenarios with AppTest.",
+        "startingPoint": "Your slice-three copy with app.py, rules.py, tests/ and Streamlit 1.51.0.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "An AppTest regression script with separately recorded real-browser verification."
+      },
+      "sections": [
+        {
+          "id": "interface",
+          "heading": "Correct Rules Still Need the Right Interface Connection",
+          "paragraphs": [
+            "rules.py rejecting incomplete input does not establish correct feedback in app.py. A button may fail to call rules, success may remain stale or input changes may leave a download available. Interface tests connect operations to displayed results.",
+            "AppTest simulates a Streamlit app, allowing widget values, script execution, display inspection and Session State checks. This course pins 1.51.0; rely on that version’s supported behavior and actual execution."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Replay a Counter-service Script",
+          "paragraphs": [
+            "An operation script says which field to fill, when to check and what should appear. Merely establishing that a counter exists says nothing about correction guidance after invalid input.",
+            "AppTest repeats this script but is not a person using a real browser. Observe layout, keyboard focus and download bytes separately."
+          ]
+        },
+        {
+          "id": "rerun",
+          "heading": "Connect Input, Rerun and Observation",
+          "paragraphs": [
+            "After creating AppTest, call run() for the initial screen. After changing widgets or pressing a button, explicitly run() before checking the new result. Values retained from an earlier rerun do not establish that the new action executed.",
+            "The example locates three fields by stable keys. With one primary check action, it uses at.button[0]. If your project has more buttons, adjust targeting first so the test does not trigger another action."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Three Consecutive Acceptance States",
+              "description": "Update input and rerun at each step, observing the current result.",
+              "items": [
+                {
+                  "title": "Omission",
+                  "body": "Fill two fields and check; expect missing-data feedback without complete download."
+                },
+                {
+                  "title": "Correction",
+                  "body": "Fill the third field and check; expect success and a download component."
+                },
+                {
+                  "title": "Change",
+                  "body": "Clear the third field and rerun; old success, download and snapshot become invalid."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "example",
+          "heading": "A Complete Interface Test",
+          "paragraphs": [
+            "Create tests/test_app_contract.py in your slice-three copy, retaining app.py and rules.py in the same project structure. Path locates app.py relative to the test file instead of guessing from the launching shell’s directory.",
+            "Assert absent states at each stage too. Positive success assertions alone do not protect omission rejection or stale-result invalidation."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "tests/test_app_contract.py",
+              "paragraphs": [
+                "Run with Streamlit 1.51.0 and pytest installed. The retained Chinese omission text, synthetic input and stable keys match the actual reference interface."
+              ],
+              "code": "from pathlib import Path\nfrom streamlit.testing.v1 import AppTest\n\n\ndef test_input_change_invalidates_report():\n    app = str(Path(__file__).resolve().parents[1] / \"app.py\")\n    at = AppTest.from_file(app).run()\n    assert not at.exception\n    at.text_input(key=\"application_id\").input(\"SYN-001\")\n    at.text_input(key=\"applicant_code\").input(\"DEMO-A\")\n    at.button[0].click().run()\n    assert \"缺少文件類型\" in at.error[0].value\n    assert at.text_input(key=\"application_id\").value == \"SYN-001\"\n    assert not at.success\n    assert not at.get(\"download_button\")\n    at.text_input(key=\"document_type\").input(\"合成申請表\").run()\n    at.button[0].click().run()\n    assert not at.exception\n    assert at.success\n    assert len(at.get(\"download_button\")) == 1\n    at.text_input(key=\"document_type\").input(\"\").run()\n    assert not at.exception\n    assert not at.success\n    assert not at.get(\"download_button\")\n    assert \"checked\" not in at.session_state"
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "Move from Components to a Real Browser",
+          "paragraphs": [
+            "From the project root, run python -m pytest -q tests/test_app_contract.py, then start app.py and perform the same task by keyboard. Download JSON and inspect filename, Chinese content, status, scope and allowed fields.",
+            "A download component in AppTest is state evidence, not proof of file delivery to a device. A real browser also cannot replace observing whether a person understands feedback; keep separate results for all three."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | This Tool’s Verification Scope",
+              "headers": [
+                "Item",
+                "AppTest",
+                "Further verification"
+              ],
+              "rows": [
+                [
+                  "Errors/success and Session State",
+                  "Assert with a script.",
+                  "Whether the specification itself is correct."
+                ],
+                [
+                  "Download-component visibility",
+                  "Check presence or absence.",
+                  "Actual file bytes and filename."
+                ],
+                [
+                  "Keyboard and mobile layout",
+                  "Not established by this test.",
+                  "Real-browser and viewport checks."
+                ],
+                [
+                  "User understanding of feedback",
+                  "Not established by component presence.",
+                  "Task observation."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "Read the Failure Before Choosing the Repair",
+          "paragraphs": [
+            "For AppTest exceptions, inspect paths, dependencies and output. For an unlocated component, check whether the current stage includes it. A third-slice download test is not appropriate for slice one; do not “repair” that intentional difference.",
+            "If a test differs from your specification, clarify requirements first. Do not silently add unconfirmed fields, login or external services just to make tests green."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Your slice-three copy with app.py, rules.py, tests/ and Streamlit 1.51.0.",
+        "steps": [
+          "Add the complete test, run it from the project root and retain results.",
+          "Identify assertions protecting omission, correction and change at each step.",
+          "Replay in a real browser and read the downloaded JSON separately, recording keyboard/download outcomes."
+        ],
+        "expected": "An AppTest regression script with separately recorded real-browser verification.",
+        "check": "Each operation has an explicit rerun. Check removal of stale results/downloads; simulated components are not real-download evidence.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
     }
   },
   "checks": [
@@ -170,6 +309,21 @@
             "確保觀察對應重跑。",
             "缺少證據。",
             "不是操作測試步驟。"
+          ]
+        },
+        "en": {
+          "prompt": "After changing an AppTest widget, how should you inspect new results?",
+          "options": [
+            "Inspect old values only.",
+            "Call run() explicitly, then inspect the current state.",
+            "Assume success directly.",
+            "Rewrite spec."
+          ],
+          "rationales": [
+            "The new scenario may not have executed.",
+            "Match observation to the rerun.",
+            "There is no evidence.",
+            "That is not an operation-testing step."
           ]
         }
       }
@@ -192,6 +346,21 @@
             "超出本 AppTest 腳本的證明範圍。",
             "可由 AppTest 核對。"
           ]
+        },
+        "en": {
+          "prompt": "Which needs separate real-browser verification?",
+          "options": [
+            "Simulated error text.",
+            "The checked value in Session State.",
+            "Actual download bytes and keyboard focus.",
+            "The simulated success component."
+          ],
+          "rationales": [
+            "AppTest can inspect this.",
+            "The simulation can check this.",
+            "These exceed the proof scope of this AppTest script.",
+            "AppTest can inspect this."
+          ]
         }
       }
     },
@@ -213,8 +382,29 @@
             "此時不應成功。",
             "完整覆蓋本課失效要求。"
           ]
+        },
+        "en": {
+          "prompt": "What should you check after clearing the third field?",
+          "options": [
+            "The old report can still download.",
+            "Only the page title.",
+            "Success text is present.",
+            "Old success, download and checked are all invalidated."
+          ],
+          "rationales": [
+            "That violates the current-input contract.",
+            "That misses the state transition.",
+            "Success should be absent now.",
+            "These cover the course’s invalidation requirement."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

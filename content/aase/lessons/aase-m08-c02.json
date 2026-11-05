@@ -1,8 +1,8 @@
 {
   "id": "AASE-M08-C02",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -145,6 +145,140 @@
         "check": "Red 必須因需求行為失敗；重構不放寬測試或增加未確認要求。",
         "cleanup": "保留三階段程式與結果，別把人工缺陷起點誤放入正常專案。"
       }
+    },
+    "en": {
+      "summary": "First make tests detect export despite missing data, then make a minimal repair and refactor while preserving behavior.",
+      "objectives": [
+        "Distinguish expected requirement failures from environment failures.",
+        "Run a small Red, Green, Refactor cycle.",
+        "Preserve commands and results without weakening tests to fit faults."
+      ],
+      "readingGuide": {
+        "goal": "Distinguish expected requirement failures from environment failures.",
+        "startingPoint": "A separate tdd-lab/ and Python with pytest 8.4.2 installed; preserve the workshop reference solution.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "A reproducible small rule exercise with actual Red, Green and Refactor execution records."
+      },
+      "sections": [
+        {
+          "id": "cycle",
+          "heading": "Make One Requirement a Test That Can Fail",
+          "paragraphs": [
+            "Test-driven development (TDD) expresses one requirement in a test, runs it to confirm failure from missing behavior, adds enough code to pass, then improves internal structure. Red, Green and Refactor form a feedback cycle, not three status stickers.",
+            "In separate tdd-lab/, practice one rule: missing document type must not produce a complete report. This is not the reference solution; it omits the other two fields, length, output allowlisting and interface. Do not replace the complete program with this exercise."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Use a Gauge to Find the Gap Before Repair",
+          "paragraphs": [
+            "A gauge must distinguish acceptable from unacceptable material. If defective material passes, improve the measurement. Running a test red checks whether its feedback detects the behavior you intend to protect.",
+            "Syntax errors, missing pytest and uncollected tests are not the missing-data export failure sought here. Read the failure before choosing to repair code, tests or environment."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Small TDD Feedback Steps",
+              "description": "Advance only the current requirement, then select another scenario.",
+              "items": [
+                {
+                  "title": "Red",
+                  "body": "The test fails because expected behavior is absent."
+                },
+                {
+                  "title": "Green",
+                  "body": "A minimal change makes the same test pass."
+                },
+                {
+                  "title": "Refactor",
+                  "body": "Preserve behavior, improve naming/structure and test again."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "red-stage",
+          "heading": "Red: Confirm Detection of the Fault",
+          "paragraphs": [
+            "Create export_gate.py in a separate directory with the deliberately unvalidated starting code, then create test_export_gate.py. This is an injected exercise, not a defect in the public reference.",
+            "Run python -m pytest -q. Negative cases should fail because no ValueError is raised, while valid data passes. Preserve output and reasons; a red screen alone does not establish useful TDD feedback."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "export_gate.py | Exercise Starting Point",
+              "paragraphs": [
+                "Use only a new tdd-lab/; preserve the prototype’s rules.py."
+              ],
+              "code": "def build_report(record):\n    return {\"status\": \"complete\", \"data\": dict(record)}"
+            },
+            {
+              "kind": "step",
+              "heading": "test_export_gate.py | Fix the Acceptance Behavior",
+              "paragraphs": [
+                "Put both files in the same directory and run with Python containing pytest. The expected exception text means “missing document type”; the valid synthetic label and exact output are retained."
+              ],
+              "code": "import pytest\nfrom export_gate import build_report\n\n\n@pytest.mark.parametrize(\"value\", [\"\", \"   \", None, 42])\ndef test_missing_document_cannot_be_complete(value):\n    with pytest.raises(ValueError, match=\"缺少文件類型\"):\n        build_report({\"document_type\": value})\n\n\ndef test_valid_document_matches_contract():\n    result = build_report({\"document_type\": \"合成申請表\"})\n    assert result == {\"status\": \"complete\", \"data\": {\"document_type\": \"合成申請表\"}}"
+            }
+          ]
+        },
+        {
+          "id": "green-stage",
+          "heading": "Green: Repair Behavior, Keep the Tests",
+          "paragraphs": [
+            "Replace export_gate.py with this version and run the same command. Reject non-string values and text empty after trimming, and trim valid document text before output.",
+            "Keep negative tests and their expectations rather than accepting every input as complete. Passing covers these inputs only; the next lesson adds the three-field rules and boundaries."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "export_gate.py | Minimal Repair",
+              "paragraphs": [
+                "Keep the original tests and observe negative cases changing from failure to pass."
+              ],
+              "code": "def build_report(record):\n    value = record.get(\"document_type\")\n    if not isinstance(value, str) or not value.strip():\n        raise ValueError(\"缺少文件類型\")\n    return {\"status\": \"complete\", \"data\": {**record, \"document_type\": value.strip()}}"
+            }
+          ]
+        },
+        {
+          "id": "refactor-stage",
+          "heading": "Refactor: Keep Behavior and Clarify Structure",
+          "paragraphs": [
+            "This version extracts document-type normalization and error handling into a named function, preserving build_report’s external interface and results. It is one way to organize this exercise; no extra abstraction is necessary if the existing code is already clear.",
+            "Rerun the same tests, then add missing-key, surrounding-whitespace and unchanged-input cases to check for unintended behavior changes. A new business requirement starts another cycle rather than hiding within refactoring."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "export_gate.py | Refactored Version",
+              "paragraphs": [
+                "Change one small area at a time, preserving the external contract."
+              ],
+              "code": "def require_document_type(value):\n    if not isinstance(value, str) or not value.strip():\n        raise ValueError(\"缺少文件類型\")\n    return value.strip()\n\n\ndef build_report(record):\n    document_type = require_document_type(record.get(\"document_type\"))\n    return {\"status\": \"complete\", \"data\": {**record, \"document_type\": document_type}}"
+            }
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "Retain Evidence from All Three Stages",
+          "paragraphs": [
+            "Record test contents, expected Red failures, the same tests passing at Green and regression results after Refactor. If an Agent supplies a finished package, check whether these steps actually ran; final code cannot establish its development history.",
+            "This exercise covers one rule. Before integration with the three-field prototype, check original spec and full tests. Local success does not establish the whole system or completed security."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "A separate tdd-lab/ and Python with pytest 8.4.2 installed; preserve the workshop reference solution.",
+        "steps": [
+          "Create the starting code and tests, run python -m pytest -q and preserve missing-exception failures.",
+          "Run the same tests with the minimal repair and then with the refactored version.",
+          "Add missing-key, trimming and unchanged-input tests; record each stage’s results and scope."
+        ],
+        "expected": "A reproducible small rule exercise with actual Red, Green and Refactor execution records.",
+        "check": "Red must fail on required behavior. Refactoring neither weakens tests nor adds unconfirmed requirements.",
+        "cleanup": "Keep all three program stages and results; do not put the deliberately faulty starting code into the normal project."
+      }
     }
   },
   "checks": [
@@ -165,6 +299,21 @@
             "先修測試。",
             "回饋確實抓到要求缺失。",
             "尚未驗證任何行為。"
+          ]
+        },
+        "en": {
+          "prompt": "Which failure fits the purpose of this Red stage?",
+          "options": [
+            "pytest is unavailable.",
+            "The test file has a syntax error.",
+            "Missing data does not raise the expected exception.",
+            "No tests were collected."
+          ],
+          "rationales": [
+            "Repair the environment first.",
+            "Repair the test first.",
+            "The feedback detects the missing requirement.",
+            "No behavior was tested."
           ]
         }
       }
@@ -187,6 +336,21 @@
             "增加無關變動。",
             "失去驗收保護。"
           ]
+        },
+        "en": {
+          "prompt": "What should Green prioritize?",
+          "options": [
+            "The smallest repair that passes the current tests.",
+            "Change expectations to universal success.",
+            "Rewrite the website.",
+            "Delete failing cases."
+          ],
+          "rationales": [
+            "Keep feedback short and focused.",
+            "That accepts faulty behavior.",
+            "That adds unrelated changes.",
+            "That removes acceptance protection."
+          ]
         }
       }
     },
@@ -208,8 +372,29 @@
             "改變要求。",
             "結構改變而行為保持。"
           ]
+        },
+        "en": {
+          "prompt": "Which change is refactoring in this exercise?",
+          "options": [
+            "Add official login.",
+            "Remove the required-field rule.",
+            "Mark all data complete.",
+            "Extract a named validation function while keeping the input/output contract."
+          ],
+          "rationales": [
+            "That is a new feature.",
+            "That changes behavior.",
+            "That changes requirements.",
+            "Structure changes while behavior remains."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

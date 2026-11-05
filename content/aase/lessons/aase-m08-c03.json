@@ -1,8 +1,8 @@
 {
   "id": "AASE-M08-C03",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -127,6 +127,122 @@
         "check": "有效路徑、例外類型、80／81 邊界與允許欄位都有斷言，未把測試數量當成完整性保證。",
         "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
       }
+    },
+    "en": {
+      "summary": "Use parametrized tests for valid, invalid and length-boundary values in three fields, directly checking rules and the export contract.",
+      "objectives": [
+        "Express acceptance scenarios as input, action and result.",
+        "Use pytest parametrization and exception assertions for business rules.",
+        "Check exported content and absence of unintended input mutation."
+      ],
+      "readingGuide": {
+        "goal": "Express acceptance scenarios as input, action and result.",
+        "startingPoint": "Your slice-three copy, rules.py, pytest 8.4.2 and confirmed spec.md.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "tests/test_rules_contract.py and actual results covering three-field rules and controlled export."
+      },
+      "sections": [
+        {
+          "id": "rule",
+          "heading": "Locate Rules Independent of the Interface",
+          "paragraphs": [
+            "reference/rules.py validate accepts a dictionary and returns errors. export_report revalidates before JSON generation and raises ValueError on invalid data. Direct calls check inputs beyond interface restrictions.",
+            "The required keys are application_id, applicant_code and document_type. Each must be a nonempty string after trimming, at most 80 characters. These are synthetic teaching rules, not official document-acceptance conditions."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Measure Different Samples with the Same Checklist",
+          "paragraphs": [
+            "Change one sample condition while keeping the others valid to see which condition causes failure. Clearing every field at once shows an overall error but makes it harder to verify protection for each field.",
+            "Parametrization applies the same assertions to several inputs. Add cases for meaningful combinations, without using repeated data to imply that all conditions were tested."
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "Normal, Invalid, Boundary and Output-contract Cases",
+          "paragraphs": [
+            "Test empty strings, whitespace-only values, missing keys and wrong types, plus lengths exactly 80 and 81. Also check successful export, trimming, fixed structure and allowed fields so rejection tests do not omit the usable path.",
+            "Derive expectations from spec rather than copying current function outputs as answers. Resolve ambiguous rules with the specification and owner; do not arbitrarily weaken tests."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Information Needed in a Test",
+              "description": "Read preparation, execution and assertions; identify the requirement each case protects.",
+              "items": [
+                {
+                  "title": "Arrange",
+                  "body": "Create a valid baseline and replace only the field being tested."
+                },
+                {
+                  "title": "Act",
+                  "body": "Call validate or export_report directly."
+                },
+                {
+                  "title": "Assert",
+                  "body": "Check errors, exceptions or export results against the specification."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "example",
+          "heading": "A Complete Test Example for Your Project",
+          "paragraphs": [
+            "Create tests/test_rules_contract.py in your slice-three copy. The two stacked parametrization decorators combine three fields with six invalid values. Every case must report errors and reject export.",
+            "The normal case checks that JSON data equals exactly the three allowed fields and that input is unchanged. This is not a complete production-system contract; define other business needs separately."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "tests/test_rules_contract.py",
+              "paragraphs": [
+                "The file must import this project’s rules.py. Keep different stages’ rules out of the same test process. The unchanged synthetic document label and program keys match the reference."
+              ],
+              "code": "import json\nimport pytest\nfrom rules import validate, export_report\n\nGOOD = {\"application_id\": \"SYN-001\", \"applicant_code\": \"DEMO-A\", \"document_type\": \"合成申請表\"}\n\n\n@pytest.mark.parametrize(\"field\", tuple(GOOD))\n@pytest.mark.parametrize(\"bad\", [\"\", \"   \", \"\\t\\n\", None, 42, \"x\" * 81])\ndef test_each_invalid_field_is_rejected(field, bad):\n    record = {**GOOD, field: bad}\n    assert validate(record)\n    with pytest.raises(ValueError):\n        export_report(record)\n\n\n@pytest.mark.parametrize(\"size,accepted\", [(80, True), (81, False)])\ndef test_length_boundary(size, accepted):\n    record = {**GOOD, \"application_id\": \"x\" * size}\n    assert (validate(record) == []) is accepted\n\n\ndef test_valid_export_uses_only_allowed_fields():\n    record = {**GOOD, \"application_id\": \" SYN-001 \", \"debug_note\": \"not-exported\"}\n    result = json.loads(export_report(record))\n    assert result[\"status\"] == \"complete\"\n    assert result[\"data\"] == GOOD\n    assert \"debug_note\" not in result[\"data\"]\n    assert record[\"application_id\"] == \" SYN-001 \"\n\n\ndef test_missing_key_is_rejected():\n    record = GOOD.copy()\n    del record[\"document_type\"]\n    with pytest.raises(ValueError):\n        export_report(record)"
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "Execute and Read Failures",
+          "paragraphs": [
+            "From your slice-three root, run python -m pytest -q tests/test_rules_contract.py. On failure, read parameters, assertion and actual values before investigating rules. For import/environment errors, check the execution location first.",
+            "Once the example passes, run all tests in that project. Record actual counts and exit outcomes rather than prefilled success totals; counts change as tests are added."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Rule-test Commands",
+              "paragraphs": [
+                "Confirm the workshop environment is activated and you are in your own slice-three directory."
+              ],
+              "code": "python -m pytest -q tests/test_rules_contract.py\npython -m pytest -q"
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "Passing Does Not Mean Every Input Was Tested",
+          "paragraphs": [
+            "The UI preventing 81 characters does not replace a function test rejecting an overlong direct call. Asserting “any error” may also mistake a program defect for correct rejection. Expect ValueError, checking messages or more specific conditions where needed.",
+            "Rule tests cannot establish discoverable feedback, a keyboard-completable task or correct real downloads. The next lesson tests the interface, followed by observation of people doing tasks."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Your slice-three copy, rules.py, pytest 8.4.2 and confirmed spec.md.",
+        "steps": [
+          "Add and run the complete example, explaining invalid, boundary and normal cases.",
+          "Inspect the parameters and assertion shown by a failure, confirming it is not an environment issue.",
+          "Run the full suite and preserve command, version, results and uncovered scenarios."
+        ],
+        "expected": "tests/test_rules_contract.py and actual results covering three-field rules and controlled export.",
+        "check": "Assert valid paths, exception types, 80/81 boundaries and allowed fields. A test count is not a completeness guarantee.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
     }
   },
   "checks": [
@@ -147,6 +263,21 @@
             "這是直接函式測試。",
             "控制其他條件有助判斷。",
             "正常路徑仍需驗證。"
+          ]
+        },
+        "en": {
+          "prompt": "Why replace only one field of a valid baseline per case?",
+          "options": [
+            "To avoid many tests.",
+            "To make tests inspect only the screen.",
+            "To locate the unprotected condition more easily.",
+            "To eliminate valid-data tests."
+          ],
+          "rationales": [
+            "The purpose is diagnosability.",
+            "These tests call functions directly.",
+            "Controlling other conditions helps identify the cause.",
+            "Normal paths still need verification."
           ]
         }
       }
@@ -169,6 +300,21 @@
             "需要人的研究。",
             "沒有身分測試。"
           ]
+        },
+        "en": {
+          "prompt": "What do the 80/81-character cases directly check?",
+          "options": [
+            "Official document authenticity.",
+            "The specified length boundary.",
+            "User satisfaction.",
+            "Login state."
+          ],
+          "rationales": [
+            "That is outside the rules.",
+            "Check the adjacent valid and invalid limits.",
+            "That needs research with people.",
+            "No identity testing is involved."
+          ]
         }
       }
     },
@@ -190,8 +336,29 @@
             "不能保護匯出。",
             "拒絕方式需符合契約。"
           ]
+        },
+        "en": {
+          "prompt": "How should negative export be asserted?",
+          "options": [
+            "Count failure to start as passing.",
+            "Accept any unexpected error.",
+            "Check only the page title.",
+            "Expect ValueError and check the relevant conditions."
+          ],
+          "rationales": [
+            "The behavior was not reached.",
+            "That may hide a bug.",
+            "That cannot protect export.",
+            "Rejection must follow the contract."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

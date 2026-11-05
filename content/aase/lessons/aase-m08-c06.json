@@ -1,8 +1,8 @@
 {
   "id": "AASE-M08-C06",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -155,6 +155,149 @@
         "check": "可測拒絕有實際證據；多人授權保持未實作，沒有以 UI 隱藏或假函式替代控制。",
         "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
       }
+    },
+    "en": {
+      "summary": "Verify invalid input, extra fields and stale results through negative cases, separating tested prototype behavior from unimplemented multiuser security.",
+      "objectives": [
+        "Derive negative scenarios from requirements and risks.",
+        "Record rejection, repair and regression evidence.",
+        "List absent authorization explicitly as not implemented and unverified."
+      ],
+      "readingGuide": {
+        "goal": "Derive negative scenarios from requirements and risks.",
+        "startingPoint": "The third slice and tests, spec.md, verification records and unimplemented shared-version requirements.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "A risk–case–result mapping with a separate list of unimplemented security requirements."
+      },
+      "sections": [
+        {
+          "id": "negative",
+          "heading": "Check When the System Must Reject",
+          "paragraphs": [
+            "A positive case shows one valid record completing a task. Negative cases check rejection of input or actions that should not be accepted, without producing an incorrect result. Identify the protected requirement before selecting an observation layer.",
+            "This course already rejects incomplete exports, excludes extra report fields and invalidates old results on input change. These specific integrity/output-boundary tests do not establish completion of all security testing or a formal risk assessment."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Test Access That Should Be Denied Too",
+          "paragraphs": [
+            "A valid pass opening a door does not establish rejection of expired passes or unauthorized visitors. Define denial conditions, enforcement locations and observable outcomes.",
+            "Hiding a button restricts one interface path; data/export functions need validation too. Multiuser authorization needs actual identities and resource relationships. Displaying A/B labels does not implement isolation."
+          ]
+        },
+        {
+          "id": "matrix",
+          "heading": "Turn Risks into Executable Cases",
+          "paragraphs": [
+            "A direct export_report call with missing data must raise ValueError. Extra input fields must not expand the three allowlisted data keys. After a complete record’s required field is cleared, success and download must disappear.",
+            "The final table row is candidate acceptance for a shared version. The single-user prototype has no accounts or database: record that control as unimplemented. An unrelated fake authorization function cannot establish its success."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Verifiable Prototype Behavior and Pending Shared Controls",
+              "headers": [
+                "Risk scenario",
+                "Expected rejection/protection",
+                "Evidence and status"
+              ],
+              "rows": [
+                [
+                  "Blank, wrong-type or overlong export input",
+                  "Reject a complete report.",
+                  "Rule exception tests."
+                ],
+                [
+                  "Input includes extra debug_note",
+                  "Exclude the extra key from the report.",
+                  "JSON and allowlisted-field checks."
+                ],
+                [
+                  "Clear a required field after completion",
+                  "Invalidate old success and download.",
+                  "AppTest + real browser."
+                ],
+                [
+                  "A requests B’s data without permission",
+                  "Reject at data access without returning content.",
+                  "Unimplemented in this prototype; verify separately for a shared version."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "regression",
+          "heading": "Retest the Original Fault and Existing Features",
+          "paragraphs": [
+            "If a negative case fails, preserve reproduction conditions and observations, locate the cause and apply a minimal repair. Rerun the original failing case and affected normal/negative scenarios, checking that valid reports still work.",
+            "Regression evidence identifies the same version, environment and cases. “Fixed” or a success screenshot alone does not establish removal of the original fault. Where coverage is missing, first add assertions that can detect failure."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Regression Evidence for a Negative Case",
+              "description": "Follow requirements through repair and verification. Uncovered controls remain separate pending work.",
+              "items": [
+                {
+                  "title": "Requirement and risk",
+                  "body": "Identify data or actions that must be rejected."
+                },
+                {
+                  "title": "Reproducible failure",
+                  "body": "Retain input, action, expectation and actual result."
+                },
+                {
+                  "title": "Local repair",
+                  "body": "Address the cause while preserving other work."
+                },
+                {
+                  "title": "Regression evidence",
+                  "body": "Pass the original case, then affected positive/negative scenarios."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "future",
+          "heading": "Authorization Tests Need Implemented Controls",
+          "paragraphs": [
+            "A future ten-user version first needs defined identities, roles, data ownership and sharing exceptions, followed by authorization enforcement at data access. Negative tests should use actual test identities and isolated synthetic records to verify that A cannot read unauthorized B data.",
+            "That is separate requirements/architecture work, not a feature to add silently to this local single-user prototype. Record candidate Given/When/Then, an implementation owner and acceptance scope; current status remains not implemented and unverified."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Candidate Shared-version Acceptance",
+              "paragraphs": [
+                "Keep this among requirements awaiting confirmation, not executed findings or official policy. The unchanged scenario says: Given authenticated test user A lacks permission for B’s synthetic record, When A requests it through data access, Then deny without returning content. This local prototype has not implemented the control; shared-version confirmation and verification remain pending."
+              ],
+              "code": "Given 測試使用者 A 已驗證身分，且未獲授權讀取 B 的合成紀錄\nWhen A 透過資料存取入口請求該紀錄\nThen 系統拒絕且不回傳紀錄內容\n狀態：本機原型未實作此控制，待多人版確認及驗證"
+            }
+          ]
+        },
+        {
+          "id": "close",
+          "heading": "Retain Limits and Next Steps for Handoff",
+          "paragraphs": [
+            "Link test commands, results, failures and repairs to spec. Separately list absent identity, authorization, persistence and organizational-deployment needs. Completeness tests passing do not implement them.",
+            "M09 places evidence into README, versions and demonstrations. Explain both the prototype behavior already protected and requirements needing another design/implementation stage."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "The third slice and tests, spec.md, verification records and unimplemented shared-version requirements.",
+        "steps": [
+          "Run negative scenarios for incomplete export, extra fields and input change after completeness; retain real results.",
+          "If a case fails, locate and repair it, then rerun that case and affected tests. If none fail, accurately record the passing scope.",
+          "Write candidate unauthorized-read acceptance, marking it unimplemented in this prototype without a fabricated pass."
+        ],
+        "expected": "A risk–case–result mapping with a separate list of unimplemented security requirements.",
+        "check": "Executable rejection claims have actual evidence. Multiuser authorization remains unimplemented; hidden UI or fake functions cannot substitute for controls.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
     }
   },
   "checks": [
@@ -175,6 +318,21 @@
             "結論與實際案例相符。",
             "與身分授權不同。",
             "沒有刪除證據。"
+          ]
+        },
+        "en": {
+          "prompt": "What does debug_note being absent from a report directly establish?",
+          "options": [
+            "Every security risk is resolved.",
+            "Output fields are constrained in that scenario.",
+            "Multiuser isolation is complete.",
+            "All data was securely deleted."
+          ],
+          "rationales": [
+            "That exceeds the evidence.",
+            "The conclusion matches the executed case.",
+            "Identity/authorization is a different concern.",
+            "There is no deletion evidence."
           ]
         }
       }
@@ -197,6 +355,21 @@
             "清楚保留能力邊界。",
             "接手者仍需知道。"
           ]
+        },
+        "en": {
+          "prompt": "With no accounts or database in this prototype, how should authorization testing be recorded?",
+          "options": [
+            "Assume it passed.",
+            "Declare success using A/B text labels.",
+            "Not implemented; record candidate requirements and later verification.",
+            "Omit the limitation."
+          ],
+          "rationales": [
+            "The control does not exist.",
+            "That does not test actual access.",
+            "This preserves capability boundaries.",
+            "Successors still need to know."
+          ]
         }
       }
     },
@@ -218,8 +391,29 @@
             "須經明確需求決策。",
             "確認修正與既有行為。"
           ]
+        },
+        "en": {
+          "prompt": "After repairing a negative scenario, what else is needed?",
+          "options": [
+            "Delete failure evidence.",
+            "Inspect only a success screenshot.",
+            "Relax the specification.",
+            "Rerun the original and affected positive/negative tests, keeping versions and results."
+          ],
+          "rationales": [
+            "That removes regression evidence.",
+            "That cannot cover the original fault.",
+            "That requires an explicit requirements decision.",
+            "Confirm both repair and existing behavior."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }
