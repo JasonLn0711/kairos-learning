@@ -1,8 +1,8 @@
 {
   "id": "AASE-M07-C05",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -131,6 +131,126 @@
         "check": "舊成功不能授權新資料匯出；額外鍵不進報告；已下載檔另行管理。",
         "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
       }
+    },
+    "en": {
+      "summary": "Bind a complete result to exact input, require rechecking after edits, and revalidate at export while emitting only allowed fields.",
+      "objectives": [
+        "Constrain preview and download with a checked snapshot.",
+        "Invalidate the old result when input changes.",
+        "Verify the export structure and negative inputs."
+      ],
+      "readingGuide": {
+        "goal": "Constrain preview and download with a checked snapshot.",
+        "startingPoint": "Workshop reference/, a browser, pytest and your second slice.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "app.py, rules.py, tests and download acceptance traceable to the same current input."
+      },
+      "sections": [
+        {
+          "id": "risk",
+          "heading": "A Successful Result Applies to Particular Data",
+          "paragraphs": [
+            "After all three fields pass, a user may immediately clear document type. If the program stores only complete=True, an old success may remain and let currently incomplete data obtain a complete report.",
+            "reference/ is the teacher solution for slice three. It keeps a copy of the passed data and presents complete preview/download only when the copy equals current input and the rules still pass."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "A Signature Refers to That Version of a Document",
+          "paragraphs": [
+            "A signature confirms particular content at a point in time. Editing the document does not make the old signature endorse the new content. A check result likewise needs an identifiable input rather than an unattached green light.",
+            "The teaching snapshot is a dictionary copy and equality comparison. It is not a cryptographic signature, formal audit trail or multiuser consistency mechanism. Database or concurrent-user needs require redesigned versioning and authorization."
+          ]
+        },
+        {
+          "id": "state",
+          "heading": "Retain, Invalidate and Recheck State",
+          "paragraphs": [
+            "Streamlit Session State retains values between reruns within a user session. After a check with no errors, the reference stores record.copy(); committing an input change invokes an on_change callback that clears checked.",
+            "The display condition also compares checked with record and checks the rules again. This snapshot/equality mechanism addresses three text fields; it is not a universal solution for arbitrary objects or concurrent multiuser data."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Results Must Follow the Data Version",
+              "description": "The flow includes a recheck condition. Input changes return the record to an unchecked state.",
+              "items": [
+                {
+                  "title": "Unchecked",
+                  "body": "Enter or edit data; show interaction guidance only."
+                },
+                {
+                  "title": "Press check",
+                  "body": "List omissions on failure; store a copy of current values on success."
+                },
+                {
+                  "title": "Preview and export",
+                  "body": "Show them only when current values equal the snapshot and rules pass."
+                },
+                {
+                  "title": "Input changes",
+                  "body": "Clear the snapshot and download entry point; require a fresh check."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "export",
+          "heading": "Do Not Trust an Old Interface Flag at Export",
+          "paragraphs": [
+            "In rules.py, export_report calls report, which first calls validate. Invalid data raises ValueError, so earlier interface success cannot by itself produce a report. Export selects only the three FIELDS keys, excluding debug or unagreed extra fields.",
+            "The downloaded JSON contains status, scope and data. complete means only teaching-field completeness; scope explicitly disclaims official intake acceptance. Values are trimmed, and the report exports Chinese content as UTF-8 to a file on the operator’s device."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Controlled Export Example",
+              "paragraphs": [
+                "This course-defined structure is not an official organizational format. The unchanged JSON uses status=complete, scope meaning “teaching-field completeness only, not official acceptance,” and data with application_id=SYN-001, applicant_code=DEMO-A and a synthetic application-form document_type."
+              ],
+              "code": "{\n  \"status\": \"complete\",\n  \"scope\": \"僅代表教學欄位完整性，不代表正式受理\",\n  \"data\": {\n    \"application_id\": \"SYN-001\",\n    \"applicant_code\": \"DEMO-A\",\n    \"document_type\": \"合成申請表\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "Accept Complete, Clear and Correct Again",
+          "paragraphs": [
+            "From the extracted root, enter reference, run tests, then start app.py. Enter three valid synthetic values, check, inspect the preview and download. Next clear document type and commit the change: the old complete result and download must disappear.",
+            "After correcting the field, check again. AppTest inspects state and elements; a real browser separately verifies download bytes, Chinese text and filename. A visible button alone does not establish correct file contents."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Run Slice Three",
+              "paragraphs": [
+                "Run separately from the first two stages, preserving the learner’s project."
+              ],
+              "code": "cd reference\npython -m pytest -q\npython -m streamlit run app.py --server.address 127.0.0.1"
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "Do Not Expand Completeness into an Official Guarantee",
+          "paragraphs": [
+            "Disabling a frontend button alone misses direct export calls. Clearing checked does not delete every downloaded file: session state and device files have different lifecycles. The operator still manages files already downloaded.",
+            "This course implements no login, multiuser authorization, persistent storage or secure-deletion mechanism. Record these limits in acceptance and handoff so successors know exactly what the local prototype demonstrates."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Workshop reference/, a browser, pytest and your second slice.",
+        "steps": [
+          "Add the snapshot, input-change invalidation, controlled report and export revalidation.",
+          "Test a complete record followed by clearing a field, plus direct export of invalid data; verify no complete report can be produced.",
+          "Download JSON in a real browser, check allowlisted fields, Chinese text and scope, and record actual results."
+        ],
+        "expected": "app.py, rules.py, tests and download acceptance traceable to the same current input.",
+        "check": "Old success cannot justify exporting new input. Extra keys stay out of reports, and downloaded files need separate management.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
     }
   },
   "checks": [
@@ -151,6 +271,21 @@
             "修改資料後無法確認對應關係。",
             "JSON 支援布林。",
             "需要明確狀態責任。"
+          ]
+        },
+        "en": {
+          "prompt": "Why is complete=True alone insufficient?",
+          "options": [
+            "Boolean values cannot be stored in state.",
+            "It does not identify the input that passed.",
+            "JSON cannot contain Booleans.",
+            "Forms need no state."
+          ],
+          "rationales": [
+            "They can be stored; the problem is meaning.",
+            "After an edit, the relationship to input is unknown.",
+            "JSON supports Booleans.",
+            "State responsibilities need an explicit design."
           ]
         }
       }
@@ -173,6 +308,21 @@
             "守住匯出邊界。",
             "不能解決不合法資料。"
           ]
+        },
+        "en": {
+          "prompt": "What should export do with incomplete data?",
+          "options": [
+            "Trust the old success.",
+            "Guess the document type.",
+            "Revalidate and refuse to produce a complete report.",
+            "Hide scope."
+          ],
+          "rationales": [
+            "The old state may be stale.",
+            "That violates the specification.",
+            "This protects the export boundary.",
+            "That does not make invalid data valid."
+          ]
         }
       }
     },
@@ -194,8 +344,29 @@
             "本課未實作多人控制。",
             "推論限於被清除的狀態。"
           ]
+        },
+        "en": {
+          "prompt": "What follows from clearing checked in Session State?",
+          "options": [
+            "Every downloaded file is deleted.",
+            "Formal identity is verified.",
+            "Multiuser permissions are complete.",
+            "This session no longer holds that checked snapshot."
+          ],
+          "rationales": [
+            "Device files have their own lifecycle.",
+            "This is not an identity mechanism.",
+            "This course has not implemented those controls.",
+            "Keep the inference limited to the state removed."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

@@ -35,7 +35,7 @@ test('only published AASE routes exist; pending neighbors land on directory anch
   assert.equal(Boolean(getPage('/en'+c.href)),Boolean(catalog().forLanguage('en')?.concepts.find(e=>e.id===c.id)?.lesson));
  }
  assert.ok(getPage('/en/courses/aase/v1/'));
- assert.equal(getPage('/en/courses/aase/v1/m07/concepts/m07-01/'),null);
+ assert.equal(getPage('/en/courses/aase/v1/m08/concepts/m08-01/'),null);
  assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-01/'));
  assert.ok(!searchEntries.some(e=>e.id.startsWith('AASE-M')&&!catalog().lessons.some(l=>l.id===e.id)));
  const aaseSearch=searchEntries.find(e=>e.id==='AASE-M05-C03')!;

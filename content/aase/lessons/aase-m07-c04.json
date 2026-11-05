@@ -1,8 +1,8 @@
 {
   "id": "AASE-M07-C04",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -159,6 +159,154 @@
         "check": "直接呼叫函式也拒絕負向資料，畫面不把當次通過誤作正式受理。",
         "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
       }
+    },
+    "en": {
+      "summary": "Separate completeness rules from the interface, test blanks, types, missing keys and lengths directly, then present results that support correction.",
+      "objectives": [
+        "Write validate without depending on Streamlit.",
+        "Verify three required fields with normal and negative data.",
+        "Preserve input while showing errors that support correction."
+      ],
+      "readingGuide": {
+        "goal": "Write validate without depending on Streamlit.",
+        "startingPoint": "Your form slice, confirmed spec.md and workshop slices/02-validation/.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "rules.py, matching tests and operation records demonstrating slice two’s three-field rules."
+      },
+      "sections": [
+        {
+          "id": "problem",
+          "heading": "Rules Must Hold Beyond Interface Limits",
+          "paragraphs": [
+            "M05 specifies three nonempty text fields after trimming leading/trailing whitespace, each at most 80 characters. These are synthetic teaching rules. max_chars limits interface entry, but other code may call functions directly; the function must protect its contract.",
+            "slices/02-validation/rules.py evaluates data without calling Streamlit. Tests can therefore pass None, numbers, overlong strings or missing keys directly without manufacturing every input in a browser."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Separate the Intake Counter from Its Checklist",
+          "paragraphs": [
+            "The counter helps people enter data and correct omissions; the checklist defines required conditions. Changing counters should not remove rules, and a better-looking screen does not make missing material complete.",
+            "validate(record) returns a list of errors. An empty list means this record passed the three-field rules, without establishing document truth, identity or official eligibility."
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "Define Observable Positive and Negative Cases",
+          "paragraphs": [
+            "Use SYN-001, DEMO-A and a synthetic application-form label for a valid record. For each required key, test an empty string, whitespace only, None, a number, 81 characters and absence of the key. Also test acceptance at 80 characters and trimming.",
+            "Write tests, observe the unimplemented behavior failing, then make the smallest implementation. Failure should expose the expected rule gap. A syntax error or missing package does not establish that the acceptance test detects the requirement."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Test Beyond Interface Restrictions",
+              "headers": [
+                "Input",
+                "Expected outcome",
+                "Verification layer"
+              ],
+              "rows": [
+                [
+                  "Valid text in all three fields",
+                  "No errors.",
+                  "Rule function"
+                ],
+                [
+                  "Whitespace-only document type",
+                  "Identify missing document type.",
+                  "Rules + interface"
+                ],
+                [
+                  "Missing application_id key",
+                  "Identify missing application ID.",
+                  "Rule function"
+                ],
+                [
+                  "80/81 characters",
+                  "Accept 80, reject 81.",
+                  "Rule function"
+                ],
+                [
+                  "Fill the missing field and check again",
+                  "Preserve existing values and show the current pass.",
+                  "Interface"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "flow",
+          "heading": "Turn Function Results into Correctable Feedback",
+          "paragraphs": [
+            "Pressing “檢查資料” (check data) obtains the current validate result. Errors identify what is missing and how to recheck while preserving filled values. With no errors, state that the three fields passed, while report preview/export remain absent.",
+            "The stage-two success message appears only in the rerun triggered by that check. Committing the next input change reruns the page and removes the prior result; another check generates the current result."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Responsibilities of Rules and Interface",
+              "description": "The interface and tests can call the same rule function. This figure shows the user’s correction cycle.",
+              "items": [
+                {
+                  "title": "Read input",
+                  "body": "Keep the three current field values."
+                },
+                {
+                  "title": "Call validate",
+                  "body": "Check required values, types, blanks and length."
+                },
+                {
+                  "title": "Present results",
+                  "body": "On errors, explain and retain input; otherwise state this check passed."
+                },
+                {
+                  "title": "Correct and recheck",
+                  "body": "Do not reuse a prior result after changing data."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "Run Slice Two and Inspect Focused Tests",
+          "paragraphs": [
+            "Stop the previous service, return to the extracted root, then enter this stage. Run pytest separately per stage to prevent same-named rules modules from being mixed within one test process.",
+            "Read each input and assertion in tests/test_rules.py, then the missing-field, correction and disappearing-result scenarios in tests/test_app.py. A test count cannot replace examining what behavior it covers."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Run Slice Two",
+              "paragraphs": [
+                "After the full test group passes, start the interface and repeat omission and correction."
+              ],
+              "code": "cd slices/02-validation\npython -m pytest -q\npython -m streamlit run app.py --server.address 127.0.0.1"
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "Keep Evidence for Both Rules and Acceptance",
+          "paragraphs": [
+            "A required marker or character limit does not replace function validation. UI-only rules can be bypassed by direct function calls and make negative behavior harder to verify.",
+            "A passed check does not yet permit export in this stage. Report contracts and export boundaries are unimplemented, so success feedback must state its scope. The next lesson connects currently passed data to preview and download."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Your form slice, confirmed spec.md and workshop slices/02-validation/.",
+        "steps": [
+          "List normal, blank, missing-key, type and length cases; observe why they fail before implementation.",
+          "Implement an independent validate function, connect the interface, and run rule/interface tests.",
+          "Repeat omission, correction and input change in a browser; record retained input and the absent download."
+        ],
+        "expected": "rules.py, matching tests and operation records demonstrating slice two’s three-field rules.",
+        "check": "Direct function calls reject negative data too, and the screen does not present a current pass as official acceptance.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
     }
   },
   "checks": [
@@ -179,6 +327,21 @@
             "保護函式邊界且便於測試。",
             "介面也需檢查。",
             "應由需求決定案例。"
+          ]
+        },
+        "en": {
+          "prompt": "Why test rules.py directly?",
+          "options": [
+            "To replace every user test.",
+            "To enforce rules on invalid data arriving outside the interface path.",
+            "Because the interface is never wrong.",
+            "Only to increase the test count."
+          ],
+          "rationales": [
+            "Verification still needs different layers.",
+            "This protects the function boundary and supports testing.",
+            "The interface also needs checks.",
+            "Requirements should determine cases."
           ]
         }
       }
@@ -201,6 +364,21 @@
             "支持修正且遵守規格。",
             "不應推定業務內容。"
           ]
+        },
+        "en": {
+          "prompt": "What should whitespace-only document type produce?",
+          "options": [
+            "Complete.",
+            "Immediate export.",
+            "A missing-document-type error, preserving other filled values.",
+            "A guessed official document."
+          ],
+          "rationales": [
+            "It violates the nonempty rule.",
+            "There is no valid report yet.",
+            "This supports correction and follows the specification.",
+            "Do not infer business content."
+          ]
         }
       }
     },
@@ -222,8 +400,29 @@
             "本階段尚無下載。",
             "符合當次結果的生命週期。"
           ]
+        },
+        "en": {
+          "prompt": "After slice two succeeds, the user changes input. What should happen?",
+          "options": [
+            "Keep the old success.",
+            "Further input cannot affect the result.",
+            "Download the old data first.",
+            "Remove the old result and require a fresh check."
+          ],
+          "rationales": [
+            "It no longer describes current input.",
+            "The value has changed.",
+            "This stage has no download.",
+            "This follows the lifecycle of a current result."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

@@ -70,8 +70,8 @@ test('English directory, search, pending neighbors and downloads use actual loca
   const slug=m.id+'-'+c.id.slice(-2),path=`/en/courses/aase/v1/${m.id}/concepts/${slug}/`;expect((await request.get(path)).status(),path).toBe(404);
   const zh=await request.get(path.replace(/^\/en/,''));expect(zh.status()).toBe(200);expect(await zh.text()).not.toContain('class="language"');
  }
- await page.goto('/en/courses/aase/v1/m06/concepts/m06-06/');const next=page.locator('.next-links a').last();await expect(next).toHaveAttribute('href','/en/courses/aase/v1/m07/#m07-01');await next.click();await expect(page.locator('#m07-01')).toContainText('In preparation');
- const sitemap=await(await request.get('/sitemap.xml')).text();expect(sitemap).toContain('https://learn.cs-kairos.com/en/courses/aase/v1/m01/concepts/m01-01/');expect(sitemap).toContain('/en/courses/aase/v1/m06/concepts/m06-06/');expect(sitemap).not.toContain('/en/courses/aase/v1/m07/concepts/m07-01/');
+ await page.goto('/en/courses/aase/v1/m07/concepts/m07-07/');const next=page.locator('.next-links a').last();await expect(next).toHaveAttribute('href','/en/courses/aase/v1/m08/#m08-01');await next.click();await expect(page.locator('#m08-01')).toContainText('In preparation');
+ const sitemap=await(await request.get('/sitemap.xml')).text();expect(sitemap).toContain('https://learn.cs-kairos.com/en/courses/aase/v1/m01/concepts/m01-01/');expect(sitemap).toContain('/en/courses/aase/v1/m07/concepts/m07-07/');expect(sitemap).not.toContain('/en/courses/aase/v1/m08/concepts/m08-01/');
  await page.goto('/en/courses/aase/v1/workshop/');await expect(page.locator('main')).toContainText('currently in Traditional Chinese');for(const name of ['aase-v1-workshop.zip','SHA256SUMS.txt']){const r=await request.get('/downloads/aase/'+name);expect(r.status()).toBe(200);expect(await r.body()).toEqual(readFileSync('site/downloads/aase/'+name));}
 });
 
