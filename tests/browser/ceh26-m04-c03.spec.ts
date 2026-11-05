@@ -30,7 +30,7 @@ test('four downloadable FTP/SMTP SVGs retain bounded text geometry',async({page,
  await page.setViewportSize({width:1280,height:1600});
  for(const lang of ['zh','en'])for(const key of ['protocols','evidence']){
   const path=`/images/ceh/m04-03-${key}-${lang}-v1-1-0.svg`;const response=await request.get(path);expect(response.status()).toBe(200);await page.setContent(await response.text());await page.evaluate(()=>window.scrollTo(0,0));
-  const bad=await page.locator('svg text').evaluateAll(es=>es.flatMap(e=>{const b=e.getBoundingClientRect(),r=(e as SVGGraphicsElement).ownerSVGElement!.getBoundingClientRect();return b.left<r.left-.1||b.top<r.top-.1||b.right>r.right+.1||b.bottom>r.bottom+.1?[e.textContent]:[]}));expect(bad).toEqual([]);
+  const bad=await page.locator('svg text').evaluateAll(es=>es.flatMap(e=>{const b=e.getBoundingClientRect(),r=(e as SVGGraphicsElement).ownerSVGElement!.getBoundingClientRect();return b.left<r.left-.1||b.top<r.top-.1||b.right>r.right+.1||b.bottom>r.bottom+.1?[e.textContent]:[]}));expect(bad).toEqual([]);if(key==='protocols'){await expect(page.locator('g[id*="node-"]')).toHaveCount(5);const clipped=await page.locator('g[id*="node-"]').evaluateAll(gs=>gs.flatMap(g=>{const r=g.querySelector('rect')!.getBoundingClientRect();return [...g.querySelectorAll('text')].filter(t=>{const b=t.getBoundingClientRect();return b.left<r.left-.1||b.top<r.top-.1||b.right>r.right+.1||b.bottom>r.bottom+.1}).map(t=>t.textContent)}));expect(clipped).toEqual([]);}
   await page.screenshot({path:`${dir}/${lang}-${key}-svg.png`,fullPage:true});
  }
 });

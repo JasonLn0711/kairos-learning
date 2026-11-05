@@ -34,9 +34,11 @@ def generate():
             def arrow(x1,x2,y,double=False):
                 parts.append(f'<path d="M{x1} {y}H{x2}m-12-8 12 8-12 8'+(f'M{x1+12} {y-8}l-12 8 12 8' if double else '')+'" fill="none" stroke="#205e96" stroke-width="3"/>')
             def node(index,x,y,w=230):
-                rect(x,y,w,150,'#e4f3f0' if index==6 else '#e7f0ff')
+                parts.append(f'<g id="{prefix}node-{index}">')
+                rect(x,y,w,170,'#e4f3f0' if index==6 else '#e7f0ff')
                 used=text(items[index]['title'],x+16,y+35,w-32,24)
                 text(items[index]['body'],x+16,y+45+used,w-32,21)
+                parts.append('</g>')
             text(v['caption'],45,55,1110,30)
             if key=='protocols':
                 rect(30,145,1140,430);text('FTP',55,187,1080,28)

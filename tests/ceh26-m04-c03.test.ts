@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
-import {allConceptTeachings,getPage,searchEntries} from '../src/lib/server/catalog.ts';
+import {allConceptTeachings,getPage,searchEntries,concepts} from '../src/lib/server/catalog.ts';
+import {createConceptCatalog} from '../src/lib/concepts.ts';
 import type {SourceBlock} from '../src/lib/concepts.ts';
 const id='CEH26-M04-C03',root='docs/sources/ceh26-m04-c03/replacement-2026-11-05/';
 const t=allConceptTeachings.find(x=>x.id===id)!;
@@ -31,4 +32,12 @@ test('FTP/SMTP diagrams preserve parallel channels, SMTP roles and three evidenc
  for(const [key,pair] of Object.entries(models) as [string,any][]){for(const block of Object.values(pair) as any[]){
   assert.equal(block.visual.items.length,key==='protocols'?11:3);const bytes=readFileSync('site'+block.src);assert.ok(bytes.length<100000);const svg=bytes.toString();assert.ok(!/<(?:script|image|foreignObject|use)\b|\bon\w+=|href=/i.test(svg));assert.ok(svg.includes('preserveAspectRatio="xMidYMid meet"'));assert.ok(svg.includes(block.visual.caption));
  }}
+});
+
+test('known FTP/SMTP renderers reject incomplete or incompatible diagram shapes before publication',()=>{
+ for(const change of ['missing-node','wrong-kind','missing-evidence-line']){
+  const bad=structuredClone(t);const block=bad.text.zh.sourceBody!.find(b=>b.kind==='visual'&&b.src.includes(change==='missing-evidence-line'?'-evidence-':'-protocols-'));assert.ok(block?.kind==='visual');
+  if(change==='missing-node')block.visual.items.pop();else if(change==='wrong-kind')block.visual.kind='flow';else block.visual.items[0].body='one line';
+  assert.throws(()=>createConceptCatalog(concepts,allConceptTeachings.map(x=>x.id===id?bad:x),'2026-11-05'),/invalid FTP\/SMTP diagram structure/);
+ }
 });

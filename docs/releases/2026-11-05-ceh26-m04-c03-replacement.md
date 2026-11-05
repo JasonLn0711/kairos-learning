@@ -13,10 +13,10 @@ M04-03 改用完整供稿，保留十一章、SMTP 第二部分標記、重點�
 ## 本機實測
 
 - WRITE-01–06、08：原始附件與採用稿雜湊核對；來源／版本／公開課次／雙語條件核對通過。RFC 與 OpenSSH 來源校對範圍見 source-review.md。
-- `npm run validate:content`：通過；`npm test`：195 項通過；`npm run check`：0 錯誤、0 警告。兩個產生器 `--check` 以正式來源核對正文及四個 SVG，成功後回報實際產物數。
+- `npm run validate:content`：通過；`npm test`：196 項通過；`npm run check`：0 錯誤、0 警告。兩個產生器 `--check` 以正式來源核對正文及四個 SVG，成功後回報實際產物數。
 - publication-boundary：draft／future 標記未出現在 752 份部署文字，英文課程 draft／future 閘門通過並還原乾淨正式建置。`npm run validate:release` 全套通過，含既有封裝檔及教材邊界；本次沒有重製舊 ZIP。
 - HTML-01–04、A11Y-01–03：C03 五項瀏覽器檢查通過，中英完整正文順序、14 個主標題（11 章及部分／整理／檢核）、320／390／768／1280 CSS px、200% 根字級、無 JavaScript、答案 Enter／Space、Tab／Shift+Tab 焦點、搜尋、前後篇與 pending 404。兩語 320px／200% document.scrollWidth 均為 320。
-- FIG-01–06：桌面／手機 HTML 及四張下載圖已目視；四個 SVG 文字矩形位於圖面內，實際 Enter 下載與來源位元組一致。文字／色底最低對比 5.83:1；不用顏色作唯一區分。protocols zh 5313／en 5870 bytes，evidence zh 3578／en 4576 bytes，皆低於 100000。
+- FIG-01–06：桌面／手機 HTML 及四張下載圖已目視；四個 SVG 文字矩形位於圖面內，實際 Enter 下載與來源位元組一致。文字／色底最低對比 5.83:1；不用顏色作唯一區分。protocols zh 5513／en 6070 bytes，evidence zh 3578／en 4576 bytes，皆低於 100000。
 - 共用 SourceBody 的 C02 瀏覽器回歸：22 項通過。INT-01 無計算互動，不適用。
 - 首輪無 JavaScript 測試把三個非 section-* 主標題誤算入該前綴選取器；已改為 11 個章節加逐一核對部分／整理／檢核，兩語全套五項通過，未刪除正文來配合測試。
 
@@ -25,3 +25,5 @@ Linux ARM64／Playwright Chromium 代理驗收證據在 `.local/c03/`（忽略�
 ## 發布基準與下一關
 
 隔離工作樹以 7f4293e 起稿，保留主工作目錄既有 CEH／AASE 修改；同期遠端 543730a 只更新 C05 文件，合併保留。C01／C02／C04／C05 與待發布閘門保持。本次源稿、實作與文件分開提交並以 HEAD:main 推送；正式站兩語全文與四份圖檔須於實際 Pages 成功後回讀，結果接續記錄。
+
+最後目視下載圖後，增加英文角色卡底部留白；產生器以具命名群組的五張角色卡輸出，瀏覽器另核對每段文字均落在自己的卡片內，不只檢查整張 viewBox。catalog 對四個固定路徑另拒絕少節點、錯版型及缺證據行的資料，避免直接編輯 JSON 時繞過來源產生器。
