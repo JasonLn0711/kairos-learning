@@ -28,3 +28,11 @@ An incident correction should state the affected content/version, evidence, corr
 ## Perspectives extension
 
 Bilingual educational perspectives use a separate catalog with the shared publication date gate. See [authoring guide](perspectives/authoring.md). Private case material stays in ignored local storage. Synthetic preview builds are isolated and excluded from deployment. Publication evidence is recorded in [the November 1 release record](releases/2026-11-01-perspectives-standards.md).
+
+## Pages artifacts per attempt — 2026-11-05
+
+The Pages artifact name is `github-pages-${{ github.run_attempt }}` in the upload, visibility check and deployment inputs. A failed-job rerun receives a new name, so artifacts from earlier attempts remain available without making the deployment ambiguous. The workflow adds only `actions: read` for metadata inspection; it does not delete artifacts or add repository write access.
+
+After upload, `scripts/pages-artifact.mjs` checks the current workflow run using the Actions API, with at most six metadata checks separated by two seconds. It proceeds only for one matching, non-expired artifact with a valid ID and positive byte count. Duplicates, invalid metadata, API errors and a bounded visibility timeout stop before deployment. Logs show measured match counts and elapsed time, not estimated deployment progress. This waits for metadata visibility; it does not retry a deployment.
+
+The trigger was run 41986934035: attempt 1 finalized artifact 13395939415, then deployment listed zero artifacts; a subsequent API read found it. Attempt 2 retained that artifact and uploaded 13397300134 under the same old name, so deployment rejected two matches. Both failed records remain; no artifacts were manually deleted. [Upload input](https://github.com/actions/upload-pages-artifact#inputs-), [deployment input](https://github.com/actions/deploy-pages#inputs), and [Actions API permissions](https://docs.github.com/en/rest/actions/artifacts#list-workflow-run-artifacts) support the new contract. The readiness helper's controlled tests do not establish a deployed result; actual workflow and page evidence belongs in the [AASE bilingual receipt](releases/2026-11-05-aase-bilingual-foundation.md).

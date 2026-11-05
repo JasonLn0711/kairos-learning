@@ -29,3 +29,9 @@ WRITE-01–07：中英主張、條件、範例與版本一致，未將目錄翻�
 ## 下一步
 
 依相同結構續編其餘 48 篇英文，逐篇對照主張、例子、程式與檢核，通過閘門後才開放。工作坊實際 Agent 版本、帳號及權限全程驗收、真人試教、Windows／Python 3.11 及產業案例包仍分別追蹤；本次未啟動真實資料或正式多人系統。
+
+### 部署 artifact 修正
+
+首頁提交 0261b60／文件 0001ea4 的 Pages run 41986934035 兩次都在部署階段失敗，先前內容、單元、型別與靜態檢查皆通過。第一次 artifact 13395939415 上傳完成後，部署查到零份，稍後 API 確認存在；第二次追加 artifact 13397300134，部署查到兩份同名 github-pages 並拒絕。原 run／attempt 及本機 pages-home-*.log 保留，不把失敗當成功，也未刪除舊 artifact。
+
+改用每個 run_attempt 的唯一名稱，upload／metadata gate／deploy 共用；新增 actions: read 與官方 github-script@v8 執行本 repo 的有界 metadata 檢查。最多六次、間隔兩秒；僅單一有效 artifact 可進入部署，錯誤、重複、過期或仍不可見就停止。未新增部署自動重試、強制發布或刪除權限。四項控制測試驗證延遲可見、保留舊 attempt、重複、API 失敗、期限及無效資料；目前 180 項 Node 與型別（0 errors／0 warnings）通過，YAML／一致命名／步驟順序另核對。這些是 helper 與設定驗證，正式新流程結果另待回讀。規則與官方來源見[發布維護契約](../publishing-security.md#pages-artifacts-per-attempt--2026-11-05)。
