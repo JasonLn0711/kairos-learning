@@ -13,3 +13,5 @@
 依 WRITE-06，新增完整教學範圍升 v1.1.0，原發布日 2026-11-04 保留；目前版本修訂日 2026-11-05。圖解只接受四個固定來源路徑，沿既有 visual 結構；固定幾何與文字跳脫後經 m0903_svg sanitizer。沒有任意 HTML／SVG、事件或外部影像。
 
 執行 `python3 scripts/ceh26_m04_c03_content.py --check` 及 `python3 scripts/ceh26_m04_c03_diagrams.py --check` 核對全文與圖檔。[編輯處理](editorial-notes.md)及[發布回執](../../../releases/2026-11-05-ceh26-m04-c03-replacement.md)分開記錄來源採用、本機驗證與正式回讀。
+
+[Planning 連接與 ownership](../../../releases/2026-11-05-ceh26-m04-c03-replacement.md#planning-closeout-2026-11-05)將此來源連至正式回執、日／週紀錄及網站／CEH 專案；Planning 不複製原稿，也不把教材發布當成學習完成。

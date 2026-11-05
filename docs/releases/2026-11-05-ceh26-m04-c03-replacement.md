@@ -38,3 +38,15 @@ Linux ARM64／Playwright Chromium 代理驗收證據在 `.local/c03/`（忽略�
 - 另外核對三份原始附件逐位元組、採用稿與模型雜湊，以及前版中英稿／原 ZIP 與起始提交一致。主工作目錄只同步本次 C03 檔案與既有共用入口；其餘 CEH／AASE 與未追蹤工作保留，沒有混入本次提交。
 
 本節只補記已觀察發布，不改正文或圖解。真人手機、完整螢幕閱讀器與獨立學習理解保持待驗；網站發布不新增本人教學交付、學習分數、實作完成、排程或工時。
+
+<a id="planning-closeout-2026-11-05"></a>
+## FIRST PRINCIPLE 與 Planning 連接
+
+稀缺資源為閱讀注意力、審稿時間與可信發布證據。Jason 提供完整供稿、兩張參考圖與公開課次要求；代理完成來源保存、雙語／圖解、工程驗證與發布。Kairos Learning 持原文、模型及詳細證據；Planning 持定位、狀態、容量及下一關：
+
+- [11/5 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-05.md#kairos-m0403-closeout-2026-11-05)：貢獻、結果與接手關卡。
+- [網站專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-m0403-closeout-2026-11-05)：與 M04-04／05、WRITE-08 及共用渲染契約連接，各篇來源與回執保留。
+- [CEH 專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-07-ceh-cehp-certification-training.md#kairos-m0403-closeout-2026-11-05)：網站修訂與私人交付、作答／理解分開。
+- [W45 回顧入口](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#kairos-m0403-closeout-2026-11-05)：已完成維護成果，不新增週輸出或容量。
+
+Planning 最新 C06 交付後接 C07 的路線保持；不回填本人答案、不重排進度、不新增時段或把代理時間計為個人工時。下一關由 Jason 於下次正常閱讀回報兩組情境題答案／卡點；實機、完整螢幕閱讀器與獨立理解仍待證。來源與實作維持本回執前述已發布版本，本輪只補導航並按 repo／邏輯分開提交。
