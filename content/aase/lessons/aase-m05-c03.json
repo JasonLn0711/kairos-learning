@@ -6,8 +6,8 @@
     "gherkin",
     "streamlit-apptest"
   ],
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.0.3",
   "date": "2026-11-05",
   "qa": [],
   "text": {
@@ -130,6 +130,126 @@
         "route": "先讀原理與例子，再完成最小實作，最後核對理解檢核與參考解析。",
         "output": "至少四條可以重演的驗收情境，包含負向結果與對應證據欄位。"
       }
+    },
+    "en": {
+      "summary": "Use Given/When/Then to express work commitments as observable scenarios, including negative cases for missing values, whitespace and input changes.",
+      "objectives": [
+        "Distinguish preconditions, triggering actions and observable outcomes.",
+        "Write normal and negative acceptance scenarios for completeness checking.",
+        "Explain the links still needed between acceptance scenarios and executable tests."
+      ],
+      "readingGuide": {
+        "goal": "Distinguish preconditions, triggering actions and observable outcomes.",
+        "startingPoint": "A text editor and the synthetic case in problem.md.",
+        "route": "Read principles and examples, complete the small exercise, then compare your understanding with checks and reference explanations.",
+        "output": "At least four replayable acceptance scenarios with negative outcomes and corresponding evidence fields."
+      },
+      "sections": [
+        {
+          "id": "start",
+          "heading": "Give Two People the Same Understanding of an Outcome",
+          "paragraphs": [
+            "“Make the form usable and the data correct” is hard to accept. A designer may mean populated fields while a user expects verified content. Narrow the commitment: when document type is missing, checking lists the omission and prevents a complete report.",
+            "Given/When/Then separates background, action and outcome for domain workers, developers and testers to discuss together. Scenarios in Markdown can support manual checks before automation."
+          ]
+        },
+        {
+          "id": "mechanism",
+          "heading": "Give Each Part a Distinct Responsibility",
+          "paragraphs": [
+            "Given states conditions established before the scenario; When describes the trigger; Then describes an observable expected result. Cucumber’s Gherkin uses these keywords and step definitions to connect steps to executable code. Here, practice expression without installing Cucumber.",
+            "For a meal order, selected food with no delivery address is the precondition; submitting is the action; identifying the missing address while retaining the food is the outcome. Results must be observable, beyond “handle correctly.”"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | From Conditions Through Action to an Observable Outcome",
+              "description": "Read the numbered parts as one acceptance scenario.",
+              "items": [
+                {
+                  "title": "Given: conditions",
+                  "body": "Application number and applicant code are entered; document type is blank."
+                },
+                {
+                  "title": "When: action",
+                  "body": "The intake worker requests checking or export."
+                },
+                {
+                  "title": "Then: outcome",
+                  "body": "Identify missing document type, reject complete export and retain entered values."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "gherkin"
+          ]
+        },
+        {
+          "id": "examples",
+          "heading": "Four Scenarios Address Different Risks",
+          "paragraphs": [
+            "The normal case permits preview/export with three populated fields. The missing-value case prevents marking a record complete without document type. Whitespace-only input tests apparent entry without a valid value. Changing complete input to missing checks that stale results cannot still be used.",
+            "These four scenarios are the course’s acceptance contract, not comprehensive security testing. Define length, allowed characters, retention and formal authorization rules separately."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Example",
+              "paragraphs": [
+                "The original Traditional Chinese scenarios A–D specify complete data and matching export; empty document type with blocking and retained values; whitespace-only applicant code treated as missing; and clearing document type after a pass, which must block stale export and require current-input rechecking. Copy them into an editor and review against this section; these are teaching scenarios, not executed Gherkin tests."
+              ],
+              "code": "情境 A：完整資料\nGiven 三個必要欄位皆有非空白值\nWhen 按下檢查並要求匯出\nThen 顯示完整性通過，提供同一筆資料的報告\n\n情境 B：缺漏\nGiven 文件類型為空字串\nWhen 要求檢查或匯出\nThen 指出文件類型缺漏，拒絕完整匯出，保留其他欄位\n\n情境 C：空白文字\nGiven 申請人代號只有空白\nWhen 按下檢查\nThen 視為缺漏，不能標記完整\n\n情境 D：結果過期\nGiven 先前檢查完整，之後清空文件類型\nWhen 嘗試匯出\nThen 不得匯出先前標記完整的結果；要求重新檢查目前資料"
+            }
+          ]
+        },
+        {
+          "id": "negative",
+          "heading": "Check That Forbidden Outcomes Do Not Occur",
+          "paragraphs": [
+            "Negative acceptance requires more than an error message: inappropriate outcomes must remain unavailable. Red text is feedback; rejecting complete export enforces the rule against handing off missing data as complete.",
+            "A shared system needs additional cases, such as user B attempting data authorized only for A, with denial and no content in the response. This single-user prototype has no formal login/storage layer. Record that as unimplemented, not passed security verification."
+          ]
+        },
+        {
+          "id": "tests",
+          "heading": "Connect Scenarios to Evidence",
+          "paragraphs": [
+            "Put B/C string rules into UI-independent functions and use pytest with missing/whitespace inputs to inspect returned omissions. Use AppTest to simulate form entry, checking and edits, examining feedback and invalidation. AppTest is programmatic simulation; real browser downloads and keyboard paths still require separate operation.",
+            "Beside each spec.md scenario, record the corresponding test, latest command and result. Specifications without execution remain pending. Naming a nonexistent test cannot establish a pass."
+          ],
+          "sourceIds": [
+            "streamlit-apptest"
+          ]
+        },
+        {
+          "id": "changes",
+          "heading": "Review Scenarios Again When Requirements Change",
+          "paragraphs": [
+            "If the domain owner adds a fourth required field, update normal input, all missing-field scenarios, labels and test data together in one reviewable change. Avoid a four-field spec.md with code still checking three.",
+            "Ask an agent to list affected scenarios before changing named files and running tests. Human review must confirm authorization for the new field and scenario coverage rather than accepting a green-test summary alone."
+          ]
+        },
+        {
+          "id": "misunderstandings",
+          "heading": "Avoid Fragile Detail and Unobservable Generalities",
+          "paragraphs": [
+            "“Given a button at pixel 20, When clicking the third component, Then it turns green” depends on mutable appearance rather than work commitments. Prefer requests for checking and receipt of missing-field feedback; interface tests handle concrete controls.",
+            "Conversely, “Then the system is secure and usable” is vague. State concrete outcomes, such as no unauthorized content in responses and errors identifying correctable fields. Another colleague should be able to judge the result."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "A text editor and the synthetic case in problem.md.",
+        "steps": [
+          "Create spec.md with four Given/When/Then scenarios covering complete data, missing input, whitespace and stale results.",
+          "For each, list inputs, expected feedback and allowed or forbidden actions.",
+          "Exchange specifications with a peer and have them replay one from text alone. Define ambiguous terms and record test layers and pending items."
+        ],
+        "expected": "At least four replayable acceptance scenarios with negative outcomes and corresponding evidence fields.",
+        "check": "A peer can judge outcomes without asking what “correct” means. Unexecuted scenarios remain pending verification.",
+        "cleanup": "Retain revision history. Use synthetic inputs, not actual accounts or business data."
+      }
     }
   },
   "checks": [
@@ -151,8 +271,29 @@
             "同時檢查回饋、禁止行為與復原所需資料，直接對應需求。",
             "工具啟動只證明環境的一部分，未驗證業務承諾。"
           ]
+        },
+        "en": {
+          "prompt": "Which Then best accepts “incomplete data cannot export a complete report”?",
+          "options": [
+            "The system works normally.",
+            "Show an attractive red message.",
+            "Identify missing fields, reject complete export and retain other entered values.",
+            "The test tool starts successfully."
+          ],
+          "rationales": [
+            "This defines no observable outcome.",
+            "Visual feedback alone neither restricts export nor avoids subjective appearance.",
+            "This checks feedback, forbidden behavior and recovery data against the requirement.",
+            "Tool startup establishes part of the environment, not the business commitment."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }
