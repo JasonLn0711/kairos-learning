@@ -413,3 +413,7 @@ forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，�
 圖解沿既有 `visual` 資料形狀；固定四個 `m04-04-{stages|evidence}-{zh|en}-v1-1-0.svg` 路徑交由 `SmbDiagram` 以跳脫文字呈現。flow 是五個依序關卡，每卡一個成功範圍及推論界線；cards 是五筆三欄證據對照，手機逐筆堆疊。SVG 僅由固定元素、幾何與跳脫文字產生，沒有任意標記、影像或事件。HTML、搜尋及 SVG 來自同一資料；SVG 固定桌面版面，頁面 HTML 依容器重排。
 
 內容、單元、型別、publication-boundary、release 及 C04 瀏覽器檢查依序執行；共用 SourceBody 另跑 C02 回歸。驗證與正式站回讀見 [本次回執](releases/2026-11-05-ceh26-m04-c04-replacement.md)。
+
+### M04-05 完整 NetBIOS／RPC 教學 v1.1.0
+
+[替換來源](sources/ceh26-m04-c05/replacement-2026-11-05/README.md)保存完整供稿、三張參考 PNG、前版與明列公開稿調整。38 個中英章／小節、9 表、37 個程式／文字區塊均沿 sourceBody；公開課次 M04-05，stable ID 與 slug 保留。三張圖由 diagram-models.json 提供 HTML、搜尋與 SVG 文字；RpcEvidenceDiagram 只接六個已知圖檔路徑，rpc-diagram-groups.json 定義平行三卡／兩卡、五階段流程與底部界線，窄欄直向重排。SVG 產生器沿既有 sanitizer。先執行 ceh26_m04_c05_content.py、ceh26_m04_c05_diagrams.py，再以 verify-ceh26-m04-c05.py 核對完整來源、錨點、雜湊及產物。三題編輯參考答案沿既有原生收合，qa=[]。驗收與發布見 [回執](releases/2026-11-05-ceh26-m04-c05-full-replacement.md)。
