@@ -1,3 +1,5 @@
+Current edition: [M04-03 v1.1.0 full plain-language replacement](replacement-2026-11-05/README.md). The initial edition and its deterministic SVG ZIP below remain preserved as historical sources; the current scripts generate the replacement.
+
 # M04-03 FTP / SMTP source preservation
 
 New stable ID CEH26-M04-C03; public slug m04-03. Initial v1.0.0, 2026-11-04 Asia/Taipei.
