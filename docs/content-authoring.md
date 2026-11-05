@@ -368,3 +368,13 @@ AASE 四篇資料升為 v1.0.1，對齊 CEH 的 `id`、`revision`、`contentVers
 `qa` 代表收到的實際問題，與編輯理解檢核 `checks` 分開；目前四篇均為 `[]`，顯示與 CEH 相同的待補訊息。單語 Q&A 由共用元件依現有語言顯示，支持 question、originalQuestion、answer、explanation、editorial 及既有受限 Markdown 格式；不產生假英文。CEH 原有雙語驗證不放寬，AASE 驗證目前只接受已確認的繁中欄位。
 
 維護時執行既有內容、型別、單元與發布邊界；AASE 瀏覽器測試比對兩課程的共用欄位、實際計算樣式與側欄目的地。因觸及共用教材元件，另執行 `npx playwright test --config playwright.ceh26-m04-c02.config.ts`，確認 CEH 雙語、Q&A、SVG 下載及短網址保留。[本次回執](releases/2026-11-05-aase-ceh-layout.md)
+
+### AASE 架構圖區塊（2026-11-05）
+
+AASE章節正文可使用受限`architecture`區塊，外層教材欄位及CEH版型不變。`AaseBlocks`只將新區塊交給`ArchitectureDiagram`，原flow／cards／table／step仍交給未修改的ConceptBlocks；CEH資料型別、驗證與渲染器不放寬。
+
+正式模型與驗證在src/lib/architecture-diagram.ts：level限定context／container；caption、description、boundary為文字；nodes為2–8個唯一id／title／body／kind／inside；relations為1–12條from／to／label。kind限定person、software-system、container、data-store；拒絕多餘欄位、未知端點、自連、重複及未連結節點。Context恰有一個系統內software-system，每條關係都連到該主系統；Container內只接受應用容器或資料儲存，不以檔名自動視為服務。
+
+HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查詢重排雙欄與箭頭，文字與搜尋由同一資料產生。沒有任意HTML／SVG、座標、事件或圖片路徑，也沒有新增SVG匯出。圖例需明說系統範圍不代表安全信任邊界，關係列不表示時序。標籤元件支持zh／en，當前AASE正文仍僅已確認繁中，不產生英文路由。
+
+執行architecture-diagram.test.ts的資料拒絕與搜尋／發布測試、既有內容／型別／發布邊界／release及AASE瀏覽器檢查。瀏覽器逐節核對節點分組、關係端點與標籤，四尺寸、200%文字、無JavaScript及手機／桌面圖解；同時保留原教材與CEH回歸。[發布回執](releases/2026-11-05-aase-m06.md)記錄實際影響及未驗事項。
