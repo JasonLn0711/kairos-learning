@@ -8,7 +8,7 @@ import {conceptPath,createConceptCatalog,type SourceBlock} from '../src/lib/conc
 const id='CEH26-M04-C01';const t=allConceptTeachings.find(t=>t.id===id)!;
 const flatten=(b:SourceBlock)=>b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text'in b?[b.text]:[];
 test('M04-01 replacement retains supplied source, all subsections, tables, commands and bounded answers',()=>{
- assert.equal(t.contentVersion,'1.1.0');assert.equal(t.revision,3);assert.equal(t.publishedOn,'2026-11-04');assert.equal(t.date,'2026-11-04');assert.deepEqual(t.qa,[]);assert.equal(t.checks,undefined);
+ assert.equal(t.contentVersion,'1.1.1');assert.equal(t.revision,4);assert.equal(t.publishedOn,'2026-11-04');assert.equal(t.date,'2026-11-05');assert.deepEqual(t.qa,[]);assert.equal(t.checks,undefined);
  const root='docs/sources/ceh26-m04-c01/';
  const old=JSON.parse(readFileSync(root+'archive-v1.0.1/concept.json','utf8'));
  assert.equal(createHash('sha256').update(JSON.stringify({text:old.text,qa:old.qa})).digest('hex'),'0b34af70e3490bc8c406a70c8ce380d2920fd57eda756bb0d3e4b0ef5ce2b6e0');

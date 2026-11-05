@@ -34,7 +34,7 @@ def parse(lang,suffix):
  assert next(headings,None) is None
  blocks.append(dict(kind='answer',id='answer-dns-evidence',summary='參考答案：四題的證據界線' if lang=='zh' else 'Reference answer: evidence boundaries in the four questions',paragraphs=(S/f'answer.{suffix}.md').read_text().strip().split('\n\n')))
  return dict(summary='從 DNS 名稱、紀錄與回覆狀態，練習逐層驗證服務、身分與授權，並分清快取、DNSSEC 與加密傳輸。' if lang=='zh' else 'Read DNS names, records and response status; verify services, identity and authorization in layers, and distinguish cache, DNSSEC and encrypted transport.',sections=[],sourceBody=blocks)
-lesson=dict(id='CEH26-M04-C02',revision=2,contentVersion='1.1.0',date='2026-11-04',status='published',publishedOn='2026-11-04',qa=[],text={lang:parse(lang,suffix) for lang,suffix in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='CEH26-M04-C02',revision=3,contentVersion='1.1.1',date='2026-11-05',status='published',publishedOn='2026-11-04',qa=[],text={lang:parse(lang,suffix) for lang,suffix in [('zh','zh-TW'),('en','en')]})
 data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n';path=R/'content/concepts/ceh26-m04-c02.json'
 if '--check' in sys.argv:assert path.read_text()==data
 else:path.write_text(data)

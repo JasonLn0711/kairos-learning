@@ -42,7 +42,7 @@ def parse(lang,suffix):
   head,*paras=chunk.strip().split('\n\n');ident,title=re.split(r'｜|\s*\|\s*',head,maxsplit=1)
   blocks.append(dict(kind='answer',id=ident.strip(),summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title.strip(),paragraphs=paras))
  return dict(summary='從封包特徵、工具比對與網路位置，建立可查核的作業系統推測。' if lang=='zh' else 'Connect packet features, tool matches and network position to a verifiable operating-system assessment.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-06',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-06',revision=3,contentVersion='1.1.1',date='2026-11-05',status='published',publishedOn='2026-11-03',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 p=ROOT/'content/concepts/m03-06.json';data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n'
 if '--check' in sys.argv:assert p.read_text()==data
 else:p.write_text(data)

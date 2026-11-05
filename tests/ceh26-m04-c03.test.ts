@@ -3,7 +3,7 @@ import {allConceptTeachings,getPage,searchEntries} from '../src/lib/server/catal
 const id='CEH26-M04-C03';const t=allConceptTeachings.find(t=>t.id===id)!;
 const flatten=(b:SourceBlock)=>b.kind==='list'?b.items:b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(x=>[x.title,x.body])]:b.kind==='answer'?[b.summary,...b.paragraphs]:'text'in b?[b.text]:[];
 test('new FTP/SMTP lesson preserves both full manuscripts, separate evidence, answers, and safe paired diagrams',()=>{
- assert.equal(t.contentVersion,'1.0.0');assert.equal(t.revision,1);assert.equal(t.publishedOn,'2026-11-04');assert.deepEqual(t.qa,[]);
+ assert.equal(t.contentVersion,'1.0.1');assert.equal(t.revision,2);assert.equal(t.publishedOn,'2026-11-04');assert.deepEqual(t.qa,[]);
  const root='docs/sources/ceh26-m04-c03/';for(const [f,h] of Object.entries(JSON.parse(readFileSync(root+'sha256.json','utf8'))))assert.equal(createHash('sha256').update(readFileSync(root+f)).digest('hex'),h);
  for(const [lang,suffix] of [['zh','zh-TW'],['en','en']] as const){const b=t.text[lang].sourceBody!;assert.equal(b.filter(x=>x.kind==='heading').length,11);assert.equal(b.filter(x=>x.kind==='code').length,2);assert.equal(b.filter(x=>x.kind==='visual').length,2);assert.equal(b.filter(x=>x.kind==='answer').length,1);let cursor=0;const text=b.flatMap(flatten).join('\n');
  for(const line of readFileSync(root+`teaching.${suffix}.md`,'utf8').split('\n')){const value=line.trim().replace(/^#{1,3} /,'').replace(/^- /,'').replaceAll('**','');if(!value)continue;const at=text.indexOf(value,cursor);assert.ok(at>=cursor,`Full source order: ${value}`);cursor=at+value.length;}

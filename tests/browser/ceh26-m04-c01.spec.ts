@@ -14,8 +14,8 @@ for(const lang of ['zh','en']){
   await expect(page.locator('link[hreflang=en]')).toHaveAttribute('href',base+'/en'+zhPath);
   await expect(page.locator('link[hreflang=x-default]')).toHaveAttribute('href',base+zhPath);
   await expect(page.locator('article')).toContainText('Finance');await expect(page.locator('article')).toContainText('demo.txt');await expect(page.locator('article')).not.toContainText('SMB/Kafka');
-  await expect(page.locator('h1')).toContainText('CEH M04-01');await expect(page.locator('.article-metadata')).toContainText('v1.1.0');
-  const dates=page.locator('.article-metadata time');await expect(dates).toHaveCount(2);for(const date of await dates.all())await expect(date).toHaveAttribute('datetime','2026-11-04');
+  await expect(page.locator('h1')).toContainText('CEH M04-01');await expect(page.locator('.article-metadata')).toContainText('v'+source.contentVersion);
+  const dates=page.locator('.article-metadata time');await expect(dates).toHaveCount(2);await expect(dates.nth(0)).toHaveAttribute('datetime',source.publishedOn);await expect(dates.nth(1)).toHaveAttribute('datetime',source.date);
   await expect(page.locator('article h2[id^=section-]')).toHaveCount(10);await expect(page.locator('article details')).toHaveCount(1);const answer=page.locator('#answer-projects');await expect(answer).not.toHaveAttribute('open','');
   await expect(page.locator('.source-body h2[id]')).toHaveCount(14);await expect(page.locator('.source-body table')).toHaveCount(9);
   const headings=JSON.parse(readFileSync('docs/sources/ceh26-m04-c01/detailed-section-map.json','utf8'));

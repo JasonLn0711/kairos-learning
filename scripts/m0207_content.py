@@ -37,5 +37,5 @@ def parse(lang,suffix):
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
  blocks.extend(answers)
  return dict(summary='從社群、人員搜尋與暗網相關情報整理可查證的公開足跡，轉成保護措施。' if lang=='zh' else 'Corroborate social, people-search, and dark-web-related intelligence and turn findings into protective actions.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-07',revision=1,contentVersion='1.0.0',date='2026-11-01',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M02-07',revision=2,contentVersion='1.0.1',date='2026-11-05',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m02-07.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

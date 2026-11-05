@@ -46,5 +46,5 @@ def parse(lang,suffix):
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
  blocks.extend(answers)
  return dict(summary='從IP、傳輸協定、連接埠到服務，理解網路請求的分工與判讀。' if lang=='zh' else 'Understand how IP, transport protocols, ports and services work together in a network request.',sections=[],sourceBody=blocks)
-lesson=dict(id='M03-01',revision=2,contentVersion='1.1.0',date='2026-11-03',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M03-01',revision=3,contentVersion='1.1.1',date='2026-11-05',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m03-01.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

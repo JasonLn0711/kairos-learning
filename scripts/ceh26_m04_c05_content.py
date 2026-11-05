@@ -19,7 +19,7 @@ def parse(lang,suffix):
     assert next(headings,None) is None
     blocks.append(dict(kind='answer',id='answer-netbios-rpc-evidence',summary='小檢核參考答案' if lang=='zh' else 'Reference answer',paragraphs=(S/f'answer.{suffix}.md').read_text().strip().split('\n\n')))
     return dict(summary='NetBIOS／RPC 列舉：區分名稱線索、端點映射、連線與指定操作權限。' if lang=='zh' else 'NetBIOS/RPC enumeration: distinguish name clues, endpoint mappings, connections, and permission for specified operations.',sections=[],sourceBody=blocks)
-t=dict(id='CEH26-M04-C05',revision=1,contentVersion='1.0.0',date='2026-11-05',publishedOn='2026-11-05',status='published',qa=[],text={l:parse(l,s) for l,s in [('zh','zh-TW'),('en','en')]})
+t=dict(id='CEH26-M04-C05',revision=2,contentVersion='1.0.1',date='2026-11-05',publishedOn='2026-11-05',status='published',qa=[],text={l:parse(l,s) for l,s in [('zh','zh-TW'),('en','en')]})
 p=R/'content/concepts/ceh26-m04-c05.json';data=json.dumps(t,ensure_ascii=False,indent=2)+'\n'
 if '--check' in sys.argv:assert p.read_text()==data
 else:p.write_text(data)

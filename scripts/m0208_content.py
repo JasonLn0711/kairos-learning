@@ -41,5 +41,5 @@ def parse(lang,suffix):
   at=next(i for i,b in enumerate(blocks) if b.get('id')==f'section-{section+1}');blocks.insert(at,block)
  blocks.extend(answers)
  return dict(summary='將公開足跡轉為分層防護與可追溯的證據紀錄，並核驗改善成效。' if lang=='zh' else 'Turn public footprints into layered protection and traceable evidence records, then verify improvements.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-08',revision=1,contentVersion='1.0.0',date='2026-11-01',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M02-08',revision=2,contentVersion='1.0.1',date='2026-11-05',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m02-08.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

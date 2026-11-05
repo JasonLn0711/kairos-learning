@@ -8,7 +8,7 @@ import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M03-06')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text'in b?[b.text]:[];
 test('M03-06 bilingual structure, source order, answers, searchable figures and next pending unit',()=>{
- assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.date,'2026-11-03');assert.equal(lesson.publishedOn,'2026-11-03');assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.1.1');assert.equal(lesson.date,'2026-11-05');assert.equal(lesson.publishedOn,'2026-11-03');assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-03');
  for(const [lang,suffix] of [['zh','zh-TW'],['en','en']] as const){
   const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,2);assert.equal(body.filter(b=>b.kind==='answer').length,4);

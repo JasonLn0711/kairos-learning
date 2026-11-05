@@ -38,5 +38,5 @@ def parse(lang,suffix):
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
  at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=answers
  return dict(summary='串連 IP、網段、ASN 與路徑觀測，建立可回查的網路地圖。' if lang=='zh' else 'Build a traceable network map with IP addresses, prefixes, ASNs, and path observations.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-06',revision=3,contentVersion='1.1.0',date='2026-11-01',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M02-06',revision=4,contentVersion='1.1.1',date='2026-11-05',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m02-06.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

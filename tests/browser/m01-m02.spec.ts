@@ -15,7 +15,7 @@ for(const c of cases){
   await page.goto(c.url);await expect(page.locator('.article-reading-guide')).toHaveCount(1);await expect(page.locator('.article-metadata')).not.toContainText(/閱讀更新|Reading updated/);
   await expect(page.locator('.article-metadata')).toContainText('v'+c.source.contentVersion);
   await expect(page.locator('.article-metadata')).toContainText(c.source.publishedOn);
-  await expect(page.locator('.article-metadata')).toContainText((c.lang==='zh'?'版本修訂':'Version revised')+' 2026-11-01');
+  await expect(page.locator('.article-metadata')).toContainText((c.lang==='zh'?'版本修訂':'Version revised')+' '+(c.source.date??c.source.revisedOn));
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}px page overflow`).toBe(true);

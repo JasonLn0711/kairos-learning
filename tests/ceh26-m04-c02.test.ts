@@ -6,7 +6,7 @@ test('DNS replacement preserves original edition, complete supplied prose, paire
  const root='docs/sources/ceh26-m04-c02/';const archive=root+'revision-2026-11-04/archive-v1.0.0/';
  assert.equal(createHash('sha256').update(readFileSync(archive+'teaching.zh-TW.md')).digest('hex'),'744c93e7d07c7a82131aaae007957decd1dccf4a6339c2322feda45d67c9471d');
  for(const [file,hash] of Object.entries(JSON.parse(readFileSync(root+'sha256.json','utf8'))))assert.equal(createHash('sha256').update(readFileSync(root+file)).digest('hex'),hash);
- assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,2);assert.equal(lesson.publishedOn,'2026-11-04');assert.equal(lesson.date,'2026-11-04');assert.deepEqual(lesson.qa,[]);assert.equal(lesson.checks,undefined);
+ assert.equal(lesson.contentVersion,'1.1.1');assert.equal(lesson.revision,3);assert.equal(lesson.publishedOn,'2026-11-04');assert.equal(lesson.date,'2026-11-05');assert.deepEqual(lesson.qa,[]);assert.equal(lesson.checks,undefined);
  const map=JSON.parse(readFileSync(root+'revision-2026-11-04/detailed-section-map.json','utf8'));
  for(const lang of ['zh','en'] as const){const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='table').length,12);assert.equal(body.filter(b=>b.kind==='visual').length,2);assert.equal(body.filter(b=>b.kind==='answer').length,1);
   assert.deepEqual(body.filter(b=>('id'in b)&&b.kind!=='answer').map(b=>({id:'id'in b?b.id:null,text:'text'in b?b.text:null})),map.map((m:any)=>({id:m.id,text:m[lang].replaceAll('`','')})));
