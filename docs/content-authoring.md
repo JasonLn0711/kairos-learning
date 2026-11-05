@@ -417,3 +417,7 @@ forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，�
 ### M04-05 完整 NetBIOS／RPC 教學 v1.1.0
 
 [替換來源](sources/ceh26-m04-c05/replacement-2026-11-05/README.md)保存完整供稿、三張參考 PNG、前版與明列公開稿調整。38 個中英章／小節、9 表、37 個程式／文字區塊均沿 sourceBody；公開課次 M04-05，stable ID 與 slug 保留。三張圖由 diagram-models.json 提供 HTML、搜尋與 SVG 文字；RpcEvidenceDiagram 只接六個已知圖檔路徑，rpc-diagram-groups.json 定義平行三卡／兩卡、五階段流程與底部界線，窄欄直向重排。SVG 產生器沿既有 sanitizer。先執行 ceh26_m04_c05_content.py、ceh26_m04_c05_diagrams.py，再以 verify-ceh26-m04-c05.py 核對完整來源、錨點、雜湊及產物。三題編輯參考答案沿既有原生收合，qa=[]。驗收與發布見 [回執](releases/2026-11-05-ceh26-m04-c05-full-replacement.md)。
+
+### AASE 公開課次與模組篇數（2026-11-05）
+
+依 WRITE-08，`aase-labels.ts` 共用讀者課次與標題；stable ID、URL 與 readingId 保留。主標題、資訊列、目錄、前後篇及搜尋使用 `Mxx-yy`，課程名稱仍在導覽與站點資訊。`AaseCourse` 依目前模組篩選可用概念，僅存在未開放概念時顯示準備中。49 筆各升 patch，正文、圖解、來源、原發布日期及翻譯閘門不變；[本批回執](releases/2026-11-05-aase-short-titles.md)記錄實測及發布狀態。
