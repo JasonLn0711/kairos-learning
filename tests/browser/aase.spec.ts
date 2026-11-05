@@ -13,7 +13,7 @@ for(const path of paths){
   await expect(page.locator('link[rel=alternate]')).toHaveCount(0);await expect(page.locator('a.language')).toHaveCount(0);await expect(page.locator('.module-rail')).toBeVisible();await expect(page.locator('.module-rail nav a')).toHaveCount(10);
   const data=conceptPaths.find(c=>c.path===path);
   if(data){await expect(page.locator('.toc')).toHaveCount(1);await expect(page.locator('article.prose')).toHaveCount(1);await expect(page.locator('.article-reading-guide')).toHaveCount(1);await expect(page.locator('#discussion')).toHaveText('概念 Q&A');await expect(page.locator('.next-links a')).toHaveCount(2);for(const s of data.lesson.text.zh.sections){await expect(page.locator('h2#'+s.id)).toHaveText(s.heading);for(const p of s.paragraphs)await expect(page.locator('h2#'+s.id).locator('..')).toContainText(p);}
-   await expect(page.locator('.article-metadata')).toContainText('v1.0.1');
+   await expect(page.locator('.article-metadata')).toContainText('v'+data.lesson.contentVersion);
   }
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});
@@ -21,11 +21,13 @@ for(const path of paths){
    const issues=await page.locator('main p,main li,.node h3,figcaption').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<(e.closest('.module-list,.toc')?14:16)&& !e.classList.contains('article-metadata')||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1);}).map(e=>e.textContent?.slice(0,80)));
    expect(issues,`${width}px readability`).toEqual([]);
    if(width===390||width===1280)await page.screenshot({path:`.local/aase/screenshots/${path.replaceAll('/','-')}-${width}.png`,fullPage:true});
+   if(data && ['AASE-M01-C02','AASE-M01-C03','AASE-M01-C04'].includes(data.lesson.id) && [390,1280].includes(width)){for(const [i,figure] of (await page.locator('article figure').all()).entries())await figure.screenshot({path:`.local/aase/screenshots/${data.lesson.id}-${width}-figure-${i}.png`});}
   }
   await page.setViewportSize({width:390,height:900});await page.addStyleTag({content:'html{font-size:200% !important}'});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'200% overflow').toBe(true);
   if(data){const summary=page.locator('main summary').first();await summary.focus();await expect(summary).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('main details').first()).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(page.locator('main details').first()).not.toHaveAttribute('open','');}
   await page.goto(path);await page.keyboard.press('Tab');await expect(page.locator('a.skip')).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#main')).toBeFocused();
+  if(data && data.lesson.id.startsWith('AASE-M01-C0') && data.lesson.id!=='AASE-M01-C01'){await page.setViewportSize({width:320,height:900});for(const region of await page.locator('.table-scroll').all()){await region.focus();await expect(region).toBeFocused();const range=await region.evaluate(e=>e.scrollWidth-e.clientWidth);if(range>0){await page.keyboard.press('ArrowRight');await expect.poll(()=>region.evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);}}}
   expect(errors).toEqual([]);
   const context=await browser.newContext({javaScriptEnabled:false,baseURL});const staticPage=await context.newPage();await staticPage.goto(path);
   await expect(staticPage.locator('h1')).toHaveCount(1);if(data){await expect(staticPage.locator('#practice').locator('..')).toContainText(data.lesson.text.zh.exercise.expected);await staticPage.locator('main summary').first().click();await expect(staticPage.locator('main details').first()).toHaveAttribute('open','');}
@@ -33,11 +35,11 @@ for(const path of paths){
  });
 }
 test('registry, search, directory gates, CEH regression and download bytes',async({page,request})=>{
- await page.goto('/courses/aase/v1/');await expect(page.locator('main li[id^=m]')).toHaveCount(49);await expect(page.locator('main li[id^=m] a')).toHaveCount(4);
+ await page.goto('/courses/aase/v1/');await expect(page.locator('main li[id^=m]')).toHaveCount(49);await expect(page.locator('main li[id^=m] a')).toHaveCount(lessons.length);
  const data=await (await request.get('/search-index.json')).json();
- const list=Array.isArray(data)?data:data.entries;expect(list.filter((e:any)=>e.id.startsWith('AASE-M'))).toHaveLength(4);
+ const list=Array.isArray(data)?data:data.entries;expect(list.filter((e:any)=>e.id.startsWith('AASE-M'))).toHaveLength(lessons.length);
  await page.goto('/search/');await page.locator('#search-query').fill('結果過期');await page.getByRole('button',{name:'搜尋',exact:true}).click();await expect(page.locator('.reading-list a[href="/courses/aase/v1/m05/concepts/m05-03/"]')).toBeVisible();
- const pending=await request.get('/courses/aase/v1/m01/concepts/m01-02/');expect(pending.status()).toBe(404);
+ const pending=await request.get('/courses/aase/v1/m02/concepts/m02-01/');expect(pending.status()).toBe(404);
  expect((await request.get('/en/courses/aase/v1/')).status()).toBe(404);
  await page.goto('/courses/ceh/v13/m01/concepts/m01-01/');await expect(page.locator('.module-rail')).toBeVisible();
  for(const name of ['aase-v1-workshop.zip','SHA256SUMS.txt']){const res=await request.get('/downloads/aase/'+name);expect(res.status()).toBe(200);expect(await res.body()).toEqual(readFileSync('site/downloads/aase/'+name));}

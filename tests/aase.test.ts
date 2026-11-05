@@ -9,7 +9,7 @@ const lessons=readdirSync('content/aase/lessons').map(f=>read('content/aase/less
 const sources=read('content/aase/sources.json') as AaseSource[];
 const catalog=(ls=lessons,c=course)=>createAaseCatalog(c,ls,sources,'2026-11-05');
 test('AASE has independent 49 IDs, nine modules and exact workshop allocation',()=>{
- const c=catalog();assert.equal(c.concepts.length,49);assert.equal(c.lessons.length,4);
+ const c=catalog();assert.equal(c.concepts.length,49);assert.equal(c.lessons.length,7);
  assert.equal(course.modules.reduce((n,m)=>n+m.minutes,0),600);
  assert.equal(course.modules.reduce((n,m)=>n+m.practiceMinutes,0),150);
  for(const mutate of [(c:AaseCourse)=>{c.modules[0].minutes++;},(c:AaseCourse)=>{c.modules[0].concepts[0].id='M01-01';},(c:AaseCourse)=>{c.modules[0].concepts.pop();}]){const c=structuredClone(course);mutate(c);assert.throws(()=>catalog(lessons,c));}
@@ -18,7 +18,7 @@ test('AASE draft and future content never enters public concepts or search',()=>
  for(const state of ['draft','future']){
   const ls=structuredClone(lessons);ls[0].text.zh.summary='unpublished-marker';
   if(state==='draft')ls[0].status='draft';else ls[0].publishedOn=ls[0].date='2099-01-01';
-  const c=catalog(ls);assert.equal(c.lessons.length,3);assert.equal(c.concepts.find(x=>x.id===ls[0].id)!.lesson,null);
+  const c=catalog(ls);assert.equal(c.lessons.length,lessons.length-1);assert.equal(c.concepts.find(x=>x.id===ls[0].id)!.lesson,null);
   assert.ok(!JSON.stringify(c.concepts).includes('unpublished-marker'));assert.ok(!JSON.stringify(c.searchEntries).includes('unpublished-marker'));
  }
 });
@@ -26,7 +26,7 @@ test('AASE validation rejects malformed dates, sources, figures and answer keys'
  for(const mutate of [(l:AaseLesson)=>{l.publishedOn='2026-02-30';},(l:AaseLesson)=>{l.sourceIds=['missing'];},(l:AaseLesson)=>{l.checks[0].answer=4;},(l:AaseLesson)=>{l.text.zh.sections[2].blocks![0].kind='html' as 'flow';},(l:AaseLesson)=>{l.text.zh.exercise.steps=[];}]){const ls=structuredClone(lessons);const l=ls.find(x=>x.id==='AASE-M01-C01')!;mutate(l);assert.throws(()=>catalog(ls));}
 });
 test('only published AASE routes exist; pending neighbors land on directory anchors',()=>{
- assert.equal(routes.filter(r=>r.kind.startsWith('aase')).length,15);
+ assert.equal(routes.filter(r=>r.kind.startsWith('aase')).length,11+catalog().lessons.length);
  for(const c of catalog().concepts){
   const page=getPage(c.href);
   if(c.lesson){assert.equal(page?.aaseConcept?.id,c.id);assert.equal(page!.selected.length,0);assert.equal(page!.module,undefined);for(const n of page!.aaseNavigation){assert.ok(n.pending?n.href.includes('#'):getPage(n.href));}}
@@ -41,7 +41,7 @@ test('only published AASE routes exist; pending neighbors land on directory anch
  assert.ok(aaseSearch.text.includes('字串'));
 });
 test('AASE adopts CEH field names without losing original teaching, examples or answer keys',()=>{
- for(const l of lessons){
+ for(const l of lessons.filter(l=>['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id))){
   const old=read('docs/sources/aase/layout-2026-11-05/'+l.id.toLowerCase()+'.json');
   assert.equal(l.publishedOn,old.publishedOn);assert.equal(l.date,'2026-11-05');assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,old.revision+1);
   assert.equal(l.text.zh.summary,old.summary);assert.deepEqual(l.text.zh.objectives,old.objectives);assert.deepEqual(l.text.zh.exercise,old.exercise);assert.deepEqual(l.qa,[]);
@@ -59,4 +59,11 @@ test('AASE Q&A uses the CEH localized discussion fields without invented transla
  const c=catalog(ls);assert.ok(c.searchEntries.some(e=>e.text.includes('合成問題：完整代表什麼？')));
  ls[0].qa.push(structuredClone(ls[0].qa[0]));assert.throws(()=>catalog(ls));
  const bad=structuredClone(lessons);bad[0].text.zh.sections[0].id='discussion';assert.throws(()=>catalog(bad));
+});
+
+test('AASE M01 has four published lessons with substantive evidence and original checks',()=>{
+ const m01=catalog().concepts.filter(c=>c.module==='m01');assert.equal(m01.length,4);assert.ok(m01.every(c=>c.lesson));
+ for(const c of m01.slice(1)){const l=c.lesson!;assert.equal(l.contentVersion,'1.0.0');assert.equal(l.revision,1);assert.ok(l.text.zh.sections.length>=6);assert.ok(l.checks.length>=3);assert.deepEqual(l.qa,[]);assert.ok(l.text.zh.sections.some(s=>s.blocks?.some(b=>b.kind==='flow'||b.kind==='cards')));}
+ const m03=m01.find(c=>c.id==='AASE-M01-C03')!.lesson!;assert.ok(m03.text.zh.sections.flatMap(s=>s.paragraphs).join(' ').includes('待實作'));
+ const m04=m01.find(c=>c.id==='AASE-M01-C04')!.lesson!;assert.ok(m04.text.zh.sections.flatMap(s=>s.paragraphs).join(' ').includes('虛構示範回答'));
 });
