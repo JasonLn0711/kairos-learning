@@ -23,3 +23,5 @@ course.en.json 是原課程九模組、49 個穩定 ID 的英文目錄文字，�
 ## 首頁後續修正
 
 首頁總述改為依篇目提供已完成的語言對應；避免將 AASE 一篇英譯描述成全系列雙語。新增首頁檢查在未修改正式站及本機量測英文 320px／200% 頁寬同為 337px，觀察存在 .local/aase/bilingual/home-overflow-probe.json；課程列固定欄位、部分長字及 Begin with M01 的 nowrap 均需處理。修正限定 course-home，保留文字及連結並容許換行，未使用 overflow:hidden。兩語四尺寸／兩倍字級、欄位不重疊、鍵盤及無 JavaScript 的結果另見回執。
+
+首頁與 artifact 發布修正後，Pages run 41987914668 成功，正式站包含首頁的新套件 15 項通過；英譯仍為 M01-01 一篇，其餘 48 篇沒有英文正文路由。兩次舊部署失敗、唯讀 artifact metadata helper 的四項受控測試，以及新工作流程的真正成功記錄分開保存，詳見回執。
