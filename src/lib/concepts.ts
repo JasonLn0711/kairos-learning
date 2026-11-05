@@ -22,6 +22,7 @@ export type ConceptVisual = {kind:'flow'|'cards';caption:string;description:stri
 export type ConceptBlock = ConceptVisual | {kind:'table';caption:string;headers:string[];rows:string[][]} | {kind:'details'|'step';heading:string;paragraphs:string[];code?:string;id?:string};
 export type ConceptCheck = {id:string;answer:number;text:Partial<Bilingual<{prompt:string;options:string[];rationales:string[]}>>};
 export type SourceBlock = {kind:'sourceImage';src:string;alt:string;caption:string;openLabel:string;downloadLabel:string;width:number;height:number} | {kind:'answer';id:string;summary:string;paragraphs:string[]} | {kind:'dnsDiagram';id:'lookup'|'resolution'|'cname'|'axfr'} | {kind:'visual';visual:ConceptVisual;src:string;downloadLabel:string} | {kind:'accessDiagram';src:string;texts:string[]} | {kind:'paragraph'|'heading'|'code';text:string;id?:string} | {kind:'list';items:string[]} | {kind:'table';headers:string[];rows:string[][]};
+export type ConceptDiscussion = {id:string;format?:'markdown';text:Partial<Bilingual<{question:string;originalQuestion?:string;answer:string[];explanation?:string[];editorial?:string[]}>>};
 export type ConceptTeaching = {
   id: string; revision: number; contentVersion?: string; date: string; status: 'draft' | 'published'; publishedOn: string;
   text: Bilingual<{summary: string; sourceBody?: SourceBlock[]; sections: {id: string; heading: string; paragraphs: string[];blocks?:ConceptBlock[]}[]}>;

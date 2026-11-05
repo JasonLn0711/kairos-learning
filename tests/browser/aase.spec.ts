@@ -10,15 +10,15 @@ for(const path of paths){
  test(`${path}: readable, responsive, keyboard, static`,async({page,browser,baseURL})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(path);await expect(page.locator('h1')).toHaveCount(1);await expect(page.locator('html')).toHaveAttribute('lang','zh-Hant');
-  await expect(page.locator('link[rel=alternate]')).toHaveCount(0);await expect(page.locator('a.language')).toHaveCount(0);await expect(page.locator('.module-rail')).toHaveCount(0);
+  await expect(page.locator('link[rel=alternate]')).toHaveCount(0);await expect(page.locator('a.language')).toHaveCount(0);await expect(page.locator('.module-rail')).toBeVisible();await expect(page.locator('.module-rail nav a')).toHaveCount(10);
   const data=conceptPaths.find(c=>c.path===path);
-  if(data){for(const s of data.lesson.sections){await expect(page.locator('#'+s.id+' h2')).toHaveText(s.heading);for(const p of s.paragraphs)await expect(page.locator('#'+s.id)).toContainText(p);}
-   await expect(page.locator('.article-metadata')).toContainText('v1.0.0');
+  if(data){await expect(page.locator('.toc')).toHaveCount(1);await expect(page.locator('article.prose')).toHaveCount(1);await expect(page.locator('.article-reading-guide')).toHaveCount(1);await expect(page.locator('#discussion')).toHaveText('概念 Q&A');await expect(page.locator('.next-links a')).toHaveCount(2);for(const s of data.lesson.text.zh.sections){await expect(page.locator('h2#'+s.id)).toHaveText(s.heading);for(const p of s.paragraphs)await expect(page.locator('h2#'+s.id).locator('..')).toContainText(p);}
+   await expect(page.locator('.article-metadata')).toContainText('v1.0.1');
   }
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}px overflow`).toBe(true);
-   const issues=await page.locator('main p,main li,.node h3,figcaption').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16&& !e.classList.contains('article-metadata')||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1);}).map(e=>e.textContent?.slice(0,80)));
+   const issues=await page.locator('main p,main li,.node h3,figcaption').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<(e.closest('.module-list,.toc')?14:16)&& !e.classList.contains('article-metadata')||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1);}).map(e=>e.textContent?.slice(0,80)));
    expect(issues,`${width}px readability`).toEqual([]);
    if(width===390||width===1280)await page.screenshot({path:`.local/aase/screenshots/${path.replaceAll('/','-')}-${width}.png`,fullPage:true});
   }
@@ -28,7 +28,7 @@ for(const path of paths){
   await page.goto(path);await page.keyboard.press('Tab');await expect(page.locator('a.skip')).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#main')).toBeFocused();
   expect(errors).toEqual([]);
   const context=await browser.newContext({javaScriptEnabled:false,baseURL});const staticPage=await context.newPage();await staticPage.goto(path);
-  await expect(staticPage.locator('h1')).toHaveCount(1);if(data){await expect(staticPage.locator('#practice')).toContainText(data.lesson.exercise.expected);await staticPage.locator('main summary').first().click();await expect(staticPage.locator('main details').first()).toHaveAttribute('open','');}
+  await expect(staticPage.locator('h1')).toHaveCount(1);if(data){await expect(staticPage.locator('#practice').locator('..')).toContainText(data.lesson.text.zh.exercise.expected);await staticPage.locator('main summary').first().click();await expect(staticPage.locator('main details').first()).toHaveAttribute('open','');}
   await context.close();
  });
 }
@@ -52,4 +52,17 @@ test('real Streamlit task, invalidation, keyboard and exported JSON',async({page
  const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'匯出完整報告'}).click();const download=await downloadPromise;const stream=await download.createReadStream();const chunks=[];for await(const chunk of stream!)chunks.push(chunk);const report=JSON.parse(Buffer.concat(chunks).toString());expect(report.status).toBe('complete');expect(report.data).toEqual({application_id:'SYN-001',applicant_code:'DEMO-A',document_type:'合成申請表'});
  await page.getByLabel('文件類型（必填）').fill('');await page.getByLabel('文件類型（必填）').press('Tab');await expect(page.getByRole('button',{name:'匯出完整報告'})).toHaveCount(0);
  await page.screenshot({path:'.local/aase/screenshots/streamlit-invalidated.png',fullPage:true});
+});
+
+
+test('AASE and CEH share the same teaching frame and navigation geometry',async({page})=>{
+ await page.setViewportSize({width:1280,height:900});
+ const snapshots=[];
+ for(const path of ['/courses/ceh/v13/m01/concepts/m01-01/','/courses/aase/v1/m04/concepts/m04-05/']){
+  await page.goto(path);
+  snapshots.push(await page.evaluate(()=>Object.fromEntries(['.page-shell','.module-rail','main','.toc','.article-metadata','.next-links'].map(selector=>{const e=document.querySelector(selector)!;const c=getComputedStyle(e);return [selector,{width:Math.round(e.getBoundingClientRect().width),fontSize:c.fontSize,lineHeight:c.lineHeight,display:c.display}];}))));
+ }
+ expect(snapshots[1]).toEqual(snapshots[0]);
+ await expect(page.locator('.module-rail a[href*="/ceh/"]')).toHaveCount(0);
+ await page.locator('.module-rail a[href="/courses/aase/v1/m03/"]').click();await expect(page.locator('h1')).toContainText('M03');await expect(page.locator('.module-rail a[aria-current=page]')).toContainText('M03');
 });

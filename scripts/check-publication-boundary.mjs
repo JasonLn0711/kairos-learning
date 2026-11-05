@@ -19,8 +19,8 @@ try {
     const path=`content/aase/lessons/${name}.json`;
     const original=readFileSync(path,'utf8');aaseOriginals.set(path,original);
     const lesson=JSON.parse(original);lesson.status=i===0?'draft':'published';
-    lesson.publishedOn=lesson.revisedOn=i===0?'2026-01-01':'2099-01-01';
-    lesson.summary=i===0?'AASE_UNPUBLISHED_DRAFT_4fc21':'AASE_UNPUBLISHED_FUTURE_4fc21';
+    lesson.publishedOn=lesson.date=i===0?'2026-01-01':'2099-01-01';
+    lesson.text.zh.summary=i===0?'AASE_UNPUBLISHED_DRAFT_4fc21':'AASE_UNPUBLISHED_FUTURE_4fc21';
     writeFileSync(path,JSON.stringify(lesson));
   }
 

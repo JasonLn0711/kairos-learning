@@ -19,10 +19,11 @@
   {:else if block.kind === 'details'}
     <section class="concept-detail"><h4>{block.heading}</h4>{#each block.paragraphs as p}<p><InlineText text={p} /></p>{/each}</section>
   {:else if block.kind === 'step'}
-    <section><h3 id={block.id}>{block.heading}</h3>{#each block.paragraphs as p}<p><InlineText text={p} /></p>{/each}{#if block.code}<pre><code>{block.code}</code></pre>{/if}</section>
+    <section><h3 id={block.id}>{block.heading}</h3>{#each block.paragraphs as p}<p><InlineText text={p} /></p>{/each}{#if block.code}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Scrollable code needs keyboard access.) --><div class="code-region" role="region" aria-label={block.heading+' code'} tabindex="0"><pre><code>{block.code}</code></pre></div>{/if}</section>
   {/if}
 {/each}
 <style>
+  .code-region{max-width:100%;overflow:auto}
   figure{margin:1.5rem 0;padding:1.25rem;background:var(--soft);border:1px solid var(--line);border-radius:6px}
   figcaption>strong{font-size:1.1rem;color:var(--ink)}
   figcaption p{font-size:.9rem;line-height:1.7;margin:.5rem 0 1rem}

@@ -16,14 +16,14 @@ test('AASE has independent 49 IDs, nine modules and exact workshop allocation',(
 });
 test('AASE draft and future content never enters public concepts or search',()=>{
  for(const state of ['draft','future']){
-  const ls=structuredClone(lessons);ls[0].summary='unpublished-marker';
-  if(state==='draft')ls[0].status='draft';else ls[0].publishedOn=ls[0].revisedOn='2099-01-01';
+  const ls=structuredClone(lessons);ls[0].text.zh.summary='unpublished-marker';
+  if(state==='draft')ls[0].status='draft';else ls[0].publishedOn=ls[0].date='2099-01-01';
   const c=catalog(ls);assert.equal(c.lessons.length,3);assert.equal(c.concepts.find(x=>x.id===ls[0].id)!.lesson,null);
   assert.ok(!JSON.stringify(c.concepts).includes('unpublished-marker'));assert.ok(!JSON.stringify(c.searchEntries).includes('unpublished-marker'));
  }
 });
 test('AASE validation rejects malformed dates, sources, figures and answer keys',()=>{
- for(const mutate of [(l:AaseLesson)=>{l.publishedOn='2026-02-30';},(l:AaseLesson)=>{l.sourceIds=['missing'];},(l:AaseLesson)=>{l.checks[0].answer=4;},(l:AaseLesson)=>{l.sections[2].figure!.kind='html' as 'flow';},(l:AaseLesson)=>{l.exercise.steps=[];}]){const ls=structuredClone(lessons);const l=ls.find(x=>x.id==='AASE-M01-C01')!;mutate(l);assert.throws(()=>catalog(ls));}
+ for(const mutate of [(l:AaseLesson)=>{l.publishedOn='2026-02-30';},(l:AaseLesson)=>{l.sourceIds=['missing'];},(l:AaseLesson)=>{l.checks[0].answer=4;},(l:AaseLesson)=>{l.text.zh.sections[2].blocks![0].kind='html' as 'flow';},(l:AaseLesson)=>{l.text.zh.exercise.steps=[];}]){const ls=structuredClone(lessons);const l=ls.find(x=>x.id==='AASE-M01-C01')!;mutate(l);assert.throws(()=>catalog(ls));}
 });
 test('only published AASE routes exist; pending neighbors land on directory anchors',()=>{
  assert.equal(routes.filter(r=>r.kind.startsWith('aase')).length,15);
@@ -39,4 +39,24 @@ test('only published AASE routes exist; pending neighbors land on directory anch
  const aaseSearch=searchEntries.find(e=>e.id==='AASE-M05-C03')!;
  assert.ok(aaseSearch.text.includes('結果過期'));
  assert.ok(aaseSearch.text.includes('字串'));
+});
+test('AASE adopts CEH field names without losing original teaching, examples or answer keys',()=>{
+ for(const l of lessons){
+  const old=read('docs/sources/aase/layout-2026-11-05/'+l.id.toLowerCase()+'.json');
+  assert.equal(l.publishedOn,old.publishedOn);assert.equal(l.date,'2026-11-05');assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,old.revision+1);
+  assert.equal(l.text.zh.summary,old.summary);assert.deepEqual(l.text.zh.objectives,old.objectives);assert.deepEqual(l.text.zh.exercise,old.exercise);assert.deepEqual(l.qa,[]);
+  assert.equal(l.text.zh.sections.length,old.sections.length);assert.equal(l.checks.length,old.checks.length);
+  for(const [i,s] of l.text.zh.sections.entries()){
+   assert.equal(s.id,old.sections[i].id);assert.equal(s.heading,old.sections[i].heading);assert.deepEqual(s.paragraphs,old.sections[i].paragraphs);
+   if(old.sections[i].figure)assert.deepEqual((s.blocks!.find(b=>b.kind==='flow'||b.kind==='cards') as {items:unknown}).items,old.sections[i].figure.items);
+   if(old.sections[i].code)assert.equal((s.blocks!.find(b=>'code'in b&&b.code) as {code:string}).code,old.sections[i].code);
+  }
+  for(const [i,q] of l.checks.entries()){assert.equal(q.answer,old.checks[i].answer);assert.deepEqual(q.text.zh!.rationales,old.checks[i].rationales);}
+ }
+});
+test('AASE Q&A uses the CEH localized discussion fields without invented translations',()=>{
+ const ls=structuredClone(lessons);ls[0].qa=[{id:'synthetic-qa',text:{zh:{question:'合成問題：完整代表什麼？',answer:['只代表教學欄位完整。']}}}];
+ const c=catalog(ls);assert.ok(c.searchEntries.some(e=>e.text.includes('合成問題：完整代表什麼？')));
+ ls[0].qa.push(structuredClone(ls[0].qa[0]));assert.throws(()=>catalog(ls));
+ const bad=structuredClone(lessons);bad[0].text.zh.sections[0].id='discussion';assert.throws(()=>catalog(bad));
 });

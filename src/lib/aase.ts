@@ -1,7 +1,11 @@
+import {parseQA} from './qa-markdown.ts';
+import type {ConceptBlock,ConceptCheck,ConceptDiscussion} from './concepts.ts';
+import type {ReadingGuide} from './article-reading.ts';
 import { isPublic, type SearchEntry } from './model.ts';
 export type AaseSource = {id:string;title:string;url:string;checkedOn:string};
-export type AaseSection = {id:string;heading:string;paragraphs:string[];sourceIds?:string[];code?:string;figure?:{kind:'flow'|'comparison';caption:string;items:{title:string;body:string}[]}};
-export type AaseLesson = {id:string;status:'draft'|'published';revision:number;contentVersion:string;publishedOn:string;revisedOn:string;summary:string;objectives:string[];sections:AaseSection[];exercise:{environment:string;steps:string[];expected:string;check:string;cleanup:string};checks:{id:string;prompt:string;options:string[];answer:number;rationales:string[]}[];sourceIds:string[]};
+export type AaseSection = {id:string;heading:string;paragraphs:string[];sourceIds?:string[];blocks?:ConceptBlock[]};
+export type AaseExercise = {environment:string;steps:string[];expected:string;check:string;cleanup:string};
+export type AaseLesson = {id:string;status:'draft'|'published';revision:number;contentVersion:string;publishedOn:string;date:string;qa:ConceptDiscussion[];text:{zh:{summary:string;objectives:string[];sections:AaseSection[];exercise:AaseExercise;readingGuide:ReadingGuide}};checks:ConceptCheck[];sourceIds:string[]};
 export type AaseCourse = {id:string;version:string;contentVersion:string;title:string;subtitle:string;englishTitle:string;locale:string;status:string;modules:{id:string;title:string;minutes:number;practiceMinutes:number;artifact:string;concepts:{id:string;slug:string;title:string;status:string;workshopDepth:string;objective:string;practice:string;assessment:string}[]}[]};
 export const aaseModulePath=(id:string)=>`/courses/aase/v1/${id}/`;
 export const aaseConceptPath=(module:string,slug:string)=>`${aaseModulePath(module)}concepts/${slug}/`;
@@ -25,20 +29,32 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
   if(sourceIds.size!==sources.length||sources.some(s=>!text(s.id)||!text(s.title)||!s.url.startsWith('https://')||!day(s.checkedOn)))fail('invalid sources');
   if(new Set(lessons.map(l=>l.id)).size!==lessons.length)fail('duplicate lesson');
   for(const l of lessons){
-    if(!concepts.some(c=>c.id===l.id)||!['draft','published'].includes(l.status)||!Number.isInteger(l.revision)||l.revision<1||!/^\d+\.\d+\.\d+$/.test(l.contentVersion)||!day(l.publishedOn)||!day(l.revisedOn)||l.revisedOn<l.publishedOn)fail('invalid lesson metadata');
-    if(!text(l.summary)||l.objectives.length<2||l.objectives.some(x=>!text(x))||l.sections.length<5||!l.sourceIds.length||l.sourceIds.some(id=>!sourceIds.has(id)))fail('incomplete lesson');
-    if(new Set(l.sections.map(s=>s.id)).size!==l.sections.length)fail('duplicate section');
-    for(const s of l.sections){
-      if(!/^[a-z][a-z0-9-]*$/.test(s.id)||!text(s.heading)||!s.paragraphs.length||s.paragraphs.some(p=>!text(p))||(s.sourceIds??[]).some(id=>!l.sourceIds.includes(id)))fail('invalid section');
-      if(s.figure&&(!['flow','comparison'].includes(s.figure.kind)||!text(s.figure.caption)||s.figure.items.length<2||s.figure.items.some(i=>!text(i.title)||!text(i.body))))fail('invalid figure');
+    const t=l.text?.zh;
+    if(!t||!t.readingGuide||!(['goal','startingPoint','route','output'] as const).every(k=>text(t.readingGuide[k]))||!Array.isArray(l.qa))fail('incomplete lesson fields');
+    if(Object.keys(l.text).some(k=>k!=='zh'))fail('unreviewed lesson language');
+    if(!concepts.some(c=>c.id===l.id)||!['draft','published'].includes(l.status)||!Number.isInteger(l.revision)||l.revision<1||!/^\d+\.\d+\.\d+$/.test(l.contentVersion)||!day(l.publishedOn)||!day(l.date)||l.date<l.publishedOn)fail('invalid lesson metadata');
+    if(!text(t.summary)||t.objectives.length<2||t.objectives.some(x=>!text(x))||t.sections.length<5||!l.sourceIds.length||l.sourceIds.some(id=>!sourceIds.has(id)))fail('incomplete lesson');
+    if(new Set(t.sections.map(s=>s.id)).size!==t.sections.length)fail('duplicate section');
+    for(const s of t.sections){
+      if(!/^[a-z][a-z0-9-]*$/.test(s.id)||!text(s.heading)||['discussion','objectives','practice','checks','sources'].includes(s.id)||s.id.startsWith('qa-')||!s.paragraphs.length||s.paragraphs.some(p=>!text(p))||(s.sourceIds??[]).some(id=>!l.sourceIds.includes(id)))fail('invalid section');
+      for(const b of s.blocks??[]){
+        if(b.kind==='flow'||b.kind==='cards'){if(!text(b.caption)||!text(b.description)||b.items.length<2||b.items.some(i=>!text(i.title)||!text(i.body)))fail('invalid figure');}
+        else if(b.kind==='step'||b.kind==='details'){if(!text(b.heading)||!b.paragraphs.length||!b.paragraphs.every(text)||(b.code!==undefined&&!text(b.code)))fail('invalid step');}
+        else if(b.kind==='table'){if(!text(b.caption)||!b.headers.length||!b.headers.every(text)||!b.rows.length||b.rows.some(r=>r.length!==b.headers.length||!r.every(text)))fail('invalid table');}
+        else fail('invalid block');
+      }
     }
-    const e=l.exercise;
+    const e=t.exercise;
     if(!e||!text(e.environment)||e.steps.length<3||e.steps.some(x=>!text(x))||![e.expected,e.check,e.cleanup].every(text))fail('incomplete exercise');
     if(!l.checks.length||new Set(l.checks.map(q=>q.id)).size!==l.checks.length)fail('missing or duplicate checks');
-    if(l.checks.some(q=>!q.id.startsWith(l.id+'-Q')||!text(q.prompt)||q.options.length!==4||q.rationales.length!==4||!Number.isInteger(q.answer)||q.answer<0||q.answer>3||[...q.options,...q.rationales].some(x=>!text(x))))fail('invalid check');
+    if(l.checks.some(q=>!q.id.startsWith(l.id+'-Q')||!q.text.zh||Object.keys(q.text).some(k=>k!=='zh')||!text(q.text.zh.prompt)||q.text.zh.options.length!==4||q.text.zh.rationales.length!==4||!Number.isInteger(q.answer)||q.answer<0||q.answer>3||[...q.text.zh.options,...q.text.zh.rationales].some(x=>!text(x))))fail('invalid check');
+    const qaIds=new Set<string>();
+    for(const q of l.qa){const v=q.text.zh;if(!v)throw new Error('AASE: missing Q&A locale');if(!/^[a-zA-Z0-9-]+$/.test(q.id)||qaIds.has(q.id)||Object.keys(q.text).some(k=>k!=='zh')||(q.format!==undefined&&q.format!=='markdown')||!text(v.question)||!v.answer.length||!v.answer.every(text))fail('invalid Q&A');if([v.originalQuestion].some(x=>x!==undefined&&!text(x))||[v.explanation,v.editorial].some(a=>a!==undefined&&(!a.length||!a.every(text))))fail('invalid Q&A fields');if(q.format==='markdown'&&(parseQA(v.answer.join('\n\n')).filter(b=>b.kind==='quiz').length!==1||!v.explanation?.length))fail('incomplete Q&A teaching test');qaIds.add(q.id);}
+
   }
   const publicLessons=lessons.filter(l=>isPublic(l,today));
   const publicConcepts=concepts.map(c=>({...c,lesson:publicLessons.find(l=>l.id===c.id)??null}));
-  const searchEntries:SearchEntry[]=publicConcepts.filter(c=>c.lesson).map(c=>({id:c.id,lang:'zh',title:c.title,summary:c.lesson!.summary,text:[...c.lesson!.objectives,...c.lesson!.sections.flatMap(s=>[s.heading,...s.paragraphs,s.code??'',...(s.figure?[s.figure.caption,...s.figure.items.flatMap(i=>[i.title,i.body])]:[])]),...Object.values(c.lesson!.exercise).flat(),...c.lesson!.checks.flatMap(q=>[q.prompt,...q.options,...q.rationales])].join(' '),href:c.href,label:`AASE ${c.module.toUpperCase()}`}));
+  const blockText=(b:ConceptBlock):string[]=>b.kind==='flow'||b.kind==='cards'?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'heading' in b?[b.heading,...b.paragraphs,b.code??'']:[];
+  const searchEntries:SearchEntry[]=publicConcepts.filter(c=>c.lesson).map(c=>{const l=c.lesson!,t=l.text.zh;return {id:c.id,lang:'zh',title:c.title,summary:t.summary,text:[...t.objectives,...Object.values(t.readingGuide),...t.sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(blockText)]),...Object.values(t.exercise).flat(),...l.checks.flatMap(q=>[q.text.zh!.prompt,...q.text.zh!.options,...q.text.zh!.rationales]),...l.qa.flatMap(q=>[q.text.zh!.question,q.text.zh!.originalQuestion??'',...q.text.zh!.answer,...(q.text.zh!.explanation??[]),...(q.text.zh!.editorial??[])])].join(' '),href:c.href,label:`AASE ${c.module.toUpperCase()}`};});
   return {concepts:publicConcepts,lessons:publicLessons,searchEntries};
 }
