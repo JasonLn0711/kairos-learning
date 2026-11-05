@@ -1,9 +1,11 @@
+import {assertArchitectureDiagram,architectureDiagramText,type ArchitectureDiagramModel} from './architecture-diagram.ts';
 import {parseQA} from './qa-markdown.ts';
 import type {ConceptBlock,ConceptCheck,ConceptDiscussion} from './concepts.ts';
 import type {ReadingGuide} from './article-reading.ts';
 import { isPublic, type SearchEntry } from './model.ts';
 export type AaseSource = {id:string;title:string;url:string;checkedOn:string};
-export type AaseSection = {id:string;heading:string;paragraphs:string[];sourceIds?:string[];blocks?:ConceptBlock[]};
+export type AaseBlock = ConceptBlock | ArchitectureDiagramModel;
+export type AaseSection = {id:string;heading:string;paragraphs:string[];sourceIds?:string[];blocks?:AaseBlock[]};
 export type AaseExercise = {environment:string;steps:string[];expected:string;check:string;cleanup:string};
 export type AaseLesson = {id:string;status:'draft'|'published';revision:number;contentVersion:string;publishedOn:string;date:string;qa:ConceptDiscussion[];text:{zh:{summary:string;objectives:string[];sections:AaseSection[];exercise:AaseExercise;readingGuide:ReadingGuide}};checks:ConceptCheck[];sourceIds:string[]};
 export type AaseCourse = {id:string;version:string;contentVersion:string;title:string;subtitle:string;englishTitle:string;locale:string;status:string;modules:{id:string;title:string;minutes:number;practiceMinutes:number;artifact:string;concepts:{id:string;slug:string;title:string;status:string;workshopDepth:string;objective:string;practice:string;assessment:string}[]}[]};
@@ -38,7 +40,8 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
     for(const s of t.sections){
       if(!/^[a-z][a-z0-9-]*$/.test(s.id)||!text(s.heading)||['discussion','objectives','practice','checks','sources'].includes(s.id)||s.id.startsWith('qa-')||!s.paragraphs.length||s.paragraphs.some(p=>!text(p))||(s.sourceIds??[]).some(id=>!l.sourceIds.includes(id)))fail('invalid section');
       for(const b of s.blocks??[]){
-        if(b.kind==='flow'||b.kind==='cards'){if(!text(b.caption)||!text(b.description)||b.items.length<2||b.items.some(i=>!text(i.title)||!text(i.body)))fail('invalid figure');}
+        if(b.kind==='architecture'){assertArchitectureDiagram(b);}
+        else if(b.kind==='flow'||b.kind==='cards'){if(!text(b.caption)||!text(b.description)||b.items.length<2||b.items.some(i=>!text(i.title)||!text(i.body)))fail('invalid figure');}
         else if(b.kind==='step'||b.kind==='details'){if(!text(b.heading)||!b.paragraphs.length||!b.paragraphs.every(text)||(b.code!==undefined&&!text(b.code)))fail('invalid step');}
         else if(b.kind==='table'){if(!text(b.caption)||!b.headers.length||!b.headers.every(text)||!b.rows.length||b.rows.some(r=>r.length!==b.headers.length||!r.every(text)))fail('invalid table');}
         else fail('invalid block');
@@ -54,7 +57,7 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
   }
   const publicLessons=lessons.filter(l=>isPublic(l,today));
   const publicConcepts=concepts.map(c=>({...c,lesson:publicLessons.find(l=>l.id===c.id)??null}));
-  const blockText=(b:ConceptBlock):string[]=>b.kind==='flow'||b.kind==='cards'?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'heading' in b?[b.heading,...b.paragraphs,b.code??'']:[];
+  const blockText=(b:AaseBlock):string[]=>b.kind==='architecture'?architectureDiagramText(b):b.kind==='flow'||b.kind==='cards'?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'heading' in b?[b.heading,...b.paragraphs,b.code??'']:[];
   const searchEntries:SearchEntry[]=publicConcepts.filter(c=>c.lesson).map(c=>{const l=c.lesson!,t=l.text.zh;return {id:c.id,lang:'zh',title:c.title,summary:t.summary,text:[...t.objectives,...Object.values(t.readingGuide),...t.sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(blockText)]),...Object.values(t.exercise).flat(),...l.checks.flatMap(q=>[q.text.zh!.prompt,...q.text.zh!.options,...q.text.zh!.rationales]),...l.qa.flatMap(q=>[q.text.zh!.question,q.text.zh!.originalQuestion??'',...q.text.zh!.answer,...(q.text.zh!.explanation??[]),...(q.text.zh!.editorial??[])])].join(' '),href:c.href,label:`AASE ${c.module.toUpperCase()}`};});
   return {concepts:publicConcepts,lessons:publicLessons,searchEntries};
 }

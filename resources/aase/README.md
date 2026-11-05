@@ -1,6 +1,6 @@
 # AASE v1｜合成收件完整性檢核工作坊
 
-本包包含學員手冊、教師流程、三次切片起始骨架、可執行參考解答、規則及 AppTest 測試、合成資料與作品工作表。教材正本在 CS Kairos Learn 的 AASE 系列；本包不是原分享對話附件的重製。
+本包包含學員手冊、教師流程、起始骨架、前兩次切片快照、可執行參考解答、規則及 AppTest 測試、合成資料與作品工作表。教材正本在 CS Kairos Learn 的 AASE 系列；本包不是原分享對話附件的重製。
 
 適用 Python 3.11／3.12。本次套件固定為 Streamlit 1.51.0、pytest 8.4.2；這是重現組合，不表示最新版本。測試結果與執行環境以 repo 發布回執為準。Agent 品牌可替換，教師需先測試授課版本、帳號與費用。
 
@@ -17,7 +17,9 @@ python -m streamlit run starter/app.py --server.address 127.0.0.1
 
 Windows PowerShell 的啟用指令為 `.venv\Scripts\Activate.ps1`；依系統既有政策操作，不為安裝而降低安全設定。瀏覽器開啟終端機顯示的本機網址，Ctrl+C 停止服務。起始骨架沒有完整規則；依 student-handout.md 將 templates/ 複製到 starter/ 後逐步實作。
 
-教師參考解答在另一個目錄，避免覆蓋學員作品：
+前兩階段可執行快照位於 `slices/01-form/`、`slices/02-validation/`；第三階段沿用 `reference/`。每階段有自己的測試，詳見 [切片操作與比較方式](slices/README.md)。請在獨立目錄操作，保留學員作品。
+
+教師參考解答在另一個目錄：
 
 ```sh
 cd reference
