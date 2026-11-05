@@ -19,7 +19,7 @@ HTML-03／04：英文長標題能換行，手機直向前後篇，不使用隱�
 - 最終 CSS 下 CEH C05 4 項、C01／C02／退役閘門 22 項及英文四尺寸閱讀子集 26 項通過。
 - C02 舊瀏覽器閘門斷言仍期待 3 篇公開，與先前已發布 C05 的實際 4 篇不符；本次同步既有發布事實，C04 及 C06–C10 仍 pending，未放寬出版條件。
 
-本機證據 .local/aase/rail-fix/local/，正式發布證據待部署後補入。截圖由本次代理檢視，與真人、實體手機或輔助科技接受分開。既有 scripts/__pycache__/ 保留且不提交。
+本機證據 .local/aase/rail-fix/local/。程式／版本提交 bda6ba0、文件提交 228c93b69e17d33e68d095aff8561a2d62b2bfaa 已推送 origin main，推送後分歧 0 0；[Pages run 41983416743](https://github.com/JasonLn0711/kairos-learning/actions/runs/41983416743) 成功。正式站 course-rail 7 項通過（含 106 頁版本列）、C05 4 項及 AASE 目錄／搜尋／閘門／下載與共用版型 2 項通過。C05 中英 320px／200% 頁寬皆為 320px；正式 ZIP 為 30135 bytes，SHA256 d745b276f1ce19cb9d128a48f3281cd12d2b96dd3255ee83af18e828d561261d，與本機逐位元組一致。Python urllib 的直接下載被 403 拒絕，Playwright request 正式下載成功，不把前者宣稱為通過。正式證據為 .local/aase/rail-fix/live-*.log／json，未覆蓋本機結果。新增／修改文件連結核對通過；完整舊 content-authoring.md 仍含已退役 QAIllustration.svelte 的歷史參照，本次保留並未把整份歷史連結掃描宣稱為通過。截圖由本次代理檢視，與真人、實體手機或輔助科技接受分開。既有 scripts/__pycache__/ 保留且不提交。
 
 ## 後續
 
