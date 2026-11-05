@@ -27,3 +27,14 @@ Linux ARM64／Playwright Chromium 代理驗收證據在 `.local/c03/`（忽略�
 隔離工作樹以 7f4293e 起稿，保留主工作目錄既有 CEH／AASE 修改；同期遠端 543730a 只更新 C05 文件，合併保留。C01／C02／C04／C05 與待發布閘門保持。本次源稿、實作與文件分開提交並以 HEAD:main 推送；正式站兩語全文與四份圖檔須於實際 Pages 成功後回讀，結果接續記錄。
 
 最後目視下載圖後，增加英文角色卡底部留白；產生器以具命名群組的五張角色卡輸出，瀏覽器另核對每段文字均落在自己的卡片內，不只檢查整張 viewBox。catalog 對四個固定路徑另拒絕少節點、錯版型及缺證據行的資料，避免直接編輯 JSON 時繞過來源產生器。
+
+## 正式發布與回讀
+
+- 來源保存 `5a0aafc`；完整教材／圖解／測試 `f44571b`；契約與本機紀錄 `dc10644`；保留同期遠端 C05 文件的 merge `7925ae7`；最後圖文邊界與模型驗證 `a25a07e`。以 `git push origin HEAD:main` 發布後 fetch，分歧 0／0，沒有 force push 或重寫歷史。
+- [Pages run 42016258995](https://github.com/JasonLn0711/kairos-learning/actions/runs/42016258995) success，headSha 為 `a25a07e4fb76e0244c98baa6cd05f6f2e801ce06`，與本次內容提交完全一致。
+- 正式頁面：[中文](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-03/)／[English](https://learn.cs-kairos.com/en/courses/ceh/v13/m04/concepts/m04-03/)。執行 `CEH_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.ceh26-m04-c03.config.ts`：五項通過，22.4 秒。
+- 正式站核對完整來源順序、M04-03 主標題、v1.1.0、原發布／修訂日期、四種寬度、200% 根字級、關閉 JavaScript、鍵盤答案及下載、搜尋、C02／C04 導覽與 pending 404；320px／200% 兩語 document.scrollWidth 都是 320。
+- 四份正式 SVG 位元組與來源一致，實際 Enter 下載成功；文字位於完整圖面及各自角色卡內。正式站結果／截圖在 `.local/c03/`，本機結果保存在 `.local/c03-local/`；執行 log `/tmp/c03-production.log` 為本機忽略證據，不納公開 Git。
+- 另外核對三份原始附件逐位元組、採用稿與模型雜湊，以及前版中英稿／原 ZIP 與起始提交一致。主工作目錄只同步本次 C03 檔案與既有共用入口；其餘 CEH／AASE 與未追蹤工作保留，沒有混入本次提交。
+
+本節只補記已觀察發布，不改正文或圖解。真人手機、完整螢幕閱讀器與獨立學習理解保持待驗；網站發布不新增本人教學交付、學習分數、實作完成、排程或工時。
