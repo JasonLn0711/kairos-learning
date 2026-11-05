@@ -21,6 +21,12 @@ try {
     const lesson=JSON.parse(original);lesson.status=i===0?'draft':'published';
     lesson.publishedOn=lesson.date=i===0?'2026-01-01':'2099-01-01';
     lesson.text.zh.summary=i===0?'AASE_UNPUBLISHED_DRAFT_4fc21':'AASE_UNPUBLISHED_FUTURE_4fc21';
+    if(lesson.text.en){
+      lesson.text.en.summary=lesson.text.zh.summary+'_EN';
+      // A translation cannot precede its base article. Keep the fixture valid
+      // so this build exercises publication exclusion rather than schema failure.
+      if(lesson.translations.en.publishedOn<lesson.publishedOn)lesson.translations.en.publishedOn=lesson.publishedOn;
+    }
     writeFileSync(path,JSON.stringify(lesson));
   }
 
@@ -70,6 +76,10 @@ try {
     if(markers.some(m=>text.includes(m)) || text.includes('/boundary-0/') || text.includes('/boundary-1/')) throw new Error(`Unpublished content leaked to ${path}`);
   }
   for(const slug of ['m01-01','m01-02','m01-03'])if(existsSync(`build/en/courses/aase/v1/m01/concepts/${slug}/index.html`))throw Error('Closed English article route exists: '+slug);
+  for(const prefix of ['', 'en/'])for(const module of ['m01','m03']){
+    const path=`build/${prefix}courses/aase/v1/${module}/concepts/${module}-01/index.html`;
+    if(existsSync(path))throw Error('Closed base article route exists: '+path);
+  }
   console.log(`PASS: draft/future markers absent from ${outputs.length} deployed text artifacts; ${((Date.now()-started)/1000).toFixed(1)}s.`);
   const englishPath='content/aase/course.en.json',englishOriginal=readFileSync(englishPath,'utf8');aaseOriginals.set(englishPath,englishOriginal);
   for(const state of ['draft','future']){
