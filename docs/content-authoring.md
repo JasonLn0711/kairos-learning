@@ -40,7 +40,7 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
-Current M04 contract (2026-11-05): ten new stable IDs; C01–C05 are published and C06–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C05 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
+Current M04 contract (2026-11-05): ten new stable IDs; C01–C06 are published and C07–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C06 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
 
 `content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
@@ -429,3 +429,10 @@ forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，�
 兩圖沿 visual 模型，只在四個 m04-03-{protocols|evidence}-{zh|en}-v1-1-0.svg 固定路徑啟用 FtpSmtpDiagram。第一圖保留 FTP 雙通道及 SMTP 三角色／兩段連線；第二圖三張卡並列判讀。手機按相同分組重排，不將平行通道／證據分類轉成先後流程。兩語同一模型供 HTML、搜尋及 SVG，SVG 經既有 sanitizer；原有圖檔與 ZIP 保留歷史，不覆寫。
 
 執行 ceh26_m04_c03_content.py、ceh26_m04_c03_diagrams.py 的 --check，再依內容、單元、型別、publication-boundary、release、C03 瀏覽器與 C02 共用元件回歸順序驗證。正式站設定 CEH_BASE_URL，回讀兩語正文與四個 SVG；實測與未驗界線見[本次回執](releases/2026-11-05-ceh26-m04-c03-replacement.md)。
+
+
+## 新版 M04 第六課 Unix/Linux 使用者與 NFS（2026-11-05）
+
+`CEH26-M04-C06` 以 `M04-06` 顯示，公開短網址 `concepts/m04-06/`，英文加 `/en`。完整中英稿、原始輸入、八個章節錨點與 SHA-256 位於 [來源](sources/ceh26-m04-c06/README.md)。七節教學、一題檢核及編輯參考答案保留完整內容；本文直接顯示，答案預設原生收合，qa=[]。本次不新增圖解、網路操作或學習者完成紀錄。
+
+執行 `python3 scripts/ceh26_m04_c06_content.py --check` 核對完整來源與產物。C01–C06 公開，C07–C10 維持 pending；C05 後一篇連至 C06 正文，C06 後一篇連至 C07 目錄錨點。舊版來源與失效網址維持原邊界。依序執行內容、單元、型別、publication-boundary、release 與 `npx playwright test --config playwright.ceh26-m04-c06.config.ts`。正式站設定 CEH_BASE_URL 回讀；[本次回執](releases/2026-11-05-ceh26-m04-c06.md)分開紀錄本機與正式驗證。
