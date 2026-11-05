@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'tests/browser',testMatch:'ceh26-m04-c03.spec.ts',workers:1,timeout:60000,outputDir:'.local/c03/browser',reporter:[['list'],['json',{outputFile:'.local/c03/results.json'}]],use:{baseURL:process.env.CEH_BASE_URL||'http://127.0.0.1:4203',headless:true,trace:'retain-on-failure'},webServer:process.env.CEH_BASE_URL?undefined:{command:'python3 -m http.server 4203 --bind 127.0.0.1 --directory build',url:'http://127.0.0.1:4203/',reuseExistingServer:false}});
