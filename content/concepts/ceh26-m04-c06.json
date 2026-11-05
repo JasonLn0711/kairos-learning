@@ -1,0 +1,415 @@
+{
+  "id": "CEH26-M04-C06",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-05",
+  "publishedOn": "2026-11-05",
+  "status": "published",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從帳號名稱、程序身分到 NFS 請求，核對 UID／GID、目錄權限與指定檔案的實際操作證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "M04-06｜Unix/Linux 使用者與 NFS：名字相同，為什麼還是讀不到檔案？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本單元整合使用者列舉與 NFS，重點放在一條線：帳號叫什麼、程式以誰的身分執行、伺服器如何辨識請求，以及這個身分能對指定檔案做什麼。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先把「名冊、識別證、文件櫃」接起來"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像公司有兩個辦公室，各自發員工證。兩邊都有一位叫「小林」的員工，不代表員工編號一樣，也不代表兩邊的門禁系統會把他當成同一人。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "使用者列舉（User Enumeration）：在授權範圍查帳號、使用者編號與群組，像核對員工名冊。",
+            "UID／GID（User ID／Group ID）：Linux 用來辨識使用者與群組的數字編號。",
+            "NFS（Network File System，網路檔案系統）：讓用戶端透過網路使用伺服器提供的檔案系統，像兩個辦公室共用一座文件櫃。",
+            "Export／Mount（匯出／掛載）：伺服器設定要提供哪些資源及條件；用戶端把遠端檔案系統接到自己的目錄樹。掛載不是把全部內容複製到本機，也不代表取得所有檔案的讀寫權。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課以 Linux 常見行為說明。不同 Unix 系統、檔案系統與 NFS 部署仍要對照各自設定。[Linux 身分與群組](https://man7.org/linux/man-pages/man7/credentials.7.html)｜[Linux NFS 手冊](https://man7.org/linux/man-pages/man5/nfs.5.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、查帳號資料，和查「正在做事的程式」是兩件事"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下並排說明三種查詢的用途："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "getent passwd learner：依本機的 NSS（Name Service Switch，名稱服務切換）設定查 learner 的帳號資料，來源可能包括本機檔案與集中式目錄。",
+            "id learner：查指定帳號的使用者與群組資訊。",
+            "id：省略帳號時，顯示目前程序的使用者與群組資訊。從測試終端機執行時，可用來核對該環境的身分，但不能代替查另一個服務程序的身分。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，帳號名冊新增了群組，既有工作階段未必已帶著新的群組執行。查得到帳號也只證明查詢來源回覆了這筆資料，不能直接推論可登入、已登入，或有管理權。這類本機查詢本身沒有一個通用的「使用者列舉連接埠」。[getent](https://man7.org/linux/man-pages/man1/getent.1.html)｜[GNU id](https://man7.org/linux/man-pages/man1/id.1.html)｜[程序身分](https://man7.org/linux/man-pages/man7/credentials.7.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、同名帳號跨到 NFS，還要核對伺服器收到的身分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見的 sec=sys／AUTH_SYS 安全模式，會以用戶端提供的 UID、GID 等數字身分資訊處理請求。它本身沒有密碼學身分證明，所以部署時也依賴對用戶端及網路環境的信任。單純把兩台電腦上的帳號都命名為 learner，不會自動統一它們的 UID 或權限。[RFC 5531：AUTH_SYS](https://www.rfc-editor.org/rfc/rfc5531.html#appendix-A)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還有兩個容易混在一起的地方："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "root_squash：Linux NFS 伺服器把請求中的 UID／GID 0 對應到匿名 UID／GID，避免直接承接遠端 root 的身分。它不會把所有非零身分一起匿名化；那是不同的 all_squash 設定。因此，root_squash 不能代替完整的身分與檔案權限管理。[NFS 身分對映選項](https://man7.org/linux/man-pages/man5/exports.5.html)",
+            "NFSv4 的擁有者名稱屬性：檔案的 owner／owner_group 可以採 user@domain 形式表示，再做本地對映。這和「這次請求用什麼方式驗證身分」是不同問題；看到 NFSv4 或同名帳號，仍要核對實際安全模式與伺服器採用的身分。[RFC 8881 §5.9](https://www.rfc-editor.org/rfc/rfc8881.html#section-5.9)"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、權限要看對象：目錄的 r／x，不等於檔案的 r"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先用一般 Linux 權限說明，暫不加入 ACL（Access Control List，存取控制清單）等額外規則："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "對一般檔案，r 是讀內容，w 是修改內容，x 是執行。",
+            "對目錄，r 是讀取目錄項目名稱，x 是搜尋／通過目錄、依名稱查找其中項目。要讀某個檔案，還需要對路徑上的目錄具有適用的搜尋權限，以及檔案本身的讀取權限。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "像文件室一樣：能看櫃門上的文件名稱，不代表能打開每份文件；知道文件名稱，也還要有通過門禁與開啟文件的權利。[Red Hat：檔案系統權限](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_basic_system_settings/managing-file-system-permissions_configuring-basic-system-settings)｜[Linux 路徑解析](https://man7.org/linux/man-pages/man7/path_resolution.7.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如權限文字 rw-r-----，每三個字元是一組，依序表示擁有者可讀寫、所屬群組可讀、其他人沒有權限；短橫線代表那項權限未開啟。一般基本權限會依擁有者、群組、其他人的適用身分類別判斷，不是把三組任意相加。實際環境還須核對 ACL、安全政策與特權等因素。[Linux 權限表示](https://man7.org/linux/man-pages/man7/inode.7.html)｜[權限判斷](https://man7.org/linux/man-pages/man7/path_resolution.7.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、看一份合成紀錄：名稱相同，資料夾能列出，檔案仍遭拒"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是紙上案例，沒有連線任何真實主機。假設管理者已核准測試帳號、指定共享與唯讀操作："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 用戶端的 learner 是 UID 1001，主要 GID 3000，群組清單只有 3000；測試程序也使用這組身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 伺服器帳號資料中的 learner 卻是 UID 2001。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. NFS 使用 sec=sys；管理端核對這次請求以 UID 1001、GID 3000 處理，未另行對映。root_squash 已啟用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 共享已成功掛載，能列出其中 report.txt 的名稱；讀取 report.txt 時收到 Permission denied。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 伺服器確認該檔案擁有者 UID 為 2001、群組 GID 為 3000，基本權限為 rw-------。路徑搜尋已獲准；本例沒有額外 ACL 或特權改變這項判斷。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "6. 沒有測試修改檔案，也沒有測試其他檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "讀這份紀錄時，依序比對「實際請求 UID」與「檔案擁有者 UID」，再看適用的權限組。不要只比兩台電腦顯示的 learner 名稱，也不要把目錄清單成功當成檔案內容已讀取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的設定與身分已經明示，所以能練習有條件的權限判讀。真實工作若只有 Permission denied 一句，仍需查核身分、路徑、有效權限與日誌，才能確認原因。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、列舉工具知道多少，結論就寫到哪裡"
+        },
+        {
+          "kind": "paragraph",
+          "text": "rpcinfo 可查 ONC RPC 服務登記；showmount -e 則向 MNT 服務查詢 export 清單。兩者都不等於讀取共享內的檔案；使用工具前仍要核對具體選項，工具名稱本身不保證所有操作都是唯讀。[Oracle：rpcinfo](https://docs.oracle.com/cd/E88353_01/html/E72487/rpcinfo-8.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS 常見服務埠是 2049；NFSv3 部署常另涉及 111 上的 rpcbind 及 mountd 等服務。NFSv4.1 不要求沿用這套尋址流程，規格建議用戶端不要透過 RPC binding 查服務埠。只提供 NFSv4 的伺服器也可能不開放 showmount 所查的 MNT 服務。因此，showmount 查不到，不足以證明沒有 NFS；2049 有回應，也不足以證明指定檔案可讀。[showmount 手冊](https://man7.org/linux/man-pages/man8/showmount.8.html)｜[NFS 網路服務](https://man7.org/linux/man-pages/man5/nfs.5.html)｜[RFC 8881 §2.9.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-2.9.3)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "記錄時至少分清：查到帳號、查到共享、掛載成功、列出名稱、讀取內容、修改內容。它們各自是不同的證據，並不是每次都要從頭執行的固定測試流程。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、防護與下一步查核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "管理者要一起維護帳號生命週期、跨主機身分對映、共享允許來源，以及目錄與檔案權限；只需閱讀的共享，採伺服器端唯讀政策。export 的 rw 只讓共享層允許寫入，沒有替所有使用者授予檔案寫入權。[exports 手冊](https://man7.org/linux/man-pages/man5/exports.5.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "需要較強身分與傳輸保護時，可依基礎設施評估 Kerberos：krb5 提供身分驗證，krb5i 再提供完整性保護，krb5p 再提供加密的隱私保護。支援這些能力不等於目前已啟用；應核對實際協商與設定。[NFS 安全模式](https://man7.org/linux/man-pages/man5/nfs.5.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "遇到拒絕先保存時間、版本、安全模式、用戶端、實際請求身分、路徑、操作與完整回應，再由獲授權的管理者核對設定。修正依工作需求授予必要權限，保留原設定並在同一測試條件重驗，不用「把所有權限打開」取代診斷。公開紀錄使用合成名稱，不放真實帳號清單或憑證。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "一個小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "針對第五節，同事說：「兩邊都叫 learner，而且能看到 report.txt，代表已經有讀取權；如果讀不到，一定是 root_squash 造成的。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請用兩三句話修正這段結論：實際以哪個身分判斷？哪個設定能解釋本例的讀取結果？還有哪些操作沒有證據？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這次只判讀合成資料，沒有實際安裝、掛載或修改設定，因此沒有環境清理步驟。參考解答另外提供，閱讀教材不等於已確認理解；下一單元接 SNMP。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-unix-nfs-evidence",
+          "summary": "參考解答｜先自行判讀，再展開對照",
+          "paragraphs": [
+            "伺服器這次以 UID 1001、GID 3000 處理請求；兩邊同名的 learner 不代表同一個 UID，而 report.txt 的擁有者是 UID 2001。檔案權限 rw------- 只讓擁有者讀寫，所以在本例已排除其他規則的條件下，UID 1001 即使符合檔案群組 3000，仍沒有讀取權；root_squash 針對 UID／GID 0，本次兩個編號都不是 0，因此不是本例的解釋。現有證據是掛載與目錄名稱列舉成功、這次讀檔遭拒；修改及其他檔案的存取均未測試。",
+            "白話記法：兩張員工證上的名字一樣，不代表編號相同；看得到文件名稱，不代表能打開文件。這是編輯提供的參考解答，不是學員作答或理解通過紀錄。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Trace account names, process credentials, and NFS requests; verify UID/GID, directory permissions, and evidence for each file operation.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "M04-06 | Unix/Linux Users and NFS: Why Can’t I Read the File If the Usernames Match?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This unit brings user enumeration and NFS together around one chain of questions: What is the account called, which identity is the program running under, how does the server identify the request, and what can that identity do to the specified file?"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Connect the Staff Directory, ID Badge, and Filing Cabinet"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a company with two offices, each issuing its own employee badges. Both offices have an employee named “Lin.” That does not mean their employee numbers match, or that both access-control systems treat them as the same person."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "User enumeration: Looking up accounts, user IDs, and groups within an authorized scope, like checking a staff directory.",
+            "UID/GID (User ID/Group ID): The numeric identifiers Linux uses for users and groups.",
+            "NFS (Network File System): Allows a client to use a server-provided file system over a network, like two offices sharing a filing cabinet.",
+            "Export/Mount: The server defines which resources to make available and under what conditions; the client attaches the remote file system to its own directory tree. Mounting does not copy all the contents onto the local machine, nor does it grant read and write access to every file."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson describes common Linux behavior. Other Unix systems, file systems, and NFS deployments must still be checked against their own configurations. [Linux identities and groups](https://man7.org/linux/man-pages/man7/credentials.7.html) | [Linux NFS manual](https://man7.org/linux/man-pages/man5/nfs.5.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Looking Up an Account Is Different from Checking the Program Doing the Work"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here are three queries and their purposes, side by side:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "getent passwd learner: Looks up the account information for learner according to the local NSS (Name Service Switch) configuration. Sources may include local files and a centralized directory.",
+            "id learner: Looks up user and group information for the specified account.",
+            "id: Without an account argument, displays user and group information for the current process. Running it in a test terminal can help verify that environment’s identity, but it does not substitute for checking the identity of a different service process."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consequently, adding a group to an account’s directory entry does not necessarily mean an existing session is already running with that new group. Finding an account only proves that the queried source returned that record. It does not establish that the account can log in, is logged in, or has administrative privileges. These local queries do not have a universal “user enumeration port.” [getent](https://man7.org/linux/man-pages/man1/getent.1.html) | [GNU id](https://man7.org/linux/man-pages/man1/id.1.html) | [Process credentials](https://man7.org/linux/man-pages/man7/credentials.7.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. With NFS, Matching Names Still Require Checking the Identity the Server Receives"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The common sec=sys/AUTH_SYS security mode handles requests using numeric identity information supplied by the client, including UID and GID. It does not itself provide cryptographic proof of identity, so deployment also relies on trust in the clients and network environment. Simply naming an account learner on both computers does not automatically align their UIDs or permissions. [RFC 5531: AUTH_SYS](https://www.rfc-editor.org/rfc/rfc5531.html#appendix-A)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two other concepts are easy to confuse:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "root_squash: A Linux NFS server maps UID/GID 0 in requests to the anonymous UID/GID, rather than directly accepting the remote root identity. It does not anonymize every nonzero identity as well; that is a different setting, all_squash. Therefore, root_squash is not a substitute for comprehensive identity and file-permission management. [NFS identity-mapping options](https://man7.org/linux/man-pages/man5/exports.5.html)",
+            "NFSv4 owner-name attributes: A file’s owner/owner_group attributes can be represented in user@domain form and then mapped locally. This is a separate question from how a particular request authenticates its identity. Seeing NFSv4 or matching account names still leaves you needing to verify the actual security mode and the identity the server uses. [RFC 8881 §5.9](https://www.rfc-editor.org/rfc/rfc8881.html#section-5.9)"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Permissions Depend on the Object: Directory r/x Is Not File r"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Start with ordinary Linux permissions, leaving additional rules such as ACLs (Access Control Lists) aside for now:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "For a regular file, r means reading its contents, w means modifying its contents, and x means executing it.",
+            "For a directory, r means reading the names of directory entries, while x means searching/traversing the directory and looking up entries by name. Reading a particular file also requires applicable search permission on the directories along its path, as well as read permission on the file itself."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of a records room: being able to see document names on a cabinet does not mean you can open every document. Knowing a document’s name still requires permission to pass through the access-controlled doors and open that document. [Red Hat: File-system permissions](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_basic_system_settings/managing-file-system-permissions_configuring-basic-system-settings) | [Linux path resolution](https://man7.org/linux/man-pages/man7/path_resolution.7.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, the permission string rw-r----- consists of three groups of three characters. In order, they mean that the owner can read and write, the owning group can read, and others have no permissions. A hyphen means that particular permission is not enabled. Ordinary basic permissions are evaluated using the applicable owner, group, or other identity class, rather than arbitrarily adding all three groups together. In a real environment, ACLs, security policies, privileges, and other factors must also be checked. [Linux permission notation](https://man7.org/linux/man-pages/man7/inode.7.html) | [Permission checks](https://man7.org/linux/man-pages/man7/path_resolution.7.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Read a Synthetic Record: Same Name, Directory Listing Works, File Access Still Denied"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a paper exercise with no connection to any real host. Assume an administrator has approved the test account, the specified share, and read-only operations:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. On the client, learner has UID 1001 and primary GID 3000, and its group list contains only 3000. The test process also uses this identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. In the server’s account records, however, learner has UID 2001."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. NFS uses sec=sys. The administrator confirms that this request is handled as UID 1001 and GID 3000, with no additional mapping. root_squash is enabled."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. The share has been mounted successfully, and the name report.txt can be listed within it. Reading report.txt returns Permission denied."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. The server confirms that the file’s owner UID is 2001, its group GID is 3000, and its basic permissions are rw-------. Path search is allowed; no additional ACLs or privileges alter this decision in this example."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6. No attempt has been made to modify the file or test any other files."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When reading this record, first compare the “actual request UID” with the “file owner UID,” then examine the applicable permission group. Do not compare only the learner names displayed on the two computers, and do not treat a successful directory listing as evidence that the file contents have been read."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The configuration and identities are explicit here, allowing you to practice interpreting permissions under stated conditions. In real work, if all you have is the message Permission denied, you still need to check identities, paths, effective permissions, and logs before confirming the cause."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Keep Your Conclusions Within What the Enumeration Tools Establish"
+        },
+        {
+          "kind": "paragraph",
+          "text": "rpcinfo can query ONC RPC service registrations; showmount -e queries the MNT service for an export list. Neither is equivalent to reading files inside a share. Check the specific options before using either tool: a tool’s name alone does not guarantee that every operation is read-only. [Oracle: rpcinfo](https://docs.oracle.com/cd/E88353_01/html/E72487/rpcinfo-8.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The usual NFS service port is 2049. NFSv3 deployments often also involve rpcbind on port 111 and services such as mountd. NFSv4.1 does not require that same service-location procedure, and the specification recommends that clients not use RPC binding to discover the service port. An NFSv4-only server may also leave the MNT service queried by showmount unavailable. Therefore, a failed showmount query does not prove that NFS is absent; a response on port 2049 does not prove that a particular file is readable. [showmount manual](https://man7.org/linux/man-pages/man8/showmount.8.html) | [NFS network services](https://man7.org/linux/man-pages/man5/nfs.5.html) | [RFC 8881 §2.9.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-2.9.3)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "At a minimum, distinguish these observations in your records: account found, share found, mount successful, names listed, contents read, and contents modified. They are separate pieces of evidence, not a fixed test procedure that must always be performed from beginning to end."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Protection and Further Checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Administrators need to manage account lifecycles, identity mapping across hosts, the sources allowed to access shares, and directory and file permissions together. Use a server-side read-only policy for shares that only need to be read. An export’s rw option permits writing at the share layer; it does not grant every user file-level write permission. [exports manual](https://man7.org/linux/man-pages/man5/exports.5.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Where stronger identity and transport protection are needed, evaluate Kerberos according to the infrastructure: krb5 provides authentication, krb5i adds integrity protection, and krb5p adds encrypted privacy protection. Support for these capabilities does not mean they are currently enabled. Verify the actual negotiation and configuration. [NFS security modes](https://man7.org/linux/man-pages/man5/nfs.5.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When access is denied, first preserve the time, version, security mode, client, actual request identity, path, operation, and full response. Have an authorized administrator check the configuration. Grant the permissions required by the work, retain the original configuration, and retest under the same conditions. Do not replace diagnosis with “turn on every permission.” Use synthetic names in public records, and do not include real account lists or credentials."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "One Quick Check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Referring to Section 5, a colleague says: “Both accounts are called learner, and we can see report.txt, so we already have read access. If we can’t read it, root_squash must be the cause.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Correct that conclusion in two or three sentences: Which identity is actually evaluated? Which setting explains the read result in this example? Which operations still lack evidence?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This exercise only interprets synthetic data. No installation, mounting, or configuration changes have actually been performed, so there are no environment-cleanup steps. A reference answer is provided separately; reading the material does not establish understanding. The next unit covers SNMP."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-unix-nfs-evidence",
+          "summary": "Reference Answer | Interpret the Evidence Yourself Before Expanding to Compare",
+          "paragraphs": [
+            "The server handles this request as UID 1001 and GID 3000. Having an account named learner on both systems does not mean the UIDs match, and the owner of report.txt is UID 2001. The file permissions rw------- allow only the owner to read and write, so, under the stated conditions that rule out other permission mechanisms, UID 1001 has no read permission even though it matches the file’s group, 3000. root_squash applies to UID/GID 0, and neither ID in this request is 0, so it does not explain this example. The available evidence shows a successful mount and directory-name listing, followed by a denied file-read attempt; modification and access to other files have not been tested.",
+            "A plain-language reminder: matching names on two employee badges do not mean matching ID numbers; seeing a document’s name does not mean you can open it. This is an editor-provided reference answer, not a learner’s submitted answer or a record of verified understanding."
+          ]
+        }
+      ]
+    }
+  }
+}

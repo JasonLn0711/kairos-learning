@@ -1,0 +1,5 @@
+**Reference Answer | Interpret the Evidence Yourself Before Expanding to Compare**
+
+The server handles this request as UID 1001 and GID 3000. Having an account named learner on both systems does not mean the UIDs match, and the owner of report.txt is UID 2001. The file permissions rw------- allow only the owner to read and write, so, under the stated conditions that rule out other permission mechanisms, UID 1001 has no read permission even though it matches the file’s group, 3000. root_squash applies to UID/GID 0, and neither ID in this request is 0, so it does not explain this example. The available evidence shows a successful mount and directory-name listing, followed by a denied file-read attempt; modification and access to other files have not been tested.
+
+A plain-language reminder: matching names on two employee badges do not mean matching ID numbers; seeing a document’s name does not mean you can open it. This is an editor-provided reference answer, not a learner’s submitted answer or a record of verified understanding.
