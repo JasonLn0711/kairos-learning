@@ -6,13 +6,24 @@ const fixtureCheck=spawnSync('node',['scripts/check-concept-rendering.mjs'],{std
 if(fixtureCheck.status!==0) process.exit(1);
 const source=JSON.parse(readFileSync('content/lessons/ceh-m01-scope.json','utf8'));
 const files=[];
+const aaseOriginals=new Map();
 const registryPath='content/concepts.json';
 const originalRegistry=readFileSync(registryPath,'utf8');
 const markers=['KAIROS_UNPUBLISHED_DRAFT_4fc21','KAIROS_UNPUBLISHED_FUTURE_4fc21','CONCEPT_SECOND_FIXTURE','ZH_FIXTURE_QUESTION','EN_FIXTURE_ANSWER'];
+markers.push('AASE_UNPUBLISHED_DRAFT_4fc21','AASE_UNPUBLISHED_FUTURE_4fc21');
 const started=Date.now();
 function walk(dir) {return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(join(dir,e.name)):[join(dir,e.name)]);}
 try {
   console.error('Building with one draft and one future-dated fixture; checking all deployed text artifacts.');
+  for(const [i,name] of ['aase-m01-c01','aase-m03-c01'].entries()) {
+    const path=`content/aase/lessons/${name}.json`;
+    const original=readFileSync(path,'utf8');aaseOriginals.set(path,original);
+    const lesson=JSON.parse(original);lesson.status=i===0?'draft':'published';
+    lesson.publishedOn=lesson.revisedOn=i===0?'2026-01-01':'2099-01-01';
+    lesson.summary=i===0?'AASE_UNPUBLISHED_DRAFT_4fc21':'AASE_UNPUBLISHED_FUTURE_4fc21';
+    writeFileSync(path,JSON.stringify(lesson));
+  }
+
   for(let i=0;i<2;i++) {
     const path=`content/lessons/publication-boundary-${i}.json`;
     if(existsSync(path)) throw new Error(`Refusing to replace ${path}`);
@@ -53,6 +64,7 @@ try {
 } catch(error) { console.error(String(error)); process.exitCode=1; }
 finally {
   for(const path of files) unlinkSync(path);
+  for(const [path,original] of aaseOriginals)writeFileSync(path,original);
   writeFileSync(registryPath,originalRegistry);
   console.error('Fixtures removed; rebuilding clean production output.');
   const clean=spawnSync('npm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
