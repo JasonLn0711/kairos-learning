@@ -1,8 +1,8 @@
 {
   "id": "AASE-M09-C01",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -157,6 +157,152 @@
         "check": "不使用整個專案的強制重設；能指出提交、推送、部署與驗收的差別。",
         "cleanup": "保留練習結果或自行刪除整個獨立練習目錄；不要在正常專案執行練習的覆蓋操作。"
       }
+    },
+    "en": {
+      "summary": "Preserve each slice in a reviewable commit, naming recovery sources and paths explicitly while retaining other unfinished work.",
+      "objectives": [
+        "Distinguish working tree, staging area, commit and remote publication.",
+        "Create a single-purpose commit traceable to a specification.",
+        "Restore a selected path in an independent lab while preserving other edits."
+      ],
+      "readingGuide": {
+        "goal": "Distinguish working tree, staging area, commit and remote publication.",
+        "startingPoint": "Git, an editor and a new empty git-lab/; use neither real data nor a remote.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "A purpose-linked commit and selective-restoration record with other work preserved."
+      },
+      "sections": [
+        {
+          "id": "history",
+          "heading": "Give Changes a Reason and a Recoverable Starting Point",
+          "paragraphs": [
+            "M07 diffs show current changes; a Git commit records the project snapshot prepared in the staging area for later comparison, diagnosis and recovery. Check each slice’s acceptance scenarios, then group related files into one purposeful commit.",
+            "A local commit does not establish remote push, deployment or acceptance. Record those statuses separately and keep real data, keys and unapproved public material out of history."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Maintain a Traceable Engineering Record",
+          "paragraphs": [
+            "A workbench may hold material for different tasks. The staging area resembles the selected material to archive now; a commit records that version. “Done” alone does not explain the requirement it serves.",
+            "A useful message states purpose, such as “Form slice: add three fields and an unvalidated preview.” Link relevant tests and limits without mixing unrelated repairs into that commit."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | From Edits to a Traceable Commit",
+              "description": "Review scope before recording it. Verify remote publication and actual deployment separately.",
+              "items": [
+                {
+                  "title": "Working tree",
+                  "body": "Edit code, tests and documents."
+                },
+                {
+                  "title": "Review the diff",
+                  "body": "Check specification/scope and inspect untracked files too."
+                },
+                {
+                  "title": "Stage selected paths",
+                  "body": "Include only content ready for this commit."
+                },
+                {
+                  "title": "Commit the snapshot",
+                  "body": "Record purpose and version, then handle push and deployment separately."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "lab",
+          "heading": "Practice in a Separate Directory First",
+          "paragraphs": [
+            "Create and enter an empty git-lab/, preserving existing projects and other work. The identity below is for this local synthetic exercise only; use authorized authorship in real projects and leave global configuration unchanged.",
+            "Create slice-notes.md with “切片一：三欄輸入及未檢核預覽” (slice one: three fields and unvalidated preview), and keep.txt with “其他工作：原始紀錄” (other work: original note). Add .gitignore entries for .venv/, __pycache__/, .pytest_cache/ and .env. Ignore rules do not remove already tracked files or historical content."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Initialize the Local Lab",
+              "paragraphs": [
+                "Run only in the new empty git-lab/, without configuring a remote or pushing."
+              ],
+              "code": "git init\ngit config user.name \"AASE Learner\"\ngit config user.email \"aase@example.invalid\""
+            },
+            {
+              "kind": "step",
+              "heading": ".gitignore | Exercise Contents",
+              "paragraphs": [
+                "Put these patterns on separate lines. They do not replace pre-commit content inspection."
+              ],
+              "code": ".venv/\n__pycache__/\n.pytest_cache/\n.env"
+            },
+            {
+              "kind": "step",
+              "heading": "Create a Baseline Commit",
+              "paragraphs": [
+                "Inspect the three files, then stage explicit paths. The retained Chinese commit message means “create synthetic slice-record baseline.”"
+              ],
+              "code": "git status --short\ngit add .gitignore slice-notes.md keep.txt\ngit diff --cached\ngit commit -m \"建立合成切片紀錄基準\"\ngit log -1 --oneline"
+            }
+          ]
+        },
+        {
+          "id": "diff",
+          "heading": "Distinguish Both Diffs and Untracked Files",
+          "paragraphs": [
+            "git diff compares the working tree with staging by default; git diff --cached compares staged content with HEAD. Inspect status and contents for untracked files. An empty diff does not establish that nothing changed anywhere.",
+            "After the baseline, append “誤加：完整報告已完成” (mistaken claim: complete report finished) to slice-notes.md and “其他工作：尚待完成” (other work: pending) to keep.txt. Check that both edits are in the working tree only, with neither staged."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Read-only Checks Before Restoration",
+              "paragraphs": [
+                "Preserve current state. If another person’s work or staged edits are present, stop this simplified exercise and establish scope first."
+              ],
+              "code": "git status --short\ngit diff -- slice-notes.md keep.txt\ngit diff --cached -- slice-notes.md keep.txt"
+            }
+          ]
+        },
+        {
+          "id": "restore",
+          "heading": "Restore Only the Confirmed Path",
+          "paragraphs": [
+            "First save the current slice-notes.md as readable slice-notes.backup.md. The command explicitly restores the working-tree slice-notes.md from HEAD, overwriting its current contents. Other edits in keep.txt must remain.",
+            "This exercise assumes the target contains only this task’s edit. For mixed work, preserve a copy and recover selected sections instead of overwriting the whole file. Check files and diffs afterward, rerunning affected tests for program changes."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Recover the Baseline Selectively",
+              "paragraphs": [
+                "Use only in this independent lab after saving the backup."
+              ],
+              "code": "git restore --source=HEAD --worktree -- slice-notes.md\ngit diff -- slice-notes.md\ngit diff -- keep.txt\ngit status --short"
+            }
+          ]
+        },
+        {
+          "id": "handoff",
+          "heading": "Use History for Handoff and Recovery",
+          "paragraphs": [
+            "Apply the method to the three slices: connect each commit to requirements, changes and test results, and give successors its identifier. Follow project collaboration rules for published changes; preserve other people’s history rather than rewriting it for tidiness.",
+            "Git preserves content entrusted to it. Protect uncommitted or unsaved work separately. A local commit is neither a remote backup, permission control nor personal-data cleanup tool. The next lesson records startup, limits and recovery in README."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Git, an editor and a new empty git-lab/; use neither real data nor a remote.",
+        "steps": [
+          "Create the exercise files, ignore rules and baseline commit; record its purpose.",
+          "Edit slice-notes.md and keep.txt, inspect working/staged differences and save the target backup.",
+          "Restore only slice-notes.md; verify its baseline, retained keep.txt edit and preserved backup."
+        ],
+        "expected": "A purpose-linked commit and selective-restoration record with other work preserved.",
+        "check": "Use no whole-project forced reset. Distinguish commit, push, deployment and acceptance.",
+        "cleanup": "Keep the lab results or delete only the independent lab directory; do not perform the exercise’s overwrite operations in a normal project."
+      }
     }
   },
   "checks": [
@@ -177,6 +323,21 @@
             "需先核對暫存內容。",
             "提交與部署分開。",
             "需要各自證據。"
+          ]
+        },
+        "en": {
+          "prompt": "What does a commit most directly record?",
+          "options": [
+            "Every untracked file.",
+            "The project snapshot prepared in staging.",
+            "Production deployment status.",
+            "Acceptance by every user."
+          ],
+          "rationales": [
+            "Files not added are not included automatically.",
+            "Inspect staged content first.",
+            "Commit and deployment are separate.",
+            "Those need their own evidence."
           ]
         }
       }
@@ -199,6 +360,21 @@
             "未獲授權。",
             "無法回復檔案內容。"
           ]
+        },
+        "en": {
+          "prompt": "The target file contains other work. What should precede restoration?",
+          "options": [
+            "Overwrite it immediately.",
+            "Preserve current state and clarify scope or recover selected sections.",
+            "Delete the other person’s content.",
+            "Change only the commit message."
+          ],
+          "rationales": [
+            "That may lose work.",
+            "Identify source, paths and what must remain.",
+            "That is unauthorized.",
+            "That does not restore file content."
+          ]
         }
       }
     },
@@ -220,8 +396,29 @@
             "需針對實際暴露採取措施。",
             "更需要提交前核對。"
           ]
+        },
+        "en": {
+          "prompt": "Does adding .gitignore remove historical secrets?",
+          "options": [
+            "Yes; all history is deleted.",
+            "Yes; pushing completes cleanup.",
+            "No; inspect tracked content and respond to the actual exposure.",
+            "No; therefore review is unnecessary."
+          ],
+          "rationales": [
+            "Ignoring does not change existing history.",
+            "Push does not remove it automatically.",
+            "Address the actual exposure separately.",
+            "Pre-commit review is still necessary."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

@@ -12,10 +12,10 @@ const build=(ls=lessons,en=english)=>createAaseCatalog(course,ls,sources,'2026-1
 const first=(ls:AaseLesson[])=>ls.find(l=>l.id==='AASE-M01-C01')!;
 test('AASE English publishes reviewed teaching with complete directory metadata and stable identities',()=>{
  const c=build(),en=c.forLanguage('en')!;
- assert.equal(c.lessons.length,49);assert.equal(en.concepts.length,49);assert.equal(en.lessons.length,45);
+ assert.equal(c.lessons.length,49);assert.equal(en.concepts.length,49);assert.equal(en.lessons.length,49);
  assert.deepEqual(en.modules.map(m=>[m.id,m.minutes,m.practiceMinutes]),c.modules.map(m=>[m.id,m.minutes,m.practiceMinutes]));
  assert.deepEqual(en.concepts.map(c=>c.id),c.concepts.map(c=>c.id));
- assert.equal(routes.filter(r=>r.kind.startsWith('aase')&&r.lang==='en').length,56);
+ assert.equal(routes.filter(r=>r.kind.startsWith('aase')&&r.lang==='en').length,60);
  for(const row of en.concepts)assert.equal(Boolean(getPage(row.href)),Boolean(row.lesson));
  const page=getPage('/en/courses/aase/v1/m01/concepts/m01-01/')!;
  assert.equal(page.aaseConcept!.lesson!.text.en!.summary,first(lessons).text.en!.summary);
@@ -23,10 +23,10 @@ test('AASE English publishes reviewed teaching with complete directory metadata 
  assert.equal(page.aaseCounterpart,'/courses/aase/v1/m01/concepts/m01-01/');
  assert.equal(page.aaseNavigation[0].href,'/en/courses/aase/v1/m01/concepts/m01-02/');assert.equal(page.aaseNavigation[0].pending,false);
  assert.equal(getPage('/courses/aase/v1/m01/concepts/m01-02/')!.aaseCounterpart,'/en/courses/aase/v1/m01/concepts/m01-02/');
- assert.equal(getPage('/courses/aase/v1/m09/concepts/m09-01/')!.aaseCounterpart,null);
+ assert.equal(getPage('/courses/aase/v1/m09/concepts/m09-01/')!.aaseCounterpart,'/en/courses/aase/v1/m09/concepts/m09-01/');
  assert.ok(searchEntries.some(e=>e.id==='AASE-M01-C01'&&e.lang==='en'&&e.text.includes('production release')));
  assert.ok(searchEntries.some(e=>e.id==='AASE-M01-C02'&&e.lang==='en'));
- assert.ok(!searchEntries.some(e=>e.id==='AASE-M09-C01'&&e.lang==='en'));
+ assert.ok(searchEntries.some(e=>e.id==='AASE-M09-C01'&&e.lang==='en'));
 });
 test('AASE translation drafts and future dates stay out of all public payloads without hiding Chinese',()=>{
  for(const state of ['draft','future'] as const){
@@ -34,7 +34,7 @@ test('AASE translation drafts and future dates stay out of all public payloads w
   l.checks[0].text.en!.rationales[0]='EN_PRIVATE_CHECK_MARKER';
   l.qa=[{id:'translation-private-qa',text:{zh:{question:'合成問題',answer:['公開中文']},en:{question:'EN_PRIVATE_QA_MARKER',answer:['Private translation']}}}];
   if(state==='draft')l.translations!.en.status='draft';else l.translations!.en.publishedOn='2099-01-01';
-  const c=build(ls);assert.equal(c.forLanguage('en')!.lessons.length,44);assert.equal(c.lessons.length,49);
+  const c=build(ls);assert.equal(c.forLanguage('en')!.lessons.length,48);assert.equal(c.lessons.length,49);
   assert.ok(c.searchEntries.some(e=>e.text.includes('公開中文')));
   for(const publicPart of [c.concepts,c.searchEntries,c.forLanguage('en')])assert.ok(!JSON.stringify(publicPart).includes('EN_PRIVATE_'));
  }
@@ -45,7 +45,7 @@ test('AASE course translation and base article gates independently close English
   const c=build(lessons,en);assert.equal(c.forLanguage('en'),null);assert.equal(c.lessons.length,49);
   const ls=structuredClone(lessons),l=first(ls);
   if(state==='draft')l.status='draft';else l.publishedOn=l.date=l.translations!.en.publishedOn='2099-01-01';
-  const closed=build(ls);assert.equal(closed.lessons.length,48);assert.equal(closed.forLanguage('en')!.lessons.length,44);
+  const closed=build(ls);assert.equal(closed.lessons.length,48);assert.equal(closed.forLanguage('en')!.lessons.length,48);
  }
 });
 test('AASE rejects incomplete, misaligned or unauthorized translation structures',()=>{
@@ -90,9 +90,9 @@ test('M01 English additions preserve all Chinese teaching and original acceptanc
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
  }
  const en=build().forLanguage('en')!;
- assert.deepEqual(en.lessons.map(l=>l.id).sort(),['AASE-M01-C01','AASE-M01-C02','AASE-M01-C03','AASE-M01-C04',...Array.from({length:6},(_,i)=>`AASE-M02-C0${i+1}`),...Array.from({length:5},(_,i)=>`AASE-M03-C0${i+1}`),...Array.from({length:6},(_,i)=>`AASE-M04-C0${i+1}`),...Array.from({length:5},(_,i)=>`AASE-M05-C0${i+1}`),...Array.from({length:6},(_,i)=>`AASE-M06-C0${i+1}`),...Array.from({length:7},(_,i)=>`AASE-M07-C0${i+1}`),...Array.from({length:6},(_,i)=>`AASE-M08-C0${i+1}`)]);
+ assert.deepEqual(en.lessons.map(l=>l.id).sort(),['AASE-M01-C01','AASE-M01-C02','AASE-M01-C03','AASE-M01-C04',...Array.from({length:6},(_,i)=>`AASE-M02-C0${i+1}`),...Array.from({length:5},(_,i)=>`AASE-M03-C0${i+1}`),...Array.from({length:6},(_,i)=>`AASE-M04-C0${i+1}`),...Array.from({length:5},(_,i)=>`AASE-M05-C0${i+1}`),...Array.from({length:6},(_,i)=>`AASE-M06-C0${i+1}`),...Array.from({length:7},(_,i)=>`AASE-M07-C0${i+1}`),...Array.from({length:6},(_,i)=>`AASE-M08-C0${i+1}`),...Array.from({length:4},(_,i)=>`AASE-M09-C0${i+1}`)]);
  const last=getPage('/en/courses/aase/v1/m08/concepts/m08-06/')!;
- assert.equal(last.aaseNavigation.find(n=>n.side==='next')!.href,'/en/courses/aase/v1/m09/#m09-01');
+ assert.equal(last.aaseNavigation.find(n=>n.side==='next')!.href,'/en/courses/aase/v1/m09/concepts/m09-01/');
 });
 
 test('M03 English preserves Chinese sources, synthetic records, checks and version history',()=>{
@@ -152,7 +152,7 @@ test('M07 English preserves Chinese slices, executable examples, sources and ans
   assert.deepEqual(codes(l.text.en),codes(before.text.zh));codeCount+=codes(l.text.en).length;
  }
  assert.equal(codeCount,10);
- const last=getPage('/en/courses/aase/v1/m08/concepts/m08-06/')!;assert.equal(last.aaseNavigation.find(n=>n.side==='next')!.href,'/en/courses/aase/v1/m09/#m09-01');
+ const last=getPage('/en/courses/aase/v1/m08/concepts/m08-06/')!;assert.equal(last.aaseNavigation.find(n=>n.side==='next')!.href,'/en/courses/aase/v1/m09/concepts/m09-01/');
 });
 
 test('M08 English preserves Chinese verification layers, executable examples and answer semantics',()=>{
@@ -166,4 +166,17 @@ test('M08 English preserves Chinese verification layers, executable examples and
  }
  assert.equal(codeCount,10);
  const en=build().forLanguage('en')!;assert.ok(en.searchEntries.some(e=>e.id==='AASE-M08-C05'&&e.text.includes('human observation has not happened')));
+});
+
+test('M09 English preserves Chinese handoff, Git examples and actual assessment boundaries',()=>{
+ let codeCount=0;
+ for(let n=1;n<=4;n++){
+  const before=read(`docs/sources/aase/m09-en/aase-m09-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
+  assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
+  assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,before.revision+1);assert.equal(l.date,'2026-11-05');
+  for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
+  const codes=(t:any)=>t.sections.flatMap((s:any)=>(s.blocks??[]).filter((b:any)=>'code'in b).map((b:any)=>b.code));assert.deepEqual(codes(l.text.en),codes(before.text.zh));codeCount+=codes(l.text.en).length;
+ }
+ assert.equal(codeCount,7);assert.equal(build().forLanguage('en')!.lessons.length,49);
+ const last=getPage('/en/courses/aase/v1/m09/concepts/m09-04/')!;assert.ok(!last.aaseNavigation.some(n=>n.side==='next'));
 });
