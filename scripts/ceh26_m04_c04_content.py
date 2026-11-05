@@ -1,6 +1,7 @@
 """Render the complete paired SMB manuscript with semantic tables, code and diagrams."""
 from pathlib import Path
-import json, re, sys, html, textwrap
+import json, re, sys, html
+from m0903_svg import sanitized_svg
 R=Path(__file__).resolve().parents[1]
 S=R/'docs/sources/ceh26-m04-c04/replacement-2026-11-05'
 models=json.loads((S/'diagram-models.json').read_text())
@@ -53,7 +54,7 @@ def parse(lang,suffix):
 
 def svg(block,lang,key):
     # Text-only escaped serializer; fixed geometry and palette, no supplied markup.
-    v=block['visual'];out=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" role="img" aria-labelledby="title desc">',f'<title id="title">{html.escape(v["caption"])}</title>',f'<desc id="desc">{html.escape(v["description"])}</desc>','<rect width="1600" height="1200" fill="#101b30"/>']
+    v=block['visual'];prefix=f'smb-{key}-{lang}-';out=[f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 675" role="img" aria-labelledby="{prefix}title {prefix}desc">',f'<title id="{prefix}title">{html.escape(v["caption"])}</title>',f'<desc id="{prefix}desc">{html.escape(v["description"])}</desc>','<g transform="scale(0.5625)"><rect width="1600" height="1200" fill="#101b30"/>']
     def text(value,x,y,width,size=24,color='#e8f0ff'):
         # CJK units count double; wrap English only at word boundaries.
         limit=max(5,int(width/(size*.58)))
@@ -89,7 +90,7 @@ def svg(block,lang,key):
                 out.append(f'<rect x="{x}" y="{y}" width="490" height="130" rx="12" fill="#1d304d"/>')
                 text(val,x+20,y+40,450,24,['#e8f0ff','#90e8cf','#ffb6bf'][j])
     text(v['description'],60,985,1480,24,'#c5d8ed')
-    out.append('</svg>');return '\n'.join(out)+'\n'
+    out.append('</g></svg>');data=sanitized_svg('\n'.join(out),prefix)+'\n';assert len(data.encode())<100000;return data
 
 teaching=dict(id='CEH26-M04-C04',revision=2,contentVersion='1.1.0',date='2026-11-05',publishedOn='2026-11-05',status='published',qa=[],text={l:parse(l,s) for l,s in [('zh','zh-TW'),('en','en')]})
 # Paired chapter/subheading order, tables, code and diagrams must agree.

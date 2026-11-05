@@ -17,7 +17,13 @@
 - `python3 scripts/ceh26_m04_c04_content.py --check`：正文與四個 SVG 生成一致。
 - `npm run validate:content`：通過；`npm test`：190 項通過；`npm run check`：0 錯誤、0 警告。
 - HTML-01–04、FIG-01–06、A11Y-01–03：C04 瀏覽器五項通過；中英 320／390／768／1280 CSS px、200% 根字級、完整正文順序、標題、前後篇、搜尋與 pending 404；兩語關閉 JavaScript 仍可閱讀與展開答案。Tab／Shift+Tab／Enter／Space 驗證原生答案控制，Enter 驗證四個 SVG 下載，下載與來源位元組一致。
-- 四個 SVG 皆小於 100000 bytes：stages zh 5199／en 6691；evidence zh 4265／en 5286。瀏覽器 getBBox 核對文字全在 1600×1200 viewBox；目視桌面／手機 HTML 與中英下載圖，保留次序、三欄關係及顏色文字提示。本機證據 `.local/c04/`（忽略檔）。
+- 四個 SVG 皆小於 100000 bytes：stages zh 5332／en 6824；evidence zh 4412／en 5433。瀏覽器文字矩形核對全在 900×675 viewBox 的實際顯示範圍；目視桌面／手機 HTML 與中英下載圖，保留次序、三欄關係及顏色文字提示。本機證據 `.local/c04/`（忽略檔）。
 - 首輪 SVG 頂層文件全頁截圖等待逾時，正文四項已通過；改用相同回應 SVG 置於 HTML 頁面進行幾何／截圖驗收後，全套五項通過。版面調整後以完成的乾淨 build 重跑；不引用建置期間的結果。
 - publication-boundary：draft／future 標記未進入 744 份部署文字，英文課程 draft／future 閘門皆通過並還原乾淨正式建置。release 全套通過，含舊教材、SVG、MATLAB ZIP 及 AASE workshop；audit 高嚴重度閘門通過，五筆既有 low finding，未改套件。
 - C02 共用 SourceBody 瀏覽器回歸：22 項通過。正式站頁面與圖檔回讀尚待完成；本節不宣稱已部署。
+
+## 遠端整合後複驗
+
+遠端 C05 來源／實作 bd03f73、3c88d24 已發布，採保留雙方意圖合併；共用 SourceBody 同時保留兩篇的圖解、字級與鍵盤程式碼區，content-authoring 保留兩篇契約。C05 正文、圖檔與驗證器保持遠端版本。
+
+整合後 content、完整單元測試、型別、publication-boundary 與 release 均通過；C04 五項、C05 五項、C02 二十二項瀏覽器測試通過。SVG 最後改用既有 m0903_svg sanitizer 與受限 viewBox，固定圖面等比例轉換，並重新生成、建置、release 與三組瀏覽器驗證。正文與圖解資料不變。瀏覽器與截圖為代理操作證據，不代表實體手機、獨立學習者或完整輔助技術認證。INT-01 無計算互動，不適用。

@@ -32,7 +32,7 @@ test('SMB downloadable diagrams use escaped static SVG, match the semantic model
  const models=JSON.parse(readFileSync(root+'diagram-models.json','utf8'));
  for(const pair of Object.values(models) as any[])for(const block of Object.values(pair) as any[]){
   const bytes=readFileSync('site'+block.src);assert.ok(bytes.length<100000);const svg=bytes.toString();
-  assert.ok(svg.includes('viewBox="0 0 1600 1200"'));assert.ok(!/<(?:script|image|foreignObject|use)\b|\bon\w+=|href=/i.test(svg));
+  assert.ok(svg.includes('viewBox="0 0 900 675"'));assert.ok(!/<(?:script|image|foreignObject|use)\b|\bon\w+=|href=/i.test(svg));
   assert.ok(svg.includes(block.visual.caption.replaceAll('&','&amp;')));
   for(const item of block.visual.items)for(const token of item.title.split('｜'))assert.ok(svg.replace(/<[^>]+>/g,'').replace(/\s/g,'').includes(token.replace(/\s/g,'')),token);
  }
