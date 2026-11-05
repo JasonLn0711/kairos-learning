@@ -34,3 +34,19 @@
 正式回讀輸出為 `.local/c05/production-browser.log` 與 results.json；截圖已更新為正式站結果。來源／圖檔原始位元組另與本次四個附件核對一致。最後整理僅移除元件空白行尾空格，不改本文、圖解資料或執行行為；整個變更範圍 `git diff b73cdec --check` 通過。
 
 主工作目錄另有 M04-04、article-standards 與 Python 快取等同步／既有修改，未納入本次提交；本次以獨立 worktree 發布，保留兩邊 Git 歷史。
+
+<a id="planning-closeout-2026-11-05"></a>
+## FIRST PRINCIPLE 與 Planning 收束
+
+**confirmed／published：** 2026-11-05 以最新遠端 main `7f4293e` 為基線核對，原來源 bd03f73、教材 3c88d24、回執 7e4c913 均為其祖先；[基線 Pages 42013095782](https://github.com/JasonLn0711/kairos-learning/actions/runs/42013095782) success。本輪重新執行 `python3 scripts/verify-ceh26-m04-c05.py` 通過，並從 HTTPS 正式站重跑本課瀏覽器套件，五項全數通過，24.0 秒。完整來源、主標題、四尺寸、200% 文字、無 JavaScript、鍵盤、搜尋、導覽及六份 SVG 位元組／文字邊界均再次核對。原 189 項單元與初次部署為前文歷史證據，本輪連接文件未重跑整站建置或宣稱新的整站驗收。
+
+稀缺資源是閱讀注意力、審稿時間及可信證據。Jason 提供完整供稿、三張參考圖及 M04-05 標題要求；Codex 保存來源、完成雙語／圖解與發布驗證。Kairos Learning 保管[來源與採納界線](../sources/ceh26-m04-c05/replacement-2026-11-05/README.md)、教材、圖解模型及工程證據；Planning 保管定位、狀態、容量與下一關。本輪文件適用維護接手與週回顧，不新增學習交付事件、作答或個人工作時數。
+
+- [11/5 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-05.md#kairos-m0405-closeout-2026-11-05)：本人貢獻、已發布結果、證據與下一關；接續 13:00 原交付紀錄。
+- [網站專案定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-m0405-closeout-2026-11-05)：維護 owner、版本、來源與發布狀態。
+- [CEH 學習界線](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-07-ceh-cehp-certification-training.md#kairos-m0405-closeout-2026-11-05)：網站修訂與私人作答／理解分開，原 C06 續讀路線保持。
+- [W45 回顧入口](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#kairos-m0405-closeout-2026-11-05)：已完成維護成果，不新增週輸出、固定時段或容量承諾。
+
+維護契約連到 [WRITE-08](../article-standards.md#課程文章標題write-08)、[內容契約](../content-authoring.md#m04-05-完整-netbiosrpc-教學-v110)及 [M04-04 整合回執](2026-11-05-ceh26-m04-c04-replacement.md#遠端整合後複驗)：兩課共用 SourceBody、鍵盤區與 SVG 審核邊界；正文、來源及驗證回執各有正本，後續共同元件修訂須核對兩篇。
+
+**pending confirmation／下一關：** Jason 於下次正常閱讀回報三題答案或閱讀卡點，依既有私人 CEH 紀錄保存。實體手機、完整螢幕閱讀器與獨立理解保留各自關卡；共享每週 240 分鐘／課日 25 分鐘與 W45 Unknown 維持。本輪不啟動新測驗、實驗或排程。新測試輸出保存在 `.local/closeout/production-browser.log` 與 `.local/c05/`；Planning 不複製全文或工程 logs。
