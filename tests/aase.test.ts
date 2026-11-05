@@ -9,7 +9,7 @@ const lessons=readdirSync('content/aase/lessons').map(f=>read('content/aase/less
 const sources=read('content/aase/sources.json') as AaseSource[];
 const catalog=(ls=lessons,c=course)=>createAaseCatalog(c,ls,sources,'2026-11-05');
 test('AASE has independent 49 IDs, nine modules and exact workshop allocation',()=>{
- const c=catalog();assert.equal(c.concepts.length,49);assert.equal(c.lessons.length,17);
+ const c=catalog();assert.equal(c.concepts.length,49);assert.equal(c.lessons.length,22);
  assert.equal(course.modules.reduce((n,m)=>n+m.minutes,0),600);
  assert.equal(course.modules.reduce((n,m)=>n+m.practiceMinutes,0),150);
  for(const mutate of [(c:AaseCourse)=>{c.modules[0].minutes++;},(c:AaseCourse)=>{c.modules[0].concepts[0].id='M01-01';},(c:AaseCourse)=>{c.modules[0].concepts.pop();}]){const c=structuredClone(course);mutate(c);assert.throws(()=>catalog(lessons,c));}
