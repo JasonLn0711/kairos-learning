@@ -1,8 +1,8 @@
 {
   "id": "AASE-M02-C03",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -155,6 +155,148 @@
         "check": "能解釋為何 KV Cache 命中不等於永久記憶、檢索到文件不等於答案正確、筆記存在不等於本次模型已讀取。",
         "cleanup": "保留合成筆記即可；沒有建立快取、向量資料庫或外部服務可供清理。"
       }
+    },
+    "en": {
+      "summary": "Distinguish inference reuse, context compaction, external retrieval and persistent records. Choose methods for long tasks while retaining a way to check them.",
+      "objectives": [
+        "Explain that KV Cache reuses attention keys and values, not readable long-term notes.",
+        "Distinguish the sources, timing and failure risks of Compaction, RAG and Memory.",
+        "Choose methods for four intake-project problems without confusing caches, memory and model training."
+      ],
+      "readingGuide": {
+        "goal": "Choose caches, summaries, retrieval or persistent records according to the problem, separating performance evidence from knowledge use.",
+        "startingPoint": "Separate “forgetting” into recomputation, capacity, data access and cross-session state.",
+        "route": "Understand mechanisms, compare purposes, then design traceable project notes.",
+        "output": "A purpose-and-failure comparison of four methods and a synthetic project-state note."
+      },
+      "sections": [
+        {
+          "id": "start",
+          "heading": "“Forgetting” Can Mean Four Different Problems",
+          "paragraphs": [
+            "Recomputing past material for each generated token, an overlong conversation, a missing specification and uncertainty about yesterday’s task state are different engineering problems. Calling them all “more memory” obscures which layer needs changing.",
+            "This is an online-extension concept. The workshop needs the purpose comparison first; learners are not expected to implement an inference engine, vector database or complete memory service within ten hours."
+          ]
+        },
+        {
+          "id": "kv-cache",
+          "heading": "KV Cache Reuses Computed Representations",
+          "paragraphs": [
+            "In ordinary causal autoregressive inference, earlier positions’ keys and values can be retained for later generation, avoiding recomputation of those projections. New positions still require their own computations and attention operations. These tensors are inference state, not text notes a person can use as spec.md.",
+            "Hugging Face explains per-layer KV reuse. Cross-request prefix caching also requires engine-specific reuse conditions, such as matching prefixes and configuration. vLLM distinguishes prefix processing from subsequent generation. A cache hit does not automatically add context capacity, data permissions or permanent memory."
+          ],
+          "sourceIds": [
+            "hf-kv-cache",
+            "vllm-prefix"
+          ]
+        },
+        {
+          "id": "summary-and-notes",
+          "heading": "Compact Current History or Save Notes for Later",
+          "paragraphs": [
+            "Compaction can replace longer history with a shorter summary for continued work. In this course, Memory means records kept outside context and read back later. It may use files or other storage; it is not one fixed model architecture.",
+            "Anthropic’s engineering article discusses compaction and structured notes separately. The course uses that purpose distinction and additionally requires sources, versions, unresolved questions and update procedures. Summaries can omit details and persistent notes can become stale. Saving a file does not mean each call has read it or that model weights were retrained."
+          ],
+          "sourceIds": [
+            "context-engineering"
+          ]
+        },
+        {
+          "id": "retrieval",
+          "heading": "RAG Retrieves Material to Support Generation",
+          "paragraphs": [
+            "Retrieval-Augmented Generation combines external retrieval with generation. The original RAG paper studies models using a retriever to obtain document information. In this course’s application design, retrieve authorized, relevant specification excerpts and provide them with their sources to the generation step.",
+            "Retrieval does not guarantee the right version or complete conditions. An old spec.md, a partial rule or instructions in an external document mistaken for authority can all cause problems. Enforce access restrictions at appropriate retrieval-system boundaries rather than asking a model to hide content it should not have accessed."
+          ],
+          "sourceIds": [
+            "rag-paper",
+            "owasp-agent-security"
+          ]
+        },
+        {
+          "id": "comparison",
+          "heading": "Choose What You Need to Retain",
+          "paragraphs": [
+            "This table compares purposes for the course. Systems can combine methods and share storage or retrieval infrastructure while keeping their engineering purposes distinct."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Four Methods and Their Verification Questions",
+              "headers": [
+                "Method",
+                "Main Purpose",
+                "What Still Needs Checking"
+              ],
+              "rows": [
+                [
+                  "KV Cache",
+                  "Reuse attention keys and values for processed tokens.",
+                  "Prefix and configuration compatibility, resources and isolation boundaries."
+                ],
+                [
+                  "Compaction",
+                  "Continue long history using a shorter summary.",
+                  "Omissions of critical rules, failure evidence and unresolved work."
+                ],
+                [
+                  "RAG",
+                  "Retrieve external material for generation in response to a query.",
+                  "Source, version, relevance, completeness and access permission."
+                ],
+                [
+                  "Memory",
+                  "Save project or task records for later retrieval.",
+                  "Whether they were read back, updates, access and deletion."
+                ]
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Four Independent Needs in One Intake Project",
+              "description": "These cards compare purposes, not four stages that must be enabled in order.",
+              "items": [
+                {
+                  "title": "Recomputation cost",
+                  "body": "Check KV reuse if the engine supports it; a summary is not a substitute for the same mathematical computation."
+                },
+                {
+                  "title": "Overlong work history",
+                  "body": "Create a source-traceable compact summary and check rules and unresolved work."
+                },
+                {
+                  "title": "Scattered specifications",
+                  "body": "Retrieve the correct specification excerpts and retain their sources."
+                },
+                {
+                  "title": "Cross-session project state",
+                  "body": "Save updatable task notes, check them and read them back next time."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "apply",
+          "heading": "Keep Separate Evidence for Each Improvement",
+          "paragraphs": [
+            "To continue yesterday’s prototype change, begin with the specification version, failing tests, unfinished slice and next step. A small task note is easier to inspect for usefulness than an immediate large memory-platform build.",
+            "State what remains unverified. This course has not measured KV Cache speedups, RAG retrieval quality or actual model long-task accuracy. After the tabletop comparison, use a specified engine, dataset and task to establish any performance or quality improvement."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Paper or a text editor with synthetic specifications and task records. Do not install retrieval services or inference engines.",
+        "steps": [
+          "Use Table 1 to choose a primary method for recomputation, overlong history, scattered specifications and next-day continuation.",
+          "Write a project note with specification version, sources, unresolved questions and next step, explaining how to read it back.",
+          "Suppose a summary omits invalidation after input changes. Identify the affected acceptance scenario and how to detect the omission.",
+          "Design a check for an outdated retrieved specification, separating retrieval success from correct rule application."
+        ],
+        "expected": "A purpose comparison and a traceable, updatable synthetic task note with outstanding verification questions.",
+        "check": "Explain why a KV hit is not permanent memory, finding a document is not answer correctness, and a saved note is not proof that the current model read it.",
+        "cleanup": "Retain synthetic notes only. No cache, vector database or external service was created."
+      }
     }
   },
   "checks": [
@@ -175,6 +317,21 @@
             "業務規則仍需正本與負責人。",
             "快取不是重新訓練或永久知識保證。",
             "不能由快取概念推定所有歷史都被保存或授權共享。"
+          ]
+        },
+        "en": {
+          "prompt": "What does KV Cache most directly reuse?",
+          "options": [
+            "Keys and values for already processed inference positions.",
+            "Human-confirmed authority over business rules.",
+            "New knowledge permanently written into a model.",
+            "Every user’s chat history."
+          ],
+          "rationales": [
+            "That corresponds to avoiding recomputation of past keys and values.",
+            "Rules still need authoritative records and owners.",
+            "Caching is not retraining or a guarantee of permanent knowledge.",
+            "Caching does not establish retention or authorization to share all history."
           ]
         }
       }
@@ -197,6 +354,21 @@
             "單一摘要錯誤無法支持對所有能力的概括。",
             "這能修正工作資料並留下與需求對應的驗證。"
           ]
+        },
+        "en": {
+          "prompt": "A summary omits the need to recheck after input changes. What is the next step?",
+          "options": [
+            "Treat the omission as a new specification.",
+            "Increase the cache-hit rate.",
+            "Declare that the model has no memory capability.",
+            "Check the authoritative record, correct the summary and replay stale-result invalidation."
+          ],
+          "rationales": [
+            "A summary does not authorize a requirements change.",
+            "A computation cache cannot restore a deleted textual condition.",
+            "One summary error cannot support a claim about every capability.",
+            "This corrects working information and verifies it against the requirement."
+          ]
         }
       }
     },
@@ -218,8 +390,29 @@
             "字數不代表規格正確或完整。",
             "連結可以幫助回查，但仍需核對內容。"
           ]
+        },
+        "en": {
+          "prompt": "RAG finds a document. What must still be checked?",
+          "options": [
+            "Nothing; retrieval establishes trustworthiness.",
+            "Source, version, permission and coverage of the current question.",
+            "Only its character count.",
+            "Only whether the answer includes a link."
+          ],
+          "rationales": [
+            "Retrieval success and applicability differ.",
+            "These conditions affect whether the document fits this task.",
+            "Length does not establish specification correctness or completeness.",
+            "A link aids inspection but its contents still need checking."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }

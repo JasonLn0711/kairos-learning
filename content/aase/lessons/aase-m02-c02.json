@@ -1,8 +1,8 @@
 {
   "id": "AASE-M02-C02",
   "status": "published",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.0.1",
   "publishedOn": "2026-11-05",
   "date": "2026-11-05",
   "sourceIds": [
@@ -158,6 +158,154 @@
         "check": "能說明「內容能放入」與「任務確實做對」的差別，並指出下一次呼叫需要重新取得哪些資訊。",
         "cleanup": "保留合成筆記；可刪除臨時預算程式，沒有建立外部模型或帳號。"
       }
+    },
+    "en": {
+      "summary": "Treat the context window as finite working space for a generation call. Select specifications and tool results, reserve output space and check whether the task actually uses that information effectively.",
+      "objectives": [
+        "Distinguish chat history retained by the interface from context actually supplied to a model call.",
+        "Use an explicitly assumed token budget to identify capacity overflow and crowding by irrelevant material.",
+        "Retain rereadable specifications, state and sources for long tasks instead of relying only on conversation history."
+      ],
+      "readingGuide": {
+        "goal": "Prepare finite, relevant and traceable context for one model call.",
+        "startingPoint": "Separate chat history from the specifications, code and test results currently needed.",
+        "route": "Use the work-desk analogy, calculate a synthetic budget, then prepare a task packet for one correction.",
+        "output": "An assumption-labeled budget and a task summary with sources, versions and unresolved questions."
+      },
+      "sections": [
+        {
+          "id": "window",
+          "heading": "Visible Chat History May Not Reach This Call",
+          "paragraphs": [
+            "A context window is the sequence range a model can process in a calculation. The application chooses which instructions, messages, file excerpts and tool results to send. The complete history visible in a chat interface need not be included in the current call.",
+            "Actual constraints can also involve output length, image representations, tool messages and server-side processing. Check a particular product’s model, version and API rules for its limits; this course does not apply one number to every model."
+          ],
+          "sourceIds": [
+            "context-engineering"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Like a Desk with Room for Only Some Documents",
+          "paragraphs": [
+            "Think of context as the documents currently open on a desk. More documents in storage do not mean you are reading them now. A larger desk does not guarantee that you will find a rule buried in the middle.",
+            "Separate external authoritative records from current working material. spec.md is a record you can reread. A rule mentioned earlier in conversation needs checking for presence in current context and subsequent updates."
+          ]
+        },
+        {
+          "id": "budget-example",
+          "heading": "State the Assumptions Before Calculating",
+          "paragraphs": [
+            "This example assumes an 8192-token window and counts input plus reserved output against that same limit. All token counts are teaching inputs, not actual tokenizer or service measurements. Check additional message overhead in a real service too.",
+            "800 + 1200 + 4800 + 1000 = 7800, leaving 392. Adding 600 tokens gives 8400, exceeding the assumed limit by 208. This checks capacity, not whether the model performs the task correctly."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | A Synthetic Context Budget",
+              "headers": [
+                "Item",
+                "Assigned Tokens",
+                "Purpose"
+              ],
+              "rows": [
+                [
+                  "Rules and tool descriptions",
+                  "800",
+                  "Describe task boundaries and available tools."
+                ],
+                [
+                  "Current specification",
+                  "1200",
+                  "Required fields and acceptance conditions."
+                ],
+                [
+                  "Tool results",
+                  "4800",
+                  "Outputs relevant to this correction."
+                ],
+                [
+                  "Reserved generation output",
+                  "1000",
+                  "Leave response space under the stated assumptions."
+                ]
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Optional Python Budget Check",
+              "paragraphs": [
+                "Environment: Python 3 standard library. The program prints reserved = 7800, remaining = 392 and fits = True."
+              ],
+              "code": "window = 8192\ninput_parts = {\"rules\": 800, \"spec\": 1200, \"tool_results\": 4800}\noutput_reserve = 1000\nreserved = sum(input_parts.values()) + output_reserve\nremaining = window - reserved\nprint(\"reserved =\", reserved)\nprint(\"remaining =\", remaining)\nprint(\"fits =\", remaining >= 0)"
+            }
+          ]
+        },
+        {
+          "id": "effective-use",
+          "heading": "Capacity and Effective Use Need Separate Checks",
+          "paragraphs": [
+            "Lost in the Middle observed position-dependent performance in its multi-document question-answering and key-value retrieval settings. Fitting content into a window does not establish reliable use of all information. Those experiments also do not establish fixed performance for every newer model.",
+            "Use concrete intake cases: were required-field rules applied correctly, or was an old specification used? When logs contain much irrelevant material, select excerpts related to the failure before adding more reminders."
+          ],
+          "sourceIds": [
+            "lost-middle"
+          ]
+        },
+        {
+          "id": "prepare",
+          "heading": "Prepare a Traceable Packet for the Next Call",
+          "paragraphs": [
+            "A course task packet can contain the goal, current specification version, relevant code excerpts, newly executed test results, unresolved questions and stop conditions. State each item’s source. When a summary says “tests passed,” retain commands and results that can be inspected.",
+            "To continue a long task, check whether authoritative records changed, reread necessary excerpts and verify current state. This is a course workflow example, not a claim that any agent automatically performs every step."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Rebuild Usable Task Context",
+              "description": "The packet selects material for the current task while retaining access to full sources.",
+              "items": [
+                {
+                  "title": "Identify the current task",
+                  "body": "Fix only the issue where clearing a field after a successful check still allows export."
+                },
+                {
+                  "title": "Read necessary authoritative records",
+                  "body": "Retrieve current spec.md rules and relevant code instead of reusing an outdated summary."
+                },
+                {
+                  "title": "Include necessary evidence",
+                  "body": "Retain the failing case, corresponding test output and file versions."
+                },
+                {
+                  "title": "Reserve space and verify",
+                  "body": "Budget under the service’s rules, then check outcomes against scenarios after execution."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "limits",
+          "heading": "Repeated Reminders Are Not a Complete Record",
+          "paragraphs": [
+            "Repetition can help, but cannot guarantee that information stays available or replace the specification. Update the document and explain its version when rules change instead of adding another variation at the end of a conversation.",
+            "The next lesson compares compaction, RAG and persistent records. They can help select or rebuild context, but omissions, stale information and incorrect retrieval still require checking against task outcomes."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Paper or Python 3. Use only the assigned token counts; no actual model call is needed.",
+        "steps": [
+          "Classify specifications, history and tool results as authoritative records, currently necessary material or retrievable evidence, explaining your choices.",
+          "Check the synthetic budget of 7800 and remaining 392, optionally running the program.",
+          "Add 600 tokens of irrelevant logs, calculate overflow and decide what to remove from the current packet first.",
+          "Write a next-call task summary with specification version, sources, unresolved questions and scenarios still needing verification."
+        ],
+        "expected": "Synthetic budget calculations and a source-traceable task packet, without claiming real service token measurements.",
+        "check": "Explain the difference between fitting content and performing the task correctly, and identify information the next call must retrieve again.",
+        "cleanup": "Keep synthetic notes and optionally delete the temporary budget program. No external model or account is created."
+      }
     }
   },
   "checks": [
@@ -178,6 +326,21 @@
             "未刪除不保證全部送入模型。",
             "沒有足夠依據可保證所有歷史自動恢復。",
             "這把判斷連回本次呼叫實際取得的資料。"
+          ]
+        },
+        "en": {
+          "prompt": "An early message remains visible in chat. Must the model have received it in this call?",
+          "options": [
+            "Yes; the interface and model input are always identical.",
+            "Yes, unless the user deleted it.",
+            "There is no need to check because the model restores every message automatically.",
+            "No; inspect the context the application actually assembled."
+          ],
+          "rationales": [
+            "Interface retention and actual model input are different layers.",
+            "Not deleting a message does not guarantee it is sent.",
+            "There is no basis for guaranteeing automatic restoration of all history.",
+            "This connects the judgment to information available in this call."
           ]
         }
       }
@@ -200,6 +363,21 @@
             "兩者不相等。",
             "這是已明示假設的算術，不依賴真實模型版本。"
           ]
+        },
+        "en": {
+          "prompt": "Under the course assumptions, how does 7800 plus 600 compare with the 8192 limit?",
+          "options": [
+            "It leaves 208 tokens.",
+            "It exceeds the limit by 208.",
+            "It exactly equals the limit.",
+            "A newer model makes the arithmetic impossible."
+          ],
+          "rationales": [
+            "8400 is greater than 8192, not below it.",
+            "7800 + 600 − 8192 = 208.",
+            "The two values differ.",
+            "This arithmetic uses explicit assumptions, not a real model version."
+          ]
         }
       }
     },
@@ -221,8 +399,29 @@
             "這分開容量條件與任務品質。",
             "窗口大小不授予資料權限。"
           ]
+        },
+        "en": {
+          "prompt": "What does a larger context window most directly change?",
+          "options": [
+            "It guarantees correct application of every important rule.",
+            "It removes the need for a specification.",
+            "The sequence range that can fit under applicable rules; effective use still needs verification.",
+            "It grants access to all external files."
+          ],
+          "rationales": [
+            "Capacity does not establish task correctness.",
+            "Specifications still need to be traceable and maintained.",
+            "This separates capacity from task quality.",
+            "Window size grants no data permissions."
+          ]
         }
       }
     }
-  ]
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
 }
