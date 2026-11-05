@@ -29,7 +29,7 @@ for(const lang of ['zh','en']){
 test('four downloadable SMB SVGs retain bounded text geometry',async({page,request})=>{
  for(const lang of ['zh','en'])for(const key of ['stages','evidence']){
   const path=`/images/ceh/m04-04-${key}-${lang}-v1-1-0.svg`;const response=await request.get(path);expect(response.status()).toBe(200);await page.setContent(await response.text());await page.evaluate(()=>window.scrollTo(0,0));
-  const bad=await page.locator('svg text').evaluateAll(es=>es.flatMap(e=>{const b=e.getBoundingClientRect(),r=e.ownerSVGElement!.getBoundingClientRect();return b.left<r.left-.1||b.top<r.top-.1||b.right>r.right+.1||b.bottom>r.bottom+.1?[e.textContent]:[]}));expect(bad).toEqual([]);
+  const bad=await page.locator('svg text').evaluateAll(es=>es.flatMap(e=>{const b=e.getBoundingClientRect(),r=(e as SVGGraphicsElement).ownerSVGElement!.getBoundingClientRect();return b.left<r.left-.1||b.top<r.top-.1||b.right>r.right+.1||b.bottom>r.bottom+.1?[e.textContent]:[]}));expect(bad).toEqual([]);
   await page.screenshot({path:`${dir}/${lang}-${key}-svg.png`,fullPage:true});
  }
 });
