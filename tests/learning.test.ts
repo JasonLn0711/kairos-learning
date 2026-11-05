@@ -68,13 +68,13 @@ test('search reaches worked examples, exercise checks and answer explanations',(
       assert.ok(search(searchEntries,query,lang).some(e=>e.id===lesson.id));
   }
 });
-test('new M04 route publishes only taught C01 and C02 and no legacy teaching',()=>{
+test('new M04 route publishes C01–C03 and C05 with C04 pending and no legacy teaching',()=>{
  const page=getPage('/courses/ceh/v13/m04/')!;
  const units=page.concepts.filter(c=>c.module==='m04');
- assert.equal(units.length,10);assert.equal(units.filter(c=>c.href).length,3);assert.equal(units[0].id,'CEH26-M04-C01');assert.ok(units.slice(3).every(c=>c.href===null));
+ assert.equal(units.length,10);assert.equal(units.filter(c=>c.href).length,4);assert.equal(units[0].id,'CEH26-M04-C01');assert.ok(units.filter(c=>!['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C05'].includes(c.id)).every(c=>c.href===null));
  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-01/')?.conceptTeaching?.id,'CEH26-M04-C01');
  assert.equal(getPage('/courses/ceh/v13/m04/concepts/ceh26-m04-c01/'),null);
  assert.equal(getPage('/courses/ceh/v13/m04/quiz/'),null);
  assert.equal(getPage('/courses/ceh/v13/m04/labs/'),null);
- assert.deepEqual([...new Set(searchEntries.filter(e=>e.label==='CEH M04').map(e=>e.id))],['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03']);
+ assert.deepEqual([...new Set(searchEntries.filter(e=>e.label==='CEH M04').map(e=>e.id))],['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C05']);
 });
