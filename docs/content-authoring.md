@@ -396,7 +396,7 @@ HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查�
 
 forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，不以中文代填英文。課程關閉時沒有英文路由／搜尋；翻譯缺件、draft 或 future 時只有目錄項目，前後篇落至該語言模組錨點。真正成對的頁面才有 language link 與三個 alternates，canonical／sitemap／搜尋共用 catalog。qa 可保留尚未翻譯的實際中文問題，英文只呈現已翻譯者；無問題就保留空陣列。
 
-兩語章節 ID、順序、段落數、目標與練習步數、區塊形狀、程式碼、來源 ID、圖解節點／關係及答案鍵對應。驗證器的結構核對不取代編輯語意核對。ArchitectureDiagram 與搜尋文字接收同一語言參數。來源與前版保存依 WRITE-04／06；初批 M01-01 v1.0.2 保留中文正文與檢核並新增英譯；後續 M01-02–04 各升 v1.0.1，原中文同樣不改，M01 四篇英文齊備，M02 六篇亦新增對應並升 v1.0.1；M03 五篇新增完整對應（M03-01 升 v1.0.3，其餘四篇 v1.0.1），其餘 34 篇待編。詳細出版狀態見 [M01 英文回執](releases/2026-11-05-aase-m01-en.md)、[M02 英文回執](releases/2026-11-05-aase-m02-en.md)及 [M03 英文回執](releases/2026-11-05-aase-m03-en.md)。
+兩語章節 ID、順序、段落數、目標與練習步數、區塊形狀、程式碼、來源 ID、圖解節點／關係及答案鍵對應。驗證器的結構核對不取代編輯語意核對。ArchitectureDiagram 與搜尋文字接收同一語言參數。來源與前版保存依 WRITE-04／06；初批 M01-01 v1.0.2 保留中文正文與檢核並新增英譯；後續 M01-02–04 各升 v1.0.1，原中文同樣不改，M01 四篇英文齊備，M02 六篇亦新增對應並升 v1.0.1；M03 五篇新增完整對應（M03-01 升 v1.0.3，其餘四篇 v1.0.1），M04 六篇新增完整對應（M04-05 升 v1.0.2，其餘五篇 v1.0.1），其餘 28 篇待編。詳細出版狀態見 [M01 英文回執](releases/2026-11-05-aase-m01-en.md)、[M02 英文回執](releases/2026-11-05-aase-m02-en.md)、[M03 英文回執](releases/2026-11-05-aase-m03-en.md)及 [M04 英文回執](releases/2026-11-05-aase-m04-en.md)。
 
 先跑內容、單元、型別，再執行 publication-boundary（含英文課程與翻譯 draft／future 的真正建置）及 release；接續 `npx playwright test --config playwright.aase-bilingual.config.ts`、完整 AASE 及 CEH 共用版型回歸。正式站以 AASE_BASE_URL 執行新套件。測試輸出與建置不可同時改寫同一產物目錄；先等建置結束再啟動瀏覽器。英文工作坊 HTML 與 ZIP 內語言分開核對，未翻譯 ZIP 必須明示。[發布回執](releases/2026-11-05-aase-bilingual-foundation.md)記錄實際範圍。
 
