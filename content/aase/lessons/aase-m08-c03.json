@@ -1,0 +1,197 @@
+{
+  "id": "AASE-M08-C03",
+  "status": "published",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "pytest-parametrize",
+    "pytest-assert",
+    "pytest-usage"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "用參數化測試覆蓋三欄的有效、無效與長度邊界，直接驗證規則及匯出契約。",
+      "objectives": [
+        "把驗收情境寫成輸入、動作與結果。",
+        "用 pytest 參數化及例外斷言檢查業務規則。",
+        "核對匯出內容與函式沒有意外改動輸入。"
+      ],
+      "readingGuide": {
+        "goal": "把驗收情境寫成輸入、動作與結果。",
+        "startingPoint": "自己的第三切片副本、rules.py、pytest 8.4.2，與已確認 spec.md。",
+        "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
+        "output": "tests/test_rules_contract.py 與實際結果覆蓋三欄規則及受控匯出。"
+      },
+      "sections": [
+        {
+          "id": "rule",
+          "heading": "先找出不依賴畫面的規則",
+          "paragraphs": [
+            "reference/rules.py 的 validate 接收字典、回傳錯誤列表；export_report 在產生 JSON 前重新驗證，不合法時拋出 ValueError。直接呼叫這兩個函式，就能檢查畫面輸入限制以外的資料。",
+            "三個必要鍵是 application_id、applicant_code、document_type。去除首尾空白後須為非空字串且最多 80 字元；這是教學合成規則，不是正式文件受理條件。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像用同一張檢查表逐一量測不同樣本",
+          "paragraphs": [
+            "每個樣本換一個條件，其餘維持已知有效，才能看清楚哪個條件造成失敗。若一次把所有欄位都清空，只知道整體有錯，難以確認每一欄的規則都受到保護。",
+            "參數化讓同一組斷言套用到多筆資料。案例數增加要來自有意義的條件組合，不能用大量重複資料營造已驗證所有情況的印象。"
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "正常、無效、邊界與輸出契約",
+          "paragraphs": [
+            "必要欄位要測空字串、純空白、缺鍵與錯誤型別；長度要測剛好 80 與 81。正常匯出再核對去除首尾空白、固定結構與允許欄位，避免只測拒絕而漏掉可用路徑。",
+            "測試期望應從 spec 推得，不直接把函式目前回傳值複製成答案。規則若有歧義，先回到規格與負責人，不任意放寬測試。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜一份測試需要哪些資訊",
+              "description": "依輸入、執行與斷言閱讀，每一案例都能回答哪個要求受到保護。",
+              "items": [
+                {
+                  "title": "Arrange｜準備",
+                  "body": "建立有效基準，只替換本次要測的欄位。"
+                },
+                {
+                  "title": "Act｜執行",
+                  "body": "直接呼叫 validate 或 export_report。"
+                },
+                {
+                  "title": "Assert｜斷言",
+                  "body": "確認錯誤、例外或匯出結果符合規格。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "example",
+          "heading": "可加入自己專案的完整測試範例",
+          "paragraphs": [
+            "在自己的第三切片副本建立 tests/test_rules_contract.py。以下兩個參數化裝飾器組合三個欄位與六種無效值；每例都應有錯誤且拒絕匯出。",
+            "正常案例核對 JSON 資料完全等於允許的三欄，並檢查原輸入未被改寫。這仍不是全部正式系統契約，其他業務需求需另外定義。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "tests/test_rules_contract.py",
+              "paragraphs": [
+                "檔案需能 import 同專案 rules.py；不要把不同階段的 rules 放在同一測試程序。"
+              ],
+              "code": "import json\nimport pytest\nfrom rules import validate, export_report\n\nGOOD = {\"application_id\": \"SYN-001\", \"applicant_code\": \"DEMO-A\", \"document_type\": \"合成申請表\"}\n\n\n@pytest.mark.parametrize(\"field\", tuple(GOOD))\n@pytest.mark.parametrize(\"bad\", [\"\", \"   \", \"\\t\\n\", None, 42, \"x\" * 81])\ndef test_each_invalid_field_is_rejected(field, bad):\n    record = {**GOOD, field: bad}\n    assert validate(record)\n    with pytest.raises(ValueError):\n        export_report(record)\n\n\n@pytest.mark.parametrize(\"size,accepted\", [(80, True), (81, False)])\ndef test_length_boundary(size, accepted):\n    record = {**GOOD, \"application_id\": \"x\" * size}\n    assert (validate(record) == []) is accepted\n\n\ndef test_valid_export_uses_only_allowed_fields():\n    record = {**GOOD, \"application_id\": \" SYN-001 \", \"debug_note\": \"not-exported\"}\n    result = json.loads(export_report(record))\n    assert result[\"status\"] == \"complete\"\n    assert result[\"data\"] == GOOD\n    assert \"debug_note\" not in result[\"data\"]\n    assert record[\"application_id\"] == \" SYN-001 \"\n\n\ndef test_missing_key_is_rejected():\n    record = GOOD.copy()\n    del record[\"document_type\"]\n    with pytest.raises(ValueError):\n        export_report(record)"
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "執行與閱讀失敗",
+          "paragraphs": [
+            "在自己的第三切片根目錄執行 python -m pytest -q tests/test_rules_contract.py。若測試失敗，先讀案例參數、斷言及實際值，再查規則；若是 import 或環境錯誤，先修正執行位置。",
+            "範例可通過時，再執行該專案整組測試。記錄實際數量與退出結果，不預填固定成功數；日後新增測試後，數量會隨內容改變。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "規則測試命令",
+              "paragraphs": [
+                "先確認已啟用工作坊環境，並在自己的第三切片目錄。"
+              ],
+              "code": "python -m pytest -q tests/test_rules_contract.py\npython -m pytest -q"
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "通過不代表測過所有資料",
+          "paragraphs": [
+            "UI 不讓輸入 81 字元，仍需測函式拒絕超長直接呼叫；例外測試只寫「有任何錯誤」也可能把程式缺陷當成正確拒絕。使用預期 ValueError，必要時再核對錯誤訊息或類型。",
+            "規則測試無法判斷錯誤提示是否好找、鍵盤是否能完成任務或 JSON 真實下載是否正確。下一篇接著測介面，之後再安排人的任務觀察。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "自己的第三切片副本、rules.py、pytest 8.4.2，與已確認 spec.md。",
+        "steps": [
+          "加入完整範例並執行，逐一說明無效、邊界與正常案例。",
+          "核對一筆失敗時顯示的參數與斷言，確認不是環境問題。",
+          "執行整組測試，保存命令、版本、結果與未涵蓋情境。"
+        ],
+        "expected": "tests/test_rules_contract.py 與實際結果覆蓋三欄規則及受控匯出。",
+        "check": "有效路徑、例外類型、80／81 邊界與允許欄位都有斷言，未把測試數量當成完整性保證。",
+        "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M08-C03-Q01",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "為何每例只替換一個有效基準欄位？",
+          "options": [
+            "避免測太多",
+            "讓測試只看畫面",
+            "較容易定位哪個條件未受保護",
+            "不用再測有效資料"
+          ],
+          "rationales": [
+            "目的是可定位。",
+            "這是直接函式測試。",
+            "控制其他條件有助判斷。",
+            "正常路徑仍需驗證。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C03-Q02",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "80／81 字元案例最直接檢查什麼？",
+          "options": [
+            "正式文件真偽",
+            "規格長度邊界",
+            "使用者滿意度",
+            "登入狀態"
+          ],
+          "rationales": [
+            "不在規則內。",
+            "核對臨界有效與無效。",
+            "需要人的研究。",
+            "沒有身分測試。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C03-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "負向匯出應如何斷言？",
+          "options": [
+            "程式沒有啟動就算通過",
+            "接受任何未預期錯誤",
+            "只檢查畫面標題",
+            "確認預期 ValueError，並核對相關條件"
+          ],
+          "rationales": [
+            "尚未跑到行為。",
+            "可能掩蓋 bug。",
+            "不能保護匯出。",
+            "拒絕方式需符合契約。"
+          ]
+        }
+      }
+    }
+  ]
+}
