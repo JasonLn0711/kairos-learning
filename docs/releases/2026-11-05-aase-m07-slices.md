@@ -22,4 +22,4 @@
 
 本機完整 AASE 瀏覽器 48 項通過，包含網站四尺寸、200% 文字、鍵盤、無 JavaScript、下載位元組、CEH／AASE 共用版型與原參考程式任務，以及新增兩個切片任務；完整 JSON 保存在 .local/aase/m07-slices/local/results.json。
 
-資源提交 13ebf57 已推送 origin main。正式站發布與回讀結果於驗證後補記。M07 全文、後續 M08／M09、英文、指定品牌 Agent 全程操作、真人試教與完整工作坊驗收仍未完成。
+資源提交 13ebf57 已推送 origin main。[資源 Pages run 41974331657](https://github.com/JasonLn0711/kairos-learning/actions/runs/41974331657) 成功。正式站針對受影響範圍的三項瀏覽器檢查通過：工作坊頁四尺寸／200% 文字／鍵盤／無 JavaScript；目錄與搜尋閘門、CEH 路由及下載 ZIP／SHA256 位元組；兩課共用版型與章節側欄。正式 ZIP 為 30135 bytes，SHA256 d745b276f1ce19cb9d128a48f3281cd12d2b96dd3255ee83af18e828d561261d，與本機封裝一致。遠端沒有執行 Streamlit，亦未重跑未改動的全部正文頁；本機完整 48 項結果另存不覆蓋。文件提交 ee37c95，推送後與 origin/main 分歧 0 0。M07 全文、後續 M08／M09、英文、指定品牌 Agent 全程操作、真人試教與完整工作坊驗收仍未完成。
