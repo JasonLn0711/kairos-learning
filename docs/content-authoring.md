@@ -383,3 +383,9 @@ AASE章節正文可使用受限`architecture`區塊，外層教材欄位及CEH�
 HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查詢重排雙欄與箭頭，文字與搜尋由同一資料產生。沒有任意HTML／SVG、座標、事件或圖片路徑，也沒有新增SVG匯出。圖例需明說系統範圍不代表安全信任邊界，關係列不表示時序。標籤元件支持zh／en，當前AASE正文仍僅已確認繁中，不產生英文路由。
 
 執行architecture-diagram.test.ts的資料拒絕與搜尋／發布測試、既有內容／型別／發布邊界／release及AASE瀏覽器檢查。瀏覽器逐節核對節點分組、關係端點與標籤，四尺寸、200%文字、無JavaScript及手機／桌面圖解；同時保留原教材與CEH回歸。[發布回執](releases/2026-11-05-aase-m06.md)記錄實際影響及未驗事項。
+
+### 英文共用課程導覽（2026-11-05）
+
+英文 .with-rail 側欄與前後篇連結使用 overflow-wrap:anywhere；900px 以下 rail-content 高度上限為 10rem，540px 以下前後篇直向排列。維持完整標題、目的地及局部捲動，不以隱藏文字或省略號解決溢出。中文不匹配本次樣式。修改後執行 `npx playwright test --config playwright.course-rail.config.ts`，正式站設定 RAIL_BASE_URL；涵蓋 CEH 中英、AASE 中文、有／無 JavaScript、四尺寸及 200% 根字級。
+
+53 筆 CEH 資料依 WRITE-06 提升 patch，原發布日及非版本內容雜湊保留；17 筆舊式 lesson 的語意版號遷移基準另記。[回執](releases/2026-11-05-english-course-navigation.md)及[逐筆清單](releases/2026-11-05-course-navigation-versions.json)保留版本來源。M03-02 歷史 CSS 雜湊核對修訂前保存檔，不改寫原雜湊。AASE 英文全文與路由仍未開啟。
