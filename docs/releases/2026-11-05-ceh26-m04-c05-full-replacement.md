@@ -25,4 +25,12 @@
 
 ## 發布
 
-發布基線：Pages run [42004054843](https://github.com/JasonLn0711/kairos-learning/actions/runs/42004054843)，commit b73cdec，success。正式部署及 HTTPS 回讀待補。
+發布基線：Pages run [42004054843](https://github.com/JasonLn0711/kairos-learning/actions/runs/42004054843)，commit b73cdec，success。
+
+來源保存提交 bd03f73；教材提交 [3c88d24](https://github.com/JasonLn0711/kairos-learning/commit/3c88d24724772406224725bd31c5747c1a7efceb)。推送 `origin HEAD:main` 後 fetch，分歧 0／0；[Pages run 42005010527](https://github.com/JasonLn0711/kairos-learning/actions/runs/42005010527) 為 success，部署 headSha 與教材提交完全一致。
+
+正式頁面：[中文](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-05/)／[English](https://learn.cs-kairos.com/en/courses/ceh/v13/m04/concepts/m04-05/)。`CEH_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.ceh26-m04-c05.config.ts`：5 項全部通過，23.9 秒。兩語 h1 均以 M04-05 開頭；主文全文、四尺寸、200% 文字、無 JavaScript、鍵盤、搜尋、導覽、404 與六份 SVG 逐位元組／文字邊界再次驗證通過。200%／320px 的 document.scrollWidth=320，沒有水平頁面溢出。
+
+正式回讀輸出為 `.local/c05/production-browser.log` 與 results.json；截圖已更新為正式站結果。來源／圖檔原始位元組另與本次四個附件核對一致。最後整理僅移除元件空白行尾空格，不改本文、圖解資料或執行行為；整個變更範圍 `git diff b73cdec --check` 通過。
+
+主工作目錄另有 M04-04、article-standards 與 Python 快取等同步／既有修改，未納入本次提交；本次以獨立 worktree 發布，保留兩邊 Git 歷史。
