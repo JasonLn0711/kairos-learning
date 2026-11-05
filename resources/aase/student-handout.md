@@ -23,3 +23,7 @@
 ## 交接
 
 交付 problem.md、四狀態 wireframe.svg、spec.md、architecture.md、app.py、tests/、README.md 與 Git 紀錄。README 必須讓同儕從乾淨環境啟動；測試紀錄寫實際版本、命令、結果及未驗證項目。使用整合評量六題說明你的取捨。沒有實作的多人授權需求，保持待實作。
+
+## 卡關時使用階段快照
+
+依 [切片指南](slices/README.md) 在獨立目錄啟動第一、第二階段，再與自己的程式比較。第三階段在 reference/。先指出哪一條驗收情境失敗、保留目前 Diff，再決定最小修改；不要用整份參考解答覆蓋作品或把看過解答記成完成實作。

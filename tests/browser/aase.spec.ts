@@ -74,3 +74,42 @@ test('AASE and CEH share the same teaching frame and navigation geometry',async(
  await expect(page.locator('.module-rail a[href*="/ceh/"]')).toHaveCount(0);
  await page.locator('.module-rail a[href="/courses/aase/v1/m03/"]').click();await expect(page.locator('h1')).toContainText('M03');await expect(page.locator('.module-rail a[aria-current=page]')).toContainText('M03');
 });
+
+
+test('slice one exposes labelled inputs and an explicitly unvalidated preview',async({page})=>{
+ test.skip(Boolean(process.env.AASE_BASE_URL),'Slice apps run in a separate local teaching environment.');
+ await page.goto('http://127.0.0.1:8516');
+ await expect(page.getByRole('heading',{name:'合成收件資料｜切片一'})).toBeVisible();
+ await expect(page.getByRole('textbox')).toHaveCount(3);
+ await page.getByLabel('申請編號（必填）').fill('SYN-001');
+ await page.getByRole('button',{name:'查看本次輸入（未檢核）',exact:true}).focus();
+ await page.keyboard.press('Enter');
+ await expect(page.getByText('以下僅為本次輸入，尚未檢核。',{exact:true})).toBeVisible();
+ await expect(page.locator('[data-testid="stJson"]')).toContainText('SYN-001');
+ await expect(page.getByRole('button',{name:'匯出完整報告'})).toHaveCount(0);
+ await page.getByLabel('申請編號（必填）').fill('SYN-002');
+ await page.getByLabel('申請編號（必填）').press('Tab');
+ await expect(page.locator('[data-testid="stJson"]')).toHaveCount(0);
+});
+
+test('slice two supports correction and requires a fresh check after input changes',async({page})=>{
+ test.skip(Boolean(process.env.AASE_BASE_URL),'Slice apps run in a separate local teaching environment.');
+ await page.goto('http://127.0.0.1:8517');
+ await expect(page.getByRole('heading',{name:'合成收件資料｜切片二'})).toBeVisible();
+ await page.getByLabel('申請編號（必填）').fill('SYN-001');
+ await page.getByLabel('申請人代號（必填）').fill('DEMO-A');
+ await page.getByRole('button',{name:'檢查資料',exact:true}).click();
+ await expect(page.getByText('缺少文件類型。請補齊或修正後重新檢查。',{exact:true})).toBeVisible();
+ await expect(page.getByLabel('申請編號（必填）')).toHaveValue('SYN-001');
+ await page.getByLabel('文件類型（必填）').fill('合成申請表');
+ await page.getByRole('button',{name:'檢查資料',exact:true}).focus();
+ await page.keyboard.press('Enter');
+ const success=page.getByText('本次三欄檢核通過；尚未提供報告預覽與匯出。',{exact:true});
+ await expect(success).toBeVisible();
+ await expect(page.getByRole('button',{name:'匯出完整報告'})).toHaveCount(0);
+ await page.getByLabel('文件類型（必填）').fill('');
+ await page.getByLabel('文件類型（必填）').press('Tab');
+ await expect(success).toHaveCount(0);
+ await page.getByRole('button',{name:'檢查資料',exact:true}).click();
+ await expect(page.getByText('缺少文件類型。請補齊或修正後重新檢查。',{exact:true})).toBeVisible();
+});
