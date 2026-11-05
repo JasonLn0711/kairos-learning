@@ -365,7 +365,7 @@ AASE 使用 `content/aase/course.json` 的九模組、49 概念目錄及獨立 `
 
 AASE 四篇資料升為 v1.0.1，對齊 CEH 的 `id`、`revision`、`contentVersion`、`date`、`publishedOn`、`status`、`text.zh.summary`、`text.zh.sections`、`checks[].text.zh`、`qa[].text.zh`。段落沿 `id`／`heading`／`paragraphs`，圖解與步驟使用同一 `ConceptBlock` 型別及 `ConceptBlocks.svelte`；檢核題沿零起算 answer、四選項與四解析。AASE 額外保留 `text.zh.objectives`、`exercise`、`readingGuide` 與來源欄位，讓原有學習證據仍可編輯及搜尋。`revisedOn` 改為 CEH 的 `date`，正文不再放在頂層。遷移前原稿見 [保存紀錄](sources/aase/layout-2026-11-05/README.md)。
 
-`qa` 代表收到的實際問題，與編輯理解檢核 `checks` 分開；目前四篇均為 `[]`，顯示與 CEH 相同的待補訊息。單語 Q&A 由共用元件依現有語言顯示，支持 question、originalQuestion、answer、explanation、editorial 及既有受限 Markdown 格式；不產生假英文。CEH 原有雙語驗證不放寬，該批 AASE 驗證只接受已確認的繁中欄位；後續英文欄位與逐語言閘門見下方雙語契約。
+`qa` 代表收到的實際問題，與編輯理解檢核 `checks` 分開；版型遷移的四篇均為 `[]`，顯示與 CEH 相同的待補訊息。單語 Q&A 由共用元件依現有語言顯示，支持 question、originalQuestion、answer、explanation、editorial 及既有受限 Markdown 格式；不產生假英文。CEH 原有雙語驗證不放寬，該批 AASE 驗證只接受已確認的繁中欄位；後續英文欄位與逐語言閘門見下方雙語契約。
 
 維護時執行既有內容、型別、單元與發布邊界；AASE 瀏覽器測試比對兩課程的共用欄位、實際計算樣式與側欄目的地。因觸及共用教材元件，另執行 `npx playwright test --config playwright.ceh26-m04-c02.config.ts`，確認 CEH 雙語、Q&A、SVG 下載及短網址保留。[本次回執](releases/2026-11-05-aase-ceh-layout.md)
 

@@ -19,3 +19,7 @@ course.en.json 是原課程九模組、49 個穩定 ID 的英文目錄文字，�
 新增發布邊界 fixture 是暫時複製的合成測試資料，故意保持未公開；不是可用翻譯。指令在 finally 還原原檔並重建乾淨產物。實際驗課程英文 draft／future、文章全域 draft／future、翻譯 draft／future；掃描 HTML／JSON／JS／XML，檢查路由、搜尋、頁面資料及 alternates。階段輸出採現有純文字慣例，報告實際完成與耗時，未加百分比、重試或改動程序退出碼。
 
 完整結果與正式部署見 [發布回執](../../../releases/2026-11-05-aase-bilingual-foundation.md)。指定 Agent、真人試教、Windows／Python 3.11 仍未驗收。
+
+## 首頁後續修正
+
+首頁總述改為依篇目提供已完成的語言對應；避免將 AASE 一篇英譯描述成全系列雙語。新增首頁檢查在未修改正式站及本機量測英文 320px／200% 頁寬同為 337px，觀察存在 .local/aase/bilingual/home-overflow-probe.json；課程列固定欄位、部分長字及 Begin with M01 的 nowrap 均需處理。修正限定 course-home，保留文字及連結並容許換行，未使用 overflow:hidden。兩語四尺寸／兩倍字級、欄位不重疊、鍵盤及無 JavaScript 的結果另見回執。
