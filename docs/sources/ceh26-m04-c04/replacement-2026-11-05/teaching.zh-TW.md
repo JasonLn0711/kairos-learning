@@ -1,0 +1,1108 @@
+# M04-04｜SMB 列舉：白話文完整教學
+**SMB Enumeration — 從網路共用、檔案權限到傳輸安全**
+
+本課對應：[CS Kairos Learn｜CEH M04-04：SMB 列舉](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-04/)
+
+## 一、先掌握這堂課最重要的觀念
+
+**SMB 列舉的核心，不是找出伺服器有哪些檔案，而是確認：我們究竟知道什麼、被允許做什麼，以及哪些事情尚未獲得證明。**
+
+想像你今天進入一棟公司的辦公大樓。
+
+你可能會經歷以下過程：
+
+1. 看到公司大樓的地址。
+2. 找到大樓入口。
+3. 出示員工證，通過身分驗證。
+4. 看到大樓裡有「財務部」與「教育訓練部」。
+5. 進入教育訓練部。
+6. 看見某個資料櫃。
+7. 打開資料櫃，閱讀裡面的文件。
+8. 修改文件，甚至把文件刪掉。
+
+這八件事情，代表八種不同程度的存取能力。
+
+**看到財務部的名稱，不代表能進入財務部；能進入財務部，也不代表可以閱讀、修改或刪除裡面的文件。**
+
+電腦的 SMB 檔案共享機制也是如此。
+
+這堂課主要教我們四件事：
+
+| 核心問題 | 需要理解的觀念 |
+|---|---|
+| 1. 電腦為什麼連不上共用資料夾？ | SMB 連線階段與錯誤定位 |
+| 2. 系統究竟認為我是誰？ | 身分驗證、Guest、Anonymous |
+| 3. 使用 SMB 3.1.1 是否就安全？ | 協定版本、簽署、加密 |
+| 4. 如何判斷是否存在資安問題？ | 列舉、讀取、修改及權限證據 |
+
+整堂課最重要的原則是：
+
+> **資訊可見 ≠ 有權存取 ≠ 能夠讀取 ≠ 能夠修改 ≠ 能夠刪除。**
+
+這也是 CEH M04「Enumeration，列舉」與 M05「Vulnerability Analysis，弱點分析」之間非常重要的區別。
+
+列舉是在確認系統透露了什麼資訊；弱點分析則進一步評估這些資訊或系統設定是否構成安全問題。[learn.cs-kairos.com](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-04/)
+
+---
+
+## 二、SMB 到底是什麼？為什麼我們需要它？
+
+### 2.1 SMB 就是讓電腦透過網路使用其他電腦的檔案
+
+SMB 的全名是 Server Message Block。
+
+你可以把它想成：
+
+**讓多台電腦共用資料夾的網路通訊語言。**
+
+例如，今天一間研究實驗室有十位研究生，每個人的電腦都需要讀取相同的研究資料。
+
+如果沒有網路檔案共享機制，大家可能必須：
+
+- 使用 USB 隨身碟交換檔案。
+- 透過電子郵件傳送資料。
+- 每個人都保存一份研究資料。
+
+這樣不但麻煩，也很容易產生版本混亂。
+
+因此，實驗室可以設置一台 NAS（Network Attached Storage，網路附加儲存設備）。
+
+NAS 裡面有幾個資料夾：
+
+```text
+LAB-NAS
+│
+├── Public
+│   └── 公開文件
+│
+├── Research
+│   └── 研究資料
+│
+├── Finance
+│   └── 財務資料
+│
+└── Backup
+    └── 備份資料
+```
+
+研究生只要使用自己的電腦，就可以透過網路存取 NAS 上有權使用的資料。
+
+SMB 就是實現這類功能的常見協定之一。
+
+在 Windows 中，你可能看過這種路徑：
+
+```text
+\\LAB-NAS\Research
+```
+
+我們把它拆開來看：
+
+| 部分 | 意思 |
+|---|---|
+| `\\` | 表示使用網路資源路徑 |
+| `LAB-NAS` | 提供檔案的伺服器 |
+| `Research` | 伺服器分享出來的共用名稱（Share） |
+
+這類路徑稱為 UNC（Universal Naming Convention）路徑。
+
+你也可以透過 IP 位址存取，例如：
+
+```text
+\\192.168.1.100\Research
+```
+
+SMB 傳統上常透過 TCP 445 提供服務；現代 SMB 也有其他傳輸方式，例如 SMB over QUIC，因此不能把所有 SMB 通訊一律等同於 TCP 445。
+
+另外，**使用 SMB 的伺服器不一定是 Windows**。
+
+Linux 可以透過 Samba 提供 SMB 服務，許多 NAS 也支援 SMB。因此，看到 SMB 服務不能直接判定對方使用 Windows 作業系統。[Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)
+
+### 2.2 SMB 與 FTP 有什麼不同？
+
+前一堂 M04-03 我們學過 FTP。
+
+FTP 和 SMB 都可以傳輸檔案，但典型使用情境不同。
+
+| 比較 | FTP | SMB |
+|---|---|---|
+| 主要用途 | 上傳、下載檔案 | 遠端檔案與資源共享 |
+| 常見環境 | 檔案交換服務 | Windows、Linux、NAS、企業內網 |
+| 使用方式 | 連線後操作遠端檔案 | 像操作本機資料夾一樣操作共用資源 |
+| 常見連接埠 | TCP 21（控制連線） | TCP 445 |
+| 權限管理 | 由 FTP 伺服器及底層檔案系統控制 | 共用權限與底層檔案權限共同影響 |
+
+兩者最重要的共通點是：
+
+**能連到服務，不代表能取得檔案；能看到檔名，也不代表能讀取內容。**
+
+這個原則可以一路套用到 DNS、FTP、SMTP、SMB，以及下一課的 NetBIOS／RPC。
+
+---
+
+## 三、為什麼「連不上」？先理解 SMB 的五個連線階段
+
+這一章是本課最重要的技術基礎。
+
+### 3.1 連線不是只有成功與失敗兩種結果
+
+假設你想從研究室電腦連接：
+
+```text
+\\LAB-NAS\Research
+```
+
+系統並不是直接打開資料夾，而是需要經過一連串程序。
+
+
+
+
+
+
+
+[[figure:stages]]
+
+這張圖中的五個階段，就像進入公司的五道關卡。
+
+### 第一階段：Transport（建立網路連線）
+
+想像你準備進入公司，首先必須確認公司大樓是否有開放入口。
+
+在 SMB 中，這通常代表你的電腦能否連接伺服器的 TCP 445。
+
+例如：
+
+```text
+192.168.1.100:445
+```
+
+假設掃描結果顯示：
+
+```text
+445/tcp open microsoft-ds
+```
+
+這代表什麼？
+
+**代表 TCP 445 可以建立連線，而且該連接埠通常與 SMB 有關。**
+
+但這不代表：
+
+- 你已成功登入。
+- 你看見了共用資料夾。
+- 你可以讀取任何檔案。
+
+甚至不能單憑連接埠號碼就完全確認後面的服務實作。
+
+這與 CEH M03 的 Port Scanning（連接埠掃描）觀念相同。
+
+**M03 主要回答「服務入口在哪裡」；M04 則要進一步確認「服務願意告訴我們什麼」。**
+
+### 第二階段：Negotiate（協商）
+
+假設你已經到達公司大樓，接下來必須確認雙方能用什麼方式溝通。
+
+SMB 也是如此。
+
+你的電腦可能說：
+
+「我支援 SMB 2.1、3.0、3.1.1。」
+
+伺服器回答：
+
+「我也支援 SMB 3.1.1，那我們就使用這個版本。」
+
+雙方因此完成協商。
+
+這個選定的協定版本叫做 **Dialect**。
+
+它不是在討論使用者權限，而是確認雙方如何使用 SMB 通訊。
+
+例如：
+
+```text
+Dialect: SMB 3.1.1
+```
+
+代表本次連線選用 SMB 3.1.1。
+
+但請特別注意：
+
+**使用 SMB 3.1.1，不代表整個連線已經啟用 SMB 加密。**
+
+後面第七章會深入解釋。
+
+### 第三階段：Session Setup（建立工作階段）
+
+現在你已經來到公司大樓，也確認溝通方式沒有問題。
+
+接下來，警衛可能詢問：
+
+「你是誰？」
+
+你拿出員工證。
+
+警衛確認你的身分後，才讓你建立一個可以使用的工作階段。
+
+SMB 的 Session Setup 就有類似作用。
+
+例如：
+
+```text
+Domain: LAB
+Username: labreader
+Authentication: Success
+```
+
+代表使用者已成功建立身分工作階段。
+
+這裡有兩個重要概念。
+
+**Authentication（身分驗證）**
+
+確認你是誰。
+
+**Authorization（授權）**
+
+確認你可以做什麼。
+
+這兩件事不相同。
+
+例如，你確實是研究室的學生，但並不代表你有權閱讀教授的薪資資料。
+
+通過身分驗證，只是確認身分。
+
+具體檔案權限仍然需要另外判斷。
+
+### 第四階段：Tree Connect（連接共用）
+
+這個名稱可能比較陌生。
+
+Tree Connect 可以簡單理解成：
+
+**使用者要求連接某個指定的共享資料夾。**
+
+例如：
+
+```text
+\\LAB-NAS\Training
+```
+
+伺服器可能回覆：
+
+```text
+Tree Connect: Success
+```
+
+這代表系統允許你連接 Training 這個共用。
+
+但是，如果你改為連接：
+
+```text
+\\LAB-NAS\Finance
+```
+
+伺服器可能回答：
+
+```text
+STATUS_ACCESS_DENIED
+```
+
+這代表這一次連接共用的要求遭到拒絕。
+
+這時候，你不能宣稱：
+
+「Finance 裡面有一個 Salary.xlsx，而且我已經確認它不能讀取。」
+
+因為你根本沒有進去，也沒有實際確認裡面的檔案。
+
+目前只能說：
+
+> 這次使用指定身分連接 Finance 共用時遭到拒絕，因此尚未取得其內部檔案的存取證據。
+
+這就是 CEH 列舉時最需要培養的證據判讀能力。
+
+### 第五階段：File Operation（檔案操作）
+
+現在假設你已經成功連接 Training。
+
+裡面有兩個檔案：
+
+```text
+Training
+│
+├── readme.txt
+│
+└── draft.txt
+```
+
+你看得見這兩個檔名。
+
+但伺服器可以設定不同權限：
+
+| 檔案 | 列出檔名 | 讀取內容 | 修改內容 |
+|---|---|---|---|
+| readme.txt | 成功 | 成功 | 未測試 |
+| draft.txt | 成功 | 拒絕 | 未測試 |
+
+這代表什麼？
+
+即使你已成功進入共用資料夾，也不表示你能操作所有檔案。
+
+每一次操作都可能受到不同權限限制。
+
+### 3.2 為什麼要區分這些階段？
+
+因為同樣顯示「連不上」，可能是完全不同的問題。
+
+| 失敗階段 | 可能原因 | 檢查方向 |
+|---|---|---|
+| Transport | 服務未啟動、防火牆阻擋 | 網路與連接埠 |
+| Negotiate | 協定不相容 | SMB 版本、伺服器設定 |
+| Session Setup | 身分驗證失敗 | 帳號、票證、驗證政策 |
+| Tree Connect | 共用不存在、授權不足、加密要求不符 | 共用設定、權限、安全政策 |
+| File Operation | 檔案存取權限不足 | 目標檔案的有效權限 |
+
+這也是 Microsoft 官方故障排除文件採用的基本思路：先確定錯誤出現在協商、工作階段建立，還是共用連接，而不是看到 `ACCESS_DENIED` 就直接修改權限。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)
+
+上方圖解依本課五階段說明重製，可搭配 Microsoft 官方故障排除文件對照閱讀。
+
+
+
+---
+
+## 四、為什麼輸入了帳號，系統卻不一定用這個身分？
+
+這一章主要介紹三種身分。
+
+### 4.1 具名帳號（Named Account）
+
+假設你登入：
+
+```text
+LAB\labreader
+```
+
+代表你希望以 LAB 網域中的 labreader 身分使用 SMB。
+
+這就像你拿出自己的員工證。
+
+伺服器需要驗證你的身分，才能決定授權。
+
+### 4.2 Guest（來賓）
+
+Guest 可以想成公司提供給訪客的臨時身分。
+
+例如：
+
+公司有一個 Public 資料夾，允許訪客使用。
+
+訪客不需要一般員工帳號，系統仍然可以將其映射為 Guest 身分。
+
+但 Guest 不代表毫無限制。
+
+例如：
+
+```text
+Public:
+    Guest → Read
+
+Finance:
+    Guest → Deny
+```
+
+這種設定可以讓 Guest 讀取公開資料，卻無法存取財務資料。
+
+### 4.3 Anonymous（匿名）
+
+Anonymous 則是指沒有建立一般具名使用者身分的匿名存取情境。
+
+它與 Guest 不是同一個概念。
+
+在不同 SMB 伺服器及設定下，匿名連線可能被拒絕，也可能被映射成某個 Guest 身分。
+
+因此，不應只看使用者輸入了什麼帳號，就直接認定伺服器最後使用什麼身分。
+
+### 4.4 為什麼沒有要求輸入密碼，不代表匿名成功？
+
+這是本課特別強調的觀念。
+
+假設你開啟 Windows 檔案總管：
+
+```text
+\\LAB-NAS\Research
+```
+
+結果系統直接顯示資料夾。
+
+完全沒有要求輸入密碼。
+
+有人可能說：
+
+「這台 NAS 可以匿名存取！」
+
+這個結論可能是錯的。
+
+因為 Windows 可能已經使用你現有的登入憑證，或是重用了之前建立的工作階段。
+
+在網域環境中，也可能使用 Kerberos 票證完成身分驗證。
+
+所以：
+
+**沒有跳出密碼視窗，不等於沒有身分驗證。**
+
+這是我們區分「使用者介面表現」與「底層協定實際結果」的重要例子。
+
+---
+
+## 五、SMB 列舉工具：smbclient 到底在做什麼？
+
+這一章可以呼應我們在 M04-03 學過的 FTP 工具。
+
+在 Linux 中，`smbclient` 是 Samba 提供的 SMB 用戶端工具。
+
+它可以與 SMB 伺服器互動，包括查詢共用、列出目錄及下載檔案。
+
+### 5.1 `-L`：查詢共用清單
+
+假設我們在獲得授權的實驗室環境中執行：
+
+```bash
+smbclient -L 192.0.2.10 -U labreader
+```
+
+其中 `192.0.2.10` 是文件範例使用的保留 IP 位址。
+
+這個指令的概念是：
+
+「請使用 labreader 帳號，查詢這台 SMB 伺服器提供哪些共享資源。」
+
+假設結果為：
+
+```text
+Sharename       Type
+---------       ----
+Training        Disk
+Finance         Disk
+Public          Disk
+```
+
+我們現在知道伺服器回傳了三個共用名稱。
+
+但還不能宣稱三個資料夾都能進入。
+
+### 5.2 `ls`：列出資料夾內的項目
+
+接下來連接某個允許存取的共用：
+
+```bash
+smbclient //192.0.2.10/Training -U labreader
+```
+
+若成功，就可以進入 smbclient 的互動環境。
+
+然後輸入：
+
+```text
+smb: \> ls
+```
+
+假設結果為：
+
+```text
+readme.txt
+draft.txt
+```
+
+代表本次目錄列舉成功，取得了兩個檔名。
+
+但還沒有證明任何一個檔案的內容可以被讀取。
+
+### 5.3 `get`：讀取並下載檔案
+
+假設你取得了明確授權，可以測試下載：
+
+```text
+smb: \> get readme.txt
+```
+
+如果成功，代表該檔案內容已透過 SMB 傳輸到本機。
+
+**請注意：`get` 不只是查詢檔名，它會實際讀取遠端檔案並在本機保存資料。**
+
+因此，在需要保護敏感資訊的環境中，不能把下載檔案視為完全沒有副作用的列舉。
+
+### 5.4 `-N` 是什麼？
+
+你可能看過：
+
+```bash
+smbclient -L 192.0.2.10 -N
+```
+
+`-N` 的主要用途是避免互動式密碼提示。
+
+但它並不代表：
+
+「請讓我以匿名身分登入，而且伺服器一定會接受。」
+
+實際結果仍需要確認。
+
+這三個操作的差別，可以整理如下：
+
+| 操作 | 要回答的問題 |
+|---|---|
+| `smbclient -L` | 伺服器回傳哪些共用資源？ |
+| `ls` | 我能列出目前目錄內哪些項目？ |
+| `get` | 我能否取得指定檔案的內容？ |
+
+這些功能及 `-N` 的行為，都可以在 Samba 官方工具手冊中確認。[Samba](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)
+
+---
+
+## 六、共用權限與檔案權限，為什麼必須一起看？
+
+這是本課值得延伸的一個實務問題。
+
+### 6.1 共用權限（Share Permissions）
+
+假設管理員在 Windows Server 分享：
+
+```text
+D:\Research
+```
+
+並設定共用名稱：
+
+```text
+\\LAB-SERVER\Research
+```
+
+管理員可以針對這個共用設定權限。
+
+例如：
+
+```text
+Research Share
+
+Researchers → Read
+Administrators → Full Control
+```
+
+這是第一層權限控制。
+
+### 6.2 NTFS 權限
+
+Windows 的 NTFS 檔案系統也可以針對資料夾或檔案設定權限。
+
+例如：
+
+```text
+D:\Research
+
+Researchers → Modify
+Administrators → Full Control
+```
+
+這是第二層權限控制。
+
+### 6.3 兩層權限如何共同作用？
+
+假設研究生透過 SMB 存取資料夾。
+
+設定如下：
+
+| 權限來源 | labreader |
+|---|---|
+| Share Permission | Read |
+| NTFS Permission | Modify |
+
+結果呢？
+
+透過該 SMB 共用存取時，labreader 通常只能讀取，而不能修改。
+
+因為 Share Permission 只允許 Read。
+
+反過來也一樣。
+
+| 權限來源 | labreader |
+|---|---|
+| Share Permission | Change |
+| NTFS Permission | Read |
+
+有效權限仍然不會因為共用允許 Change，就自動取得 NTFS 未授予的修改能力。
+
+因此，你可以先把這個機制理解為：
+
+**透過 SMB 的有效權限，必須同時符合共用層與檔案系統層的授權要求。**
+
+實際 Windows 權限計算還涉及群組成員資格、繼承、拒絕權限及存取控制項目（ACE），因此「取較小的權限」只是方便入門的簡化說法。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)
+
+### 6.4 ABE：為什麼有時連檔名都看不見？
+
+ABE 是 Access-Based Enumeration。
+
+中文可以稱為「依存取權限篩選顯示」。
+
+假設資料夾裡有：
+
+```text
+Research
+│
+├── public.txt
+├── student_report.txt
+└── professor_salary.xlsx
+```
+
+管理員希望一般研究生只能看到自己有權存取的資料。
+
+如果啟用適當設定的 ABE，研究生可能只看見：
+
+```text
+Research
+│
+├── public.txt
+└── student_report.txt
+```
+
+`professor_salary.xlsx` 不會出現在一般研究生的目錄清單中。
+
+這個機制的重點是：
+
+**不只是限制能否讀取，也可以減少不應被看到的檔案與資料夾名稱。**
+
+但請注意，ABE 主要控制共用內檔案與資料夾的列舉顯示。
+
+它不是取代 NTFS 權限的安全措施，也不代表在任何情況下都會隱藏伺服器的共用名稱。
+
+如果原本的檔案權限設定錯誤，ABE 本身不能解決所有存取控制問題。
+
+---
+
+## 七、SMB 3.1.1、Signing、Encryption 有什麼差別？
+
+這一章很容易混淆，而且是實務資安評估非常重要的概念。
+
+### 7.1 SMB 3.1.1 是協定版本
+
+想像你跟朋友都使用新版通訊軟體。
+
+新版通訊軟體支援端對端加密。
+
+但你不能只因為雙方都安裝新版軟體，就直接推論某一段對話已經使用端對端加密。
+
+SMB 也是一樣。
+
+支援加密功能，和這次實際使用加密，是不同的事情。
+
+### 7.2 Signing：數位簽署
+
+Signing 可以想成你寄出一封附有防偽簽章的信。
+
+收件者可以確認訊息來自持有適當金鑰的通訊方，並檢查訊息是否遭到竄改。
+
+但是，**簽署本身並不負責隱藏訊息內容。**
+
+SMB Signing 的核心目的是保護協定訊息的完整性與真實性。
+
+例如：
+
+```text
+SMB Signing: Enabled
+```
+
+代表這次連線使用 SMB 簽署。
+
+但單憑這項資訊，不能宣稱傳輸內容已經由 SMB 加密。
+
+### 7.3 Encryption：加密
+
+Encryption 則比較像把信件放進上鎖的保密箱。
+
+即使有人在傳輸途中取得資料，沒有適當的解密金鑰，就無法直接讀取受保護的內容。
+
+SMB Encryption 主要保護傳輸過程中的資料機密性。
+
+例如：
+
+```text
+SMB Encryption: Enabled
+```
+
+代表本次 SMB 通訊正在使用 SMB 層的加密保護。
+
+但這不代表 NAS 硬碟上的資料也已經加密。
+
+磁碟資料的保護通常需要額外的技術，例如 BitLocker 或其他儲存加密機制。
+
+### 7.4 三個重要概念的差別
+
+| 機制 | 主要目的 | 白話理解 |
+|---|---|---|
+| SMB Dialect | 協商通訊版本 | 雙方決定使用哪一版語言 |
+| SMB Signing | 訊息完整性與真實性 | 確認信件沒有遭到竄改 |
+| SMB Encryption | 傳輸機密性 | 把信件放入上鎖的保密箱 |
+
+這裡還有一個更細緻的區別：
+
+即使 SMB 層沒有啟用 Encryption，也不能不經確認就斷言整條網路路徑完全沒有其他加密保護；例如 VPN 或其他安全傳輸層可能提供保護。
+
+應該精確說明是哪一層使用了什麼保護。
+
+Microsoft 官方也明確區分 SMB Encryption 與磁碟靜態資料加密，並說明 SMB 3.1.1 的協商保護機制。[Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)
+
+### 7.5 最重要的觀念：支援、要求、實際使用
+
+假設實驗室 NAS 的設定如下：
+
+```text
+SMB Version: 3.1.1
+
+Signing Supported: Yes
+Signing Required: Yes
+
+Encryption Supported: Yes
+Encryption Required: No
+```
+
+其中：
+
+**Supported（支援）**
+
+代表設備具有這項功能。
+
+**Required（要求）**
+
+代表相關安全政策規定連線必須使用該功能。
+
+**Negotiated／Observed（實際協商或觀察結果）**
+
+代表這一次連線真正採用了什麼設定。
+
+例如，系統雖然支援 SMB Encryption，卻不要求所有共用都必須加密。
+
+因此，某次連線可能呈現：
+
+```text
+Dialect: SMB 3.1.1
+
+Signed: True
+
+Encrypted: False
+```
+
+這並不矛盾。
+
+代表：
+
+1. 使用 SMB 3.1.1。
+2. 已使用 SMB 簽署。
+3. 本次沒有使用 SMB 層加密。
+
+**不能因為第一項成立，就直接推論第三項也成立。**
+
+補充一個實務重點：Windows 11 24H2 與 Windows Server 2025 強化了 SMB 簽署的預設要求。因此，某些舊 NAS 在系統更新後突然無法連接，可能與安全政策不相容有關，而不只是檔案權限設定錯誤。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)
+
+---
+
+## 八、實際案例：如何正確判讀 SMB 列舉結果？
+
+現在我們把前面所有觀念結合起來。
+
+以下使用原教材的合成案例。
+
+假設你是研究室的資安管理人員，使用：
+
+```text
+Domain: LAB
+Username: labreader
+```
+
+對已獲授權的 NAS 進行安全檢查。
+
+### 8.1 實際觀察結果
+
+| 測試項目 | 結果 |
+|---|---|
+| 查詢共用清單 | Training、Finance |
+| 連接 Training | 成功 |
+| 列出 Training 目錄 | readme.txt、draft.txt |
+| 讀取 readme.txt | 成功 |
+| 讀取 draft.txt | ACCESS_DENIED |
+| 連接 Finance | ACCESS_DENIED |
+| SMB 協定版本 | 3.1.1 |
+| SMB Signing | 已使用 |
+| SMB Encryption | 未使用 |
+| 上傳檔案 | 未測試 |
+| 修改檔案 | 未測試 |
+| 刪除檔案 | 未測試 |
+
+這份紀錄很適合拿來訓練資安判斷能力。
+
+
+
+
+
+
+
+[[figure:evidence]]
+
+### 8.2 Finance 出現在清單，代表它可以被存取嗎？
+
+不能。
+
+目前只知道：
+
+「伺服器回傳了一個名稱為 Finance 的共用。」
+
+由於 Tree Connect 遭拒，我們甚至還沒有進入 Finance。
+
+因此，Finance 裡面有哪些檔案，目前仍然未知。
+
+### 8.3 draft.txt 看得到，卻不能讀，這算安全嗎？
+
+答案取決於系統的安全要求。
+
+假設安全政策規定：
+
+> 研究生不可以閱讀 draft.txt。
+
+那麼本次讀取遭拒，符合這次測試的預期。
+
+但如果安全政策規定：
+
+> 研究生連 draft.txt 這個名稱都不應該知道。
+
+那麼，即使讀取遭拒，檔名仍然出現在清單中，就可能構成資訊揭露問題。
+
+這也是 ABE 可以發揮作用的地方。
+
+因此，資安不只是檢查檔案能否被讀取，還要確認資訊是否應該被顯示。
+
+### 8.4 readme.txt 能讀取，是不是代表能刪除？
+
+不能。
+
+因為本次沒有測試刪除。
+
+正確結論應該是：
+
+「labreader 本次成功讀取 readme.txt 的指定內容，但尚未驗證修改及刪除權限。」
+
+這比寫成「具有完整檔案存取權限」精確得多。
+
+### 8.5 這份紀錄能證明 NAS 安全嗎？
+
+還不能。
+
+目前只能說明特定身分、特定時間及特定操作的結果。
+
+例如：
+
+```text
+已確認：
+
+- labreader 可以連接 Training。
+- labreader 可以讀取 readme.txt。
+- labreader 讀取 draft.txt 遭拒。
+- labreader 連接 Finance 遭拒。
+- 本次 SMB 連線使用簽署。
+
+尚未確認：
+
+- 是否存在其他具有過大權限的帳號。
+- 是否有 Guest 或匿名存取問題。
+- 是否有不應揭露的檔案名稱。
+- 是否允許未授權修改或刪除。
+- 是否符合所有傳輸加密政策。
+```
+
+尤其要注意：
+
+**驗證一個帳號被拒絕，不等於證明其他帳號都會被拒絕。**
+
+同樣地，某次檢查沒有發現問題，也不等於整台 NAS 已通過全面安全驗證。
+
+---
+
+## 九、實務延伸：你今天要檢查實驗室 NAS，應該怎麼做？
+
+可以把本課整理成一個簡單的安全檢查流程。
+
+### 9.1 首先確認目標與身分
+
+你必須先知道：
+
+- 這台 NAS 是誰管理的？
+- 你取得了哪些檢查授權？
+- 這次測試使用哪個帳號？
+- 這個帳號原本應該擁有哪些權限？
+
+這樣才能判斷測試結果是否符合預期。
+
+### 9.2 接著確認可見資訊與實際授權
+
+例如：
+
+```text
+帳號：labreader
+
+預期權限：
+
+Training → Read
+Research → Read
+Finance  → Deny
+Backup   → Deny
+```
+
+然後檢查：
+
+Training 是否可以連接？
+
+Finance 是否會拒絕？
+
+Training 中的特定檔案是否能讀取？
+
+這些都是不同的驗證項目。
+
+### 9.3 再確認傳輸安全
+
+例如：
+
+```text
+SMB Dialect
+SMB Signing
+SMB Encryption
+Guest Access
+```
+
+要比對的是：
+
+**安全政策要求什麼，以及實際連線採用了什麼。**
+
+若政策要求所有研究敏感資料都必須透過 SMB 加密傳輸，但實際連線顯示沒有 SMB Encryption，就需要調查政策是否被正確實施。
+
+### 9.4 最後保留檢查證據
+
+建議每一筆檢查紀錄至少包含：
+
+| 欄位 | 用途 |
+|---|---|
+| Timestamp | 什麼時候測試 |
+| Server | 哪一台設備 |
+| Identity | 這次實際使用什麼身分 |
+| Resource | 測試哪個共用或檔案 |
+| Operation | 執行列舉、讀取或其他操作 |
+| Response | 系統完整回應 |
+| Expected Result | 根據政策，原本應該允許還是拒絕 |
+| Conclusion | 本次測試能支持的結論 |
+
+更進一步，可以把檢查結果整理成：
+
+```text
+SMB Security Assessment
+│
+├── 1. Network Connectivity
+│   └── 網路連線與入口
+│
+├── 2. Authentication
+│   └── 實際使用者身分
+│
+├── 3. Authorization
+│   ├── Share Permissions
+│   ├── File Permissions
+│   └── Access-Based Enumeration
+│
+├── 4. Transport Security
+│   ├── SMB Dialect
+│   ├── Signing
+│   └── Encryption
+│
+└── 5. Evidence & Reporting
+    ├── 成功項目
+    ├── 拒絕項目
+    └── 尚未測試項目
+```
+
+這種做法能讓資安檢查不只是執行工具，而是建立可以追溯、重現及審查的證據。
+
+它也能自然銜接 CEH M05 的弱點分析。
+
+---
+
+## 十、總結：這堂課真正要培養的是什麼能力？
+
+M04-04 的重點，其實可以收斂成三個判斷原則。
+
+**第一，分清楚連線階段。**
+
+TCP 連線成功、完成身分驗證、進入共用資料夾、讀取檔案，是不同的事情。
+
+**第二，分清楚資訊與權限。**
+
+知道資源存在，不代表有權使用；能讀取，不代表能修改或刪除。
+
+**第三，分清楚安全能力與實際保護。**
+
+支援 Signing、要求 Signing、實際使用 Signing，是不同層次的資訊；Encryption 也是如此。
+
+更重要的是，**不要把沒有測試的事情寫成已經確認，也不要把單一測試結果誇大成整體安全結論。**
+
+這個原則不只適用於 SMB，也適用於後續的 FTP、SMTP、RPC、Active Directory，以及各種企業內部系統。
+
+---
+
+## 十一、理解檢核：請你試著判斷
+
+假設某實驗室 NAS 有以下測試結果：
+
+```text
+SMB Server: LAB-NAS
+
+Username: student01
+
+Share List:
+    Public
+    Research
+    Finance
+
+Public:
+    Tree Connect: Success
+    ls: Success
+    readme.txt: Read Success
+
+Research:
+    Tree Connect: Success
+    confidential.txt: ACCESS_DENIED
+
+Finance:
+    Tree Connect: ACCESS_DENIED
+
+Protocol:
+    SMB 3.1.1
+
+Signing:
+    Enabled
+
+Encryption:
+    Disabled
+```
+
+請回答以下四個問題。
+
+**問題一：**
+
+Finance 出現在共用清單中，但 Tree Connect 遭到拒絕。你能否判斷 Finance 裡面有哪些檔案？為什麼？
+
+**問題二：**
+
+Research 裡面的 confidential.txt 被拒絕讀取，但你仍然看得見這個檔名。你認為這是否可能是資安問題？判斷條件是什麼？
+
+**問題三：**
+
+這個 NAS 使用 SMB 3.1.1，而且 Signing 已經啟用。是否代表目前的 SMB 傳輸內容已經加密？
+
+**問題四：**
+
+如果你是這間實驗室的資安管理人員，想確認 student01 不能刪除 Research 裡面的檔案，你認為目前的證據是否足夠？你會如何在不危害正式研究資料的情況下完成驗證？
+
+請先依照自己的理解作答，再比對參考解答，檢查推理、觀念差異及實際 NAS 資安管理中的應用。

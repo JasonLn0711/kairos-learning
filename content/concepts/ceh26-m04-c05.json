@@ -1,418 +1,4144 @@
 {
   "id": "CEH26-M04-C05",
-  "revision": 2,
-  "contentVersion": "1.0.1",
+  "revision": 3,
+  "contentVersion": "1.1.0",
   "date": "2026-11-05",
-  "publishedOn": "2026-11-05",
   "status": "published",
+  "publishedOn": "2026-11-05",
   "qa": [],
   "text": {
     "zh": {
-      "summary": "NetBIOS／RPC 列舉：區分名稱線索、端點映射、連線與指定操作權限。",
+      "summary": "從 NetBIOS 名稱、RPC 端點與操作結果，分清服務線索、連線、介面、身分與授權的證據。",
       "sections": [],
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "CEH M04-05｜NetBIOS／RPC：查到名稱與端點，離取得權限還差什麼？"
+          "text": "這一課最重要的觀念是：查得到一台電腦、知道它提供什麼服務，不代表你有權限使用那些服務。"
         },
         {
           "kind": "paragraph",
-          "text": "本單元簡短複習 NetBIOS 名稱表與 RPC 端點，再練習分辨「資訊查得到、連線接得上、指定操作獲准」三種不同證據。"
+          "text": "本單元是 CEH M04（Enumeration，列舉）的第五課，主題為："
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS／RPC Enumeration：網路名稱、遠端服務與操作權限的調查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "原始教材：[CS Kairos Learn－CEH M04-05](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-05/)"
+        },
+        {
+          "kind": "heading",
+          "id": "story",
+          "text": "先用一個故事理解整堂課"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是一位刑事警察，正在調查某間公司的資訊系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你知道這家公司有一棟辦公大樓，但不知道裡面有哪些部門、哪些員工負責什麼業務，以及你是否有權查閱資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "於是，你開始進行調查。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "調查過程",
+            "電腦網路的對應概念"
+          ],
+          "rows": [
+            [
+              "① 知道大樓地址",
+              "IP Address"
+            ],
+            [
+              "② 查詢大樓裡有哪些部門",
+              "NetBIOS 名稱列舉"
+            ],
+            [
+              "③ 知道某部門提供文件服務",
+              "SMB 服務"
+            ],
+            [
+              "④ 向總機詢問承辦人分機",
+              "RPC Endpoint Mapper"
+            ],
+            [
+              "⑤ 撥打承辦人的分機",
+              "建立網路連線"
+            ],
+            [
+              "⑥ 確認雙方使用相同的辦事程序",
+              "RPC 介面協商"
+            ],
+            [
+              "⑦ 出示證件，請求調閱資料",
+              "身分驗證與操作授權"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在假設你已經查到："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "公司有一個檔案管理部門。",
+            "該部門的承辦分機是 50020。",
+            "但是撥打 50020 時，電話沒有接通。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你能夠因此認定這個部門不存在嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能是電話線路故障、分機換了、有人設定禁止外部來電，或者承辦人目前沒有接電話。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣地，在電腦網路裡："
+        },
+        {
+          "kind": "paragraph",
+          "text": "查得到服務，不代表連得上；連得上，不代表通過驗證；通過驗證，也不代表有權執行任何操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 M04-05 的核心。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來我們按照原始教材的六個章節，逐步建立完整觀念。"
         },
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "一、先把三種角色放回正確位置"
+          "text": "第一章｜先認識 NetBIOS、SMB、RPC 三種技術"
         },
         {
-          "kind": "list",
-          "items": [
-            "NetBIOS（Network Basic Input/Output System）：原本是區域網路程式使用名稱與交換資料的一套介面；放在 TCP/IP 上運作，稱為 NBT 或 NetBT。",
-            "SMB（Server Message Block）：讓用戶端存取網路上的檔案等資源。上一課已分開共用清單、目錄清單、讀取及修改權限。",
-            "RPC（Remote Procedure Call，遠端程序呼叫）：程式把參數傳給另一個程序，請它執行指定功能，再接收結果。不是遠端桌面，也不等於拿到命令列。"
+          "kind": "paragraph",
+          "text": "這三種技術常常同時出現在 Windows 網路環境中，但是用途不同。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-05-roles-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "NetBIOS、SMB、RPC：各自回答不同問題",
+            "description": "三種技術並列比較，不表示必須按固定順序發生。",
+            "items": [
+              {
+                "title": "NetBIOS｜誰在這個網路上？",
+                "body": "看見電腦／服務名稱；常見 137、138、139。線索：LAB-FS <20> UNIQUE。不能證明檔案可讀。"
+              },
+              {
+                "title": "SMB｜可以存取哪些共享資源？",
+                "body": "查詢共享資料夾名稱，分別檢查列目錄／讀取／寫入；常見 TCP 445。不能證明有管理權。"
+              },
+              {
+                "title": "RPC｜遠端提供哪些功能？",
+                "body": "查詢介面與端點位置；如 TCP 135 → 動態埠，再驗證具體操作是否獲准。不能證明所有操作都能做。"
+              },
+              {
+                "title": "核心邊界",
+                "body": "看得到名稱 ≠ 能連線 ≠ 通過驗證 ≠ 被授權。知道服務存在，仍須驗證能否使用。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1-1",
+          "text": "1.1 NetBIOS：讓電腦知道彼此的名稱"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS 的全名是 Network Basic Input/Output System。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以先把它想成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "電腦區域網路裡的一套名稱與通訊機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，一間公司有三台電腦："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "IP 位址",
+            "電腦名稱",
+            "用途"
+          ],
+          "rows": [
+            [
+              "192.168.1.10",
+              "LAB-FS",
+              "檔案伺服器"
+            ],
+            [
+              "192.168.1.20",
+              "LAB-PC01",
+              "員工電腦"
+            ],
+            [
+              "192.168.1.30",
+              "LAB-PRINT",
+              "列印服務"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "可以把 NetBIOS 名稱想成通訊錄裡的名稱，RPC 端點想成承辦窗口的位置，特定操作權限則是窗口願不願意替這個身分辦理某件事。這只是角色比喻，不是 NetBIOS、SMB、RPC 必須依序執行的固定流程。[RFC 1001：NetBIOS over TCP/IP](https://www.rfc-editor.org/rfc/rfc1001)｜[Microsoft：RPC 如何運作](https://learn.microsoft.com/en-us/windows/win32/rpc/how-rpc-works)"
+          "text": "我們知道，每台電腦在網路上都需要使用 IP 位址通訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但人類很難記住大量 IP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，名稱機制讓我們可以使用比較容易辨識的名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個名稱可能代表公司的一台檔案伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要注意，NetBIOS 不只是名稱解析，它還包含名稱服務、資料報與工作階段等機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中，NetBIOS over TCP/IP（NBT／NetBT）是將相關功能放到 TCP/IP 網路上運作的方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，現代 Windows 網路也廣泛使用 DNS，不是所有電腦名稱都必須經由 NetBIOS 解析。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1-2",
+          "text": "1.2 SMB：讓電腦分享檔案"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 的全名是 Server Message Block。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司將一個資料夾設定為共享："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-FS\\Public"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其他員工便可能透過 SMB 存取它。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 負責處理的事情包括："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "查詢共享資料夾。",
+            "列出資料夾內容。",
+            "讀取檔案。",
+            "新增、修改或刪除檔案。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "但每個操作都可能有不同的權限要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，員工 A 可以讀取報告，卻不能修改報告。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "員工 B 則可能同時具有讀寫權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "知道某台電腦提供 SMB 服務，不代表自己可以讀取該電腦上的檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與上一課 M04-04 的觀念相同。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1-3",
+          "text": "1.3 RPC：讓一台電腦請另一台電腦執行功能"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC 的全名是 Remote Procedure Call，中文稱為「遠端程序呼叫」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本課最重要的新概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司有一台印表機伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你在自己的電腦上開啟管理軟體，希望查詢："
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前印表機還有多少工作正在排隊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "管理軟體可以透過 RPC，向遠端服務提出請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "整個過程概念上是："
+        },
+        {
+          "kind": "code",
+          "text": "你的電腦\n    │\n    │ 請問目前有多少列印工作？\n    ▼\n遠端伺服器\n    │\n    │ 執行查詢功能\n    ▼\n回傳查詢結果\n    │\n    ▼\n你的電腦顯示結果"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 RPC 的基本概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你熟悉軟體工程，可以將它理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "呼叫一個遠端電腦提供的函式（Function）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "# 純粹用來說明概念的虛構函式\nresult = remote_printer.get_job_count()"
+        },
+        {
+          "kind": "paragraph",
+          "text": "看起來像呼叫普通函式，但實際執行功能的是遠端伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC 系統會負責處理資料傳輸、參數轉換與結果回傳等工作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft 的 RPC 文件也採用這種用戶端呼叫遠端程序的架構。[Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/rpc/how-rpc-works)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1-4",
+          "text": "1.4 RPC 與遠端桌面有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡很容易誤解。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "技術",
+            "主要用途",
+            "白話理解"
+          ],
+          "rows": [
+            [
+              "RPC",
+              "呼叫遠端功能",
+              "請別人替你執行一項指定工作"
+            ],
+            [
+              "RDP",
+              "遠端桌面",
+              "透過網路操作另一台電腦的桌面"
+            ],
+            [
+              "SSH",
+              "安全遠端連線與命令執行",
+              "登入遠端系統並在授權範圍內操作"
+            ],
+            [
+              "SMB",
+              "網路檔案共享",
+              "存取另一台電腦提供的共享檔案"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC 不等於遠端桌面，也不代表一定能開啟命令列。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC 能做什麼，取決於目標服務實際提供哪些功能，以及呼叫者是否獲得授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一章的重點："
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS 主要讓我們辨識名稱與相關服務線索；SMB 用來存取共享資源；RPC 則讓程式呼叫遠端提供的功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "三者並不是一定要依序執行的固定流程。"
         },
         {
           "kind": "heading",
           "id": "section-2",
-          "text": "二、NetBIOS 的短複習：看名稱、尾碼與類型，不把它當成權限表"
+          "text": "第二章｜NetBIOS 列舉：從電腦名稱尋找線索"
         },
         {
           "kind": "paragraph",
-          "text": "在常見 Windows NetBIOS 命名慣例中，名稱共 16 位元組，前 15 位元組放名稱，最後一個位元組是用途尾碼；較短的名稱會補空白。尾碼是十六進位數值，不是連接埠號碼。[Microsoft：NetBIOS 名稱表示法](https://learn.microsoft.com/zh-tw/openspecs/windows_protocols/ms-brws/940f299f-669f-4a0b-8411-9ead7e2f31ec)"
+          "id": "subsection-2-1",
+          "text": "2.1 什麼是 Enumeration（列舉）？"
         },
         {
           "kind": "paragraph",
-          "text": "例如合成名稱表中的三筆資料："
+          "text": "先連結前面學過的 CEH。"
         },
         {
-          "kind": "list",
-          "items": [
-            "LAB-FS <00> UNIQUE：工作站服務使用的電腦名稱線索。",
-            "LAB-FS <20> UNIQUE：伺服器服務的名稱線索，可引導後續檔案分享查核。",
-            "LABGROUP <00> GROUP：群組名稱線索，實際工作群組或網域歸屬仍須核對。"
+          "kind": "paragraph",
+          "text": "M03 的重點是 Network Scanning（網路掃描）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們可能透過掃描知道："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10\n    TCP 445 OPEN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表從目前的測試位置，觀察到 TCP 445 提供可建立連線的入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 TCP 445 常用於 SMB，所以這是一項服務線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但我們還不知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這台電腦叫什麼？提供哪些共享資源？目前允許哪些操作？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "於是進入 M04。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration（列舉）就是進一步向服務查詢資訊，讓原本模糊的線索變得具體。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，列舉結果是否足以支持某個結論，仍然取決於實際取得的資料。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2-2",
+          "text": "2.2 NetBIOS 名稱後面的 <00>、<20> 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們取得以下資料："
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS       <00>  UNIQUE\nLAB-FS       <20>  UNIQUE\nLABGROUP     <00>  GROUP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "初學者可能會想："
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼 LAB-FS 出現兩次？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "<20> 是不是連接埠 20？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UNIQUE 是不是代表只有某個人有權限？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "答案都不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們先拆解第一筆："
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS       <00>  UNIQUE\n  │           │      │\n  │           │      └─ 名稱類型\n  │           │\n  │           └─ NetBIOS 名稱尾碼\n  │\n  └─ 電腦名稱"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS 名稱通常由 16 個位元組組成。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前 15 個位元組用於名稱，最後一個位元組是辨識用途的尾碼（Suffix）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個尾碼以十六進位表示。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "<20> 指的是十六進位數值 0x20，不是 TCP 20 埠。[Microsoft Learn](https://learn.microsoft.com/zh-tw/openspecs/windows_protocols/ms-brws/940f299f-669f-4a0b-8411-9ead7e2f31ec)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2-3",
+          "text": "2.3 三種常見紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一種：LAB-FS <00> UNIQUE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在常見的 Windows NetBIOS 命名慣例中，這是工作站服務使用的名稱線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把它理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這台電腦以 LAB-FS 這個名稱登記了相關服務。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二種：LAB-FS <20> UNIQUE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "<20> 通常是 Windows Server Service（伺服器服務）的名稱尾碼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這告訴我們："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這台電腦登記了與檔案分享服務有關的名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但它不代表："
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS 上面所有共享檔案都可以讀取"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為共享是否存在、哪些使用者能讀取、是否需要驗證，都必須另外查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三種：LABGROUP <00> GROUP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 GROUP 是 NetBIOS 名稱類型。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能反映工作群組或網域相關的命名資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意，這裡的 GROUP 並不等於 Windows 中負責存取控制的使用者群組。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UNIQUE／GROUP 描述的是名稱登記類型，不是檔案權限。[Microsoft Learn](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nbte/6dbf0972-bb15-4f29-afeb-baaae98416ed)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2-4",
+          "text": "2.4 為什麼要記住 137、138、139、445？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這四個連接埠非常重要。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "連接埠",
+            "協定",
+            "功能",
+            "白話理解"
+          ],
+          "rows": [
+            [
+              "137",
+              "UDP／TCP",
+              "NetBIOS Name Service",
+              "查詢名稱"
+            ],
+            [
+              "138",
+              "UDP",
+              "NetBIOS Datagram Service",
+              "傳送資料報"
+            ],
+            [
+              "139",
+              "TCP",
+              "NetBIOS Session Service",
+              "建立工作階段"
+            ],
+            [
+              "445",
+              "TCP",
+              "Direct-hosted SMB",
+              "直接提供 SMB 通訊"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "UNIQUE 與 GROUP 描述 NetBIOS 名稱類型；GROUP 不是檔案存取控制中的使用者群組。名稱表也不是完整帳號清單。看到 <20>，不能直接推出共用名稱、SMB 版本或指定檔案的讀取權限。[Microsoft：名稱與尾碼行為](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nbte/6dbf0972-bb15-4f29-afeb-baaae98416ed)"
+          "text": "這裡有一個值得理解的歷史變化。"
         },
         {
           "kind": "paragraph",
-          "text": "常見連接埠角色可一起複習：名稱服務使用 UDP／TCP 137、資料報服務使用 UDP 138、工作階段服務使用 TCP 139；直接透過 TCP 的 SMB 使用 445，可不依賴 NetBIOS。因此，137 沒有回應，不代表 445 上的 SMB 一定不存在。[Microsoft：NetBIOS 與直接 SMB 傳輸](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/direct-hosting-of-smb-over-tcpip)"
+          "text": "早期 SMB 可以經由 NetBIOS Session Service 傳輸。"
         },
         {
           "kind": "paragraph",
-          "text": "Windows 的 nbtstat 也要分清資料從哪裡來："
-        },
-        {
-          "kind": "list",
-          "items": [
-            "nbtstat /n：本機名稱表。",
-            "nbtstat /c：本機名稱快取，可能反映先前解析結果。",
-            "nbtstat /a LAB-FS：依遠端名稱查名稱表。",
-            "nbtstat /A 192.0.2.10：依 IP 查遠端名稱表。"
-          ]
+          "text": "後來，SMB 也能直接透過 TCP 445 通訊，不必依賴 NetBIOS。"
         },
         {
           "kind": "paragraph",
-          "text": "/a 與 /A 大小寫有差別。最後一例的 IP 是文件示範位址，不是本課測試目標；這裡不需要執行指令。另注意 /R、/RR 會清除／重載快取或重新註冊名稱，不是單純顯示資訊的同義選項。[Microsoft：nbtstat](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/nbtstat)"
+          "text": "因此，假設："
+        },
+        {
+          "kind": "code",
+          "text": "UDP 137：沒有回應\nTCP 445：可以建立連線"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者完全可能同時成立。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能因為 NetBIOS 名稱查詢沒有回應，就認為 SMB 不存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft 官方文件也明確區分 NetBIOS 傳輸與直接透過 TCP 445 的 SMB。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/direct-hosting-of-smb-over-tcpip)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2-5",
+          "text": "2.5 nbtstat 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "nbtstat 是 Windows 提供的 NetBIOS over TCP/IP 診斷工具。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以用它查看名稱表、名稱快取等資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們在 Windows 電腦上操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查看自己電腦的 NetBIOS 名稱表："
+        },
+        {
+          "kind": "code",
+          "text": "nbtstat /n"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是查看本機資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查看本機快取的名稱資料："
+        },
+        {
+          "kind": "code",
+          "text": "nbtstat /c"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是查看電腦以前查過、目前仍保留在快取中的名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "快取資料可能不是目標目前最新的狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "透過電腦名稱查詢遠端名稱表："
+        },
+        {
+          "kind": "code",
+          "text": "nbtstat /a LAB-FS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "透過 IP 查詢遠端名稱表："
+        },
+        {
+          "kind": "code",
+          "text": "nbtstat /A 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡使用的 192.0.2.10 是文件示範位址，不是實際測試目標。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "/a 與 /A 大小寫不同，功能也不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，/R、/RR 會影響名稱快取或名稱重新註冊，不應把它們當成純粹查看資料的指令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在實際環境使用遠端查詢前，應先確認設備及網路測試範圍已獲授權。[Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/nbtstat)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二章的重點："
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS 列舉可以提供電腦名稱、服務名稱與群組等線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，名稱表不是檔案權限表，也不是完整的使用者帳號清單。"
         },
         {
           "kind": "heading",
           "id": "section-3",
-          "text": "三、RPC 多分一層：介面、操作與端點"
+          "text": "第三章｜RPC 列舉：找到遠端服務的真正位置"
         },
         {
           "kind": "paragraph",
-          "text": "RPC 裡的三個名詞回答不同問題："
+          "text": "這是整堂課最值得深入理解的部分。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-1",
+          "text": "3.1 什麼是 RPC Endpoint？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你現在要聯絡公司的資訊部門。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你知道資訊部門存在，但不知道他們的分機號碼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "於是你打給總機。"
+        },
+        {
+          "kind": "code",
+          "text": "你：「請問資訊部門的分機？」\n\n總機：「資訊部門是 50020。」\n\n你：「謝謝，我現在撥打 50020。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC 也有類似的機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
         },
         {
           "kind": "list",
           "items": [
-            "介面（Interface）：提供哪一組約定好的功能與參數格式。",
-            "操作（Operation／Procedure）：這次要呼叫哪一個具體功能，例如讀取某項狀態。",
-            "端點（Endpoint）：透過哪個通訊位置連到服務。TCP 端點可以是埠號；具名管道端點則是管道名稱，不是另一個 TCP 埠。"
+            "Interface（介面）：一組功能的約定。",
+            "Operation（操作）：其中某項具體功能。",
+            "Endpoint（端點）：提供通訊的具體位置。"
           ]
         },
         {
           "kind": "paragraph",
-          "text": "Microsoft RPC 介面常以 UUID（通用唯一識別碼）和介面版本識別。這個版本描述介面的相容契約，不能直接當成 Windows 或應用程式產品版本，更不能只拿版本數字套用 CVE。[Microsoft：RPC 介面識別](https://learn.microsoft.com/en-us/windows/win32/api/rpcdce/ns-rpcdce-rpc_if_id)｜[端點的種類](https://learn.microsoft.com/en-us/windows/win32/rpc/finding-endpoints)"
+          "text": "例如，某個 RPC 服務可能支援："
+        },
+        {
+          "kind": "code",
+          "text": "Interface：PrinterManagement\n\n    Operation 1：查詢列印工作\n    Operation 2：取消列印工作\n    Operation 3：修改印表機設定"
         },
         {
           "kind": "paragraph",
-          "text": "Endpoint Mapper（端點對應服務）像查號臺：協助把要找的介面對應到通訊位置。它回覆位置，不會替呼叫者核發所有功能的使用權。"
+          "text": "這只是為了教學而建立的假想介面，不是 Windows 內建介面的真實名稱。"
         },
         {
           "kind": "paragraph",
-          "text": "常見 Microsoft RPC over TCP 情境是：先向 TCP 135 的 Endpoint Mapper 查詢，再連到回傳的服務埠。現代 Windows 常見的動態 TCP 埠範圍是 49152–65535，但實際服務可能採固定埠或另有設定；不能把這段範圍當成每台設備的實測結果，也不是一律對外全開的設定建議。[Microsoft：服務與網路連接埠需求](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements)"
+          "text": "不同操作可能需要不同權限。"
         },
         {
           "kind": "paragraph",
-          "text": "也有 RPC 經由 SMB 的具名管道傳輸，或用戶端已知道端點的情況，所以不是每次 RPC 呼叫都必須先經過 TCP 135。Samba 的 rpcclient 是 MS-RPC 用戶端工具，可以使用具名管道或 TCP 等傳輸；工具叫 rpcclient，不表示它的每個命令都只查詢資料，還要核對具體子命令。[Samba：rpcclient](https://www.samba.org/samba/docs/current/man-html/rpcclient.1.html)"
+          "text": "一般員工也許可以查詢列印狀態，但只有管理員能修改印表機設定。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-2",
+          "text": "3.2 Endpoint Mapper 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Endpoint Mapper 是 RPC 使用的端點對應機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在常見的 Microsoft RPC over TCP 情境中，它使用 TCP 135。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以把它想成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC 服務的查號臺。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "你的電腦\n    │\n    │ TCP 135\n    │ 請問某個 RPC 介面在哪裡？\n    ▼\nEndpoint Mapper\n    │\n    │ 回答：\n    │ 該介面登記在 TCP 50020\n    ▼\n你的電腦\n    │\n    │ TCP 50020\n    ▼\nRPC 服務"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這裡有一個很重要的細節。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 135 並不是所有 RPC 功能實際工作的連接埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能只是協助查找服務位置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正提供功能的服務，可能位於另一個連接埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft RPC 的端點也可以是具名管道（Named Pipe），不一定是 TCP 埠號。[Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/rpc/finding-endpoints)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-3",
+          "text": "3.3 為什麼 RPC 會出現 50020 這種連接埠？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為部分 Microsoft RPC 服務使用動態連接埠（Dynamic Port）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務不一定永遠使用同一個埠號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在現代 Windows 的常見預設設定中，動態 TCP 埠範圍是："
+        },
+        {
+          "kind": "code",
+          "text": "49152–65535"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如某次服務啟動後使用："
+        },
+        {
+          "kind": "code",
+          "text": "TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另一次可能使用其他埠號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際情況還要考慮作業系統版本、應用程式與管理員設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，這段範圍並不表示所有埠都正在監聽，更不表示應該全部對外開放。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-4",
+          "text": "3.4 RPC 的 UUID 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC 服務可能提供多個不同介面。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "系統需要一個方法辨識："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「現在要呼叫的究竟是哪一組功能？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此 Microsoft RPC 可以使用 UUID（Universally Unique Identifier）作為介面識別資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Interface UUID：\nxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n\nInterface Version：\n1.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 UUID 是示意格式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以將它理解成："
+        },
+        {
+          "kind": "code",
+          "text": "UUID：辨識哪一種功能介面\nVersion：辨識該介面的版本"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但有一個常見的資安判讀錯誤："
+        },
+        {
+          "kind": "paragraph",
+          "text": "看到 RPC Interface Version 1.0，就認為這台電腦執行 Windows 1.0，或者認定它存在某個舊版弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是不對的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC 介面版本與作業系統版本是不同概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要判定 CVE 是否適用，仍需要確認產品、元件及實際版本等資訊。[Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/api/rpcdce/ns-rpcdce-rpc_if_id)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-5",
+          "text": "3.5 RPC Bind 代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設現在你已經找到端點："
+        },
+        {
+          "kind": "code",
+          "text": "TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且 TCP 連線成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一步就是確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "雙方是否能使用相容的 RPC 介面與資料格式進行通訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這涉及 RPC Bind。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以把它想成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你打通某個政府機關的電話，告訴對方："
+        },
+        {
+          "kind": "paragraph",
+          "text": "我要使用某一項申辦服務，請問你們支援這套申辦程序嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對方可能回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「可以，我們支援。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "也可能回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「不行，這裡沒有提供這個介面。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與登入管理員是兩回事。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC Bind 成功，不等於取得管理權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還需要進一步判斷身分驗證，以及特定操作是否獲得授權。"
         },
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "四、111 與 135：同樣協助找服務，但不是同一套協定"
+          "text": "第四章｜為什麼有時候看到 111，有時候看到 135？"
         },
         {
           "kind": "paragraph",
-          "text": "ONC RPC 常見於 Unix／Linux 相關服務，使用 program number（程式編號）、version（服務協定版本）與 procedure number（程序編號）識別服務及操作。rpcbind／portmapper 在 TCP／UDP 上使用 111，協助查找服務位址；這與 Microsoft RPC 的介面 UUID、TCP 135 不是同一套查詢格式。[RFC 5531：ONC RPC](https://www.rfc-editor.org/info/rfc5531/)｜[RFC 1833：ONC RPC 對應協定](https://www.rfc-editor.org/rfc/rfc1833)"
+          "text": "這是非常容易在 CEH 考試與實務分析中混淆的地方。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-05-families-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "TCP 135 與 111：兩種服務查號臺",
+            "description": "概念相似，但協定家族、查詢格式與找到的服務不同。",
+            "items": [
+              {
+                "title": "Microsoft RPC｜Windows 常見",
+                "body": "Endpoint Mapper；常見入口 TCP 135；以 Interface UUID＋版本辨識。端點可為 TCP 服務埠或具名管道，也可經 SMB 傳輸。例：135 → TCP 50020 → 指定 RPC 操作。"
+              },
+              {
+                "title": "ONC RPC｜Unix／Linux 常見",
+                "body": "rpcbind／portmapper；常見入口 TCP／UDP 111；Program number＋Version 辨識服務，以 Procedure number 辨識操作。可能用於部分 NFS 相關服務。例：111 → 找服務位置，視版本而定。"
+              },
+              {
+                "title": "重要例外",
+                "body": "NFSv4.1 常直接使用 TCP 2049，不必把 111 當成每次必經站。不查 rpcbind 不等於不使用 RPC。"
+              }
+            ]
+          }
         },
         {
           "kind": "paragraph",
-          "text": "常見的 rpcinfo 可查詢 ONC RPC 登記資料，不能因名稱相似就拿來代替 Microsoft RPC 工具；它也有其他操作選項，使用前仍須核對參數。[Oracle：rpcinfo 官方手冊](https://docs.oracle.com/cd/E88353_01/html/E72487/rpcinfo-8.html)"
+          "id": "subsection-4-1",
+          "text": "4.1 兩種不同的 RPC 技術體系"
         },
         {
           "kind": "paragraph",
-          "text": "也別把「先問 111，再連 NFS」背成所有版本的通則。NFSv4.1 規格以 2049 為預設服務埠，並建議用戶端不要使用上述 RPC binding 查詢流程。不用 rpcbind，不代表不用 RPC；NFS 的版本差異下一單元再展開。[RFC 8881 §2.9.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-2.9.3)"
+          "text": "RPC 是一種概念，不是一個只能透過單一協定實作的技術。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你可以透過不同系統、不同網路協定實作遠端程序呼叫。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課特別介紹兩個體系。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "比較項目",
+            "Microsoft RPC",
+            "ONC RPC"
+          ],
+          "rows": [
+            [
+              "常見環境",
+              "Windows",
+              "Unix／Linux"
+            ],
+            [
+              "查詢機制",
+              "Endpoint Mapper",
+              "rpcbind／portmapper"
+            ],
+            [
+              "常見查詢埠",
+              "TCP 135",
+              "TCP／UDP 111"
+            ],
+            [
+              "介面識別方式",
+              "Interface UUID、版本",
+              "Program number、版本"
+            ],
+            [
+              "具體操作",
+              "RPC Operation",
+              "Procedure number"
+            ],
+            [
+              "常見應用",
+              "Windows 系統及服務通訊",
+              "NFS 等相關服務"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者都有遠端呼叫的概念，但並不是同一套查詢格式。[RFC Editor](https://www.rfc-editor.org/info/rfc5531/)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-4-2",
+          "text": "4.2 Linux 的 111 埠在做什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設一台 Linux 伺服器提供多種 ONC RPC 服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "每項服務可能使用不同的通訊位置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "用戶端便可以向 rpcbind 詢問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「某個服務目前登記在哪個位置？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "rpcbind 常見使用 TCP／UDP 111。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 或 Unix 環境可以使用 rpcinfo 工具查詢相關資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，在已授權的測試環境中："
+        },
+        {
+          "kind": "code",
+          "text": "rpcinfo -p 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個例子是在示範查詢 ONC RPC 服務登記資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但它並不是 Microsoft RPC Endpoint Mapper 的通用替代工具。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-4-3",
+          "text": "4.3 所有 NFS 都必須經過 111 嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是本課一個很重要的例外。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS（Network File System）是常見的網路檔案系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "早期 NFS 相關流程經常涉及 rpcbind。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但在 NFSv4.1 中，服務通常直接使用 TCP 2049，不需要每次都先向 rpcbind 查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不表示 NFSv4.1 沒有使用 RPC。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣使用 RPC，服務尋址的方式可以不同。 [RFC Editor](https://www.rfc-editor.org/rfc/rfc8881.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四章可以記住："
+        },
+        {
+          "kind": "paragraph",
+          "text": "135 與 111 都有協助尋找服務的角色，但它們屬於不同的 RPC 技術體系。"
         },
         {
           "kind": "heading",
           "id": "section-5",
-          "text": "五、這次的新重點：失敗發生在哪一步？"
+          "text": "第五章｜最重要的資安觀念：失敗究竟發生在哪一步？"
         },
         {
           "kind": "paragraph",
-          "text": "看 RPC 測試結果，可以分成以下問題；它們不是每次都要從頭重做的固定清單："
+          "text": "這一章才是將前面技術知識轉換成資安分析能力的關鍵。"
         },
         {
-          "kind": "list",
-          "items": [
-            "取得登記資料了嗎？查到端點只是取得映射資訊，尚未證明從目前位置能連到它。",
-            "端點可達嗎？映射服務有回應，實際服務埠仍可能被防火牆擋住、停止監聽或已變動。",
-            "介面相容嗎？即使 TCP 連線成功，RPC bind 仍要確認介面與傳輸語法等條件。這裡的 bind 是建立 RPC 通訊約定，不是「取得管理權限」。[Microsoft：版本與能力協商](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/ed7bf5ae-ec8e-407e-b6d7-663958e18701)",
-            "以什麼身分要求哪個操作？身分驗證處理呼叫者身分，授權處理能否執行指定工作；某個查詢成功，不能擴張成所有操作都獲准。[Microsoft：RPC 安全的基本原則](https://learn.microsoft.com/en-us/windows/win32/rpc/rpc-security-essentials)"
+          "kind": "visual",
+          "src": "/images/ceh/m04-05-evidence-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "Microsoft RPC：查到端點，還要逐關驗證",
+            "description": "合成案例：135 回傳 TCP 50020，但連線逾時。箭頭為診斷順序；驗證可能在不同階段發生。已知固定端點、快取或具名管道等情境不一定先查 135。",
+            "items": [
+              {
+                "title": "01｜端點登記",
+                "body": "Endpoint Mapper：TCP 135 回傳 50020。只確認有登記資料。"
+              },
+              {
+                "title": "02｜網路可達性",
+                "body": "TCP Connection：連線 50020 逾時，尚未連上目標端點。"
+              },
+              {
+                "title": "03｜介面協商",
+                "body": "RPC Bind：確認介面／版本相容。TCP 連線成功，協商仍可能失敗。"
+              },
+              {
+                "title": "04｜身分確認",
+                "body": "確認呼叫者是誰；有身分不等於有所有權限。"
+              },
+              {
+                "title": "05｜操作授權",
+                "body": "確認能否執行指定操作；讀取允許不等於修改允許。"
+              },
+              {
+                "title": "本案例停在第 2 關",
+                "body": "第 3～5 關均尚未驗證；不能推論帳密錯誤、管理權限或服務不存在。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-1",
+          "text": "5.1 一次 RPC 操作可能涉及五個不同階段"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像我們準備呼叫某台遠端電腦上的 RPC 功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "概念上可以分成五個階段："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "階段",
+            "要確認的問題",
+            "可能出現的結果"
+          ],
+          "rows": [
+            [
+              "① 端點資訊",
+              "知道服務在哪裡嗎？",
+              "查到 TCP 50020"
+            ],
+            [
+              "② 網路連線",
+              "從目前位置連得上嗎？",
+              "成功、拒絕或逾時"
+            ],
+            [
+              "③ 介面協商",
+              "雙方支援相容的 RPC 介面嗎？",
+              "Bind 成功或失敗"
+            ],
+            [
+              "④ 身分驗證",
+              "能確認呼叫者身分嗎？",
+              "驗證成功或失敗"
+            ],
+            [
+              "⑤ 操作授權",
+              "呼叫者可以執行指定功能嗎？",
+              "允許或拒絕"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "所以「沒有回應」不能直接寫成帳號密碼錯誤，「介面無法使用」不能直接寫成被防火牆擋住，「Access Denied」也不能直接寫成整台主機都安全。先保存原始錯誤、目標、傳輸、身分與發生階段，再配合管理端設定及日誌確認原因。"
+          "text": "這是一個用來診斷問題的概念模型，不代表每種 RPC 傳輸都必須依照完全相同的順序進行。"
         },
         {
           "kind": "paragraph",
-          "text": "只阻擋查號臺，不一定阻止已知端點的呼叫；只保護其中一個埠，也未必涵蓋其他傳輸。防護要一起看映射服務、實際端點、可連線來源及操作權限。若確定沒有舊系統依賴，再經相容性測試停用 NetBIOS；不要為了消除 135 埠就隨意停用 Windows 核心 RPC 服務。"
+          "text": "尤其身分驗證可能在連線或 RPC 通訊建立的不同階段進行。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-2",
+          "text": "5.2 第一種情況：查得到服務，但是連不上"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設："
+        },
+        {
+          "kind": "code",
+          "text": "Endpoint Mapper：\n\nRPC Interface → TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你嘗試建立連線："
+        },
+        {
+          "kind": "code",
+          "text": "TCP 50020：TIMEOUT"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候能不能說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「服務不存在。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能原因包括："
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路路徑故障、防火牆丟棄封包、服務已停止、端點位置改變，或者目標主機沒有回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些原因需要不同證據才能區分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以正確的描述是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "在本次測試條件下，未能成功建立到 TCP 50020 的連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是已經觀察到的事實。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "至於為什麼連不上，仍然需要調查。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-3",
+          "text": "5.3 第二種情況：TCP 連得上，但是 RPC Bind 失敗"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設："
+        },
+        {
+          "kind": "code",
+          "text": "TCP 50020：CONNECTED\n\nRPC Bind：INTERFACE NOT SUPPORTED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表網路連線已經成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要求的 RPC 介面沒有順利完成協商。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能原因是介面不存在、版本不相容，或其他 RPC 協商條件不符。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時不應直接下結論："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「一定是防火牆擋住了。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你已經觀察到 TCP 連線成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "應進一步檢查 RPC 層面的錯誤與設定。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-4",
+          "text": "5.4 第三種情況：RPC 成功，但是操作被拒絕"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設某個 RPC 查詢功能正常執行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是接著呼叫修改設定功能時："
+        },
+        {
+          "kind": "code",
+          "text": "ACCESS DENIED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這可能代表："
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前使用的身分，不具備執行該操作所需的權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要分清楚兩個概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication（身分驗證）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "回答的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你是誰？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，公司門禁確認你的員工證有效。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authorization（授權）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "回答的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你可以做什麼？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，即使員工證有效，也不代表你能進入董事長辦公室。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "成功完成某個 RPC 查詢，也不能直接推論所有管理操作都能執行。[Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/rpc/rpc-security-essentials)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-5",
+          "text": "5.5 這和前面學過的 CEH 有什麼關係？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "事實上，這是整個 M04 的共通邏輯。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "之前的課程",
+            "可能取得的資訊",
+            "不能直接推論"
+          ],
+          "rows": [
+            [
+              "DNS 列舉",
+              "查到子網域與 DNS 紀錄",
+              "一定能登入該系統"
+            ],
+            [
+              "FTP 列舉",
+              "查到 FTP 服務或目錄名稱",
+              "一定能下載或修改檔案"
+            ],
+            [
+              "SMTP 列舉",
+              "伺服器提供某些郵件回應",
+              "一定能冒用身分發信"
+            ],
+            [
+              "SMB 列舉",
+              "查到共享資料夾",
+              "一定能讀取檔案"
+            ],
+            [
+              "NetBIOS 列舉",
+              "查到名稱與服務線索",
+              "一定有檔案分享權限"
+            ],
+            [
+              "RPC 列舉",
+              "查到端點與介面資訊",
+              "一定能執行管理功能"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以發現："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不是六種完全不同的思考方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而是同一套資安證據判讀方法，應用到不同協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最核心的思維是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "每一項證據都有它能支持的結論範圍，不能把尚未驗證的事情當成已知事實。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-6",
+          "text": "5.6 防禦方應該怎麼處理？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在換成系統管理員的角度。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你發現 Windows 伺服器使用 TCP 135。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是否應該立即將它關閉？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 Microsoft RPC 是許多 Windows 系統服務的基礎。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "隨意停用核心服務，可能造成系統管理、網域服務或應用程式通訊異常。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "比較合理的思考方式是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一層：減少不必要的服務暴露。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不應讓不需要存取 RPC、SMB 或 NetBIOS 的網路來源，任意連接相關服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二層：管制實際服務端點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使限制 TCP 135，也不能假設所有 RPC 通訊都已被阻擋。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為可能存在固定端點、動態埠或其他傳輸方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三層：限制操作權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "除了網路層控制，還要確認誰能呼叫哪些功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四層：保留日誌與驗證結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當操作失敗時，應能辨識失敗發生在連線、介面、身分驗證還是授權階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對資安稽核而言，這比單純看到某個埠開啟就判定危險，更能支持具體改善措施。"
         },
         {
           "kind": "heading",
           "id": "section-6",
-          "text": "六、用一份合成紀錄練習寫結論"
+          "text": "第六章｜實際案例：如何判讀 NetBIOS 與 RPC 紀錄？"
         },
         {
           "kind": "paragraph",
-          "text": "以下是紙上案例，沒有查詢任何真實主機。假設測試已核准，紀錄如下："
+          "text": "現在我們把前面所有概念整合起來。"
         },
         {
-          "kind": "list",
-          "items": [
-            "Lab-A 的 NetBIOS 名稱表回傳 LAB-FS <20> UNIQUE。",
-            "Lab-A 的 Endpoint Mapper 回傳：某個 RPC 介面版本 1.0 登記在 TCP 50020。",
-            "從同一個測試網段連到 TCP 50020 時逾時，未進行該端點的 RPC 呼叫。",
-            "沒有查詢 SMB 共用，也沒有讀取任何檔案。"
+          "kind": "paragraph",
+          "id": "subsection-6-1",
+          "text": "6.1 案例背景"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你正在進行一項已獲核准的內部資安測試。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "測試對象是一台 Windows 伺服器："
+        },
+        {
+          "kind": "code",
+          "text": "目標：Lab-A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前取得四項紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "紀錄一：NetBIOS 名稱"
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS <20> UNIQUE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "紀錄二：RPC Endpoint Mapper"
+        },
+        {
+          "kind": "code",
+          "text": "RPC Interface Version 1.0\n\nEndpoint：TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "紀錄三：連接 TCP 50020"
+        },
+        {
+          "kind": "code",
+          "text": "Connection Timeout"
+        },
+        {
+          "kind": "paragraph",
+          "text": "紀錄四：SMB"
+        },
+        {
+          "kind": "code",
+          "text": "NOT TESTED"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-6-2",
+          "text": "6.2 我們究竟知道哪些事情？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先看第一項："
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS <20> UNIQUE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "取得一筆與伺服器服務有關的 NetBIOS 名稱紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但還不知道共享資料夾有哪些，更不知道目前測試身分的讀取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著看第二項："
+        },
+        {
+          "kind": "code",
+          "text": "RPC Interface Version 1.0\nEndpoint：TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Endpoint Mapper 提供了一筆介面與端點的對應資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不知道該端點現在是否仍在監聽、目前的網路路徑能否到達，以及該介面是否能成功呼叫。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再看第三項："
+        },
+        {
+          "kind": "code",
+          "text": "Connection Timeout"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "從這次測試來源出發，連接 TCP 50020 的嘗試在等待時間內沒有成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但還不知道造成逾時的確切原因。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最後："
+        },
+        {
+          "kind": "code",
+          "text": "SMB：NOT TESTED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "表示這次沒有驗證 SMB 共用資訊或檔案存取。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-6-3",
+          "text": "6.3 一份好的資安紀錄應該怎麼寫？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以這樣記錄："
+        },
+        {
+          "kind": "paragraph",
+          "text": "本次測試取得 Lab-A 的 NetBIOS 伺服器服務名稱線索，以及一筆 RPC 介面對應至 TCP 50020 的登記資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": ">"
+        },
+        {
+          "kind": "paragraph",
+          "text": "從指定測試來源連線至 TCP 50020 時發生逾時，因此尚未驗證該端點的 RPC 介面協商、身分驗證及指定操作的授權結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": ">"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本次亦未進行 SMB 共享資源與檔案存取測試。後續應依核准範圍，確認端點登記狀態、伺服器監聽情況、網路路徑、防火牆規則及相關日誌。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這段文字與一般主觀判斷有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它把三件事情區分開："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "證據層次",
+            "說明",
+            "本案例"
+          ],
+          "rows": [
+            [
+              "已觀察事實",
+              "實際得到什麼結果",
+              "NetBIOS 名稱、RPC 登記、TCP 逾時"
+            ],
+            [
+              "合理推測",
+              "哪些原因可能解釋結果",
+              "防火牆、服務停止、端點變更等"
+            ],
+            [
+              "尚待確認",
+              "沒有足夠證據的事情",
+              "RPC 操作權限、SMB 讀寫權限"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "可以記錄：「本次取得 Lab-A 的伺服器服務名稱線索及一筆 RPC 端點映射；從指定測試位置連向 TCP 50020 逾時，尚未驗證該端點的介面呼叫、身分驗證或操作權限。SMB 共用與檔案存取均未測試。」"
+          "text": "這種寫法適用於滲透測試、弱點驗證、事故調查，以及企業內部資安稽核。"
         },
         {
           "kind": "paragraph",
-          "text": "這個記錄保留了已觀察與未知的界線。實際工作再附上時間、工具版本、完整參數及原始回應，避免把密碼或無關個資寫進報告。若要繼續測試，先確認核准範圍包括該端點與指定唯讀操作；不能因為查到了新埠，就自動擴大測試。"
+          "text": "因為它可以讓下一位接手的技術人員知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前走到哪一步、做過什麼測試、哪些問題還沒有答案。"
+        },
+        {
+          "kind": "heading",
+          "id": "testing-process",
+          "text": "第七部分｜將本課與整個資安測試流程連結"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雖然原始教材主要分成六個章節，但我建議你再建立一個更高層次的概念。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-7-1",
+          "text": "7.1 從 Reconnaissance 到 Authorization"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們前面學到的技術，可以放進一條完整的資安評估流程："
+        },
+        {
+          "kind": "code",
+          "text": "① Reconnaissance\n   偵察：知道可能有哪些目標\n        │\n        ▼\n② Scanning\n   掃描：知道哪些網路入口有回應\n        │\n        ▼\n③ Enumeration\n   列舉：知道服務宣告了哪些具體資訊\n        │\n        ▼\n④ Connectivity Verification\n   連線驗證：確認實際服務是否可達\n        │\n        ▼\n⑤ Authentication\n   身分驗證：確認呼叫者身分\n        │\n        ▼\n⑥ Authorization\n   授權：確認指定操作是否獲准\n        │\n        ▼\n⑦ Security Assessment\n   安全評估：判斷控制措施及其風險"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一種教學用的概念架構。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際評估不一定完全按照這個順序進行，也不代表測試人員可以任意嘗試所有操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "每項測試都必須符合原先取得的授權範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-7-2",
+          "text": "7.2 為什麼這個觀念特別重要？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為在實際資安工作中，經常會看到過度推論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「掃描發現 TCP 445，所以這台電腦的檔案可以被下載。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個推論缺少檔案存取權限的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "或者："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「掃描發現 TCP 135，所以攻擊者可以遠端控制這台 Windows 伺服器。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個推論也缺少可利用弱點、實際功能與操作授權等證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "反過來也一樣。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "「RPC 操作遭到拒絕，所以整台伺服器沒有安全問題。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣沒有足夠依據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資安能力不只是知道如何使用工具，更重要的是知道工具的結果究竟證明了什麼。"
+        },
+        {
+          "kind": "heading",
+          "id": "lesson-summary",
+          "text": "本課總結｜你至少要記住的八個觀念"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "核心概念",
+            "你應該真正理解的事情"
+          ],
+          "rows": [
+            [
+              "NetBIOS",
+              "提供名稱與相關通訊機制"
+            ],
+            [
+              "<00>、<20>",
+              "是名稱用途尾碼，不是 TCP 埠"
+            ],
+            [
+              "UNIQUE／GROUP",
+              "是名稱類型，不是檔案存取權限"
+            ],
+            [
+              "SMB",
+              "用來存取網路共享資源，常見 TCP 445"
+            ],
+            [
+              "RPC",
+              "讓程式呼叫遠端提供的功能，不等於遠端桌面"
+            ],
+            [
+              "Endpoint Mapper",
+              "幫助尋找 RPC 端點，Microsoft RPC 常見 TCP 135"
+            ],
+            [
+              "rpcbind",
+              "ONC RPC 的服務尋址機制，常見 TCP／UDP 111"
+            ],
+            [
+              "Authentication／Authorization",
+              "身分確認與操作授權是不同問題"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "最重要的判斷原則可以整理成一句話："
+        },
+        {
+          "kind": "paragraph",
+          "text": "名稱存在 ≠ 服務可達 ≠ 介面可用 ≠ 身分驗證成功 ≠ 操作已獲授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你真正理解這個區別，就能把本課的知識應用到 SMB、FTP、SMTP，以及後續的其他網路服務安全分析。"
         },
         {
           "kind": "heading",
           "id": "section-7",
-          "text": "今天只做一個小檢核"
+          "text": "理解測驗｜用一個情境確認是否真正理解"
         },
         {
           "kind": "paragraph",
-          "text": "同事看完上述紀錄說：「<20> 表示共享檔案能讀；135 已經回傳介面，所以我們有 RPC 管理權；50020 逾時，證明那項服務不存在。」"
+          "text": "假設某台 Windows 電腦的測試結果如下："
+        },
+        {
+          "kind": "code",
+          "text": "Host：192.0.2.10\n\nNetBIOS：\nLAB-SERVER <20> UNIQUE\n\nTCP 135：\nOPEN\n\nRPC Endpoint Mapper：\nInterface UUID：已取得\nInterface Version：1.0\nEndpoint：TCP 50123\n\nTCP 50123：\nCONNECTED\n\nRPC Bind：\nSUCCESS\n\nRPC QueryStatus：\nSUCCESS\n\nRPC ModifySettings：\nACCESS DENIED\n\nSMB：\nNOT TESTED"
         },
         {
           "kind": "paragraph",
-          "text": "請用兩三句話修正這段結論，指出已確認的資訊、尚不能下的結論，以及下一步應核對的證據。"
+          "text": "請試著回答三個問題。"
         },
         {
           "kind": "paragraph",
-          "text": "這次只需判讀合成資料，不用連線、安裝工具或改設定，因此沒有環境清理操作。下一單元接 Unix／Linux 使用者與 NFS。"
+          "text": "問題一： TCP 135 已開啟，而且 Endpoint Mapper 回傳 TCP 50123。這兩項紀錄各自證明了什麼？是否代表已經取得管理員權限？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題二： RPC QueryStatus 成功，但是 RPC ModifySettings 出現 ACCESS DENIED。這兩個結果是否矛盾？你會怎麼解釋？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題三： 從整份紀錄來看，你能不能判斷 LAB-SERVER 的共享資料夾是否能被讀取？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請依照「已確認事實、合理推論、尚未取得的證據」三個層次回答這三題，再展開參考答案核對。"
         },
         {
           "kind": "answer",
           "id": "answer-netbios-rpc-evidence",
-          "summary": "小檢核參考答案",
+          "summary": "參考答案：三題的證據界線",
           "paragraphs": [
-            "目前只確認取得 LAB-FS 的 <20> 伺服器服務名稱線索，以及某 RPC 介面版本 1.0 對應 TCP 50020 的登記資料；這些都不證明可以讀共享檔案或具備管理權限。50020 逾時只表示本次連線未在等待時間內成功，原因與服務是否仍存在還不能確定，RPC 呼叫、驗證及操作權限也都尚未測試。下一步應在核准範圍內核對端點目前的監聽與映射、路徑／防火牆和日誌；若要驗證檔案讀取或 RPC 功能，須以已核准身分分別測試指定操作。",
-            "判讀重點：名稱線索、登記資料、端點連線與操作權限各有自己的證據；沒有測試的項目保留未知。這是編輯參考解答，不是學員實際作答或精熟證據。"
+            "問題一：TCP 135 OPEN 表示從本次測試來源觀察到該 TCP 入口可建立連線；Endpoint Mapper 回傳 TCP 50123，表示取得一筆介面與端點的登記對應。兩者都不代表管理員權限。後續 CONNECTED 與 Bind SUCCESS 分別支持端點連線及介面協商成功，也不能單獨證明所有操作獲准。",
+            "問題二：兩個結果可以同時成立。QueryStatus 成功只證明該次查詢成功；ModifySettings 的 ACCESS DENIED 表示該次修改操作遭拒。可能是目前身分沒有修改權限，仍須配合實際身分、服務設定及日誌查核。不能把查詢成功等同管理權，也不能以單一拒絕結果認定整台主機安全。",
+            "問題三：不能判定共享資料夾可讀。SMB 明列 NOT TESTED；NetBIOS <20> 只有伺服器服務名稱線索。須在核准範圍，以指定身分另外驗證共享、目錄與指定檔案的讀取結果。",
+            "本題只判讀合成紀錄：先列已確認事實，再提出合理推論，最後列缺少的證據；不需連線、安裝或改設定，無須清理。以上是編輯參考答案，qa 仍保留空陣列，不代表學員已作答或通過。"
           ]
         }
       ]
     },
     "en": {
-      "summary": "NetBIOS/RPC enumeration: distinguish name clues, endpoint mappings, connections, and permission for specified operations.",
+      "summary": "Interpret NetBIOS names, RPC endpoints, and operation results; distinguish discovery, connectivity, interfaces, identity, and authorization.",
       "sections": [],
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "CEH M04-05 | NetBIOS/RPC: what separates discovering names and endpoints from obtaining permission?"
+          "text": "Discovering a computer and learning which services it offers does not establish permission to use those services."
         },
         {
           "kind": "paragraph",
-          "text": "This fifth unit briefly reviews NetBIOS name tables and RPC endpoints, then distinguishes three kinds of evidence: information was returned, a connection succeeded, and a specified operation was authorized."
+          "text": "This is the fifth lesson in CEH M04 (Enumeration). Its subject is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS/RPC Enumeration: investigating network names, remote services, and operation permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Original lesson: [CS Kairos Learn — M04-05](https://learn.cs-kairos.com/en/courses/ceh/v13/m04/concepts/m04-05/)"
+        },
+        {
+          "kind": "heading",
+          "id": "story",
+          "text": "Understand the lesson through a story"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine that you are a criminal investigator examining a company's information systems."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You know the company has an office building, but not its departments, the employees responsible for each task, or whether you may inspect its records."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You begin investigating."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Investigation step",
+            "Network counterpart"
+          ],
+          "rows": [
+            [
+              "① Learn the building address",
+              "IP Address"
+            ],
+            [
+              "② Ask which departments are inside",
+              "NetBIOS name enumeration"
+            ],
+            [
+              "③ Learn that a department offers document services",
+              "SMB service"
+            ],
+            [
+              "④ Ask the switchboard for an employee's extension",
+              "RPC Endpoint Mapper"
+            ],
+            [
+              "⑤ Call the extension",
+              "Establish a network connection"
+            ],
+            [
+              "⑥ Confirm that both parties use compatible procedures",
+              "RPC interface negotiation"
+            ],
+            [
+              "⑦ Present identification and request records",
+              "Authentication and operation authorization"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you have discovered:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A department manages files.",
+            "Its contact extension is 50020.",
+            "Calling 50020 does not connect."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Does that establish that the department does not exist?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The line could be faulty, the extension could have changed, external calls could be blocked, or the employee might not be answering."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The network equivalent is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Discovering a service does not establish connectivity; connectivity does not establish authentication; authentication does not authorize every operation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the central idea of M04-05."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following six chapters develop the original lesson's concepts step by step."
         },
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "1. Put the three roles in context"
+          "text": "Chapter 1 | Meet NetBIOS, SMB, and RPC"
         },
         {
-          "kind": "list",
-          "items": [
-            "NetBIOS (Network Basic Input/Output System): originally an interface for local-network programs to use names and exchange data. Its operation over TCP/IP is called NBT or NetBT.",
-            "SMB (Server Message Block): lets clients access files and other resources over a network. The preceding lesson distinguishes share lists, directory lists, reading, and modification permissions.",
-            "RPC (Remote Procedure Call): a program passes parameters to another process, requests a specified function, and receives a result. This is not remote desktop access or possession of a command shell."
+          "kind": "paragraph",
+          "text": "These technologies often appear together in Windows networks, but have different purposes."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-05-roles-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "NetBIOS, SMB, RPC: different questions",
+            "description": "Parallel roles, not a mandatory sequence.",
+            "items": [
+              {
+                "title": "NetBIOS | Who is on the network?",
+                "body": "Computer/service names; common ports 137, 138, 139. Clue: LAB-FS <20> UNIQUE. Does not prove file read access."
+              },
+              {
+                "title": "SMB | Which shared resources are accessible?",
+                "body": "Query share names; check listing, reading, and writing separately. Commonly TCP 445. Does not prove administrative permission."
+              },
+              {
+                "title": "RPC | Which functions are offered remotely?",
+                "body": "Query interfaces and endpoints; for example TCP 135 → dynamic port. Verify specified operation permission. Does not authorize all operations."
+              },
+              {
+                "title": "Core boundary",
+                "body": "Name discovered ≠ connected ≠ authenticated ≠ authorized. Service discovery still requires verification of actual access."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1-1",
+          "text": "1.1 NetBIOS: recognizing computer names"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS stands for Network Basic Input/Output System."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of it as:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A set of naming and communication mechanisms for local-area network applications."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a company has three computers:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "IP address",
+            "Computer name",
+            "Purpose"
+          ],
+          "rows": [
+            [
+              "192.168.1.10",
+              "LAB-FS",
+              "File server"
+            ],
+            [
+              "192.168.1.20",
+              "LAB-PC01",
+              "Employee computer"
+            ],
+            [
+              "192.168.1.30",
+              "LAB-PRINT",
+              "Printing service"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "Think of a NetBIOS name as a name in a directory, an RPC endpoint as the location of a service counter, and operation permission as whether that counter will perform a particular task for this identity. This is a role analogy, not a mandatory NetBIOS → SMB → RPC sequence. [RFC 1001: NetBIOS over TCP/IP](https://www.rfc-editor.org/rfc/rfc1001) | [Microsoft: How RPC works](https://learn.microsoft.com/en-us/windows/win32/rpc/how-rpc-works)"
+          "text": "Computers use IP addresses to communicate on this network."
+        },
+        {
+          "kind": "paragraph",
+          "text": "People find large numbers of IP addresses difficult to remember."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Naming mechanisms provide recognizable names instead."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This name might identify a company file server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS includes more than name resolution: it also includes name service, datagrams, and sessions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS over TCP/IP (NBT/NetBT) carries those functions over TCP/IP networks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Modern Windows networks also use DNS extensively; computer names do not all have to be resolved through NetBIOS."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1-2",
+          "text": "1.2 SMB: sharing files between computers"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB stands for Server Message Block."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a company shares this folder:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-FS\\Public"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Employees may be able to access it through SMB."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB operations include:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Querying shared folders.",
+            "Listing folder contents.",
+            "Reading files.",
+            "Creating, modifying, or deleting files."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each operation can have different permission requirements."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Employee A might be able to read a report but not modify it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Employee B might have both read and write permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Therefore:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Knowing that a computer offers SMB does not establish permission to read its files."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the same distinction used in M04-04."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1-3",
+          "text": "1.3 RPC: asking another computer to perform a function"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC stands for Remote Procedure Call."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the main new concept in this lesson."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a company has a print server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You open management software on your own computer and ask:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "How many print jobs are currently queued?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The software can request that information from a remote service through RPC."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Conceptually:"
+        },
+        {
+          "kind": "code",
+          "text": "Your computer\n    |\n    | How many print jobs are queued?\n    v\nRemote server\n    |\n    | Execute the query function\n    v\nReturn the query result\n    |\n    v\nYour computer displays the result"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is the basic RPC idea."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In software-engineering terms:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Call a function offered by a remote computer."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "# A fictional function used only to illustrate the concept\nresult = remote_printer.get_job_count()"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It resembles an ordinary function call, but the remote server executes the function."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The RPC system handles communication, parameter conversion, and returning results."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft's documentation describes this client-to-remote-procedure architecture. [Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/rpc/how-rpc-works)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-1-4",
+          "text": "1.4 How does RPC differ from remote desktop?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These technologies are easy to confuse."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Technology",
+            "Main purpose",
+            "Plain-language meaning"
+          ],
+          "rows": [
+            [
+              "RPC",
+              "Call remote functions",
+              "Ask another program to perform a specified task"
+            ],
+            [
+              "RDP",
+              "Remote desktop",
+              "Operate another computer's desktop over a network"
+            ],
+            [
+              "SSH",
+              "Secure remote connections and command execution",
+              "Log in to a remote system and operate within authorization"
+            ],
+            [
+              "SMB",
+              "Network file sharing",
+              "Access shared files offered by another computer"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC is not remote desktop access and does not necessarily provide a command shell."
+        },
+        {
+          "kind": "paragraph",
+          "text": "What RPC can do depends on the functions the target service offers and the caller's authorization."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Chapter 1 takeaway:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS provides names and related service clues; SMB accesses shared resources; RPC calls functions offered remotely."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They do not form a mandatory sequence."
         },
         {
           "kind": "heading",
           "id": "section-2",
-          "text": "2. NetBIOS review: names, suffixes, and types are not a permission table"
+          "text": "Chapter 2 | NetBIOS enumeration: finding clues in computer names"
         },
         {
           "kind": "paragraph",
-          "text": "Under common Windows NetBIOS naming conventions, a name has 16 bytes: the first 15 contain the name, and the final byte is a purpose suffix. Shorter names are padded with spaces. The suffix is a hexadecimal value, not a port number. [Microsoft: NetBIOS name representation](https://learn.microsoft.com/zh-tw/openspecs/windows_protocols/ms-brws/940f299f-669f-4a0b-8411-9ead7e2f31ec)"
+          "id": "subsection-2-1",
+          "text": "2.1 What is enumeration?"
         },
         {
           "kind": "paragraph",
-          "text": "For example, a synthetic name table contains these three records:"
+          "text": "Connect this with the preceding CEH material."
         },
         {
-          "kind": "list",
-          "items": [
-            "LAB-FS <00> UNIQUE: a computer-name clue used by the workstation service.",
-            "LAB-FS <20> UNIQUE: a server-service name clue that can guide later file-sharing checks.",
-            "LABGROUP <00> GROUP: a group-name clue; actual workgroup or domain membership still needs checking."
+          "kind": "paragraph",
+          "text": "M03 focuses on Network Scanning."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A scan might show:"
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10\n    TCP 445 OPEN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "What does that mean?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "From the current test location, TCP 445 was observed as an entry point accepting a connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Because TCP 445 commonly carries SMB, it is a service clue."
+        },
+        {
+          "kind": "paragraph",
+          "text": "We still do not know:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "What is the computer called? Which resources does it share? Which operations are allowed?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That brings us to M04."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration queries services for more specific information, turning broad clues into concrete records."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Whether a result supports a conclusion depends on the information actually obtained."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2-2",
+          "text": "2.2 What are the <00> and <20> suffixes?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a query returns:"
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS       <00>  UNIQUE\nLAB-FS       <20>  UNIQUE\nLABGROUP     <00>  GROUP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A beginner might ask:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Why does LAB-FS appear twice?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Is <20> port 20?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Does UNIQUE mean only one person has permission?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Those interpretations are incorrect."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Break down the first record:"
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS       <00>  UNIQUE\n  |           |      |\n  |           |      +-- Name type\n  |           |\n  |           +-- NetBIOS name suffix\n  |\n  +-- Computer name"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A NetBIOS name typically has 16 bytes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The first 15 contain the name; the final byte is a suffix identifying its purpose."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The suffix is written in hexadecimal."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Thus:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "<20> is hexadecimal 0x20, not TCP port 20. [Microsoft Learn](https://learn.microsoft.com/zh-tw/openspecs/windows_protocols/ms-brws/940f299f-669f-4a0b-8411-9ead7e2f31ec)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2-3",
+          "text": "2.3 Three common records"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First: LAB-FS <00> UNIQUE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Under common Windows NetBIOS conventions, this is a workstation-service name clue."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read it as:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“This computer registered the relevant service using the name LAB-FS.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second: LAB-FS <20> UNIQUE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "<20> is commonly the Windows Server Service name suffix."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It tells us:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The computer registered a name associated with file-sharing services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not establish:"
+        },
+        {
+          "kind": "code",
+          "text": "Every shared file on LAB-FS can be read"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Whether shares exist, which users can read them, and whether authentication is required all need separate checks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third: LABGROUP <00> GROUP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "GROUP is the NetBIOS name type here."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It may reflect workgroup- or domain-related naming information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It is not the same as a Windows user group used for access control."
+        },
+        {
+          "kind": "paragraph",
+          "text": "UNIQUE/GROUP describe name registration types, not file permissions. [Microsoft Learn](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nbte/6dbf0972-bb15-4f29-afeb-baaae98416ed)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2-4",
+          "text": "2.4 Why remember 137, 138, 139, and 445?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These four ports have distinct roles."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Port",
+            "Protocol",
+            "Function",
+            "Plain-language meaning"
+          ],
+          "rows": [
+            [
+              "137",
+              "UDP/TCP",
+              "NetBIOS Name Service",
+              "Query names"
+            ],
+            [
+              "138",
+              "UDP",
+              "NetBIOS Datagram Service",
+              "Send datagrams"
+            ],
+            [
+              "139",
+              "TCP",
+              "NetBIOS Session Service",
+              "Establish sessions"
+            ],
+            [
+              "445",
+              "TCP",
+              "Direct-hosted SMB",
+              "Carry SMB directly"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "UNIQUE and GROUP describe NetBIOS name types. GROUP is not a user group in file access control. A name table is not a complete account list either. Seeing <20> does not establish share names, the SMB version, or permission to read a particular file. [Microsoft: Names and suffix behavior](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nbte/6dbf0972-bb15-4f29-afeb-baaae98416ed)"
+          "text": "There is a useful historical distinction."
         },
         {
           "kind": "paragraph",
-          "text": "Review the usual port roles together: the name service uses UDP/TCP 137, the datagram service UDP 138, and the session service TCP 139. Direct SMB over TCP uses 445 and can operate without NetBIOS. Thus, no response on 137 does not establish that SMB on 445 is absent. [Microsoft: NetBIOS and direct SMB transport](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/direct-hosting-of-smb-over-tcpip)"
+          "text": "SMB could be carried over the NetBIOS Session Service."
         },
         {
           "kind": "paragraph",
-          "text": "With Windows nbtstat, distinguish where the information comes from:"
-        },
-        {
-          "kind": "list",
-          "items": [
-            "nbtstat /n: the local name table.",
-            "nbtstat /c: the local name cache, which may reflect earlier resolution results.",
-            "nbtstat /a LAB-FS: query a remote name table by remote name.",
-            "nbtstat /A 192.0.2.10: query a remote name table by IP address."
-          ]
+          "text": "SMB can also communicate directly over TCP 445 without NetBIOS."
         },
         {
           "kind": "paragraph",
-          "text": "/a and /A are case-sensitive. The final IP is a documentation example, not a target for this lesson; no command execution is needed here. Also, /R and /RR clear/reload the cache or re-register names; they are not synonyms for merely displaying information. [Microsoft: nbtstat](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/nbtstat)"
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "UDP 137: no response\nTCP 445: connection succeeds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Both observations can be true at the same time."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An unanswered NetBIOS name query does not establish that SMB is absent."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft distinguishes NetBIOS transport from direct SMB over TCP 445. [Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/direct-hosting-of-smb-over-tcpip)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-2-5",
+          "text": "2.5 What is nbtstat?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "nbtstat is a Windows diagnostic tool for NetBIOS over TCP/IP."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It can display name tables and cached name information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "On a Windows computer:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Display your local NetBIOS name table:"
+        },
+        {
+          "kind": "code",
+          "text": "nbtstat /n"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This displays local information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Display locally cached names:"
+        },
+        {
+          "kind": "code",
+          "text": "nbtstat /c"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This displays previously obtained names still held in the local cache."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Cached information may not reflect the target's latest state."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Query a remote name table by computer name:"
+        },
+        {
+          "kind": "code",
+          "text": "nbtstat /a LAB-FS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Query a remote name table by IP address:"
+        },
+        {
+          "kind": "code",
+          "text": "nbtstat /A 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "192.0.2.10 is a documentation address, not an actual test target."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Note:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "/a and /A differ in case and function."
+        },
+        {
+          "kind": "paragraph",
+          "text": "/R and /RR affect cached names or name registration; they are not purely informational alternatives."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Before querying remotely in a real environment, confirm authorization for the device and network scope. [Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/nbtstat)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Chapter 2 takeaway:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NetBIOS enumeration provides clues about computer names, service names, and groups."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A name table is neither a file-permission table nor a complete account list."
         },
         {
           "kind": "heading",
           "id": "section-3",
-          "text": "3. Distinguish RPC interfaces, operations, and endpoints"
+          "text": "Chapter 3 | RPC enumeration: locating the remote service"
         },
         {
           "kind": "paragraph",
-          "text": "Three RPC terms answer different questions:"
+          "text": "This chapter develops the main RPC concepts."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-1",
+          "text": "3.1 What is an RPC endpoint?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you want to contact a company's IT department."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You know it exists but do not know its extension."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You call the switchboard."
+        },
+        {
+          "kind": "code",
+          "text": "You: “What is the IT department's extension?”\n\nSwitchboard: “IT is on 50020.”\n\nYou: “Thank you. I will call 50020.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC has a similar mechanism."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The terms are:"
         },
         {
           "kind": "list",
           "items": [
-            "Interface: which agreed set of functions and parameter formats is offered?",
-            "Operation/Procedure: which specific function is being called this time, such as reading a particular status?",
-            "Endpoint: which communication location reaches the service? A TCP endpoint can be a port number; a named-pipe endpoint is a pipe name, not another TCP port."
+            "Interface: an agreed set of functions.",
+            "Operation: a particular function in that set.",
+            "Endpoint: a specific communication location."
           ]
         },
         {
           "kind": "paragraph",
-          "text": "Microsoft RPC interfaces are commonly identified by a UUID (Universally Unique Identifier) and an interface version. That version describes an interface compatibility contract. It is not directly a Windows or application product version, and a version number alone cannot establish CVE applicability. [Microsoft: RPC interface identification](https://learn.microsoft.com/en-us/windows/win32/api/rpcdce/ns-rpcdce-rpc_if_id) | [Endpoint types](https://learn.microsoft.com/en-us/windows/win32/rpc/finding-endpoints)"
+          "text": "For example, an RPC service might support:"
+        },
+        {
+          "kind": "code",
+          "text": "Interface: PrinterManagement\n\n    Operation 1: Query print jobs\n    Operation 2: Cancel print jobs\n    Operation 3: Modify printer settings"
         },
         {
           "kind": "paragraph",
-          "text": "The Endpoint Mapper is like directory assistance: it maps the desired interface to a communication location. Returning a location does not grant the caller permission to use every function."
+          "text": "This is a fictional teaching interface, not the real name of a built-in Windows interface."
         },
         {
           "kind": "paragraph",
-          "text": "A common Microsoft RPC over TCP case queries the Endpoint Mapper on TCP 135, then connects to the returned service port. Modern Windows commonly uses the dynamic TCP range 49152–65535, but an actual service may use a fixed port or another configuration. This range is neither a measured result for every device nor a recommendation to expose all those ports externally. [Microsoft: Service and network port requirements](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements)"
+          "text": "Operations can require different permissions."
         },
         {
           "kind": "paragraph",
-          "text": "RPC can also use SMB named pipes, or a client may already know the endpoint, so not every RPC call must first pass through TCP 135. Samba's rpcclient is an MS-RPC client that can use named-pipe or TCP transports. Its name does not mean that every command only queries information; inspect the specific subcommand as well. [Samba: rpcclient](https://www.samba.org/samba/docs/current/man-html/rpcclient.1.html)"
+          "text": "An employee might query print status while only an administrator may change printer settings."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-2",
+          "text": "3.2 What is the Endpoint Mapper?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The Endpoint Mapper maps RPC interfaces to endpoints."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In a common Microsoft RPC over TCP scenario, it uses TCP 135."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of it as:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Directory assistance for RPC services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Your computer\n    |\n    | TCP 135\n    | Where is this RPC interface?\n    v\nEndpoint Mapper\n    |\n    | Reply:\n    | The interface is registered at TCP 50020\n    v\nYour computer\n    |\n    | TCP 50020\n    v\nRPC service"
+        },
+        {
+          "kind": "paragraph",
+          "text": "There is an important distinction:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 135 is not the port where every RPC function runs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It may only help discover the service location."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The service performing the work may listen on another port."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft RPC endpoints can also be named pipes rather than TCP port numbers. [Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/rpc/finding-endpoints)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-3",
+          "text": "3.3 Why does RPC use a port such as 50020?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Some Microsoft RPC services use dynamic ports."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That means:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A service does not necessarily always use the same port number."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A common modern Windows default dynamic TCP range is:"
+        },
+        {
+          "kind": "code",
+          "text": "49152–65535"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A service might start using:"
+        },
+        {
+          "kind": "code",
+          "text": "TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Another start could use a different port."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The actual behavior depends on operating-system version, application, and administrator configuration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This range does not mean every port is listening, or that all of them should be exposed externally. [Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-4",
+          "text": "3.4 What is an RPC UUID?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An RPC service may offer multiple interfaces."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The system needs to identify:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Which set of functions is being requested?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft RPC can use a UUID (Universally Unique Identifier) to identify an interface."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Interface UUID:\nxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n\nInterface Version:\n1.0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This UUID is a format placeholder."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read it as:"
+        },
+        {
+          "kind": "code",
+          "text": "UUID: identifies the functional interface\nVersion: identifies the interface version"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A common interpretation error is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Seeing RPC Interface Version 1.0 and concluding that the host runs Windows 1.0 or has a particular old vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That conclusion is unsupported."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An RPC interface version and an operating-system version are different things."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Determining CVE applicability still requires the product, component, and actual version. [Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/api/rpcdce/ns-rpcdce-rpc_if_id)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-3-5",
+          "text": "3.5 What does RPC Bind mean?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you located the endpoint:"
+        },
+        {
+          "kind": "code",
+          "text": "TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The TCP connection succeeds."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The next question is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Can both parties communicate using a compatible RPC interface and data format?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC Bind is involved in that negotiation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine calling a government office and asking:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "I want to use this application service. Do you support this procedure?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The office might answer:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Yes, we support it.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Or:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“No, this interface is not provided here.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is separate from logging in as an administrator."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Successful RPC Bind does not establish administrative permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication and authorization for the specified operation still need to be evaluated."
         },
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "4. Ports 111 and 135 help locate services using different protocols"
+          "text": "Chapter 4 | Why do we sometimes see 111 and sometimes 135?"
         },
         {
           "kind": "paragraph",
-          "text": "ONC RPC is common in Unix/Linux-related services. It identifies services and operations using a program number, version (service protocol version), and procedure number. rpcbind/portmapper uses TCP/UDP 111 to help locate service addresses. This is not the same query format as Microsoft RPC interface UUIDs and TCP 135. [RFC 5531: ONC RPC](https://www.rfc-editor.org/info/rfc5531/) | [RFC 1833: ONC RPC binding protocols](https://www.rfc-editor.org/rfc/rfc1833)"
+          "text": "These are easy to confuse in CEH study and practical analysis."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-05-families-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "TCP 135 and 111: two service directories",
+            "description": "Similar purpose, different protocol families, lookup formats, and services.",
+            "items": [
+              {
+                "title": "Microsoft RPC | Common on Windows",
+                "body": "Endpoint Mapper, commonly TCP 135; Interface UUID + version. Endpoints include TCP service ports or named pipes; SMB transport is possible. Example: 135 → TCP 50020 → specified RPC operation."
+              },
+              {
+                "title": "ONC RPC | Common on Unix/Linux",
+                "body": "rpcbind/portmapper, commonly TCP/UDP 111. Program number + version identifies a service; procedure number identifies an operation. Used by some NFS-related services. Example: 111 → service location, depending on version."
+              },
+              {
+                "title": "Important exception",
+                "body": "NFSv4.1 commonly uses TCP 2049 directly; 111 is not a mandatory stop. Not querying rpcbind does not mean not using RPC."
+              }
+            ]
+          }
         },
         {
           "kind": "paragraph",
-          "text": "The common rpcinfo utility can query ONC RPC registrations. Similar naming does not make it a substitute for Microsoft RPC tools. It also has other operation options, so inspect its arguments before use. [Oracle: rpcinfo manual](https://docs.oracle.com/cd/E88353_01/html/E72487/rpcinfo-8.html)"
+          "id": "subsection-4-1",
+          "text": "4.1 Two RPC technology families"
         },
         {
           "kind": "paragraph",
-          "text": "Do not memorize “ask 111, then connect to NFS” as a rule for every version. NFSv4.1 specifies 2049 as the default service port and recommends that clients not use the RPC binding lookup process described above. Not using rpcbind does not mean not using RPC; the next unit explores NFS version differences. [RFC 8881 §2.9.3](https://www.rfc-editor.org/rfc/rfc8881.html#section-2.9.3)"
+          "text": "RPC is a concept with multiple protocol implementations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Different systems and network protocols can implement remote procedure calls."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson compares two families."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Item",
+            "Microsoft RPC",
+            "ONC RPC"
+          ],
+          "rows": [
+            [
+              "Common environment",
+              "Windows",
+              "Unix/Linux"
+            ],
+            [
+              "Lookup mechanism",
+              "Endpoint Mapper",
+              "rpcbind/portmapper"
+            ],
+            [
+              "Common lookup port",
+              "TCP 135",
+              "TCP/UDP 111"
+            ],
+            [
+              "Interface identification",
+              "Interface UUID and version",
+              "Program number and version"
+            ],
+            [
+              "Specific function",
+              "RPC Operation",
+              "Procedure number"
+            ],
+            [
+              "Common applications",
+              "Windows system and service communication",
+              "NFS-related services and others"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Both support remote calls, but use different lookup formats. [RFC Editor](https://www.rfc-editor.org/info/rfc5531/)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-4-2",
+          "text": "4.2 What does port 111 do on Linux?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a Linux server offers several ONC RPC services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each service might have a different communication location."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A client can ask rpcbind:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Where is this service currently registered?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "rpcbind commonly uses TCP/UDP 111."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux and Unix systems can use rpcinfo to query these registrations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, in an authorized test environment:"
+        },
+        {
+          "kind": "code",
+          "text": "rpcinfo -p 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This illustrates querying ONC RPC service registrations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It is not a universal replacement for Microsoft RPC Endpoint Mapper tools."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-4-3",
+          "text": "4.3 Must all NFS traffic go through 111?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This exception matters."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS stands for Network File System."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Older NFS-related workflows often involve rpcbind."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFSv4.1 normally uses TCP 2049 directly, without first querying rpcbind for every connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That does not mean NFSv4.1 has stopped using RPC."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Instead:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPC implementations can locate services in different ways. [RFC Editor](https://www.rfc-editor.org/rfc/rfc8881.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Chapter 4 takeaway:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "135 and 111 both help locate services, but belong to different RPC families."
         },
         {
           "kind": "heading",
           "id": "section-5",
-          "text": "5. Identify the stage at which a failure occurred"
+          "text": "Chapter 5 | Security analysis: at which stage did the failure occur?"
         },
         {
           "kind": "paragraph",
-          "text": "Use these questions to interpret RPC results; they are not a fixed checklist that must restart for every call:"
+          "text": "This chapter applies the mechanisms to interpreting security evidence."
         },
         {
-          "kind": "list",
-          "items": [
-            "Was registration information obtained? Discovering an endpoint only obtains mapping information; it does not establish reachability from the current location.",
-            "Is the endpoint reachable? The mapping service can respond while a firewall blocks the actual service port, the service stops listening, or its location changes.",
-            "Is the interface compatible? Even after a TCP connection succeeds, RPC bind must establish conditions such as the interface and transfer syntax. Here, bind establishes an RPC communication agreement; it does not mean obtaining administrative permission. [Microsoft: Version and capability negotiation](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/ed7bf5ae-ec8e-407e-b6d7-663958e18701)",
-            "Which identity is requesting which operation? Authentication concerns the caller's identity; authorization concerns permission to perform a specified task. One successful query does not establish permission for every operation. [Microsoft: RPC security essentials](https://learn.microsoft.com/en-us/windows/win32/rpc/rpc-security-essentials)"
+          "kind": "visual",
+          "src": "/images/ceh/m04-05-evidence-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Microsoft RPC: endpoint discovery still needs verification",
+            "description": "Synthetic case: 135 returns TCP 50020, but connection times out. Arrows show diagnostic order; authentication may occur at different stages. Known endpoints, caches, or named pipes may bypass a 135 lookup.",
+            "items": [
+              {
+                "title": "01 | Endpoint registration",
+                "body": "Endpoint Mapper: TCP 135 returns 50020. Establishes registration information only."
+              },
+              {
+                "title": "02 | Network reachability",
+                "body": "TCP Connection: connection to 50020 times out; target endpoint not reached."
+              },
+              {
+                "title": "03 | Interface negotiation",
+                "body": "RPC Bind: check interface/version compatibility. Negotiation may fail even after TCP connects."
+              },
+              {
+                "title": "04 | Authentication",
+                "body": "Establish who is calling. An identity does not imply all permissions."
+              },
+              {
+                "title": "05 | Authorization",
+                "body": "Check permission for the specified operation. Read permission does not imply modification permission."
+              },
+              {
+                "title": "This case stops at stage 2",
+                "body": "Stages 3–5 remain unverified. Do not infer incorrect credentials, administrative permission, or service absence."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-1",
+          "text": "5.1 Five stages that may be involved in an RPC operation"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine calling a remote computer's RPC function."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Conceptually, distinguish five stages:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Stage",
+            "Question",
+            "Possible result"
+          ],
+          "rows": [
+            [
+              "① Endpoint information",
+              "Do we know the service location?",
+              "TCP 50020 returned"
+            ],
+            [
+              "② Network connection",
+              "Can it be reached from this location?",
+              "Success, refusal, or timeout"
+            ],
+            [
+              "③ Interface negotiation",
+              "Do both parties support compatible RPC interfaces?",
+              "Bind success or failure"
+            ],
+            [
+              "④ Authentication",
+              "Can the caller's identity be established?",
+              "Authentication success or failure"
+            ],
+            [
+              "⑤ Operation authorization",
+              "May this caller perform the specified function?",
+              "Allowed or denied"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "Thus, “no response” does not directly establish incorrect credentials, “interface unavailable” does not directly establish a firewall block, and “Access Denied” does not establish that the entire host is secure. Preserve the original error, target, transport, identity, and failure stage, then correlate administrative configuration and logs to identify the cause."
+          "text": "This is a diagnostic concept model, not a mandatory ordering for every RPC transport."
         },
         {
           "kind": "paragraph",
-          "text": "Blocking directory assistance alone may not stop calls to known endpoints. Protecting one port may not cover other transports. Defense must consider the mapping service, actual endpoints, permitted connection sources, and operation permissions together. Disable NetBIOS only after confirming there are no legacy dependencies and testing compatibility. Do not casually disable core Windows RPC services merely to eliminate port 135."
+          "text": "Authentication can occur at different stages of establishing a connection or RPC communication."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-2",
+          "text": "5.2 Case one: a service is discoverable but cannot be reached"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose:"
+        },
+        {
+          "kind": "code",
+          "text": "Endpoint Mapper:\n\nRPC Interface → TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You attempt a connection:"
+        },
+        {
+          "kind": "code",
+          "text": "TCP 50020: TIMEOUT"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Can you conclude:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“The service does not exist”?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Possible explanations include:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A network-path fault, firewall packet drops, a stopped service, an endpoint change, or an unresponsive host."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Different evidence is needed to distinguish these explanations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A supported description is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Under this test's conditions, a connection to TCP 50020 was not established successfully."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is the observed fact."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The cause still needs investigation."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-3",
+          "text": "5.3 Case two: TCP connects but RPC Bind fails"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose:"
+        },
+        {
+          "kind": "code",
+          "text": "TCP 50020: CONNECTED\n\nRPC Bind: INTERFACE NOT SUPPORTED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "What does this show?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The network connection succeeded."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Negotiation for the requested RPC interface did not complete successfully."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Possible reasons include an unavailable interface, incompatible version, or another unmet RPC negotiation condition."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not jump to:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“The firewall must be blocking it.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP connectivity has already been observed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Investigate the RPC-layer error and settings."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-4",
+          "text": "5.4 Case three: an RPC query succeeds but another operation is denied"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an RPC query works normally."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A subsequent request to modify settings returns:"
+        },
+        {
+          "kind": "code",
+          "text": "ACCESS DENIED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This could mean:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The current identity lacks permission for that operation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Separate these two concepts."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answers:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Who are you?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a company entrance checks that your employee badge is valid."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authorization"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answers:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“What may you do?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A valid badge does not necessarily permit entry to the chairperson's office."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are different questions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "One successful RPC query does not establish permission for every administrative operation. [Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/rpc/rpc-security-essentials)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-5",
+          "text": "5.5 How does this connect to the preceding CEH lessons?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This logic applies throughout M04."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Earlier lesson",
+            "Information obtained",
+            "Unsupported conclusion"
+          ],
+          "rows": [
+            [
+              "DNS enumeration",
+              "Subdomains and DNS records",
+              "Login must be possible"
+            ],
+            [
+              "FTP enumeration",
+              "FTP service or directory names",
+              "Files can definitely be downloaded or modified"
+            ],
+            [
+              "SMTP enumeration",
+              "Particular mail-server responses",
+              "Sending as another identity must be possible"
+            ],
+            [
+              "SMB enumeration",
+              "Shared folders",
+              "Files must be readable"
+            ],
+            [
+              "NetBIOS enumeration",
+              "Names and service clues",
+              "File-sharing permission must exist"
+            ],
+            [
+              "RPC enumeration",
+              "Endpoints and interfaces",
+              "Administrative functions must be allowed"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are not six unrelated reasoning methods."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They apply the same evidence discipline to different protocols."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The principle is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each observation supports a limited set of conclusions. Untested assumptions must not become established facts."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-5-6",
+          "text": "5.6 What should defenders do?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider the administrator's perspective."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A Windows server uses TCP 135."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Should you immediately shut it down?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not necessarily."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft RPC underpins many Windows system services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Disabling core services indiscriminately can disrupt administration, domain services, or application communication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use these layers of control:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Layer one: reduce unnecessary exposure."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sources that do not need RPC, SMB, or NetBIOS should not have unrestricted access to those services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Layer two: control actual service endpoints."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Restricting TCP 135 does not establish that all RPC traffic is blocked."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fixed endpoints, dynamic ports, or other transports may exist."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Layer three: restrict operation permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Alongside network controls, check who may call which functions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Layer four: retain logs and verification results."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When an operation fails, distinguish connectivity, interface negotiation, authentication, and authorization failures."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This supports concrete remediation more effectively than treating any open port as sufficient proof of danger."
         },
         {
           "kind": "heading",
           "id": "section-6",
-          "text": "6. Practice a conclusion using a synthetic record"
+          "text": "Chapter 6 | Worked case: interpreting NetBIOS and RPC records"
         },
         {
           "kind": "paragraph",
-          "text": "This is a tabletop case; no real host was queried. Assume testing was authorized and the record says:"
+          "text": "Combine the preceding concepts."
         },
         {
-          "kind": "list",
-          "items": [
-            "Lab-A's NetBIOS name table returned LAB-FS <20> UNIQUE.",
-            "Lab-A's Endpoint Mapper returned a registration mapping an RPC interface version 1.0 to TCP 50020.",
-            "A connection to TCP 50020 from the same test subnet timed out; no RPC call was made to that endpoint.",
-            "No SMB shares were queried and no files were read."
+          "kind": "paragraph",
+          "id": "subsection-6-1",
+          "text": "6.1 Case background"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are conducting an approved internal security test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The target is a Windows server:"
+        },
+        {
+          "kind": "code",
+          "text": "Target: Lab-A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Four records are available."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record one: NetBIOS name"
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS <20> UNIQUE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record two: RPC Endpoint Mapper"
+        },
+        {
+          "kind": "code",
+          "text": "RPC Interface Version 1.0\n\nEndpoint: TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record three: connecting to TCP 50020"
+        },
+        {
+          "kind": "code",
+          "text": "Connection Timeout"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Record four: SMB"
+        },
+        {
+          "kind": "code",
+          "text": "NOT TESTED"
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-6-2",
+          "text": "6.2 What do we actually know?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First:"
+        },
+        {
+          "kind": "code",
+          "text": "LAB-FS <20> UNIQUE"
+        },
+        {
+          "kind": "paragraph",
+          "text": "We know:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A NetBIOS name associated with the server service was obtained."
+        },
+        {
+          "kind": "paragraph",
+          "text": "We do not yet know share names or the current test identity's read permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next:"
+        },
+        {
+          "kind": "code",
+          "text": "RPC Interface Version 1.0\nEndpoint: TCP 50020"
+        },
+        {
+          "kind": "paragraph",
+          "text": "We know:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The Endpoint Mapper returned an interface-to-endpoint mapping."
+        },
+        {
+          "kind": "paragraph",
+          "text": "We do not know whether the endpoint still listens, whether the current network path reaches it, or whether interface calls succeed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third:"
+        },
+        {
+          "kind": "code",
+          "text": "Connection Timeout"
+        },
+        {
+          "kind": "paragraph",
+          "text": "We know:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A connection attempt from this test source to TCP 50020 did not succeed within the waiting period."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The precise cause of the timeout is unknown."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finally:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB: NOT TESTED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB shares and file access were not verified in this test."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-6-3",
+          "text": "6.3 How should a security record be written?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This test obtained a NetBIOS server-service name clue for Lab-A and a registration mapping an RPC interface to TCP 50020."
+        },
+        {
+          "kind": "paragraph",
+          "text": ">"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Connecting to TCP 50020 from the specified test source timed out. RPC interface negotiation, authentication, and authorization for specified operations at that endpoint therefore remain unverified."
+        },
+        {
+          "kind": "paragraph",
+          "text": ">"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB shared resources and file access were not tested. Within approved scope, next check current endpoint registration, server listeners, network path, firewall rules, and relevant logs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "How does this differ from a subjective judgment?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It separates three categories:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Evidence category",
+            "Meaning",
+            "This case"
+          ],
+          "rows": [
+            [
+              "Observed fact",
+              "Result actually obtained",
+              "NetBIOS name, RPC registration, TCP timeout"
+            ],
+            [
+              "Plausible explanation",
+              "Possible explanation for the observation",
+              "Firewall, stopped service, changed endpoint, etc."
+            ],
+            [
+              "Still unverified",
+              "Insufficient evidence",
+              "RPC operation permissions and SMB read/write permissions"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "A suitable record is: “This test obtained a server-service name clue and an RPC endpoint mapping for Lab-A. The connection from the specified test location to TCP 50020 timed out; interface calls, authentication, and operation permissions at that endpoint remain unverified. SMB shares and file access were not tested.”"
+          "text": "This format works for penetration testing, vulnerability verification, incident investigation, and internal security audits."
         },
         {
           "kind": "paragraph",
-          "text": "This record preserves the boundary between observations and unknowns. In actual work, also retain the time, tool version, full arguments, and original response, while keeping passwords and unrelated personal information out of the report. Before continuing, confirm that the approved scope includes that endpoint and the specified read-only operation. Discovering a new port does not automatically expand testing scope."
+          "text": "It helps the next technical owner understand:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The current stage, the tests performed, and the questions still unanswered."
+        },
+        {
+          "kind": "heading",
+          "id": "testing-process",
+          "text": "Part 7 | Connect this lesson to the broader security-testing process"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The original lesson has six chapters; this additional part connects them to a broader model."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-7-1",
+          "text": "7.1 From reconnaissance to authorization"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Place the preceding techniques in a conceptual security-assessment workflow:"
+        },
+        {
+          "kind": "code",
+          "text": "① Reconnaissance\n   Identify potential targets\n        |\n        v\n② Scanning\n   Identify responsive network entry points\n        |\n        v\n③ Enumeration\n   Obtain specific information declared by services\n        |\n        v\n④ Connectivity Verification\n   Verify actual service reachability\n        |\n        v\n⑤ Authentication\n   Establish the caller's identity\n        |\n        v\n⑥ Authorization\n   Verify permission for a specified operation\n        |\n        v\n⑦ Security Assessment\n   Assess controls and their risks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a teaching model."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An actual assessment need not follow this exact order, and the model does not authorize arbitrary operations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Every test must remain within the authorization already obtained."
+        },
+        {
+          "kind": "paragraph",
+          "id": "subsection-7-2",
+          "text": "7.2 Why does this distinction matter?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Overinterpretation is common in security work."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“A scan found TCP 445, so files can be downloaded from this computer.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That conclusion lacks evidence of file-access permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Or:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“A scan found TCP 135, so an attacker can remotely control this Windows server.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That conclusion lacks evidence of an exploitable vulnerability, actual functionality, and operation authorization."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The reverse is also possible:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“An RPC operation was denied, so the whole server has no security problems.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That conclusion is also unsupported."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Security skill includes knowing what a tool's result actually establishes."
+        },
+        {
+          "kind": "heading",
+          "id": "lesson-summary",
+          "text": "Lesson summary | Eight concepts to retain"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Concept",
+            "What to understand"
+          ],
+          "rows": [
+            [
+              "NetBIOS",
+              "Names and related communication mechanisms"
+            ],
+            [
+              "<00>, <20>",
+              "Name-purpose suffixes, not TCP ports"
+            ],
+            [
+              "UNIQUE/GROUP",
+              "Name types, not file permissions"
+            ],
+            [
+              "SMB",
+              "Access to shared network resources, commonly TCP 445"
+            ],
+            [
+              "RPC",
+              "Calls to remote functions, not remote desktop access"
+            ],
+            [
+              "Endpoint Mapper",
+              "Locates RPC endpoints; Microsoft RPC commonly uses TCP 135"
+            ],
+            [
+              "rpcbind",
+              "Service location for ONC RPC, commonly TCP/UDP 111"
+            ],
+            [
+              "Authentication/Authorization",
+              "Identity establishment and operation permission are separate"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The central distinction is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Name exists ≠ service reachable ≠ interface usable ≠ authentication successful ≠ operation authorized."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Apply this distinction to SMB, FTP, SMTP, and other network-service security analysis."
         },
         {
           "kind": "heading",
           "id": "section-7",
-          "text": "One small check"
+          "text": "Understanding check | Interpret one scenario"
         },
         {
           "kind": "paragraph",
-          "text": "A colleague reads the record and says: “<20> means shared files are readable; 135 returned an interface, so we have RPC administrative permission; the timeout on 50020 proves that service does not exist.”"
+          "text": "Suppose a Windows computer produces these test records:"
+        },
+        {
+          "kind": "code",
+          "text": "Host: 192.0.2.10\n\nNetBIOS:\nLAB-SERVER <20> UNIQUE\n\nTCP 135:\nOPEN\n\nRPC Endpoint Mapper:\nInterface UUID: obtained\nInterface Version: 1.0\nEndpoint: TCP 50123\n\nTCP 50123:\nCONNECTED\n\nRPC Bind:\nSUCCESS\n\nRPC QueryStatus:\nSUCCESS\n\nRPC ModifySettings:\nACCESS DENIED\n\nSMB:\nNOT TESTED"
         },
         {
           "kind": "paragraph",
-          "text": "Correct this conclusion in two or three sentences. Identify what was confirmed, which conclusions remain unsupported, and the evidence to check next."
+          "text": "Answer three questions."
         },
         {
           "kind": "paragraph",
-          "text": "This task only interprets synthetic data. It requires no connection, tool installation, or configuration change, so there is no environment cleanup. The next unit covers Unix/Linux users and NFS."
+          "text": "Question one: TCP 135 is open and the Endpoint Mapper returned TCP 50123. What does each record establish? Do they establish administrative permission?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question two: RPC QueryStatus succeeded, but RPC ModifySettings returned ACCESS DENIED. Are these results contradictory? How would you explain them?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question three: Can these records establish whether LAB-SERVER's shared folders are readable? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer using “confirmed facts, reasonable inferences, and missing evidence,” then expand the reference answer to compare."
         },
         {
           "kind": "answer",
           "id": "answer-netbios-rpc-evidence",
-          "summary": "Reference answer",
+          "summary": "Reference answer: evidence boundaries in the three questions",
           "paragraphs": [
-            "The only confirmed observations are a LAB-FS <20> server-service name clue and registration data mapping an RPC interface version 1.0 to TCP 50020. Neither proves shared-file read access or administrative permission. A timeout on 50020 only means this connection did not succeed within the waiting period; its cause and the service's continued existence remain undetermined, and RPC calls, authentication, and operation permissions have not been tested. Within the approved scope, next check the endpoint's current listener and mapping, network path/firewall, and logs. Testing file reads or RPC functionality requires separate tests of specified operations using an approved identity.",
-            "Interpretation principle: name clues, registrations, endpoint connections, and operation permissions each require their own evidence. Untested items remain unknown. This is an editorial reference answer, not an actual learner response or evidence of mastery."
+            "Question one: TCP 135 OPEN establishes that this TCP entry point accepted a connection from the test source. The Endpoint Mapper's TCP 50123 response supplies a registered interface-to-endpoint mapping. Neither establishes administrative permission. Subsequent CONNECTED and Bind SUCCESS separately support endpoint connectivity and successful interface negotiation; neither alone authorizes every operation.",
+            "Question two: Both results can be true. QueryStatus success establishes success for that query; ACCESS DENIED records rejection of that modification attempt. The identity may lack modification permission; check the actual identity, service configuration, and logs. A successful query does not establish administrative permission, and one rejected operation does not establish that the entire host is secure.",
+            "Question three: Shared-folder readability cannot be determined. SMB is explicitly NOT TESTED; NetBIOS <20> is only a server-service name clue. Within approved scope, separately verify shares, directory listings, and specified file reads using the approved identity.",
+            "This exercise only interprets synthetic records: identify confirmed facts, reasonable inferences, and missing evidence. No connections, installation, or configuration changes are required, so no cleanup is needed. These are editorial reference answers; qa remains empty and does not imply a learner response or successful assessment."
           ]
         }
       ]

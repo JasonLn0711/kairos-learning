@@ -1,328 +1,4074 @@
 {
   "id": "CEH26-M04-C04",
-  "revision": 1,
-  "contentVersion": "1.0.0",
+  "revision": 2,
+  "contentVersion": "1.1.0",
   "date": "2026-11-05",
   "publishedOn": "2026-11-05",
   "status": "published",
   "qa": [],
   "text": {
     "zh": {
-      "summary": "以合成 SMB 紀錄，分清連接共用、讀取檔案與實際傳輸保護的證據。",
+      "summary": "從網路共用、檔案權限到傳輸安全，分清 SMB 五個連線階段、實際身分及每項操作能支持的結論。",
       "sections": [],
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "CEH M04-04｜SMB 列舉：用證據分清共用、檔案與權限"
+          "text": "SMB Enumeration — 從網路共用、檔案權限到傳輸安全"
         },
         {
           "kind": "paragraph",
-          "text": "本單元簡短複習 SMB 基礎，再補上「拒絕發生在哪一步」及「支援加密不等於正在加密」。"
+          "text": "本課對應：[CS Kairos Learn｜CEH M04-04：SMB 列舉](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-04/)"
         },
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "先用一句話接回來"
+          "text": "一、先掌握這堂課最重要的觀念"
         },
         {
           "kind": "paragraph",
-          "text": "SMB（Server Message Block，伺服器訊息區塊）讓電腦透過網路使用伺服器的檔案等資源。共用名稱像資料室入口：查到入口、列出裡面的檔名、讀到某份內容、修改或刪除，必須分別確認。Windows、Samba 與許多 NAS 都能提供 SMB，因此不能只看 SMB 就判定作業系統。[Microsoft：SMB 概覽](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+          "text": "SMB 列舉的核心，不是找出伺服器有哪些檔案，而是確認：我們究竟知道什麼、被允許做什麼，以及哪些事情尚未獲得證明。"
         },
         {
           "kind": "paragraph",
-          "text": "基礎複習：共用權限與檔案權限要一起看；ABE（Access-Based Enumeration，依存取權限篩選顯示）主要影響共用內的檔案與資料夾是否顯示，不取代存取控制；簽署與加密保護傳輸，不會替你增加檔案權限。"
+          "text": "想像你今天進入一棟公司的辦公大樓。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能會經歷以下過程："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 看到公司大樓的地址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 找到大樓入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 出示員工證，通過身分驗證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 看到大樓裡有「財務部」與「教育訓練部」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 進入教育訓練部。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "6. 看見某個資料櫃。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "7. 打開資料櫃，閱讀裡面的文件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "8. 修改文件，甚至把文件刪掉。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這八件事情，代表八種不同程度的存取能力。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "看到財務部的名稱，不代表能進入財務部；能進入財務部，也不代表可以閱讀、修改或刪除裡面的文件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "電腦的 SMB 檔案共享機制也是如此。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這堂課主要教我們四件事："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "核心問題",
+            "需要理解的觀念"
+          ],
+          "rows": [
+            [
+              "1. 電腦為什麼連不上共用資料夾？",
+              "SMB 連線階段與錯誤定位"
+            ],
+            [
+              "2. 系統究竟認為我是誰？",
+              "身分驗證、Guest、Anonymous"
+            ],
+            [
+              "3. 使用 SMB 3.1.1 是否就安全？",
+              "協定版本、簽署、加密"
+            ],
+            [
+              "4. 如何判斷是否存在資安問題？",
+              "列舉、讀取、修改及權限證據"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "整堂課最重要的原則是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "資訊可見 ≠ 有權存取 ≠ 能夠讀取 ≠ 能夠修改 ≠ 能夠刪除。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是 CEH M04「Enumeration，列舉」與 M05「Vulnerability Analysis，弱點分析」之間非常重要的區別。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "列舉是在確認系統透露了什麼資訊；弱點分析則進一步評估這些資訊或系統設定是否構成安全問題。[learn.cs-kairos.com](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-04/)"
         },
         {
           "kind": "heading",
           "id": "section-2",
-          "text": "一、把「連不上」拆成幾個階段"
+          "text": "二、SMB 到底是什麼？為什麼我們需要它？"
         },
         {
           "kind": "paragraph",
-          "text": "典型新連線依序經過："
+          "id": "section-2-1",
+          "text": "2.1 SMB 就是讓電腦透過網路使用其他電腦的檔案"
         },
         {
           "kind": "paragraph",
-          "text": "1. 建立傳輸連線。"
+          "text": "SMB 的全名是 Server Message Block。"
         },
         {
           "kind": "paragraph",
-          "text": "2. Negotiate（協商）：決定 SMB 版本與能力。"
+          "text": "你可以把它想成："
         },
         {
           "kind": "paragraph",
-          "text": "3. Session Setup（工作階段建立）：建立使用某個身分的工作階段。"
+          "text": "讓多台電腦共用資料夾的網路通訊語言。"
         },
         {
           "kind": "paragraph",
-          "text": "4. Tree Connect（連接共用）：要求連到指定共用。"
+          "text": "例如，今天一間研究實驗室有十位研究生，每個人的電腦都需要讀取相同的研究資料。"
         },
         {
           "kind": "paragraph",
-          "text": "5. 對資料夾或檔案提出列舉、讀取等操作。"
+          "text": "如果沒有網路檔案共享機制，大家可能必須："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "使用 USB 隨身碟交換檔案。",
+            "透過電子郵件傳送資料。",
+            "每個人都保存一份研究資料。"
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "這是概念順序，不是每讀一個檔案都要重做全部步驟。前一步成功，也不表示後一步獲准。[Microsoft：SMB 連線與拒絕階段](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)"
+          "text": "這樣不但麻煩，也很容易產生版本混亂。"
         },
         {
           "kind": "paragraph",
-          "text": "因此，TCP 445 開放只是入口線索，還不是取得共用清單。若 Finance 在連接共用時就被拒絕，不能說已經進入其中、確認某個檔案存在，或測完其檔案權限。若能進入 Training，卻在讀取 draft.txt 時被拒，就要保留那次檔案操作的完整回應，核對身分、路徑與有效權限。"
+          "text": "因此，實驗室可以設置一台 NAS（Network Attached Storage，網路附加儲存設備）。"
         },
         {
           "kind": "paragraph",
-          "text": "ACCESS_DENIED（存取遭拒）是調查起點，不保證原因只有 NTFS 檔案權限；驗證、簽署或加密要求等條件也可能造成拒絕。先定位階段，再查設定與日誌，不要一遇到錯誤就關掉安全保護。[Microsoft：SMB 存取遭拒](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+          "text": "NAS 裡面有幾個資料夾："
+        },
+        {
+          "kind": "code",
+          "text": "LAB-NAS\n│\n├── Public\n│   └── 公開文件\n│\n├── Research\n│   └── 研究資料\n│\n├── Finance\n│   └── 財務資料\n│\n└── Backup\n    └── 備份資料"
+        },
+        {
+          "kind": "paragraph",
+          "text": "研究生只要使用自己的電腦，就可以透過網路存取 NAS 上有權使用的資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 就是實現這類功能的常見協定之一。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Windows 中，你可能看過這種路徑："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們把它拆開來看："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "部分",
+            "意思"
+          ],
+          "rows": [
+            [
+              "`\\\\`",
+              "表示使用網路資源路徑"
+            ],
+            [
+              "`LAB-NAS`",
+              "提供檔案的伺服器"
+            ],
+            [
+              "`Research`",
+              "伺服器分享出來的共用名稱（Share）"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這類路徑稱為 UNC（Universal Naming Convention）路徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你也可以透過 IP 位址存取，例如："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\192.168.1.100\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 傳統上常透過 TCP 445 提供服務；現代 SMB 也有其他傳輸方式，例如 SMB over QUIC，因此不能把所有 SMB 通訊一律等同於 TCP 445。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，使用 SMB 的伺服器不一定是 Windows。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 可以透過 Samba 提供 SMB 服務，許多 NAS 也支援 SMB。因此，看到 SMB 服務不能直接判定對方使用 Windows 作業系統。[Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 SMB 與 FTP 有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前一堂 M04-03 我們學過 FTP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "FTP 和 SMB 都可以傳輸檔案，但典型使用情境不同。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "比較",
+            "FTP",
+            "SMB"
+          ],
+          "rows": [
+            [
+              "主要用途",
+              "上傳、下載檔案",
+              "遠端檔案與資源共享"
+            ],
+            [
+              "常見環境",
+              "檔案交換服務",
+              "Windows、Linux、NAS、企業內網"
+            ],
+            [
+              "使用方式",
+              "連線後操作遠端檔案",
+              "像操作本機資料夾一樣操作共用資源"
+            ],
+            [
+              "常見連接埠",
+              "TCP 21（控制連線）",
+              "TCP 445"
+            ],
+            [
+              "權限管理",
+              "由 FTP 伺服器及底層檔案系統控制",
+              "共用權限與底層檔案權限共同影響"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者最重要的共通點是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "能連到服務，不代表能取得檔案；能看到檔名，也不代表能讀取內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個原則可以一路套用到 DNS、FTP、SMTP、SMB，以及下一課的 NetBIOS／RPC。"
         },
         {
           "kind": "heading",
           "id": "section-3",
-          "text": "二、你輸入的帳號，不一定就是實際使用的身分"
+          "text": "三、為什麼「連不上」？先理解 SMB 的五個連線階段"
         },
         {
           "kind": "paragraph",
-          "text": "具名帳號、Guest（來賓）與匿名工作階段是不同情況。沒有密碼提示，可能是重用登入資訊或既有票證，不能直接寫成匿名成功；輸入某個帳號名稱，也應核對最後建立的工作階段身分。"
+          "text": "這一章是本課最重要的技術基礎。"
         },
         {
           "kind": "paragraph",
-          "text": "工具選項也不是測試結果。例如 smbclient 的 -N 只是抑制密碼提示，不代表伺服器已接受匿名連線。-L 查服務或共用清單、連入共用後的 ls 查目錄、get 下載指定檔案，三者提供不同證據；get 還會在本機保存資料，不能當成完全沒有副作用的列舉。[Samba：smbclient 手冊](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+          "id": "section-3-1",
+          "text": "3.1 連線不是只有成功與失敗兩種結果"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你想從研究室電腦連接："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "系統並不是直接打開資料夾，而是需要經過一連串程序。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-04-stages-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "SMB 列舉｜連線成功，不等於取得檔案權限",
+            "description": "把一次連線拆成五個關卡；每成功一個階段，只能確認該階段的結果；被拒絕時，先查發生在哪個階段。看見共用名稱 ≠ 能進入；讀到某個檔案 ≠ 有權修改或刪除。",
+            "items": [
+              {
+                "title": "Transport｜建立網路連線",
+                "body": "✓ TCP 445 可達\n× 不代表列出共用"
+              },
+              {
+                "title": "Negotiate｜協商協定",
+                "body": "✓ SMB 版本、能力\n× 不代表身分通過"
+              },
+              {
+                "title": "Session Setup｜建立身分工作階段",
+                "body": "✓ 確認實際使用身分\n× 不代表可進所有共用"
+              },
+              {
+                "title": "Tree Connect｜連接指定共用",
+                "body": "✓ 例如 Training 可進入\n× 不代表能讀所有檔案"
+              },
+              {
+                "title": "File Operation｜操作檔案／目錄",
+                "body": "✓ 列出、讀取、寫入等\n× 各操作須分別驗證"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這張圖中的五個階段，就像進入公司的五道關卡。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "第一階段：Transport（建立網路連線）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你準備進入公司，首先必須確認公司大樓是否有開放入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 SMB 中，這通常代表你的電腦能否連接伺服器的 TCP 445。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.100:445"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設掃描結果顯示："
+        },
+        {
+          "kind": "code",
+          "text": "445/tcp open microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表 TCP 445 可以建立連線，而且該連接埠通常與 SMB 有關。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這不代表："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "你已成功登入。",
+            "你看見了共用資料夾。",
+            "你可以讀取任何檔案。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "甚至不能單憑連接埠號碼就完全確認後面的服務實作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與 CEH M03 的 Port Scanning（連接埠掃描）觀念相同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M03 主要回答「服務入口在哪裡」；M04 則要進一步確認「服務願意告訴我們什麼」。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "第二階段：Negotiate（協商）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你已經到達公司大樓，接下來必須確認雙方能用什麼方式溝通。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 也是如此。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的電腦可能說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我支援 SMB 2.1、3.0、3.1.1。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我也支援 SMB 3.1.1，那我們就使用這個版本。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雙方因此完成協商。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個選定的協定版本叫做 Dialect。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不是在討論使用者權限，而是確認雙方如何使用 SMB 通訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Dialect: SMB 3.1.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表本次連線選用 SMB 3.1.1。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但請特別注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用 SMB 3.1.1，不代表整個連線已經啟用 SMB 加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "後面第七章會深入解釋。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "第三階段：Session Setup（建立工作階段）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在你已經來到公司大樓，也確認溝通方式沒有問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來，警衛可能詢問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你是誰？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你拿出員工證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "警衛確認你的身分後，才讓你建立一個可以使用的工作階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 的 Session Setup 就有類似作用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Domain: LAB\nUsername: labreader\nAuthentication: Success"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表使用者已成功建立身分工作階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有兩個重要概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication（身分驗證）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認你是誰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authorization（授權）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認你可以做什麼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩件事不相同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你確實是研究室的學生，但並不代表你有權閱讀教授的薪資資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通過身分驗證，只是確認身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "具體檔案權限仍然需要另外判斷。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-5",
+          "text": "第四階段：Tree Connect（連接共用）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個名稱可能比較陌生。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Tree Connect 可以簡單理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用者要求連接某個指定的共享資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Training"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器可能回覆："
+        },
+        {
+          "kind": "code",
+          "text": "Tree Connect: Success"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表系統允許你連接 Training 這個共用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，如果你改為連接："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Finance"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器可能回答："
+        },
+        {
+          "kind": "code",
+          "text": "STATUS_ACCESS_DENIED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表這一次連接共用的要求遭到拒絕。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候，你不能宣稱："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「Finance 裡面有一個 Salary.xlsx，而且我已經確認它不能讀取。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你根本沒有進去，也沒有實際確認裡面的檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前只能說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這次使用指定身分連接 Finance 共用時遭到拒絕，因此尚未取得其內部檔案的存取證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 CEH 列舉時最需要培養的證據判讀能力。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-6",
+          "text": "第五階段：File Operation（檔案操作）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在假設你已經成功連接 Training。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "裡面有兩個檔案："
+        },
+        {
+          "kind": "code",
+          "text": "Training\n│\n├── readme.txt\n│\n└── draft.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你看得見這兩個檔名。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但伺服器可以設定不同權限："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "檔案",
+            "列出檔名",
+            "讀取內容",
+            "修改內容"
+          ],
+          "rows": [
+            [
+              "readme.txt",
+              "成功",
+              "成功",
+              "未測試"
+            ],
+            [
+              "draft.txt",
+              "成功",
+              "拒絕",
+              "未測試"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使你已成功進入共用資料夾，也不表示你能操作所有檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "每一次操作都可能受到不同權限限制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-7",
+          "text": "3.2 為什麼要區分這些階段？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為同樣顯示「連不上」，可能是完全不同的問題。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "失敗階段",
+            "可能原因",
+            "檢查方向"
+          ],
+          "rows": [
+            [
+              "Transport",
+              "服務未啟動、防火牆阻擋",
+              "網路與連接埠"
+            ],
+            [
+              "Negotiate",
+              "協定不相容",
+              "SMB 版本、伺服器設定"
+            ],
+            [
+              "Session Setup",
+              "身分驗證失敗",
+              "帳號、票證、驗證政策"
+            ],
+            [
+              "Tree Connect",
+              "共用不存在、授權不足、加密要求不符",
+              "共用設定、權限、安全政策"
+            ],
+            [
+              "File Operation",
+              "檔案存取權限不足",
+              "目標檔案的有效權限"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是 Microsoft 官方故障排除文件採用的基本思路：先確定錯誤出現在協商、工作階段建立，還是共用連接，而不是看到 `ACCESS_DENIED` 就直接修改權限。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上方圖解依本課五階段說明重製，可搭配 Microsoft 官方故障排除文件對照閱讀。"
         },
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "三、支援、要求、實際使用，分開看"
+          "text": "四、為什麼輸入了帳號，系統卻不一定用這個身分？"
         },
         {
           "kind": "paragraph",
-          "text": "Dialect（方言）是雙方這次選用的 SMB 協定版本。看到 SMB 3.1.1，只能確認相應的協商結果，不會自動證明每個共用或每次存取都已使用 SMB 加密。"
-        },
-        {
-          "kind": "list",
-          "items": [
-            "支援：產品與協定具備什麼能力。",
-            "要求：有效政策規定必須使用什麼。",
-            "實際使用：這次連線真的用了什麼。"
-          ]
+          "text": "這一章主要介紹三種身分。"
         },
         {
           "kind": "paragraph",
-          "text": "Signing（簽署）協助驗證訊息完整性與來源，但不以隱藏內容為目的。Encryption（加密）保護傳輸內容的機密性；即使傳輸已加密，也不等於磁碟上的檔案已加密，或存取權限一定正確。[Microsoft：簽署](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing)｜[SMB 加密](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)"
+          "id": "section-4-1",
+          "text": "4.1 具名帳號（Named Account）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你登入："
+        },
+        {
+          "kind": "code",
+          "text": "LAB\\labreader"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表你希望以 LAB 網域中的 labreader 身分使用 SMB。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像你拿出自己的員工證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器需要驗證你的身分，才能決定授權。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 Guest（來賓）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Guest 可以想成公司提供給訪客的臨時身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司有一個 Public 資料夾，允許訪客使用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "訪客不需要一般員工帳號，系統仍然可以將其映射為 Guest 身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 Guest 不代表毫無限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Public:\n    Guest → Read\n\nFinance:\n    Guest → Deny"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種設定可以讓 Guest 讀取公開資料，卻無法存取財務資料。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 Anonymous（匿名）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Anonymous 則是指沒有建立一般具名使用者身分的匿名存取情境。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它與 Guest 不是同一個概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在不同 SMB 伺服器及設定下，匿名連線可能被拒絕，也可能被映射成某個 Guest 身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，不應只看使用者輸入了什麼帳號，就直接認定伺服器最後使用什麼身分。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 為什麼沒有要求輸入密碼，不代表匿名成功？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本課特別強調的觀念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你開啟 Windows 檔案總管："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "結果系統直接顯示資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "完全沒有要求輸入密碼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有人可能說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這台 NAS 可以匿名存取！」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個結論可能是錯的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 Windows 可能已經使用你現有的登入憑證，或是重用了之前建立的工作階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在網域環境中，也可能使用 Kerberos 票證完成身分驗證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以："
+        },
+        {
+          "kind": "paragraph",
+          "text": "沒有跳出密碼視窗，不等於沒有身分驗證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是我們區分「使用者介面表現」與「底層協定實際結果」的重要例子。"
         },
         {
           "kind": "heading",
           "id": "section-5",
-          "text": "四、用一份合成案例做診斷"
+          "text": "五、SMB 列舉工具：smbclient 到底在做什麼？"
         },
         {
           "kind": "paragraph",
-          "text": "以下只是紙上教材，沒有執行任何真實查詢。假設核准的實驗室紀錄確認身分為 LAB/labreader："
+          "text": "這一章可以呼應我們在 M04-03 學過的 FTP 工具。"
         },
         {
-          "kind": "list",
-          "items": [
-            "共用清單回傳 Training、Finance。",
-            "Training 目錄列出 readme.txt、draft.txt。",
-            "readme.txt 的指定合成內容讀取成功。",
-            "draft.txt 讀取遭拒。",
-            "Finance 在連接共用時遭拒，未進入共用。",
-            "Training 的連線為 SMB 3.1.1，簽署已使用，SMB 層加密未使用。",
-            "上傳、修改、刪除都未測試。"
+          "kind": "paragraph",
+          "text": "在 Linux 中，`smbclient` 是 Samba 提供的 SMB 用戶端工具。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可以與 SMB 伺服器互動，包括查詢共用、列出目錄及下載檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "5.1 `-L`：查詢共用清單"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們在獲得授權的實驗室環境中執行："
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.0.2.10 -U labreader"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 `192.0.2.10` 是文件範例使用的保留 IP 位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個指令的概念是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請使用 labreader 帳號，查詢這台 SMB 伺服器提供哪些共享資源。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設結果為："
+        },
+        {
+          "kind": "code",
+          "text": "Sharename       Type\n---------       ----\nTraining        Disk\nFinance         Disk\nPublic          Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們現在知道伺服器回傳了三個共用名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但還不能宣稱三個資料夾都能進入。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-2",
+          "text": "5.2 `ls`：列出資料夾內的項目"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來連接某個允許存取的共用："
+        },
+        {
+          "kind": "code",
+          "text": "smbclient //192.0.2.10/Training -U labreader"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若成功，就可以進入 smbclient 的互動環境。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "然後輸入："
+        },
+        {
+          "kind": "code",
+          "text": "smb: \\> ls"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設結果為："
+        },
+        {
+          "kind": "code",
+          "text": "readme.txt\ndraft.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表本次目錄列舉成功，取得了兩個檔名。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但還沒有證明任何一個檔案的內容可以被讀取。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-3",
+          "text": "5.3 `get`：讀取並下載檔案"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你取得了明確授權，可以測試下載："
+        },
+        {
+          "kind": "code",
+          "text": "smb: \\> get readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果成功，代表該檔案內容已透過 SMB 傳輸到本機。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請注意：`get` 不只是查詢檔名，它會實際讀取遠端檔案並在本機保存資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，在需要保護敏感資訊的環境中，不能把下載檔案視為完全沒有副作用的列舉。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-4",
+          "text": "5.4 `-N` 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能看過："
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.0.2.10 -N"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-N` 的主要用途是避免互動式密碼提示。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但它並不代表："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請讓我以匿名身分登入，而且伺服器一定會接受。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際結果仍需要確認。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三個操作的差別，可以整理如下："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "操作",
+            "要回答的問題"
+          ],
+          "rows": [
+            [
+              "`smbclient -L`",
+              "伺服器回傳哪些共用資源？"
+            ],
+            [
+              "`ls`",
+              "我能列出目前目錄內哪些項目？"
+            ],
+            [
+              "`get`",
+              "我能否取得指定檔案的內容？"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "目前能說：這個身分看到了兩個共用名稱，讀到了指定的 readme.txt；draft.txt 名稱已揭露，但本次未取得內容；Finance 內部檔案尚未確認。寫入與刪除仍是未知。"
-        },
-        {
-          "kind": "paragraph",
-          "text": "若政策連 draft.txt 的名稱都不應讓 labreader 看見，那麼讀取遭拒，仍不代表資訊揭露要求已滿足。ABE 可協助降低這種名稱曝光，但真正的存取限制仍需權限控制。[Microsoft：ABE 的作用範圍](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "驗證防護時，要同時檢查「該允許的正常使用」與「不該允許的操作遭拒」，並保存時間、身分、路徑、操作、完整回應與未測項目。不要把局部成功寫成攻破，也不要把一次拒絕寫成全面安全。"
+          "text": "這些功能及 `-N` 的行為，都可以在 Samba 官方工具手冊中確認。[Samba](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
         },
         {
           "kind": "heading",
           "id": "section-6",
-          "text": "今天只做一個小檢核"
+          "text": "六、共用權限與檔案權限，為什麼必須一起看？"
         },
         {
           "kind": "paragraph",
-          "text": "同事說：「Finance 已出現在清單，所以裡面的檔案都能讀；Training 使用 SMB 3.1.1，所以內容已加密；readme.txt 能讀，也代表能刪。」"
+          "text": "這是本課值得延伸的一個實務問題。"
         },
         {
           "kind": "paragraph",
-          "text": "請用兩三句話修正這段結論，說明目前確認了什麼、還不知道什麼。"
+          "id": "section-6-1",
+          "text": "6.1 共用權限（Share Permissions）"
         },
         {
           "kind": "paragraph",
-          "text": "不必執行工具或背封包名稱。下一單元接 NetBIOS／RPC，繼續分清名稱資訊、通訊入口與實際授權。"
+          "text": "假設管理員在 Windows Server 分享："
+        },
+        {
+          "kind": "code",
+          "text": "D:\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "並設定共用名稱："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-SERVER\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "管理員可以針對這個共用設定權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Research Share\n\nResearchers → Read\nAdministrators → Full Control"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是第一層權限控制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 NTFS 權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Windows 的 NTFS 檔案系統也可以針對資料夾或檔案設定權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "D:\\Research\n\nResearchers → Modify\nAdministrators → Full Control"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是第二層權限控制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 兩層權限如何共同作用？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設研究生透過 SMB 存取資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "設定如下："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "權限來源",
+            "labreader"
+          ],
+          "rows": [
+            [
+              "Share Permission",
+              "Read"
+            ],
+            [
+              "NTFS Permission",
+              "Modify"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "結果呢？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "透過該 SMB 共用存取時，labreader 通常只能讀取，而不能修改。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 Share Permission 只允許 Read。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "反過來也一樣。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "權限來源",
+            "labreader"
+          ],
+          "rows": [
+            [
+              "Share Permission",
+              "Change"
+            ],
+            [
+              "NTFS Permission",
+              "Read"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "有效權限仍然不會因為共用允許 Change，就自動取得 NTFS 未授予的修改能力。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，你可以先把這個機制理解為："
+        },
+        {
+          "kind": "paragraph",
+          "text": "透過 SMB 的有效權限，必須同時符合共用層與檔案系統層的授權要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際 Windows 權限計算還涉及群組成員資格、繼承、拒絕權限及存取控制項目（ACE），因此「取較小的權限」只是方便入門的簡化說法。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 ABE：為什麼有時連檔名都看不見？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ABE 是 Access-Based Enumeration。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "中文可以稱為「依存取權限篩選顯示」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設資料夾裡有："
+        },
+        {
+          "kind": "code",
+          "text": "Research\n│\n├── public.txt\n├── student_report.txt\n└── professor_salary.xlsx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "管理員希望一般研究生只能看到自己有權存取的資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果啟用適當設定的 ABE，研究生可能只看見："
+        },
+        {
+          "kind": "code",
+          "text": "Research\n│\n├── public.txt\n└── student_report.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`professor_salary.xlsx` 不會出現在一般研究生的目錄清單中。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個機制的重點是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "不只是限制能否讀取，也可以減少不應被看到的檔案與資料夾名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但請注意，ABE 主要控制共用內檔案與資料夾的列舉顯示。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不是取代 NTFS 權限的安全措施，也不代表在任何情況下都會隱藏伺服器的共用名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果原本的檔案權限設定錯誤，ABE 本身不能解決所有存取控制問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、SMB 3.1.1、Signing、Encryption 有什麼差別？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章很容易混淆，而且是實務資安評估非常重要的概念。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 SMB 3.1.1 是協定版本"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你跟朋友都使用新版通訊軟體。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "新版通訊軟體支援端對端加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你不能只因為雙方都安裝新版軟體，就直接推論某一段對話已經使用端對端加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 也是一樣。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "支援加密功能，和這次實際使用加密，是不同的事情。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 Signing：數位簽署"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Signing 可以想成你寄出一封附有防偽簽章的信。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "收件者可以確認訊息來自持有適當金鑰的通訊方，並檢查訊息是否遭到竄改。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，簽署本身並不負責隱藏訊息內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB Signing 的核心目的是保護協定訊息的完整性與真實性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "SMB Signing: Enabled"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表這次連線使用 SMB 簽署。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但單憑這項資訊，不能宣稱傳輸內容已經由 SMB 加密。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "7.3 Encryption：加密"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Encryption 則比較像把信件放進上鎖的保密箱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使有人在傳輸途中取得資料，沒有適當的解密金鑰，就無法直接讀取受保護的內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB Encryption 主要保護傳輸過程中的資料機密性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "SMB Encryption: Enabled"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表本次 SMB 通訊正在使用 SMB 層的加密保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這不代表 NAS 硬碟上的資料也已經加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "磁碟資料的保護通常需要額外的技術，例如 BitLocker 或其他儲存加密機制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-4",
+          "text": "7.4 三個重要概念的差別"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "機制",
+            "主要目的",
+            "白話理解"
+          ],
+          "rows": [
+            [
+              "SMB Dialect",
+              "協商通訊版本",
+              "雙方決定使用哪一版語言"
+            ],
+            [
+              "SMB Signing",
+              "訊息完整性與真實性",
+              "確認信件沒有遭到竄改"
+            ],
+            [
+              "SMB Encryption",
+              "傳輸機密性",
+              "把信件放入上鎖的保密箱"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡還有一個更細緻的區別："
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使 SMB 層沒有啟用 Encryption，也不能不經確認就斷言整條網路路徑完全沒有其他加密保護；例如 VPN 或其他安全傳輸層可能提供保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "應該精確說明是哪一層使用了什麼保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft 官方也明確區分 SMB Encryption 與磁碟靜態資料加密，並說明 SMB 3.1.1 的協商保護機制。[Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-5",
+          "text": "7.5 最重要的觀念：支援、要求、實際使用"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設實驗室 NAS 的設定如下："
+        },
+        {
+          "kind": "code",
+          "text": "SMB Version: 3.1.1\n\nSigning Supported: Yes\nSigning Required: Yes\n\nEncryption Supported: Yes\nEncryption Required: No"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Supported（支援）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表設備具有這項功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Required（要求）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表相關安全政策規定連線必須使用該功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Negotiated／Observed（實際協商或觀察結果）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表這一次連線真正採用了什麼設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，系統雖然支援 SMB Encryption，卻不要求所有共用都必須加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，某次連線可能呈現："
+        },
+        {
+          "kind": "code",
+          "text": "Dialect: SMB 3.1.1\n\nSigned: True\n\nEncrypted: False"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這並不矛盾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 使用 SMB 3.1.1。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 已使用 SMB 簽署。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 本次沒有使用 SMB 層加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能因為第一項成立，就直接推論第三項也成立。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "補充一個實務重點：Windows 11 24H2 與 Windows Server 2025 強化了 SMB 簽署的預設要求。因此，某些舊 NAS 在系統更新後突然無法連接，可能與安全政策不相容有關，而不只是檔案權限設定錯誤。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、實際案例：如何正確判讀 SMB 列舉結果？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在我們把前面所有觀念結合起來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下使用原教材的合成案例。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是研究室的資安管理人員，使用："
+        },
+        {
+          "kind": "code",
+          "text": "Domain: LAB\nUsername: labreader"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對已獲授權的 NAS 進行安全檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-1",
+          "text": "8.1 實際觀察結果"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "測試項目",
+            "結果"
+          ],
+          "rows": [
+            [
+              "查詢共用清單",
+              "Training、Finance"
+            ],
+            [
+              "連接 Training",
+              "成功"
+            ],
+            [
+              "列出 Training 目錄",
+              "readme.txt、draft.txt"
+            ],
+            [
+              "讀取 readme.txt",
+              "成功"
+            ],
+            [
+              "讀取 draft.txt",
+              "ACCESS_DENIED"
+            ],
+            [
+              "連接 Finance",
+              "ACCESS_DENIED"
+            ],
+            [
+              "SMB 協定版本",
+              "3.1.1"
+            ],
+            [
+              "SMB Signing",
+              "已使用"
+            ],
+            [
+              "SMB Encryption",
+              "未使用"
+            ],
+            [
+              "上傳檔案",
+              "未測試"
+            ],
+            [
+              "修改檔案",
+              "未測試"
+            ],
+            [
+              "刪除檔案",
+              "未測試"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這份紀錄很適合拿來訓練資安判斷能力。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-04-evidence-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "SMB 列舉｜同一份紀錄，可以下哪些結論？",
+            "description": "合成情境：LAB / labreader；只根據真正觀察到的操作判斷。安全判讀：支援（Capability）≠ 要求（Policy）≠ 本次實際使用（Observed）。Signing 保護訊息完整性；Encryption 保護傳輸機密性，兩者都不會增加檔案權限。",
+            "items": [
+              {
+                "title": "清單出現 Finance",
+                "body": "✓ 知道共用名稱\n× 不能推論能進入或讀取裡面檔案"
+              },
+              {
+                "title": "進入 Training 成功",
+                "body": "✓ 這次能連接該共用\n× 不能推論每一個檔案都可讀"
+              },
+              {
+                "title": "看見 draft.txt",
+                "body": "✓ 取得指定檔名資訊\n× 不能推論能讀取檔案內容"
+              },
+              {
+                "title": "讀取 readme.txt 成功",
+                "body": "✓ 指定檔案內容可讀\n× 不能推論能修改、刪除或上傳"
+              },
+              {
+                "title": "SMB 3.1.1 已協商",
+                "body": "✓ 這次使用該協定版本\n× 不能推論 SMB 加密已啟用"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 Finance 出現在清單，代表它可以被存取嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前只知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「伺服器回傳了一個名稱為 Finance 的共用。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "由於 Tree Connect 遭拒，我們甚至還沒有進入 Finance。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，Finance 裡面有哪些檔案，目前仍然未知。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 draft.txt 看得到，卻不能讀，這算安全嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "答案取決於系統的安全要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設安全政策規定："
+        },
+        {
+          "kind": "paragraph",
+          "text": "研究生不可以閱讀 draft.txt。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那麼本次讀取遭拒，符合這次測試的預期。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但如果安全政策規定："
+        },
+        {
+          "kind": "paragraph",
+          "text": "研究生連 draft.txt 這個名稱都不應該知道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那麼，即使讀取遭拒，檔名仍然出現在清單中，就可能構成資訊揭露問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是 ABE 可以發揮作用的地方。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，資安不只是檢查檔案能否被讀取，還要確認資訊是否應該被顯示。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 readme.txt 能讀取，是不是代表能刪除？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為本次沒有測試刪除。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "正確結論應該是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「labreader 本次成功讀取 readme.txt 的指定內容，但尚未驗證修改及刪除權限。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這比寫成「具有完整檔案存取權限」精確得多。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5",
+          "text": "8.5 這份紀錄能證明 NAS 安全嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前只能說明特定身分、特定時間及特定操作的結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "已確認：\n\n- labreader 可以連接 Training。\n- labreader 可以讀取 readme.txt。\n- labreader 讀取 draft.txt 遭拒。\n- labreader 連接 Finance 遭拒。\n- 本次 SMB 連線使用簽署。\n\n尚未確認：\n\n- 是否存在其他具有過大權限的帳號。\n- 是否有 Guest 或匿名存取問題。\n- 是否有不應揭露的檔案名稱。\n- 是否允許未授權修改或刪除。\n- 是否符合所有傳輸加密政策。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尤其要注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗證一個帳號被拒絕，不等於證明其他帳號都會被拒絕。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣地，某次檢查沒有發現問題，也不等於整台 NAS 已通過全面安全驗證。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、實務延伸：你今天要檢查實驗室 NAS，應該怎麼做？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以把本課整理成一個簡單的安全檢查流程。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-1",
+          "text": "9.1 首先確認目標與身分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你必須先知道："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "這台 NAS 是誰管理的？",
+            "你取得了哪些檢查授權？",
+            "這次測試使用哪個帳號？",
+            "這個帳號原本應該擁有哪些權限？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣才能判斷測試結果是否符合預期。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "9.2 接著確認可見資訊與實際授權"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "帳號：labreader\n\n預期權限：\n\nTraining → Read\nResearch → Read\nFinance  → Deny\nBackup   → Deny"
+        },
+        {
+          "kind": "paragraph",
+          "text": "然後檢查："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Training 是否可以連接？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finance 是否會拒絕？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Training 中的特定檔案是否能讀取？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些都是不同的驗證項目。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-3",
+          "text": "9.3 再確認傳輸安全"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "SMB Dialect\nSMB Signing\nSMB Encryption\nGuest Access"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要比對的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "安全政策要求什麼，以及實際連線採用了什麼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若政策要求所有研究敏感資料都必須透過 SMB 加密傳輸，但實際連線顯示沒有 SMB Encryption，就需要調查政策是否被正確實施。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-4",
+          "text": "9.4 最後保留檢查證據"
+        },
+        {
+          "kind": "paragraph",
+          "text": "建議每一筆檢查紀錄至少包含："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "用途"
+          ],
+          "rows": [
+            [
+              "Timestamp",
+              "什麼時候測試"
+            ],
+            [
+              "Server",
+              "哪一台設備"
+            ],
+            [
+              "Identity",
+              "這次實際使用什麼身分"
+            ],
+            [
+              "Resource",
+              "測試哪個共用或檔案"
+            ],
+            [
+              "Operation",
+              "執行列舉、讀取或其他操作"
+            ],
+            [
+              "Response",
+              "系統完整回應"
+            ],
+            [
+              "Expected Result",
+              "根據政策，原本應該允許還是拒絕"
+            ],
+            [
+              "Conclusion",
+              "本次測試能支持的結論"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "更進一步，可以把檢查結果整理成："
+        },
+        {
+          "kind": "code",
+          "text": "SMB Security Assessment\n│\n├── 1. Network Connectivity\n│   └── 網路連線與入口\n│\n├── 2. Authentication\n│   └── 實際使用者身分\n│\n├── 3. Authorization\n│   ├── Share Permissions\n│   ├── File Permissions\n│   └── Access-Based Enumeration\n│\n├── 4. Transport Security\n│   ├── SMB Dialect\n│   ├── Signing\n│   └── Encryption\n│\n└── 5. Evidence & Reporting\n    ├── 成功項目\n    ├── 拒絕項目\n    └── 尚未測試項目"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種做法能讓資安檢查不只是執行工具，而是建立可以追溯、重現及審查的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它也能自然銜接 CEH M05 的弱點分析。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "十、總結：這堂課真正要培養的是什麼能力？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M04-04 的重點，其實可以收斂成三個判斷原則。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，分清楚連線階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 連線成功、完成身分驗證、進入共用資料夾、讀取檔案，是不同的事情。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，分清楚資訊與權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "知道資源存在，不代表有權使用；能讀取，不代表能修改或刪除。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，分清楚安全能力與實際保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "支援 Signing、要求 Signing、實際使用 Signing，是不同層次的資訊；Encryption 也是如此。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "更重要的是，不要把沒有測試的事情寫成已經確認，也不要把單一測試結果誇大成整體安全結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個原則不只適用於 SMB，也適用於後續的 FTP、SMTP、RPC、Active Directory，以及各種企業內部系統。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "十一、理解檢核：請你試著判斷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設某實驗室 NAS 有以下測試結果："
+        },
+        {
+          "kind": "code",
+          "text": "SMB Server: LAB-NAS\n\nUsername: student01\n\nShare List:\n    Public\n    Research\n    Finance\n\nPublic:\n    Tree Connect: Success\n    ls: Success\n    readme.txt: Read Success\n\nResearch:\n    Tree Connect: Success\n    confidential.txt: ACCESS_DENIED\n\nFinance:\n    Tree Connect: ACCESS_DENIED\n\nProtocol:\n    SMB 3.1.1\n\nSigning:\n    Enabled\n\nEncryption:\n    Disabled"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請回答以下四個問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題一："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finance 出現在共用清單中，但 Tree Connect 遭到拒絕。你能否判斷 Finance 裡面有哪些檔案？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題二："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Research 裡面的 confidential.txt 被拒絕讀取，但你仍然看得見這個檔名。你認為這是否可能是資安問題？判斷條件是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題三："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個 NAS 使用 SMB 3.1.1，而且 Signing 已經啟用。是否代表目前的 SMB 傳輸內容已經加密？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題四："
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你是這間實驗室的資安管理人員，想確認 student01 不能刪除 Research 裡面的檔案，你認為目前的證據是否足夠？你會如何在不危害正式研究資料的情況下完成驗證？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請先依照自己的理解作答，再比對參考解答，檢查推理、觀念差異及實際 NAS 資安管理中的應用。"
         },
         {
           "kind": "answer",
           "id": "answer-smb-evidence",
-          "summary": "參考解答：共用、加密與刪除權限的證據",
+          "summary": "參考解答：四題證據判讀",
           "paragraphs": [
-            "Finance 名稱可見不等於能讀內部檔案；這次在連共用時就遭拒，內部檔案還沒確認。SMB 3.1.1 是協商版本，紀錄另指出 SMB 層加密未使用，不能說內容已由 SMB 加密。readme.txt 的讀取成功只證明這次指定檔案可讀；刪除沒有測試，仍是未知。"
+            "問題一：不能。共用清單只證明 Finance 名稱被回傳，Tree Connect 遭拒，沒有取得其目錄或內部檔案的證據。",
+            "問題二：可能。如果政策只禁止讀取，這次拒絕符合預期；若連檔名都不應顯示，名稱可見可能構成資訊揭露。應比對實際身分、檔案權限及 ABE 設定。",
+            "問題三：不能。SMB 3.1.1 是協定版本，Signing 保護訊息完整性與真實性；本例明示 Encryption Disabled，不能宣稱使用 SMB 層加密。其他傳輸層是否提供加密仍需另外確認。",
+            "問題四：證據不足，讀取遭拒不證明刪除遭拒。先取得授權，由管理員在隔離測試共用建立可丟棄檔案，重現 Research 的相關共用／檔案權限、繼承、群組與擁有者條件，以 student01 驗證刪除回應，記錄身分、資源、操作及結果，再由管理員清理。不要刪除正式資料；測試條件未能對應正式環境時，結論只適用測試資源。"
           ]
         }
       ]
     },
     "en": {
-      "summary": "Use a synthetic SMB record to distinguish evidence for share access, file reads, and transport protection actually in use.",
+      "summary": "From network shares and file permissions to transport security: distinguish five SMB stages, actual identity, and conclusions supported by each operation.",
       "sections": [],
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "CEH M04-04｜SMB Enumeration: Use Evidence to Distinguish Shares, Files, and Permissions"
+          "text": "SMB Enumeration — Network shares, file permissions, and transport security"
         },
         {
           "kind": "paragraph",
-          "text": "This unit briefly reviews SMB fundamentals, then adds two distinctions: where a refusal occurs, and support for encryption versus encryption actually in use."
+          "text": "This lesson corresponds to [CS Kairos Learn｜M04-04: SMB enumeration](https://learn.cs-kairos.com/en/courses/ceh/v13/m04/concepts/m04-04/)."
         },
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "Reconnect with the idea in one sentence"
+          "text": "1. Start with the central idea"
         },
         {
           "kind": "paragraph",
-          "text": "SMB (Server Message Block) lets computers use resources such as a server's files over a network. A share name is like the entrance to a records room: finding the entrance, listing the filenames inside, reading a particular file's contents, and modifying or deleting it must each be verified separately. Windows, Samba, and many NAS devices can provide SMB, so seeing SMB alone does not identify the operating system. [Microsoft: SMB overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+          "text": "SMB enumeration means establishing what we know, what we are allowed to do, and what remains unproven, beyond finding files on a server."
         },
         {
           "kind": "paragraph",
-          "text": "Fundamentals to recall: share permissions and file permissions must be considered together; ABE (Access-Based Enumeration, which filters what is displayed according to access rights) primarily affects whether files and folders within a share are visible and does not replace access control; signing and encryption protect data in transit and do not grant you additional file permissions."
+          "text": "Imagine entering a company's office building."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You might go through these steps:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. See the building's address."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Find its entrance."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Show an employee badge and pass authentication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. See that it contains Finance and Training departments."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. Enter Training."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6. See a filing cabinet."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7. Open it and read a document."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8. Modify or even delete that document."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These eight actions represent eight different levels of access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Seeing the name Finance does not mean you can enter it; entering it does not mean you can read, modify, or delete its documents."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB file sharing works in a similar way."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson covers four questions:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Main question",
+            "Concepts to understand"
+          ],
+          "rows": [
+            [
+              "1. Why can't a computer connect to a shared folder?",
+              "SMB connection stages and locating failures"
+            ],
+            [
+              "2. Who does the system actually think I am?",
+              "Authentication, Guest, Anonymous"
+            ],
+            [
+              "3. Does using SMB 3.1.1 make a connection secure?",
+              "Dialect, signing, encryption"
+            ],
+            [
+              "4. How do we judge whether a security problem exists?",
+              "Evidence of enumeration, reading, modification, and permissions"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The guiding principle is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Information visibility ≠ access authorization ≠ ability to read ≠ ability to modify ≠ ability to delete."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This also distinguishes CEH M04 Enumeration from M05 Vulnerability Analysis."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration establishes what information a system reveals; vulnerability analysis then assesses whether that information or configuration constitutes a security problem. [learn.cs-kairos.com](https://learn.cs-kairos.com/en/courses/ceh/v13/m04/concepts/m04-04/)"
         },
         {
           "kind": "heading",
           "id": "section-2",
-          "text": "1. Break “cannot connect” into stages"
+          "text": "2. What is SMB, and why do we need it?"
         },
         {
           "kind": "paragraph",
-          "text": "A typical new connection proceeds in this order:"
+          "id": "section-2-1",
+          "text": "2.1 SMB lets computers use files on other computers over a network"
         },
         {
           "kind": "paragraph",
-          "text": "1. Establish a transport connection."
+          "text": "SMB stands for Server Message Block."
         },
         {
           "kind": "paragraph",
-          "text": "2. Negotiate: agree on the SMB version and capabilities."
+          "text": "Think of it as:"
         },
         {
           "kind": "paragraph",
-          "text": "3. Session Setup: establish a session using an identity."
+          "text": "A network language that lets multiple computers share folders."
         },
         {
           "kind": "paragraph",
-          "text": "4. Tree Connect: request a connection to a specified share."
+          "text": "For example, a research laboratory has ten graduate students whose computers all need to read the same research data."
         },
         {
           "kind": "paragraph",
-          "text": "5. Request operations such as listing a directory or reading a file."
+          "text": "Without network file sharing, they might have to:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Exchange files on USB drives.",
+            "Send files by email.",
+            "Each keep a separate copy of the research data."
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "This is a conceptual sequence, not a requirement to repeat every step each time a file is read. Success at one step does not mean the next step is authorized. [Microsoft: SMB connection and failure stages](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)"
+          "text": "That is inconvenient and easily creates conflicting versions."
         },
         {
           "kind": "paragraph",
-          "text": "An open TCP port 445 is therefore only a clue about an entry point, not evidence that a share list has been obtained. If access to Finance is denied at Tree Connect, you cannot claim to have entered it, confirmed that a particular file exists inside, or completed tests of that file's permissions. If you can enter Training but are denied when reading draft.txt, retain the full response to that file operation and check the identity, path, and effective permissions."
+          "text": "The laboratory can instead install a NAS (Network Attached Storage) device."
         },
         {
           "kind": "paragraph",
-          "text": "ACCESS_DENIED is a starting point for investigation, not a guarantee that NTFS file permissions are the only cause; conditions involving authentication, signing, or encryption requirements can also cause a refusal. Identify the stage first, then inspect the configuration and logs. Do not disable security protections as soon as an error appears. [Microsoft: SMB access denied](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+          "text": "It contains several folders:"
+        },
+        {
+          "kind": "code",
+          "text": "LAB-NAS\n│\n├── Public\n│   └── Public documents\n│\n├── Research\n│   └── Research data\n│\n├── Finance\n│   └── Financial data\n│\n└── Backup\n    └── Backup data"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Students can use their own computers to access data on the NAS that they are authorized to use."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB is one common protocol that makes this possible."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In Windows, you may have seen a path like this:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Break it into parts:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Part",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "`\\\\`",
+              "Indicates a network resource path"
+            ],
+            [
+              "`LAB-NAS`",
+              "The server providing the files"
+            ],
+            [
+              "`Research`",
+              "The share name exposed by the server"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a UNC (Universal Naming Convention) path."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An IP address can also be used, for example:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\192.168.1.100\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB commonly uses TCP 445. Modern SMB also supports other transports, such as SMB over QUIC, so SMB traffic cannot always be equated with TCP 445."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Also, an SMB server need not run Windows."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux can provide SMB through Samba, and many NAS devices support SMB. Finding SMB therefore does not establish that the operating system is Windows. [Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 How does SMB differ from FTP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M04-03 covered FTP."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Both FTP and SMB can transfer files, but their typical use differs."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Comparison",
+            "FTP",
+            "SMB"
+          ],
+          "rows": [
+            [
+              "Main purpose",
+              "Uploading and downloading files",
+              "Remote file and resource sharing"
+            ],
+            [
+              "Common environment",
+              "File exchange services",
+              "Windows, Linux, NAS, corporate networks"
+            ],
+            [
+              "How it is used",
+              "Connect, then operate on remote files",
+              "Use shared resources much like local folders"
+            ],
+            [
+              "Common port",
+              "TCP 21 (control connection)",
+              "TCP 445"
+            ],
+            [
+              "Permission control",
+              "FTP server and underlying filesystem",
+              "Share permissions and underlying file permissions together"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Their central common principle is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Connecting to a service does not establish file access; seeing a filename does not establish that its contents are readable."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Apply this principle to DNS, FTP, SMTP, SMB, and the next lesson's NetBIOS/RPC."
         },
         {
           "kind": "heading",
           "id": "section-3",
-          "text": "2. The account you enter is not necessarily the identity actually used"
+          "text": "3. Why does a connection fail? Understand SMB's five stages"
         },
         {
           "kind": "paragraph",
-          "text": "A named account, Guest access, and an anonymous session are different cases. The absence of a password prompt may mean that existing sign-in information or tickets are being reused; it does not establish successful anonymous access. Even after entering an account name, check the identity of the session that was actually established."
+          "text": "This chapter provides the technical foundation for the lesson."
         },
         {
           "kind": "paragraph",
-          "text": "Tool options are not test results either. For example, smbclient's -N suppresses the password prompt; it does not mean the server has accepted an anonymous connection. -L requests a list of services or shares, ls lists a directory after connecting to a share, and get downloads a specified file. These provide different kinds of evidence. get also saves data locally, so it cannot be treated as enumeration with no side effects. [Samba: smbclient manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+          "id": "section-3-1",
+          "text": "3.1 A connection has more than a success or failure outcome"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you want to connect from a laboratory computer to:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The system goes through a series of procedures before opening the folder."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-04-stages-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "SMB enumeration｜A connection does not establish file permissions",
+            "description": "Treat a connection as five checkpoints. Each successful stage establishes only its own result. Locate the failed stage before diagnosing a refusal. Seeing a share name does not establish entry; reading a file does not establish modification or deletion rights.",
+            "items": [
+              {
+                "title": "Transport｜Establish connectivity",
+                "body": "✓ TCP 445 is reachable\n× Does not establish a share listing"
+              },
+              {
+                "title": "Negotiate｜Agree on the protocol",
+                "body": "✓ SMB version and capabilities\n× Does not establish authentication"
+              },
+              {
+                "title": "Session Setup｜Establish identity",
+                "body": "✓ Confirm the identity actually used\n× Does not grant access to every share"
+              },
+              {
+                "title": "Tree Connect｜Connect to a share",
+                "body": "✓ Training can be entered, for example\n× Does not establish every file is readable"
+              },
+              {
+                "title": "File Operation｜Operate on files/directories",
+                "body": "✓ Listing, reading, writing, and more\n× Verify each operation separately"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "The five stages resemble five checkpoints at a company."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "Stage 1: Transport — establish network connectivity"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Before entering the company, you first check whether an entrance is open."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For SMB, this commonly means checking whether your computer can connect to the server's TCP 445."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.100:445"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a scan reports:"
+        },
+        {
+          "kind": "code",
+          "text": "445/tcp open microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "What does that mean?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 445 accepts a connection, and this port is commonly associated with SMB."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not establish that:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "You have logged in successfully.",
+            "You have seen any shared folders.",
+            "You can read any file."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The port number alone does not fully identify the service implementation behind it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This follows CEH M03's Port Scanning concepts."
+        },
+        {
+          "kind": "paragraph",
+          "text": "M03 mainly asks where the service entrance is; M04 asks what information the service is willing to reveal."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "Stage 2: Negotiate — agree on the protocol"
+        },
+        {
+          "kind": "paragraph",
+          "text": "After reaching the building, you need to establish how both sides will communicate."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB works similarly."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your computer might say:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“I support SMB 2.1, 3.0, and 3.1.1.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The server replies:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“I also support SMB 3.1.1; let's use that version.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The two sides complete negotiation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The selected protocol version is called the dialect."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This determines how the sides communicate using SMB, rather than establishing user permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Dialect: SMB 3.1.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connection selected SMB 3.1.1."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep this distinction in mind:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Using SMB 3.1.1 does not establish that SMB encryption is enabled for the connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Chapter 7 explains this further."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "Stage 3: Session Setup — establish a session"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You have reached the building and established a means of communication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The guard may now ask:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Who are you?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You show an employee badge."
+        },
+        {
+          "kind": "paragraph",
+          "text": "After checking your identity, the guard allows you to establish a usable session."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB Session Setup has a similar role."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Domain: LAB\nUsername: labreader\nAuthentication: Success"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The user has successfully established an authenticated session."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two concepts matter here."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Establishes who you are."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authorization"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Establishes what you may do."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They are different."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, being a laboratory student does not authorize you to read your professor's salary records."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passing authentication establishes identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Specific file permissions still require a separate judgment."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-5",
+          "text": "Stage 4: Tree Connect — connect to a share"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The name may be unfamiliar."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Tree Connect means:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The user requests a connection to a particular shared folder."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Training"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The server may reply:"
+        },
+        {
+          "kind": "code",
+          "text": "Tree Connect: Success"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The system allows you to connect to the Training share."
+        },
+        {
+          "kind": "paragraph",
+          "text": "But if you instead connect to:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Finance"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The server might reply:"
+        },
+        {
+          "kind": "code",
+          "text": "STATUS_ACCESS_DENIED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This particular share-connection request was rejected."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You cannot then claim:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Finance contains Salary.xlsx, and I confirmed that it cannot be read.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You never entered Finance or established which files it contains."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can only state:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Connecting to Finance with the specified identity was rejected in this attempt, so there is no evidence of access to its internal files."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the evidence interpretation needed for CEH enumeration."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-6",
+          "text": "Stage 5: File Operation — operate on files"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you successfully connect to Training."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It contains two files:"
+        },
+        {
+          "kind": "code",
+          "text": "Training\n│\n├── readme.txt\n│\n└── draft.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can see both filenames."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The server can still apply different permissions:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "File",
+            "List filename",
+            "Read content",
+            "Modify content"
+          ],
+          "rows": [
+            [
+              "readme.txt",
+              "Success",
+              "Success",
+              "Not tested"
+            ],
+            [
+              "draft.txt",
+              "Success",
+              "Denied",
+              "Not tested"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "What does this establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Entering the share does not establish that you can operate on every file."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each operation may be subject to different permission restrictions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-7",
+          "text": "3.2 Why distinguish these stages?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The same description, “cannot connect,” can refer to entirely different problems."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Failed stage",
+            "Possible cause",
+            "What to check"
+          ],
+          "rows": [
+            [
+              "Transport",
+              "Service stopped, firewall blocking",
+              "Network and ports"
+            ],
+            [
+              "Negotiate",
+              "Incompatible protocol",
+              "SMB versions and server configuration"
+            ],
+            [
+              "Session Setup",
+              "Authentication failure",
+              "Account, tickets, authentication policy"
+            ],
+            [
+              "Tree Connect",
+              "Missing share, insufficient authorization, encryption requirement mismatch",
+              "Share settings, permissions, security policy"
+            ],
+            [
+              "File Operation",
+              "Insufficient file access",
+              "Effective permissions on the target file"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft's troubleshooting guidance follows this approach: locate the failure in negotiation, session setup, or tree connection before changing permissions in response to `ACCESS_DENIED`. [Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The diagram above was recreated from this lesson's five stages; compare it with Microsoft's official troubleshooting guidance."
         },
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "3. Separate support, requirements, and actual use"
+          "text": "4. Why might the server use an identity other than the one you entered?"
         },
         {
           "kind": "paragraph",
-          "text": "A dialect is the SMB protocol version selected by both sides for this connection. Seeing SMB 3.1.1 confirms the corresponding negotiation result; it does not automatically prove that SMB encryption is in use for every share or every access."
-        },
-        {
-          "kind": "list",
-          "items": [
-            "Support: what the product and protocol are capable of.",
-            "Requirements: what the effective policy mandates.",
-            "Actual use: what this connection actually used."
-          ]
+          "text": "This chapter introduces three identities."
         },
         {
           "kind": "paragraph",
-          "text": "Signing helps verify message integrity and origin, but its purpose is not to hide the contents. Encryption protects the confidentiality of data in transit. Even encrypted transmission does not mean the files on disk are encrypted or that access permissions are necessarily correct. [Microsoft: signing](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing)｜[SMB encryption](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)"
+          "id": "section-4-1",
+          "text": "4.1 Named account"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you sign in as:"
+        },
+        {
+          "kind": "code",
+          "text": "LAB\\labreader"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You intend to use SMB as labreader in the LAB domain."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This resembles showing your own employee badge."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The server must authenticate you before determining authorization."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 Guest"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of Guest as a temporary identity provided for visitors."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The company has a Public folder that visitors may use."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Visitors need not have ordinary employee accounts; the system can map them to Guest."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Guest still has limits."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Public:\n    Guest → Read\n\nFinance:\n    Guest → Deny"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lets Guest read public data but denies access to financial data."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 Anonymous"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Anonymous refers to access without establishing an ordinary named-user identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It is distinct from Guest."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Depending on the SMB server and configuration, an anonymous connection may be rejected or mapped to a Guest identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not infer the server's final identity only from the username entered by the client."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 Why does no password prompt not prove anonymous access?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This distinction matters throughout the lesson."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you open this path in Windows File Explorer:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-NAS\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The folder appears immediately."
+        },
+        {
+          "kind": "paragraph",
+          "text": "No password prompt appears."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Someone might say:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“This NAS permits anonymous access!”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That conclusion may be wrong."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Windows may have used your existing credentials or reused a session established earlier."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In a domain environment, a Kerberos ticket may also complete authentication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Therefore:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No password dialog does not mean no authentication occurred."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Distinguish the user interface from the actual protocol outcome."
         },
         {
           "kind": "heading",
           "id": "section-5",
-          "text": "4. Diagnose a synthetic case"
+          "text": "5. SMB enumeration tools: what does smbclient do?"
         },
         {
           "kind": "paragraph",
-          "text": "The following is a tabletop teaching example only; no real queries were run. Suppose the authorized lab records confirm the identity as LAB/labreader:"
+          "text": "Compare this with the FTP tools covered in M04-03."
         },
         {
-          "kind": "list",
-          "items": [
-            "The share list returns Training and Finance.",
-            "The Training directory lists readme.txt and draft.txt.",
-            "Reading the specified synthetic contents of readme.txt succeeds.",
-            "Reading draft.txt is denied.",
-            "Finance is denied at Tree Connect; the share was not entered.",
-            "The Training connection uses SMB 3.1.1, with signing in use and SMB-layer encryption not in use.",
-            "Uploading, modifying, and deleting have not been tested."
+          "kind": "paragraph",
+          "text": "On Linux, `smbclient` is an SMB client supplied by Samba."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It interacts with SMB servers, including querying shares, listing directories, and downloading files."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "5.1 `-L`: query the share list"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose we run this in an authorized laboratory environment:"
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.0.2.10 -U labreader"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The address `192.0.2.10` is reserved for documentation examples."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The command means:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Use labreader to query which shared resources this SMB server provides.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the result is:"
+        },
+        {
+          "kind": "code",
+          "text": "Sharename       Type\n---------       ----\nTraining        Disk\nFinance         Disk\nPublic          Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "We know that the server returned three share names."
+        },
+        {
+          "kind": "paragraph",
+          "text": "We cannot yet claim that all three shares can be entered."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-2",
+          "text": "5.2 `ls`: list items inside a folder"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, connect to a share you are authorized to access:"
+        },
+        {
+          "kind": "code",
+          "text": "smbclient //192.0.2.10/Training -U labreader"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If successful, smbclient opens its interactive environment."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enter:"
+        },
+        {
+          "kind": "code",
+          "text": "smb: \\> ls"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose it returns:"
+        },
+        {
+          "kind": "code",
+          "text": "readme.txt\ndraft.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This directory enumeration succeeded and returned two filenames."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not establish that either file's contents are readable."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-3",
+          "text": "5.3 `get`: read and download a file"
+        },
+        {
+          "kind": "paragraph",
+          "text": "With explicit authorization to test a download:"
+        },
+        {
+          "kind": "code",
+          "text": "smb: \\> get readme.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Success means that the file's contents were transferred to the local computer over SMB."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`get` does more than query a filename: it reads a remote file and saves data locally."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In an environment handling sensitive information, downloading cannot be treated as enumeration without consequences."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-4",
+          "text": "5.4 What does `-N` mean?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You may have seen:"
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.0.2.10 -N"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The main purpose of `-N` is to suppress an interactive password prompt."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not mean:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Log me in anonymously, and the server will certainly accept it.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check the actual outcome."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The operations differ as follows:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Operation",
+            "Question it answers"
+          ],
+          "rows": [
+            [
+              "`smbclient -L`",
+              "Which shared resources does the server return?"
+            ],
+            [
+              "`ls`",
+              "Which items can I list in the current directory?"
+            ],
+            [
+              "`get`",
+              "Can I obtain the specified file's contents?"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "What can be stated now: this identity saw two share names and read the specified readme.txt; the name draft.txt was disclosed, but its contents were not obtained in this attempt; files inside Finance have not been confirmed. Write and delete access remain unknown."
-        },
-        {
-          "kind": "paragraph",
-          "text": "If policy says that even the name draft.txt must not be visible to labreader, a denied read still does not establish that the information-disclosure requirement has been met. ABE can help reduce this exposure of names, but actual access restrictions still require permission controls. [Microsoft: the scope of ABE](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
-        },
-        {
-          "kind": "paragraph",
-          "text": "When verifying safeguards, check both that legitimate use is allowed and that operations that should not be allowed are denied. Retain the time, identity, path, operation, full response, and untested items. Do not describe a limited success as a compromise or a single denial as proof of comprehensive security."
+          "text": "Samba's official manual documents these functions and the behavior of `-N`. [Samba](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
         },
         {
           "kind": "heading",
           "id": "section-6",
-          "text": "Just one small check"
+          "text": "6. Why must share permissions and file permissions be considered together?"
         },
         {
           "kind": "paragraph",
-          "text": "A colleague says: “Finance appears in the list, so all the files inside it can be read; Training uses SMB 3.1.1, so its contents are encrypted; being able to read readme.txt also means it can be deleted.”"
+          "text": "This extends the lesson into a practical permission question."
         },
         {
           "kind": "paragraph",
-          "text": "Correct this conclusion in two or three sentences, explaining what has been confirmed and what is still unknown."
+          "id": "section-6-1",
+          "text": "6.1 Share permissions"
         },
         {
           "kind": "paragraph",
-          "text": "There is no need to run tools or memorize packet names. The next unit covers NetBIOS/RPC, continuing to distinguish name information, communication entry points, and actual authorization."
+          "text": "Suppose an administrator shares this Windows Server folder:"
+        },
+        {
+          "kind": "code",
+          "text": "D:\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The share name is:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\LAB-SERVER\\Research"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The administrator can configure permissions for the share."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Research Share\n\nResearchers → Read\nAdministrators → Full Control"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the first authorization layer."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 NTFS permissions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Windows NTFS also supports permissions on folders and files."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "D:\\Research\n\nResearchers → Modify\nAdministrators → Full Control"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the second authorization layer."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 How do the two layers work together?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a student accesses the folder through SMB."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The settings are:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Permission source",
+            "labreader"
+          ],
+          "rows": [
+            [
+              "Share Permission",
+              "Read"
+            ],
+            [
+              "NTFS Permission",
+              "Modify"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "What is the result?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Through this SMB share, labreader can generally read but cannot modify."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The share permission allows only Read."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The reverse applies too."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Permission source",
+            "labreader"
+          ],
+          "rows": [
+            [
+              "Share Permission",
+              "Change"
+            ],
+            [
+              "NTFS Permission",
+              "Read"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A share permission of Change does not grant modification rights absent from NTFS permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For an initial understanding:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Effective access through SMB must satisfy authorization at both the share and filesystem layers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Actual Windows permission calculations also involve group membership, inheritance, deny permissions, and access control entries (ACEs). “Take the more restrictive permission” is only an introductory simplification. [Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 ABE: why might even filenames be hidden?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ABE stands for Access-Based Enumeration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It filters displayed items based on access permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a folder contains:"
+        },
+        {
+          "kind": "code",
+          "text": "Research\n│\n├── public.txt\n├── student_report.txt\n└── professor_salary.xlsx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The administrator wants ordinary students to see only data they may access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "With appropriately configured ABE enabled, a student might see only:"
+        },
+        {
+          "kind": "code",
+          "text": "Research\n│\n├── public.txt\n└── student_report.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`professor_salary.xlsx` does not appear in that student's directory listing."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The point is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In addition to controlling reads, visibility filtering can reduce exposure of file and folder names that should remain hidden."
+        },
+        {
+          "kind": "paragraph",
+          "text": "ABE primarily controls enumeration of files and folders inside a share."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not replace NTFS permissions or guarantee that server share names are hidden in every situation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If file permissions are wrong, ABE alone cannot solve every access-control problem."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. How do SMB 3.1.1, signing, and encryption differ?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These concepts are easily confused and matter in practical security assessment."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 SMB 3.1.1 is a protocol version"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine that you and a friend both use a new version of a messaging application."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The new version supports end-to-end encryption."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Installing it on both sides does not by itself establish that a particular conversation uses end-to-end encryption."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The same principle applies to SMB."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Supporting encryption differs from using it in this connection."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 Signing: digital signatures"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Signing resembles sending a letter with a tamper-evident signature."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The recipient can verify that the message came from a party holding the appropriate key and check whether it was altered."
+        },
+        {
+          "kind": "paragraph",
+          "text": "However, signing itself does not hide message contents."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB signing protects protocol-message integrity and authenticity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB Signing: Enabled"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In this example, it describes signing used by this connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This alone does not establish SMB encryption of the transferred content."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "7.3 Encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Encryption resembles putting the letter in a locked confidential box."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An interceptor without the appropriate decryption key cannot directly read the protected contents."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB encryption primarily protects data confidentiality in transit."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB Encryption: Enabled"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In this example, SMB-layer encryption protects this communication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This does not establish that data on the NAS disks is encrypted."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Protecting stored data generally requires additional technology, such as BitLocker or another storage-encryption mechanism."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-4",
+          "text": "7.4 Three different concepts"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Mechanism",
+            "Main purpose",
+            "Analogy"
+          ],
+          "rows": [
+            [
+              "SMB Dialect",
+              "Negotiate the protocol version",
+              "Agree on a version of the language"
+            ],
+            [
+              "SMB Signing",
+              "Message integrity and authenticity",
+              "Check that a letter has not been altered"
+            ],
+            [
+              "SMB Encryption",
+              "Confidentiality in transit",
+              "Put the letter in a locked box"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A further distinction matters:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even if SMB-layer encryption is off, do not assume without checking that the whole network path lacks any other encryption. A VPN or another secure transport layer may provide protection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "State precisely which layer uses which protection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft distinguishes SMB encryption from encryption of stored data and describes SMB 3.1.1 negotiation protection. [Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-5",
+          "text": "7.5 Supported, required, and actually used"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a laboratory NAS has these settings:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB Version: 3.1.1\n\nSigning Supported: Yes\nSigning Required: Yes\n\nEncryption Supported: Yes\nEncryption Required: No"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Supported"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The device has the capability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Required"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The relevant security policy requires connections to use it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Negotiated/Observed"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The settings actually negotiated or observed for this connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A system may support SMB encryption without requiring it for all shares."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A connection may therefore show:"
+        },
+        {
+          "kind": "code",
+          "text": "Dialect: SMB 3.1.1\n\nSigned: True\n\nEncrypted: False"
+        },
+        {
+          "kind": "paragraph",
+          "text": "There is no contradiction."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It means:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. SMB 3.1.1 is in use."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. SMB signing is in use."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. This connection does not use SMB-layer encryption."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The first fact cannot establish encryption."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A practical note: Windows 11 24H2 and Windows Server 2025 strengthened default SMB signing requirements. An older NAS that stops connecting after an OS update may have a security-policy compatibility issue rather than simply incorrect file permissions. [Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Worked case: interpret SMB enumeration results"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Now combine the preceding concepts."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following is the original teaching material's synthetic case."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are the laboratory security administrator using:"
+        },
+        {
+          "kind": "code",
+          "text": "Domain: LAB\nUsername: labreader"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You are authorized to assess this NAS."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-1",
+          "text": "8.1 Observed results"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Test",
+            "Result"
+          ],
+          "rows": [
+            [
+              "Query share list",
+              "Training, Finance"
+            ],
+            [
+              "Connect to Training",
+              "Success"
+            ],
+            [
+              "List Training directory",
+              "readme.txt, draft.txt"
+            ],
+            [
+              "Read readme.txt",
+              "Success"
+            ],
+            [
+              "Read draft.txt",
+              "ACCESS_DENIED"
+            ],
+            [
+              "Connect to Finance",
+              "ACCESS_DENIED"
+            ],
+            [
+              "SMB dialect",
+              "3.1.1"
+            ],
+            [
+              "SMB Signing",
+              "In use"
+            ],
+            [
+              "SMB Encryption",
+              "Not in use"
+            ],
+            [
+              "Upload files",
+              "Not tested"
+            ],
+            [
+              "Modify files",
+              "Not tested"
+            ],
+            [
+              "Delete files",
+              "Not tested"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use this record to practice security judgment."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-04-evidence-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "SMB enumeration｜Which conclusions does this record support?",
+            "description": "Synthetic case: LAB / labreader. Judge only operations actually observed. Capability ≠ Policy ≠ Observed use in this connection. Signing protects message integrity; encryption protects confidentiality in transit. Neither grants additional file permissions.",
+            "items": [
+              {
+                "title": "Finance appears in the list",
+                "body": "✓ The share name is known\n× Does not establish entry or access to its files"
+              },
+              {
+                "title": "Connecting to Training succeeds",
+                "body": "✓ This attempt can connect to the share\n× Does not establish every file is readable"
+              },
+              {
+                "title": "draft.txt is visible",
+                "body": "✓ The specified filename is known\n× Does not establish readable contents"
+              },
+              {
+                "title": "Reading readme.txt succeeds",
+                "body": "✓ The specified contents are readable\n× Does not establish modification, deletion, or upload"
+              },
+              {
+                "title": "SMB 3.1.1 is negotiated",
+                "body": "✓ This connection uses that dialect\n× Does not establish SMB encryption is enabled"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 Does Finance appearing in the list establish access?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No."
+        },
+        {
+          "kind": "paragraph",
+          "text": "All we know is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“The server returned a share named Finance.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Tree Connect was rejected; we did not enter Finance."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Its internal files remain unknown."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 draft.txt is visible but unreadable: is that secure?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It depends on the security requirements."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the policy states:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Students must not read draft.txt."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The rejected read matches the expectation for this test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "But suppose the policy states:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Students must not even know the name draft.txt."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A visible filename may then constitute information disclosure even though reading is rejected."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is where ABE can help."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Security assessment must check whether information should be displayed as well as whether files can be read."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 Does reading readme.txt establish deletion rights?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Deletion was not tested."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The accurate conclusion is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“labreader successfully read the specified contents of readme.txt in this attempt; modification and deletion permissions remain unverified.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is more precise than claiming “full file access.”"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5",
+          "text": "8.5 Does this record prove the NAS is secure?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not yet."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It establishes only the results for a particular identity, time, and set of operations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Confirmed:\n\n- labreader can connect to Training.\n- labreader can read readme.txt.\n- Reading draft.txt as labreader was rejected.\n- Connecting to Finance as labreader was rejected.\n- This SMB connection uses signing.\n\nNot yet confirmed:\n\n- Whether other accounts have excessive permissions.\n- Whether Guest or anonymous access causes problems.\n- Whether filenames are exposed inappropriately.\n- Whether unauthorized modification or deletion is allowed.\n- Whether all transport-encryption policies are met."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep in mind:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A rejected request from one account does not prove that every other account will also be rejected."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Likewise, finding no problem in one check does not amount to a comprehensive security validation of the entire NAS."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Practical extension: how should you assess a laboratory NAS?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Turn this lesson into a simple security-check workflow."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-1",
+          "text": "9.1 Establish the target and identity"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Know the following:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Who manages the NAS?",
+            "Which checks are authorized?",
+            "Which account will this test use?",
+            "Which permissions should that account have?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lets you compare results with expectations."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "9.2 Check visible information and actual authorization"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Account: labreader\n\nExpected permissions:\n\nTraining → Read\nResearch → Read\nFinance  → Deny\nBackup   → Deny"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Then check:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Can Training be connected?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Does Finance reject the connection?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Can specific files in Training be read?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are distinct verification items."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-3",
+          "text": "9.3 Check transport security"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB Dialect\nSMB Signing\nSMB Encryption\nGuest Access"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Compare:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "What the policy requires with what the actual connection uses."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If policy requires sensitive research data to be transferred using SMB encryption but the connection shows no SMB encryption, investigate whether that policy is correctly implemented."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-4",
+          "text": "9.4 Preserve evidence"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each check should record at least:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Field",
+            "Purpose"
+          ],
+          "rows": [
+            [
+              "Timestamp",
+              "When the test occurred"
+            ],
+            [
+              "Server",
+              "Which device was tested"
+            ],
+            [
+              "Identity",
+              "The identity actually used"
+            ],
+            [
+              "Resource",
+              "Which share or file was tested"
+            ],
+            [
+              "Operation",
+              "Enumeration, reading, or another operation"
+            ],
+            [
+              "Response",
+              "The complete system response"
+            ],
+            [
+              "Expected Result",
+              "Whether policy should allow or reject it"
+            ],
+            [
+              "Conclusion",
+              "The conclusion supported by this test"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can organize the results further:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB Security Assessment\n│\n├── 1. Network Connectivity\n│   └── Network connectivity and entrance\n│\n├── 2. Authentication\n│   └── Actual user identity\n│\n├── 3. Authorization\n│   ├── Share Permissions\n│   ├── File Permissions\n│   └── Access-Based Enumeration\n│\n├── 4. Transport Security\n│   ├── SMB Dialect\n│   ├── Signing\n│   └── Encryption\n│\n└── 5. Evidence & Reporting\n    ├── Successful checks\n    ├── Rejected operations\n    └── Untested items"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This makes the assessment traceable, reproducible, and reviewable, beyond running a tool."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It also connects naturally to CEH M05 vulnerability analysis."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10. Recap: which judgment skills does this lesson develop?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M04-04 comes down to three principles."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, distinguish connection stages."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A successful TCP connection, authentication, share connection, and file read establish different things."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second, distinguish information from permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Knowing a resource exists does not authorize its use; reading does not establish modification or deletion rights."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third, distinguish security capabilities from actual protection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Supporting signing, requiring signing, and actually using signing are different levels of information. The same applies to encryption."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not report untested matters as confirmed, or generalize one test into an overall security conclusion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This applies to SMB, FTP, SMTP, RPC, Active Directory, and other internal enterprise systems."
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "11. Understanding check: make your own judgment"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a laboratory NAS produces these test results:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB Server: LAB-NAS\n\nUsername: student01\n\nShare List:\n    Public\n    Research\n    Finance\n\nPublic:\n    Tree Connect: Success\n    ls: Success\n    readme.txt: Read Success\n\nResearch:\n    Tree Connect: Success\n    confidential.txt: ACCESS_DENIED\n\nFinance:\n    Tree Connect: ACCESS_DENIED\n\nProtocol:\n    SMB 3.1.1\n\nSigning:\n    Enabled\n\nEncryption:\n    Disabled"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer four questions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 1:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finance appears in the share list, but Tree Connect was rejected. Can you determine which files it contains? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 2:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reading confidential.txt in Research was rejected, but the filename remains visible. Could this be a security problem? What determines your judgment?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 3:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This NAS uses SMB 3.1.1 and signing is enabled. Does that establish that the SMB content is encrypted in transit?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 4:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "As the laboratory security administrator, you want to establish that student01 cannot delete files in Research. Is the current evidence sufficient? How would you verify it without endangering production research data?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer first, then compare with the reference answers to check your reasoning, conceptual differences, and application to NAS security administration."
         },
         {
           "kind": "answer",
           "id": "answer-smb-evidence",
-          "summary": "Reference answer: evidence for shares, encryption, and deletion",
+          "summary": "Reference answers: four evidence judgments",
           "paragraphs": [
-            "Seeing the name Finance does not mean the files inside can be read; this attempt was denied at Tree Connect, so the files inside have not been confirmed. SMB 3.1.1 is the negotiated version, and the record separately states that SMB-layer encryption was not in use, so the contents cannot be described as encrypted by SMB. The successful read of readme.txt proves only that the specified file was readable in this attempt; deletion was not tested and remains unknown."
+            "Question 1: No. The share list establishes only that Finance was returned. Tree Connect was rejected, so there is no evidence about its directory or internal files.",
+            "Question 2: Possibly. If policy prohibits reading only, the refusal matches the expectation. If even the filename must remain hidden, its visibility may disclose information. Compare the actual identity, file permissions, and ABE configuration.",
+            "Question 3: No. SMB 3.1.1 is the dialect, and signing protects message integrity and authenticity. The example explicitly reports Encryption Disabled, so SMB-layer encryption cannot be claimed. Check separately whether another transport layer provides encryption.",
+            "Question 4: Evidence is insufficient: a rejected read does not establish rejected deletion. Obtain authorization, then have an administrator create disposable files in an isolated test share reproducing the relevant Research share/file permissions, inheritance, groups, and ownership conditions. Test deletion as student01, record the identity, resource, operation, and response, and have the administrator clean up. Do not delete production data. If the conditions do not correspond to production, the conclusion applies only to the test resource."
           ]
         }
       ]

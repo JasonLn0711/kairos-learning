@@ -1,3 +1,5 @@
+Current replacement: [M04-04 full plain-language edition v1.1.0](replacement-2026-11-05/README.md). The initial edition below remains preserved as historical source.
+
 # SMB enumeration: review and evidence diagnosis
 
 Stable ID: CEH26-M04-C04. Public short slug: m04-04. Initial public edition v1.0.0, 2026-11-05 (Asia/Taipei).
