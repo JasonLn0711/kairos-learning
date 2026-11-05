@@ -1,0 +1,1 @@
+This A response provides only two IPv4 addresses; it does not establish that the website is reachable or functioning normally. With NOERROR and an empty ANSWER for AAAA, and without the other sections, we can say only that this query did not obtain an AAAA answer. We cannot yet establish the cause or conclude that there is no IPv6 at all.

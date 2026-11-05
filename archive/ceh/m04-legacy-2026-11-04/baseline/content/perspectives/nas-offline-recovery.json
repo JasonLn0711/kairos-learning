@@ -1,0 +1,883 @@
+{
+  "id": "nas-offline-recovery",
+  "slug": "nas-offline-recovery",
+  "status": "published",
+  "publishedOn": "2026-11-01",
+  "updatedOn": "2026-11-01",
+  "revision": 5,
+  "category": "analysis",
+  "topics": [
+    "security",
+    "cs"
+  ],
+  "sources": [
+    {
+      "id": "synology-dsm",
+      "title": "Synology SA-26:13 — DSM",
+      "url": "https://www.synology.com/en-global/security/advisory/Synology_SA_26_13",
+      "checkedOn": "2026-11-01"
+    },
+    {
+      "id": "synology-packages",
+      "title": "Synology SA-26:14 — PHP2Shell",
+      "url": "https://www.synology.com/en-global/security/advisory/Synology_SA_26_14",
+      "checkedOn": "2026-11-01"
+    },
+    {
+      "id": "cloudflare-tunnel",
+      "title": "Cloudflare Tunnel",
+      "url": "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/",
+      "checkedOn": "2026-11-01"
+    },
+    {
+      "id": "cloudflare-smb",
+      "title": "Cloudflare One — SMB",
+      "url": "https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/use-cases/smb/",
+      "checkedOn": "2026-11-01"
+    },
+    {
+      "id": "synology-backup",
+      "title": "Synology — Backup & Data Protection",
+      "url": "https://www.synology.com/en-global/dsm/solution/data_backup",
+      "checkedOn": "2026-11-01"
+    },
+    {
+      "id": "synology-snapshots",
+      "title": "Synology — Snapshot Replication",
+      "url": "https://www.synology.com/en-global/dsm/feature/snapshot_replication",
+      "checkedOn": "2026-11-01"
+    }
+  ],
+  "related": [
+    {
+      "kind": "lesson",
+      "id": "ceh-m04-enumeration"
+    }
+  ],
+  "updates": [
+    {
+      "date": "2026-11-01",
+      "text": {
+        "zh": "v1.0.1：以讀者問題重寫 NAS 共享、斷網範圍、漏洞利用、系統與套件更新、遠端入口五段說明，同步英文並重新核對官方來源。統一使用 v x.x.x；原整數 v1 以 1.0.0 作遷移基準，本次閱讀改善升 patch。先前誤顯示 v2 已更正，原發布日期保留。",
+        "en": "v1.0.1: Rewrote five sections on NAS sharing, isolation, exploit conditions, updates, and remote access in both languages and rechecked official sources. Adopted v x.x.x, mapping the original integer v1 to a 1.0.0 migration baseline and treating these reading improvements as a patch. Corrected the earlier v2 display while preserving the original publication date."
+      }
+    },
+    {
+      "date": "2026-11-01",
+      "text": {
+        "zh": "v1.0.2：新增漏洞公告與修補教學的延伸閱讀連結。",
+        "en": "v1.0.2: Added the companion advisory and patching guide."
+      }
+    },
+    {
+      "date": "2026-11-01",
+      "text": {
+        "zh": "v1.0.3：簡化文章署名。",
+        "en": "v1.0.3: Simplified the article byline."
+      }
+    }
+  ],
+  "text": {
+    "zh": {
+      "title": "NAS 已經斷網，接下來該確認什麼？",
+      "summary": "從共享檔案的日常需求出發，用六張圖看懂隔離、漏洞、權限、遠端入口與備份，建立有證據的復線順序。",
+      "author": "CS Kairos Learn",
+      "sections": [
+        {
+          "id": "starting-point",
+          "heading": "NAS 已經斷網，為什麼還要繼續確認？",
+          "paragraphs": [
+            "收到 NAS 安全警訊後，暫停連線為團隊留下檢查與處理的空間。接下來要回答的問題是：哪些人仍能連線、能修改哪些資料，以及資料受損後能否還原。把這三件事查清楚，才能決定恢復哪些服務。",
+            "本文從實驗室共享檔案的情境出發，帶你看懂網路隔離、系統修補、遠端入口與資料復原。設備、帳號與路徑均以教學情境呈現；六張圖說明判斷方法，個別設備的版本、入侵狀態與復線結果由管理者另行驗證。"
+          ]
+        },
+        {
+          "id": "shared-storage",
+          "heading": "什麼是 NAS？ NAS 如何共享檔案？",
+          "paragraphs": [
+            "NAS（Network Attached Storage，網路附加儲存設備）是一台連上網路、專門儲存與分享檔案的設備。你可以把它想成團隊共用的檔案櫃：研究生各自使用自己的電腦，透過網路開啟 NAS 上的共享資料夾，把論文、模型與研究資料存放在同一個地方。",
+            "共享檔案時，電腦會先找到 NAS，再以帳號登入。NAS 依照這個帳號的權限，決定使用者能開啟哪些資料夾，以及能否新增、修改或刪除檔案。例如，研究生 A 可以修改某個資料夾裡的檔案，研究生 B 則只能讀取；兩人都能連到同一台 NAS，能做的事卻可以不同。",
+            "IP 位址像設備在網路上的地址，幫助電腦找到 NAS；SMB（Server Message Block）是常見的檔案共享協定，也就是電腦與 NAS 傳送檔案、溝通操作要求時使用的一套規則。因此，找到 NAS、登入帳號與獲准修改檔案，是需要分別確認的三件事。",
+            "以受管理的測試內網為例，`smb://192.168.1.20/Research` 表示透過 SMB，開啟位址為 192.168.1.20 的 NAS 上名為 Research 的共享資料夾。這裡的位址與名稱是教學用的合成示例；實際連線時，使用管理者提供的位址與獲准帳號。",
+            "管理者則透過 NAS 的作業系統設定帳號、共享資料夾與權限。Synology NAS 的作業系統稱為 DSM（DiskStation Manager）；安裝在 DSM 上、提供額外功能的軟體稱為「套件」。後面討論系統與套件更新時，指的就是這兩個層次。"
+          ],
+          "diagram": {
+            "id": "nas-lan",
+            "caption": "圖 1｜兩台電腦，共用一個資料空間",
+            "description": "LAN 是區域網路；兩位使用者各自連到 NAS。",
+            "groups": [
+              {
+                "title": "實驗室內網：獨立的存取關係",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "研究生 A 的電腦",
+                    "body": "電腦 A → NAS：以自己的帳號透過 SMB 讀寫獲准的資料夾。",
+                    "icon": "computer",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "研究生 B 的電腦",
+                    "body": "電腦 B → NAS：直接連到同一個共享空間，權限可與 A 不同。",
+                    "icon": "computer",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "NAS 共享儲存",
+                    "body": "分別檢查兩個帳號的權限，保存論文、模型與研究資料。",
+                    "icon": "nas",
+                    "tone": "purple"
+                  }
+                ]
+              }
+            ],
+            "note": "卡片是平行關係；A 不需要經過 B 才能連到 NAS。"
+          }
+        },
+        {
+          "id": "isolation",
+          "heading": "口語化的「斷網」究竟代表什麼？是拔了網路線？還是阻斷外網連線？",
+          "paragraphs": [
+            "聽到「NAS 已經斷網」，我們可以接著問：拔掉的是哪一條網路線？還是在路由器或防火牆上阻斷外網連線？這些做法會影響不同的連線，所以要先確認實際做了什麼，才知道哪些電腦還能存取 NAS。",
+            "第一種情況是拔掉 NAS 本身的網路線。原本經由這條線連到 NAS 的電腦，就無法再沿著這條路徑存取檔案。如果 NAS 還接著其他網路線，或另有啟用的網路介面，就要一起確認。確認 NAS 的所有網路連線都已中斷後，才能判定其他電腦已無法透過網路連到它。",
+            "第二種情況是阻斷外網連線，也就是切斷通往網際網路的路徑。此時，實驗室內的交換器仍可能讓電腦與 NAS 互相連線；即使上不了網，研究生仍可能開啟 NAS 的共享資料夾。管理者可以記錄阻斷的位置、方向與範圍，並核對其他遠端入口，確認實際還有哪些路徑能連到 NAS。",
+            "我們做隔離，是為了控制誰還能透過哪些路徑接觸 NAS。如果內網某台電腦已感染惡意程式，而且登入帳號有修改共享檔案的權限，這台電腦仍可能影響 NAS 裡的資料。因此，除了處理 NAS，也要檢查相關電腦，並調整帳號與資料夾權限。",
+            "準備恢復連線時，先選定供維護使用、狀態已確認的電腦與獲准的連線路徑，只開放這次更新或測試需要的入口。完成後，再確認哪些人能連線、能讀寫哪些資料夾，依結果逐步恢復服務。"
+          ],
+          "diagram": {
+            "id": "nas-isolation",
+            "caption": "圖 2｜兩種斷網，保留的路徑不同",
+            "description": "先分辨外網中斷與 NAS 網路介面中斷。",
+            "groups": [
+              {
+                "title": "A｜外網斷開，內網保留",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "外網路徑：中斷 ×",
+                    "body": "網際網路 × 路由器：此路徑無法通行。",
+                    "icon": "network",
+                    "tone": "red"
+                  },
+                  {
+                    "title": "內網路徑：仍待管理",
+                    "body": "內網電腦 ↔ NAS：網路與權限允許時仍可共享檔案。",
+                    "icon": "nas",
+                    "tone": "teal"
+                  }
+                ]
+              },
+              {
+                "title": "B｜NAS 的所有網路連線斷開",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "電腦到 NAS：路徑中斷 ×",
+                    "body": "透過已拔除介面的網路存取停止；維護另安排受控路徑。",
+                    "icon": "nas",
+                    "tone": "red"
+                  }
+                ]
+              }
+            ],
+            "note": "驗收要記錄拔除或封鎖的介面及仍可達的服務。"
+          }
+        },
+        {
+          "id": "attack-paths",
+          "heading": "漏洞（弱點）是否能被攻擊者利用？",
+          "paragraphs": [
+            "漏洞（弱點）是系統在設計、實作或設定上，可能讓人繞過原有保護的缺口。要判斷攻擊者能否利用某個漏洞，可以先問三個問題：攻擊者連得到有問題的服務嗎？目前使用的版本與設定符合公告列出的受影響條件嗎？利用這個漏洞，需要先登入或具備特定權限嗎？把這些條件逐一對照，才能判斷它與這台 NAS 的關係。",
+            "例如，某個漏洞需要先登入才能利用，就要確認攻擊者是否可能取得可用帳號；若漏洞位於某項服務，也要確認那項服務是否啟用，以及哪些人能連到它。漏洞公告中的利用條件，可以幫助管理者安排修補順序與暫時的隔離措施。",
+            "共享檔案還有另一個需要檢查的地方：誰有權限修改資料？假設研究生的電腦感染勒索軟體，而這台電腦使用的帳號能修改 NAS 裡的共享檔案，惡意程式就可能沿用這些權限，加密或破壞檔案。這種情況不一定需要利用 NAS 本身的漏洞，因此修補 NAS 與管理寫入權限都要做。",
+            "實際管理時，將管理帳號與日常使用帳號分開，依工作需要設定資料夾權限。只需要看資料的人給予唯讀權限，需要編輯的人才開放寫入。驗收可以使用測試資料夾與測試檔案：確認有權限的帳號能完成預定操作，也確認唯讀帳號無法新增、修改或刪除檔案。"
+          ],
+          "diagram": {
+            "id": "nas-threat-paths",
+            "caption": "圖 3｜兩條需要分別防護的路徑",
+            "description": "箭頭表示可能的影響傳遞，並非個案已遭入侵的證據。",
+            "groups": [
+              {
+                "title": "A｜利用可達服務的漏洞",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "外部攻擊者",
+                    "body": "能到達某個開放服務。",
+                    "icon": "computer",
+                    "tone": "orange"
+                  },
+                  {
+                    "title": "受影響的 NAS 服務",
+                    "body": "版本與利用條件同時符合。",
+                    "icon": "nas",
+                    "tone": "orange"
+                  },
+                  {
+                    "title": "未授權的影響",
+                    "body": "可能讀寫檔案或影響服務，依漏洞能力而定。",
+                    "icon": "warning",
+                    "tone": "red"
+                  }
+                ]
+              },
+              {
+                "title": "B｜使用既有檔案權限",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "受感染的電腦",
+                    "body": "惡意程式取得使用者的執行環境。",
+                    "icon": "computer",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "SMB 寫入權限",
+                    "body": "該帳號獲准修改共享資料夾。",
+                    "icon": "shield",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "共享資料遭修改",
+                    "body": "可寫入的檔案可能遭刪除或加密。",
+                    "icon": "data",
+                    "tone": "red"
+                  }
+                ]
+              }
+            ],
+            "note": "修補處理軟體缺口；最小權限、端點防護與復原副本各自承接不同風險。"
+          }
+        },
+        {
+          "id": "patch-inventory",
+          "heading": "NAS 系統更新了，裡面的軟體也更新了嗎？",
+          "paragraphs": [
+            "可以把 NAS 的更新想成手機更新：手機有作業系統，也有另外安裝的 App。Synology NAS 的 DSM 是作業系統，套件則是安裝在裡面、提供額外功能的軟體。檢查安全更新時，先確認 DSM 的版本，再到「套件中心」查看已安裝套件的版本，兩邊都要核對。",
+            "先看 DSM。依 2026-11-01 查核的 Synology 安全公告 SA-26:13，使用 DSM 7.4 的設備，需更新至 `7.4-90075` 或更新版本，才符合該公告列出的修補要求。如果設備使用 DSM 7.3 或其他版本系列，就要查看公告中對應的那一列。比對時記下完整版本號與 Update 編號，才能確認是否已包含這次修補。",
+            "再看套件。同日查核的 SA-26:14 列出 PHP、Mail Station 與 Synology Calendar 的漏洞及各自的修補版本。其中 PHP 7.3 已停止支援，公告明確表示不提供修補。若有安裝，下一步是確認哪些服務依賴它，再規劃改用仍受支援、且已修補的版本，或停用不再需要的功能。因此，完成 DSM 更新後，還要逐項確認相關套件是否已處理。",
+            "收到安全警訊時，可以先保留原始通知，找出其中的 CVE 編號。CVE 是用來辨認特定漏洞的公開編號，方便把警訊、官方公告與設備上的軟體對起來。本文的兩份公告示範了查核方法；實際處理時，要以警訊提到的漏洞及設備安裝的版本為準。",
+            "更新前後各記一次版本，並記下操作時間。完成後，用測試檔案確認登入、開啟共享資料夾與必要功能是否正常。如果看到陌生帳號、異常登入或大量檔案遭修改，也要保存相關紀錄，交由負責資安事件的人員繼續調查。版本紀錄回答「修補做了什麼」，事件調查則釐清「是否已有人入侵」。下表整理可以去哪裡查看，以及要留下哪些資料。"
+          ],
+          "sourceIds": [
+            "synology-dsm",
+            "synology-packages"
+          ],
+          "table": {
+            "headers": [
+              "去哪裡查看？",
+              "要記下什麼？"
+            ],
+            "rows": [
+              [
+                "控制台：更新與還原",
+                "機型、DSM 完整版本及 Update 編號"
+              ],
+              [
+                "套件中心",
+                "安裝套件、完整版本、是否仍受支援"
+              ],
+              [
+                "網路與路由設備",
+                "介面、公開入口、轉送規則、IPv6 與遠端路徑"
+              ],
+              [
+                "帳號與紀錄",
+                "管理權限、異常登入、陌生帳號與大量檔案變更"
+              ],
+              [
+                "備份與快照",
+                "成功時間、獨立副本、還原測試結果"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "remote-access",
+          "heading": "遠端入口的專責化：網頁與 SMB 等單一功能為何要分開設計？",
+          "paragraphs": [
+            "人在實驗室外使用 NAS，可能有兩種需求：用瀏覽器開啟某個網頁服務，或用電腦的檔案管理工具開啟共享資料夾。前者使用網頁連線，後者可以使用 SMB 檔案共享協定。這裡說的「專責化」，就是為每項功能訂清楚誰能使用、從哪裡連入，以及能做哪些事；需要讀取研究資料的人，就只開放完成這項工作所需的功能。",
+            "以網頁入口為例，Cloudflare Tunnel 會由內網中的連接程式主動連到 Cloudflare，建立傳送服務流量的通道。接著設定 Cloudflare Access，檢查使用者身分，並依允許規則決定誰能開啟這個網頁服務。使用者進入後，NAS 本身仍要檢查登入帳號與操作權限。通道、入口身分檢查與 NAS 權限，各自負責一段。",
+            "如果需求是開啟 SMB 共享資料夾，就要另外確認這種連線怎麼走。Cloudflare 官方文件提供的一種方式，是在使用者電腦安裝 Cloudflare One Client，搭配通往內網的私有路由。Split Tunnels（流量分流設定）決定哪些連線交給這個用戶端處理；管理者要讓通往 NAS 的指定內網位址走入這條路徑，再設定可連線的使用者、目標與服務範圍。若使用設備名稱連線，也要確認名稱能對應到正確位址。",
+            "完成 SMB 連線後，使用者仍以 NAS 帳號存取獲准的共享資料夾。因此，能開啟受保護的網頁，不代表已取得 SMB 的連線與檔案權限。分開設計讓管理者能依需求開放網頁或共享資料夾；兩者可以共用底層通道，重點是各項服務的路徑與權限都有明確設定。",
+            "這是供管理者評估的架構方案。採用前，分別測試網頁與 SMB：獲准帳號能完成指定工作，未獲准帳號會被拒絕；唯讀帳號能看檔案，但無法修改。也要核對其他公開位址、連接埠與轉送設定，確認沒有繞過預定身分檢查的入口。記錄結果後，再由管理者確認開放對象與功能範圍。"
+          ],
+          "sourceIds": [
+            "cloudflare-tunnel",
+            "cloudflare-smb"
+          ],
+          "diagram": {
+            "id": "nas-remote-access",
+            "caption": "圖 4｜通道、身分與權限各有角色",
+            "description": "網頁箭頭表示邏輯存取順序；連接器主動對外建立 Tunnel。",
+            "groups": [
+              {
+                "title": "網頁服務：身分檢查後存取",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "遠端瀏覽器",
+                    "body": "使用者請求 NAS 網頁服務。",
+                    "icon": "computer",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "Cloudflare Access",
+                    "body": "依身分與應用程式政策允許或拒絕。",
+                    "icon": "shield",
+                    "tone": "teal"
+                  },
+                  {
+                    "title": "Tunnel 與 NAS",
+                    "body": "通道承接流量，NAS 再檢查登入與操作權限。",
+                    "icon": "nas",
+                    "tone": "purple"
+                  }
+                ]
+              },
+              {
+                "title": "SMB：另設私有網路路徑",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "受管理的用戶端 → NAS",
+                    "body": "Cloudflare One Client、私有路由及網路政策承接 SMB；檔案權限由 NAS 管理。",
+                    "icon": "network",
+                    "tone": "blue"
+                  }
+                ]
+              }
+            ],
+            "note": "入口驗證成功後，仍需管理已授權電腦與帳號的寫入能力。"
+          }
+        },
+        {
+          "id": "recoverable-data",
+          "heading": "讓資料可還原：分清三種保護",
+          "paragraphs": [
+            "RAID（獨立磁碟備援陣列）與 SHR（Synology Hybrid RAID）依配置承受部分硬碟故障，讓設備維持運作；檔案被刪除或改寫時，陣列也會保存這個變更。快照記錄某個時間點的資料狀態，適合回復誤刪或修改；保留在同一台設備的快照，也共用設備故障與部分管理風險。",
+            "獨立備份把副本放到另一個目的地，再依需求加入異地、離線或不可變保護。不可變表示在指定期間限制修改或刪除；實際支援仍要核對機型、檔案系統與設定。備份帳號和管理權限也要隔離，讓同一個受感染帳號難以同時改寫所有副本。",
+            "用一份獲准的測試檔案驗證：記錄內容或雜湊值，建立備份，再還原到獨立測試目錄，比對內容與存取權限，記錄耗時並清理測試副本。生產資料的破壞性測試另安排受控環境；「備份成功」與「確實還原」分別留下證據。"
+          ],
+          "sourceIds": [
+            "synology-backup",
+            "synology-snapshots"
+          ],
+          "diagram": {
+            "id": "nas-recovery",
+            "caption": "圖 5｜硬碟容錯、時間點與獨立副本",
+            "description": "三張卡片處理不同問題，屬於平行的保護措施。",
+            "groups": [
+              {
+                "title": "NAS 資料的三種保護角色",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "RAID／SHR",
+                    "body": "依配置承受硬碟故障；誤刪或加密會反映到陣列中。",
+                    "icon": "nas",
+                    "tone": "orange"
+                  },
+                  {
+                    "title": "快照",
+                    "body": "保留時間點狀態，協助快速回復；同機副本共用設備風險。",
+                    "icon": "data",
+                    "tone": "teal"
+                  },
+                  {
+                    "title": "獨立備份",
+                    "body": "將副本存到另一個目的地，分開管理存取權限。",
+                    "icon": "shield",
+                    "tone": "purple"
+                  }
+                ]
+              },
+              {
+                "title": "備份副本的保存與驗證",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "異地／離線／不可變",
+                    "body": "依風險配置位置與保護期間，核對產品支援條件。",
+                    "icon": "shield",
+                    "tone": "teal"
+                  },
+                  {
+                    "title": "實際還原",
+                    "body": "還原至測試目錄，核對檔案、權限與耗時。",
+                    "icon": "check",
+                    "tone": "purple"
+                  }
+                ]
+              }
+            ],
+            "note": "還原證據回答「資料拿不拿得回來」，備份工作狀態回答「備份是否執行成功」。"
+          }
+        },
+        {
+          "id": "return-to-service",
+          "heading": "依驗收結果，分階段恢復服務",
+          "paragraphs": [
+            "復線是一個有順序的判斷流程。先由管理者確認隔離與紀錄，再盤點和修補，接著驗證帳號、服務與資料復原。每一步寫下誰執行、何時完成、得到什麼結果，最後決定哪些使用者與服務先恢復。",
+            "若看到勒索訊息、陌生管理帳號或大量異常檔案變更，先維持隔離並保存紀錄，由事件處理人員判斷調查與重建方式。一般更新流程適用於已完成狀態評估的維護工作；可疑設備的清理與復線需要事件處理結果支持。"
+          ],
+          "diagram": {
+            "id": "nas-return-to-service",
+            "caption": "圖 6｜五個有證據的復線步驟",
+            "description": "這是處置規劃，並非已完成的維運紀錄。",
+            "groups": [
+              {
+                "title": "從隔離到有限恢復",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "01｜確認隔離",
+                    "body": "列出介面、路徑與仍可達的服務。",
+                    "icon": "network",
+                    "tone": "gray"
+                  },
+                  {
+                    "title": "02｜保存與檢查紀錄",
+                    "body": "檢查登入、帳號與檔案異常；可疑情況轉入調查。",
+                    "icon": "data",
+                    "tone": "orange"
+                  },
+                  {
+                    "title": "03｜盤點與受控修補",
+                    "body": "逐項核對 DSM 與套件，記錄更新前後版本。",
+                    "icon": "nas",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "04｜驗證權限與復原",
+                    "body": "測試允許及拒絕的操作，完成獨立副本還原。",
+                    "icon": "shield",
+                    "tone": "teal"
+                  },
+                  {
+                    "title": "05｜分階段復線",
+                    "body": "管理者確認結果後，只恢復必要服務並觀察紀錄。",
+                    "icon": "check",
+                    "tone": "purple"
+                  }
+                ]
+              }
+            ],
+            "note": "任一步出現入侵跡象，維持隔離並交由事件處理；復線以評估結果為準。"
+          }
+        },
+        {
+          "id": "understanding-check",
+          "heading": "理解檢查：誰仍然能改寫資料？",
+          "paragraphs": [
+            "情境：NAS 已更新，也沒有直接公開的入站入口；某位使用者的電腦卻遭感染。為什麼共享檔案仍可能被加密？請選一項防護措施，說明它保護哪個環節。",
+            "參考思路：惡意程式可能利用該使用者既有的寫入權限。把不需修改的資料夾改為唯讀可縮小影響；端點防護處理感染來源；獨立且經還原驗證的副本承接資料復原。判斷時指出所選措施處理的路徑，再列出仍需其他措施承接的部分。",
+            "下一步：用本文盤點表整理一台獲准管理的設備。先記錄現況，再選出一項最能降低不確定性的檢查，例如取得套件完整版本，或完成一次測試檔案還原。",
+            "想進一步看懂漏洞編號、版本門檻與離線更新，可接著閱讀[漏洞公告與修補教學](https://learn.cs-kairos.com/perspectives/nas-cve-patching/)。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "title": "The NAS Is Offline. What Should We Verify Next?",
+      "summary": "Six diagrams connect everyday file sharing to isolation, vulnerabilities, permissions, remote access and backups, building an evidence-based path to reconnection.",
+      "author": "CS Kairos Learn",
+      "sections": [
+        {
+          "id": "starting-point",
+          "heading": "Why keep checking after disconnecting a NAS?",
+          "paragraphs": [
+            "Disconnecting a NAS after a security alert creates time to investigate. The next questions are who can still reach it, what they can change, and whether damaged data can be restored. Those answers determine which services can return.",
+            "This article uses a laboratory file-sharing scenario to explain isolation, patching, remote access and recovery. Devices, accounts and paths are teaching examples. The six diagrams explain decisions; an administrator must separately verify a real device’s versions, compromise status and recovery results."
+          ]
+        },
+        {
+          "id": "shared-storage",
+          "heading": "What is a NAS? How does it share files?",
+          "paragraphs": [
+            "A NAS (Network Attached Storage) is a network-connected device dedicated to storing and sharing files. Think of it as a shared filing cabinet for a team: researchers use their own computers to open shared folders on the NAS over the network, keeping papers, models, and research data in one place.",
+            "To access shared files, a computer first finds the NAS and then signs in with an account. The NAS uses that account’s permissions to determine which folders the user can open and whether they can add, edit, or delete files. For example, researcher A may edit files in a folder while researcher B can only read them. Both connect to the same NAS, but their permissions can differ.",
+            "An IP address acts like a device’s address on the network, helping the computer find the NAS. SMB (Server Message Block) is a common file-sharing protocol: a set of rules computers and the NAS use to transfer files and communicate requests. Finding the NAS, signing in, and receiving permission to edit files are three separate things to verify.",
+            "On a managed test LAN, for example, `smb://192.168.1.20/Research` opens the shared folder named Research on the NAS at 192.168.1.20 using SMB. This address and folder name are synthetic teaching examples; for an actual connection, use the address and authorized account provided by the administrator.",
+            "Administrators use the NAS operating system to configure accounts, shared folders, and permissions. Synology calls its NAS operating system DSM (DiskStation Manager). Software installed on DSM to provide additional functions is called a package. These are the two layers discussed later when we cover system and package updates."
+          ],
+          "diagram": {
+            "id": "nas-lan",
+            "caption": "Figure 1 | Two computers, one shared resource",
+            "description": "A LAN is a local area network. Each user connects independently to the NAS.",
+            "groups": [
+              {
+                "title": "Laboratory LAN: independent access paths",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "Researcher A’s computer",
+                    "body": "Computer A → NAS: uses its own account to read and write permitted folders over SMB.",
+                    "icon": "computer",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "Researcher B’s computer",
+                    "body": "Computer B → NAS: reaches the same storage directly; permissions may differ from A’s.",
+                    "icon": "computer",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "Shared NAS storage",
+                    "body": "Checks each account’s permissions separately and stores papers, models and research data.",
+                    "icon": "nas",
+                    "tone": "purple"
+                  }
+                ]
+              }
+            ],
+            "note": "The cards represent parallel relationships. A does not connect through B."
+          }
+        },
+        {
+          "id": "isolation",
+          "heading": "What does “offline” actually mean: unplugging a network cable or blocking Internet access?",
+          "paragraphs": [
+            "When someone says “the NAS is offline,” ask which network cable was unplugged, or whether Internet access was blocked on a router or firewall. These actions affect different connections. Knowing what was actually done helps establish which computers can still access the NAS.",
+            "One possibility is unplugging a network cable from the NAS itself. Computers that used that link can no longer access files through it. If the NAS has other connected cables or enabled network interfaces, check those too. Confirm that all NAS network connections are disconnected before concluding that other computers can no longer reach it over the network.",
+            "Another possibility is blocking the path to the Internet. The laboratory switch may still connect local computers to the NAS, so researchers may still open shared folders even when Internet access is unavailable. Record where traffic was blocked, in which direction, and to what extent. Check other remote entry points to establish which paths can still reach the NAS.",
+            "Isolation controls who can reach the NAS and through which paths. If a local computer is infected with malware and its signed-in account can modify shared files, it may still affect data on the NAS. Alongside the NAS, check the relevant computers and adjust account and folder permissions.",
+            "To restore connectivity, start with a maintenance computer whose state has been checked and an approved connection path. Open only the entry points needed for the update or test. Then verify who can connect and which folders they can read or write, restoring services gradually based on those results."
+          ],
+          "diagram": {
+            "id": "nas-isolation",
+            "caption": "Figure 2 | Two disconnections, different remaining paths",
+            "description": "Distinguish an Internet uplink outage from disconnected NAS interfaces.",
+            "groups": [
+              {
+                "title": "A | Internet disconnected, LAN retained",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "Internet path: disconnected ×",
+                    "body": "Internet × router: this path is unavailable.",
+                    "icon": "network",
+                    "tone": "red"
+                  },
+                  {
+                    "title": "LAN path: still requires controls",
+                    "body": "Local computer ↔ NAS: file sharing remains possible when networking and permissions allow it.",
+                    "icon": "nas",
+                    "tone": "teal"
+                  }
+                ]
+              },
+              {
+                "title": "B | All NAS network links disconnected",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "Computer to NAS: path disconnected ×",
+                    "body": "Access through disconnected interfaces stops. Arrange a separate controlled maintenance path.",
+                    "icon": "nas",
+                    "tone": "red"
+                  }
+                ]
+              }
+            ],
+            "note": "Record which interfaces are disconnected or blocked and which services remain reachable."
+          }
+        },
+        {
+          "id": "attack-paths",
+          "heading": "Can an attacker exploit the vulnerability?",
+          "paragraphs": [
+            "A vulnerability is a weakness in a system’s design, implementation, or configuration that may allow someone to bypass its protections. Start with three questions: Can the attacker reach the affected service? Do the installed version and configuration match the advisory’s affected conditions? Does exploitation require signing in or holding particular permissions? Comparing these conditions helps establish how the vulnerability applies to this NAS.",
+            "For example, if exploitation requires signing in, check whether an attacker could obtain a usable account. If the vulnerability affects a particular service, check whether that service is enabled and who can reach it. The exploitation conditions in an advisory help administrators prioritize patches and temporary isolation measures.",
+            "Shared files introduce another question: Who has permission to change the data? Suppose a researcher’s computer is infected with ransomware and its account can modify shared files on the NAS. The malware may use those existing permissions to encrypt or damage the files. This does not necessarily require exploiting a vulnerability in the NAS itself, so both patching and write-permission management matter.",
+            "Keep administrator accounts separate from everyday accounts and assign folder permissions according to work needs. Give read-only access to people who only need to view data, and write access to those who need to edit it. Use a test folder and test files for acceptance checks: confirm that authorized accounts can perform the intended operations and that read-only accounts cannot add, modify, or delete files."
+          ],
+          "diagram": {
+            "id": "nas-threat-paths",
+            "caption": "Figure 3 | Two paths requiring separate controls",
+            "description": "Arrows show possible propagation of impact, not evidence that a particular device was compromised.",
+            "groups": [
+              {
+                "title": "A | Exploiting a reachable service",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "External attacker",
+                    "body": "Can reach an exposed service.",
+                    "icon": "computer",
+                    "tone": "orange"
+                  },
+                  {
+                    "title": "Affected NAS service",
+                    "body": "The version and exploitation conditions apply.",
+                    "icon": "nas",
+                    "tone": "orange"
+                  },
+                  {
+                    "title": "Unauthorized impact",
+                    "body": "May read or write files or disrupt a service, depending on the vulnerability.",
+                    "icon": "warning",
+                    "tone": "red"
+                  }
+                ]
+              },
+              {
+                "title": "B | Using existing file permissions",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "Infected computer",
+                    "body": "Malware operates in the user’s environment.",
+                    "icon": "computer",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "SMB write permission",
+                    "body": "The account is permitted to modify shared folders.",
+                    "icon": "shield",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "Shared data modified",
+                    "body": "Writable files may be deleted or encrypted.",
+                    "icon": "data",
+                    "tone": "red"
+                  }
+                ]
+              }
+            ],
+            "note": "Patches address software flaws; least privilege, endpoint protection and recovery copies address distinct risks."
+          }
+        },
+        {
+          "id": "patch-inventory",
+          "heading": "The NAS system is updated. Are its installed apps updated too?",
+          "paragraphs": [
+            "Think of NAS updates like phone updates: a phone has an operating system and separately installed apps. On a Synology NAS, DSM is the operating system, while packages are installed software that adds functions. Check the DSM version first, then open Package Center to check installed package versions. Both need attention.",
+            "Start with DSM. As checked on November 1, 2026, Synology advisory SA-26:13 requires DSM 7.4 devices to run `7.4-90075` or later to meet its listed fix requirement. For DSM 7.3 or another release series, use the corresponding row in the advisory. Record the complete version and Update number to establish whether the fix is included.",
+            "Next, check packages. SA-26:14, checked on the same date, lists vulnerabilities and separate fixed releases for PHP, Mail Station, and Synology Calendar. PHP 7.3 has reached end of life, and the advisory explicitly states that no fix will be provided. If it is installed, identify services that depend on it, then plan a move to a supported, patched version or disable functions no longer needed. After updating DSM, check that each relevant package has also been addressed.",
+            "When a security alert arrives, keep the original notice and find its CVE identifier. A CVE is a public identifier for a specific vulnerability, helping connect the alert, official advisory, and installed software. The two advisories here illustrate the checking process; actual maintenance should follow the vulnerability in the alert and the versions installed on the device.",
+            "Record versions before and after updating, along with the time of the work. Then use test files to check sign-in, shared-folder access, and required functions. If you find unfamiliar accounts, unusual logins, or widespread file changes, preserve the relevant records for the people responsible for incident investigation. Version records show what was patched; investigation establishes whether an intrusion occurred. The table below lists where to look and what to record."
+          ],
+          "sourceIds": [
+            "synology-dsm",
+            "synology-packages"
+          ],
+          "table": {
+            "headers": [
+              "Where should you look?",
+              "What should you record?"
+            ],
+            "rows": [
+              [
+                "Control Panel: Update & Restore",
+                "Model, full DSM version and Update number"
+              ],
+              [
+                "Package Center",
+                "Installed packages, full versions and support status"
+              ],
+              [
+                "Network and routing devices",
+                "Interfaces, exposed entries, forwarding, IPv6 and remote paths"
+              ],
+              [
+                "Accounts and logs",
+                "Administrative privileges, unusual logins, unknown accounts and mass file changes"
+              ],
+              [
+                "Backup and snapshots",
+                "Success time, independent copies and restore-test results"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "remote-access",
+          "heading": "Purpose-specific remote access: why design web, SMB, and other functions separately?",
+          "paragraphs": [
+            "Outside the laboratory, someone may need to open a web service in a browser or open a shared folder in their computer’s file manager. The first uses a web connection; the second can use SMB file sharing. Purpose-specific access means defining who may use each function, how they connect, and what they may do. Someone who needs research files receives only the functions needed for that task.",
+            "For a web entry point, Cloudflare Tunnel uses a connector inside the network to initiate a connection to Cloudflare and carry service traffic. Configure Cloudflare Access to check identity and apply rules for who may open the web service. The NAS still checks its own accounts and operation permissions. The tunnel, entry-point identity check, and NAS permissions each have a role.",
+            "For an SMB shared folder, establish its connection path separately. One method in Cloudflare’s documentation uses the Cloudflare One Client on the user’s computer with a private route to the internal network. Split Tunnels settings determine which connections the client handles. Route the designated internal NAS addresses through it, then configure the allowed users, destinations, and services. If users connect by device name, verify that it resolves to the correct address.",
+            "After connecting over SMB, users still access approved shared folders with NAS accounts. Access to a protected web page does not establish SMB connectivity or file permissions. Separate design lets administrators enable the web service or shared folders according to need. They can share an underlying tunnel; each service still needs an explicit path and permission configuration.",
+            "This is an architecture proposal for administrator evaluation. Before adopting it, test web and SMB access separately: authorized accounts complete their intended tasks, unauthorized accounts are denied, and read-only accounts can view files but cannot modify them. Check other public addresses, ports, and forwarding rules for entry points that bypass the intended identity checks. Record the results, then have the administrator confirm the permitted users and functions."
+          ],
+          "sourceIds": [
+            "cloudflare-tunnel",
+            "cloudflare-smb"
+          ],
+          "diagram": {
+            "id": "nas-remote-access",
+            "caption": "Figure 4 | Transport, identity and permissions have distinct roles",
+            "description": "Web arrows show logical access order; the connector initiates the outbound tunnel.",
+            "groups": [
+              {
+                "title": "Web service: access after identity checks",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "Remote browser",
+                    "body": "The user requests a NAS web service.",
+                    "icon": "computer",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "Cloudflare Access",
+                    "body": "Allows or denies access through identity and application policies.",
+                    "icon": "shield",
+                    "tone": "teal"
+                  },
+                  {
+                    "title": "Tunnel and NAS",
+                    "body": "The tunnel carries traffic; the NAS checks sign-in and operation permissions.",
+                    "icon": "nas",
+                    "tone": "purple"
+                  }
+                ]
+              },
+              {
+                "title": "SMB: a separate private-network path",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "Managed client → NAS",
+                    "body": "Cloudflare One Client, private routes and network policies carry SMB; the NAS manages file permissions.",
+                    "icon": "network",
+                    "tone": "blue"
+                  }
+                ]
+              }
+            ],
+            "note": "After entry authentication succeeds, authorized computers and accounts still need appropriate write restrictions."
+          }
+        },
+        {
+          "id": "recoverable-data",
+          "heading": "Make data recoverable: distinguish three protections",
+          "paragraphs": [
+            "RAID (Redundant Array of Independent Disks) and SHR (Synology Hybrid RAID) can tolerate some disk failures, depending on configuration. An array also preserves file deletions and modifications. Snapshots capture a point in time for recovery; snapshots retained only on the same device share hardware and some administrative risks.",
+            "Independent backups place copies at another destination, with off-site, offline or immutable protection as appropriate. Immutability restricts modification or deletion for a defined period; verify model, file-system and configuration support. Separate backup accounts and administrative rights so a compromised account cannot readily rewrite every copy.",
+            "For an authorized test file, record its content or hash, back it up, restore it to a separate test directory, and compare content and permissions. Record elapsed time and clean up test copies. Use a controlled environment for destructive tests of production data. Keep separate evidence of backup success and successful restoration."
+          ],
+          "sourceIds": [
+            "synology-backup",
+            "synology-snapshots"
+          ],
+          "diagram": {
+            "id": "nas-recovery",
+            "caption": "Figure 5 | Disk resilience, points in time and independent copies",
+            "description": "The three cards address different problems and represent parallel protections.",
+            "groups": [
+              {
+                "title": "Three protection roles for NAS data",
+                "mode": "cards",
+                "items": [
+                  {
+                    "title": "RAID / SHR",
+                    "body": "Tolerates disk failures according to configuration; deletion or encryption is reflected in the array.",
+                    "icon": "nas",
+                    "tone": "orange"
+                  },
+                  {
+                    "title": "Snapshots",
+                    "body": "Retains points in time for quick recovery; local copies share device risks.",
+                    "icon": "data",
+                    "tone": "teal"
+                  },
+                  {
+                    "title": "Independent backup",
+                    "body": "Stores copies at another destination with separately managed access.",
+                    "icon": "shield",
+                    "tone": "purple"
+                  }
+                ]
+              },
+              {
+                "title": "Preserving and verifying backup copies",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "Off-site / offline / immutable",
+                    "body": "Choose location and protection periods for the risks, and verify product support.",
+                    "icon": "shield",
+                    "tone": "teal"
+                  },
+                  {
+                    "title": "Restore test",
+                    "body": "Restore to a test directory and check files, permissions and elapsed time.",
+                    "icon": "check",
+                    "tone": "purple"
+                  }
+                ]
+              }
+            ],
+            "note": "Restore evidence answers whether data can be recovered; job status answers whether a backup ran successfully."
+          }
+        },
+        {
+          "id": "return-to-service",
+          "heading": "Restore service in stages using acceptance evidence",
+          "paragraphs": [
+            "Returning to service is a sequence of decisions. Establish isolation and preserve records, inventory and patch, then validate accounts, services and recovery. Record the owner, time and result of each step before deciding which users and services can return first.",
+            "If ransom notes, unknown administrators or unusual mass file changes appear, maintain isolation and preserve records for incident responders to assess investigation and rebuilding. Routine patching applies after status assessment; cleanup and reconnection of a suspected compromised device require incident-response evidence."
+          ],
+          "diagram": {
+            "id": "nas-return-to-service",
+            "caption": "Figure 6 | Five evidence-based steps to reconnection",
+            "description": "This is a response plan, not a record of completed maintenance.",
+            "groups": [
+              {
+                "title": "From isolation to limited restoration",
+                "mode": "flow",
+                "items": [
+                  {
+                    "title": "01 | Confirm isolation",
+                    "body": "List interfaces, paths and services still reachable.",
+                    "icon": "network",
+                    "tone": "gray"
+                  },
+                  {
+                    "title": "02 | Preserve and inspect records",
+                    "body": "Check logins, accounts and file anomalies; escalate suspicious findings.",
+                    "icon": "data",
+                    "tone": "orange"
+                  },
+                  {
+                    "title": "03 | Inventory and controlled patching",
+                    "body": "Check DSM and packages individually and record versions before and after.",
+                    "icon": "nas",
+                    "tone": "blue"
+                  },
+                  {
+                    "title": "04 | Verify permissions and recovery",
+                    "body": "Test allowed and denied operations and restore an independent copy.",
+                    "icon": "shield",
+                    "tone": "teal"
+                  },
+                  {
+                    "title": "05 | Reconnect in stages",
+                    "body": "After administrator acceptance, restore necessary services and monitor logs.",
+                    "icon": "check",
+                    "tone": "purple"
+                  }
+                ]
+              }
+            ],
+            "note": "At any step, signs of compromise require continued isolation and incident handling; reconnect according to the assessment."
+          }
+        },
+        {
+          "id": "understanding-check",
+          "heading": "Understanding check: who can still change data?",
+          "paragraphs": [
+            "Scenario: the NAS is patched and has no directly exposed inbound entry, but a user’s computer is infected. Why might shared files still be encrypted? Choose one control and identify the part of the path it protects.",
+            "Suggested reasoning: malware may use the user’s existing write permissions. Read-only access where editing is unnecessary reduces impact; endpoint protection addresses infection; independently protected and tested copies support recovery. Identify the path covered by your chosen control and the parts needing additional measures.",
+            "Next step: use the inventory table for a device you are authorized to manage. Record its current state, then choose one check that most reduces uncertainty, such as obtaining a full package version or restoring a test file.",
+            "Continue with the [advisory and patching guide](https://learn.cs-kairos.com/en/perspectives/nas-cve-patching/) for vulnerability identifiers, fix thresholds and offline updating."
+          ]
+        }
+      ]
+    }
+  },
+  "contentVersion": "1.0.3"
+}

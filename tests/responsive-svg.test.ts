@@ -22,7 +22,7 @@ test('full teaching SVGs fit their columns; fixed-size node icons remain separat
     ['DnsDiagram.svelte',/\.card svg\{width:24px;height:24px/],
     ['FtpDiagram.svelte',/\.endpoints svg\{width:42px;height:34px/],
     ['M0401Visual.svelte',/\.icon\{width:24px;height:24px/]
-  ] as const)assert.match(readFileSync('src/lib/components/'+file,'utf8'),pattern);
+  ] as const)assert.match(readFileSync('archive/ceh/m04-legacy-2026-11-04/src/lib/components/'+file,'utf8'),pattern);
 });
 
 test('existing source-image and MATLAB SVG renderers already preserve column-fit aspect ratio',()=>{

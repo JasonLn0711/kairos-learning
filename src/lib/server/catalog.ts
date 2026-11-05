@@ -36,8 +36,8 @@ export const routes: Route[] = (['zh','en'] as Locale[]).flatMap(lang => [
   {path:localized('/perspectives/',lang),kind:'perspectives',lang},
   ...perspectives.map(p=>({path:localized(`/perspectives/${p.slug}/`,lang),kind:'perspective' as Kind,lang,perspectiveId:p.id})),
   ...['/courses/ceh/','/courses/ceh/v13/'].map(path => ({path:localized(path,lang),kind:'ceh' as Kind,lang})),
+  ...modules.map(m => ({path:modulePath(m.id,lang),kind:'module' as Kind,lang,moduleId:m.id})),
   ...modules.filter(m => lessons.some(l => l.module === m.id)).flatMap(m => [
-    {path:modulePath(m.id,lang),kind:'module' as Kind,lang,moduleId:m.id},
     {path:modulePath(m.id,lang)+'quiz/',kind:'quiz' as Kind,lang,moduleId:m.id},
     {path:modulePath(m.id,lang)+'labs/',kind:'lab' as Kind,lang,moduleId:m.id}
   ]),

@@ -1,0 +1,4417 @@
+{
+  "id": "CEH26-M04-C01",
+  "revision": 3,
+  "contentVersion": "1.1.0",
+  "date": "2026-11-04",
+  "status": "published",
+  "publishedOn": "2026-11-04",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "Enumeration vs. Scanning｜從服務入口、資源名稱到可核對的權限證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M04-01｜掃描找到入口，列舉問出資訊"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration vs. Scanning｜逐章白話文完整教學"
+        },
+        {
+          "kind": "paragraph",
+          "text": "課程： CEH 2026 · Module 04 — Enumeration（列舉）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材： [CS Kairos Learn — M04-01](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-01/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "範圍： 第 1～10 節完整教學、概念 Q&A 與理解檢核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下主機、帳號、路徑與輸出均為教學用假設情境，不是本次對真實設備執行測試的紀錄。"
+        },
+        {
+          "kind": "heading",
+          "id": "overview",
+          "text": "課前導讀｜先掌握這堂課最重要的觀念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這堂課要教你的，其實就是一件事情："
+        },
+        {
+          "kind": "paragraph",
+          "text": "發現電腦有開放某項網路服務，不代表你已經知道服務裡面有什麼，更不代表你有權限使用裡面的資源。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們可以把 M03、M04、M05 想像成調查一棟辦公大樓。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "學習階段",
+            "白話文",
+            "技術上在做什麼"
+          ],
+          "rows": [
+            [
+              "M02 偵察",
+              "這棟大樓在哪裡？屬於哪家公司？",
+              "Reconnaissance"
+            ],
+            [
+              "M03 掃描",
+              "大樓有哪些入口？哪些門有人應答？",
+              "Scanning"
+            ],
+            [
+              "**M04 列舉**",
+              "裡面有哪些部門、房間和資源？",
+              "**Enumeration**"
+            ],
+            [
+              "M05 弱點分析",
+              "有沒有不該開放的資訊或權限？",
+              "Vulnerability Analysis"
+            ],
+            [
+              "M06 系統入侵",
+              "在授權測試中，是否能實際證明弱點造成的影響？",
+              "System Hacking"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一張概念地圖，不代表每次測試都必須依照這個順序執行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你在 M03 學會了使用 Nmap，發現："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.56.10\n\nPORT      STATE    SERVICE\n445/tcp   open     microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你知道 TCP 445 開放了。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，接下來你可能還想知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 這個入口是不是真的提供 SMB 檔案共用？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 這台伺服器有哪些共用資料夾？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 我能不能看到這些資料夾的名稱？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 我能不能讀取裡面的檔案？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 我能不能修改裡面的檔案？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些問題的答案可能完全不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M04 最重要的能力，就是學會向服務查詢資訊，並且正確理解查詢結果能夠證明什麼。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "第 1 節｜先想像：看見文件櫃，不等於能打開抽屜"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-1",
+          "text": "1.1 用公司文件室來理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是公司的資安工程師。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司委託你檢查一台檔案伺服器（File Server）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器就像一間文件室，裡面有好幾個文件櫃："
+        },
+        {
+          "kind": "code",
+          "text": "                   公司檔案伺服器\n                 192.168.56.10\n                        │\n              ┌─────────┴─────────┐\n              │    SMB 檔案服務    │\n              │     TCP 445       │\n              └─────────┬─────────┘\n                        │\n          ┌─────────────┼─────────────┐\n          │             │             │\n     ┌────▼────┐   ┌────▼────┐   ┌────▼────┐\n     │ Public  │   │ Finance │   │ Archive │\n     │ 公開共用 │   │ 財務資料 │   │ 歷史資料 │\n     └─────────┘   └─────────┘   └─────────┘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能會經歷以下情況。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一種：知道文件室在哪裡。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你知道伺服器的 IP 是 `192.168.56.10`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你還不知道它提供什麼服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二種：發現文件室有一個入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "透過 Nmap，你發現 TCP 445 是開放的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這表示有程式接受這個連接埠上的 TCP 連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你還沒有證明裡面有任何資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三種：知道這個入口提供檔案共用服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你透過協定辨識，確認它提供 SMB 服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像確認這棟建築物確實有文件室。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四種：知道文件櫃有哪些名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你查詢後得到："
+        },
+        {
+          "kind": "code",
+          "text": "Public\nFinance\nArchive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是列舉（Enumeration）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但注意！"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你只是知道有三個共用資源的名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你還不知道自己能不能讀取它們。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第五種：實際讀取某個檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你使用公司提供的測試帳號，成功讀取："
+        },
+        {
+          "kind": "code",
+          "text": "Public/demo.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這才證明你在當時的身分與測試條件下，可以讀取這份指定檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它仍然不代表你可以讀取其他檔案，也不代表你可以修改任何資料。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-2",
+          "text": "1.2 這節真正要理解的觀念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請分清楚四種不同的能力："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "能力",
+            "代表意義",
+            "是否證明下一項能力？"
+          ],
+          "rows": [
+            [
+              "發現服務",
+              "知道入口有回應",
+              "否"
+            ],
+            [
+              "列出資源名稱",
+              "知道有哪些共用資源",
+              "否"
+            ],
+            [
+              "讀取指定檔案",
+              "已成功取得該檔案內容",
+              "否"
+            ],
+            [
+              "修改指定檔案",
+              "已證明能對該檔案執行修改",
+              "不代表能修改其他檔案"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把這套觀念用在很多系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你在 NAS 管理頁面上看見一個資料夾名稱，不代表你能進入。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你能進入資料夾，也不代表你能刪除檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資安測試必須區分「看得見」、「進得去」、「讀得到」和「改得動」。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "第 2 節｜掃描與列舉，問的是不同問題"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-1",
+          "text": "2.1 先複習三個基礎概念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節會與 M03 的內容直接連接。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "IP Address：你要找哪台設備？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 位址就像設備在網路上的地址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們透過 IP 定位要溝通的設備。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但知道 IP，不代表知道該設備提供什麼服務。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "Port：你要連哪個服務入口？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一台電腦可能同時提供多種網路服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Port",
+            "常見用途"
+          ],
+          "rows": [
+            [
+              "TCP 22",
+              "SSH 遠端管理"
+            ],
+            [
+              "TCP 80",
+              "HTTP 網站"
+            ],
+            [
+              "TCP 443",
+              "HTTPS 網站"
+            ],
+            [
+              "TCP 445",
+              "SMB 檔案共用"
+            ],
+            [
+              "TCP 3389",
+              "RDP 遠端桌面"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些是常見的對應關係，不保證實際服務一定如此。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尤其要記住："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port 是傳輸層用來區分通訊端點的編號，而不是某項服務的身分證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，TCP 443 常見於 HTTPS，但不是說任何開放 TCP 443 的程式都一定是 HTTPS 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-4",
+          "text": "Protocol：雙方使用什麼規則溝通？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Protocol 就是通訊規則。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你走進銀行，不能直接對著櫃台說一串沒有意義的數字，就期待銀行完成轉帳。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你必須按照銀行規定的方式提出請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路服務也是一樣。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你要向 SMB 伺服器查詢資源，就必須使用符合 SMB 協定的請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是為什麼："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Nmap 可以協助確認服務入口的狀態。",
+            "`smbclient` 可以向 SMB 伺服器提出具體查詢。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者並不是做同一件事。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-5",
+          "text": "2.2 Scanning 與 Enumeration 的差別"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你是一位受公司授權的稽核人員。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-6",
+          "text": "Scanning：確認服務入口"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你詢問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個門口有人嗎？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器回應："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「有。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你得到的資訊是："
+        },
+        {
+          "kind": "code",
+          "text": "TCP 445: open"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-7",
+          "text": "Enumeration：查詢服務提供的資訊"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著，你向服務詢問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「目前有哪些共用資料夾？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務回應："
+        },
+        {
+          "kind": "code",
+          "text": "Public\nFinance\nArchive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在你不只知道入口開著，還取得了服務提供的具體資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是列舉。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-8",
+          "text": "2.3 一個容易混淆的地方"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是不是使用 Nmap 就叫 Scanning，使用其他工具才叫 Enumeration？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "分類的重點在於："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你向目標提出什麼問題，以及取得了什麼證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，Nmap 除了掃描連接埠，也能使用服務偵測及腳本功能取得更詳細的資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當工具開始向服務詢問具體資源或屬性時，這部分工作就具有列舉的性質。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，CEH 的章節是在幫助你理解資安工作的概念，不是規定每個工具只能用在哪個階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 官方文件也強調，掃描結果描述的是測試者當下觀察到的狀態，而不是對所有網路位置都永遠成立的結論。[nmap.org](https://nmap.org/book/man-port-scanning-basics.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "第 3 節｜第一個容易誤判的地方：445 open 到底證明什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這節非常重要，因為它牽涉到資安人員如何正確解讀證據。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "3.1 先看指令"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在已授權的隔離練習環境中："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 445 192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "逐個拆解："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "指令",
+            "意義"
+          ],
+          "rows": [
+            [
+              "`nmap`",
+              "執行網路掃描工具"
+            ],
+            [
+              "`-p`",
+              "指定要掃描的 Port"
+            ],
+            [
+              "`445`",
+              "這次檢查 TCP 445"
+            ],
+            [
+              "`192.168.56.10`",
+              "目標設備的 IP"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設結果如下："
+        },
+        {
+          "kind": "code",
+          "text": "PORT      STATE    SERVICE\n445/tcp   open     microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在我們逐項解讀。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "445/tcp"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表這次掃描的是："
+        },
+        {
+          "kind": "code",
+          "text": "傳輸協定：TCP\nPort：445"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "open"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表 Nmap 根據此次探測得到的回應，判斷這個連接埠有程式在接受連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不代表："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "可以登入。",
+            "可以讀取檔案。",
+            "存在可利用漏洞。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是最容易讓初學者誤判的地方。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能會想："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「Nmap 已經告訴我 microsoft-ds，所以我已經確認這台電腦提供 SMB 服務了。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其實沒有這麼簡單。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在這個沒有啟用服務版本偵測的基本掃描案例中，`microsoft-ds` 通常只是 Nmap 根據 Port 445 所顯示的常見服務名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就像你看到一棟大樓的門牌寫著「圖書館」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是線索，但你還沒有實際確認裡面是否正在提供圖書館服務。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-5",
+          "text": "3.2 如何進一步確認？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 有一個參數："
+        },
+        {
+          "kind": "code",
+          "text": "-sV"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它代表 Service Version Detection（服務與版本偵測）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 445 192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它會嘗試向目標服務發送探測資料，並分析回應，以推測實際提供的服務及可能的版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但即使成功辨識 SMB，也不代表你有檔案讀取權限。[nmap.org](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-6",
+          "text": "3.3 SMB 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 的完整名稱是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Server Message Block"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它是一種網路資源共用協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最常見的用途是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "讓使用者透過網路，存取另一台電腦上的共用資料夾或檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "你的 Windows 電腦\n       │\n       │ 使用 SMB 協定\n       ▼\n公司檔案伺服器\n       │\n       └── \\\\fileserver\\Public"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你在 Windows 檔案總管輸入："
+        },
+        {
+          "kind": "code",
+          "text": "\\\\fileserver\\Public"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就可能透過 SMB 存取遠端共用資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 也能使用 SMB，並非只有 Windows 可以。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，SMB 不一定只能透過 TCP 445 運作；現代 Windows 也支援其他 SMB 傳輸方式。[Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-7",
+          "text": "3.4 請看 SMB 的基本運作方式"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最基本的模型是："
+        },
+        {
+          "kind": "code",
+          "text": "┌───────────────────┐\n│  SMB Client       │\n│  你的電腦          │\n└─────────┬─────────┘\n          │\n          │ SMB Request\n          │ 請求列出共用資源\n          ▼\n┌───────────────────┐\n│  SMB Server       │\n│  公司檔案伺服器     │\n│                   │\n│  檢查相關身分      │\n│  與存取權限        │\n└─────────┬─────────┘\n          │\n          │ SMB Response\n          │ 回傳允許揭露的資訊\n          ▼\n┌───────────────────┐\n│  SMB Client       │\n│                   │\n│  Public           │\n│  Finance          │\n│  Archive          │\n└───────────────────┘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要注意，這是教學用的簡化圖。實際 SMB 可能涉及協定協商、身分驗證、工作階段建立，以及不同資源的權限檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第 3 節的核心：Port 開放只是傳輸層連線的觀察；要確認服務的具體功能，需要進一步取得協定層面的證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "第 4 節｜真正進入列舉：問服務「你有哪些共用資源？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節開始接觸真正的 Enumeration。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "4.1 認識 smbclient"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`smbclient` 是 Samba 專案提供的 SMB 用戶端工具。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以想像它是一個能用終端機和 SMB 伺服器溝通的程式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你平常在 Windows 裡使用檔案總管查看網路共用資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Linux 上，我們可以使用 `smbclient` 與 SMB 伺服器溝通。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可以執行的工作包括："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "查詢伺服器提供的共用資源。",
+            "連接指定的共用資料夾。",
+            "在有權限時，查詢資料夾內容。",
+            "在有權限時，進行檔案傳輸。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些功能及參數都有 Samba 官方文件支援。[Samba](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 逐項拆解指令"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司提供測試帳號："
+        },
+        {
+          "kind": "code",
+          "text": "labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你已獲得查詢共用資源的授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行："
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.10 -p 445 -U labuser"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "參數",
+            "白話解釋"
+          ],
+          "rows": [
+            [
+              "`smbclient`",
+              "使用 SMB 用戶端程式"
+            ],
+            [
+              "`-L`",
+              "請伺服器列出可查詢的共用資源"
+            ],
+            [
+              "`192.168.56.10`",
+              "要詢問的伺服器"
+            ],
+            [
+              "`-p 445`",
+              "指定 TCP 445"
+            ],
+            [
+              "`-U labuser`",
+              "以 labuser 的身分提出請求"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "若需要密碼，讓程式在互動提示時要求輸入。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不要把密碼直接接在指令後面，以免意外暴露在 Shell 歷史紀錄或程序資訊中。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 伺服器可能回傳什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設得到："
+        },
+        {
+          "kind": "code",
+          "text": "Sharename       Type\n---------       ----\nPublic          Disk\nFinance         Disk\nArchive         Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "逐個理解。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sharename"
+        },
+        {
+          "kind": "paragraph",
+          "text": "表示共用資源的名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不是實際檔案清單，而是伺服器對外提供的資源名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Finance"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能是一個部門共用資料夾的名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Type"
+        },
+        {
+          "kind": "paragraph",
+          "text": "表示資源種類。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的："
+        },
+        {
+          "kind": "code",
+          "text": "Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "表示檔案儲存類型的共用資源。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不表示整個磁碟都能被存取。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 看見 Finance，代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你得到："
+        },
+        {
+          "kind": "code",
+          "text": "Finance    Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以合理說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「在這次查詢條件下，伺服器回傳了一個名稱為 Finance 的共用資源。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能直接說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我已經取得 Finance 內部的財務報表。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你目前取得的是："
+        },
+        {
+          "kind": "code",
+          "text": "共用名稱"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是："
+        },
+        {
+          "kind": "code",
+          "text": "檔案內容"
+        },
+        {
+          "kind": "paragraph",
+          "text": "更不是："
+        },
+        {
+          "kind": "code",
+          "text": "修改權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際上，服務甚至可能依照你的帳號身分，決定哪些資訊可以回傳。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，另一個帳號可能得到不同結果。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-5",
+          "text": "4.5 從系統設計角度理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼伺服器願意告訴使用者有哪些共用資料夾？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為列出資源本身就是很多系統的正常功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，一家公司的共用伺服器可能希望員工知道："
+        },
+        {
+          "kind": "code",
+          "text": "Public\nHR\nFinance\nEngineering"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不代表每個人都能進入所有部門的資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，伺服器可以允許你查詢資源名稱，同時拒絕你讀取某個資源。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這並不矛盾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft 的 `NetShareEnum` 也是用來查詢共用資源資訊的介面，且不同查詢層級可能需要不同權限。[Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第 4 節的核心：Enumeration 的目標是取得服務提供的具體資訊，但資訊可見性與資源存取權限是兩個不同問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "第 5 節｜身分驗證、存取權限、測試許可，要分開"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這節是 M04 非常重要的資安觀念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們要認識三個不同的概念："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Authentication：身分驗證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Authorization：存取授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Testing Authorization：測試許可。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它們看起來相似，但解決的是完全不同的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "5.1 Authentication：身分驗證"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication 問的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你是誰？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你在公司上班。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "每天進入辦公室時，需要刷員工識別證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "門禁系統會確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你是不是這家公司已登記的員工？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通過確認，就是身分驗證成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在電腦系統裡也是一樣。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Username: labuser\nPassword: ********"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器可能驗證這組登入資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "成功後，系統便能以特定身分處理後續請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "成功登入不代表擁有所有權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以成功登入公司的 NAS，但可能無法讀取主管的私人資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-2",
+          "text": "5.2 Authorization：存取授權"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authorization 問的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你能做什麼？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "延續剛才的公司例子。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你已經刷卡進入公司。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司裡面有："
+        },
+        {
+          "kind": "code",
+          "text": "公司辦公室\n    │\n    ├── 一般辦公區\n    ├── 會議室\n    ├── 財務室\n    └── 機房"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你雖然是公司員工，但不代表能進入所有區域。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "資源",
+            "一般員工",
+            "財務人員",
+            "系統管理員"
+          ],
+          "rows": [
+            [
+              "公開文件",
+              "可讀取",
+              "可讀取",
+              "可讀取"
+            ],
+            [
+              "財務文件",
+              "不可讀取",
+              "可讀寫",
+              "依工作需求設定"
+            ],
+            [
+              "系統設定",
+              "不可修改",
+              "不可修改",
+              "可管理"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一個假設性的權限設計，不是所有公司的標準。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "身分驗證讓系統知道你是誰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "存取授權則決定你對特定資源可以執行哪些操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩者的差異在 Microsoft 官方身分管理文件中也有明確區分。[Microsoft Learn](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-3",
+          "text": "5.3 Testing Authorization：測試許可"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是資安人員還必須考慮的第三個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你是否獲得委託者允許執行這項測試？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是資安工程師。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司要求你測試一台 NAS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的任務範圍是："
+        },
+        {
+          "kind": "code",
+          "text": "測試目標：\n192.168.56.10\n\n允許：\n✓ 掃描指定連接埠\n✓ 查詢 SMB 共用名稱\n✓ 使用 labuser 登入\n✓ 讀取指定測試檔案\n\n不允許：\n✗ 猜測其他員工密碼\n✗ 下載非測試資料\n✗ 修改正式檔案\n✗ 刪除資料"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使系統本身允許你讀取某個敏感檔案，也不代表你的測試委託允許這樣做。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是技術權限與測試許可的差別。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-4",
+          "text": "5.4 三種權限要如何一起思考？"
+        },
+        {
+          "kind": "code",
+          "text": "                  你提出一個存取請求\n                          │\n                          ▼\n               ┌──────────────────┐\n               │ Authentication   │\n               │ 你是誰？          │\n               └────────┬─────────┘\n                        │\n                        ▼\n               ┌──────────────────┐\n               │ Authorization    │\n               │ 系統允許做什麼？   │\n               └────────┬─────────┘\n                        │\n                        ▼\n               ┌──────────────────┐\n               │ Test Permission  │\n               │ 測試範圍允許嗎？   │\n               └──────────────────┘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意，前兩者通常是資訊系統執行的安全機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三者是執行資安測試前必須確認的合法性與作業範圍，並不是 SMB 協定裡的第三道自動驗證程序。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-5",
+          "text": "5.5 常見考試觀念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題目可能問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "某個使用者已經成功登入 SMB 伺服器，但無法讀取 Finance 資料夾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請問問題發生在哪個階段？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果身分驗證已經成功，而系統基於權限設定拒絕讀取，這就是 Authorization 的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但實務上仍必須查核錯誤原因，不能僅憑畫面上的 Access Denied 就斷言特定權限設定有問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：Authentication 是確認身分；Authorization 是檢查操作權限；測試許可則決定資安人員被允許做哪些事情。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "第 6 節｜同一個案例，四種結果要分開記"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節在訓練你建立正確的證據判讀能力。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "6.1 假設我們取得以下結果"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司提供一個測試帳號："
+        },
+        {
+          "kind": "code",
+          "text": "labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們在已核准的環境中查詢 NAS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "得到："
+        },
+        {
+          "kind": "code",
+          "text": "Public\nFinance\nArchive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著，依照授權執行指定的讀取測試。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "結果如下："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "資源",
+            "是否列出名稱",
+            "指定檔案讀取",
+            "寫入測試"
+          ],
+          "rows": [
+            [
+              "Public",
+              "成功",
+              "成功",
+              "未測試"
+            ],
+            [
+              "Finance",
+              "成功",
+              "遭拒",
+              "未測試"
+            ],
+            [
+              "Archive",
+              "成功",
+              "未測試",
+              "未測試"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來，我們逐一理解。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 Public：讀取成功"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你成功讀取："
+        },
+        {
+          "kind": "code",
+          "text": "Public/demo.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "能證明什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "能證明："
+        },
+        {
+          "kind": "paragraph",
+          "text": "在目前的網路、身分與測試條件下，`labuser` 成功讀取了這份檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能證明："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Public 裡的每一份檔案都能讀取。",
+            "其他帳號也能讀取。",
+            "Public 裡的檔案都能修改。",
+            "可以建立或刪除檔案。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為檔案可能有不同權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡要記住："
+        },
+        {
+          "kind": "paragraph",
+          "text": "一次成功的操作，只能支持它實際測試到的範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 Finance：讀取遭拒"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你嘗試讀取指定的測試路徑，得到："
+        },
+        {
+          "kind": "code",
+          "text": "NT_STATUS_ACCESS_DENIED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它表示這次請求被拒絕。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但背後可能有不同原因。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "情況 A：共用資源權限不足。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NAS 可能規定："
+        },
+        {
+          "kind": "code",
+          "text": "Finance\n\n允許：\nFinanceGroup\n\n拒絕：\n一般員工"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以一般員工無法存取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情況 B：檔案系統權限不足。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Windows 檔案伺服器上，除了共用權限（Share Permissions），還可能受到 NTFS 權限影響。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "SMB 共用層\n    │\n    │ 允許連接\n    ▼\nNTFS 檔案系統層\n    │\n    │ 不允許讀取\n    ▼\nAccess Denied"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使共用層允許存取，底層檔案系統仍可能拒絕讀取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft 官方疑難排解文件也特別提醒，遇到 SMB Access Denied 時，需要確認實際身分、相關安全設定及權限，而不是直接關閉防護機制。[Microsoft Learn](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情況 C：遭拒不一定證明檔案存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你嘗試："
+        },
+        {
+          "kind": "code",
+          "text": "Finance/salary.xlsx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "結果被拒絕。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是否代表一定存在 `salary.xlsx`？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果系統在你進入共用資源時就已拒絕請求，這次測試根本沒有確認那份檔案是否存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，報告應記錄實際遭拒的操作與位置，而不是自行推測內部檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 Archive：沒有測試"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個例子很有價值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你知道 Archive 這個名稱存在，但沒有進一步測試。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那麼你知道什麼？"
+        },
+        {
+          "kind": "code",
+          "text": "名稱可見：是\n讀取權限：未知\n寫入權限：未知"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能因為 Public 可以讀取，就推測 Archive 也能讀取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "更不能因為 Finance 遭拒，就認為 Archive 一定也遭拒。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是資安研究很重要的原則："
+        },
+        {
+          "kind": "paragraph",
+          "text": "沒有測試，不等於測試失敗，也不等於測試成功。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-5",
+          "text": "6.5 為什麼要這樣記錄？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為資安評估是一種證據推論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你把不同操作混在一起，就容易高估實際風險。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "觀察：\nFinance 這個名稱可見。\n\n錯誤結論：\n已取得財務資料。\n\n合理結論：\n目前確認該共用名稱可被查詢；\n尚未證實內容可讀取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種證據思維不只適用於 SMB。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "未來你學習 Web API、LDAP、DNS、雲端儲存與身分管理系統時，都會遇到相同問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：每一項操作都應獨立記錄成功、失敗或未測試，不能把局部結果擴大成整個系統的結論。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "第 7 節｜查到資訊，是不是就找到漏洞？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "答案是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。資訊可被查詢，可能是正常功能，也可能形成資訊揭露風險。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "關鍵在於資訊內容、接收者及業務需求。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 舉一個生活中的例子"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你到醫院掛號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "醫院大廳有一張樓層配置圖："
+        },
+        {
+          "kind": "code",
+          "text": "1F：掛號櫃台\n2F：門診\n3F：檢驗科\n4F：行政辦公室"
+        },
+        {
+          "kind": "paragraph",
+          "text": "任何民眾都能看見。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是不是漏洞？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通常不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為醫院原本就希望民眾知道這些位置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但假設醫院的公共資訊看板還顯示："
+        },
+        {
+          "kind": "code",
+          "text": "內部管理系統帳號\n員工個人資料\n機密伺服器登入資訊"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就可能構成不適當的資訊揭露。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "差別在哪裡？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是「有沒有顯示資訊」，而是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "什麼資訊被提供給了什麼人，以及這是否符合組織的安全要求。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 我們建立一個簡單的風險判斷框架"
+        },
+        {
+          "kind": "code",
+          "text": "                發現資訊可以被查詢\n                         │\n                         ▼\n               ┌─────────────────┐\n               │ ① 資訊是什麼？    │\n               │ 名稱？個資？機密？ │\n               └────────┬────────┘\n                        │\n                        ▼\n               ┌─────────────────┐\n               │ ② 誰可以取得？    │\n               │ 員工？訪客？外部？ │\n               └────────┬────────┘\n                        │\n                        ▼\n               ┌─────────────────┐\n               │ ③ 是否符合需求？  │\n               │ 業務與政策允許嗎？ │\n               └────────┬────────┘\n                        │\n                        ▼\n                  判斷是否有風險"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "第一個問題：資訊是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "Public"
+        },
+        {
+          "kind": "paragraph",
+          "text": "和："
+        },
+        {
+          "kind": "code",
+          "text": "Confidential_Merger_Project"
+        },
+        {
+          "kind": "paragraph",
+          "text": "揭露的資訊性質不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能光看名稱就確認裡面的內容或資料敏感度。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-4",
+          "text": "第二個問題：誰可以取得？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Finance 部門員工可以看到財務資料夾名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這可能完全合理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但假設一個不相關的訪客帳號，也可以查詢大量敏感內部系統資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就需要進一步評估風險。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-5",
+          "text": "第三個問題：是否符合業務需求？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有些資訊必須公開才能提供服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "醫院的門診科別，應讓病患知道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但病患沒有必要知道醫院內部資料庫帳號或機密文件路徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，判斷資訊揭露是否不當，必須考慮實際使用情境。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-6",
+          "text": "7.3 從 Enumeration 到 Vulnerability Analysis"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以這樣理解："
+        },
+        {
+          "kind": "code",
+          "text": "Enumeration\n    │\n    │ 發現：\n    │ 一般使用者能查詢 Finance 共用名稱\n    ▼\nVulnerability Analysis\n    │\n    │ 調查：\n    │ 這個可見性是否符合組織政策？\n    │ 該帳號是否有不應取得的權限？\n    ▼\nRisk Assessment\n    │\n    │ 評估：\n    │ 可能影響哪些資產？\n    │ 有什麼業務後果？\n    ▼\nRemediation\n    │\n    └── 修正有問題的設定並驗證"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請注意：M04 與 M05 的工作實際上可能互相重疊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M04 幫助我們發現具體資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M05 則會更深入分析其中是否存在弱點，以及弱點可能造成的影響。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：發現資訊不等於發現漏洞；必須結合資產敏感度、存取身分及預期安全政策才能判斷。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "第 8 節｜防護要保護資訊與操作，不只是把名稱藏起來"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這節開始從防禦者角度思考。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是公司的資安工程師。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "發現一般員工能夠看到："
+        },
+        {
+          "kind": "code",
+          "text": "Finance"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能想到："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「是不是把 Finance 這個名稱隱藏起來就安全了？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "答案是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "隱藏名稱可以降低資訊曝光，但真正的安全仍然依賴存取控制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-1",
+          "text": "8.1 第一層：Network Access Control"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先確認哪些設備可以連接 SMB。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "                 公司網路\n                     │\n       ┌─────────────┴─────────────┐\n       │                           │\n  員工工作電腦                   外部網路\n       │                           │\n       ▼                           ▼\n   防火牆檢查                  防火牆檢查\n       │                           │\n    符合規則                      不允許\n       │                           │\n       ▼                           X\n   NAS TCP 445"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣的設計，是避免不需要的設備直接連接檔案服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際政策應依照使用者、設備、業務需求及網路架構設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般企業內部的 SMB 服務，不應任意直接暴露 TCP 445 到公網。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft 也有專門的 SMB 網路安全強化指引。[Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 第二層：Resource Access Control"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設一個員工通過防火牆，已經能夠連線 NAS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來是不是就可以讀取全部資料？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當然不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還需要對資源設定權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "NAS\n │\n ├── Public\n │    └── 一般員工可讀取\n │\n ├── Finance\n │    └── 僅授權財務人員可存取\n │\n └── Admin\n      └── 僅授權管理員可存取"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡會用到最小權限原則："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Least Privilege"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用者只應取得完成工作所需的權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般員工只需要閱讀某份公告時，就不必同時取得修改或刪除權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣即使帳號遭到冒用，攻擊者能利用的權限也可能受到限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能因此認為單靠最小權限就能防止所有攻擊。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 第三層：Logging and Auditing"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三層是紀錄與稽核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設某個帳號在短時間內多次查詢 SMB 資源，或持續對未獲授權的檔案提出存取請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資安人員可能希望知道："
+        },
+        {
+          "kind": "code",
+          "text": "哪個帳號？\n什麼時間？\n從哪台設備？\n存取什麼資源？\n操作成功還是失敗？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就需要適當的日誌紀錄與稽核設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是請注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "沒有日誌，不代表事情沒有發生。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "也可能只是系統沒有啟用相關事件的紀錄功能。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 真正完整的防護架構"
+        },
+        {
+          "kind": "code",
+          "text": "                  使用者／設備\n                       │\n                       ▼\n             ┌──────────────────┐\n             │ 第一層：網路控制  │\n             │ 允許哪些來源連線？│\n             └─────────┬────────┘\n                       │\n                       ▼\n             ┌──────────────────┐\n             │ 第二層：身分驗證  │\n             │ 確認使用者身分    │\n             └─────────┬────────┘\n                       │\n                       ▼\n             ┌──────────────────┐\n             │ 第三層：存取授權  │\n             │ 可讀？可寫？可刪？│\n             └─────────┬────────┘\n                       │\n                       ▼\n             ┌──────────────────┐\n             │ 第四層：日誌稽核  │\n             │ 紀錄相關操作與結果│\n             └──────────────────┘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一個用來理解防護控制的簡化架構。實際系統的日誌可能分散在各層，權限檢查也可能多次發生。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，現代 SMB 還有 SMB Signing（訊息簽章）及 SMB Encryption（加密）等安全機制，可以協助保護通訊內容的完整性或機密性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這些傳輸保護功能不能取代檔案存取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5",
+          "text": "8.5 一個值得記住的反例"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你把 Finance 的名稱隱藏了。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但某個不應具備權限的帳號，仍然能直接透過已知路徑讀取財務文件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣安全嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不安全。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你只是讓它比較不容易被發現。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "卻沒有真正限制存取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像把一間房間的門牌拿掉，卻仍然讓所有人都能打開房門。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：隱藏資源名稱是資訊曝光控制，不是完整的存取控制。真正的防護必須限制不應被允許的操作。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "第 9 節｜把結果寫成別人看得懂、能核對的一句話"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節非常實用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為資安工程師不只要會操作工具，也要有能力把技術結果轉換成可以被查核的報告。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-1",
+          "text": "9.1 不好的報告寫法"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你執行："
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.10 -p 445 -U labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "得到："
+        },
+        {
+          "kind": "code",
+          "text": "Public\nFinance\nArchive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你向主管報告："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我們已經攻破公司的 Finance 資料夾！」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個說法有什麼問題？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它把："
+        },
+        {
+          "kind": "code",
+          "text": "成功列出名稱"
+        },
+        {
+          "kind": "paragraph",
+          "text": "誇大成："
+        },
+        {
+          "kind": "code",
+          "text": "成功攻破系統"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者完全不同。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "9.2 比較好的報告寫法"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「在本次授權測試中，使用測試帳號 labuser，從指定測試網路對 192.168.56.10 執行 SMB 共用資源查詢，成功取得 Public、Finance、Archive 三個共用名稱。後續測試確認 Public 中指定測試檔案可讀取，Finance 指定路徑的讀取要求遭拒；Archive 與所有寫入操作均未測試。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣的描述有什麼優點？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它明確交代："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "使用哪個身分。",
+            "測試哪個目標。",
+            "執行哪些操作。",
+            "得到哪些結果。",
+            "哪些事情尚未確認。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "最重要的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "不會讓主管誤以為你已經證明了實際上沒有測試過的風險。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-3",
+          "text": "9.3 一個可以重複使用的報告框架"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以後你在 M04、M05，甚至正式滲透測試時，都可以採用以下邏輯："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "報告元素",
+            "需要回答的問題",
+            "範例"
+          ],
+          "rows": [
+            [
+              "Scope",
+              "測試範圍是什麼？",
+              "192.168.56.10"
+            ],
+            [
+              "Identity",
+              "使用什麼身分？",
+              "labuser"
+            ],
+            [
+              "Action",
+              "執行什麼操作？",
+              "SMB 共用資源查詢"
+            ],
+            [
+              "Observation",
+              "觀察到什麼？",
+              "回傳三個共用名稱"
+            ],
+            [
+              "Evidence",
+              "有什麼證據？",
+              "指令與原始輸出"
+            ],
+            [
+              "Limitation",
+              "哪些沒有確認？",
+              "未測試寫入"
+            ],
+            [
+              "Assessment",
+              "這代表什麼風險？",
+              "需結合權限政策評估"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有一個值得特別強調的區別："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Observation（觀察結果）不等於 Assessment（風險評估）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "觀察結果："
+        },
+        {
+          "kind": "code",
+          "text": "labuser 可以列出 Finance 共用名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "風險評估："
+        },
+        {
+          "kind": "code",
+          "text": "需確認 Finance 共用名稱是否預期對 labuser 可見。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能在沒有更多證據時，直接把觀察結果解釋成重大資料外洩。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-4",
+          "text": "9.4 更進一步的專業做法"
+        },
+        {
+          "kind": "paragraph",
+          "text": "正式資安報告通常還應保留："
+        },
+        {
+          "kind": "paragraph",
+          "text": "測試日期與時間、來源位置、工具版本、原始指令、相關輸出、測試範圍限制，以及風險判斷依據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若發現值得修正的問題，應提出對應的修補與驗證方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "發現：\n非預期的帳號可讀取指定敏感測試檔案。\n\n可能原因：\n共用或檔案系統權限設定不符合政策。\n\n改善方向：\n檢查相關群組及資源權限。\n\n驗證方法：\n使用原帳號重新測試指定讀取操作，\n同時確認合法使用者仍能正常工作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不要因為修正後查不到資料夾名稱，就認為問題已經解決。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "應重新確認原本不應被允許的操作是否確實受到限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節重點：好的資安報告必須讓其他人能夠理解、驗證並重現你的觀察，同時清楚區分已證實與未確認的事項。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "第 10 節｜今天只做一個小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節的目標不是考指令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而是檢查你是否真正掌握了本課的核心觀念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們先把整堂課整理成一個證據模型。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-1",
+          "text": "10.1 請建立這張概念地圖"
+        },
+        {
+          "kind": "code",
+          "text": "                      目標主機\n                         │\n                         ▼\n                ┌─────────────────┐\n                │ ① 發現服務入口   │\n                │ TCP 445 open    │\n                └────────┬────────┘\n                         │\n                         ▼\n                ┌─────────────────┐\n                │ ② 辨識協定       │\n                │ 確認 SMB 服務    │\n                └────────┬────────┘\n                         │\n                         ▼\n                ┌─────────────────┐\n                │ ③ 查詢資源資訊   │\n                │ Public/Finance  │\n                └────────┬────────┘\n                         │\n                         ▼\n                ┌─────────────────┐\n                │ ④ 測試指定操作   │\n                │ 讀取／修改等     │\n                └────────┬────────┘\n                         │\n                         ▼\n                ┌─────────────────┐\n                │ ⑤ 分析測試證據   │\n                │ 是否符合政策？   │\n                └─────────────────┘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這張圖是一條方便學習的推理路徑，不是固定的實際通訊順序。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尤其要記住："
+        },
+        {
+          "kind": "paragraph",
+          "text": "每一個階段得到的資訊，都必須對應它實際支持的結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "觀察 A：\n445 open\n\n只能證明：\n有服務入口接受這次探測。\n\n觀察 B：\n取得 Finance 共用名稱\n\n只能證明：\n在本次條件下可以查詢到該名稱。\n\n觀察 C：\n指定測試檔案讀取成功\n\n能進一步證明：\n當時使用的身分可以讀取該檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，你還沒有測試的其他行為，仍然是未知。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-2",
+          "text": "10.2 最後的核心觀念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請特別記住三句話："
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一句：服務存在，不等於可以使用所有資源。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二句：資源名稱可見，不等於可以讀取內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三句：成功讀取指定檔案，不等於具備整個資料夾的完整讀寫權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三句話就是本堂課的精華。"
+        },
+        {
+          "kind": "heading",
+          "id": "concept-qa",
+          "text": "補充｜概念 Q&A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下為本課的教學補充問答，與實際學習者提問紀錄分開。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-1",
+          "text": "Q1：Enumeration 跟 Scanning 到底有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scanning 主要是辨識主機、連接埠與服務狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration 則進一步向服務查詢具體資訊，例如共用資源、使用者、群組或目錄物件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者不是完全互斥，因為同一個工具可能同時執行掃描與列舉。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-2",
+          "text": "Q2：看到 TCP 445 open，是否代表存在資安漏洞？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不代表。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 445 開放，通常只表示你從目前的位置可以連接到該服務入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是否存在漏洞，還需要評估實際服務、版本、設定、權限及網路暴露情況。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-3",
+          "text": "Q3：列舉是不是一定要先登入？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有些服務提供不需要登入的查詢功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有些服務必須完成身分驗證，才能取得特定資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使不需要登入，也不一定代表存在漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-4",
+          "text": "Q4：`smbclient -L` 和 Nmap 有什麼差別？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 445 192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主要是檢查 TCP 445 的狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而："
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.10 -p 445 -U labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "則是嘗試以指定身分，向 SMB 伺服器查詢共用資源清單。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前者偏向服務入口觀察，後者偏向應用協定層面的資訊查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-5",
+          "text": "Q5：SMB 和 NAS 是不是同一個東西？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NAS（Network Attached Storage）是一種透過網路提供儲存服務的設備或系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB 則是實現網路檔案共用的一種協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "NAS\n │\n ├── SMB\n │    └── 提供網路檔案共用\n │\n ├── NFS\n │    └── 提供另一種網路檔案存取方式\n │\n └── HTTPS\n      └── 提供網頁管理介面"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，SMB 是 NAS 可能提供的服務之一。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NAS 不一定只能使用 SMB，SMB 也不只能用在 NAS 上。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-6",
+          "text": "Q6：M04 為什麼只先教 SMB？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為這一課最重要的是先建立 Enumeration 的共通原理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "之後學習 DNS、LDAP、SNMP 等不同服務時，仍然會反覆遇到："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「查詢什麼資訊、使用什麼身分、取得什麼結果，以及結果能證明什麼？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "只要這個框架建立起來，後面的列舉技術就比較容易理解。"
+        },
+        {
+          "kind": "heading",
+          "id": "lesson-summary",
+          "text": "本堂課總整理：你應該掌握的知識架構"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "主題",
+            "最重要的知識",
+            "實務意義"
+          ],
+          "rows": [
+            [
+              "Reconnaissance",
+              "蒐集目標背景",
+              "建立調查線索"
+            ],
+            [
+              "Scanning",
+              "確認服務入口與狀態",
+              "了解可觀察的服務"
+            ],
+            [
+              "Enumeration",
+              "查詢具體資源與屬性",
+              "理解系統暴露的資訊"
+            ],
+            [
+              "SMB",
+              "網路檔案共用協定",
+              "認識常見的檔案共用服務"
+            ],
+            [
+              "Authentication",
+              "確認身分",
+              "知道誰提出請求"
+            ],
+            [
+              "Authorization",
+              "控制可執行的操作",
+              "保護資源"
+            ],
+            [
+              "Information Disclosure",
+              "評估資訊是否不當揭露",
+              "辨識潛在風險"
+            ],
+            [
+              "Access Control",
+              "限制不應允許的操作",
+              "降低未授權存取"
+            ],
+            [
+              "Evidence",
+              "保留可核對的觀察結果",
+              "避免錯誤結論"
+            ],
+            [
+              "Reporting",
+              "明確描述操作與限制",
+              "支持修補與決策"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "lesson-summary-1",
+          "text": "建議延伸閱讀"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這幾份官方文件可以幫助你把今天的概念與真實系統連接起來。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "[Nmap — Port Scanning Basics](https://nmap.org/book/man-port-scanning-basics.html)：了解 Port 狀態實際代表什麼。",
+            "[Microsoft — SMB Overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)：了解 SMB 如何運作，以及用戶端與伺服器的角色。",
+            "[Samba — smbclient Manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)：了解 SMB 查詢工具及指令參數。",
+            "[Microsoft — SMB Secure Traffic](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic)：了解 SMB 的網路防護及安全設定。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "understanding-check",
+          "text": "理解檢核｜請你試著回答"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你在實驗室的授權測試環境中，執行："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 445 192.168.56.20"
+        },
+        {
+          "kind": "paragraph",
+          "text": "結果："
+        },
+        {
+          "kind": "code",
+          "text": "445/tcp open microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著，你使用測試帳號："
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.20 -U student"
+        },
+        {
+          "kind": "paragraph",
+          "text": "成功取得："
+        },
+        {
+          "kind": "code",
+          "text": "Sharename      Type\n---------      ----\nPublic         Disk\nResearch       Disk\nAdmin          Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，你還沒有實際連入這三個共用資源，也沒有讀取任何檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請回答三個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題 1： 這個情境中，哪一個操作屬於 Scanning？哪一個屬於 Enumeration？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題 2： 目前能不能宣稱 `student` 具備 Research 與 Admin 資料夾的讀取權限？請說明原因。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題 3： 如果你是負責撰寫報告的資安工程師，你會如何描述目前已確認的事實，以及仍然未知的事項？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請先回答這三題，再展開參考解答核對推論與限制；這項檢核銜接 M04-02：DNS Enumeration（DNS 列舉）。閱讀或展開答案不代表已完成學習驗收。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-projects",
+          "summary": "參考解答：Scanning、Enumeration 與尚未測試的權限",
+          "paragraphs": [
+            "問題 1：nmap -p 445 192.168.56.20 是本例的連接埠掃描；它取得 TCP 445 的狀態。smbclient -L 192.168.56.20 -U student 向 SMB 服務查詢共用資源名稱，屬於列舉。分類依操作目的與取得的證據，同一工具也可能執行其他類型的工作。\n\n問題 2：目前不能宣稱 student 具備 Research 或 Admin 的讀取權限。回傳名稱只證明本次條件下可查詢到這些名稱；尚未連入共用、讀取指定檔案或測試寫入，因此這些操作的結果皆為未測試。microsoft-ds 這個基本掃描標籤也不能單獨取代 SMB 協定辨識。\n\n問題 3：可寫為「在核准的實驗室測試範圍內，指定來源對 192.168.56.20 的 TCP 445 探測得到 open；以測試帳號 student 查詢 SMB，共用清單回傳 Public、Research、Admin。未測試連入各共用、指定檔案讀取或任何寫入，故無法據此判定內容存取權限或漏洞。」正式報告還應保留時間、來源、工具版本、指令及原始輸出，並以組織預期政策評估可見性；這些範例不是實際設備測試結果，也不是讀者已完成練習的證據。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Enumeration vs. Scanning | From service endpoints and share names to checkable permission evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M04-01 | Scanning finds the entrance; enumeration asks for information"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration vs. Scanning | A complete plain-language lesson"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Course: CEH 2026 · Module 04 — Enumeration"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Lesson: [CS Kairos Learn — M04-01](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-01/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scope: complete sections 1–10, conceptual Q&A, and understanding checks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The hosts, accounts, paths, and outputs below are hypothetical teaching scenarios, not records of tests performed against real equipment in this revision."
+        },
+        {
+          "kind": "heading",
+          "id": "overview",
+          "text": "Before you begin | The central distinction"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The lesson develops one idea:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Discovering an available network service does not establish what resources it contains or whether you may use them."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of the CEH modules as investigating an office building:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Learning stage",
+            "Everyday question",
+            "Technical activity"
+          ],
+          "rows": [
+            [
+              "M02 Reconnaissance",
+              "Where is the building, and which company owns it?",
+              "Reconnaissance"
+            ],
+            [
+              "M03 Scanning",
+              "Which entrances exist, and which doors receive an answer?",
+              "Scanning"
+            ],
+            [
+              "M04 Enumeration",
+              "Which departments, rooms, and resources are available?",
+              "Enumeration"
+            ],
+            [
+              "M05 Vulnerability analysis",
+              "Is information or access exposed contrary to policy?",
+              "Vulnerability Analysis"
+            ],
+            [
+              "M06 System hacking",
+              "Can an authorized test demonstrate the impact of a weakness?",
+              "System Hacking"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a concept map, not a mandatory order for every engagement."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, M03 introduced Nmap. You find:"
+        },
+        {
+          "kind": "code",
+          "text": "192.168.56.10\n\nPORT      STATE    SERVICE\n445/tcp   open     microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You know TCP 445 is open. You might next ask:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Does this endpoint actually provide SMB file sharing?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Which shares does the server provide?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Can I discover their names?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Can I read their files?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. Can I modify their files?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These questions can have different answers. M04 teaches you to query services and judge exactly what their responses establish."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "Section 1 | Seeing a filing cabinet does not mean opening its drawers"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-1",
+          "text": "1.1 Understand it through a company records room"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are a security engineer asked to examine a company file server. Think of the server as a records room containing several cabinets:"
+        },
+        {
+          "kind": "code",
+          "text": "                   Company file server\n                     192.168.56.10\n                            │\n                   SMB file service\n                       TCP 445\n                            │\n             ┌──────────────┼──────────────┐\n             │              │              │\n           Public         Finance        Archive\n         Public share   Finance data  Historical data"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider five progressively different observations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First: you know where the records room is."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You know the server's IP address, `192.168.56.10`, but not which services it provides."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second: you find an entrance."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap reports TCP 445 open. An application accepts TCP connections at that port. No folder has yet been demonstrated."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third: you identify the entrance as a file-sharing service."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Protocol identification confirms SMB. This is like confirming that the building actually provides a records room."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fourth: you learn cabinet names."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A query returns:"
+        },
+        {
+          "kind": "code",
+          "text": "Public\nFinance\nArchive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is enumeration. You have learned three share names; you have not established permission to read their contents."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fifth: you read a specific file."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Using a company-provided test account, you successfully read:"
+        },
+        {
+          "kind": "code",
+          "text": "Public/demo.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This establishes that the identity and conditions used at that time allowed reading this particular file. It does not establish access to other files or permission to modify anything."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-2",
+          "text": "1.2 What this section establishes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Separate four capabilities:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Capability",
+            "Meaning",
+            "Does it establish the next capability?"
+          ],
+          "rows": [
+            [
+              "Discover a service",
+              "An endpoint responds",
+              "No"
+            ],
+            [
+              "List resource names",
+              "Learn which share names are returned",
+              "No"
+            ],
+            [
+              "Read a particular file",
+              "Successfully obtain its contents",
+              "No"
+            ],
+            [
+              "Modify a particular file",
+              "Demonstrate modification of that file",
+              "Not permission to modify other files"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The same distinction applies elsewhere. Seeing a folder name in a NAS interface does not establish that you can enter it. Entering a folder does not establish permission to delete files. Distinguish visibility, entry, reading, and modification in a security test."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "Section 2 | Scanning and enumeration ask different questions"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-1",
+          "text": "2.1 Review three foundations"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This section connects directly with M03."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "IP address: which device are you contacting?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An IP address acts like a device's network address:"
+        },
+        {
+          "kind": "code",
+          "text": "192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It identifies the device to contact in this scenario. Knowing an IP does not identify the services it provides."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "Port: which service endpoint are you contacting?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "One computer can provide several services:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Port",
+            "Common use"
+          ],
+          "rows": [
+            [
+              "TCP 22",
+              "SSH remote administration"
+            ],
+            [
+              "TCP 80",
+              "HTTP website"
+            ],
+            [
+              "TCP 443",
+              "HTTPS website"
+            ],
+            [
+              "TCP 445",
+              "SMB file sharing"
+            ],
+            [
+              "TCP 3389",
+              "RDP remote desktop"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are common associations, not guarantees. A port is a transport-layer endpoint number, not proof of an application's identity. An application listening on TCP 443 is not necessarily an HTTPS server."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-4",
+          "text": "Protocol: which communication rules do both sides use?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A protocol defines communication rules. In a bank, speaking arbitrary numbers at a counter does not cause a transfer; you must make a request in the required form."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Likewise, querying an SMB server requires an SMB-compatible request:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Nmap can help determine endpoint state.",
+            "`smbclient` can make specific requests to an SMB server."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These activities ask different questions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-5",
+          "text": "2.2 Scanning versus enumeration"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine an auditor authorized by the company."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-6",
+          "text": "Scanning: check the service endpoint"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You ask whether anyone answers at the door. A reply supports:"
+        },
+        {
+          "kind": "code",
+          "text": "TCP 445: open"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-7",
+          "text": "Enumeration: query service information"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You then ask which shares are available. The service returns:"
+        },
+        {
+          "kind": "code",
+          "text": "Public\nFinance\nArchive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You now have specific service-provided information in addition to an open endpoint. That is enumeration."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-8",
+          "text": "2.3 A common source of confusion"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Does Nmap always mean scanning, while another tool always means enumeration? No. Classify the activity by the question you ask and the evidence returned."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap can also perform service detection and run scripts that obtain detailed information. When a tool queries specific resources or attributes, that portion of its work has an enumeration purpose. CEH module names organize concepts; they do not confine each tool to one phase."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The [Nmap state documentation](https://nmap.org/book/man-port-scanning-basics.html) also explains that a result describes an observation from a particular position, rather than an unchanging conclusion for all network positions."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "Section 3 | What does 445 open actually establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This section develops evidence interpretation."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "3.1 Start with the command"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In an authorized isolated practice environment:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 445 192.168.56.10"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Component",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "`nmap`",
+              "Run the network scanning tool"
+            ],
+            [
+              "`-p`",
+              "Select ports to scan"
+            ],
+            [
+              "`445`",
+              "Check TCP 445 in this example"
+            ],
+            [
+              "`192.168.56.10`",
+              "Target IP address"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the output is:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT      STATE    SERVICE\n445/tcp   open     microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read each field separately."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "445/tcp"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The probe concerns:"
+        },
+        {
+          "kind": "code",
+          "text": "Transport protocol: TCP\nPort: 445"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "open"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap interprets the response as an application accepting connections at this port. It does not establish:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Successful login.",
+            "Permission to read files.",
+            "An exploitable vulnerability."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A beginner might read this label as confirmed SMB identification. In this basic scan, which does not enable service/version detection, it is normally the common service name associated with port 445 in Nmap's database."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A door labeled “Library” is a clue; it does not establish what service is actually operating inside. Keep the label separate from protocol evidence."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-5",
+          "text": "3.2 How can you investigate further?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap provides:"
+        },
+        {
+          "kind": "code",
+          "text": "-sV"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This enables service/version detection. For example:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 445 192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It sends probes to the service and analyzes replies to identify the application and possibly its version. Even successfully identifying SMB does not establish file-read permission. See [Nmap service/version detection](https://nmap.org/book/man-version-detection.html)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-6",
+          "text": "3.3 What is SMB?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB means Server Message Block. It is a protocol for sharing network resources, commonly folders and files on another computer:"
+        },
+        {
+          "kind": "code",
+          "text": "Your Windows computer\n       │ SMB protocol\n       ▼\nCompany file server\n       └── \\\\fileserver\\Public"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Entering this path in Windows File Explorer may access a remote SMB share:"
+        },
+        {
+          "kind": "code",
+          "text": "\\\\fileserver\\Public"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux can also use SMB. The protocol is not confined to Windows or exclusively to TCP 445; modern Windows supports other SMB transports too. See the [Microsoft SMB overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-7",
+          "text": "3.4 The basic SMB exchange"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A simplified exchange is:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB Client — your computer\n          │\n          │ SMB Request: list shares\n          ▼\nSMB Server — company file server\n          │ Check identity and access permissions\n          │\n          │ SMB Response: information permitted for disclosure\n          ▼\nSMB Client\n    Public\n    Finance\n    Archive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Real SMB may involve protocol negotiation, authentication, session establishment, and separate resource permission checks. The diagram omits these details to explain the request/response relationship."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An open port is a transport-level connection observation. Confirming specific service behavior requires additional protocol-level evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "Section 4 | Enumeration asks the service which shares it provides"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This section applies enumeration to SMB."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "4.1 Meet smbclient"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`smbclient` is an SMB client supplied by the Samba project. It communicates with an SMB server from a terminal, much as File Explorer provides a graphical way to interact with shares in Windows."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Its capabilities include:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Querying the server's shares.",
+            "Connecting to a particular share.",
+            "Listing folder contents when permitted.",
+            "Transferring files when permitted."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "See the [official Samba manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html) for options and behavior."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 Read the command one parameter at a time"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The company provides this test account:"
+        },
+        {
+          "kind": "code",
+          "text": "labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You are authorized to query share information:"
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.10 -p 445 -U labuser"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Parameter",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "`smbclient`",
+              "Run the SMB client"
+            ],
+            [
+              "`-L`",
+              "Request a list of the server's shares"
+            ],
+            [
+              "`192.168.56.10`",
+              "Server to query"
+            ],
+            [
+              "`-p 445`",
+              "Use TCP 445"
+            ],
+            [
+              "`-U labuser`",
+              "Make the request using labuser"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "If a password is required, enter it at the interactive prompt. Do not append it to the command, where it could be exposed in shell history or process information."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 What might the server return?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose it returns:"
+        },
+        {
+          "kind": "code",
+          "text": "Sharename       Type\n---------       ----\nPublic          Disk\nFinance         Disk\nArchive         Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sharename is a resource name, not a list of the files inside it. For example:"
+        },
+        {
+          "kind": "code",
+          "text": "Finance"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This may name a departmental share."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Type describes the resource category:"
+        },
+        {
+          "kind": "code",
+          "text": "Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here it indicates a file-storage share; it does not grant access to the whole disk."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 What does seeing Finance establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Given:"
+        },
+        {
+          "kind": "code",
+          "text": "Finance    Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A defensible statement is that the server returned a share named Finance under this query's conditions. It does not establish that you obtained financial reports."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You obtained:"
+        },
+        {
+          "kind": "code",
+          "text": "A share name"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not:"
+        },
+        {
+          "kind": "code",
+          "text": "File contents"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Or:"
+        },
+        {
+          "kind": "code",
+          "text": "Modification permission"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A server may tailor its response to the account identity. Another account may receive a different result."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-5",
+          "text": "4.5 Understand the system-design purpose"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Listing shares is often normal functionality. A company might want employees to discover:"
+        },
+        {
+          "kind": "code",
+          "text": "Public\nHR\nFinance\nEngineering"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It need not let every employee enter every department's share. Permitting a name query and refusing a subsequent read are compatible policies."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Microsoft's [NetShareEnum interface](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum) also queries share information, with permissions varying by information level."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration obtains concrete service information. Information visibility and resource access remain separate questions."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "Section 5 | Authentication, resource authorization, and test permission are different"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The three concepts are:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Authentication: confirming identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Authorization: permitting an action on a resource."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Testing authorization: the engagement's permission to perform a test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They answer different questions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "5.1 Authentication: who are you?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An employee badge lets the entrance system check that you are a registered employee. A successful identity check is authentication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A computer system similarly may verify:"
+        },
+        {
+          "kind": "code",
+          "text": "Username: labuser\nPassword: ********"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It can then process subsequent requests under a particular identity. Successful login does not grant every permission. You may log into a company NAS while still being unable to read a manager's private folder."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-2",
+          "text": "5.2 Authorization: what may you do?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "After entering the office, you still may not enter every area:"
+        },
+        {
+          "kind": "code",
+          "text": "Company office\n    ├── General work area\n    ├── Meeting room\n    ├── Finance room\n    └── Server room"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Resource",
+            "General employee",
+            "Finance employee",
+            "Administrator"
+          ],
+          "rows": [
+            [
+              "Public documents",
+              "Read",
+              "Read",
+              "Read"
+            ],
+            [
+              "Finance documents",
+              "No read access",
+              "Read/write",
+              "According to job requirements"
+            ],
+            [
+              "System configuration",
+              "No modification",
+              "No modification",
+              "Administer"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a hypothetical permission design, not a universal company standard. Authentication identifies the requester; authorization determines which operations that identity may perform on a particular resource. See [Microsoft's explanation](https://learn.microsoft.com/en-us/entra/identity-platform/authentication-vs-authorization)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-3",
+          "text": "5.3 Testing authorization: does the engagement permit this test?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A security engineer must also establish the commissioning organization's permission. Suppose your NAS test scope is:"
+        },
+        {
+          "kind": "code",
+          "text": "Target:\n192.168.56.10\n\nAllowed:\n✓ Scan specified ports\n✓ Query SMB share names\n✓ Log in as labuser\n✓ Read a specified test file\n\nNot allowed:\n✗ Guess other employees' passwords\n✗ Download non-test data\n✗ Modify production files\n✗ Delete data"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even if the system technically permits reading a sensitive file, the engagement may prohibit that action. Technical capability and test permission are separate."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-4",
+          "text": "5.4 Consider the three questions together"
+        },
+        {
+          "kind": "code",
+          "text": "A proposed access request\n          ▼\nAuthentication\nWho are you?\n          ▼\nAuthorization\nWhat does the system permit?\n          ▼\nTest Permission\nIs this within the approved test scope?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The first two are normally system security mechanisms. Test permission must be checked before executing the security test; it is not a third automatic SMB protocol verification step. The diagram organizes the questions rather than prescribing protocol timing."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-5",
+          "text": "5.5 A common exam distinction"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a user successfully authenticates to an SMB server but cannot read Finance. If authentication succeeded and a permission policy refused the read, the issue concerns authorization."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In practice, investigate the actual failure. The words Access Denied alone do not identify a particular incorrect permission setting."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication establishes identity, authorization checks an operation's permissions, and test permission defines what the engineer is allowed to test."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "Section 6 | Record different outcomes separately in the same scenario"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This section practices evidence interpretation."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "6.1 Suppose these are the results"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The company supplies:"
+        },
+        {
+          "kind": "code",
+          "text": "labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An approved NAS query returns:"
+        },
+        {
+          "kind": "code",
+          "text": "Public\nFinance\nArchive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authorized, specified read tests then produce:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Resource",
+            "Name returned",
+            "Specified file read",
+            "Write test"
+          ],
+          "rows": [
+            [
+              "Public",
+              "Success",
+              "Success",
+              "Not tested"
+            ],
+            [
+              "Finance",
+              "Success",
+              "Denied",
+              "Not tested"
+            ],
+            [
+              "Archive",
+              "Success",
+              "Not tested",
+              "Not tested"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read each outcome independently."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 Public: successful read"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you successfully read:"
+        },
+        {
+          "kind": "code",
+          "text": "Public/demo.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This establishes that labuser read this file under the current network, identity, and test conditions. It does not establish:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Read access to every file in Public.",
+            "The same access for another account.",
+            "Permission to modify files in Public.",
+            "Permission to create or delete files."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Different files may have different permissions. One successful operation supports only its tested scope."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 Finance: denied read"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A request against the specified test path returns:"
+        },
+        {
+          "kind": "code",
+          "text": "NT_STATUS_ACCESS_DENIED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This establishes that the request was refused. Several causes are possible."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Situation A: insufficient share permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A NAS might apply:"
+        },
+        {
+          "kind": "code",
+          "text": "Finance\n\nAllow:\nFinanceGroup\n\nDeny:\nGeneral employees"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An ordinary employee would then lack access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Situation B: insufficient file-system permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "On Windows, access may depend on NTFS permissions as well as share permissions:"
+        },
+        {
+          "kind": "code",
+          "text": "SMB share layer\n    │ Connection allowed\n    ▼\nNTFS file-system layer\n    │ Reading not allowed\n    ▼\nAccess Denied"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A share-layer permission need not imply that the underlying file system permits the read. Microsoft's [SMB Access Denied troubleshooting guidance](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share) calls for checking identity, relevant security settings, and permissions rather than immediately disabling protections."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Situation C: a refusal need not establish file existence."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a request for:"
+        },
+        {
+          "kind": "code",
+          "text": "Finance/salary.xlsx"
+        },
+        {
+          "kind": "paragraph",
+          "text": "is denied. Does `salary.xlsx` necessarily exist? No. If access was refused while connecting to the share, the test never established the file's existence. Record the actual operation and the point of refusal without inventing internal files."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 Archive: not tested"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You discovered Archive but did not test further:"
+        },
+        {
+          "kind": "code",
+          "text": "Name visible: yes\nRead permission: unknown\nWrite permission: unknown"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Public's successful read does not establish Archive read access. Finance's refusal does not establish Archive refusal. An unperformed test is neither a failed test nor a successful test."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-5",
+          "text": "6.5 Why record the distinctions?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Security assessment draws inferences from evidence. Mixing operations can overstate risk:"
+        },
+        {
+          "kind": "code",
+          "text": "Observation:\nThe Finance share name is visible.\n\nUnsupported conclusion:\nFinancial data has been obtained.\n\nSupported conclusion:\nThis query returned the share name;\nreading its contents has not been established."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The same reasoning applies to Web APIs, LDAP, DNS, cloud storage, and identity systems. Record success, refusal, or not tested separately for every operation; a local outcome does not establish a whole-system conclusion."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "Section 7 | Does queryable information mean a vulnerability was found?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not necessarily. Queryable information may be normal functionality or an information-disclosure risk. Its content, recipients, and business purpose determine the assessment."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 An everyday example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A hospital lobby shows:"
+        },
+        {
+          "kind": "code",
+          "text": "1F: Registration\n2F: Outpatient clinics\n3F: Laboratory\n4F: Administrative offices"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The public can read it. This is normally intentional assistance, not a vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If the public display instead includes:"
+        },
+        {
+          "kind": "code",
+          "text": "Internal administration account names\nEmployees' personal information\nConfidential server login information"
+        },
+        {
+          "kind": "paragraph",
+          "text": "it may be inappropriate disclosure. Judge which information is given to which people and whether that matches organizational security requirements."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 A simple assessment framework"
+        },
+        {
+          "kind": "code",
+          "text": "Information can be queried\n          ▼\n① What is the information?\nNames? Personal data? Secrets?\n          ▼\n② Who can obtain it?\nEmployees? Guests? External users?\n          ▼\n③ Does it meet business needs?\nIs disclosure allowed by policy?\n          ▼\nAssess risk"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "First question: what information is it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Compare:"
+        },
+        {
+          "kind": "code",
+          "text": "Public"
+        },
+        {
+          "kind": "paragraph",
+          "text": "with:"
+        },
+        {
+          "kind": "code",
+          "text": "Confidential_Merger_Project"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The names reveal different kinds of information. A name alone still does not establish the contents or their actual sensitivity."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-4",
+          "text": "Second question: who can obtain it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finance staff seeing a finance-share name may be expected. An unrelated guest discovering substantial sensitive internal-system information warrants further assessment."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-5",
+          "text": "Third question: does it serve a business need?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Some information must be public for a service to work. Patients need to discover clinical departments; they do not need internal database accounts or confidential document paths. Evaluate disclosure in its operational context."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-6",
+          "text": "7.3 From enumeration to vulnerability analysis"
+        },
+        {
+          "kind": "code",
+          "text": "Enumeration\n    │ Discover:\n    │ An ordinary user can query the Finance share name\n    ▼\nVulnerability Analysis\n    │ Investigate:\n    │ Does visibility match policy?\n    │ Does the account have unintended permissions?\n    ▼\nRisk Assessment\n    │ Evaluate:\n    │ Which assets could be affected?\n    │ What are the business consequences?\n    ▼\nRemediation\n    └── Correct inappropriate settings and verify"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M04 and M05 activities can overlap. M04 helps discover specific information; M05 investigates weaknesses and potential consequences. Assess information alongside asset sensitivity, identity, and intended policy before labeling it a vulnerability."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "Section 8 | Protect information and operations, rather than only hiding names"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose ordinary employees can discover:"
+        },
+        {
+          "kind": "code",
+          "text": "Finance"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Would hiding the name make the system secure? It may reduce exposure, but security still depends on access control."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-1",
+          "text": "8.1 First layer: network access control"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Determine which devices may connect to SMB:"
+        },
+        {
+          "kind": "code",
+          "text": "                     Company network\n                      /           \\\n            Employee computer    External network\n                     │                │\n                Firewall check   Firewall check\n                     │                │\n                 Rule permits       Not allowed\n                     │                ✕\n                 NAS TCP 445"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This limits unnecessary direct access to file services. Set actual policy according to users, devices, business needs, and network architecture. Ordinary internal enterprise SMB should not be exposed arbitrarily on public TCP 445. See [Microsoft's SMB network hardening guidance](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 Second layer: resource access control"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passing the firewall and reaching the NAS does not permit reading everything:"
+        },
+        {
+          "kind": "code",
+          "text": "NAS\n ├── Public\n │    └── General employees may read\n ├── Finance\n │    └── Authorized finance staff only\n └── Admin\n      └── Authorized administrators only"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Apply least privilege: grant only permissions needed for the work. Reading an announcement need not include modifying or deleting it. This can limit the capabilities available through a compromised account, but least privilege alone does not prevent every attack."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 Third layer: logging and auditing"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If an account repeatedly queries SMB resources or requests unauthorized files, an investigator may need:"
+        },
+        {
+          "kind": "code",
+          "text": "Which account?\nAt what time?\nFrom which device?\nWhich resource?\nDid the operation succeed or fail?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suitable logging and audit settings provide that evidence. An absent log does not establish that nothing happened; the relevant logging may simply have been disabled."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 An integrated protection model"
+        },
+        {
+          "kind": "code",
+          "text": "User / device\n      ▼\nLayer 1: network controls\nWhich sources may connect?\n      ▼\nLayer 2: authentication\nConfirm identity\n      ▼\nLayer 3: authorization\nRead? Write? Delete?\n      ▼\nLayer 4: logging and auditing\nRecord relevant operations and outcomes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This simplified model organizes controls. Real logs may be generated at every layer, and permission checks may recur."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB signing and SMB encryption can protect message integrity or confidentiality. These transport protections do not replace file-access permissions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-5",
+          "text": "8.5 A useful counterexample"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose Finance is hidden, but an unauthorized account can still read a financial document through a known path. The problem remains: removing a room's nameplate does not stop everyone from opening its door."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Hiding names manages information exposure. Effective access control must restrict the operations that should not be permitted."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "Section 9 | Report the result so others can understand and verify it"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A security engineer must turn tool results into a checkable report."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-1",
+          "text": "9.1 An unsupported report"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You execute:"
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.10 -p 445 -U labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "and obtain:"
+        },
+        {
+          "kind": "code",
+          "text": "Public\nFinance\nArchive"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reporting “We broke into the company's Finance folder” makes an unsupported jump. You obtained:"
+        },
+        {
+          "kind": "code",
+          "text": "A successfully listed name"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The report instead claims:"
+        },
+        {
+          "kind": "code",
+          "text": "A successfully compromised system"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The second statement is not established by the first observation."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "9.2 A more defensible report"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You could write:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In this authorized test, labuser queried SMB shares on 192.168.56.10 from the designated test network and received Public, Finance, and Archive. A subsequent specified test file in Public was readable. The specified Finance-path read was denied. Archive access and all write operations were not tested."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This states:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "The identity used.",
+            "The target.",
+            "The operations performed.",
+            "The results obtained.",
+            "The remaining unknowns."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "It keeps the recipient from mistaking an untested risk for an established outcome."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-3",
+          "text": "9.3 A reusable reporting framework"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use the following reasoning in M04, M05, and authorized professional tests:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Element",
+            "Question",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Scope",
+              "What was in scope?",
+              "192.168.56.10"
+            ],
+            [
+              "Identity",
+              "Which identity was used?",
+              "labuser"
+            ],
+            [
+              "Action",
+              "What was done?",
+              "Query SMB shares"
+            ],
+            [
+              "Observation",
+              "What was observed?",
+              "Three share names returned"
+            ],
+            [
+              "Evidence",
+              "What supports the observation?",
+              "Command and original output"
+            ],
+            [
+              "Limitation",
+              "What remains unconfirmed?",
+              "Writes were not tested"
+            ],
+            [
+              "Assessment",
+              "What risk does this represent?",
+              "Evaluate against permission policy"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Observation and assessment are different:"
+        },
+        {
+          "kind": "code",
+          "text": "Observation:\nlabuser can discover the Finance share name."
+        },
+        {
+          "kind": "code",
+          "text": "Assessment:\nCheck whether Finance-name visibility is intended for labuser."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Without additional evidence, do not turn the observation into a claim of major data leakage."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-4",
+          "text": "9.4 Further professional practice"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Retain the date and time, source position, tool version, exact commands, relevant output, scope limits, and reasons for the risk assessment. When a problem needs correction, propose remediation and verification:"
+        },
+        {
+          "kind": "code",
+          "text": "Finding:\nAn unintended account can read a specified sensitive test file.\n\nPossible cause:\nShare or file-system permissions do not match policy.\n\nRemediation:\nReview relevant groups and resource permissions.\n\nVerification:\nRepeat the specified read with the original account;\nalso verify that legitimate users can still work normally."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A folder name disappearing after a change does not establish that the original improper operation was blocked. Retest that operation. A useful report lets someone understand, verify, and reproduce an observation while separating confirmed results from unknowns."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "Section 10 | One small conceptual check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The purpose is evidence interpretation rather than memorizing commands. First organize the lesson into a model."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-1",
+          "text": "10.1 Build this concept map"
+        },
+        {
+          "kind": "code",
+          "text": "Target host\n      ▼\n① Discover endpoint\nTCP 445 open\n      ▼\n② Identify protocol\nConfirm SMB service\n      ▼\n③ Query resource information\nPublic / Finance\n      ▼\n④ Test a specified operation\nRead / modify, as authorized\n      ▼\n⑤ Analyze evidence\nDoes the outcome match policy?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a learning and reasoning route, not a fixed communication sequence. Match each observation to the conclusion it actually supports:"
+        },
+        {
+          "kind": "code",
+          "text": "Observation A:\n445 open\n\nSupports:\nAn endpoint accepted this probe.\n\nObservation B:\nFinance share name returned\n\nSupports:\nThe name can be queried under these conditions.\n\nObservation C:\nSpecified test-file read succeeded\n\nFurther supports:\nThe identity used could read that file at that time."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Other untested behavior remains unknown."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-2",
+          "text": "10.2 The final distinctions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First: a service existing does not permit use of all its resources."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second: a visible resource name does not establish readable contents."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third: reading one specified file does not establish full read/write permissions over the folder."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These distinctions organize the lesson."
+        },
+        {
+          "kind": "heading",
+          "id": "concept-qa",
+          "text": "Supplement | Conceptual Q&A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are supplementary teaching questions, separate from actual learner-submitted Q&A records."
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-1",
+          "text": "Q1: how does enumeration differ from scanning?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scanning primarily discovers hosts and port/service states. Enumeration queries concrete information such as shares, users, groups, or directory objects. They overlap: one tool can perform both activities."
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-2",
+          "text": "Q2: does TCP 445 open establish a vulnerability?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No. It normally establishes that the endpoint is reachable from the current position. Evaluate the actual service, version, configuration, permissions, and exposure before identifying a vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-3",
+          "text": "Q3: must you log in before enumeration?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not always. Some services offer unauthenticated queries; others require authentication for particular information. An unauthenticated query is not automatically a vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-4",
+          "text": "Q4: how do smbclient -L and Nmap differ?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 445 192.168.56.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "checks TCP 445's state, while:"
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.10 -p 445 -U labuser"
+        },
+        {
+          "kind": "paragraph",
+          "text": "attempts to query SMB shares using the specified identity. The first observes an endpoint; the second asks for application-protocol information."
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-5",
+          "text": "Q5: are SMB and NAS the same thing?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No. Network Attached Storage (NAS) is a device or system providing storage over a network. SMB is one protocol for network file sharing:"
+        },
+        {
+          "kind": "code",
+          "text": "NAS\n ├── SMB\n │    └── Network file sharing\n ├── NFS\n │    └── Another network file-access protocol\n └── HTTPS\n      └── Web administration interface"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A NAS may provide SMB alongside other services. NAS is not limited to SMB, and SMB is not limited to NAS devices."
+        },
+        {
+          "kind": "paragraph",
+          "id": "concept-qa-6",
+          "text": "Q6: why begin M04 with SMB?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The first lesson establishes enumeration principles. DNS, LDAP, and SNMP later repeat the same questions: what information is queried, under which identity, with what result, and what does that result establish? This framework makes subsequent techniques easier to interpret."
+        },
+        {
+          "kind": "heading",
+          "id": "lesson-summary",
+          "text": "Lesson summary | A knowledge framework"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Topic",
+            "Central knowledge",
+            "Practical purpose"
+          ],
+          "rows": [
+            [
+              "Reconnaissance",
+              "Gather target background",
+              "Develop investigative leads"
+            ],
+            [
+              "Scanning",
+              "Identify endpoints and states",
+              "Understand observable services"
+            ],
+            [
+              "Enumeration",
+              "Query concrete resources and attributes",
+              "Understand exposed information"
+            ],
+            [
+              "SMB",
+              "Network file-sharing protocol",
+              "Recognize a common file service"
+            ],
+            [
+              "Authentication",
+              "Confirm identity",
+              "Identify the requester"
+            ],
+            [
+              "Authorization",
+              "Control permitted operations",
+              "Protect resources"
+            ],
+            [
+              "Information Disclosure",
+              "Assess inappropriate disclosure",
+              "Identify potential risk"
+            ],
+            [
+              "Access Control",
+              "Restrict unintended operations",
+              "Reduce unauthorized access"
+            ],
+            [
+              "Evidence",
+              "Preserve checkable observations",
+              "Avoid unsupported conclusions"
+            ],
+            [
+              "Reporting",
+              "State operations and limits",
+              "Support remediation and decisions"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "lesson-summary-1",
+          "text": "Further reading"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These official documents connect the concepts with real systems:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "[Nmap — Port Scanning Basics](https://nmap.org/book/man-port-scanning-basics.html): the meaning of port states.",
+            "[Microsoft — SMB Overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview): SMB operation and client/server roles.",
+            "[Samba — smbclient Manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html): client options and commands.",
+            "[Microsoft — SMB Secure Traffic](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic): network protection and security settings."
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "understanding-check",
+          "text": "Understanding check | Try answering"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In an authorized laboratory test environment, you execute:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -p 445 192.168.56.20"
+        },
+        {
+          "kind": "paragraph",
+          "text": "and receive:"
+        },
+        {
+          "kind": "code",
+          "text": "445/tcp open microsoft-ds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You then use the test account:"
+        },
+        {
+          "kind": "code",
+          "text": "smbclient -L 192.168.56.20 -U student"
+        },
+        {
+          "kind": "paragraph",
+          "text": "and obtain:"
+        },
+        {
+          "kind": "code",
+          "text": "Sharename      Type\n---------      ----\nPublic         Disk\nResearch       Disk\nAdmin          Disk"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You have not connected to these shares or read any files."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 1: which operation is scanning and which is enumeration? Explain why."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 2: can you claim that student has read access to Research and Admin? Explain your reasoning."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 3: as the reporting engineer, how would you describe confirmed facts and remaining unknowns?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer first, then compare your reasoning and limits with the reference answer. This check connects with M04-02: DNS Enumeration. Reading or opening an answer does not establish learner completion."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-projects",
+          "summary": "Reference answer: scanning, enumeration, and untested permissions",
+          "paragraphs": [
+            "Question 1: nmap -p 445 192.168.56.20 is port scanning in this example; it obtains TCP 445's state. smbclient -L 192.168.56.20 -U student queries SMB share names and is enumeration. Classify by the operation's purpose and evidence; the same tool may also perform other activities.\n\nQuestion 2: the evidence does not establish that student can read Research or Admin. Returned names establish visibility under this query's conditions. Connecting to a share, reading a specified file, and writing have not been tested. The basic scan's microsoft-ds label alone also does not replace SMB protocol identification.\n\nQuestion 3: a defensible report is: “Within the approved laboratory scope, a probe from the specified source to 192.168.56.20 TCP 445 returned open. An SMB query using test account student returned Public, Research, and Admin. Share connections, specified file reads, and all writes were not tested, so these observations do not establish content-access permissions or a vulnerability.” A formal report should also retain time, source, tool version, commands, and original output, and assess visibility against intended policy. These examples are not real equipment test results or evidence of learner completion."
+          ]
+        }
+      ]
+    }
+  }
+}

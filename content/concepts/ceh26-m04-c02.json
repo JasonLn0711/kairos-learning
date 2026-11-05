@@ -1,0 +1,5011 @@
+{
+  "id": "CEH26-M04-C02",
+  "revision": 2,
+  "contentVersion": "1.1.0",
+  "date": "2026-11-04",
+  "status": "published",
+  "publishedOn": "2026-11-04",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從 DNS 名稱、紀錄與回覆狀態，練習逐層驗證服務、身分與授權，並分清快取、DNSSEC 與加密傳輸。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "這堂課最重要的觀念：DNS 告訴你「某個名稱對應哪些資料」，但不代表該主機存在、服務正常，更不代表你有權限存取它。"
+        },
+        {
+          "kind": "heading",
+          "id": "orientation",
+          "text": "一、先建立整體觀念：DNS 在資安調查中扮演什麼角色？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們先回想前面學過的 CEH 課程。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "CEH 章節",
+            "主要任務",
+            "白話文"
+          ],
+          "rows": [
+            [
+              "M02 足跡蒐集",
+              "Reconnaissance",
+              "先了解目標可能有哪些公開資訊"
+            ],
+            [
+              "M03 網路掃描",
+              "Scanning",
+              "確認哪些主機、Port、服務可能存在"
+            ],
+            [
+              "M04 列舉",
+              "Enumeration",
+              "向特定服務詢問更具體的資訊"
+            ],
+            [
+              "M05 弱點分析",
+              "Vulnerability Analysis",
+              "判斷已發現的系統是否存在弱點"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，假設你是公司的資安工程師。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你知道公司有一個網站："
+        },
+        {
+          "kind": "paragraph",
+          "text": "www.example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你不知道這個網站背後使用什麼設備、郵件服務由誰處理、哪些伺服器負責 DNS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時就可以利用 DNS 查詢取得部分線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "整個調查的邏輯是："
+        },
+        {
+          "kind": "code",
+          "text": "知道一個網域名稱\n       │\n       ▼\n查詢 DNS 紀錄\n       │\n       ├── A / AAAA → 可能的 IP 位址\n       │\n       ├── MX       → 郵件接收服務的設定\n       │\n       ├── NS       → 權威名稱伺服器\n       │\n       ├── CNAME    → 名稱之間的別名關係\n       │\n       └── TXT      → 網域政策與驗證資訊\n       │\n       ▼\n整理出可能的系統與服務線索\n       │\n       ▼\n依授權範圍進一步確認\n       │\n       ├── 主機是否可連線？\n       ├── Port 是否開放？\n       ├── TLS 憑證是否有效？\n       ├── HTTP 服務是否正常？\n       └── 是否存在安全弱點？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 查詢是蒐集證據的其中一個步驟，不是完成整套資安檢測。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "第一章｜DNS 比較像通訊錄，不是網站的健康檢查"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-1",
+          "text": "1.1 DNS 到底是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS（Domain Name System）稱為「網域名稱系統」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 DNS 想像成電話通訊錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以前我們要打電話給某個人，可能需要查詢："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「王先生的電話號碼是多少？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在我們要連線到網站，電腦需要知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個網站名稱對應什麼 IP 位址？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "你輸入：\nwww.example.com\n\n        ↓\n\nDNS 查詢\n\n        ↓\n\n得到：\n93.184.215.14"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以上 IP 僅用來說明名稱解析的形式，不代表該網站目前一定使用這個位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們可以把它理解成："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Domain Name：容易讓人記住的名稱。",
+            "IP Address：網路通訊需要使用的位址。",
+            "DNS：提供名稱與相關資料的查詢系統。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 DNS 不只是名稱轉 IP，還能提供郵件、名稱伺服器及其他服務設定資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-2",
+          "text": "1.2 查到 IP，為什麼不代表網站正常？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 DNS 回答："
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test → 192.0.2.10\nwww.example.test → 192.0.2.11"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能直覺認為："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「很好！這個網站有兩台伺服器，而且都正在運作。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個推論並不正確。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 回覆只能表示：這次查詢取得兩筆 IPv4 位址紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不能證明："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 兩個 IP 都能連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 兩個 IP 都有提供網頁服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 網站目前運作正常。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 背後真的有兩台實體電腦。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 這兩個 IP 一定是公司的原始伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-3",
+          "text": "實際例子：Cloudflare CDN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司使用 Cloudflare 保護網站。"
+        },
+        {
+          "kind": "code",
+          "text": "使用者\n   │\n   │ 查詢 www.company.com\n   ▼\nDNS 回傳 Cloudflare 的 IP\n   │\n   ▼\nCloudflare 邊緣節點\n   │\n   │ 根據設定代理請求\n   ▼\n公司原始伺服器（Origin Server）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你從 DNS 查到的 IP，可能是 Cloudflare 的節點，而不是公司真正存放網站的伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且，CDN 背後可能使用 Anycast（任播）等技術，讓不同地點的使用者透過相同 IP，到達不同的服務節點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 的兩個 IP ≠ 兩台實體主機。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-4",
+          "text": "1.3 和 M03 網路掃描有什麼關係？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡可以連接你之前學過的 M03-03 Port Scanning。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設："
+        },
+        {
+          "kind": "code",
+          "text": "第一階段：DNS\nwww.example.test → 192.0.2.10\n\n第二階段：TCP 探測\n192.0.2.10:443 → 有服務回應\n\n第三階段：HTTPS\nTLS 交握成功\n\n第四階段：HTTP\nGET / → HTTP 200"
+        },
+        {
+          "kind": "paragraph",
+          "text": "每一階段都提供不同的證據。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "觀察",
+            "可以合理判斷",
+            "不可以直接判斷"
+          ],
+          "rows": [
+            [
+              "查到 A 紀錄",
+              "DNS 提供了 IPv4 位址",
+              "主機正常運作"
+            ],
+            [
+              "TCP 443 連線成功",
+              "目標 Port 可建立 TCP 連線",
+              "一定是 HTTPS"
+            ],
+            [
+              "TLS 交握成功",
+              "可以建立 TLS 安全通道",
+              "網頁功能都正常"
+            ],
+            [
+              "HTTP 200",
+              "某次 HTTP 請求得到成功狀態碼",
+              "整套網站都沒有問題"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種分層驗證的思考方式，在資安調查中特別重要。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "第二章｜你問的 DNS 伺服器，不一定就是保管答案的人"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章是在解釋 DNS 背後的架構。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-1",
+          "text": "2.1 DNS 裡面有三個重要角色"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你想知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "www.example.com 的 IP 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "整個系統可以分成三個角色。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "角色一：Stub Resolver（用戶端解析器）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是你電腦上的 DNS 查詢元件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你打開 Firefox，輸入網址，系統需要解析網域名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果使用系統 DNS，這個查詢通常會透過電腦的解析服務送出。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但某些瀏覽器也可能使用自己的 DNS over HTTPS 設定，不完全依照系統解析器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "角色二：Recursive Resolver（遞迴解析器）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它的工作是幫你找到答案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把它想成公司櫃檯。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你問櫃檯：「請問王先生在哪個部門？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "櫃檯如果知道，就直接回答。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果不知道，它會向其他單位詢問，再把結果告訴你。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見的公共遞迴解析服務包括："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Cloudflare DNS：1.1.1.1",
+            "Google Public DNS：8.8.8.8"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "角色三：Authoritative Name Server（權威名稱伺服器）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個角色比較像公司的正式資料管理單位。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它負責維護特定 DNS 區域的權威紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "example.com 區域：\n\nwww.example.com    A     192.0.2.10\nmail.example.com   A     192.0.2.20\nexample.com        MX    10 mail.example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以上為示意資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "權威伺服器可以提供這些正式設定，但它不負責證明各服務目前是否正常運作。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 DNS 查詢是怎麼找到答案的？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先用一個概念流程理解："
+        },
+        {
+          "kind": "code",
+          "text": "┌──────────────────────┐\n│  你的電腦 / 瀏覽器   │\n│  我要查 www.example.com │\n└──────────┬───────────┘\n           │\n           ▼\n┌──────────────────────┐\n│   Recursive Resolver │\n│   遞迴解析器         │\n└──────────┬───────────┘\n           │\n           ├── 有快取？\n           │      └── 有 → 直接回覆\n           │\n           └── 沒有快取\n                  │\n                  ▼\n             Root DNS\n             根名稱伺服器\n                  │\n                  ▼\n             .com DNS\n             頂級網域伺服器\n                  │\n                  ▼\n             example.com\n             權威名稱伺服器\n                  │\n                  ▼\n             取得所需紀錄\n                  │\n                  ▼\n             遞迴解析器\n                  │\n                  ▼\n               你的電腦"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是典型的概念模型。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際上，解析器可能已經有快取，也可能使用轉送器（Forwarder），所以不一定每次都從根名稱伺服器開始查。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "2.3 Domain 和 Zone 有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩個詞很容易搞混。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Domain（網域）：DNS 名稱空間的一部分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "example.com\n    │\n    ├── www.example.com\n    ├── mail.example.com\n    └── research.example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Zone（DNS 區域）：由特定權威 DNS 管理的一組 DNS 資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司總部管理："
+        },
+        {
+          "kind": "paragraph",
+          "text": "example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是研究部門有自己的 DNS 管理團隊，於是把："
+        },
+        {
+          "kind": "paragraph",
+          "text": "research.example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "委派（Delegation）給另一組權威 DNS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這表示兩個名稱雖然存在上下層關係，卻可以分別由不同的 DNS 區域管理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "重要結論："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你取得 example.com 某個 Zone 的資料，不代表你取得公司所有子網域的完整資料。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "第三章｜DNS 列舉在問什麼？先認識常見紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章是本課的核心。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 裡面的每一筆資料通常稱為 Resource Record，縮寫 RR（資源紀錄）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以把 RR 想成通訊錄裡的不同欄位。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "員工姓名：王先生\n聯絡電話：0912-xxx-xxx\nEmail：wang@example.com\n部門：資訊部\n職稱：工程師"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 也有不同的資料類型。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "3.1 A Record：查詢 IPv4 位址"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A 紀錄的用途："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Domain Name → IPv4 Address"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test → 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "白話文："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請告訴我這個名稱設定了哪些 IPv4 位址。」"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 AAAA Record：查詢 IPv6 位址"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AAAA 紀錄的用途："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Domain Name → IPv6 Address"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test → 2001:db8::10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 2001:db8::/32 是保留給文件示例使用的 IPv6 範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼 A 只有一個 A，AAAA 卻有四個 A？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 DNS 紀錄類型的正式名稱，不代表要輸入四次指令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你只需要記得："
+        },
+        {
+          "kind": "code",
+          "text": "A     → IPv4\nAAAA  → IPv6"
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意：查不到 AAAA，不能據此認定這個網域完全沒有 IPv6 相關配置。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 CNAME：名稱的別名"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CNAME（Canonical Name）可以理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個名稱是另一個名稱的別名。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test\n        │\n        │ CNAME\n        ▼\nweb.example.test\n        │\n        │ A\n        ▼\n192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你想架設網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你希望："
+        },
+        {
+          "kind": "paragraph",
+          "text": "www.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "和某個服務的正式名稱建立關係。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CNAME 就是一種做法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要特別注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "CNAME 不是 HTTP 301 或 302 Redirect。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者差異："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "CNAME：DNS 名稱解析階段使用的別名關係。",
+            "HTTP Redirect：瀏覽器已經發出 HTTP 請求後，伺服器要求瀏覽器前往另一個 URL。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "3.4 PTR：反向 DNS 查詢"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前面的 A 紀錄是："
+        },
+        {
+          "kind": "code",
+          "text": "名稱 → IP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "PTR（Pointer Record）常用於："
+        },
+        {
+          "kind": "code",
+          "text": "IP → 名稱"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "192.0.2.10\n      │\n      ▼\n反向 DNS 查詢\n      │\n      ▼\nweb.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 PTR 回傳某個名稱，不代表那台主機一定屬於該名稱所代表的組織。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為反向 DNS 紀錄通常由管理相應 IP 位址空間的單位配置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，即使正向與反向查詢吻合，也不能單憑這件事完成身分驗證。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-5",
+          "text": "3.5 NS：誰負責回答這個 DNS 區域的問題？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NS（Name Server）紀錄指出某個 DNS 區域使用哪些權威名稱伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "example.test NS ns1.example.test\nexample.test NS ns2.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個 DNS 區域使用 ns1、ns2 作為權威名稱伺服器。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NS 不是你電腦目前設定使用的遞迴解析器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是兩種不同的角色。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-6",
+          "text": "3.6 SOA：DNS 區域的管理資料"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SOA（Start of Authority）紀錄包含 DNS 區域的管理資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "主要權威伺服器的名稱。",
+            "管理聯絡資訊。",
+            "Zone Serial Number（區域序號）。",
+            "與區域同步相關的計時參數。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 SOA 想成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這份 DNS 區域資料的管理資訊表。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 Serial Number 可以協助判斷區域資料版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但它不是："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "主機開機時間。",
+            "伺服器存活秒數。",
+            "網站最後一次更新時間。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-7",
+          "text": "3.7 MX：郵件寄到哪裡？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "MX（Mail Exchanger）是郵件接收服務的重要紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "example.test MX 10 mail1.example.test\nexample.test MX 20 mail2.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它代表這個網域設定了兩筆郵件交換紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "數字代表偏好優先順序。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通常："
+        },
+        {
+          "kind": "paragraph",
+          "text": "數字越小，優先順序越高。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "code",
+          "text": "10 → 較優先\n20 → 次優先"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這不等於："
+        },
+        {
+          "kind": "code",
+          "text": "10 → 10% 的郵件\n20 → 20% 的郵件"
+        },
+        {
+          "kind": "paragraph",
+          "text": "也不代表 mail1 故障時，mail2 就一定能正常接收所有郵件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "MX 是郵件路由的設定線索，不是郵件系統健康報告。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-8",
+          "text": "3.8 TXT：網域的文字設定"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TXT Record 可以放置文字資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見用途："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "驗證網域控制權。",
+            "SPF 郵件寄件授權政策。",
+            "DKIM 電子郵件簽章的公開金鑰。",
+            "DMARC 郵件驗證與處理政策。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "example.test TXT \"v=spf1 -all\""
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一種 SPF 政策表示方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "v=spf1 表示 SPF 版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "-all 表示政策宣告：未由前面機制授權的來源不應被視為合格寄件來源。由於這個例子沒有其他允許來源，實際意義是該網域不授權任何 IP 以它的名稱寄送通過 SPF 驗證的郵件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但看見 TXT 紀錄，不能直接認定整套郵件防護都已經正確部署。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TXT 是公開可查詢的資料，不應該拿來存放密碼或機密金鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-9",
+          "text": "3.9 SRV：提供服務入口的設定"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SRV（Service Record）能描述某種服務的："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "目標主機。",
+            "Port。",
+            "Priority（優先順序）。",
+            "Weight（權重）。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，以下是一個合成的 LDAP 服務設定："
+        },
+        {
+          "kind": "code",
+          "text": "_ldap._tcp.example.test.  IN SRV 0 5 389 ldap01.example.test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以拆成："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "意思"
+          ],
+          "rows": [
+            [
+              "_ldap",
+              "服務名稱為 LDAP"
+            ],
+            [
+              "_tcp",
+              "使用 TCP"
+            ],
+            [
+              "0",
+              "Priority"
+            ],
+            [
+              "5",
+              "Weight"
+            ],
+            [
+              "389",
+              "服務 Port"
+            ],
+            [
+              "ldap01.example.test",
+              "目標主機名稱"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡要與 M03-03 連結。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你之前學到 Port 389 常用於 LDAP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在你又發現某筆 SRV 紀錄描述 LDAP 的主機與 Port。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「DNS 提供了可能的 LDAP 服務入口資訊。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能直接說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「LDAP 服務一定正在運作，而且任何人都能登入。」"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-10",
+          "text": "第三章重點整理"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "紀錄",
+            "主要用途",
+            "好記的比喻"
+          ],
+          "rows": [
+            [
+              "A",
+              "IPv4 位址",
+              "電話號碼"
+            ],
+            [
+              "AAAA",
+              "IPv6 位址",
+              "另一種格式的電話號碼"
+            ],
+            [
+              "CNAME",
+              "名稱別名",
+              "同一聯絡人的別名"
+            ],
+            [
+              "PTR",
+              "反向名稱查詢",
+              "依號碼查詢登記名稱"
+            ],
+            [
+              "NS",
+              "權威名稱伺服器",
+              "資料管理單位"
+            ],
+            [
+              "SOA",
+              "區域管理資訊",
+              "資料版本與管理資訊表"
+            ],
+            [
+              "MX",
+              "郵件接收路由",
+              "公司收發室"
+            ],
+            [
+              "TXT",
+              "文字設定與政策",
+              "公開公告欄"
+            ],
+            [
+              "SRV",
+              "特定服務入口",
+              "服務櫃檯的分機及位置"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "不需要一次死背全部。先掌握 A、AAAA、NS、MX，再逐步擴展到其他紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-11",
+          "text": "DNS 列舉整體架構圖"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這張圖把前面三章串在一起：先認識 DNS 查詢的角色，再理解不同紀錄的用途，最後學會區分 DNS 回覆與後續需要驗證的證據。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/dns-overview-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "DNS 列舉：從名稱到可驗證的證據",
+            "description": "箭頭表示查詢角色或證據判讀順序，不代表每次都接觸權威端，也不代表自動取得存取權；授權須在各階段事先確認。",
+            "items": [
+              {
+                "title": "你的電腦｜Stub Resolver",
+                "body": "送出：「www.example.test 的 A 紀錄是什麼？」"
+              },
+              {
+                "title": "遞迴解析器｜Recursive Resolver",
+                "body": "可從快取回答；沒有適用快取時，再查根、頂級網域與權威伺服器。"
+              },
+              {
+                "title": "權威名稱伺服器｜Authoritative DNS",
+                "body": "依所管理的區域提供權威紀錄。"
+              },
+              {
+                "title": "A / AAAA",
+                "body": "IPv4 / IPv6 位址"
+              },
+              {
+                "title": "CNAME / PTR",
+                "body": "名稱別名／反查"
+              },
+              {
+                "title": "NS / SOA",
+                "body": "權威 DNS／區域管理"
+              },
+              {
+                "title": "MX",
+                "body": "郵件接收路由"
+              },
+              {
+                "title": "TXT / SRV",
+                "body": "文字政策／服務入口"
+              },
+              {
+                "title": "DNS 回覆",
+                "body": "查到配置資料"
+              },
+              {
+                "title": "TCP / UDP",
+                "body": "確認相應的網路回應"
+              },
+              {
+                "title": "TLS / HTTP",
+                "body": "確認協定與功能"
+              },
+              {
+                "title": "身分與授權",
+                "body": "確認身分與允許的操作；各階段都須事先確認授權。"
+              },
+              {
+                "title": "查詢紀錄",
+                "body": "查詢來源／時間 → DNS 端點 → 名稱與類型 → 狀態與旗標 → 回覆與 TTL → 尚待驗證事項"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "第四章｜先看懂一條 dig 指令"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章開始進入 Ubuntu 實際操作。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "4.1 dig 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "dig 全名是 Domain Information Groper。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它是一個 DNS 查詢工具。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把它想成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我指定一個 DNS 伺服器，問它某個網域的特定資訊。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不會替你確認網站的所有功能是否正常。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 拆解一條 dig 指令"
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材使用："
+        },
+        {
+          "kind": "code",
+          "text": "dig @192.0.2.53 www.example.test A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 192.0.2.53 是文件示例位址，並非真正可以直接使用的公共 DNS 服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們拆成四個部分。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "指令片段",
+            "意思",
+            "白話文"
+          ],
+          "rows": [
+            [
+              "dig",
+              "DNS 查詢工具",
+              "我要查 DNS"
+            ],
+            [
+              "@192.0.2.53",
+              "指定 DNS 伺服器",
+              "我要問這一台"
+            ],
+            [
+              "www.example.test",
+              "查詢的名稱",
+              "我想查這個名稱"
+            ],
+            [
+              "A",
+              "指定紀錄類型",
+              "我要它的 IPv4 位址"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "用中文讀整條指令："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請向 192.0.2.53 這台 DNS 伺服器，查詢 www.example.test 的 A 紀錄。」"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "為什麼前面要有 @？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "@ 是 dig 指定 DNS 伺服器的語法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "dig @1.1.1.1 example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「向 Cloudflare 的公共 DNS 解析服務，查詢 example.com 的 IPv4 位址。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果沒有指定 @server："
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "dig 通常會依照系統 DNS 設定選擇查詢端點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是為什麼兩個人在不同電腦執行相同指令，可能得到不同的結果。[BIND 9 Documentation](https://bind9.readthedocs.io/en/stable/manpages.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.3 DNS 使用 UDP 還是 TCP？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還記得 M03-01 的 TCP 和 UDP 嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳統 DNS 使用："
+        },
+        {
+          "kind": "code",
+          "text": "UDP Port 53\nTCP Port 53"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般 DNS 查詢經常透過 UDP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 TCP 也能處理一般 DNS 查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "DNS 回覆過大，需要改用 TCP。",
+            "查詢工具明確指定 TCP。",
+            "DNS 區域傳送（AXFR）使用 TCP。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以不能認為："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「DNS 的 TCP 53 一定是惡意流量。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "也不能認為："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「DNS 只需要 UDP 53，所以所有 TCP 53 都應該封鎖。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防火牆政策必須依照伺服器角色與實際需求制定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，DNS over HTTPS（DoH）及 DNS over TLS（DoT）屬於不同的傳輸方式，分別常使用 HTTPS 的 443 埠及 TCP 853 埠，不能直接與傳統 DNS Port 53 混為一談。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-5",
+          "text": "4.4 在 Ubuntu 上實作"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你使用 Ubuntu 24.04，可以先安裝 dig。"
+        },
+        {
+          "kind": "code",
+          "text": "sudo apt update\n\nsudo apt install dnsutils"
+        },
+        {
+          "kind": "paragraph",
+          "text": "安裝完成後，執行："
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是對 IANA 保留的示例網域進行一般公開 DNS 查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著你可以分別查詢："
+        },
+        {
+          "kind": "code",
+          "text": "# 查詢 IPv4\ndig example.com A\n\n# 查詢 IPv6\ndig example.com AAAA\n\n# 查詢郵件接收設定\ndig example.com MX\n\n# 查詢權威 DNS\ndig example.com NS\n\n# 查詢文字紀錄\ndig example.com TXT"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先不用在意答案有幾筆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你現在要練習的是：知道自己問了什麼問題，以及得到的回答究竟能證明什麼。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "第五章｜讀懂一次回覆：把「答案」與「回答者」分開"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章是最值得反覆練習的部分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你未來做 DNS 故障排除、資安檢測、伺服器管理，都會遇到這些欄位。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "5.1 看懂 dig 的回覆"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們在授權實驗環境中取得以下合成回覆："
+        },
+        {
+          "kind": "code",
+          "text": ";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345\n;; flags: qr rd ra; QUERY: 1, ANSWER: 1\n\n;; QUESTION SECTION:\n;www.lab.example.test. IN A\n\n;; ANSWER SECTION:\nwww.lab.example.test. 120 IN A 192.0.2.50\n\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這段看起來很複雜，但只要分成四個區域就很好懂。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-2",
+          "text": "第一個區域：HEADER"
+        },
+        {
+          "kind": "code",
+          "text": "status: NOERROR"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表這次 DNS 回覆的狀態碼沒有回報 DNS 錯誤。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但它不代表："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "網站一定存在且正常運作。",
+            "你取得了所有想查的紀錄。",
+            "這個主機一定在線。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "NOERROR 指的是 DNS 回覆狀態，不是應用程式健康狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-3",
+          "text": "第二個區域：QUESTION"
+        },
+        {
+          "kind": "code",
+          "text": "www.lab.example.test. IN A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我剛剛詢問 www.lab.example.test 的 A 紀錄。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "www.lab.example.test.：查詢名稱。",
+            "IN：Internet 類別。",
+            "A：IPv4 位址紀錄。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "名稱最後的 . 代表完整 DNS 名稱的根節點結尾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "www.example.com."
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 DNS 表示法中是一個完整網域名稱（Fully Qualified Domain Name，FQDN）。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-4",
+          "text": "第三個區域：ANSWER"
+        },
+        {
+          "kind": "code",
+          "text": "www.lab.example.test. 120 IN A 192.0.2.50"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表："
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 回覆提供了一筆 IPv4 位址紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "code",
+          "text": "192.0.2.50"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是回覆的位址資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而："
+        },
+        {
+          "kind": "code",
+          "text": "120"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是 TTL。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-5",
+          "text": "第四個區域：SERVER"
+        },
+        {
+          "kind": "code",
+          "text": "SERVER: 192.0.2.53#53 (UDP)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡要非常小心！"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SERVER 代表這次 DNS 查詢的回覆端點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是你要連線的網站伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請看："
+        },
+        {
+          "kind": "code",
+          "text": "DNS 伺服器：\n192.0.2.53\n\n        │\n        │ 我向它詢問\n        ▼\n\nwww.lab.example.test 的 IP？\n\n        │\n        │ 它回答\n        ▼\n\n192.0.2.50"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩個 IP 扮演完全不同的角色。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "IP",
+            "角色"
+          ],
+          "rows": [
+            [
+              "SERVER",
+              "192.0.2.53",
+              "本次回答查詢的 DNS 端點"
+            ],
+            [
+              "ANSWER",
+              "192.0.2.50",
+              "DNS 回傳的 IPv4 位址資料"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "在真實環境中，這兩個位址可能剛好相同，但仍必須區分角色。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-6",
+          "text": "5.2 TTL 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TTL 全名是 Time To Live。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 DNS 裡面可以理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這筆資料允許被快取多久。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設："
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test. 300 IN A 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TTL 是 300 秒。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把它想成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這筆答案可以暫時存放在 DNS 快取中。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果遞迴解析器取得這筆資料，可能在快取有效期間直接回答其他查詢，不需要每次都重新向權威伺服器詢問。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "時間 00:00\n取得 DNS 回覆，TTL = 300\n\n時間 01:00\n可能仍有快取，剩餘 TTL 約 240\n\n時間 03:00\n可能仍有快取，剩餘 TTL 約 120\n\n時間 05:00\n原本這筆快取的有效時間屆滿"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是簡化示意。真實環境還可能有多層快取、預先更新、Serve-Stale（過期資料暫時服務）等機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請記住："
+        },
+        {
+          "kind": "paragraph",
+          "text": "TTL 不是主機的開機時間，也不保證全世界的 DNS 都會在指定秒數後完全一致。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-7",
+          "text": "5.3 qr、rd、ra、aa 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些是 DNS 訊息的旗標（Flags）。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Flag",
+            "全名",
+            "白話文"
+          ],
+          "rows": [
+            [
+              "qr",
+              "Query Response",
+              "這是一則回覆"
+            ],
+            [
+              "rd",
+              "Recursion Desired",
+              "查詢方希望使用遞迴解析"
+            ],
+            [
+              "ra",
+              "Recursion Available",
+              "回覆方宣告可以提供遞迴服務"
+            ],
+            [
+              "aa",
+              "Authoritative Answer",
+              "回覆宣告具有權威性"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 rd 和 ra 最容易搞混。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你到公司櫃檯詢問某份資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "rd 就像你說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「如果你不知道答案，請幫我問其他部門。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ra 則像櫃檯表示："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我們提供代為查詢的服務。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 ra 不代表這一次一定真的詢問過其他部門，因為答案可能來自快取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而 aa 表示 DNS 回覆宣告具有權威性，並不是密碼學上的真偽保證。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-8",
+          "text": "5.4 為什麼 Ubuntu 可能看到 127.0.0.53？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你執行："
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "結果出現："
+        },
+        {
+          "kind": "code",
+          "text": "SERVER: 127.0.0.53#53"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能會想："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「為什麼 DNS 伺服器變成我自己的電腦？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這其實可能是正常現象。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在使用 systemd-resolved 並啟用本機 Stub Resolver 的 Ubuntu 系統中，127.0.0.53 是本機 DNS 查詢端點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "dig\n │\n ▼\n127.0.0.53\n本機 systemd-resolved\n │\n ▼\n系統設定的上游 DNS\n │\n ▼\n取得 DNS 回覆"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，看到 127.0.0.53，不代表真正的上游 DNS 就是你自己。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以用："
+        },
+        {
+          "kind": "code",
+          "text": "resolvectl status"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查看系統目前的 DNS 設定及相關介面資訊。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "第六章｜沒有查到答案，至少要分清五種情況"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章非常重要，因為很多初學者會犯相同的錯誤。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "沒有取得答案，不等於 DNS 已經證明名稱不存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你向某個公司詢問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請問你們有王先生這個員工嗎？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不同的回答有完全不同的意思。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "6.1 NOERROR，但沒有答案"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "status: NOERROR\n\nANSWER: 0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見情況之一是 NODATA。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這次 DNS 查詢沒有取得所要求類型的紀錄。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你查詢："
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com AAAA"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果沒有得到 AAAA 紀錄，可能代表該名稱沒有對應的 AAAA 資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要搭配其他回覆區塊判斷，不能只看空白結果就直接下結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "特別注意：NODATA 是描述一類 DNS 否定回答的常用術語，不是獨立的 DNS status 回應碼。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 NXDOMAIN：名稱不存在"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "status: NXDOMAIN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般可以理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「DNS 回覆報告所查詢的名稱不存在。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "生活比喻："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你打電話去公司詢問王先生，得到："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我們的正式名單裡沒有這個名字。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這並不代表："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "整家公司不存在。",
+            "公司完全沒有其他人。",
+            "所有相關子網域都不存在。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果查詢涉及 CNAME 別名鏈，也需要辨認究竟是哪一個名稱被判定不存在。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 SERVFAIL：DNS 解析失敗"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "status: SERVFAIL"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「DNS 伺服器無法成功完成這次解析。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見可能原因："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "上游 DNS 服務發生問題。",
+            "DNSSEC 驗證失敗。",
+            "DNS 伺服器設定錯誤。",
+            "其他解析處理問題。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像公司櫃檯回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「抱歉，我們目前的查詢系統有問題。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不是告訴你王先生不存在。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 REFUSED：拒絕處理"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "status: REFUSED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「DNS 伺服器拒絕處理這個要求。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能是因為："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "存取控制政策。",
+            "查詢來源不在允許範圍。",
+            "特定服務或功能受到限制。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "生活比喻："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你問公司櫃檯："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「可以提供所有員工的完整資料嗎？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對方回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「抱歉，依照公司規定，不能提供。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不代表公司沒有員工資料。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-5",
+          "text": "6.5 Timeout：等待逾時"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": ";; communications error: timed out"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「在等待時間內，沒有收到可用回覆。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能原因包括："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "網路封包遺失。",
+            "防火牆過濾。",
+            "DNS 服務沒有回應。",
+            "查詢端點或路由發生問題。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "請注意："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Timeout 與 REFUSED 不一樣。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "REFUSED 是 DNS 伺服器明確回覆拒絕。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Timeout 則是你沒有收到可用的 DNS 回覆。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-6",
+          "text": "六、五種情況比較表"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "狀態",
+            "白話文",
+            "能否證明名稱不存在？"
+          ],
+          "rows": [
+            [
+              "NOERROR + 空 ANSWER",
+              "沒有取得所問類型的答案",
+              "不能單憑這兩項判定"
+            ],
+            [
+              "NXDOMAIN",
+              "回覆報告相關名稱不存在",
+              "可作為此名稱不存在的 DNS 證據，但須判讀查詢情境"
+            ],
+            [
+              "SERVFAIL",
+              "DNS 解析失敗",
+              "不能"
+            ],
+            [
+              "REFUSED",
+              "DNS 伺服器拒絕處理",
+              "不能"
+            ],
+            [
+              "Timeout",
+              "沒有收到可用回覆",
+              "不能"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-7",
+          "text": "補充：為什麼 NOERROR + 空 ANSWER 也不能絕對證明名稱存在？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有一個進階概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RFC 9824 定義了 DNSSEC 的 Compact Denial of Existence 技術。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某些情況下，權威伺服器可以使用 NOERROR 搭配空 ANSWER 的形式，表達原本不存在的名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "判讀 DNS 結果時，不能只看 status 與 ANSWER 的筆數，還要看其他區塊、DNSSEC 資料與查詢情境。 [RFC Editor](https://www.rfc-editor.org/rfc/rfc9824.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個細節不必立刻背起來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH 這一階段真正要掌握的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「沒有答案」可以有很多原因，而不同原因對應不同的調查方向。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "第七章｜把零散查詢整理成線索，而不是把猜測寫成事實"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章其實是在教你資安調查的核心能力："
+        },
+        {
+          "kind": "paragraph",
+          "text": "如何從技術工具的輸出，整理成有證據支持的結論。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 一筆查詢，可以得到什麼資訊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你在授權的實驗室環境查詢："
+        },
+        {
+          "kind": "code",
+          "text": "dig @192.0.2.53 example.test MX"
+        },
+        {
+          "kind": "paragraph",
+          "text": "得到以下合成結果："
+        },
+        {
+          "kind": "code",
+          "text": "example.test. 300 IN MX 10 mail.example.test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "你能確定什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這次 DNS 回覆表示："
+        },
+        {
+          "kind": "paragraph",
+          "text": "mail.example.test 被設定為 example.test 的郵件接收主機，MX 優先值為 10。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能直接說："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "郵件伺服器目前正在運作。",
+            "這台伺服器一定屬於公司自己。",
+            "任何人都能透過它寄送郵件。",
+            "公司員工的信箱名稱已經被查出來。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 MX 紀錄只是郵件路由設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要確認郵件服務是否真的存在，還需要進一步解析郵件主機名稱，並在授權範圍內驗證相關服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這又連接到前面學過的 M03 網路掃描。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 查到 admin、vpn、dev，就代表有這些服務嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你發現 DNS 中存在："
+        },
+        {
+          "kind": "code",
+          "text": "admin.example.test\nvpn.example.test\ndev.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能直覺認為："
+        },
+        {
+          "kind": "code",
+          "text": "admin → 管理者後台\nvpn   → VPN 伺服器\ndev   → 開發環境"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些名稱確實可能提供線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但也有其他可能："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "名稱早已不再使用。",
+            "原本的服務已經搬遷。",
+            "名稱只是暫時保留。",
+            "DNS 指向的是 CDN 或第三方服務。",
+            "名稱與實際服務用途不同。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，資安調查應該把「查到的資料」和「自己的判斷」分開。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "7.3 如何寫出專業的 DNS 調查紀錄？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "建議使用下面的格式。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "類別",
+            "紀錄內容"
+          ],
+          "rows": [
+            [
+              "觀察（Observation）",
+              "DNS 回覆顯示 vpn.example.test 有一筆 A 紀錄"
+            ],
+            [
+              "事實範圍",
+              "這次查詢取得 192.0.2.30"
+            ],
+            [
+              "初步推論（Inference）",
+              "名稱可能與 VPN 服務有關"
+            ],
+            [
+              "尚未確認",
+              "是否有 VPN 服務、服務是否在線、由誰管理"
+            ],
+            [
+              "後續驗證",
+              "依照授權範圍確認服務及系統配置"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種方式可以避免調查報告出現不可靠的結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，資安調查時最好保留完整的 dig 輸出，而不是只保留 dig +short 的結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "適合保留較完整的查詢資訊。"
+        },
+        {
+          "kind": "code",
+          "text": "dig +short example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "適合快速查看簡短答案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但後者會省略部分狀態、旗標與查詢端點資訊，不適合單獨作為完整調查紀錄。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "第八章｜ANY 不是「全部給我」，AXFR 才是另一種工作"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這章要區分兩種非常容易混淆的 DNS 操作。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-1",
+          "text": "8.1 ANY 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你已經知道："
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是在問 A 紀錄。"
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com MX"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是在問 MX 紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那如果想查全部紀錄，可以直接使用 ANY 嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不可以這樣理解。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ANY 是 DNS 的一種查詢類型，但現代 DNS 伺服器不一定會返回該名稱的所有紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它也不會替你列出整個網域裡所有子網域。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "ANY 不是「把這家公司所有 DNS 資料全部交給我」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你要查 MX，就明確查 MX。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果要查 NS，就明確查 NS。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 AXFR 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AXFR（Full Zone Transfer）稱為完整 DNS 區域傳送。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這和一般 DNS 查詢非常不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們用一個公司情境來理解。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司有兩台權威 DNS 伺服器："
+        },
+        {
+          "kind": "code",
+          "text": "Primary DNS\n    │\n    │ 保存及管理 Zone 資料\n    │\n    ▼\nSecondary DNS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司希望第二台 DNS 能保存該區域的副本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "正常情況下，Secondary DNS 可以透過授權的區域傳送機制取得資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "概念如下："
+        },
+        {
+          "kind": "code",
+          "text": "Primary DNS\n┌─────────────────────┐\n│ example.test Zone   │\n│                     │\n│ www      A          │\n│ mail     A          │\n│ example  MX         │\n│ example  NS         │\n│ ...                 │\n└──────────┬──────────┘\n           │\n           │ AXFR\n           │ TCP\n           ▼\n┌─────────────────────┐\n│ Secondary DNS       │\n│                     │\n│ 保存區域資料副本    │\n└─────────────────────┘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是正常的 DNS 管理功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "相關標準為 RFC 5936。[RFC Editor](https://www.rfc-editor.org/rfc/rfc5936.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 為什麼 AXFR 會有資安風險？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司原本只允許 Secondary DNS 取得完整區域資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是管理員設定錯誤，讓不受信任的外部來源也能取得原本不應公開的完整資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就可能暴露："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "主機命名方式。",
+            "郵件主機名稱。",
+            "其他系統或服務的 DNS 紀錄。",
+            "部分內部架構或環境命名線索。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這會增加攻擊者理解組織網路配置的能力。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要注意兩個判斷原則。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，AXFR 成功不一定代表漏洞。如果發起者是經授權的次要 DNS 伺服器，那可能完全正常。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，AXFR 傳送的是某個 Zone 的資料，不代表取得了組織所有網域、已委派子區域及其他 DNS 視圖的完整內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，資安檢測不能只看「AXFR 成功或失敗」，還要確認來源、授權政策和資料範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 ANY 和 AXFR 的比較"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "項目",
+            "ANY",
+            "AXFR"
+          ],
+          "rows": [
+            [
+              "類型",
+              "DNS 查詢類型",
+              "DNS 區域傳送"
+            ],
+            [
+              "目的",
+              "詢問特定名稱的紀錄集合",
+              "取得一個 Zone 的資料副本"
+            ],
+            [
+              "會列出所有子網域嗎？",
+              "不會",
+              "只涵蓋傳送區域內的相關資料"
+            ],
+            [
+              "一定取得所有紀錄嗎？",
+              "不會",
+              "正常完整傳送應取得該區域應傳送的資料"
+            ],
+            [
+              "主要安全重點",
+              "查詢資訊與回覆政策",
+              "授權控制、資料暴露與完整性"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "第九章｜快取、DNSSEC、加密傳輸各管不同的事"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章對系統安全架構非常重要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為很多人會把 DNSSEC、DoH 和 DNS 快取誤認成相似的安全機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際上，它們處理的是完全不同的問題。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/dns-security-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "DNS 的三種機制：效能、資料驗證與傳輸隱私",
+            "description": "三張卡片是平行比較。下方箭頭表示簡化查詢路徑；DoH／DoT 保護特定鏈路，DNSSEC 驗證簽章與信任鏈，並非加密整條解析路徑。",
+            "items": [
+              {
+                "title": "快取 Cache",
+                "body": "加速重複查詢：重複請求不必一直問權威 DNS。不能證明特定使用者曾造訪網站。"
+              },
+              {
+                "title": "DNSSEC",
+                "body": "驗證經簽署資料的來源與完整性。不能保證查詢內容保密或網站正常。"
+              },
+              {
+                "title": "加密 DNS：DoH / DoT",
+                "body": "保護用戶端到解析服務的特定傳輸鏈路。解析服務仍可得知並處理查詢內容。"
+              },
+              {
+                "title": "你的電腦｜Stub Resolver",
+                "body": "發起 DNS 查詢"
+              },
+              {
+                "title": "遞迴解析器",
+                "body": "可進行 DNSSEC 驗證；也可能使用快取"
+              },
+              {
+                "title": "權威 DNS 資料",
+                "body": "依區域設定提供紀錄"
+              },
+              {
+                "title": "用戶端 ↔ 解析服務：DoH / DoT",
+                "body": "加密這段傳輸鏈路；不保證後續鏈路同樣加密。"
+              },
+              {
+                "title": "DNSSEC：簽章與信任鏈",
+                "body": "驗證經簽署的 DNS 資料，不驗證網站功能。"
+              },
+              {
+                "title": "區域傳送",
+                "body": "使用存取控制與 TSIG 保護授權／完整性；TSIG 不會加密區域內容。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-1",
+          "text": "9.1 DNS Cache：加速查詢"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前面已經介紹過 TTL。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS Cache 就像公司櫃檯常用的聯絡資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果很多人都詢問同一個電話號碼，櫃檯不必每次重新詢問總公司。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這裡有一個資安判斷問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你發現某個共享 DNS Resolver 的快取裡面有："
+        },
+        {
+          "kind": "paragraph",
+          "text": "www.example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「一定有某位員工造訪過這個網站」嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不可以。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 DNS 查詢可能來自："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "不同的使用者。",
+            "系統背景服務。",
+            "自動化程式。",
+            "解析器的預先查詢或其他機制。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且 DNS 查詢本身不代表完成了網站瀏覽。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，DNS 快取不能直接當作特定使用者的瀏覽紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "9.2 DNSSEC：防止 DNS 資料遭到未授權竄改"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC 全名："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Domain Name System Security Extensions。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主要提供兩種安全能力："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 資料來源驗證（Data Origin Authentication）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 資料完整性（Data Integrity）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "白話文："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我不只想知道 DNS 回了什麼，還想驗證這些資料是否來自正確的權威來源，以及是否遭到竄改。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC 使用數位簽章及信任鏈等機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "權威 DNS\n    │\n    │ 提供經簽署的 DNS 資料\n    ▼\n驗證型解析器\n    │\n    │ 驗證簽章與信任鏈\n    ▼\n決定是否接受資料"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 DNSSEC 不會自動加密 DNS 查詢內容，也不能證明網站安全。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RFC 4033 明確將 DNSSEC 的核心保護定位在資料來源驗證與完整性，而非保密性。[RFC Editor](https://www.rfc-editor.org/rfc/rfc4033.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-3",
+          "text": "dig +dnssec 是不是就完成驗證？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "dig +dnssec example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主要是要求與 DNSSEC 有關的資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不代表 dig 已經完整驗證 DNSSEC 信任鏈。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若需要實際驗證，可以進一步學習 BIND 的 delv 工具，或使用具備 DNSSEC 驗證能力的解析器。[BIND 9 Documentation](https://bind9.readthedocs.io/en/stable/manpages.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-4",
+          "text": "9.3 DNS over HTTPS：保護查詢傳輸"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DoH 全名："
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS over HTTPS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以想像："
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳統 DNS 查詢就像使用沒有加密保護的通訊方式傳送問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DoH 則是在用戶端與 DoH 解析服務之間，透過 HTTPS 傳送 DNS 訊息。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "概念如下："
+        },
+        {
+          "kind": "code",
+          "text": "你的電腦\n    │\n    │ HTTPS 加密\n    ▼\nDoH Resolver\n    │\n    │ 依其設定處理 DNS 查詢\n    ▼\nDNS 系統"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這提供了特定傳輸鏈路上的保密性與完整性保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但仍然有幾個限制："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "DoH 解析服務本身可以處理並得知查詢內容。",
+            "加密不代表 DNS 資料一定正確。",
+            "DoH 不代表網站本身安全。",
+            "DoH 不保證整條後續 DNS 解析鏈路都受到相同的加密保護。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-5",
+          "text": "9.4 三種機制比較"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "機制",
+            "主要目的",
+            "不能直接保證"
+          ],
+          "rows": [
+            [
+              "DNS Cache",
+              "減少重複解析、改善效能",
+              "資料一定即時、主機正常"
+            ],
+            [
+              "DNSSEC",
+              "驗證 DNS 資料來源及完整性",
+              "查詢內容保密、網站安全"
+            ],
+            [
+              "DoH／DoT",
+              "保護特定 DNS 傳輸鏈路",
+              "DNS 資料本身一定可信"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以這樣記："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Cache 管效率，DNSSEC 管資料可信度，DoH／DoT 管傳輸保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三者可以互相補充，但不能彼此取代。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "第十章｜防守不是讓 DNS 永遠不回答，而是限制不必要的暴露"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這章開始從防守者的角度思考。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是公司的資安管理員。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你發現外部使用者可以查詢公司的 DNS 紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一個想法可能是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「既然 DNS 會暴露資訊，是不是直接把 DNS 封鎖就好？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "答案通常不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為公開網站需要提供必要的 DNS 資料，才能讓正常使用者找到服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，真正要管理的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "哪些 DNS 資料應該公開、哪些功能應該受到限制，以及哪些來源有權限使用特定功能。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-1",
+          "text": "10.1 檢查不必要的公開 DNS 紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，公司 DNS 存在："
+        },
+        {
+          "kind": "code",
+          "text": "old-vpn.example.test\nold-dev.example.test\ntest-admin.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果這些名稱已經沒有用途，就應該檢查是否仍有必要保留。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "特別是曾經指向第三方服務、現在卻沒有正確解除配置的紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某些情況下，失效的 DNS 指向可能造成 Subdomain Takeover（子網域接管）的風險。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，存在一筆失效 CNAME 並不自動代表能被接管；還需要看目標服務是否允許其他人重新取得對應的資源名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-2",
+          "text": "10.2 限制 AXFR 區域傳送"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先回想第八章："
+        },
+        {
+          "kind": "paragraph",
+          "text": "AXFR 讓授權的 DNS 伺服器同步區域資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，防守重點是："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "明確指定哪些來源可以使用區域傳送。",
+            "避免讓不受信任的來源取得不必要的區域副本。",
+            "依需求使用 TSIG 等驗證機制。",
+            "保留相關日誌，確認實際政策是否生效。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "TSIG（Transaction Signature）是以共享金鑰為基礎的 DNS 訊息驗證機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可以提供訊息驗證及完整性保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 TSIG 本身不會加密 DNS 區域內容。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-3",
+          "text": "10.3 限制遞迴解析服務"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一點也很重要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 DNS 服務區分成兩種功能："
+        },
+        {
+          "kind": "paragraph",
+          "text": "公開權威 DNS："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我負責回答某個區域的正式 DNS 資料。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "遞迴解析 DNS："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我幫使用者尋找其他網域的 DNS 資料。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩種功能不一定需要對相同的使用者開放。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "公司對外權威 DNS\n       │\n       ├── 對外回答必要的權威紀錄\n       │\n       └── 不替任意外部使用者進行遞迴解析"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果一台 DNS 伺服器允許網際網路上任何人使用遞迴服務，就可能成為 Open Resolver（開放式遞迴解析器）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "沒有適當防護時，這類服務可能遭到濫用，例如 DNS 放大反射攻擊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，公開權威查詢與遞迴服務應分別設計存取控制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-4",
+          "text": "10.4 為什麼不同人查同一個網域，會得到不同 IP？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設："
+        },
+        {
+          "kind": "paragraph",
+          "text": "台灣使用者查詢："
+        },
+        {
+          "kind": "code",
+          "text": "www.example.com → IP A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "美國使用者查詢："
+        },
+        {
+          "kind": "code",
+          "text": "www.example.com → IP B"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是不是表示其中有人被 DNS 攻擊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能原因包括："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "CDN 的地理位置調度。",
+            "GeoDNS（依地理位置提供不同 DNS 答案）。",
+            "Split DNS（不同環境使用不同 DNS 視圖）。",
+            "快取時間不同。",
+            "不同解析器採取不同處理策略。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，調查 DNS 結果時必須記錄查詢條件。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-5",
+          "text": "建議使用的 DNS 調查紀錄表"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "記錄內容"
+          ],
+          "rows": [
+            [
+              "查詢時間",
+              "日期、時間、時區"
+            ],
+            [
+              "查詢來源",
+              "IP、網路位置、授權範圍"
+            ],
+            [
+              "DNS 端點",
+              "查詢的解析器或權威伺服器"
+            ],
+            [
+              "Query Name",
+              "查詢的網域名稱"
+            ],
+            [
+              "Query Type",
+              "A、AAAA、MX 等"
+            ],
+            [
+              "Status",
+              "NOERROR、NXDOMAIN 等"
+            ],
+            [
+              "Flags",
+              "qr、rd、ra、aa 等"
+            ],
+            [
+              "Answer",
+              "完整回覆內容"
+            ],
+            [
+              "TTL",
+              "回覆的快取時間"
+            ],
+            [
+              "結論",
+              "這些資料能支持什麼判斷"
+            ],
+            [
+              "限制",
+              "還有哪些事項沒有證實"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果目的是正式資安檢測，保留原始輸出會比只記錄最後結論更有價值。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "第十一章｜今天先記住這一條線"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這章是整堂課的總結。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我建議把 M04-02 濃縮成一個判斷模型。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-1",
+          "text": "DNS 列舉的六個問題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當你看到一筆 DNS 查詢結果時，依序問自己："
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，我問的是哪個 DNS 伺服器？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.1.1.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，我問的是哪個名稱？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "www.example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，我問的是哪一種紀錄？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四，對方的回覆狀態是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "NOERROR"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第五，對方實際回覆了什麼資料？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "一筆 IPv4 位址紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第六，這些資料還不能證明什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能證明主機在線、網站正常、憑證有效或具有存取授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這六個問題，是從 DNS 工具輸出走向專業資安判斷的基礎。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-12",
+          "text": "第十二部分｜概念 Q&A 與整合實作"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是教學常見問題，並提供一個練習情境；與學員實際討論分開呈現。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-12-1",
+          "text": "Q1：DNS Enumeration 和 Port Scanning 差在哪裡？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS Enumeration 主要是查詢名稱、位址及服務設定等資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port Scanning 則是在授權範圍內觀察目標網路 Port 的回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "DNS Enumeration\n      │\n      ▼\nwww.example.com\n      │\n      ▼\n192.0.2.10\n\nPort Scanning\n      │\n      ▼\n192.0.2.10:443\n      │\n      ▼\n觀察 TCP 回應"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩個工作互相關聯，但回答的是不同問題。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-12-2",
+          "text": "Q2：DNS 查詢是否屬於被動偵察？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你閱讀第三方已經蒐集的公開資料，可能屬於被動偵察。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但如果你主動向 DNS 服務發送查詢，便已經與該服務互動。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，不能因為 DNS 資料公開，就把所有 DNS 列舉都稱為被動偵察。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且，能查詢公開 DNS，不代表你自動取得對相關主機進行其他安全測試的授權。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-12-3",
+          "text": "Q3：我可以直接用 DNS 資料判斷系統漏洞嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通常不行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 可以揭露配置線索，但真正的弱點判斷需要其他證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "一筆 CNAME 指向已停止使用的外部服務，可能值得檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要確認是否構成可被利用的子網域接管風險，還必須確認外部服務的資源註冊與所有權控制機制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-12-4",
+          "text": "Ubuntu 綜合練習"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以在自己的 Ubuntu 上執行以下基本查詢："
+        },
+        {
+          "kind": "code",
+          "text": "# 1. 確認系統目前的 DNS 設定\nresolvectl status\n\n# 2. 查詢示例網域的 IPv4\ndig example.com A\n\n# 3. 查詢 IPv6\ndig example.com AAAA\n\n# 4. 查詢郵件設定\ndig example.com MX\n\n# 5. 查詢權威名稱伺服器\ndig example.com NS\n\n# 6. 指定公共遞迴解析器\ndig @1.1.1.1 example.com A\n\n# 7. 使用 TCP 進行一般 DNS 查詢\ndig +tcp example.com A\n\n# 8. 使用精簡模式\ndig +short example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 example.com 是 IANA 保留的示例網域。上述操作會產生真實 DNS 查詢，但不涉及 Port Scanning 或 AXFR。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以比較："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "不同 DNS 端點回覆的位址是否一致。",
+            "TTL 有沒有差異。",
+            "dig 與 dig +short 的資訊量有何不同。",
+            "UDP 和 TCP 查詢結果有沒有差異。",
+            "SERVER 欄位是否因指定解析器而改變。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "練習重點不是找出最多 IP，而是能夠正確描述每筆回覆的證據意義與限制。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-13",
+          "text": "全課總結"
+        },
+        {
+          "kind": "paragraph",
+          "text": "M04-02 最重要的五個觀念："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. DNS 是資料查詢系統，不是服務健康檢查工具。 查到 IP 不代表網站正常。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. DNS 有不同角色與紀錄類型。 Recursive Resolver、Authoritative DNS、A、AAAA、MX、NS 等都要分清楚。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. DNS 回覆狀態不能過度解讀。 NOERROR、NXDOMAIN、SERVFAIL、REFUSED、Timeout 代表不同事情。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. ANY 與 AXFR 不是同一種工作。 AXFR 是區域資料傳送，需要明確的授權與存取控制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. DNSSEC、DoH、Cache 解決不同問題。 分別關注資料驗證、傳輸保護及查詢效能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中最值得帶到其他 CEH 課程的核心原則是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "工具觀察到的資料，不等於所有尚未驗證的結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "未來學習 FTP、SMTP、SMB、SNMP、LDAP 等服務列舉時，都應該使用相同的證據判讀方式。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-13-1",
+          "text": "理解檢驗｜一個工作情境"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你正在進行經授權的公司 DNS 安全檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "得到以下合成結果："
+        },
+        {
+          "kind": "code",
+          "text": "# 查詢一\nwww.lab.example.test\nA → 192.0.2.10\nA → 192.0.2.11\n\n# 查詢二\nwww.lab.example.test\nAAAA → NOERROR\nANSWER: 0\n\n# 查詢三\nlab.example.test\nMX → 10 mail.lab.example.test\n\n# 查詢四\nlab.example.test\nAXFR → REFUSED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請回答下面四個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題一： 第一個查詢回傳兩個 IPv4 位址，是否代表公司有兩台正常運作的網站伺服器？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題二： 第二個查詢的 NOERROR 搭配空 ANSWER，可以得出哪些結論？還缺少哪些資訊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題三： 第三個查詢取得 MX 紀錄，是否代表郵件服務已經確定正常？如果要進一步確認，你會如何規劃授權範圍內的驗證？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題四： AXFR 回覆 REFUSED，能否直接判斷 DNS 設定安全？如果你是公司的資安管理員，還會檢查哪些項目？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請先依回覆狀態、實際資料與待驗步驟說明四題理由，再連結回 CEH M03 網路掃描與 M04 列舉的技術原理。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-dns-evidence",
+          "summary": "參考答案：四題的證據界線",
+          "paragraphs": [
+            "問題一：兩筆 A 紀錄只表示這次 DNS 回覆提供兩個 IPv4 位址；可能是 CDN、負載平衡或已過時的配置，不能推論兩台實體主機或兩個正常網站。依授權逐層確認連線、TLS 與 HTTP 功能。",
+            "問題二：目前只能說這次沒有取得 AAAA 答案；NODATA、轉介及精簡不存在證明等情境須搭配 AUTHORITY、DNSSEC 資料、別名鏈、回覆端點及查詢條件判讀。不能由此斷言名稱存在或整個網域沒有 IPv6。",
+            "問題三：MX 提供郵件路由及優先值，不證明郵件服務健康。先確認測試範圍、來源及允許的操作，再解析 MX 目標，查核設定，依授權驗證相應的郵件協定及接收功能；不得因 MX 公開而自行寄送測試郵件或測試轉送。",
+            "問題四：REFUSED 只證明本次端點對本次來源及要求回覆拒絕。還須檢查各權威端點、DNS 視圖、允許來源、傳送存取控制與 TSIG、遞迴權限、不必要公開紀錄及日誌；一次拒絕不能代表整體 DNS 安全。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Read DNS names, records and response status; verify services, identity and authorization in layers, and distinguish cache, DNSSEC and encrypted transport.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "DNS tells you which data a name maps to. It does not establish that a host is present, its services work, or you have permission to access it."
+        },
+        {
+          "kind": "heading",
+          "id": "orientation",
+          "text": "Orientation: where DNS fits in a security investigation"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Recall the preceding CEH topics."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "CEH module",
+            "Main task",
+            "Plain-language meaning"
+          ],
+          "rows": [
+            [
+              "M02 Footprinting",
+              "Reconnaissance",
+              "Learn what public information may be available about a target"
+            ],
+            [
+              "M03 Network scanning",
+              "Scanning",
+              "Check which hosts, ports and services may be present"
+            ],
+            [
+              "M04 Enumeration",
+              "Enumeration",
+              "Ask a particular service for more specific information"
+            ],
+            [
+              "M05 Vulnerability analysis",
+              "Vulnerability Analysis",
+              "Assess whether the discovered systems have vulnerabilities"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are your company's security engineer. You know its website name, www.example.com, but do not know the equipment behind it, its mail provider, or its DNS servers. DNS queries can supply some of those clues."
+        },
+        {
+          "kind": "code",
+          "text": "Known domain name\n  ↓ Query DNS records\n  ├─ A / AAAA → possible IP addresses\n  ├─ MX       → inbound mail configuration\n  ├─ NS       → authoritative name servers\n  ├─ CNAME    → aliases between names\n  └─ TXT      → domain policies and verification data\n  ↓ Organize possible system and service clues\n  ↓ Verify further within the authorized scope\n  ├─ Is the host reachable?\n  ├─ Is the port open?\n  ├─ Is the TLS certificate valid?\n  ├─ Does HTTP work?\n  └─ Is there a security vulnerability?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS queries collect one layer of evidence. They do not complete a security assessment."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "Chapter 1 | DNS is an address book, not a website health check"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-1",
+          "text": "1.1 What is DNS?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS stands for Domain Name System. Think of a telephone directory: instead of asking for a person's telephone number, a computer asks which IP address corresponds to a website name."
+        },
+        {
+          "kind": "code",
+          "text": "You enter www.example.com\n  ↓ DNS lookup\nAn address is returned, for example 93.184.215.14"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This address only illustrates name resolution; it is not a claim about the site's current address. A domain name is a memorable label, an IP address is used for network communication, and DNS supplies the associated data. It also supplies mail, name-server and other service configuration, beyond name-to-IP mapping."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-2",
+          "text": "1.2 Why does finding an IP not prove the website works?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose DNS returns the following synthetic records:"
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test → 192.0.2.10\nwww.example.test → 192.0.2.11"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It is tempting to conclude that there are two functioning website servers. The observation establishes only that this query returned two IPv4 records. It does not establish that either address is reachable, serves web pages, or is healthy; nor that two physical computers exist or that these are the company's origin servers."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-3",
+          "text": "Example: Cloudflare CDN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A company may protect its site with Cloudflare:"
+        },
+        {
+          "kind": "code",
+          "text": "User queries www.company.com\n  ↓ DNS returns a Cloudflare address\nCloudflare edge node\n  ↓ Proxies a request according to configuration\nCompany origin server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The address can identify a CDN edge rather than the machine storing the site. Anycast can let users in different locations reach different nodes through the same IP address. Two DNS addresses therefore do not mean two physical hosts."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-4",
+          "text": "1.3 How does this connect to M03 scanning?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Connect this to M03-03 Port Scanning. Consider four separate observations:"
+        },
+        {
+          "kind": "code",
+          "text": "DNS:   www.example.test → 192.0.2.10\nTCP:   192.0.2.10:443 responds to a connection attempt\nTLS:   handshake succeeds\nHTTP:  GET / returns HTTP 200"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Observation",
+            "Supported judgment",
+            "Unsupported conclusion"
+          ],
+          "rows": [
+            [
+              "An A record is returned",
+              "DNS supplied an IPv4 address",
+              "The host works"
+            ],
+            [
+              "TCP 443 connects",
+              "A TCP connection can be established to that port",
+              "The service must be HTTPS"
+            ],
+            [
+              "TLS handshake succeeds",
+              "A TLS channel can be established",
+              "Every web function works"
+            ],
+            [
+              "HTTP 200",
+              "One HTTP request received a success status",
+              "The entire website has no problems"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each layer supplies different evidence. Keep those layers separate in security investigations."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "Chapter 2 | The server you ask may not maintain the answer"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-1",
+          "text": "2.1 Three important DNS roles"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When looking up the address of www.example.com, distinguish three roles."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Role 1: Stub Resolver"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the client-side lookup component. When Firefox needs a name resolved through system DNS, the request normally goes through the computer's resolver service. A browser configured for its own DNS over HTTPS may take another path rather than use system DNS."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Role 2: Recursive Resolver"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This service finds answers for clients. Think of a company reception desk: it answers from information it already has, or asks other departments and relays the result. Public recursive services include Cloudflare DNS at 1.1.1.1 and Google Public DNS at 8.8.8.8."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Role 3: Authoritative Name Server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This role resembles the official records office. It maintains authoritative data for a DNS zone, for example:"
+        },
+        {
+          "kind": "code",
+          "text": "example.com zone, illustrative only:\nwww.example.com    A     192.0.2.10\nmail.example.com   A     192.0.2.20\nexample.com        MX    10 mail.example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authoritative servers provide official DNS configuration, but do not establish the health of the services named in it."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 How does a lookup find its answer?"
+        },
+        {
+          "kind": "code",
+          "text": "Your computer / browser asks for www.example.com\n  ↓ Recursive Resolver\n  ├─ Suitable cache entry → reply immediately\n  └─ Cache miss\n       → Root DNS: where is .com managed?\n       → .com TLD DNS: where is example.com managed?\n       → example.com authoritative DNS: requested record\n       → Recursive Resolver\n       → Your computer"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a typical conceptual model. A resolver may already have cached intermediate information or use a forwarder, so it need not start at the root for every query."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "2.3 Domain versus zone"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A domain is part of the DNS namespace:"
+        },
+        {
+          "kind": "code",
+          "text": "example.com\n  ├─ www.example.com\n  ├─ mail.example.com\n  └─ research.example.com"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A zone is a set of DNS data managed by particular authoritative servers. Headquarters might manage example.com while delegating research.example.com to a research department with its own authoritative servers. Names in the same hierarchy can therefore belong to different zones. Obtaining data for one example.com zone does not obtain all of the company's subdomain data."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "Chapter 3 | What enumeration asks: common records"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A DNS data entry is a Resource Record, or RR. Records are like different address-book fields: name, telephone, email, department and job title carry different meanings."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "3.1 A: IPv4 addresses"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A maps a domain name to an IPv4 address:"
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test → 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The question is: which IPv4 addresses are configured for this name?"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 AAAA: IPv6 addresses"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AAAA maps a domain name to an IPv6 address:"
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test → 2001:db8::10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2001:db8::/32 is reserved for documentation. AAAA is the formal record type name; it does not mean running a command four times. Remember A → IPv4 and AAAA → IPv6. A missing AAAA answer does not establish that the entire domain has no IPv6-related configuration."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 CNAME: an alias between names"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CNAME means Canonical Name and describes one name as an alias of another:"
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test\n  ↓ CNAME\nweb.example.test\n  ↓ A\n192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When publishing a website, CNAME can associate www.example.test with the service's canonical name. It is different from an HTTP 301 or 302 redirect: CNAME operates during DNS resolution; an HTTP redirect tells a browser to visit another URL after an HTTP request has been sent."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "3.4 PTR: reverse DNS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A is a name-to-address lookup. PTR, or Pointer Record, commonly supports the reverse direction:"
+        },
+        {
+          "kind": "code",
+          "text": "192.0.2.10\n  ↓ Reverse DNS lookup\nweb.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A returned PTR name does not establish that the host belongs to the organization suggested by that name. Reverse data is normally configured by the party managing the relevant address space. Even matching forward and reverse lookups are insufficient on their own for identity authentication."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-5",
+          "text": "3.5 NS: who answers authoritatively for the zone?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NS means Name Server and identifies authoritative name servers:"
+        },
+        {
+          "kind": "code",
+          "text": "example.test NS ns1.example.test\nexample.test NS ns2.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This zone uses ns1 and ns2 as authoritative servers. These are different from the recursive resolver configured on your computer."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-6",
+          "text": "3.6 SOA: zone administration data"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SOA, Start of Authority, includes the primary authoritative server name, administrative contact data, zone serial number and synchronization timers. Think of a zone's management/version sheet. Its serial helps compare versions; it is not a host's boot time, server uptime, or the website's last update time."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-7",
+          "text": "3.7 MX: where does incoming mail go?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "MX means Mail Exchanger:"
+        },
+        {
+          "kind": "code",
+          "text": "example.test MX 10 mail1.example.test\nexample.test MX 20 mail2.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are two mail-exchanger records. A smaller preference value is preferred: 10 before 20. They are not percentages of mail. Nor does this prove that mail2 will successfully receive all mail when mail1 fails. MX is a routing configuration clue, not a mail-system health report."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-8",
+          "text": "3.8 TXT: domain text settings"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TXT can hold text for domain-control verification, SPF sender-authorization policy, DKIM public signing keys, and DMARC authentication/handling policy. For example:"
+        },
+        {
+          "kind": "code",
+          "text": "example.test TXT \"v=spf1 -all\""
+        },
+        {
+          "kind": "paragraph",
+          "text": "v=spf1 identifies SPF. -all declares sources not authorized by earlier mechanisms to fail SPF; with no earlier authorizing mechanisms, this policy authorizes no IP to send mail that passes SPF using this domain. Seeing a TXT record does not establish that the full mail-protection setup is correct. TXT data is publicly queryable and must not contain passwords or secret keys."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-9",
+          "text": "3.9 SRV: a service entry point"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SRV, Service Record, describes a target host, port, priority and weight. This is a synthetic LDAP example:"
+        },
+        {
+          "kind": "code",
+          "text": "_ldap._tcp.example.test.  IN SRV 0 5 389 ldap01.example.test."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Field",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "_ldap",
+              "LDAP service name"
+            ],
+            [
+              "_tcp",
+              "TCP transport"
+            ],
+            [
+              "0",
+              "Priority"
+            ],
+            [
+              "5",
+              "Weight"
+            ],
+            [
+              "389",
+              "Service port"
+            ],
+            [
+              "ldap01.example.test",
+              "Target hostname"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "M03-03 introduced port 389 as commonly used for LDAP. An SRV record now supplies a possible LDAP endpoint. You can report that DNS provides possible LDAP entry-point data; you cannot conclude that LDAP is running or that anyone can log in."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-10",
+          "text": "Chapter 3 reference table"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Record",
+            "Main purpose",
+            "Address-book analogy"
+          ],
+          "rows": [
+            [
+              "A",
+              "IPv4 address",
+              "Telephone number"
+            ],
+            [
+              "AAAA",
+              "IPv6 address",
+              "Another number format"
+            ],
+            [
+              "CNAME",
+              "Name alias",
+              "Another name for a contact"
+            ],
+            [
+              "PTR",
+              "Reverse name lookup",
+              "Registered name for a number"
+            ],
+            [
+              "NS",
+              "Authoritative servers",
+              "Records-management office"
+            ],
+            [
+              "SOA",
+              "Zone management",
+              "Version and management sheet"
+            ],
+            [
+              "MX",
+              "Incoming-mail routing",
+              "Company mailroom"
+            ],
+            [
+              "TXT",
+              "Text settings and policy",
+              "Public noticeboard"
+            ],
+            [
+              "SRV",
+              "Service entry point",
+              "Service desk's location and extension"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Start with A, AAAA, NS and MX, then extend to the other types rather than memorizing everything at once."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-11",
+          "text": "DNS enumeration overview diagram"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The diagram joins the first three chapters: lookup roles, record purposes, and the boundary between a DNS reply and evidence requiring further verification."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/dns-overview-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "DNS enumeration: from names to verifiable evidence",
+            "description": "Arrows show lookup roles or evidence-reading order, not guaranteed authoritative contact or permission. Confirm authorization before every stage.",
+            "items": [
+              {
+                "title": "Your computer | Stub Resolver",
+                "body": "Ask: what are the A records of www.example.test?"
+              },
+              {
+                "title": "Recursive Resolver",
+                "body": "May answer from cache; otherwise consult root, TLD and authoritative servers as needed."
+              },
+              {
+                "title": "Authoritative DNS",
+                "body": "Provides authoritative records for its managed zone."
+              },
+              {
+                "title": "A / AAAA",
+                "body": "IPv4 / IPv6 addresses"
+              },
+              {
+                "title": "CNAME / PTR",
+                "body": "Aliases / reverse lookup"
+              },
+              {
+                "title": "NS / SOA",
+                "body": "Authority / zone management"
+              },
+              {
+                "title": "MX",
+                "body": "Incoming-mail routing"
+              },
+              {
+                "title": "TXT / SRV",
+                "body": "Text policies / service endpoints"
+              },
+              {
+                "title": "DNS reply",
+                "body": "Configuration data obtained"
+              },
+              {
+                "title": "TCP / UDP",
+                "body": "Check relevant network responses"
+              },
+              {
+                "title": "TLS / HTTP",
+                "body": "Check protocol and function"
+              },
+              {
+                "title": "Identity and authorization",
+                "body": "Check identity and permitted operations; authorization is required before every stage."
+              },
+              {
+                "title": "Query record",
+                "body": "Source / time → DNS endpoint → name / type → status / flags → answer / TTL → remaining verification"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "Chapter 4 | Read one dig command first"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "4.1 What is dig?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "dig stands for Domain Information Groper. It is a DNS query tool: specify a DNS server and ask for a particular type of data about a name. It does not check every website function."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 Break down a command"
+        },
+        {
+          "kind": "code",
+          "text": "dig @192.0.2.53 www.example.test A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "192.0.2.53 is a documentation address, not a usable public DNS service."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Part",
+            "Meaning",
+            "Plain-language reading"
+          ],
+          "rows": [
+            [
+              "dig",
+              "DNS query tool",
+              "I want to query DNS"
+            ],
+            [
+              "@192.0.2.53",
+              "Selected DNS server",
+              "Ask this server"
+            ],
+            [
+              "www.example.test",
+              "Query name",
+              "Look up this name"
+            ],
+            [
+              "A",
+              "Record type",
+              "Ask for IPv4 data"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read the whole line as: ask DNS server 192.0.2.53 for the A records of www.example.test."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "Why the @ prefix?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "@ is dig's syntax for selecting a server:"
+        },
+        {
+          "kind": "code",
+          "text": "dig @1.1.1.1 example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This asks Cloudflare's public recursive service for example.com's IPv4 records. Without a selected server:"
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "dig normally chooses an endpoint from system resolver configuration. Different computers can therefore produce different answers. [BIND 9 documentation](https://bind9.readthedocs.io/en/stable/manpages.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.3 Does DNS use UDP or TCP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Recall TCP and UDP from M03-01. Conventional DNS uses both UDP port 53 and TCP port 53. Ordinary queries often use UDP, but TCP also carries ordinary queries, for example when a reply is too large or the tool explicitly selects TCP. AXFR uses TCP."
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS on TCP 53 is not automatically malicious, and blocking all TCP 53 because DNS supposedly needs only UDP is unsound. Base firewall policy on the server role and actual requirements. DoH and DoT are different transports, commonly HTTPS port 443 and TCP port 853 respectively; distinguish them from conventional port-53 DNS."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-5",
+          "text": "4.4 Practice on Ubuntu"
+        },
+        {
+          "kind": "paragraph",
+          "text": "On Ubuntu 24.04, install dig if needed:"
+        },
+        {
+          "kind": "code",
+          "text": "sudo apt update\n\nsudo apt install dnsutils"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Then try:"
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is an ordinary public DNS query to an IANA-reserved example domain. Query the types individually:"
+        },
+        {
+          "kind": "code",
+          "text": "# IPv4\ndig example.com A\n\n# IPv6\ndig example.com AAAA\n\n# Incoming mail configuration\ndig example.com MX\n\n# Authoritative DNS\ndig example.com NS\n\n# Text records\ndig example.com TXT"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Focus on the question you asked and what the reply establishes, rather than how many answers you found."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "Chapter 5 | Separate the answer from the answering server"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "5.1 Read a dig response"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider this synthetic response for an authorized lab:"
+        },
+        {
+          "kind": "code",
+          "text": ";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345\n;; flags: qr rd ra; QUERY: 1, ANSWER: 1\n\n;; QUESTION SECTION:\n;www.lab.example.test. IN A\n\n;; ANSWER SECTION:\nwww.lab.example.test. 120 IN A 192.0.2.50\n\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read it in four parts."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-2",
+          "text": "First part: HEADER"
+        },
+        {
+          "kind": "paragraph",
+          "text": "status: NOERROR means the reply's DNS status does not report a DNS error. It does not establish a working website, all desired records, or an online host. DNS response status and application health are separate."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-3",
+          "text": "Second part: QUESTION"
+        },
+        {
+          "kind": "paragraph",
+          "text": "www.lab.example.test. IN A is the question: A records for that name. IN is the Internet class; A requests IPv4 address data. The final dot denotes the DNS root ending a complete name. For example, www.example.com. is a Fully Qualified Domain Name (FQDN)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-4",
+          "text": "Third part: ANSWER"
+        },
+        {
+          "kind": "paragraph",
+          "text": "www.lab.example.test. 120 IN A 192.0.2.50 supplies one IPv4 record. 192.0.2.50 is address data; 120 is its TTL."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-5",
+          "text": "Fourth part: SERVER"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SERVER: 192.0.2.53#53 (UDP) identifies the endpoint that answered this DNS query, not the web server you want to visit."
+        },
+        {
+          "kind": "code",
+          "text": "DNS server 192.0.2.53\n  ← I ask it for www.lab.example.test's address\n  → It answers with 192.0.2.50"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Field",
+            "Address",
+            "Role"
+          ],
+          "rows": [
+            [
+              "SERVER",
+              "192.0.2.53",
+              "DNS endpoint answering this query"
+            ],
+            [
+              "ANSWER",
+              "192.0.2.50",
+              "Returned IPv4 address data"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The addresses could coincide in a real deployment, but their roles still differ."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-6",
+          "text": "5.2 What is TTL?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TTL means Time To Live: how long this DNS data may be cached. For example:"
+        },
+        {
+          "kind": "code",
+          "text": "www.example.test. 300 IN A 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The TTL is 300 seconds. A recursive resolver may answer subsequent queries from its valid cache rather than contact authoritative servers every time."
+        },
+        {
+          "kind": "code",
+          "text": "00:00  Reply received, TTL = 300\n01:00  Cache may remain, about 240 seconds left\n03:00  Cache may remain, about 120 seconds left\n05:00  Original cache lifetime expires"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is simplified. Multiple caches, prefetching and Serve-Stale can affect real behavior. TTL is not host uptime and does not guarantee worldwide DNS agreement after that many seconds."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-7",
+          "text": "5.3 What do qr, rd, ra and aa mean?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are DNS message flags."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Flag",
+            "Full name",
+            "Plain-language meaning"
+          ],
+          "rows": [
+            [
+              "qr",
+              "Query Response",
+              "This message is a response"
+            ],
+            [
+              "rd",
+              "Recursion Desired",
+              "The client requested recursion"
+            ],
+            [
+              "ra",
+              "Recursion Available",
+              "The responder advertises recursive service"
+            ],
+            [
+              "aa",
+              "Authoritative Answer",
+              "The reply claims authority"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Distinguish rd from ra using the reception-desk analogy: rd says, “Please ask another department if necessary”; ra says, “We provide that lookup service.” ra does not establish that other servers were actually contacted for this query; a cache may have supplied the answer. aa is an authority flag, not cryptographic proof of authenticity."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-8",
+          "text": "5.4 Why might Ubuntu show 127.0.0.53?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You might run:"
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "and see:"
+        },
+        {
+          "kind": "code",
+          "text": "SERVER: 127.0.0.53#53"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This can be normal on Ubuntu using systemd-resolved with its local stub enabled. 127.0.0.53 is a local DNS endpoint:"
+        },
+        {
+          "kind": "code",
+          "text": "dig\n  ↓ 127.0.0.53: local systemd-resolved\n  ↓ Configured upstream DNS\n  ↓ DNS reply"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not mean the actual upstream DNS server is your own computer. Inspect current DNS/interface settings with:"
+        },
+        {
+          "kind": "code",
+          "text": "resolvectl status"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "Chapter 6 | Five different reasons for no answer"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not receiving an answer does not mean DNS has established that the name is absent. Asking a company whether it employs a person can produce very different replies."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "6.1 NOERROR with an empty answer"
+        },
+        {
+          "kind": "code",
+          "text": "status: NOERROR\n\nANSWER: 0"
+        },
+        {
+          "kind": "paragraph",
+          "text": "One common interpretation is NODATA: no record of the requested type was obtained. For example:"
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com AAAA"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An absent AAAA answer may indicate no AAAA data for that name, but examine the other response sections before concluding this. NODATA describes a class of negative DNS answers; it is not a separate DNS status code."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-2",
+          "text": "6.2 NXDOMAIN: nonexistent name"
+        },
+        {
+          "kind": "code",
+          "text": "status: NXDOMAIN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The reply reports a name as nonexistent. In the company analogy, the official list does not contain that person's name. This does not mean the company is absent, it employs nobody else, or all related subdomains are absent. If a CNAME chain is involved, identify which name was reported nonexistent."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-3",
+          "text": "6.3 SERVFAIL: resolution failure"
+        },
+        {
+          "kind": "code",
+          "text": "status: SERVFAIL"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The server could not complete resolution. Possible causes include upstream trouble, DNSSEC validation failure, misconfiguration or other processing failures. A reception desk saying its lookup system is unavailable has not established that the person is absent."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-4",
+          "text": "6.4 REFUSED: processing denied"
+        },
+        {
+          "kind": "code",
+          "text": "status: REFUSED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The DNS server refuses the request. Access-control policy, an unauthorized query source, or a restricted function can cause it. A company refusing to release all employee records does not imply it has no records."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-5",
+          "text": "6.5 Timeout: waiting expired"
+        },
+        {
+          "kind": "code",
+          "text": ";; communications error: timed out"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No usable reply arrived during the wait. Packet loss, firewall filtering, an unresponsive service, endpoint trouble or routing problems may cause it. REFUSED is an explicit DNS refusal; a timeout provides no usable DNS response."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-6",
+          "text": "Five outcomes compared"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Outcome",
+            "Meaning",
+            "Does it prove the name is absent?"
+          ],
+          "rows": [
+            [
+              "NOERROR + empty ANSWER",
+              "No answer of the requested type obtained",
+              "Not from these two facts alone"
+            ],
+            [
+              "NXDOMAIN",
+              "Reply reports a relevant name absent",
+              "DNS evidence of absence, interpreted in context"
+            ],
+            [
+              "SERVFAIL",
+              "Resolution failed",
+              "No"
+            ],
+            [
+              "REFUSED",
+              "Server refused processing",
+              "No"
+            ],
+            [
+              "Timeout",
+              "No usable reply received",
+              "No"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-7",
+          "text": "Why does NOERROR + empty ANSWER not prove existence either?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RFC 9824 defines DNSSEC Compact Denial of Existence. In some circumstances an authoritative server can express a nonexistent name using NOERROR and an empty ANSWER. Read the other sections, DNSSEC data and query context rather than only status and answer count. [RFC 9824](https://www.rfc-editor.org/rfc/rfc9824.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You do not need to memorize this advanced detail immediately. The main CEH lesson is that different reasons for an absent answer lead to different investigation steps."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "Chapter 7 | Turn queries into clues without presenting guesses as facts"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Security investigation requires conclusions supported by tool output."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 What does one query establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In an authorized lab, suppose you query:"
+        },
+        {
+          "kind": "code",
+          "text": "dig @192.0.2.53 example.test MX"
+        },
+        {
+          "kind": "paragraph",
+          "text": "and receive this synthetic answer:"
+        },
+        {
+          "kind": "code",
+          "text": "example.test. 300 IN MX 10 mail.example.test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The reply configures mail.example.test as a mail exchanger for example.test with preference 10. It does not establish that mail is functioning, that the company owns the host, that anyone can relay mail through it, or that employee mailbox names have been found. MX is routing configuration. Resolve the mail hostname and verify relevant services within the authorized scope to learn more, connecting this task to M03 scanning."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 Do admin, vpn and dev names prove those services exist?"
+        },
+        {
+          "kind": "code",
+          "text": "admin.example.test\nvpn.example.test\ndev.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These suggest an administration interface, VPN, or development environment. Other explanations include obsolete names, moved services, reserved names, CDN or third-party destinations, or a name that does not match actual usage. Separate returned data from interpretation."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "7.3 Write an evidence-based DNS investigation record"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Category",
+            "Record"
+          ],
+          "rows": [
+            [
+              "Observation",
+              "DNS returned one A record for vpn.example.test"
+            ],
+            [
+              "Fact boundary",
+              "This query returned 192.0.2.30"
+            ],
+            [
+              "Inference",
+              "The name may relate to a VPN service"
+            ],
+            [
+              "Unconfirmed",
+              "Whether VPN is present, online, and who manages it"
+            ],
+            [
+              "Follow-up",
+              "Verify service and configuration within authorization"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This prevents unsupported conclusions. Preserve full dig output rather than only +short:"
+        },
+        {
+          "kind": "code",
+          "text": "dig example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This retains more query context. In contrast:"
+        },
+        {
+          "kind": "code",
+          "text": "dig +short example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "is useful for a quick answer but omits status, flags and endpoint details. It is insufficient on its own as a complete investigation record."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "Chapter 8 | ANY is not “everything”; AXFR does a different job"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-1",
+          "text": "8.1 What is ANY?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You know that dig example.com A asks for A records and dig example.com MX asks for MX. ANY is a DNS query type, but modern servers need not return all records even for the queried name. It does not enumerate every subdomain in a domain. Ask explicitly for MX when you need MX, and NS when you need NS; ANY does not mean “give me every DNS record in this company.”"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-2",
+          "text": "8.2 What is AXFR?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AXFR is Full Zone Transfer, distinct from an ordinary lookup. Suppose a company has a primary authoritative DNS server maintaining zone data and a secondary needing a copy. An authorized transfer can synchronize them:"
+        },
+        {
+          "kind": "code",
+          "text": "Primary DNS: example.test zone\n  www A; mail A; example MX; example NS; ...\n  ↓ AXFR over TCP\nSecondary DNS: stores a zone-data copy"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is an ordinary DNS administration function specified by [RFC 5936](https://www.rfc-editor.org/rfc/rfc5936.html)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-3",
+          "text": "8.3 Why can AXFR create a security risk?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If only the secondary should receive a copy, but configuration also allows untrusted external sources to obtain data that was not intended to be released wholesale, it may expose host naming patterns, mail hostnames, other service records and infrastructure/environment clues. That helps an attacker understand the network."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two judgments matter. Successful AXFR is not automatically a vulnerability: an authorized secondary may legitimately obtain the data. Also, the transfer covers one zone, not necessarily every organizational domain, delegated child zone or DNS view. Assess the requester's source, authorization policy and data scope alongside success or failure."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-4",
+          "text": "8.4 ANY versus AXFR"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Item",
+            "ANY",
+            "AXFR"
+          ],
+          "rows": [
+            [
+              "Type",
+              "DNS query type",
+              "Zone transfer"
+            ],
+            [
+              "Purpose",
+              "Ask for record sets at a name",
+              "Obtain a zone-data copy"
+            ],
+            [
+              "Lists every subdomain?",
+              "No",
+              "Only relevant data in the transferred zone"
+            ],
+            [
+              "Guaranteed all records?",
+              "No",
+              "A complete transfer should contain the data to be transferred for that zone"
+            ],
+            [
+              "Security focus",
+              "Query information and response policy",
+              "Authorization, data exposure and integrity"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "Chapter 9 | Cache, DNSSEC and encrypted transport protect different things"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Cache, DNSSEC and DoH address different problems. Read the comparison before treating one as a substitute for another."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/dns-security-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Three DNS mechanisms: efficiency, data authentication and transport privacy",
+            "description": "The three cards are parallel comparisons. Arrows below show a simplified lookup path. DoH/DoT protect a particular link; DNSSEC validates signatures and a trust chain, rather than encrypting the entire resolution path.",
+            "items": [
+              {
+                "title": "Cache",
+                "body": "Speeds repeated queries without always contacting authoritative DNS. Does not prove a particular user visited a website."
+              },
+              {
+                "title": "DNSSEC",
+                "body": "Authenticates signed DNS data and its integrity. Does not guarantee query confidentiality or website health."
+              },
+              {
+                "title": "Encrypted DNS: DoH / DoT",
+                "body": "Protects a particular client-to-resolver transport link. The resolver still learns and processes the query."
+              },
+              {
+                "title": "Your computer | Stub Resolver",
+                "body": "Sends a DNS query"
+              },
+              {
+                "title": "Recursive Resolver",
+                "body": "May validate DNSSEC or use cached data"
+              },
+              {
+                "title": "Authoritative DNS data",
+                "body": "Supplies records according to zone configuration"
+              },
+              {
+                "title": "Client ↔ resolver: DoH / DoT",
+                "body": "Encrypts this transport link; later links need not use the same encryption."
+              },
+              {
+                "title": "DNSSEC: signatures and trust chain",
+                "body": "Validates signed DNS data, not website functions."
+              },
+              {
+                "title": "Zone transfer",
+                "body": "Access control and TSIG protect authorization / integrity. TSIG does not encrypt zone contents."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-1",
+          "text": "9.1 DNS cache: speed up lookups"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Like a reception desk's frequently used contact list, a cache avoids repeatedly asking headquarters for the same number. If a shared resolver caches www.example.com, this does not establish that a particular employee visited that site. Queries can come from other users, background services, automation or resolver prefetching. A DNS lookup itself does not establish that a website visit completed. DNS cache is not a particular user's browsing history."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "9.2 DNSSEC: authenticate DNS data and detect modification"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC means Domain Name System Security Extensions. It provides data-origin authentication and data integrity: verify whether data comes from the proper DNS authority and has been altered. It uses digital signatures and a chain of trust:"
+        },
+        {
+          "kind": "code",
+          "text": "Authoritative DNS supplies signed data\n  ↓ Validating resolver checks signatures and trust chain\n  ↓ Decide whether to accept the data"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC does not automatically encrypt query contents or establish website safety. [RFC 4033](https://www.rfc-editor.org/rfc/rfc4033.html) defines authentication and integrity rather than confidentiality as the core protection."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-3",
+          "text": "Does dig +dnssec complete validation?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No. For example:"
+        },
+        {
+          "kind": "code",
+          "text": "dig +dnssec example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "principally requests DNSSEC-related data; it does not mean dig has validated the complete trust chain. Learn BIND's delv or use a DNSSEC-validating resolver when validation is required. [BIND 9 documentation](https://bind9.readthedocs.io/en/stable/manpages.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-4",
+          "text": "9.3 DNS over HTTPS: protect query transport"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DoH means DNS over HTTPS. Conventional unencrypted DNS sends a question without that transport encryption. DoH carries DNS messages over HTTPS between a client and a DoH service:"
+        },
+        {
+          "kind": "code",
+          "text": "Your computer\n  ↓ HTTPS encryption\nDoH resolver\n  ↓ Processes the query according to configuration\nDNS system"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It provides confidentiality and integrity for that transport link. The resolver still processes and can learn the queries; encryption does not establish correct DNS data or website safety, nor guarantee identical encryption on every subsequent resolution link."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-5",
+          "text": "9.4 Three mechanisms compared"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Mechanism",
+            "Main purpose",
+            "Does not directly guarantee"
+          ],
+          "rows": [
+            [
+              "Cache",
+              "Reduce repeated resolution and improve efficiency",
+              "Fresh data or a healthy host"
+            ],
+            [
+              "DNSSEC",
+              "Authenticate DNS data and integrity",
+              "Query confidentiality or website safety"
+            ],
+            [
+              "DoH / DoT",
+              "Protect a particular DNS transport link",
+              "Trustworthy DNS data itself"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Cache concerns efficiency; DNSSEC concerns data authentication; DoH/DoT concern transport protection. They complement each other rather than replace one another."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "Chapter 10 | Defend DNS by limiting unnecessary exposure"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A security administrator finding publicly queryable records should not simply block DNS: public services need necessary DNS data so users can find them. Decide which data should be public, which functions need restrictions, and which sources may use those functions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-1",
+          "text": "10.1 Review unnecessary public records"
+        },
+        {
+          "kind": "code",
+          "text": "old-vpn.example.test\nold-dev.example.test\ntest-admin.example.test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If these names no longer serve a purpose, review whether they should remain. Pay particular attention to records still pointing at former third-party services. Dangling DNS can create a subdomain-takeover risk, but an inactive CNAME alone does not establish exploitability: check whether someone else can claim the corresponding resource name at the provider."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-2",
+          "text": "10.2 Restrict AXFR"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AXFR synchronizes data for authorized DNS servers. Specify allowed transfer sources, prevent unnecessary copies reaching untrusted parties, use authentication such as TSIG where appropriate, and retain logs to check actual enforcement. TSIG, Transaction Signature, uses shared keys to authenticate DNS messages and protect integrity. It does not encrypt zone contents."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-3",
+          "text": "10.3 Restrict recursion"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Public authoritative DNS answers officially for its zones; recursive DNS finds data about other domains on behalf of clients. These functions need not be available to the same audience:"
+        },
+        {
+          "kind": "code",
+          "text": "Company public authoritative DNS\n  ├─ Answers necessary authoritative records externally\n  └─ Does not recurse for arbitrary external clients"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A server offering recursion to anyone on the Internet is an open resolver. Without suitable protections it may be abused, including in DNS reflection/amplification attacks. Design access controls for authoritative queries and recursion separately."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-4",
+          "text": "10.4 Why do different people receive different IP addresses?"
+        },
+        {
+          "kind": "code",
+          "text": "User in Taiwan: www.example.com → IP A\nUser in the US: www.example.com → IP B"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This does not necessarily imply an attack. CDN geographic steering, GeoDNS, split DNS views, different cache ages and different resolver strategies can explain it. Record query conditions when investigating."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-10-5",
+          "text": "Suggested DNS investigation record"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Field",
+            "Record"
+          ],
+          "rows": [
+            [
+              "Query time",
+              "Date, time and timezone"
+            ],
+            [
+              "Query source",
+              "IP, network location and authorized scope"
+            ],
+            [
+              "DNS endpoint",
+              "Queried resolver or authoritative server"
+            ],
+            [
+              "Query Name",
+              "Domain name queried"
+            ],
+            [
+              "Query Type",
+              "A, AAAA, MX, etc."
+            ],
+            [
+              "Status",
+              "NOERROR, NXDOMAIN, etc."
+            ],
+            [
+              "Flags",
+              "qr, rd, ra, aa, etc."
+            ],
+            [
+              "Answer",
+              "Complete response"
+            ],
+            [
+              "TTL",
+              "Returned cache lifetime"
+            ],
+            [
+              "Conclusion",
+              "Judgment supported by these data"
+            ],
+            [
+              "Limitations",
+              "What remains unverified"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For a formal assessment, original output is more useful than a conclusion alone."
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "Chapter 11 | Keep this line of reasoning"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-1",
+          "text": "Six questions for DNS enumeration"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For every DNS result, ask:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Which DNS server did I ask? For example, 1.1.1.1."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Which name did I ask about? For example, www.example.com."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Which record type did I request? For example, A."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. What response status did it return? For example, NOERROR."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. What data did it actually return? For example, one IPv4 record."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6. What do these data still not establish? Host availability, working web service, certificate validity and access authorization remain separate."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These questions connect tool output to defensible security judgments."
+        },
+        {
+          "kind": "heading",
+          "id": "section-12",
+          "text": "Part 12 | Concept questions and integrated practice"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following are teaching FAQs, followed by a practice scenario. They are separate from actual learner discussion."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-12-1",
+          "text": "Q1: DNS enumeration versus port scanning"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS enumeration queries names, addresses and service configuration. Port scanning observes network-port responses within authorization:"
+        },
+        {
+          "kind": "code",
+          "text": "DNS enumeration: www.example.com → 192.0.2.10\nPort scanning:   192.0.2.10:443 → observe TCP response"
+        },
+        {
+          "kind": "paragraph",
+          "text": "They are connected tasks that answer different questions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-12-2",
+          "text": "Q2: Is querying DNS passive reconnaissance?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not always. Reading public data already collected by a third party may be passive. Sending a DNS query interacts with a service. Public data does not make every DNS enumeration passive, nor grant permission to perform further security tests on related hosts."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-12-3",
+          "text": "Q3: Can DNS data establish a vulnerability?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Usually not by itself. DNS reveals configuration clues. A CNAME pointing to an abandoned external service merits investigation, but assessing exploitable takeover requires evidence about resource registration and ownership controls at that service."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-12-4",
+          "text": "Integrated Ubuntu exercise"
+        },
+        {
+          "kind": "paragraph",
+          "text": "On your own Ubuntu system, run these basic queries:"
+        },
+        {
+          "kind": "code",
+          "text": "# 1. Inspect current DNS configuration\nresolvectl status\n\n# 2. Query the example domain's IPv4\ndig example.com A\n\n# 3. Query IPv6\ndig example.com AAAA\n\n# 4. Query incoming-mail settings\ndig example.com MX\n\n# 5. Query authoritative servers\ndig example.com NS\n\n# 6. Select a public recursive resolver\ndig @1.1.1.1 example.com A\n\n# 7. Use TCP for an ordinary DNS query\ndig +tcp example.com A\n\n# 8. Use short output\ndig +short example.com A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "example.com is an IANA-reserved example domain. These commands generate real DNS queries, without port scanning or AXFR. Compare addresses and TTLs across endpoints, full versus short output, UDP versus TCP results, and how the SERVER field changes when a resolver is selected. The goal is to describe the meaning and limitations of every reply, rather than find the most IP addresses."
+        },
+        {
+          "kind": "heading",
+          "id": "section-13",
+          "text": "Course reference summary"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. DNS is a data lookup system; an IP answer does not establish website health."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Distinguish recursive and authoritative roles and A, AAAA, MX, NS and other types."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Interpret NOERROR, NXDOMAIN, SERVFAIL, REFUSED and timeout separately."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. ANY and AXFR are different; zone transfers need authorization and access control."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. DNSSEC, DoH and cache address data authentication, transport protection and efficiency respectively."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Tool observations do not establish every unverified conclusion. Apply the same evidence discipline to FTP, SMTP, SMB, SNMP and LDAP enumeration."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-13-1",
+          "text": "Understanding check | A workplace scenario"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an authorized company DNS review produces the following synthetic results:"
+        },
+        {
+          "kind": "code",
+          "text": "# Query 1\nwww.lab.example.test\nA → 192.0.2.10\nA → 192.0.2.11\n\n# Query 2\nwww.lab.example.test\nAAAA → NOERROR\nANSWER: 0\n\n# Query 3\nlab.example.test\nMX → 10 mail.lab.example.test\n\n# Query 4\nlab.example.test\nAXFR → REFUSED"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 1: Do two IPv4 addresses establish two healthy website servers? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 2: What can NOERROR and an empty ANSWER establish, and what information is missing?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 3: Does MX establish a healthy mail service? How would you plan further verification within authorization?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 4: Does REFUSED for AXFR establish secure DNS configuration? What else should an administrator inspect?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use the response status, returned data and remaining verification steps to explain each answer, connecting your reasoning to M03 scanning and M04 enumeration."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-dns-evidence",
+          "summary": "Reference answer: evidence boundaries in the four questions",
+          "paragraphs": [
+            "Question 1: Two A records establish only two IPv4 addresses in this reply. CDN, load-balancing or stale configuration may explain them; they do not establish two physical hosts or two healthy websites. Verify connectivity, TLS and HTTP within authorization.",
+            "Question 2: This query obtained no AAAA answer. Distinguish NODATA, referrals and compact denial using AUTHORITY, DNSSEC data, any alias chain, the endpoint and query conditions. Neither name existence nor domain-wide absence of IPv6 follows from the given facts.",
+            "Question 3: MX supplies mail routing and preference, not mail health. Confirm scope, source and permitted operations before resolving the MX target, reviewing configuration and verifying relevant mail protocols and receipt functionality. Public MX data does not grant permission to send test mail or test relaying.",
+            "Question 4: REFUSED establishes refusal only for this endpoint, source and request. Review other authoritative endpoints, DNS views, allowed sources, transfer access control and TSIG, recursion permissions, unnecessary public records and logs. One refusal does not establish overall DNS security."
+          ]
+        }
+      ]
+    }
+  }
+}

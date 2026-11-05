@@ -23,7 +23,7 @@ for lang,prefix in [('zh',''),('en','en/')]:
  assert f'/{prefix}courses/ceh/v13/m04/concepts/m04-01/' in raw
  for b in [b for b in lesson['text'][lang]['sourceBody'] if b['kind']=='visual']:
   assert (ROOT/'site'/b['src'].lstrip('/')).read_bytes()==(ROOT/'build'/b['src'].lstrip('/')).read_bytes()
-p=ROOT/'site/downloads/ceh-m03-08-bilingual-svg.zip';assert p.read_bytes()==(ROOT/'build/downloads/ceh-m03-08-bilingual-svg.zip').read_bytes()
+p=ROOT/'site/downloads/ceh-m03-08-v1.1.0-bilingual-svg.zip';assert p.read_bytes()==(ROOT/'build/downloads/ceh-m03-08-v1.1.0-bilingual-svg.zip').read_bytes()
 with zipfile.ZipFile(p) as z:
  assert len(z.namelist())==4
  for name in z.namelist():assert z.read(name)==(ROOT/'site/images/ceh'/name).read_bytes()

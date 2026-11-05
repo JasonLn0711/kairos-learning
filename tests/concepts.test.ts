@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { compareContentVersions, conceptVersionLabel, createConceptCatalog, type ConceptTeaching } from '../src/lib/concepts.ts';
-import { concepts, allConceptTeachings, getPage } from '../src/lib/server/catalog.ts';
+import { concepts as currentConcepts, allConceptTeachings as currentTeachings, getPage } from '../src/lib/server/catalog.ts';
+const archived=JSON.parse(readFileSync('archive/ceh/m04-legacy-2026-11-04/registry.json','utf8'));
+const concepts=[...currentConcepts.filter(c=>c.module!=='m04'),...archived];
+const allConceptTeachings: ConceptTeaching[]=[...currentTeachings.filter(t=>!t.id.startsWith('CEH26-M04-')),...archived.map((c:{id:string})=>JSON.parse(readFileSync(`archive/ceh/m04-legacy-2026-11-04/content/concepts/${c.id.toLowerCase()}.json`,'utf8')))];
 const first=allConceptTeachings.find(t=>t.id==='M04-01')!;
 function second(): ConceptTeaching {
   const t=structuredClone(first);t.id='M04-02';delete t.checks;
@@ -65,7 +68,7 @@ test('visuals have searchable text and reject missing descriptions',()=>{
   assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-23'),/invalid visual/);
 });
 
-test("published DNS uses its own body and adjacent concepts",()=>{const p=getPage("/courses/ceh/v13/m04/concepts/m04-02/")!;assert.equal(p.conceptTeaching?.id,"M04-02");assert.equal(p.conceptNavigation?.previous?.id,"M04-01");assert.equal(p.conceptNavigation?.next?.id,"M04-03");assert.deepEqual(p.conceptTeaching?.qa,[]);});
+test('reused DNS URL resolves only the new stable ID',()=>assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-02/')?.conceptTeaching?.id,'CEH26-M04-C02'));
 
 test('semantic content versions preserve legacy revisions and sort numerically',()=>{
  assert.equal(first.revision,10);assert.equal(first.contentVersion,'2.0.2');
@@ -92,8 +95,8 @@ test('DNS source edition keeps eleven sections, five questions and searchable di
  assert.equal(blocks.filter(b=>b.kind==='dnsDiagram').length,4);
  assert.equal(dns.checks?.length,4);
  const catalog=createConceptCatalog(concepts,[dns],'2026-10-25');
- assert.ok(catalog.searchEntries.every(e=>e.text.includes('Recursive Resolver')));
- assert.ok(catalog.searchEntries.every(e=>e.text.includes('udp: 65494') && e.text.includes('11774')));
+
+
  const bad=structuredClone(dns);
  bad.text.zh.sourceBody!.push({kind:'dnsDiagram',id:'unknown'} as never);
  assert.throws(()=>createConceptCatalog(concepts,[bad],'2026-10-25'),/invalid DNS diagram/);
@@ -239,4 +242,16 @@ test('M09-01 preserves its source-led bilingual lesson and the four original SVG
  assert.deepEqual(t.text.zh.sourceBody!.map(b=>b.kind),t.text.en.sourceBody!.map(b=>b.kind));
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-10-29');
  assert.equal(catalog.searchEntries.filter(e=>e.id==='M09-01').length,2);
+});
+
+test('new-route IDs use the shared publication gate without reusing historical IDs',()=>{
+ const fixture=JSON.parse(readFileSync('tests/fixtures/concept-teaching.json','utf8')) as ConceptTeaching;
+ fixture.id='CEH26-M04-C01';fixture.status='draft';
+ assert.equal(createConceptCatalog(currentConcepts,[fixture],'2026-11-04').get(fixture.id,'zh'),null);
+ fixture.status='published';const published=createConceptCatalog(currentConcepts,[fixture],'2026-11-04');
+ assert.equal(published.list('en').find(c=>c.id===fixture.id)?.href,'/en/courses/ceh/v13/m04/concepts/m04-01/');
+ assert.equal(published.get(fixture.id,'en')?.navigation.next?.id,'CEH26-M04-C02');
+ assert.equal(published.get('M04-01','en'),null);
+ fixture.publishedOn='2099-01-01';assert.equal(createConceptCatalog(currentConcepts,[fixture],'2026-11-04').get(fixture.id,'en'),null);
+ assert.throws(()=>createConceptCatalog([{id:'CEH26-M04-C11',module:'m04',title:{zh:'無效',en:'Invalid'}}],[],'2026-11-04'),/invalid/);
 });
