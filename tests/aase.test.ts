@@ -35,7 +35,7 @@ test('only published AASE routes exist; pending neighbors land on directory anch
   assert.equal(Boolean(getPage('/en'+c.href)),Boolean(catalog().forLanguage('en')?.concepts.find(e=>e.id===c.id)?.lesson));
  }
  assert.ok(getPage('/en/courses/aase/v1/'));
- assert.equal(getPage('/en/courses/aase/v1/m01/concepts/m01-02/'),null);
+ assert.equal(getPage('/en/courses/aase/v1/m02/concepts/m02-01/'),null);
  assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-01/'));
  assert.ok(!searchEntries.some(e=>e.id.startsWith('AASE-M')&&!catalog().lessons.some(l=>l.id===e.id)));
  const aaseSearch=searchEntries.find(e=>e.id==='AASE-M05-C03')!;
@@ -65,7 +65,7 @@ test('AASE Q&A uses the CEH localized discussion fields without invented transla
 
 test('AASE M01 has four published lessons with substantive evidence and original checks',()=>{
  const m01=catalog().concepts.filter(c=>c.module==='m01');assert.equal(m01.length,4);assert.ok(m01.every(c=>c.lesson));
- for(const c of m01.slice(1)){const l=c.lesson!;assert.equal(l.contentVersion,'1.0.0');assert.equal(l.revision,1);assert.ok(l.text.zh.sections.length>=6);assert.ok(l.checks.length>=3);assert.deepEqual(l.qa,[]);assert.ok(l.text.zh.sections.some(s=>s.blocks?.some(b=>b.kind==='flow'||b.kind==='cards')));}
+ for(const c of m01.slice(1)){const l=c.lesson!;assert.equal(l.contentVersion,'1.0.1');assert.equal(l.revision,2);assert.ok(l.text.zh.sections.length>=6);assert.ok(l.checks.length>=3);assert.deepEqual(l.qa,[]);assert.ok(l.text.zh.sections.some(s=>s.blocks?.some(b=>b.kind==='flow'||b.kind==='cards')));}
  const m03=m01.find(c=>c.id==='AASE-M01-C03')!.lesson!;assert.ok(m03.text.zh.sections.flatMap(s=>s.paragraphs).join(' ').includes('待實作'));
  const m04=m01.find(c=>c.id==='AASE-M01-C04')!.lesson!;assert.ok(m04.text.zh.sections.flatMap(s=>s.paragraphs).join(' ').includes('虛構示範回答'));
 });

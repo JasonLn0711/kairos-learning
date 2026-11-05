@@ -33,9 +33,10 @@ for(const path of paths)test(`${path}: English teaching, reflow, keyboard and no
   const issues=await page.locator('main p,main li,figcaption').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<(e.closest('.module-list,.toc')?14:16)&&!e.classList.contains('article-metadata')||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1);}).map(e=>e.textContent?.slice(0,100)));
   expect(issues,`${width}px/${scale} reading`).toEqual([]);
  }
+ if(lesson){await page.setViewportSize({width:320,height:900});for(const region of await page.locator('.table-scroll').all()){await region.focus();await expect(region).toBeFocused();if(await region.evaluate(e=>e.scrollWidth-e.clientWidth)>0){await region.press('ArrowRight');await expect.poll(()=>region.evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);}}}
  await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));
  await page.setViewportSize({width:390,height:900});await page.screenshot({path:`.local/aase/bilingual/${path.replaceAll('/','-')}.png`,fullPage:true});
- if(lesson)for(const width of [390,1280]){await page.setViewportSize({width,height:900});await page.locator('article figure').first().screenshot({path:`.local/aase/bilingual/first-figure-${width}.png`});}
+ if(lesson)for(const width of [390,1280]){await page.setViewportSize({width,height:900});await page.locator('article figure').first().screenshot({path:`.local/aase/bilingual/${lesson.id}-figure-${width}.png`});}
  await page.goto(path);await page.keyboard.press('Tab');await expect(page.locator('a.skip')).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#main')).toBeFocused();
  await page.locator('a.language').focus();await page.keyboard.press('Enter');await expect(page).toHaveURL(path.replace(/^\/en/,''));await page.locator('a.language').press('Enter');await expect(page).toHaveURL(path);
  const context=await browser.newContext({baseURL,javaScriptEnabled:false});try{const p=await context.newPage();await p.goto(path);await expect(p.locator('h1')).toHaveCount(1);await p.locator('a.language').press('Enter');await expect(p).toHaveURL(path.replace(/^\/en/,''));if(lesson){await p.goto(path);await expect(p.locator('#practice').locator('..')).toContainText(lesson.text.en.exercise.expected);const summary=p.locator('main summary').first();await summary.focus();await summary.press('Enter');await expect(p.locator('main details').first()).toHaveAttribute('open','');await summary.press('Space');await expect(p.locator('main details').first()).not.toHaveAttribute('open','');}}finally{await context.close();}
@@ -51,8 +52,8 @@ test('English directory, search, pending neighbors and downloads use actual loca
   const slug=m.id+'-'+c.id.slice(-2),path=`/en/courses/aase/v1/${m.id}/concepts/${slug}/`;expect((await request.get(path)).status(),path).toBe(404);
   const zh=await request.get(path.replace(/^\/en/,''));expect(zh.status()).toBe(200);expect(await zh.text()).not.toContain('class="language"');
  }
- await page.goto('/en/courses/aase/v1/m01/concepts/m01-01/');const next=page.locator('.next-links a').last();await expect(next).toHaveAttribute('href','/en/courses/aase/v1/m01/#m01-02');await next.click();await expect(page.locator('#m01-02')).toContainText('In preparation');
- const sitemap=await(await request.get('/sitemap.xml')).text();expect(sitemap).toContain('https://learn.cs-kairos.com/en/courses/aase/v1/m01/concepts/m01-01/');expect(sitemap).not.toContain('/en/courses/aase/v1/m01/concepts/m01-02/');
+ await page.goto('/en/courses/aase/v1/m01/concepts/m01-04/');const next=page.locator('.next-links a').last();await expect(next).toHaveAttribute('href','/en/courses/aase/v1/m02/#m02-01');await next.click();await expect(page.locator('#m02-01')).toContainText('In preparation');
+ const sitemap=await(await request.get('/sitemap.xml')).text();expect(sitemap).toContain('https://learn.cs-kairos.com/en/courses/aase/v1/m01/concepts/m01-01/');expect(sitemap).toContain('/en/courses/aase/v1/m01/concepts/m01-04/');expect(sitemap).not.toContain('/en/courses/aase/v1/m02/concepts/m02-01/');
  await page.goto('/en/courses/aase/v1/workshop/');await expect(page.locator('main')).toContainText('currently in Traditional Chinese');for(const name of ['aase-v1-workshop.zip','SHA256SUMS.txt']){const r=await request.get('/downloads/aase/'+name);expect(r.status()).toBe(200);expect(await r.body()).toEqual(readFileSync('site/downloads/aase/'+name));}
 });
 
