@@ -1,0 +1,331 @@
+{
+  "id": "CEH26-M04-C04",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-05",
+  "publishedOn": "2026-11-05",
+  "status": "published",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "以合成 SMB 紀錄，分清連接共用、讀取檔案與實際傳輸保護的證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M04-04｜SMB 列舉：用證據分清共用、檔案與權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本單元簡短複習 SMB 基礎，再補上「拒絕發生在哪一步」及「支援加密不等於正在加密」。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "先用一句話接回來"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB（Server Message Block，伺服器訊息區塊）讓電腦透過網路使用伺服器的檔案等資源。共用名稱像資料室入口：查到入口、列出裡面的檔名、讀到某份內容、修改或刪除，必須分別確認。Windows、Samba 與許多 NAS 都能提供 SMB，因此不能只看 SMB 就判定作業系統。[Microsoft：SMB 概覽](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "基礎複習：共用權限與檔案權限要一起看；ABE（Access-Based Enumeration，依存取權限篩選顯示）主要影響共用內的檔案與資料夾是否顯示，不取代存取控制；簽署與加密保護傳輸，不會替你增加檔案權限。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "一、把「連不上」拆成幾個階段"
+        },
+        {
+          "kind": "paragraph",
+          "text": "典型新連線依序經過："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 建立傳輸連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Negotiate（協商）：決定 SMB 版本與能力。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Session Setup（工作階段建立）：建立使用某個身分的工作階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Tree Connect（連接共用）：要求連到指定共用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 對資料夾或檔案提出列舉、讀取等操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是概念順序，不是每讀一個檔案都要重做全部步驟。前一步成功，也不表示後一步獲准。[Microsoft：SMB 連線與拒絕階段](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，TCP 445 開放只是入口線索，還不是取得共用清單。若 Finance 在連接共用時就被拒絕，不能說已經進入其中、確認某個檔案存在，或測完其檔案權限。若能進入 Training，卻在讀取 draft.txt 時被拒，就要保留那次檔案操作的完整回應，核對身分、路徑與有效權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ACCESS_DENIED（存取遭拒）是調查起點，不保證原因只有 NTFS 檔案權限；驗證、簽署或加密要求等條件也可能造成拒絕。先定位階段，再查設定與日誌，不要一遇到錯誤就關掉安全保護。[Microsoft：SMB 存取遭拒](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "二、你輸入的帳號，不一定就是實際使用的身分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "具名帳號、Guest（來賓）與匿名工作階段是不同情況。沒有密碼提示，可能是重用登入資訊或既有票證，不能直接寫成匿名成功；輸入某個帳號名稱，也應核對最後建立的工作階段身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "工具選項也不是測試結果。例如 smbclient 的 -N 只是抑制密碼提示，不代表伺服器已接受匿名連線。-L 查服務或共用清單、連入共用後的 ls 查目錄、get 下載指定檔案，三者提供不同證據；get 還會在本機保存資料，不能當成完全沒有副作用的列舉。[Samba：smbclient 手冊](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "三、支援、要求、實際使用，分開看"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Dialect（方言）是雙方這次選用的 SMB 協定版本。看到 SMB 3.1.1，只能確認相應的協商結果，不會自動證明每個共用或每次存取都已使用 SMB 加密。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "支援：產品與協定具備什麼能力。",
+            "要求：有效政策規定必須使用什麼。",
+            "實際使用：這次連線真的用了什麼。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Signing（簽署）協助驗證訊息完整性與來源，但不以隱藏內容為目的。Encryption（加密）保護傳輸內容的機密性；即使傳輸已加密，也不等於磁碟上的檔案已加密，或存取權限一定正確。[Microsoft：簽署](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing)｜[SMB 加密](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "四、用一份合成案例做診斷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下只是紙上教材，沒有執行任何真實查詢。假設核准的實驗室紀錄確認身分為 LAB/labreader："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "共用清單回傳 Training、Finance。",
+            "Training 目錄列出 readme.txt、draft.txt。",
+            "readme.txt 的指定合成內容讀取成功。",
+            "draft.txt 讀取遭拒。",
+            "Finance 在連接共用時遭拒，未進入共用。",
+            "Training 的連線為 SMB 3.1.1，簽署已使用，SMB 層加密未使用。",
+            "上傳、修改、刪除都未測試。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "目前能說：這個身分看到了兩個共用名稱，讀到了指定的 readme.txt；draft.txt 名稱已揭露，但本次未取得內容；Finance 內部檔案尚未確認。寫入與刪除仍是未知。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若政策連 draft.txt 的名稱都不應讓 labreader 看見，那麼讀取遭拒，仍不代表資訊揭露要求已滿足。ABE 可協助降低這種名稱曝光，但真正的存取限制仍需權限控制。[Microsoft：ABE 的作用範圍](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗證防護時，要同時檢查「該允許的正常使用」與「不該允許的操作遭拒」，並保存時間、身分、路徑、操作、完整回應與未測項目。不要把局部成功寫成攻破，也不要把一次拒絕寫成全面安全。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "今天只做一個小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同事說：「Finance 已出現在清單，所以裡面的檔案都能讀；Training 使用 SMB 3.1.1，所以內容已加密；readme.txt 能讀，也代表能刪。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請用兩三句話修正這段結論，說明目前確認了什麼、還不知道什麼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不必執行工具或背封包名稱。下一單元接 NetBIOS／RPC，繼續分清名稱資訊、通訊入口與實際授權。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-smb-evidence",
+          "summary": "參考解答：共用、加密與刪除權限的證據",
+          "paragraphs": [
+            "Finance 名稱可見不等於能讀內部檔案；這次在連共用時就遭拒，內部檔案還沒確認。SMB 3.1.1 是協商版本，紀錄另指出 SMB 層加密未使用，不能說內容已由 SMB 加密。readme.txt 的讀取成功只證明這次指定檔案可讀；刪除沒有測試，仍是未知。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Use a synthetic SMB record to distinguish evidence for share access, file reads, and transport protection actually in use.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M04-04｜SMB Enumeration: Use Evidence to Distinguish Shares, Files, and Permissions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This unit briefly reviews SMB fundamentals, then adds two distinctions: where a refusal occurs, and support for encryption versus encryption actually in use."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "Reconnect with the idea in one sentence"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB (Server Message Block) lets computers use resources such as a server's files over a network. A share name is like the entrance to a records room: finding the entrance, listing the filenames inside, reading a particular file's contents, and modifying or deleting it must each be verified separately. Windows, Samba, and many NAS devices can provide SMB, so seeing SMB alone does not identify the operating system. [Microsoft: SMB overview](https://learn.microsoft.com/en-us/windows-server/storage/file-server/file-server-smb-overview)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fundamentals to recall: share permissions and file permissions must be considered together; ABE (Access-Based Enumeration, which filters what is displayed according to access rights) primarily affects whether files and folders within a share are visible and does not replace access control; signing and encryption protect data in transit and do not grant you additional file permissions."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "1. Break “cannot connect” into stages"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A typical new connection proceeds in this order:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Establish a transport connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Negotiate: agree on the SMB version and capabilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Session Setup: establish a session using an identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Tree Connect: request a connection to a specified share."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. Request operations such as listing a directory or reading a file."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a conceptual sequence, not a requirement to repeat every step each time a file is read. Success at one step does not mean the next step is authorized. [Microsoft: SMB connection and failure stages](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/negotiate-session-setup-tree-connect-fails)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An open TCP port 445 is therefore only a clue about an entry point, not evidence that a share list has been obtained. If access to Finance is denied at Tree Connect, you cannot claim to have entered it, confirmed that a particular file exists inside, or completed tests of that file's permissions. If you can enter Training but are denied when reading draft.txt, retain the full response to that file operation and check the identity, path, and effective permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "ACCESS_DENIED is a starting point for investigation, not a guarantee that NTFS file permissions are the only cause; conditions involving authentication, signing, or encryption requirements can also cause a refusal. Identify the stage first, then inspect the configuration and logs. Do not disable security protections as soon as an error appears. [Microsoft: SMB access denied](https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/access-denied-access-smb-file-share)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "2. The account you enter is not necessarily the identity actually used"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A named account, Guest access, and an anonymous session are different cases. The absence of a password prompt may mean that existing sign-in information or tickets are being reused; it does not establish successful anonymous access. Even after entering an account name, check the identity of the session that was actually established."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Tool options are not test results either. For example, smbclient's -N suppresses the password prompt; it does not mean the server has accepted an anonymous connection. -L requests a list of services or shares, ls lists a directory after connecting to a share, and get downloads a specified file. These provide different kinds of evidence. get also saves data locally, so it cannot be treated as enumeration with no side effects. [Samba: smbclient manual](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "3. Separate support, requirements, and actual use"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A dialect is the SMB protocol version selected by both sides for this connection. Seeing SMB 3.1.1 confirms the corresponding negotiation result; it does not automatically prove that SMB encryption is in use for every share or every access."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Support: what the product and protocol are capable of.",
+            "Requirements: what the effective policy mandates.",
+            "Actual use: what this connection actually used."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Signing helps verify message integrity and origin, but its purpose is not to hide the contents. Encryption protects the confidentiality of data in transit. Even encrypted transmission does not mean the files on disk are encrypted or that access permissions are necessarily correct. [Microsoft: signing](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing)｜[SMB encryption](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "4. Diagnose a synthetic case"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following is a tabletop teaching example only; no real queries were run. Suppose the authorized lab records confirm the identity as LAB/labreader:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "The share list returns Training and Finance.",
+            "The Training directory lists readme.txt and draft.txt.",
+            "Reading the specified synthetic contents of readme.txt succeeds.",
+            "Reading draft.txt is denied.",
+            "Finance is denied at Tree Connect; the share was not entered.",
+            "The Training connection uses SMB 3.1.1, with signing in use and SMB-layer encryption not in use.",
+            "Uploading, modifying, and deleting have not been tested."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "What can be stated now: this identity saw two share names and read the specified readme.txt; the name draft.txt was disclosed, but its contents were not obtained in this attempt; files inside Finance have not been confirmed. Write and delete access remain unknown."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If policy says that even the name draft.txt must not be visible to labreader, a denied read still does not establish that the information-disclosure requirement has been met. ABE can help reduce this exposure of names, but actual access restrictions still require permission controls. [Microsoft: the scope of ABE](https://learn.microsoft.com/en-us/powershell/module/smbshare/set-smbshare?view=windowsserver2025-ps)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When verifying safeguards, check both that legitimate use is allowed and that operations that should not be allowed are denied. Retain the time, identity, path, operation, full response, and untested items. Do not describe a limited success as a compromise or a single denial as proof of comprehensive security."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "Just one small check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A colleague says: “Finance appears in the list, so all the files inside it can be read; Training uses SMB 3.1.1, so its contents are encrypted; being able to read readme.txt also means it can be deleted.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Correct this conclusion in two or three sentences, explaining what has been confirmed and what is still unknown."
+        },
+        {
+          "kind": "paragraph",
+          "text": "There is no need to run tools or memorize packet names. The next unit covers NetBIOS/RPC, continuing to distinguish name information, communication entry points, and actual authorization."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-smb-evidence",
+          "summary": "Reference answer: evidence for shares, encryption, and deletion",
+          "paragraphs": [
+            "Seeing the name Finance does not mean the files inside can be read; this attempt was denied at Tree Connect, so the files inside have not been confirmed. SMB 3.1.1 is the negotiated version, and the record separately states that SMB-layer encryption was not in use, so the contents cannot be described as encrypted by SMB. The successful read of readme.txt proves only that the specified file was readable in this attempt; deletion was not tested and remains unknown."
+          ]
+        }
+      ]
+    }
+  }
+}

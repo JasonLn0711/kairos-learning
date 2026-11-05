@@ -40,7 +40,7 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
-Current M04 contract (2026-11-04): ten new stable IDs; C01–C03 are published and C04–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C03 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
+Current M04 contract (2026-11-05): ten new stable IDs; C01–C04 are published and C05–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C04 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
 
 `content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
@@ -346,3 +346,7 @@ M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 
 ## 新版 M04 第三課 FTP／SMTP（2026-11-04）
 
 `CEH26-M04-C03` 沿用短網址 `concepts/m04-03/`；完整中英原稿、答案與雜湊在 [來源目錄](sources/ceh26-m04-c03/README.md)。執行 ceh26_m04_c03_content.py 與 ceh26_m04_c03_diagrams.py 的 --check 核對全文、兩組平行角色／權限圖及下載。十一節正文直接呈現，一題答案預設收合，qa 維持空陣列。C01、C02 正文不變，C04–C10 待發布，舊版歸檔不公開。[發布紀錄](releases/2026-11-04-ceh26-m04-c03.md)。
+
+## 新版 M04 第四課 SMB 複習與診斷（2026-11-05）
+
+`CEH26-M04-C04` 使用短網址 `concepts/m04-04/`；完整中英公開稿、單題答案、六個雙語錨點與雜湊在 [來源目錄](sources/ceh26-m04-c04/README.md)。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對全文。沿用 sourceBody，本文直接閱讀、參考答案預設收合、qa 為空。以文字及清單呈現拒絕階段、實際身分與傳輸保護；本次無新增圖解或互動。C01–C03 正文保留，C05–C10 待發布，舊版歸檔不公開。[驗收與發布紀錄](releases/2026-11-05-ceh26-m04-c04.md)。
