@@ -403,3 +403,13 @@ forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，�
 ## 新版 M04 第四課 SMB 複習與診斷（2026-11-05）
 
 `CEH26-M04-C04` 使用短網址 `concepts/m04-04/`；完整中英公開稿、單題答案、六個雙語錨點與雜湊在 [來源目錄](sources/ceh26-m04-c04/README.md)。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對全文。沿用 sourceBody，本文直接閱讀、參考答案預設收合、qa 為空。以文字及清單呈現拒絕階段、實際身分與傳輸保護；本次無新增圖解或互動。C01–C03 與 C05 正文保留，C06–C10 待發布，舊版歸檔不公開。[驗收與發布紀錄](releases/2026-11-05-ceh26-m04-c04.md)。
+
+### M04-04 全文抽換與標題（2026-11-05）
+
+依 WRITE-08，C04 的公開 `displayId` 為 `M04-04`，內部 `CEH26-M04-C04` 與短網址保留。資料驗證接受既有 `CEH M04-xx` 及新 `M04-xx` 顯示值，仍須與 stable ID 課次一致；後續修訂採新格式。
+
+完整原文、參考 PNG、編輯處理與英文稿在 [抽換來源](sources/ceh26-m04-c04/replacement-2026-11-05/README.md)，舊稿保留原處及 Git 歷史。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對雙語正文與四個 SVG。v1.1.0 增加完整教學範圍，原發布日不變。正文為十一章、十一個表格、39 段程式／文字範例、兩圖及四題理解檢核；一個預設收合的編輯參考答案，qa 保持空陣列。
+
+圖解沿既有 `visual` 資料形狀；固定四個 `m04-04-{stages|evidence}-{zh|en}-v1-1-0.svg` 路徑交由 `SmbDiagram` 以跳脫文字呈現。flow 是五個依序關卡，每卡一個成功範圍及推論界線；cards 是五筆三欄證據對照，手機逐筆堆疊。SVG 僅由固定元素、幾何與跳脫文字產生，沒有任意標記、影像或事件。HTML、搜尋及 SVG 來自同一資料；SVG 固定桌面版面，頁面 HTML 依容器重排。
+
+內容、單元、型別、publication-boundary、release 及 C04 瀏覽器檢查依序執行；共用 SourceBody 另跑 C02 回歸。驗證與正式站回讀見 [本次回執](releases/2026-11-05-ceh26-m04-c04-replacement.md)。
