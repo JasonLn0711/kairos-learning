@@ -353,7 +353,7 @@ AASE 使用 `content/aase/course.json` 的九模組、49 概念目錄及獨立 `
 
 本版明確為繁體中文先行；沒有英文路由、語言切換或虛構英文 alternates。未發布正文不進頁面資料、導覽或搜尋。概念前後篇尚未完成時，連到對應模組錨點；不產生空白教材頁。既有 CEH 雙語及 SVG 邊界保持原契約。
 
-`AaseLesson.svelte` 僅呈現結構化文字、程式碼及 flow／comparison HTML 圖解；不接受原始 HTML／SVG 注入。圖解的節點與搜尋文字來自同一教材資料，手機重排，答案用原生 details。讀者自我檢核不記錄成績，不冒充互動測驗或實作通過。
+`AaseLesson.svelte` 沿共用 `TeachingArticle` 呈現結構化文字與程式碼，圖解使用 CEH 的 flow／cards 與 `ConceptBlocks`；不接受原始 HTML／SVG 注入。圖解的節點與搜尋文字來自同一教材資料，手機重排，答案用原生 details。讀者自我檢核不記錄成績，不冒充互動測驗或實作通過。
 
 工作坊正本在 `resources/aase/`；起始骨架與教師參考解答分開。`npm run package:aase` 產生固定時間戳 ZIP 與 SHA256；`python3 scripts/package-aase.py --check` 核對每個檔案與位元組。修改工作坊後重新封裝。新增產業案例只用合成資料及核實的規則，不複製整套工程教材。
 

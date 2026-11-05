@@ -33,4 +33,6 @@
 
 ## 發布
 
-前一部署基線為 `e9e8ce84dd907cb82a520bd6fc353e4e56c629f1`、Pages run 41962035833。本次正式部署與 HTTPS 回讀待完成後補記；本機驗收不替代正式回讀。
+前一部署基線為 `e9e8ce84dd907cb82a520bd6fc353e4e56c629f1`、Pages run 41962035833。本次程式部署提交為 `8e76353a35759c7d25fcfabd4b23622d232e8271`，[Pages run 41963265857](https://github.com/JasonLn0711/kairos-learning/actions/runs/41963265857) 成功。正式 HTTPS 站 AASE 17 項網站檢查通過，本機 Streamlit 一項依遠端模式跳過；CEH 22 項正式站回歸通過。AASE／CEH 計算樣式比對也在正式站通過。
+
+課程欄位與原稿提交 `400f292`，共用版型與測試提交 `8e76353`，推送 `origin main`。正式站回讀證據另存 `.local/aase/parity/live/`，本機 18 項結果留在 `.local/aase/parity/local/`；CEH 正式站的原始結果為 `.local/ceh26-m04-c02/live/results.json`。程式發布後分歧為 `0 0`；既有未追蹤 Python 快取未提交。
