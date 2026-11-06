@@ -35,3 +35,11 @@ WRITE-01–08：原稿與前版保全、139 段及 11 選項對照、完整英�
 承接 [M01-01 的需求與交接](2026-11-06-aase-m01-01-replacement.md)及 [M01-02 的人／AI 分工與證據](2026-11-06-aase-m01-02-replacement.md)，本課把共用需求轉為身分、權限、資料、協作與維護的驗收條件。
 
 [今日日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-06.md#aase-m0103-replacement-2026-11-06)、[網站定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#aase-m0103-replacement-2026-11-06)與 [W45](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#aase-m0103-replacement-2026-11-06)只保存定位、狀態、容量及下一關；來源與程式由 Kairos 擁有。Planning 專案 `106948a1`、日／週 `7a8d971c` 分開提交並推送 main，fetch 後 divergence `0 0`；repository validator 通過（44 項既有警告、0 新增）、knowledge 186／186 與日／週 agenda 通過。容量維持 Unknown，不新增本人工時或學習完成；下一關是閱讀中的三題答案與卡點。
+
+## Pages 同步診斷（2026-11-06）
+
+使用者詢問是否檔案過大。本機 build 共 56,135,922 bytes、1,148 檔，最大檔 search-index.json 為 2,996,924 bytes；正式 Actions artifact 約 18.47 MB，遠低於 [Pages 1 GB 上限](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)。上傳及全部檢查成功後，部署才停在 syncing_files，十分鐘後逾時，沒有容量超限或 429 訊息。
+
+同 commit 3a5209a 的 [42234691476 第二次工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/42234691476/attempts/2) 在 14:44:41–14:45:08 UTC 以約 18.47 MB 封裝成功部署，耗時 27 秒；固定容量限制不足以解釋此差異。最小推論是 Pages 同步階段有間歇性延遲；平台內部根因仍未確認，當時官方狀態頁沒有公告事故。Cloudflare ZIP max-age=14400 的舊檔快取是另一個已量測問題，不是 Pages 部署失敗原因。
+
+下載雜湊版本修正 3a5209a 已部署；f443c0e 補上校驗檔 data-sveltekit-reload，避免 SvelteKit 接手靜態檔查詢網址，並新增實際點擊檢查。本機雙語 2 項通過。其 [42236969555 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/42236969555) 首次同樣 syncing_files 逾時，第二次仍待結果；API 曾在 finished_file_sync 與 syncing_files 間變動。尚未把本機通過記成此修正的正式驗收。
