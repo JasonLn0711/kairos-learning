@@ -14,7 +14,7 @@ test('AASE public codes accept stable IDs or slugs and exclude course prefixes',
 test('all 49 bilingual articles preserve full content while recording one presentation patch',()=>{
  assert.equal(before.length,49);assert.equal(current.length,49);assert.equal(new Set(before.map((l:any)=>l.id)).size,49);
  for(const old of before){
-  const l=current.find(l=>l.id===old.id)!;const parts=old.contentVersion.split('.').map(Number);parts[2]++;
+  const l=old.id==='AASE-M01-C01'?read('docs/sources/aase/m01-01/replacement-2026-11-06/previous-v1.0.3.json'):current.find(l=>l.id===old.id)!;const parts=old.contentVersion.split('.').map(Number);parts[2]++;
   assert.deepEqual(l,{...old,revision:old.revision+1,contentVersion:parts.join('.'),date:'2026-11-05'});
  }
 });

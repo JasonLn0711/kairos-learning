@@ -55,7 +55,7 @@ test('AASE rejects incomplete, misaligned or unauthorized translation structures
   l=>{l.text.en!.sections[0].id='renamed';},l=>{l.text.en!.exercise.steps.pop();},
   l=>{delete l.checks[0].text.en;},l=>{l.checks[0].text.en!.options.pop();},
   l=>{(l.text as any).fr=l.text.en;},l=>{(l.translations as any).fr=l.translations!.en;},
-  l=>{(l.text.en!.sections[2].blocks![0] as any).items.pop();},
+  l=>{(l.text.en!.sections.find(s=>s.id==='trace')!.blocks![0] as any).items.pop();},
   l=>{l.text.en!.sections[3].sourceIds=['c4'];}
  ];
  for(const mutate of mutations){const ls=structuredClone(lessons);mutate(first(ls));assert.throws(()=>build(ls));}
@@ -74,11 +74,11 @@ test('AASE bilingual code and graph identity remain invariant, and search uses l
  assert.throws(()=>build(ls));
 });
 test('AASE English first lesson preserves Chinese teaching, publication, sources and answer semantics',()=>{
- const before=read('docs/sources/aase/bilingual-2026-11-05/aase-m01-c01.before.json');const l=first(lessons);
+ const before=read('docs/sources/aase/bilingual-2026-11-05/aase-m01-c01.before.json');const l=read('docs/sources/aase/m01-01/replacement-2026-11-06/previous-v1.0.3.json');
  assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,[]);
  assert.equal(l.revision,before.revision+2);assert.equal(l.contentVersion,'1.0.3');
  for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
- const en=build().forLanguage('en')!.lessons.find(x=>x.id===l.id)!;assert.equal(en.publishedOn,l.publishedOn);assert.equal(en.date,l.date);assert.equal(en.contentVersion,l.contentVersion);
+ const current=first(lessons);const en=build().forLanguage('en')!.lessons.find(x=>x.id===l.id)!;assert.equal(en.publishedOn,current.publishedOn);assert.equal(en.date,current.date);assert.equal(en.contentVersion,current.contentVersion);
 });
 
 test('M01 English additions preserve all Chinese teaching and original acceptance keys',()=>{

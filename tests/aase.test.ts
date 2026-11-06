@@ -24,7 +24,7 @@ test('AASE draft and future content never enters public concepts or search',()=>
  }
 });
 test('AASE validation rejects malformed dates, sources, figures and answer keys',()=>{
- for(const mutate of [(l:AaseLesson)=>{l.publishedOn='2026-02-30';},(l:AaseLesson)=>{l.sourceIds=['missing'];},(l:AaseLesson)=>{l.checks[0].answer=4;},(l:AaseLesson)=>{l.text.zh.sections[2].blocks![0].kind='html' as 'flow';},(l:AaseLesson)=>{l.text.zh.exercise.steps=[];}]){const ls=structuredClone(lessons);const l=ls.find(x=>x.id==='AASE-M01-C01')!;mutate(l);assert.throws(()=>catalog(ls));}
+ for(const mutate of [(l:AaseLesson)=>{l.publishedOn='2026-02-30';},(l:AaseLesson)=>{l.sourceIds=['missing'];},(l:AaseLesson)=>{l.checks[0].answer=4;},(l:AaseLesson)=>{l.text.zh.sections.find(s=>s.id==='trace')!.blocks![0].kind='html' as 'flow';},(l:AaseLesson)=>{l.text.zh.exercise.steps=[];}]){const ls=structuredClone(lessons);const l=ls.find(x=>x.id==='AASE-M01-C01')!;mutate(l);assert.throws(()=>catalog(ls));}
 });
 test('only published AASE routes exist; pending neighbors land on directory anchors',()=>{
  assert.equal(routes.filter(r=>r.kind.startsWith('aase')&&r.lang==='zh').length,11+catalog().lessons.length);
@@ -43,7 +43,8 @@ test('only published AASE routes exist; pending neighbors land on directory anch
  assert.ok(aaseSearch.text.includes('字串'));
 });
 test('AASE adopts CEH field names without losing original teaching, examples or answer keys',()=>{
- for(const l of lessons.filter(l=>['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id))){
+ for(const current of lessons.filter(l=>['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id))){
+  const l:AaseLesson=current.id==='AASE-M01-C01'?read('docs/sources/aase/m01-01/replacement-2026-11-06/previous-v1.0.3.json'):current;
   const old=read('docs/sources/aase/layout-2026-11-05/'+l.id.toLowerCase()+'.json');
   assert.equal(l.publishedOn,old.publishedOn);assert.equal(l.date,'2026-11-05');const secondPatch=['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id);const patch=['AASE-M03-C01','AASE-M05-C03'].includes(l.id)?3:secondPatch?2:1;assert.equal(l.contentVersion,`1.0.${patch+1}`);assert.equal(l.revision,old.revision+patch+1);
   assert.equal(l.text.zh.summary,old.summary);assert.deepEqual(l.text.zh.objectives,old.objectives);assert.deepEqual(l.text.zh.exercise,old.exercise);assert.deepEqual(l.qa,[]);
