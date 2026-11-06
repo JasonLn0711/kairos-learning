@@ -42,4 +42,6 @@ WRITE-01–08：原稿與前版保全、139 段及 11 選項對照、完整英�
 
 同 commit 3a5209a 的 [42234691476 第二次工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/42234691476/attempts/2) 在 14:44:41–14:45:08 UTC 以約 18.47 MB 封裝成功部署，耗時 27 秒；固定容量限制不足以解釋此差異。最小推論是 Pages 同步階段有間歇性延遲；平台內部根因仍未確認，當時官方狀態頁沒有公告事故。Cloudflare ZIP max-age=14400 的舊檔快取是另一個已量測問題，不是 Pages 部署失敗原因。
 
-下載雜湊版本修正 3a5209a 已部署；f443c0e 補上校驗檔 data-sveltekit-reload，避免 SvelteKit 接手靜態檔查詢網址，並新增實際點擊檢查。本機雙語 2 項通過。其 [42236969555 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/42236969555) 首次同樣 syncing_files 逾時，第二次仍待結果；API 曾在 finished_file_sync 與 syncing_files 間變動。尚未把本機通過記成此修正的正式驗收。
+下載雜湊版本修正 3a5209a 已部署；f443c0e 補上校驗檔 data-sveltekit-reload，避免 SvelteKit 接手靜態檔查詢網址，並新增實際點擊檢查。本機雙語 2 項通過。其 [42236969555 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/42236969555) 首次同樣 syncing_files 逾時，第二次於 14:59:47–15:09:50 UTC 再次同步逾時；API 曾在 finished_file_sync 與 syncing_files 間變動。尚未把本機通過記成此修正的正式驗收。
+
+下一關：待 Pages 同步服務恢復後，重跑 f443c0e 的發布並執行雙語專用瀏覽器及實際下載／校驗檔點擊檢查。教材主體 9dfb779 與下載雜湊版本 3a5209a 已有正式部署證據，最後靜態校驗檔導航修正仍 pending。
