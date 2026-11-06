@@ -8,6 +8,7 @@ for(const lang of ['zh','en']){
  test(lang+': full paired body, four widths, 200% text, keyboard and navigation',async({page})=>{
   expect((await page.goto(path))?.status()).toBe(200);await expect(page.locator('h1')).toContainText('M04-08');
   await expect(page.locator('h1')).not.toContainText('CEH26');await expect(page.locator('.article-metadata')).toContainText('v'+source.contentVersion);
+  const dates=page.locator('.article-metadata time');await expect(dates).toHaveCount(2);await expect(dates.nth(0)).toHaveAttribute('datetime',source.publishedOn);await expect(dates.nth(1)).toHaveAttribute('datetime',source.date);
   await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href','https://learn.cs-kairos.com'+path);
   const body=source.text[lang].sourceBody;const text=norm((await page.locator('article').textContent())!);let cursor=0;
   for(const b of body)for(const unit of b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:[b.text]){const value=norm(unit);const at=text.indexOf(value,cursor);expect(at,value).toBeGreaterThanOrEqual(cursor);cursor=at+value.length;}

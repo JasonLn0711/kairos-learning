@@ -1,4 +1,4 @@
-"""Build the paired M04-08 draft from complete reviewed public manuscripts."""
+"""Build the paired M04-08 release from complete reviewed public manuscripts."""
 from pathlib import Path
 import json,re,sys
 ROOT=Path(__file__).resolve().parents[1]
@@ -18,7 +18,7 @@ def parse(lang,suffix):
             blocks.append(dict(kind='paragraph',text=text.replace('**','')))
     assert n==8
     return dict(summary='核對 LDAP 查詢的身分、起點、範圍、欄位及結束狀態，判讀帳號盤點是否完整。' if lang=='zh' else "Check an LDAP query's identity, base, scope, attributes, and final status to assess whether an account inventory is complete.",sections=[],sourceBody=blocks)
-lesson=dict(id='CEH26-M04-C08',revision=2,contentVersion='1.0.1',date='2026-11-06',status='draft',publishedOn='9999-12-31',qa=[],text={lang:parse(lang,suffix) for lang,suffix in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='CEH26-M04-C08',revision=2,contentVersion='1.0.1',date='2026-11-06',status='published',publishedOn='2026-11-06',qa=[],text={lang:parse(lang,suffix) for lang,suffix in [('zh','zh-TW'),('en','en')]})
 data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n'
 target=ROOT/'content/concepts/ceh26-m04-c08.json'
 if '--check' in sys.argv: assert target.read_text()==data
