@@ -429,3 +429,12 @@ forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，�
 兩圖沿 visual 模型，只在四個 m04-03-{protocols|evidence}-{zh|en}-v1-1-0.svg 固定路徑啟用 FtpSmtpDiagram。第一圖保留 FTP 雙通道及 SMTP 三角色／兩段連線；第二圖三張卡並列判讀。手機按相同分組重排，不將平行通道／證據分類轉成先後流程。兩語同一模型供 HTML、搜尋及 SVG，SVG 經既有 sanitizer；原有圖檔與 ZIP 保留歷史，不覆寫。
 
 執行 ceh26_m04_c03_content.py、ceh26_m04_c03_diagrams.py 的 --check，再依內容、單元、型別、publication-boundary、release、C03 瀏覽器與 C02 共用元件回歸順序驗證。正式站設定 CEH_BASE_URL，回讀兩語正文與四個 SVG；實測與未驗界線見[本次回執](releases/2026-11-05-ceh26-m04-c03-replacement.md)。
+
+<a id="aase-m0101-replacement-2026-11-06"></a>
+### AASE M01-01 完整供稿與表單比較（2026-11-06）
+
+M01-01 v1.1.0 的[完整來源與逐節對照](sources/aase/m01-01/replacement-2026-11-06/README.md)保留原文、兩張 PNG、前版 v1.0.3 與雜湊。正文沿既有 AASE 結構，導言及七節、兩表、AppTest h3 與四選項有完整中英對應；stable ID、slug、原發布日、練習、QA 與翻譯閘門保留。舊的版型／英文初版／短標題遷移測試核對前版保存檔，新版另由 aase-m0101-replacement.test.ts 核對來源與修訂範圍，不改寫歷史原稿。
+
+ApplicationCheckDemo 只在本課 analogy 與 scenario 啟用，表單對照接收現有 cards 資料；其餘 AASE blocks 與 CEH 不改。比較圖以 HTML／CSS 保留平行關係、輸入欄位、主要／次要操作及錯誤摘要／欄位提示；無任意 HTML／SVG，沒有新匯出格式。情境控制只切固定合成資料，本機 JSON 匯出由 applicationReport 核對三個非空白欄位，缺漏時不提供下載。無 JavaScript 保留預設缺漏與兩情境結果表，停用控制；不發請求、不寫入申請或成績。
+
+維護時依序執行內容、單元、型別、publication-boundary、release，以及 `npx playwright test --config playwright.aase-m0101.config.ts`；正式站設定 `AASE_BASE_URL`。共用 AaseLesson 改動另核對既有 AASE bilingual M01-01 與 CEH C02 回歸。[修訂回執](releases/2026-11-06-aase-m01-01-replacement.md)記錄實際結果與待驗項目。
