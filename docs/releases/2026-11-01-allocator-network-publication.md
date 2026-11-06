@@ -38,3 +38,11 @@ Planning 專案定位 `0a49b20e`、日／週紀錄 `3a7212a9` 已推送 main，f
 FIRST PRINCIPLE：稀缺資源為編輯注意力與可信發布證據。Kairos 保存教材及核對依據；Planning 保存[11/03 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-03.md#kairos-reconciliation-2026-11-03)、[專案定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-reconciliation-2026-11-03)、容量與下一關。原 Planning 分支亦為遠端祖先；兩 repo 以最新 main 的隔離 worktree 承接，保留兩端提交與原工作目錄。
 
 後續教材依序見 [M03-01](2026-11-03-m03-01-transport.md)、[M03-02–04](2026-11-02-m03-02-04-integration.md)及 [M03-05](2026-11-03-m03-05.md)回執。這些連結供接續維護，既有測試與部署結果仍屬各回執記錄的執行。本輪只核對 Git、檔案與文件連結，未重跑教材、瀏覽器或正式站驗收；文章規則的歷史驗證範圍維持原記錄。下一關為 Jason 閱讀回饋，個人學習成果、實體手機與螢幕閱讀器驗收仍分開記錄。
+
+
+<a id="kairos-history-closeout-2026-11-06"></a>
+## 2026-11-06｜歷史保存與今日控制面核對
+
+本次 fetch 的遠端為 `f55d4b4`；原 checkout `dc2eb66` 為其祖先，ahead／behind 為 `0 213`。既有 NAS／M02-06 功能與本回執已在遠端歷史，本輪從最新 main 的隔離 worktree 更新文件，保留原本機修改、未追蹤檔案及遠端後續教材。11/03 的逐檔比對數量屬當日證據，本輪未重新宣稱該數量。
+
+FIRST PRINCIPLE：保護編輯注意力、版本完整性與證據可信度。Kairos 保存教材、實作與歷史驗證；Planning 保存[今日日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-06.md#kairos-history-closeout-2026-11-06)、[專案定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-history-closeout-2026-11-06)與[W45 回顧入口](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#kairos-history-closeout-2026-11-06)。本次為文件核對，不新增教材修訂、工時或個人學習完成。原測試與部署證據維持其原執行日期；下一關為 Jason 正常閱讀時提供答案或卡點，實體裝置及輔助科技驗收維持待驗。
