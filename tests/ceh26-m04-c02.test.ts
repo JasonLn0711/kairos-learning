@@ -24,5 +24,5 @@ test('C01–C05 are public and their neighboring publication gates stay intact',
   for(const i of [6,7,8,9,10,11,12])assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(i).padStart(2,'0')}/`),null);
   assert.equal(conceptCatalog.get('M04-02',lang),null);assert.ok(!JSON.stringify(page.conceptTeaching).includes('11774'));
  }
- assert.deepEqual(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')).map(t=>t.id).sort(),['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04','CEH26-M04-C05']);
+ assert.deepEqual(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')&&t.status==='published').map(t=>t.id).sort(),['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04','CEH26-M04-C05']);
 });

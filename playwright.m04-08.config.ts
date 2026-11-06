@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'tests/browser',testMatch:'m04-08.spec.ts',workers:1,timeout:60000,outputDir:'.local/m04-08/browser',reporter:[['list'],['json',{outputFile:'.local/m04-08/results.json'}]],use:{baseURL:'http://127.0.0.1:4208',headless:true,trace:'retain-on-failure'},webServer:{command:'python3 -m http.server 4208 --bind 127.0.0.1 --directory .local/m04-08/preview',url:'http://127.0.0.1:4208/',reuseExistingServer:false}});

@@ -46,7 +46,7 @@ test('C01–C05 are published; five pending units and reused C01 slug resolves o
   for(const i of [6,7,8,9,10,11,12])assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(i).padStart(2,'0')}/`),null);
  }
  assert.equal(concepts.find(c=>c.id===id)?.displayId,'CEH M04-01');
- assert.equal(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')).length,5);
+ assert.equal(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')&&t.status==='published').length,5);
 });
 
 test('all ten new M04 IDs map to conventional public slugs without exposing pending content or colliding with legacy IDs',()=>{

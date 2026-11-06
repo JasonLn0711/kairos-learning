@@ -1,0 +1,465 @@
+{
+  "id": "CEH26-M04-C08",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-06",
+  "status": "draft",
+  "publishedOn": "9999-12-31",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "核對 LDAP 查詢的身分、起點、範圍、欄位及結束狀態，判讀帳號盤點是否完整。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "先說結論：LDAP 查詢得到的是「這個身分，在這次查詢條件與限制下看見的資料」。要把它當成完整盤點，還得確認查詢範圍、權限、回傳欄位，以及結果是否收完。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一課接續 LDAP 的基礎，回顧目錄位置、搜尋範圍及登入，並用一個新的合成案例，把它們串成「如何判讀結果」的完整流程。只討論合法授權的隔離環境，不對第三方目標操作。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. 把目錄想成公司的通訊錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通訊錄可能記錄同仁姓名、帳號、所屬部門與群組。你問櫃檯「研發部有哪些人」，櫃檯給了兩個名字，並不代表全公司只有兩個人：你問的範圍、可看的資料和是否還有下一頁，都會影響答案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP，全名 Lightweight Directory Access Protocol，中文是「輕量型目錄存取協定」，就是程式向目錄查詢資料的一套溝通規則。Active Directory Domain Services，簡稱 AD DS，中文是「Active Directory 網域服務」，是微軟管理帳號、電腦與相關目錄資訊的服務。LDAP 是溝通方式，AD DS 是提供目錄服務的系統，兩者不是同義詞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "列舉，英文 Enumeration，在這裡是依條件整理可取得的目錄項目與屬性。防守方可用它盤點帳號及檢查資訊暴露；未經授權的人若讀到過多資料，也可能藉此了解組織結構。所以要控制誰能看什麼，不能只想著把協定一律關掉。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. 先弄清楚你到底問了什麼"
+        },
+        {
+          "kind": "paragraph",
+          "text": "目錄中的一筆資料叫 Entry，中文可理解為「項目」；項目內的姓名、郵件等欄位叫 Attribute，也就是「屬性」。DN 是 Distinguished Name，「識別名稱」，用來描述項目在目錄階層中的位置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如合成資料 CN=Lin,OU=People,DC=example,DC=test，可讀成：example.test 目錄內 People 組織單位中的 Lin 項目。這裡 CN 是通用名稱，OU 是組織單位，DC 是網域名稱的組成部分。另一種常見用語 Domain Controller 也縮寫 DC，意思是「網域控制站」，不要與 DN 裡的 DC= 欄位混淆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一次搜尋至少要看清四件事："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Base：從哪個項目開始找。",
+            "Scope：搜尋多深。base 只看起點本身；one-level 只看下一層，不含起點；subtree 看起點與底下各層。",
+            "Filter：只挑符合什麼條件的項目，例如特定類型或名稱。",
+            "Requested attributes：要求回傳哪些欄位。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這像向櫃檯說：「以研發部為起點，只查直接隸屬的人，只要符合某條件者，給我姓名即可。」你沒查子部門，也沒要求郵件欄位，就不能拿結果宣稱「子部門沒人、這些人都沒有郵件」。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. AD 裡，查詢入口也有差別"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AD 的網域是組織目錄的一個管理範圍；樹系是由一個或多個網域構成的整體架構。這裡先記住：一個網域不必然等於整個樹系。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RootDSE 是 LDAP 伺服器用來提供自身資訊的特殊項目，可以把它想成櫃檯的「服務說明牌」。它能告訴你伺服器有哪些目錄分割區、支援哪些能力。在 AD 中，defaultNamingContext 可幫你找到該伺服器的預設網域目錄起點。讀到說明牌，不代表已經拿到所有帳號，也不代表匿名身分可讀整份通訊錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Global Catalog，簡稱 GC，中文是「通用類別目錄」，則像跨網域的索引。它能協助跨網域找物件，但對其他網域持有的是部分屬性的副本，不是每個物件所有欄位都在裡面。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，某欄位沒出現在 GC 查詢結果中，可能與它未包含在該部分屬性集合有關。應再核對查詢欄位、資料所在目錄及讀取權限，不能直接說原始資料不存在。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. 帳號登入、讀取權限、傳輸保護是三件事"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 的 Bind 是建立或變更連線驗證狀態的操作。你要記錄實際採用的驗證方式及身分，不能只看到「Bind 成功」四個字，就認定自己以某個帳號登入、而且什麼都能看。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想成公司櫃檯就很好理解："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "驗證：你是誰，或目前是不是匿名身分。",
+            "授權：這個身分可讀哪些項目與欄位。",
+            "傳輸保護：查詢與資料在路上會不會被偷看或竄改。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "TLS，中文是「傳輸層安全協定」，可保護傳輸。LDAPS 通常在 TCP 636 連線開始時使用 TLS；StartTLS 則可在 TCP 389 的 LDAP 連線上啟動 TLS。不要只靠埠號判斷安全，要確認實際保護有成功建立，且伺服器憑證驗證正確。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另有 LDAP signing，也就是「LDAP 簽章」，主要用於驗證訊息完整性與來源。簽章不等於加密：內容未被竄改，和旁人看不到內容，是不同保證。 實際防護要核對作業系統版本、驗證方式與生效設定，不套用「所有 AD 預設都一樣」的說法。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. 新案例：畫面有資料，不等於搜尋做完了"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下完全是教學用的合成紀錄，沒有連線、沒有實測，也不代表任何真實公司的資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你獲准盤點隔離實驗網域中 People 組織單位底下的帳號。工具顯示："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "查詢起點：OU=People,DC=example,DC=test。",
+            "搜尋範圍：subtree。",
+            "篩選條件：本次帳號盤點指定的條件。",
+            "回傳欄位：只有 cn，也就是通用名稱。",
+            "本次搜尋的筆數限制：2。",
+            "顯示兩筆名稱：Lin、Chen。",
+            "最後狀態：sizeLimitExceeded，結果代碼 4。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "觀察：你收到兩筆符合本次條件、且本次身分可見的項目；搜尋因筆數限制沒有正常收完。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以下的結論：目前取得兩筆結果，但完整數量尚未確認。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能下的結論：People 底下總共只有兩個帳號；整個網域只有兩個帳號；這兩人沒有郵件；他們能登入任何特定應用程式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你應先保留原始查詢條件、身分、結果及結束狀態。後續若仍在授權範圍內，可使用工具支援的分頁搜尋，逐頁取回資料，而不是為了讓數字變多就直接改動正式伺服器的限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Paging 是「分頁」：資料分批回來，工具用伺服器提供的續查資訊取得下一批。頁面大小是每批上限，不是帳號總數。只看第一頁，或沒有確認工具把後續頁面取完，都不能當作完整結果。 分頁也不會自動擴大你的讀取權限或搜尋範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使最後顯示 success，也只表示這次操作成功；它不是「整個組織所有資料都盤點完畢」的保證。盤點是否完整，還要回頭對照你原先要回答的問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. 防守方應留下什麼證據？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是這個案例的驗證做法，不是聲稱已完成的設定："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "查詢可重現：記錄時間、伺服器、使用身分、起點、範圍、篩選條件與欄位；不記錄密碼或秘密。",
+            "結果有收完：保留最後結果代碼、分頁是否完成及工具錯誤，將「收到幾筆」與「是否完整」分開。",
+            "可見範圍合理：用管理者事先建立的合成測試資料核對低權限帳號可見內容；讀不到的原因保留待確認，不自行提高權限。",
+            "連線確實受保護：核對實際 TLS 連線及憑證驗證，而非只看連線位址寫了 636；若查簽章，另確認適用的驗證方式與有效設定。",
+            "異常判讀有上下文：大量目錄查詢值得調查，但盤點工具也會合法查詢。把來源、身分、時間及既有作業排程一起看，不能只憑「有 LDAP 查詢」判定入侵。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這課要帶走的一句話：先問「我用誰的身分、從哪裡、按什麼條件查，結果收完了嗎」，再解釋查到的數字。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "小檢核，一題就好"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同事用已驗證的低權限帳號，經過有效 TLS 連線，對 People 組織單位做 one-level 搜尋，只要求姓名。工具顯示兩筆結果及 success，他說：「People 底下連同所有子部門只有兩個人，而且都沒有郵件。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個結論有哪兩處超出證據？你會先核對哪兩個查詢設定？"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ldap-completeness",
+          "summary": "參考答案",
+          "paragraphs": [
+            "第一處是範圍。one-level 只查 People 直接下一層，不會搜尋更深的子部門；應先核對 scope 是否符合「含所有子部門」的盤點目的，必要時在原授權範圍內用 subtree。",
+            "第二處是欄位。這次只要求姓名，結果沒有郵件欄位，不能證明對方沒有郵件；應核對 requested attributes 是否包含要查的郵件屬性。即使有要求但仍缺少，也要再查資料及權限等原因，不能猜。",
+            "TLS 保護傳輸，登入確認的身分與權限影響可見內容；兩者都不會自動修正搜尋範圍或補上沒要求的欄位。success 代表本次操作成功，不代表公司的盤點問題已完整回答。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "來源與適用範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課查核日期：2026/11/06。採 LDAPv3 規範與 Microsoft AD DS 文件，不假設不同 Windows 版本的安全預設完全一致。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "[RFC 4511：LDAPv3 協定，2006/06](https://www.rfc-editor.org/rfc/rfc4511.html)：搜尋請求、結束狀態與結果代碼。",
+            "[RFC 4513：驗證與安全機制，2006/06](https://www.rfc-editor.org/rfc/rfc4513.html)：驗證狀態、存取控制及傳輸保護。",
+            "[Microsoft：搜尋範圍，2020/08/17](https://learn.microsoft.com/en-us/windows/win32/ad/search-scope)。",
+            "[Microsoft：RootDSE，2024/02/07](https://learn.microsoft.com/en-us/windows/win32/adsi/rootdse)。",
+            "[Microsoft：Global Catalog，2020/08/17](https://learn.microsoft.com/en-us/windows/win32/ad/global-catalog)。",
+            "[Microsoft：分頁搜尋，2018/05/31](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/paging-search-results)。",
+            "[Microsoft：LDAP 簽章與保護差異，2026/10/02](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/ldap-signing)。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Check an LDAP query's identity, base, scope, attributes, and final status to assess whether an account inventory is complete.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The key point: an LDAP query returns “the data this identity can see under this query's conditions and limits.” Before treating it as a complete inventory, verify the search scope, permissions, requested attributes, and whether all results were retrieved."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson builds on LDAP fundamentals: directory locations, search scope, and authentication. A new synthetic case brings them together into a complete process for interpreting results. The discussion covers legally authorized, isolated environments only; it performs no operations against third-party targets."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Think of the directory as a company address book"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An address book might contain employees' names, accounts, departments, and groups. If you ask reception “Who is in Engineering?” and receive two names, that does not mean the entire company has only two people. The scope of your question, the information you may see, and whether another page remains all affect the answer."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP stands for Lightweight Directory Access Protocol. It is a set of communication rules that programs use to query directories. Active Directory Domain Services, or AD DS, is Microsoft's service for managing accounts, computers, and related directory information. LDAP is a communication method; AD DS is a system providing directory services. They are not synonyms."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here, enumeration means organizing the directory entries and attributes available under specified conditions. Defenders can use it to inventory accounts and assess information exposure. Someone without authorization who can read excessive information may also learn about the organization's structure. Control who can see what; simply disabling the protocol everywhere is not the whole answer."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. First establish exactly what you asked"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A directory record is an Entry; fields such as its name and email are Attributes. DN stands for Distinguished Name and describes an entry's location in the directory hierarchy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, the synthetic DN CN=Lin,OU=People,DC=example,DC=test identifies the Lin entry in the People organizational unit of the example.test directory. CN means common name, OU means organizational unit, and DC denotes a component of the domain name. Domain Controller is also abbreviated DC; distinguish that meaning from a DN's DC= component."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For each search, establish at least four things:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Base: the entry from which the search starts.",
+            "Scope: how deep to search. base examines only the starting entry; one-level examines only its immediate children, excluding the starting entry; subtree examines the starting entry and all levels beneath it.",
+            "Filter: the conditions an entry must match, such as a specified type or name.",
+            "Requested attributes: the fields to return."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is like telling reception: “Start with Engineering, examine only its immediate members, select those matching a condition, and give me their names only.” If you did not search subdepartments or request email, the results cannot establish that the subdepartments are empty or these people have no email."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. In AD, the query entry point also matters"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An AD domain is one administrative scope within an organization's directory; a forest is the overall structure containing one or more domains. Remember: one domain does not necessarily represent the entire forest."
+        },
+        {
+          "kind": "paragraph",
+          "text": "RootDSE is a special entry through which an LDAP server provides information about itself. Think of it as reception's service information sign. It can identify the server's directory partitions and supported capabilities. In AD, defaultNamingContext helps locate that server's default domain naming context. Reading the sign does not retrieve every account or establish that an anonymous identity can read the whole address book."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The Global Catalog, or GC, is like an index spanning domains. It helps find objects across domains, but its replicas for other domains contain only a subset of attributes. It does not contain every field of every object."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A field missing from a GC query result may therefore be absent from that partial attribute set. Check the requested attributes, the directory holding the data, and read permissions before concluding that the original data does not exist."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Authentication, read permissions, and transport protection are three separate things"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP Bind establishes or changes a connection's authentication state. Record the actual authentication method and identity. The words “Bind successful” alone do not establish that you authenticated as a particular account or can read everything."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The reception analogy helps separate these concepts:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Authentication: who you are, or whether the current identity is anonymous.",
+            "Authorization: which entries and attributes this identity may read.",
+            "Transport protection: whether queries and data can be observed or altered in transit."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "TLS stands for Transport Layer Security and can protect data in transit. LDAPS commonly uses TLS from the start of a TCP 636 connection; StartTLS can initiate TLS on a TCP 389 LDAP connection. Do not judge security from the port number alone. Verify that protection was actually established and the server certificate was validated correctly."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP signing primarily verifies message integrity and authenticity. Signing is not encryption: preventing unnoticed alteration and preventing others from reading content are different guarantees. Check the operating-system version, authentication method, and effective settings rather than assuming identical security defaults across all AD installations."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. A new case: seeing data does not mean the search finished"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following records are entirely synthetic teaching material. No connection or test was performed, and they represent no real company's data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You are authorized to inventory accounts beneath the People organizational unit in an isolated lab domain. The tool reports:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Search base: OU=People,DC=example,DC=test.",
+            "Search scope: subtree.",
+            "Filter: the conditions specified for this account inventory.",
+            "Requested attributes: cn only, meaning common name.",
+            "Entry limit for this search: 2.",
+            "Two names displayed: Lin and Chen.",
+            "Final status: sizeLimitExceeded, result code 4."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Observation: you received two entries matching this query's conditions and visible to its identity. The entry limit prevented the search from finishing normally."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Supported conclusion: two results have been obtained; the complete count remains unconfirmed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Unsupported conclusions: People contains exactly two accounts; the entire domain contains only two accounts; these two people have no email; or they can sign in to any particular application."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First preserve the original query conditions, identity, results, and final status. If further work remains within authorization, use the tool's supported paged search to retrieve results page by page. Do not change production server limits merely to increase the count."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Paging returns data in batches; the tool uses continuation information supplied by the server to obtain the next batch. The page size limits each batch, not the total account count. The first page alone, or an unverified assumption that the tool retrieved subsequent pages, cannot establish completeness. Paging also does not automatically expand your read permissions or search scope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even a final success status means only that this operation succeeded. It does not guarantee that all of the organization's data has been inventoried. Assess completeness against the question the inventory was intended to answer."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. What evidence should defenders retain?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following are verification methods for this case, not claims of completed configuration:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Reproducible query: record time, server, identity, base, scope, filter, and attributes; retain no passwords or secrets.",
+            "Complete retrieval: preserve the final result code, paging completion, and tool errors. Separate “how many entries arrived” from “whether retrieval was complete.”",
+            "Appropriate visibility: use synthetic test data created beforehand by an administrator to check what a low-privilege account can see. Leave unexplained read failures open for investigation; do not raise your own privileges.",
+            "Actual connection protection: verify the real TLS connection and certificate validation rather than relying on an address containing 636. When checking signing, separately confirm the applicable authentication method and effective settings.",
+            "Context for anomaly interpretation: large directory queries merit investigation, but legitimate inventory tools also perform them. Consider source, identity, time, and established job schedules together; an LDAP query alone does not establish an intrusion."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Take away this question: “Which identity did I use, where did I start, what conditions did I specify, and did I retrieve all results?” Answer it before interpreting the count."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "One small check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A colleague uses an authenticated low-privilege account over a valid TLS connection to perform a one-level search of the People organizational unit, requesting names only. The tool displays two results and success. The colleague says, “People and all its subdepartments contain only two people, and neither has email.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Which two parts of that conclusion exceed the evidence? Which two query settings would you check first?"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ldap-completeness",
+          "summary": "Reference answer",
+          "paragraphs": [
+            "The first issue is scope. one-level searches only People's immediate children, excluding deeper subdepartments. First check whether scope matches the inventory's aim of including all subdepartments; use subtree if necessary within the original authorization.",
+            "The second issue is attributes. This search requested only names. The absence of an email field in the result cannot establish that a person has no email. Check whether requested attributes includes the intended email attribute. Even if it was requested but remains absent, investigate the data and permissions rather than guessing.",
+            "TLS protects transport; the authenticated identity and its permissions affect visibility. Neither automatically corrects the search scope or adds unrequested attributes. success means this operation succeeded, not that the company's inventory question has been answered completely."
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "Sources and applicability"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Lesson fact-check date: 2026/11/06. This lesson uses LDAPv3 specifications and Microsoft AD DS documentation, without assuming identical security defaults across Windows versions."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "[RFC 4511: LDAPv3 protocol, 2006/06](https://www.rfc-editor.org/rfc/rfc4511.html): search requests, final status, and result codes.",
+            "[RFC 4513: authentication and security mechanisms, 2006/06](https://www.rfc-editor.org/rfc/rfc4513.html): authentication state, access control, and transport protection.",
+            "[Microsoft: search scope, 2020/08/17](https://learn.microsoft.com/en-us/windows/win32/ad/search-scope).",
+            "[Microsoft: RootDSE, 2024/02/07](https://learn.microsoft.com/en-us/windows/win32/adsi/rootdse).",
+            "[Microsoft: Global Catalog, 2020/08/17](https://learn.microsoft.com/en-us/windows/win32/ad/global-catalog).",
+            "[Microsoft: paging search results, 2018/05/31](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/paging-search-results).",
+            "[Microsoft: LDAP signing and protection differences, 2026/10/02](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/ldap-signing)."
+          ]
+        }
+      ]
+    }
+  }
+}
