@@ -45,3 +45,9 @@ WRITE-01–08：原稿與前版保全、139 段及 11 選項對照、完整英�
 下載雜湊版本修正 3a5209a 已部署；f443c0e 補上校驗檔 data-sveltekit-reload，避免 SvelteKit 接手靜態檔查詢網址，並新增實際點擊檢查。本機雙語 2 項通過。其 [42236969555 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/42236969555) 首次同樣 syncing_files 逾時，第二次於 14:59:47–15:09:50 UTC 再次同步逾時；API 曾在 finished_file_sync 與 syncing_files 間變動。尚未把本機通過記成此修正的正式驗收。
 
 下一關：待 Pages 同步服務恢復後，重跑 f443c0e 的發布並執行雙語專用瀏覽器及實際下載／校驗檔點擊檢查。教材主體 9dfb779 與下載雜湊版本 3a5209a 已有正式部署證據，最後靜態校驗檔導航修正仍 pending。
+
+## 最終正式驗收
+
+[42236969555 第三次工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/42236969555/attempts/3) 已成功部署 f443c0e，取代上文 pending 狀態。正式站雙語專用瀏覽器 2 項全通過，涵蓋完整章節、圖解、18 組授權、四尺寸／200% 文字、鍵盤、搜尋、無 JavaScript，以及版本下載連結與校驗檔實際點擊。下載頁實際取得 ZIP 30,151 bytes，SHA-256 44cab61b94b80b0bcd49d4628e60e424ff5e5659855a032042136db9cc79f182，與本機逐位元組相同；校驗檔點擊顯示正確內容，直接請求 HTTP 200 且內容相同。
+
+部署重試成功支持同步延遲判斷，未確定 GitHub 內部根因。後續純回執提交使用 skip ci，程式／教材／部署產物與已驗證的 f443c0e 相同。實體裝置、完整螢幕閱讀器、本人理解及真正多人後端仍各自待證據。
