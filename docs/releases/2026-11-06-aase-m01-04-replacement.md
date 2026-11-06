@@ -26,10 +26,16 @@ WRITE-01–10：來源與前版保存、逐段採用與修正、完整英譯、�
 
 ## 發布
 
-待本機完整檢查後，以保留歷史的獨立提交推送 main，沿用既有 GitHub Pages。本次開始時 3a5209a／42234691476 為已知成功部署；f443c0e／42236969555 的兩次 Pages 同步逾時留在原[診斷紀錄](2026-11-06-aase-m01-03-replacement.md#pages-同步診斷2026-11-06)，2026-11-06 再讀 Actions 時該工作已成功，顯示舊阻塞已解除；本次仍須核對自己的部署與頁面結果。
+來源 892fa6f、教材 cf68c60、驗證 7d8d8c1 已分開提交並推送 main，fetch 後 divergence 為 0 0，沿用既有 GitHub Pages。本次開始時 3a5209a／42234691476 為已知成功部署；f443c0e／42236969555 的兩次 Pages 同步逾時留在原[診斷紀錄](2026-11-06-aase-m01-03-replacement.md#pages-同步診斷2026-11-06)，2026-11-06 再讀 Actions 時該工作已成功，顯示舊阻塞已解除；本次仍須核對自己的部署與頁面結果。
 
 ## 所有權與下一關
 
 稀缺資源是讀者注意力與可追溯驗證證據；完整來源、正文、圖解與執行結果由 kairos-learning 擁有。Planning 僅需定位、發布狀態、容量及下一關，容量維持 Unknown，不新增學員工時或完成紀錄。教材發布驗證完成後，下一關是讀者以三題及一份需求線索紀錄檢查理解；真人訪談與實際成效另行驗證。
 
 本機執行日誌與截圖保存在發布 worktree 的 `.local/aase/m0104/`；完成後另複製到原 checkout 的忽略目錄 `.local/aase/m0104-replacement-2026-11-06/`，供後續追溯。
+
+## 首次部署與重跑
+
+[Pages 42241488413](https://github.com/JasonLn0711/kairos-learning/actions/runs/42241488413) attempt 1 的內容、223 項單元、型別、發布邊界、release 與下載校驗全部通過，上傳成功；部署於 2026-11-06 15:17:54–15:27:59 UTC 執行，停在 updating_pages，十分鐘後回報 Timeout reached, aborting! 並取消該次部署。工作已確認 completed／failure 後才啟動 attempt 2，沒有中斷仍在運行的工作。
+
+等候時瀏覽器回讀 HTTP 200，正式頁仍為 v1.0.2、新圖數量為 0；urllib 回讀收到 HTTP 403，未作成功證據。正式雙語全文與六圖仍待 attempt 2 部署後驗證。既有本機結果保存於原 checkout 的 `.local/aase/m0104-replacement-2026-11-06/local-browser/`；本次未以 Git 推送或本機通過代替正式部署完成。
