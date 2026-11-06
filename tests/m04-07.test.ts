@@ -8,6 +8,7 @@ const t=allConceptTeachings.find(t=>t.id===id)!;
 test('SNMP complete paired teaching, topology exports and publication gates',()=>{
  assert.equal(spawnSync('python3',['scripts/m04_07_content.py','--check']).status,0);
  assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
+ const malformed=structuredClone(t);const topology=malformed.text.zh.sourceBody!.find(b=>b.kind==='visual')!;if(topology.kind==='visual')topology.visual.items.pop();assert.throws(()=>createConceptCatalog(concepts,[malformed],'2026-11-06'),/invalid SNMP topology/);
  for(const lang of ['zh','en'] as const){
   const body=t.text[lang].sourceBody!;
   assert.deepEqual(body.filter(b=>b.kind==='heading').map(b=>'id' in b?b.id:null),Array.from({length:10},(_,i)=>`section-${i+1}`));
