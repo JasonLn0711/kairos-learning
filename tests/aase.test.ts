@@ -42,7 +42,7 @@ test('only published AASE routes exist; pending neighbors land on directory anch
  assert.ok(aaseSearch.text.includes('結果過期'));
  assert.ok(aaseSearch.text.includes('字串'));
 });
-test('AASE adopts CEH field names without losing original teaching, examples or answer keys',()=>{
+test('historic AASE CEH-field migration retains original teaching, examples and answer keys',()=>{
  for(const current of lessons.filter(l=>['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id))){
   const l:AaseLesson=current.id==='AASE-M01-C01'?read('docs/sources/aase/m01-01/replacement-2026-11-06/previous-v1.0.3.json'):current;
   const old=read('docs/sources/aase/layout-2026-11-05/'+l.id.toLowerCase()+'.json');

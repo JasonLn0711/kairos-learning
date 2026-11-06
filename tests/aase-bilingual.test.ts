@@ -73,7 +73,7 @@ test('AASE bilingual code and graph identity remain invariant, and search uses l
  const enGraph=l.text.en!.sections[0].blocks![0];if(enGraph.kind==='architecture')enGraph.relations[0].to=enGraph.relations[0].from;
  assert.throws(()=>build(ls));
 });
-test('AASE English first lesson preserves Chinese teaching, publication, sources and answer semantics',()=>{
+test('historic AASE first-English edition preserves Chinese teaching in the pre-replacement archive',()=>{
  const before=read('docs/sources/aase/bilingual-2026-11-05/aase-m01-c01.before.json');const l=read('docs/sources/aase/m01-01/replacement-2026-11-06/previous-v1.0.3.json');
  assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,[]);
  assert.equal(l.revision,before.revision+2);assert.equal(l.contentVersion,'1.0.3');
