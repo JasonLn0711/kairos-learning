@@ -7,7 +7,7 @@ import {createConceptCatalog} from '../src/lib/concepts.ts';
 const id='CEH26-M04-C08';
 const t=allConceptTeachings.find(t=>t.id===id)!;
 test('M04-08 draft has complete paired teaching and one editorial answer; publication stays closed',()=>{
- assert.equal(t.status,'draft');assert.equal(t.publishedOn,'9999-12-31');assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
+ assert.equal(t.status,'draft');assert.equal(t.publishedOn,'9999-12-31');assert.equal(t.contentVersion,'1.0.1');assert.deepEqual(t.qa,[]);
  assert.equal(spawnSync('python3',['scripts/m04_08_content.py','--check']).status,0);
  const shape=(lang:'zh'|'en')=>t.text[lang].sourceBody!.map(b=>({kind:b.kind,id:'id'in b?b.id:null,count:b.kind==='list'?b.items.length:b.kind==='answer'?b.paragraphs.length:null}));
  assert.deepEqual(shape('zh'),shape('en'));

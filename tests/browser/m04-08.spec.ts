@@ -7,7 +7,7 @@ for(const lang of ['zh','en']){
  const prefix=lang==='en'?'/en':'';const path=prefix+'/courses/ceh/v13/m04/concepts/m04-08/';
  test(lang+': full paired body, four widths, 200% text, keyboard and navigation',async({page})=>{
   expect((await page.goto(path))?.status()).toBe(200);await expect(page.locator('h1')).toContainText('M04-08');
-  await expect(page.locator('h1')).not.toContainText('CEH26');await expect(page.locator('.article-metadata')).toContainText('v1.0.0');
+  await expect(page.locator('h1')).not.toContainText('CEH26');await expect(page.locator('.article-metadata')).toContainText('v'+source.contentVersion);
   await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href','https://learn.cs-kairos.com'+path);
   const body=source.text[lang].sourceBody;const text=norm((await page.locator('article').textContent())!);let cursor=0;
   for(const b of body)for(const unit of b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:[b.text]){const value=norm(unit);const at=text.indexOf(value,cursor);expect(at,value).toBeGreaterThanOrEqual(cursor);cursor=at+value.length;}
@@ -15,6 +15,8 @@ for(const lang of ['zh','en']){
   for(const heading of await page.locator('.source-body h2').all())await expect(heading).toBeVisible();
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+   const baseItem=page.locator('.source-body li').filter({hasText:'OU=People,DC=example,DC=test'});await expect(baseItem).toHaveCount(1);
+   expect(await baseItem.evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);
    expect(await page.locator('.source-body p,.source-body li').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7)}).length)).toBe(0);
    await page.screenshot({path:dir+'/'+lang+'-'+width+'.png',fullPage:true});
   }
@@ -34,5 +36,20 @@ for(const lang of ['zh','en']){
   const answer=page.locator('#answer-ldap-completeness');await expect(answer).not.toHaveAttribute('open','');await answer.locator('summary').focus();await page.keyboard.press('Enter');await expect(answer.locator('p').first()).toBeVisible();
   const selected=await page.locator('.source-body p').first().evaluate(e=>{const r=document.createRange();r.selectNodeContents(e);const s=getSelection()!;s.removeAllRanges();s.addRange(r);return s.toString();});expect(selected.length).toBeGreaterThan(30);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await context.close();
+ });
+ test(lang+': actual article text doubles at 320px without clipping',async({page})=>{
+  await page.setViewportSize({width:320,height:900});await page.goto(path);
+  const baseline=await page.locator('.source-body p').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
+  await page.locator('main').evaluate(main=>{
+   const sizes=[main,...main.querySelectorAll('*')].map(e=>({e,size:parseFloat(getComputedStyle(e).fontSize),line:parseFloat(getComputedStyle(e).lineHeight)}));
+   for(const {e,size,line} of sizes){(e as HTMLElement).style.fontSize=size*2+'px';if(Number.isFinite(line))(e as HTMLElement).style.lineHeight=line*2+'px';}
+  });
+  const resized=await page.locator('.source-body p').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize));expect(resized).toBe(baseline*2);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  const answer=page.locator('#answer-ldap-completeness');await answer.locator('summary').focus();await page.keyboard.press('Enter');await expect(answer.locator('p').first()).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.locator('.source-body ul').nth(2).screenshot({path:dir+'/'+lang+'-case-text-200.png'});
+  await page.locator('.toc').screenshot({path:dir+'/'+lang+'-toc-text-200.png'});
+  writeFileSync(dir+'/'+lang+'-actual-text-200.json',JSON.stringify({baseline,resized,width:320,scrollWidth:await page.evaluate(()=>document.documentElement.scrollWidth)}));
  });
 }
