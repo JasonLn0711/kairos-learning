@@ -22,6 +22,18 @@ WRITE-01–08：逐段來源與九個選項核對、完整英譯、技術來源�
 
 ## 發布與正式站
 
-等待最終驗證與正式部署／回讀，尚未以本機測試標記正式站完成。
+來源 `287be2d`、教材／互動 `6956025`、工作坊封裝 `a46fadf`、維護／驗證 `4176f34` 分開提交並非強制推送 main，fetch 後 divergence `0 0`。先 fast-forward 保留遠端 SNMP 發布回執與測試，原 checkout 及無關 dirty work 保持。
+
+[Pages 42209603522](https://github.com/JasonLn0711/kairos-learning/actions/runs/42209603522) 成功部署 `4176f34`。部署後以 `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0102.config.ts` 實測兩語 2 項通過：新標題、v1.1.0、完整段落、四圖、四種規格情境、九個 A–C 選項與 B／C／A 解析、四尺寸／200% 文字、鍵盤、局部表格、搜尋及無 JavaScript。
+
+工作坊實際瀏覽器下載的 ZIP 與校驗碼逐位元組符合本機；校驗碼連結實際操作也能顯示正確內容。ZIP SHA-256 為 `3d0c1af8ca64c4e4483ce9981c12a7fdd03a8be4105871106cc53934e5232840`，內含課綱與新標題一致。初次 Python urllib 直接請求得到 HTTP 403，保留該觀察，不將其改寫成一般 HTTP 客戶端可用；瀏覽器使用者路徑通過。初版下載驗證器誤等一般 response／navigation 事件，改以原生 download 與可見校驗文字核對，沒有修改正式存取設定。
+
+最終提交補明標題驗收與本回執，不變更已部署正文／程式；live.log、live-download.json 與截圖保存於本輪原 checkout 忽略目錄。網站驗證與真實受測應用、權限隔離及本人理解仍分開。
 
 本機證據保存於原 checkout 的忽略目錄 `.local/aase/m0102-replacement-2026-11-06/`；發布 worktree 的 `.local/aase/m0102/` 留瀏覽器與圖解截圖。
+
+## 相鄰教學與 Planning
+
+承接 [M01-01 成品與問題判斷](2026-11-06-aase-m01-01-replacement.md)，本課聚焦責任、授權與驗證證據；同系列前後篇導覽依原 stable ID 及 slug 自動維持。
+
+[今日日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-06.md#aase-m0102-replacement-2026-11-06)、[網站定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#aase-m0102-replacement-2026-11-06)及 [W45](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#aase-m0102-replacement-2026-11-06)保存狀態、容量與下一關；來源與執行細節留 Kairos。Planning `d8d14d61`／`f61994ca` 分別保存專案及日／週紀錄，推送 main 後 divergence `0 0`；repository validator 保留 44 個既有警告、0 新增，knowledge 186／186 與日／週 agenda 通過。
