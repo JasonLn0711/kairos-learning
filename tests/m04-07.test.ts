@@ -10,7 +10,7 @@ test('SNMP complete paired teaching, topology exports and publication gates',()=
  assert.equal(t.contentVersion,'1.0.0');assert.deepEqual(t.qa,[]);
  for(const lang of ['zh','en'] as const){
   const body=t.text[lang].sourceBody!;
-  assert.deepEqual(body.filter(b=>b.kind==='heading').map(b=>b.id),Array.from({length:10},(_,i)=>`section-${i+1}`));
+  assert.deepEqual(body.filter(b=>b.kind==='heading').map(b=>'id' in b?b.id:null),Array.from({length:10},(_,i)=>`section-${i+1}`));
   assert.equal(body.filter(b=>b.kind==='paragraph'&&b.id).length,8);
   assert.equal(body.filter(b=>b.kind==='table').length,9);
   const visual=body.find(b=>b.kind==='visual');assert.ok(visual&&visual.kind==='visual');assert.equal(visual.visual.items.length,4);

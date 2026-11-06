@@ -24,7 +24,7 @@ for(const lang of ['zh','en']){
   await answer.locator('summary').focus();await page.keyboard.press('Enter');await expect(answer).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(answer).not.toHaveAttribute('open','');await page.keyboard.press('Shift+Tab');await page.keyboard.press('Tab');await expect(answer.locator('summary')).toBeFocused();expect(await answer.locator('summary').evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
   await expect(page.locator('.next-links a').first()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/m04-04/`);await expect(page.locator('.next-links a').last()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/#ceh26-m04-c06`);
   await page.goto(`${prefix}/search/`);await page.locator('input[type=search]').fill('50020');await expect(page.locator(`.reading-list a[href="${path}"]`)).toBeVisible();
-  for(const slug of ['ceh26-m04-c05','m04-06','m04-07','m04-09','m04-10','m04-11','m04-12'])expect((await request.get(`${prefix}/courses/ceh/v13/m04/concepts/${slug}/`)).status()).toBe(404);
+  for(const slug of ['ceh26-m04-c05','m04-06','m04-09','m04-10','m04-11','m04-12'])expect((await request.get(`${prefix}/courses/ceh/v13/m04/concepts/${slug}/`)).status()).toBe(404);
   const sitemap=await (await request.get('/sitemap.xml')).text();expect(sitemap).toContain(path);expect(sitemap).not.toMatch(/\/courses\/ceh\/v13\/m04\/concepts\/m04-(?:0[679]|1[0-2])\//);
  });
  test(`${lang}: no JavaScript retains body, sources and native answer`,async({browser})=>{

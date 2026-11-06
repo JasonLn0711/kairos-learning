@@ -23,7 +23,7 @@
   import InlineText from './InlineText.svelte';
   let { blocks, conceptId='', lang='zh' }: {blocks: SourceBlock[];conceptId?:string;lang?:string} = $props();
 </script>
-<div class="source-body" class:ftpsmtp={conceptId==='CEH26-M04-C05'||conceptId==='CEH26-M04-C03'||conceptId==='CEH26-M04-C04'} class:netbiosRpc={conceptId==='CEH26-M04-C05'} class:dns={conceptId==='CEH26-M04-C02'} class:enumeration={conceptId==='CEH26-M04-C01'}>
+<div class="source-body" class:snmp={conceptId==='CEH26-M04-C07'} class:ftpsmtp={conceptId==='CEH26-M04-C05'||conceptId==='CEH26-M04-C03'||conceptId==='CEH26-M04-C04'} class:netbiosRpc={conceptId==='CEH26-M04-C05'} class:dns={conceptId==='CEH26-M04-C02'} class:enumeration={conceptId==='CEH26-M04-C01'}>
   {#each blocks as block,i}
     {#if block.kind === 'sourceImage'}
       <figure class="original-image">
@@ -47,6 +47,7 @@
   {/each}
 </div>
 <style>
+  .source-body.snmp table{font-size:1rem;line-height:1.8}
   .original-image{margin:1.5rem 0;max-width:100%;min-width:0}
   .original-image img{display:block;width:100%;height:auto;max-width:100%}
   .original-image figcaption{margin-top:.6rem;overflow-wrap:anywhere}

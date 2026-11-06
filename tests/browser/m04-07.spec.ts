@@ -15,6 +15,7 @@ for(const lang of ['zh','en']){
    await expect(page.locator('[data-snmp-diagram] .devices li')).toHaveCount(3);
    const boxes=await page.locator('[data-snmp-diagram] .devices li').evaluateAll(es=>es.map(e=>({x:e.getBoundingClientRect().x,y:e.getBoundingClientRect().y})));
    if(width===1280)expect(new Set(boxes.map(e=>e.y)).size).toBe(1);if(width===320)expect(new Set(boxes.map(e=>e.x)).size).toBe(1);
+   expect(await page.locator('.source-body p,.source-body td,.source-body th').evaluateAll(es=>es.some(e=>parseFloat(getComputedStyle(e).fontSize)<16||parseFloat(getComputedStyle(e).lineHeight)/parseFloat(getComputedStyle(e).fontSize)<1.7))).toBe(false);
    expect(await page.locator('[data-snmp-diagram] p').evaluateAll(es=>es.some(e=>parseFloat(getComputedStyle(e).fontSize)<16))).toBe(false);
    await page.locator('[data-snmp-diagram]').screenshot({path:'.local/m04-07/'+lang+'-'+width+'.png'});
   }
