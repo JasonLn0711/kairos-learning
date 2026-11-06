@@ -7,8 +7,8 @@ for(const lang of ['zh','en']){
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`${prefix}/courses/ceh/v13/m04/`);
   await expect(page.locator('.concept-map li')).toHaveCount(10);
-  await expect(page.locator('.concept-map a')).toHaveCount(5);
-  for(const i of [6,7,8,9,10])await expect(page.locator(`#ceh26-m04-c${String(i).padStart(2,'0')}`)).toContainText(lang==='zh'?'待發布':'Pending publication');
+  await expect(page.locator('.concept-map a')).toHaveCount(6);
+  for(const i of [6,7,9,10])await expect(page.locator(`#ceh26-m04-c${String(i).padStart(2,'0')}`)).toContainText(lang==='zh'?'待發布':'Pending publication');
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
@@ -19,11 +19,11 @@ for(const lang of ['zh','en']){
   await page.keyboard.press('Tab');expect(await page.locator(':focus').count()).toBe(1);
   expect(await page.locator(':focus').evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
   await page.goto(`${prefix}/courses/ceh/v13/m03/concepts/m03-08/`);
-  const next=page.locator('.next-links a').last();await expect(next).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);await next.click();await expect(page.locator('h1')).toContainText('CEH M04-01');
+  const next=page.locator('.next-links a').last();await expect(next).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);await next.click();await expect(page.locator('h1')).toContainText('M04-01');
   for(const path of ['concepts/ceh26-m04-c01/','concepts/m04-12/','concepts/ceh26-m04-c02/','service-responses-and-enumeration/','quiz/','labs/'])expect((await request.get(`${prefix}/courses/ceh/v13/m04/${path}`)).status()).toBe(404);
   expect((await request.get('/images/ceh/m04-01-access-results.svg')).status()).toBe(404);
   expect((await request.get('/archive/ceh/m04-legacy-2026-11-04/manifest.json')).status()).toBe(404);
-  await page.goto(`${prefix}/search/`);await Promise.all([page.waitForResponse(r=>r.url().endsWith('/search-index.json')),page.locator('input[type=search]').fill('M04')]);await expect(page.locator('.reading-list a[href*="/courses/ceh/v13/m04/"]')).toHaveCount(5);await expect(page.locator('.reading-list a[href*="/courses/ceh/v13/m04/"]').first()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);
+  await page.goto(`${prefix}/search/`);await Promise.all([page.waitForResponse(r=>r.url().endsWith('/search-index.json')),page.locator('input[type=search]').fill('M04')]);await expect(page.locator('.reading-list a[href*="/courses/ceh/v13/m04/"]')).toHaveCount(6);await expect(page.locator('.reading-list a[href*="/courses/ceh/v13/m04/"]').first()).toHaveAttribute('href',`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`);
   expect(errors).toEqual([]);
  });
  test(`${lang}: CEH overview distinguishes published lessons and pending M04`,async({page})=>{
@@ -37,7 +37,7 @@ for(const lang of ['zh','en']){
   await expect(main).not.toContainText(lang==='zh'?'每章都有完整雙語閱讀':'Each module includes complete bilingual reading');
   await expect(main).not.toContainText(lang==='zh'?'目前從 M04 開始':'starting with M04');
   const m04=main.locator('.module-list > li').filter({has:page.locator('a[href="'+prefix+'/courses/ceh/v13/m04/"]')});
-  await expect(m04).toContainText(lang==='zh'?'10 個目錄項目，5 篇已整理':'10 topics, 5 available');
+  await expect(m04).toContainText(lang==='zh'?'10 個目錄項目，6 篇已整理':'10 topics, 6 available');
  });
  test(`${lang}: no JavaScript route and neighboring module`,async({browser})=>{
   const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:320,height:900}});const page=await context.newPage();
