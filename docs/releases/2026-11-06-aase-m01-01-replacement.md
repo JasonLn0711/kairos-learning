@@ -17,10 +17,18 @@
 - INT-01、A11Y-01–03：缺漏／齊全、三欄空白邊界、Enter／Space、Tab／Shift+Tab、原生答案及實際 JSON 下載通過；無 JavaScript 控制停用並保留兩情境表。
 - 205 項單元測試通過；Svelte／TypeScript 0 errors、0 warnings；專用雙語瀏覽器 2 項通過。來源段落與兩表、五種檔案、答案鍵及歷史保存均有對應檢查。
 
-證據在發布 worktree 的 `.local/aase/m0101/` 與本機 `/tmp/aase-{tests,check,browser,boundary,release,regression,ceh-regression}.log`。AI 協助編輯、英譯與工具驗證；讀者理解、實體手機與完整螢幕閱讀器待各自驗證。內容驗證、draft／future 發布邊界（756 份部署文字產物及英文課程閘門）、乾淨重建、release 與 30 檔工作坊封裝校驗通過；既有 AASE M01-01 英文閱讀回歸 1 項通過。
+原 checkout 的忽略目錄 `.local/aase/m0101-replacement-2026-11-06/` 保存本輪日誌與手機／桌面截圖；發布 worktree 另有 `.local/aase/m0101/`。AI 協助編輯、英譯與工具驗證；讀者理解、實體手機與完整螢幕閱讀器待各自驗證。內容驗證、draft／future 發布邊界（756 份部署文字產物及英文課程閘門）、乾淨重建、release 與 30 檔工作坊封裝校驗通過；既有 AASE M01-01 英文閱讀回歸 1 項通過。
 
 CEH C02 共用元件回歸執行 20 項，18 通過，2 項既有目錄預期失敗：`tests/browser/ceh26-m04-c02.spec.ts:24` 固定期待 5 篇，但目前 catalog 提供 6 篇，錯誤為 `Expected: 5 / Received: 6`。本輪未修改 CEH catalog、內容或該測試，保留這項 repo 條件；DNS 正文、兩語圖解、四尺寸、200% 文字、無 JavaScript、SVG 與原生答案相關檢查通過。未將 18／20 寫成全套通過。
 
 ## 發布與正式站
 
-待本輪閘門結束後記錄實際提交、部署及回讀結果。
+來源 `08bf9e3`、教材／互動 `b4dffcc`、維護／驗證 `ff38c61` 已分開提交並非強制推送 main，fetch 後 divergence `0 0`；原 checkout 與無關修改保留。
+
+[Pages run 42199564980](https://github.com/JasonLn0711/kairos-learning/actions/runs/42199564980) 成功部署 `ff38c61`。部署後以 `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0101.config.ts` 實測兩語 2 項通過：版本、全文段落、表單關係、四尺寸、200% 文字、鍵盤、無 JavaScript、缺漏阻擋、齊全時實際合成 JSON 下載及切回缺漏移除下載。這是正式站瀏覽器證據，沒有推論為讀者理解或後端安全驗收。
+
+最後將舊遷移測試名稱明確標記為歷史保存，26 項相關測試再跑通過；新教材由獨立來源完整性與互動測試核對。最終文件提交只補證據與定位，不改已部署正文或程式。
+
+## Planning 連結
+
+[今日日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-06.md#aase-m0101-replacement-2026-11-06)、[網站定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#aase-m0101-replacement-2026-11-06)及 [W45](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#aase-m0101-replacement-2026-11-06)保存容量與下一關；詳細供稿、程式、測試及本回執留 Kairos。Planning `0046f8df`／`c8cb304e` 分別保存專案定位及日／週紀錄，非強制推送 main 後 divergence `0 0`；repository validator 保留 44 項既有警告、0 新增，日／週 agenda 通過。
