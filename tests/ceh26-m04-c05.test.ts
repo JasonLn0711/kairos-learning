@@ -11,9 +11,9 @@ test('NetBIOS/RPC full bilingual manuscripts, source hashes and neighboring publ
   assert.equal(body.filter(b=>b.kind==='table').length,9);
   assert.equal(body.filter(b=>b.kind==='code').length,37);
   const prefix=lang==='en'?'/en':'';const page=getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-05/`)!;
-  assert.equal(page.conceptTeaching?.id,id);assert.equal(page.conceptNavigation?.previous?.id,'CEH26-M04-C04');assert.equal(page.conceptNavigation?.previous?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-04/`);assert.equal(page.conceptNavigation?.next?.id,'CEH26-M04-C06');assert.equal(page.conceptNavigation?.next?.href,null);
+  assert.equal(page.conceptTeaching?.id,id);assert.equal(page.conceptNavigation?.previous?.id,'CEH26-M04-C04');assert.equal(page.conceptNavigation?.previous?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-04/`);assert.equal(page.conceptNavigation?.next?.id,'CEH26-M04-C06');assert.equal(page.conceptNavigation?.next?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-06/`);
   assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c05/`),null);
-  for(const n of [6,9,10,11,12])assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(n).padStart(2,'0')}/`),null);
+  for(const n of [9,10,11,12])assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(n).padStart(2,'0')}/`),null);
   const entry=searchEntries.find(e=>e.id===id&&e.lang===lang)!;assert.ok(entry.text.includes('50020'));assert.ok(entry.text.includes('rpcbind'));
  }
  assert.deepEqual(t.text.zh.sourceBody!.flatMap(b=>'id' in b?[b.id]:[]),t.text.en.sourceBody!.flatMap(b=>'id' in b?[b.id]:[]));

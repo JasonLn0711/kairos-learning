@@ -1,0 +1,1545 @@
+{
+  "id": "CEH26-M04-C06",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-06",
+  "publishedOn": "2026-11-06",
+  "status": "published",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從名稱與實際程序身分出發，核對 NFS 安全模式、路徑與檔案權限，分清列舉、掛載、列名與讀寫的證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "這堂課最重要的觀念是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 不會只因為兩個帳號的名字相同，就認定它們是同一個人；NFS 能看到檔案，也不代表有權限讀取內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你在兩間公司都認識一個叫「小林」的人。第一間公司的小林，員工編號是 1001；第二間公司的小林，員工編號是 2001。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雖然兩人名字完全一樣，但門禁系統看的是員工編號和授權，不是名字。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 和 NFS 也是類似的道理。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-06-workflow-zh-v1-0-0.svg",
+          "downloadLabel": "下載對照 SVG",
+          "visual": {
+            "kind": "flow",
+            "caption": "圖 1｜本課的核心思考流程",
+            "description": "箭頭表示判讀次序，不表示帳號名稱會自動決定身分或授權。",
+            "items": [
+              {
+                "title": "帳號名稱｜你叫什麼？",
+                "body": "例如 learner"
+              },
+              {
+                "title": "UID／GID｜你的身分編號？",
+                "body": "例如 UID 1001、GID 3000"
+              },
+              {
+                "title": "NFS｜伺服器如何辨識請求？",
+                "body": "例如 sec=sys 傳遞數字身分"
+              },
+              {
+                "title": "Permissions｜你能做什麼？",
+                "body": "列出名稱、讀取、寫入分別核對"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "掌握這條流程，就能理解 Linux 使用者管理、檔案權限、NFS，以及 CEH 在列舉階段究竟是在蒐集什麼證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、Linux 的帳號，是名字重要，還是編號重要？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先認識三個東西："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "名稱",
+            "白話意思",
+            "範例"
+          ],
+          "rows": [
+            [
+              "Username",
+              "使用者名稱，方便人辨識",
+              "learner"
+            ],
+            [
+              "UID",
+              "使用者編號",
+              "1001"
+            ],
+            [
+              "GID",
+              "群組編號",
+              "3000"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 在一般檔案權限判斷中，主要依據的是數字身分，而不是人類看得懂的帳號名稱。程序實際用於檔案存取的身分（Linux 的 filesystem UID／GID，通常與有效 UID／GID 相同）及補充群組也要一併核對。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-06-identity-zh-v1-0-0.svg",
+          "downloadLabel": "下載對照 SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜名字相同，UID 不同",
+            "description": "兩台電腦是平行比較；同名與同 GID 不會讓不同 UID 變成檔案擁有者。",
+            "items": [
+              {
+                "title": "電腦 A｜NFS Client",
+                "body": "使用者 learner；UID 1001；GID 3000"
+              },
+              {
+                "title": "電腦 B｜NFS Server",
+                "body": "使用者 learner；UID 2001；GID 3000"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩個帳號都叫 learner，可是 UID 一個是 1001，一個是 2001。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，不能因為名稱相同就說它們具有同樣的檔案身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 Username 想成員工姓名，UID 想成員工證號，GID 則是部門編號。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、getent、id：查帳號與查現在的身分有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你在自己的 Linux 電腦打開 Terminal。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一個指令：查帳號是否存在於名稱服務中"
+        },
+        {
+          "kind": "code",
+          "text": "getent passwd learner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "合成輸出："
+        },
+        {
+          "kind": "code",
+          "text": "learner:x:1001:3000:...:/home/learner:/bin/bash"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表系統依照 NSS 設定找到了這筆帳號資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1001 是 UID，3000 是主要 GID。x 不是密碼內容，通常表示密碼雜湊不直接放在這個帳號欄位。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "特別注意：這筆資料不一定來自本機 /etc/passwd，也可能來自 LDAP 等集中式名稱服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二個指令：查指定帳號的身分與群組"
+        },
+        {
+          "kind": "code",
+          "text": "id learner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "uid=1001(learner) gid=3000(staff) groups=3000(staff)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是在問：「系統目前查得到的 learner，是哪個 UID？被分配到哪些群組？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三個指令：查現在執行指令的身分"
+        },
+        {
+          "kind": "code",
+          "text": "id"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是在問：「目前這個程序帶著什麼使用者與群組身分？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "id learner 與 id 不能完全互相取代。前者是查指定帳號；後者查目前程序。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼差別重要？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設管理者剛把你加入 research 群組，但你的 Terminal 是很久以前登入的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "帳號資料可能已經更新，既有 Shell 程序卻還帶著原來的群組清單。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，即使 id learner 看得到新群組，也不能直接推論所有既有程序已取得該群組身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "更重要的是，能查到帳號，不代表這個帳號能登入、更不代表具有管理員權限。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、NFS 是什麼？為什麼兩部電腦能共用資料？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS 是 Network File System，網路檔案系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像研究室有一台 Linux Server，儲存大量研究資料。其他研究生各自有電腦，但不想每個人都複製一份相同資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS 就能讓大家透過網路使用伺服器上的檔案系統。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-06-mount-zh-v1-0-0.svg",
+          "downloadLabel": "下載對照 SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜NFS 把遠端檔案系統接入本機目錄樹",
+            "description": "虛線箭頭表示用戶端到伺服器的讀寫請求，不是整份資料複製到本機。省略回覆、快取與協定細節；掛載成功不代表取得每個檔案的權限。",
+            "items": [
+              {
+                "title": "Client",
+                "body": "/mnt/data"
+              },
+              {
+                "title": "NFS",
+                "body": "網路讀寫請求"
+              },
+              {
+                "title": "Server",
+                "body": "/srv/share"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡需要認識兩個英文單字。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Export（匯出）：伺服器宣布「這個資料夾可以提供哪些用戶端使用，以及在什麼條件下使用」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Mount（掛載）：用戶端將遠端檔案系統接到本機目錄，例如 /mnt/data。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但有一個重要區別：掛載成功，只表示你已經接上共享檔案系統，不代表每個檔案都可以讀取或修改。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就像公司允許你進入檔案室，不代表你可以打開裡面所有機密文件。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "sec=sys 又是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS 使用 RPC（Remote Procedure Call，遠端程序呼叫）來傳遞操作請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在常見的 sec=sys，也就是 AUTH_SYS 模式中，用戶端會提供 UID、GID 等身分資訊給伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題在於，這些數字主要由用戶端宣告，本身缺少足以獨立驗證使用者身分的密碼學證明。因此，它依賴對用戶端主機及其管理方式的信任。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是為什麼不能只把不同電腦上的帳號都命名為 learner，就以為 NFS 身分問題已經解決。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "進階補充：NFSv4 的檔案擁有者屬性可能顯示為 learner@example.com，但「檔案擁有者如何表示」和「這次網路請求如何驗證身分」仍然是兩個不同問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、Linux 權限：為什麼看得到檔案名稱，卻讀不到內容？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本課最值得理解的技術核心。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux 的基本檔案權限分成三種："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "符號",
+            "一般檔案",
+            "目錄"
+          ],
+          "rows": [
+            [
+              "r",
+              "讀取內容",
+              "列出目錄項目名稱"
+            ],
+            [
+              "w",
+              "修改內容",
+              "配合其他條件新增、刪除或重新命名項目"
+            ],
+            [
+              "x",
+              "執行檔案",
+              "通過目錄，查找指定項目"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "目錄的 x 不代表執行目錄，而是 Search（搜尋或通過）權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你有這個路徑："
+        },
+        {
+          "kind": "code",
+          "text": "/shared\n    └── reports\n         └── report.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你能列出 reports 裡有 report.txt，可能是因為有目錄的讀取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但想要真正讀取 report.txt，你還需要能通過路徑上的目錄，以及對檔案本身具有讀取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "看懂 rw-r----- 與 rw-------"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般 Linux 權限字串分成三組：擁有者、群組、其他人。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-06-permissions-zh-v1-0-0.svg",
+          "downloadLabel": "下載對照 SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜互動練習：切換檔案權限",
+            "description": "只展示基本權限位元，依序為 Owner／Group／Others；SVG 與對照清單保留全部四種對照，不隨選擇改寫下載。600 為無 JavaScript 的預設。",
+            "items": [
+              {
+                "title": "600｜僅擁有者讀寫",
+                "body": "rw- | --- | ---"
+              },
+              {
+                "title": "640｜群組也能讀",
+                "body": "rw- | r-- | ---"
+              },
+              {
+                "title": "644｜其他人也能讀",
+                "body": "rw- | r-- | r--"
+              },
+              {
+                "title": "777｜所有人都有全部基本權限",
+                "body": "rwx | rwx | rwx"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個練習只展示基本權限，暫時不考慮 ACL、SELinux、特殊特權及 NFS 額外政策。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請特別記住：Linux 不是把三組權限全部加起來給你使用，而是依照你的身分選出適用的那一組。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你的 UID 符合擁有者，就看 Owner 那組；否則，如果主要群組或任一補充群組符合，就看 Group；再不符合才看 Others。選到某一組後，不能因該組沒有讀取權就再借用 Others 的權限。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、解讀本課的 Permission denied 案例"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在把前面的知識放在一起。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "合成案例：讀取 report.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本例假設路徑可通過、Export 允許該操作、沒有 ACL／額外特權或其他身分映射；以下只判斷表中身分與基本檔案權限。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "用戶端 UID",
+            "1001"
+          ],
+          "rows": [
+            [
+              "用戶端 GID",
+              "3000"
+            ],
+            [
+              "檔案擁有者 UID",
+              "2001"
+            ],
+            [
+              "檔案所屬群組 GID",
+              "3000"
+            ],
+            [
+              "檔案權限",
+              "rw-------"
+            ],
+            [
+              "NFS 安全模式",
+              "sec=sys"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器端的基本權限判斷"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "UID 是否符合擁有者？ 不符合，因為 1001 ≠ 2001。",
+            "GID 是否符合？ 符合，因為兩邊都是 3000。",
+            "群組有讀取權嗎？ 沒有。rw------- 的 Group 是 ---。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Permission denied"
+        },
+        {
+          "kind": "paragraph",
+          "text": "依本例已知條件，伺服器拒絕讀取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那麼，是 root_squash 導致的嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是。本例的請求 UID 是 1001，並不是 root 常見的 UID 0。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "root_squash 的功能是把來自用戶端的 UID／GID 0 映射成匿名身分；all_squash 才是把所有使用者請求映射為匿名身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，這個案例有充分證據指出：請求者不是檔案擁有者，雖然群組相同，但群組沒有讀取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是可以根據已知設定作出的結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "反過來說，如果今天只看到一句 Permission denied，卻沒有 UID、GID、路徑權限與安全設定，就不能這麼快下定論。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、CEH 的觀點：列舉到了什麼，不代表取得了什麼"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH M04 的重要能力，不是記住多少指令，而是能分辨不同工具實際提供了哪一層證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如在經授權的測試環境："
+        },
+        {
+          "kind": "code",
+          "text": "rpcinfo -p 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是在查遠端 RPC 服務登記資訊，不是在讀取檔案。"
+        },
+        {
+          "kind": "code",
+          "text": "showmount -e 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是透過 MNT 服務查詢 NFS Export 清單，也不是取得共享內所有資料的讀取權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你還應該認識兩個常見 Port："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Port",
+            "常見用途"
+          ],
+          "rows": [
+            [
+              "111",
+              "rpcbind，協助尋找 RPC 服務"
+            ],
+            [
+              "2049",
+              "NFS 服務"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFSv3 常涉及 rpcbind、mountd 等服務；NFSv4 可以直接使用 2049，不必依賴同樣的 MNT 查詢機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，即使 showmount -e 查不到結果，也不能證明伺服器沒有 NFS。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "你需要建立一套「證據階梯」"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "觀察到的結果",
+            "真正能證明什麼"
+          ],
+          "rows": [
+            [
+              "查到帳號名稱",
+              "名稱服務有回覆帳號資料"
+            ],
+            [
+              "查到 Export",
+              "服務提供了共享相關資訊"
+            ],
+            [
+              "Mount 成功",
+              "指定共享已掛載"
+            ],
+            [
+              "列出檔案名稱",
+              "能取得相應目錄清單"
+            ],
+            [
+              "成功讀取檔案",
+              "對該檔案的讀取操作成功"
+            ],
+            [
+              "成功修改檔案",
+              "對該檔案的特定修改操作成功"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "每一層都不能自動推論下一層成立。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是資安鑑識、滲透測試報告與系統除錯共同需要的觀念：觀察與結論之間，必須有足夠的證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、管理者怎麼保護 NFS？遇到拒絕時又該怎麼查？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS 安全至少有三層需要一起考慮。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "安全層次",
+            "要回答的問題",
+            "常見控制"
+          ],
+          "rows": [
+            [
+              "主機與共享",
+              "哪些用戶端可以使用共享？",
+              "Export 允許來源、ro／rw"
+            ],
+            [
+              "身分與傳輸",
+              "是誰提出請求？請求有沒有受到保護？",
+              "sec=sys、Kerberos"
+            ],
+            [
+              "檔案權限",
+              "這個身分可以做什麼？",
+              "UID、GID、Permissions、ACL"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "Kerberos 能解決什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前面提到 sec=sys 比較依賴對用戶端的信任。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果需要更強的身分驗證，就可以評估 Kerberos 安全模式。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "模式",
+            "提供的主要安全能力"
+          ],
+          "rows": [
+            [
+              "sec=sys",
+              "傳遞系統身分，缺少密碼學身分驗證"
+            ],
+            [
+              "sec=krb5",
+              "使用 Kerberos 驗證身分"
+            ],
+            [
+              "sec=krb5i",
+              "身分驗證，加上資料完整性保護"
+            ],
+            [
+              "sec=krb5p",
+              "身分驗證、完整性及傳輸內容加密"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些能力需要相應基礎設施和設定才能啟用，並不是 NFSv4 一定自動使用加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果日後在研究室或公司遇到 NFS 讀取失敗，正確的除錯順序應是：確認哪個操作失敗、查實際程序身分、查 NFS 版本與安全模式、查路徑與檔案的有效權限，再由管理者檢查 ACL、Export 設定及相關日誌。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不要一看到 Permission denied 就執行 chmod 777。這可能讓本來無權讀取的其他使用者取得權限，甚至仍然無法解決真正的拒絕原因。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "本課最後的理解檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情境題：判斷拒絕原因"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設另一個測試案例，NFS 伺服器的檔案 budget.txt 有以下設定："
+        },
+        {
+          "kind": "paragraph",
+          "text": "檔案擁有者 UID：2001；檔案 GID：3000；權限：rw-r-----。用戶端實際請求 UID：1001、GID：4000，補充群組不含 3000。假設路徑可通過，沒有 ACL 或額外特權，使用 sec=sys 且未另行映射身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請試著用自己的話回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 用戶端能讀取 budget.txt 嗎？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 如果把用戶端 GID 改成 3000，結果可能有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 如果能列出 budget.txt 名稱，是否代表能讀取內容？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先自行作答，再展開本頁參考答案核對；本站不提交答案或自動評分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一課的學習成果，是能夠從「使用者名稱、實際程序身分、NFS 安全模式、檔案權限」推導出存取結果，並知道哪些證據還不足以作出結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一課 M04-07 的 SNMP（Simple Network Management Protocol），則會把列舉的對象從使用者與檔案共享，轉向網路設備、系統狀態及管理資訊。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "技術來源與查核"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "[getent(1)](https://man7.org/linux/man-pages/man1/getent.1.html)：依 NSS 查名稱服務。",
+            "[id(1)](https://man7.org/linux/man-pages/man1/id.1.html)：指定帳號與目前程序身分。",
+            "[credentials(7)](https://man7.org/linux/man-pages/man7/credentials.7.html)、[path_resolution(7)](https://man7.org/linux/man-pages/man7/path_resolution.7.html)：程序憑證、補充群組與路徑查找。",
+            "[exports(5)](https://man7.org/linux/man-pages/man5/exports.5.html)、[nfs(5)](https://man7.org/linux/man-pages/man5/nfs.5.html)：共享政策、squash 與 Kerberos 模式。",
+            "[showmount(8)](https://man7.org/linux/man-pages/man8/showmount.8.html)：MNT 查詢與 NFSv4-only 限制。",
+            "[RFC 5531 附錄 A](https://www.rfc-editor.org/rfc/rfc5531.html#appendix-A)、[RFC 7530 §5.9](https://www.rfc-editor.org/rfc/rfc7530.html#section-5.9)：AUTH_SYS 與 NFSv4 擁有者表示。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-nfs-permissions",
+          "summary": "參考答案：budget.txt 的三題判讀",
+          "paragraphs": [
+            "A. 不能讀取。UID 1001 不等於擁有者 UID 2001；主要 GID 4000 不符合檔案 GID 3000，且補充群組不含 3000，所以採 Others。rw-r----- 的 Others 是 ---，沒有 r。結論依題目已排除路徑、ACL、額外特權與其他映射的條件成立。",
+            "B. 若實際請求的 GID 改為 3000，且其他條件保持，選到 Group 的 r--，可讀但不能寫。更改帳號資料不等於既有程序已更新群組；要核對實際請求的憑證。",
+            "C. 不能。列出名稱依賴相應目錄的讀取，讀內容還要通過路徑並有檔案讀取權。列舉、掛載、列名與讀取成功分開記錄。只看到 Permission denied 而沒有這些身分及政策證據時，原因仍待查核。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Start with names and actual process identities, check NFS security mode and path/file permissions, and distinguish enumeration, mounting, listing, reading and writing evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The central idea of this lesson is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux does not treat two accounts as the same person merely because their names match. Seeing a file over NFS does not establish permission to read its contents."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine knowing someone named Lin at each of two companies. At the first company, Lin’s employee number is 1001; at the second, it is 2001."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Their names match, but an access-control system checks employee identifiers and authorization, rather than names."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux and NFS work in a similar way."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-06-workflow-en-v1-0-0.svg",
+          "downloadLabel": "Download reference SVG",
+          "visual": {
+            "kind": "flow",
+            "caption": "Figure 1 | The lesson’s reasoning chain",
+            "description": "Arrows show the order of investigation, not that an account name automatically determines identity or authorization.",
+            "items": [
+              {
+                "title": "Account name | What is your name?",
+                "body": "For example, learner"
+              },
+              {
+                "title": "UID/GID | What are your identifiers?",
+                "body": "For example, UID 1001 and GID 3000"
+              },
+              {
+                "title": "NFS | How is the request identified?",
+                "body": "For example, sec=sys carries numeric identities"
+              },
+              {
+                "title": "Permissions | What may you do?",
+                "body": "Check listing, reading and writing separately"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Following this chain helps explain Linux account management, file permissions and NFS, and what evidence CEH enumeration actually gathers."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Linux Accounts: Does the Name or the Number Matter?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Start with three terms:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Term",
+            "Plain-language meaning",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Username",
+              "A name that people can recognize",
+              "learner"
+            ],
+            [
+              "UID",
+              "User identifier",
+              "1001"
+            ],
+            [
+              "GID",
+              "Group identifier",
+              "3000"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ordinary Linux file-permission decisions primarily use numeric identities rather than human-readable account names. Also check the identity actually used for file access by the process (Linux filesystem UID/GID, usually the same as effective UID/GID) and its supplementary groups."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-06-identity-en-v1-0-0.svg",
+          "downloadLabel": "Download reference SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 2 | Same name, different UID",
+            "description": "The computers are compared in parallel. Matching names and GIDs do not turn a different UID into the file owner.",
+            "items": [
+              {
+                "title": "Computer A | NFS Client",
+                "body": "User learner; UID 1001; GID 3000"
+              },
+              {
+                "title": "Computer B | NFS Server",
+                "body": "User learner; UID 2001; GID 3000"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Both accounts are named learner, but one has UID 1001 and the other UID 2001."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Matching names therefore do not establish the same file-access identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of Username as an employee’s name, UID as an employee identifier and GID as a department identifier."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. getent and id: Looking Up an Account Versus Checking the Current Identity"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine opening a terminal on your own Linux computer."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First command: look up whether the account exists in the name service."
+        },
+        {
+          "kind": "code",
+          "text": "getent passwd learner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Synthetic output:"
+        },
+        {
+          "kind": "code",
+          "text": "learner:x:1001:3000:...:/home/learner:/bin/bash"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This means the system found an account record according to its NSS configuration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1001 is the UID and 3000 is the primary GID. The x is not the password; it usually indicates that the password hash is not stored directly in this account field."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The record need not come from local /etc/passwd. It could come from a centralized name service such as LDAP."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second command: look up the specified account’s identity and groups."
+        },
+        {
+          "kind": "code",
+          "text": "id learner"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "uid=1001(learner) gid=3000(staff) groups=3000(staff)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This asks: “What UID and assigned groups can the system currently find for learner?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third command: check the identity executing the command now."
+        },
+        {
+          "kind": "code",
+          "text": "id"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This asks: “Which user and group identities does the current process carry?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "id learner and id are not interchangeable. The former looks up a specified account; the latter inspects the current process."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Why does the distinction matter?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an administrator has just added you to the research group, but your terminal session was opened much earlier."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The account record may have been updated while the existing shell process still carries its previous group list."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even if id learner shows the new group, that does not establish that every existing process has acquired it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Being able to look up an account also does not establish that it can log in or has administrator privileges."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. What Is NFS, and How Can Two Computers Share Data?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS stands for Network File System."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a laboratory Linux server storing a large research dataset. Students use their own computers but do not want everyone to keep a separate copy of the same data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS lets them use the server’s file system over the network."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-06-mount-en-v1-0-0.svg",
+          "downloadLabel": "Download reference SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 3 | NFS attaches a remote file system to the local directory tree",
+            "description": "The dashed arrow represents client-to-server read/write requests, not copying the entire dataset locally. Replies, caching and protocol details are omitted. Mounting does not grant access to every file.",
+            "items": [
+              {
+                "title": "Client",
+                "body": "/mnt/data"
+              },
+              {
+                "title": "NFS",
+                "body": "Network read/write requests"
+              },
+              {
+                "title": "Server",
+                "body": "/srv/share"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two terms are useful here."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Export: the server specifies which client hosts may use a directory and under which conditions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Mount: a client attaches the remote file system to a local directory, such as /mnt/data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A successful mount only establishes that the shared file system is attached. It does not establish permission to read or modify every file."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Being allowed into a company’s records room does not mean being allowed to open every confidential document inside."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "What Does sec=sys Mean?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS uses RPC (Remote Procedure Call) to carry operation requests."
+        },
+        {
+          "kind": "paragraph",
+          "text": "With the common sec=sys, or AUTH_SYS, mode, the client supplies identity information such as UID and GID to the server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These numbers are primarily asserted by the client and lack a cryptographic proof sufficient to independently verify the user’s identity. This mode therefore relies on trust in the client host and its administration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Naming the accounts on different computers learner does not resolve the NFS identity question."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Advanced note: NFSv4 file-owner attributes may be represented as learner@example.com. How a file owner is represented and how a network request authenticates an identity are still separate questions."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Linux Permissions: Why Can I See a Filename but Not Read Its Contents?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the lesson’s central technical mechanism."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Basic Linux permissions have three types:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Symbol",
+            "Regular file",
+            "Directory"
+          ],
+          "rows": [
+            [
+              "r",
+              "Read contents",
+              "List directory-entry names"
+            ],
+            [
+              "w",
+              "Modify contents",
+              "Add, remove or rename entries when other required conditions hold"
+            ],
+            [
+              "x",
+              "Execute the file",
+              "Search or traverse the directory to look up an entry"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A directory’s x is search or traversal permission; it does not mean executing the directory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider this path:"
+        },
+        {
+          "kind": "code",
+          "text": "/shared\n    └── reports\n         └── report.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You may be able to list the name report.txt inside reports because you have directory-read permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reading report.txt also requires the ability to traverse the directories in the path and permission to read the file itself."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "Understanding rw-r----- and rw-------"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The usual Linux permission string has three groups: owner, group and others."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-06-permissions-en-v1-0-0.svg",
+          "downloadLabel": "Download reference SVG",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 4 | Explore basic file permissions",
+            "description": "Shows basic permission bits in Owner/Group/Others order. The SVG and reference list retain all four reference cases; changing the selection does not change the download. Without JavaScript, 600 is the default.",
+            "items": [
+              {
+                "title": "600 | Owner read/write only",
+                "body": "rw- | --- | ---"
+              },
+              {
+                "title": "640 | Group can also read",
+                "body": "rw- | r-- | ---"
+              },
+              {
+                "title": "644 | Others can also read",
+                "body": "rw- | r-- | r--"
+              },
+              {
+                "title": "777 | All basic permissions for everyone",
+                "body": "rwx | rwx | rwx"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "This exercise shows basic permission bits only. It leaves out ACLs, SELinux, special privileges and additional NFS policy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Linux selects the permission class that applies to your identity; it does not combine all three classes to grant access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If your UID matches the owner, use Owner. Otherwise, if the primary group or any supplementary group matches, use Group. If neither matches, use Others. Once a class is selected, a missing read bit in that class does not allow falling back to the Others permissions."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Interpreting This Lesson’s Permission denied Case"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Now combine the preceding ideas."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Synthetic case: reading report.txt."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Assume the path can be traversed, the export allows this operation, and there are no ACLs, extra privileges or other identity mappings. The following decision considers only the listed identities and basic file permissions."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Client UID",
+            "1001"
+          ],
+          "rows": [
+            [
+              "Client GID",
+              "3000"
+            ],
+            [
+              "File-owner UID",
+              "2001"
+            ],
+            [
+              "File-group GID",
+              "3000"
+            ],
+            [
+              "File permissions",
+              "rw-------"
+            ],
+            [
+              "NFS security mode",
+              "sec=sys"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Server-side basic-permission decision:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Does the UID match the owner? No: 1001 ≠ 2001.",
+            "Does the GID match? Yes: both are 3000.",
+            "Does the group have read permission? No. Group is --- in rw-------."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Permission denied."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Under the stated conditions, the server denies the read."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Did root_squash cause this?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No. The request UID in this example is 1001, rather than root’s usual UID 0."
+        },
+        {
+          "kind": "paragraph",
+          "text": "root_squash maps client UID/GID 0 to an anonymous identity. all_squash maps all user requests to an anonymous identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The evidence in this case supports the conclusion that the requester is not the file owner and the matching group has no read permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That conclusion follows from the known configuration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A bare Permission denied message, without UID, GID, path permissions and security settings, is not enough to reach the same conclusion."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. The CEH Perspective: Enumeration Evidence Does Not Establish Access"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A central M04 skill is recognizing the evidence each tool actually provides, rather than memorizing a large number of commands."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, in an authorized test environment:"
+        },
+        {
+          "kind": "code",
+          "text": "rpcinfo -p 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This queries registered remote RPC service information. It does not read files."
+        },
+        {
+          "kind": "code",
+          "text": "showmount -e 192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This queries NFS export information through the MNT service. It does not grant permission to read every file in the share."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Know these two common ports:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Port",
+            "Common purpose"
+          ],
+          "rows": [
+            [
+              "111",
+              "rpcbind, which helps locate RPC services"
+            ],
+            [
+              "2049",
+              "NFS service"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFSv3 commonly involves services such as rpcbind and mountd. NFSv4 can use 2049 directly without the same MNT query mechanism."
+        },
+        {
+          "kind": "paragraph",
+          "text": "No result from showmount -e therefore does not establish that the server has no NFS service."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "Build an Evidence Ladder"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Observation",
+            "What it actually establishes"
+          ],
+          "rows": [
+            [
+              "Account name found",
+              "The name service returned account information"
+            ],
+            [
+              "Export found",
+              "The service provided share-related information"
+            ],
+            [
+              "Mount succeeded",
+              "The specified share was mounted"
+            ],
+            [
+              "Filename listed",
+              "The relevant directory listing was obtained"
+            ],
+            [
+              "File read succeeded",
+              "The read operation on that file succeeded"
+            ],
+            [
+              "File modification succeeded",
+              "The particular modification operation on that file succeeded"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "No level automatically establishes the next."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Security forensics, penetration-test reports and system debugging all require enough evidence between an observation and its conclusion."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Protecting NFS and Investigating a Denial"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NFS security requires at least three layers to be considered together."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Security layer",
+            "Question",
+            "Common controls"
+          ],
+          "rows": [
+            [
+              "Hosts and shares",
+              "Which clients may use the share?",
+              "Export source restrictions, ro/rw"
+            ],
+            [
+              "Identity and transport",
+              "Who is making the request, and is it protected?",
+              "sec=sys, Kerberos"
+            ],
+            [
+              "File permissions",
+              "What may this identity do?",
+              "UID, GID, permissions, ACLs"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "What Can Kerberos Provide?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "As noted earlier, sec=sys relies more heavily on trust in clients."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For stronger identity authentication, evaluate Kerberos security modes."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Mode",
+            "Main security capability"
+          ],
+          "rows": [
+            [
+              "sec=sys",
+              "Carries system identity without cryptographic identity authentication"
+            ],
+            [
+              "sec=krb5",
+              "Kerberos identity authentication"
+            ],
+            [
+              "sec=krb5i",
+              "Authentication plus data-integrity protection"
+            ],
+            [
+              "sec=krb5p",
+              "Authentication, integrity and encryption of transmitted content"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These capabilities require appropriate infrastructure and configuration. NFSv4 does not automatically imply encryption."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When an NFS read fails in a laboratory or company, first identify the failed operation, check the actual process identity, inspect the NFS version and security mode, and check effective permissions along the path and on the file. An administrator can then inspect ACLs, export settings and relevant logs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not respond to Permission denied by immediately running chmod 777. It may grant access to previously unauthorized users while still failing to resolve the actual cause."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "Final Understanding Check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scenario: determine the reason for denial."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In another test case, the NFS server’s budget.txt has the following settings:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "File-owner UID: 2001; file GID: 3000; permissions: rw-r-----. The actual client request uses UID 1001 and GID 4000, with no supplementary membership in group 3000. Assume the path can be traversed, no ACLs or extra privileges apply, and sec=sys is used without additional identity mapping."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer in your own words:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Can the client read budget.txt? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. What could change if the client GID became 3000?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Does being able to list the name budget.txt establish permission to read its contents?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer first, then expand the reference answers on this page. This site does not submit or automatically grade answers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The learning outcome is being able to derive an access result from account names, actual process identities, NFS security mode and file permissions, and to identify evidence that is still insufficient for a conclusion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The next lesson, M04-07 on SNMP (Simple Network Management Protocol), shifts the enumeration focus from users and file shares to network devices, system state and management information."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "Technical Sources and Verification"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "[getent(1)](https://man7.org/linux/man-pages/man1/getent.1.html): NSS account lookup.",
+            "[id(1)](https://man7.org/linux/man-pages/man1/id.1.html): specified-account lookup and current process identity.",
+            "[credentials(7)](https://man7.org/linux/man-pages/man7/credentials.7.html) and [path_resolution(7)](https://man7.org/linux/man-pages/man7/path_resolution.7.html): process credentials, supplementary groups and path traversal.",
+            "[exports(5)](https://man7.org/linux/man-pages/man5/exports.5.html) and [nfs(5)](https://man7.org/linux/man-pages/man5/nfs.5.html): export policy, squash mappings and Kerberos modes.",
+            "[showmount(8)](https://man7.org/linux/man-pages/man8/showmount.8.html): MNT queries and NFSv4-only limitations.",
+            "[RFC 5531 Appendix A](https://www.rfc-editor.org/rfc/rfc5531.html#appendix-A) and [RFC 7530 §5.9](https://www.rfc-editor.org/rfc/rfc7530.html#section-5.9): AUTH_SYS and NFSv4 owner representation."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-nfs-permissions",
+          "summary": "Reference answers: three judgments about budget.txt",
+          "paragraphs": [
+            "A. No. UID 1001 is not owner UID 2001. Primary GID 4000 does not match file GID 3000, and supplementary groups do not contain 3000, so Others applies. Others is --- in rw-r----- and has no r bit. This conclusion depends on the question’s stated exclusions for path restrictions, ACLs, extra privileges and other mappings.",
+            "B. If the actual request GID changes to 3000 and the other conditions remain unchanged, Group applies. Its r-- grants reading but not writing. Changing an account record does not establish that existing processes have updated their groups; check the actual request credentials.",
+            "C. No. Listing names depends on the relevant directory’s read permission; reading contents also requires path traversal and file-read permission. Record enumeration, mounting, listing and successful reads separately. Without the identity and policy evidence, a bare Permission denied still needs investigation."
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -16,7 +16,7 @@ test('SNMP complete paired teaching, topology exports and publication gates',()=
   const visual=body.find(b=>b.kind==='visual');assert.ok(visual&&visual.kind==='visual');assert.equal(visual.visual.items.length,4);
   const text=JSON.stringify(body);for(const token of ['100','20','60000 TimeTicks','sysName.0','sysLocation.0','noSuchObject','noSuchInstance','endOfMibView','timeout','authNoPriv','authPriv','Read view','Write view','Notify view'])assert.ok(text.includes(token),token);
   assert.ok(!text.includes('favicons'));assert.ok(!text.includes('五筆'));
-  const path=(lang==='en'?'/en':'')+'/courses/ceh/v13/m04/concepts/m04-07/';assert.equal(getPage(path)?.conceptTeaching?.id,id);assert.ok(searchEntries.some(e=>e.id===id&&e.lang===lang));
+  const path=(lang==='en'?'/en':'')+'/courses/ceh/v13/m04/concepts/m04-07/';assert.equal(getPage(path)?.conceptTeaching?.id,id);assert.equal(getPage(path)?.conceptNavigation?.previous?.href,(lang==='en'?'/en':'')+'/courses/ceh/v13/m04/concepts/m04-06/');assert.equal(getPage(path)?.conceptNavigation?.next?.href,(lang==='en'?'/en':'')+'/courses/ceh/v13/m04/concepts/m04-08/');assert.ok(searchEntries.some(e=>e.id===id&&e.lang===lang));
   for(const closed of [{...t,status:'draft' as const},{...t,publishedOn:'2099-01-01'}]){const catalog=createConceptCatalog(concepts,[closed],'2026-11-06');assert.equal(catalog.get(id,lang),null);assert.ok(!catalog.searchEntries.some(e=>e.id===id));}
  }
 });

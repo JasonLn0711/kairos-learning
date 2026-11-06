@@ -438,3 +438,12 @@ M01-01 v1.1.0 的[完整來源與逐節對照](sources/aase/m01-01/replacement-2
 ApplicationCheckDemo 只在本課 analogy 與 scenario 啟用，表單對照接收現有 cards 資料；其餘 AASE blocks 與 CEH 不改。比較圖以 HTML／CSS 保留平行關係、輸入欄位、主要／次要操作及錯誤摘要／欄位提示；無任意 HTML／SVG，沒有新匯出格式。情境控制只切固定合成資料，本機 JSON 匯出由 applicationReport 核對三個非空白欄位，缺漏時不提供下載。無 JavaScript 保留預設缺漏與兩情境結果表，停用控制；不發請求、不寫入申請或成績。
 
 維護時依序執行內容、單元、型別、publication-boundary、release，以及 `npx playwright test --config playwright.aase-m0101.config.ts`；正式站設定 `AASE_BASE_URL`。共用 AaseLesson 改動另核對既有 AASE bilingual M01-01 與 CEH C02 回歸。[修訂回執](releases/2026-11-06-aase-m01-01-replacement.md)記錄實際結果與待驗項目。
+
+<a id="ceh26-m04-c06-nfs-2026-11-06"></a>
+### M04-06 Unix/Linux 使用者與 NFS（2026-11-06）
+
+本課採 `CEH26-M04-C06` stable ID、公開課次 `M04-06` 與既有短 slug，完整中英供稿、附圖、修訂前目錄、171 段採用對照及雜湊在[來源紀錄](sources/ceh26-m04-c06/replacement-2026-11-06/README.md)。開始時新版只有目錄，故以 v1.0.0 初次發布；退役的舊 M04-06 SMTP 留原歸檔，內容與日期不混用。修改 teaching／answer 兩語 Markdown 與 diagram-models.json，再執行 `python3 scripts/ceh26_m04_c06_content.py`；`--check` 已列入 release，核對 124 區塊與八份受審核 SVG。
+
+圖 1／2 沿既有 flow／cards；圖 3／4 只在 `m04-06-{mount|permissions}-{zh|en}-v1-0-0.svg` 固定路徑啟用 NfsEvidenceDiagram。mount 為 Client→Server 的虛線請求，手機維持端點與方向；permissions 使用 600／640／644／777 原生選單，permissionBits 拒絕其他輸入，無 JavaScript 保留 600 與全模式對照。SVG 對照固定顯示全模式，不隨當前選擇改寫。文字由同一 visual 模型進入 HTML、搜尋及下載；產生器沿既有 sanitizer，不放寬 SVG 或任意標記邊界。
+
+新增正文使新版 M04 開放 C01–C06 與 C08，共七篇、三項待發布；C05 下一篇改連本課，C07／C09／C10 發布閘門保留。相鄰與目錄測試須同步核對公開路由、搜尋、sitemap 及 stable-ID URL 404，不將已發布 C08 當作待發布。內容、單元、型別、publication-boundary、release 後依序執行 `npx playwright test --config playwright.ceh26-m04-c06.config.ts` 及 C02／C05 回歸；正式站設定 `CEH_BASE_URL`。[回執](releases/2026-11-06-ceh26-m04-c06-nfs.md)記錄各層證據，題目與工具驗證均不代表本人理解或 NFS 實機安全。
