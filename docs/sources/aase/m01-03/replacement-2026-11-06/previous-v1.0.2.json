@@ -1,0 +1,408 @@
+{
+  "id": "AASE-M01-C03",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "owasp-authorization"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從單人本機原型擴大到多人共用時，重新確認角色、資料存取、保存、維運與交接要求，避免把一個可運行的網址當成完整組織系統。",
+      "objectives": [
+        "指出個人工具與組織共用系統在使用情境與責任上的差異。",
+        "區分登入、資料授權與資料保存的要求。",
+        "為十人共用情境列出未實作事項及進入下一階段的條件。"
+      ],
+      "readingGuide": {
+        "goal": "辨識原型變成共用系統時新增的需求與驗證界線。",
+        "startingPoint": "沿用本機單人收件原型，假設十位同仁希望共用。",
+        "route": "比較使用情境，再分清登入與授權，最後寫出下一階段的需求及驗收條件。",
+        "output": "architecture.md 的共用需求附錄、權限表與兩條授權情境。"
+      },
+      "sections": [
+        {
+          "id": "start",
+          "heading": "多一個網址，沒有自動增加一套管理方式",
+          "paragraphs": [
+            "你在自己的電腦上完成收件檢核原型。主管希望十位同仁共用，於是有人提議把網址傳給大家。操作入口雖然相同，背後的問題已經改變：不同人能看哪些資料？兩人同時使用會如何？誰負責更新、備份與處理錯誤？",
+            "本課的 Streamlit 參考解答仍是本機單人、合成資料的教學原型，沒有正式帳號、多人授權或持久資料庫。這一課用紙上設計辨識共用需求，不把尚未建置的控制標為通過。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像個人筆記本變成共用收件櫃",
+          "paragraphs": [
+            "個人筆記本由你保管，也由你解釋每一欄的意思。當它變成辦公室的共用收件櫃，就需要知道誰能放入、取閱、修改或銷毀資料。櫃子的位置只是入口；使用規則、鑰匙管理與交接方式會影響大家能否可靠地共同工作。",
+            "軟體也要把這些安排轉成明確需求。有些由程序執行，有些由管理流程與負責人處理。原本由作者記在腦中的假設，應寫進文件並交給接手者核對。"
+          ]
+        },
+        {
+          "id": "differences",
+          "heading": "使用情境擴大，哪些假設需要重問",
+          "paragraphs": [
+            "個人工具也可能處理重要資料，需要保護與備份；多人系統則更需要明確協調角色、存取規則及維運責任。下表比較的是本課兩個具體情境，不能用使用人數單獨判定軟體是否安全。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜由本機單人原型轉成十人共用的需求變更",
+              "headers": [
+                "面向",
+                "本課單人原型",
+                "共用版要確認的問題"
+              ],
+              "rows": [
+                [
+                  "操作者",
+                  "一位操作者使用合成資料",
+                  "有哪些角色？誰負責收件、複核與管理？"
+                ],
+                [
+                  "資料可見性",
+                  "未實作多人存取規則",
+                  "誰可讀取、修改、匯出哪一筆資料？"
+                ],
+                [
+                  "保存與下載",
+                  "程序工作階段及操作者的下載檔",
+                  "資料保存在哪裡、保存多久、誰可刪除或還原？"
+                ],
+                [
+                  "共同使用",
+                  "未驗證多人同時操作",
+                  "同時修改時如何避免覆蓋或錯用別人的結果？"
+                ],
+                [
+                  "維運與交接",
+                  "作者依 README 啟動與停止",
+                  "誰管理環境、更新、備份、事件回應與交接？"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "identity",
+          "heading": "登入與授權回答不同問題",
+          "paragraphs": [
+            "身分驗證（Authentication）確認正在使用哪個身分；授權（Authorization）決定這個身分能對哪些資料做什麼操作。即使 A、B 都已登入，也不表示 B 可以讀取 A 的收件資料。",
+            "OWASP 的授權指南建議最小權限、預設拒絕與每次請求的權限檢查。套用到本課共用版時，需要在實際資料存取處核對操作者、目標資料與操作，而不只在畫面隱藏一個連結。這是待實作的設計要求。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜同一套共用系統裡的三種存取要求",
+              "description": "三張卡是不同操作的授權問題，不表示固定的角色階級。角色與權限應依需求確認。",
+              "items": [
+                {
+                  "title": "收件人員 A",
+                  "body": "可處理獲授權的資料；能登入不代表可以查看所有同仁的紀錄。"
+                },
+                {
+                  "title": "複核人員",
+                  "body": "若工作需要跨承辦人複核，須明確授權其可讀取的資料與可做操作。"
+                },
+                {
+                  "title": "維運人員",
+                  "body": "環境管理權與業務內容存取權分別決定，不能因維護主機就默認可看所有資料。"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization"
+          ]
+        },
+        {
+          "id": "case",
+          "heading": "把共用願望改寫成可驗證要求",
+          "paragraphs": [
+            "以下是本課自訂、仍待單位確認的合成情境：A 和 B 各負責不同收件資料，主管希望複核者能查看指定案件。你先訪談角色與工作流程，再確認這是否真是需要的存取關係，不能直接把職稱當作完整權限表。",
+            "需求確認後，可以寫成：「Given B 只獲授權存取資料 B，When B 要求讀取資料 A，Then 應拒絕，且回應不包含資料 A 的內容。」這條情境必須對應實際身分與資料儲存層，單人原型的完整性測試無法驗證它。",
+            "接著追問匯出後的資料：即使網站限制了存取，下載檔仍有後續保管與分享的問題。請確認誰可以匯出、用途與保存方式，再決定系統及作業流程要提供哪些控制。"
+          ]
+        },
+        {
+          "id": "gate",
+          "heading": "以需求及證據決定是否進入共用階段",
+          "paragraphs": [
+            "先在 architecture.md 列出使用者、應用程式、資料儲存與外部服務，再標記新增的信任邊界。這裡只需說明資料由誰送入、在哪裡處理與保存、誰可取回，不必急著選定所有技術。C4 Context 與 Container 的用途會在 M06 詳細練習。",
+            "共用前的下一道閘門應包括：規則負責人確認、角色及資料權限、實際部署環境、資料保存及還原、維運負責人，以及對應的正常和負向測試。尚無證據的項目標為待設計、待實作或待驗證，讓下一位接手者知道工作從哪裡繼續。",
+            "如果目前目標只是教學，可以維持單人合成資料範圍，完成需求與驗證方法的練習。是否進入正式共用階段，應由負責人依實際需求決定，不能只由「已經有一個網址」決定。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "文字編輯器與虛構 A、B、複核者三種角色；不建立真實帳號或共用服務。",
+        "steps": [
+          "在 architecture.md 列出單人原型目前已具備及未實作的能力。",
+          "用合成資料 A、B 畫一張角色—資料—操作權限表，將未確認的規則標為假設。",
+          "寫一條允許讀取與一條拒絕讀取的 Given／When／Then，說明應在哪裡檢查權限。",
+          "列出資料保存、同時使用、備份及維運的待確認問題，指定下一步由誰核對。"
+        ],
+        "expected": "一份共用版需求差異表、兩條授權情境與清楚的進入下一階段條件。",
+        "check": "同儕能分清已在原型實作的完整性規則，與尚未實作的多人授權要求；沒有執行時不標示測試通過。",
+        "cleanup": "只保留合成角色與資料代號；不要為紙上練習分享實際資料或改動正式系統權限。"
+      }
+    },
+    "en": {
+      "summary": "When a local single-user prototype becomes shared software, revisit roles, data access, retention, operations and handoff rather than treating a working URL as a complete organizational system.",
+      "objectives": [
+        "Identify differences in use and responsibility between personal tools and shared organizational systems.",
+        "Distinguish login, data authorization and data retention requirements.",
+        "List unimplemented work and conditions for the next stage of a ten-user shared scenario."
+      ],
+      "readingGuide": {
+        "goal": "Identify new requirements and verification boundaries when a prototype becomes a shared system.",
+        "startingPoint": "Start with the local single-user intake prototype and suppose ten colleagues want to share it.",
+        "route": "Compare use contexts, distinguish login from authorization, then write requirements and acceptance conditions for the next stage.",
+        "output": "A shared-use appendix in architecture.md, a permission matrix and two authorization scenarios."
+      },
+      "sections": [
+        {
+          "id": "start",
+          "heading": "A URL Does Not Establish an Operating Model",
+          "paragraphs": [
+            "You have built an intake-checking prototype on your computer. A manager wants ten colleagues to share it, so someone suggests sending everyone the URL. The entry point may look the same, but the questions have changed: which data may each person see, what happens during simultaneous use, and who owns updates, backups and errors?",
+            "The course’s Streamlit reference solution remains a local, single-user teaching prototype using synthetic data. It has no production accounts, shared-user authorization or persistent database. This lesson uses a tabletop design to identify shared-use requirements, keeping unbuilt controls unverified."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Like Turning a Personal Notebook into a Shared Filing Cabinet",
+          "paragraphs": [
+            "You keep a personal notebook and explain what its fields mean. A shared office filing cabinet requires agreement about who can add, read, change or destroy records. Its location is only the entry point; usage rules, key custody and handoff arrangements affect reliable shared work.",
+            "Turn those arrangements into explicit software requirements. Some belong in program behavior, others in management procedures and assigned responsibilities. Write down assumptions previously held in the author’s head so the next person can check them."
+          ]
+        },
+        {
+          "id": "differences",
+          "heading": "Which Assumptions Change When Use Expands?",
+          "paragraphs": [
+            "Personal tools can also hold important data and need protection and backups. Shared systems add a greater need to coordinate roles, access rules and operational responsibility. The table compares two specific course scenarios; user count alone cannot establish software security."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Requirements Changes from a Local Prototype to Ten Shared Users",
+              "headers": [
+                "Aspect",
+                "Single-User Course Prototype",
+                "Questions for Shared Use"
+              ],
+              "rows": [
+                [
+                  "Operator",
+                  "One operator uses synthetic data.",
+                  "Which roles handle intake, review and administration?"
+                ],
+                [
+                  "Data visibility",
+                  "Shared-user access rules are not implemented.",
+                  "Who may read, change or export each record?"
+                ],
+                [
+                  "Retention and downloads",
+                  "Process session and the operator’s downloaded files.",
+                  "Where is data kept, for how long, and who may delete or restore it?"
+                ],
+                [
+                  "Concurrent use",
+                  "Simultaneous use by multiple people is unverified.",
+                  "How will simultaneous edits avoid overwriting data or using someone else’s result?"
+                ],
+                [
+                  "Operations and handoff",
+                  "The author starts and stops the app using the README.",
+                  "Who owns the environment, updates, backups, incident response and handoff?"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "identity",
+          "heading": "Authentication and Authorization Answer Different Questions",
+          "paragraphs": [
+            "Authentication verifies which identity is in use. Authorization determines which operations that identity may perform on which data. Both A and B being logged in does not imply that B may read A’s intake records.",
+            "OWASP’s authorization guidance recommends least privilege, denying access by default and checking permissions on every request. In the course’s shared design, check the operator, target data and requested action at the actual data-access boundary, beyond hiding a link on screen. This is a design requirement that remains to be implemented."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Three Access Requirements in One Shared System",
+              "description": "These cards represent authorization questions for different operations, not a fixed role hierarchy. Confirm roles and permissions against requirements.",
+              "items": [
+                {
+                  "title": "Intake operator A",
+                  "body": "May process authorized data; logging in does not grant access to every colleague’s records."
+                },
+                {
+                  "title": "Reviewer",
+                  "body": "If review across operators is required, explicitly authorize which records and actions are allowed."
+                },
+                {
+                  "title": "Operations staff",
+                  "body": "Decide environment administration and business-data access separately; maintaining a host does not automatically grant access to all data."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization"
+          ]
+        },
+        {
+          "id": "case",
+          "heading": "Turn a Sharing Request into Verifiable Requirements",
+          "paragraphs": [
+            "This synthetic scenario is defined for the course and still requires organizational confirmation: A and B handle different intake records, and the manager wants reviewers to see specified cases. Interview the roles about their work, then confirm the access relationships they actually need. Job titles alone are not a complete permission matrix.",
+            "After confirming requirements, write: “Given B is authorized to access only record B, When B requests record A, Then deny access and return no content from record A.” The scenario must correspond to actual identity and storage layers. Single-user completeness tests cannot verify it.",
+            "Ask what happens after export too. Access limits within the website do not settle how downloaded files are kept and shared. Confirm who may export, for what purpose and under which retention arrangements before choosing system and procedural controls."
+          ]
+        },
+        {
+          "id": "gate",
+          "heading": "Use Requirements and Evidence to Decide Whether to Share",
+          "paragraphs": [
+            "List users, the application, data stores and external services in architecture.md, then mark new trust boundaries. At this stage, explain who supplies data, where it is processed and kept, and who can retrieve it; you need not select every technology yet. M06 develops C4 Context and Container views in detail.",
+            "The next gate before shared use should cover confirmation by rule owners, roles and data permissions, the actual deployment environment, retention and restoration, operational ownership, and corresponding normal and negative tests. Mark items without evidence as pending design, implementation or verification so the next person knows where to continue.",
+            "For a teaching goal, you can retain the single-user synthetic-data scope and practice requirements and verification methods. Responsible owners should decide whether to move into production sharing based on actual needs, beyond the existence of a URL."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "A text editor and fictional roles A, B and reviewer. Do not create real accounts or a shared service.",
+        "steps": [
+          "List the prototype’s implemented and unimplemented capabilities in architecture.md.",
+          "Use synthetic records A and B to create a role–data–action permission matrix, marking unconfirmed rules as assumptions.",
+          "Write one allowed-read and one denied-read Given/When/Then scenario and identify where permission checks belong.",
+          "List questions about retention, simultaneous use, backups and operations, assigning who should check them next."
+        ],
+        "expected": "A shared-use requirements comparison, two authorization scenarios and clear conditions for the next stage.",
+        "check": "A peer can distinguish implemented completeness rules from unimplemented shared-user authorization. Do not mark tests passed without execution.",
+        "cleanup": "Keep only synthetic roles and record identifiers. Do not share actual data or change production permissions for a tabletop exercise."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M01-C03-Q01",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "A、B 都能登入網站，能否據此推定 B 可以讀取 A 的資料？",
+          "options": [
+            "視畫面的顏色而定",
+            "可以，因為登入即代表全部授權",
+            "不行，還要依資料與操作檢查授權",
+            "只要把 A 的按鈕隱藏就可以"
+          ],
+          "rationales": [
+            "色彩不決定授權。",
+            "登入與資料授權是不同的要求。",
+            "需要核對目前身分是否被允許對目標資料執行這項操作。",
+            "畫面限制不能取代實際資料存取處的檢查。"
+          ]
+        },
+        "en": {
+          "prompt": "A and B can both log in. Does that establish that B may read A’s data?",
+          "options": [
+            "It depends on the screen colors.",
+            "Yes; login grants all permissions.",
+            "No; authorization must also be checked for the data and action.",
+            "Hiding A’s button is sufficient."
+          ],
+          "rationales": [
+            "Color does not determine authorization.",
+            "Login and data authorization are different requirements.",
+            "Check whether the current identity may perform the requested action on the target data.",
+            "Interface restrictions cannot replace checks at actual data access."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M01-C03-Q02",
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "單人原型的缺漏檢核測試全部通過，接著應如何處理十人共用需求？",
+          "options": [
+            "重新確認角色、資料流、儲存及維運要求，並建立對應驗證",
+            "只改 README 的使用人數",
+            "沿用同一個成功結論即可",
+            "先開放真實資料，出錯再改"
+          ],
+          "rationales": [
+            "共用需求改變了環境及責任，需有自己的規格與證據。",
+            "文件數字不會建立多人能力。",
+            "既有測試沒有涵蓋新增的共用情境。",
+            "真實資料不應被當作尚未確認控制的測試材料。"
+          ]
+        },
+        "en": {
+          "prompt": "All single-user missing-data tests pass. How should a request for ten shared users be handled next?",
+          "options": [
+            "Reconfirm roles, data flows, storage and operations requirements, and establish corresponding verification.",
+            "Change only the user count in the README.",
+            "Reuse the same success conclusion.",
+            "Open real data first and fix problems later."
+          ],
+          "rationales": [
+            "Shared use changes the environment and responsibilities, requiring its own specification and evidence.",
+            "A number in a document does not implement shared use.",
+            "Existing tests do not cover the new shared-use scenarios.",
+            "Actual data should not be used to test controls that have not been confirmed."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M01-C03-Q03",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "以下哪個描述最精確？",
+          "options": [
+            "有 HTTPS 就已具備資料授權",
+            "個人與多人情境都需評估資料風險，共用版還要明確協調存取與維運責任",
+            "個人工具永遠不需要備份",
+            "十人共用就一定不安全"
+          ],
+          "rationales": [
+            "傳輸保護與資料授權處理不同問題。",
+            "這同時保留個人工具的責任，並指出共用情境新增的協調需求。",
+            "個人工具也可能需要保存與還原。",
+            "安全性需依設計、環境與證據判斷，不能只看人數。"
+          ]
+        },
+        "en": {
+          "prompt": "Which statement is most precise?",
+          "options": [
+            "HTTPS establishes data authorization.",
+            "Both personal and shared use need data-risk assessment; shared use also needs explicit coordination of access and operations responsibilities.",
+            "Personal tools never need backups.",
+            "Sharing among ten people is always unsafe."
+          ],
+          "rationales": [
+            "Transport protection and data authorization address different problems.",
+            "This retains personal-tool responsibilities and identifies the coordination added by shared use.",
+            "Personal tools may also require retention and restoration.",
+            "Security depends on design, environment and evidence, beyond the number of users."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
