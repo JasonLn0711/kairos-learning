@@ -19,6 +19,7 @@ for(const lang of ['zh','en']){
    expect(await page.locator('[data-snmp-diagram] p').evaluateAll(es=>es.some(e=>parseFloat(getComputedStyle(e).fontSize)<16))).toBe(false);
    await page.locator('[data-snmp-diagram]').screenshot({path:'.local/m04-07/'+lang+'-'+width+'.png'});
   }
+  await page.setViewportSize({width:320,height:900});for(const region of await page.locator('.source-body .table-scroll').all()){await region.focus();await expect(region).toBeFocused();if(await region.evaluate(e=>e.scrollWidth>e.clientWidth)){await region.press('ArrowRight');await expect.poll(()=>region.evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);}}
   const download=page.locator('[data-snmp-diagram] a');await download.focus();expect(await download.evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');await page.keyboard.press('Shift+Tab');await page.keyboard.press('Tab');await expect(download).toBeFocused();
   const [file]=await Promise.all([page.waitForEvent('download'),page.keyboard.press('Enter')]);expect(file.suggestedFilename()).toBe('snmp-manager-'+lang+'.svg');
   const url='/images/ceh/snmp-manager-'+lang+'.svg';const response=await request.get(url);expect(response.status()).toBe(200);expect(await response.body()).toEqual(readFileSync('site'+url));
