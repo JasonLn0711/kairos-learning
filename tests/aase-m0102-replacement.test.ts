@@ -18,7 +18,7 @@ test('AASE permits exactly three or four options, with matching explanations, an
  const build=(l:AaseLesson)=>createAaseCatalog(course,[l],sources,'2026-11-06',english);
  assert.doesNotThrow(()=>build(lesson));
  for(const mutate of [(q:any)=>{q.text.zh.options.pop();q.text.zh.rationales.pop();},(q:any)=>{q.text.zh.options.push('D','E');q.text.zh.rationales.push('D','E');},(q:any)=>{q.answer=3;},(q:any)=>{q.text.zh.rationales.pop();},(q:any)=>{q.text.en.options.push('D');q.text.en.rationales.push('D');}]){const changed=structuredClone(lesson);mutate(changed.checks[0]);assert.throws(()=>build(changed));}
- const four=read('content/aase/lessons/aase-m01-c03.json');assert.doesNotThrow(()=>build(four));
+ const four=read('content/aase/lessons/aase-m01-c04.json');assert.doesNotThrow(()=>build(four));
 });
 
 test('every supplied paragraph has a recorded adoption decision and all nine original answer options remain verbatim',()=>{

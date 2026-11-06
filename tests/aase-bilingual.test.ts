@@ -83,7 +83,7 @@ test('historic AASE first-English edition preserves Chinese teaching in the pre-
 
 test('historic M01 English additions retain Chinese teaching and original acceptance keys',()=>{
  for(const number of ['02','03','04']){
-  const before=read(`docs/sources/aase/m01-en/aase-m01-c${number}.before.json`),l=number==='02'?read('docs/sources/aase/m01-02/replacement-2026-11-06/previous-v1.0.2.json'):lessons.find(x=>x.id===before.id)!;
+  const before=read(`docs/sources/aase/m01-en/aase-m01-c${number}.before.json`),l=['02','03'].includes(number)?read(`docs/sources/aase/m01-${number}/replacement-2026-11-06/previous-v1.0.2.json`):lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
   assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   assert.equal(l.text.en!.sections.length,before.text.zh.sections.length);assert.equal(l.checks.length,3);
