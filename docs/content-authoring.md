@@ -447,3 +447,12 @@ ApplicationCheckDemo 只在本課 analogy 與 scenario 啟用，表單對照接�
 圖 1／2 沿既有 flow／cards；圖 3／4 只在 `m04-06-{mount|permissions}-{zh|en}-v1-0-0.svg` 固定路徑啟用 NfsEvidenceDiagram。mount 為 Client→Server 的虛線請求，手機維持端點與方向；permissions 使用 600／640／644／777 原生選單，permissionBits 拒絕其他輸入，無 JavaScript 保留 600 與全模式對照。SVG 對照固定顯示全模式，不隨當前選擇改寫。文字由同一 visual 模型進入 HTML、搜尋及下載；產生器沿既有 sanitizer，不放寬 SVG 或任意標記邊界。
 
 新增正文使新版 M04 開放 C01–C06 與 C08，共七篇、三項待發布；C05 下一篇改連本課，C07／C09／C10 發布閘門保留。相鄰與目錄測試須同步核對公開路由、搜尋、sitemap 及 stable-ID URL 404，不將已發布 C08 當作待發布。內容、單元、型別、publication-boundary、release 後依序執行 `npx playwright test --config playwright.ceh26-m04-c06.config.ts` 及 C02／C05 回歸；正式站設定 `CEH_BASE_URL`。[回執](releases/2026-11-06-ceh26-m04-c06-nfs.md)記錄各層證據，題目與工具驗證均不代表本人理解或 NFS 實機安全。
+
+<a id="aase-m0102-replacement-2026-11-06"></a>
+### AASE M01-02 完整責任分工教材（2026-11-06）
+
+[本次來源與逐段對照](sources/aase/m01-02/replacement-2026-11-06/README.md)保留原文、v1.0.2 前版、外部圖源取得狀態及使用者確認。正式 JSON 為 v1.1.0，七節加導言／課後結語完整雙語，四圖沿既有 cards／flow、四表與六項任務契約。角色與責任為平行卡片；證據及交接為編號流程，不引入任意 HTML／SVG 或新的圖解格式。
+
+供稿三題各 A–C，AASE 的 checks 受限支援三或四選項、等量解析、答案範圍及兩語數量一致；CEH 契約不變。保留舊題於前版，不新增評分、實際 Q&A 或作答紀錄。目錄標題同步，stable ID／slug／原發布日與翻譯閘門不改；練習用「任務契約表」避免表號錯位。
+
+AgentTestScenarios 只在 M01-02 testing 節啟用，沿 applicationReport 判斷固定的完整、缺漏、空白與先完整後清空輸入；預設最後一種。標示規格預期，不充作 app.py／pytest 的真實紀錄；無 JavaScript 保留預設及全情境表。正文／來源對照、單元、型別、publication-boundary、release 後，執行 playwright.aase-m0102.config.ts 與 M01 既有回歸；正式站設定 AASE_BASE_URL。[修訂回執](releases/2026-11-06-aase-m01-02-replacement.md)記錄規則、實測與待驗事項。
