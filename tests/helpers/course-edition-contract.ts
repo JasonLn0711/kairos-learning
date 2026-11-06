@@ -27,7 +27,8 @@ export function currentEdition(row:HistoricalEdition,current:CanonicalEdition):R
 export function assertRenderedEdition(metadata:string,expected:RenderedEdition,label:string):void {
  const version=metadata.match(/<span\b[^>]*>v(\d+\.\d+\.\d+)<\/span>/)?.[1];
  assert.equal(version,expected.version,label+': current canonical edition');
- const dates=[...metadata.matchAll(/<time datetime="([^"]+)"/g)].map(m=>m[1]);
- // ArticleMetadata can also append an independent content-check date.
- assert.deepEqual(dates.slice(0,2),[expected.publishedOn,expected.revisedOn],label+': original publication and current revision dates');
+ // Select the semantic fields so a content-check date cannot mask a missing revision.
+ const publishedOn=metadata.match(/<span\b[^>]*>(?:原發布|First published)\s*<time datetime="([^"]+)"/)?.[1];
+ const revisedOn=metadata.match(/<span\b[^>]*>(?:版本修訂|Version revised)\s*<time datetime="([^"]+)"/)?.[1];
+ assert.deepEqual([publishedOn,revisedOn],[expected.publishedOn,expected.revisedOn],label+': original publication and current revision dates');
 }

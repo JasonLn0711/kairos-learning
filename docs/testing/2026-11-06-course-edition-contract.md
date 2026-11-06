@@ -26,12 +26,12 @@ tests/helpers/course-edition-contract.ts 只由測試引用，不進入網站執
 - npm run check：0 errors／0 warnings。
 - node scripts/check-publication-boundary.mjs：通過，含隔離 fixture、draft／future、英文課程閘門與乾淨 build 重建。
 - npm run validate:release：完整靜態 release 通過。
-- npx playwright test --config playwright.course-rail.config.ts：7 passed、0 failed。最後一次結果起於 2026-11-06T09:23:59.427Z，約 54 秒；精確機器紀錄以忽略目錄 results.json 為準。
+- npx playwright test --config playwright.course-rail.config.ts：7 passed、0 failed。最後一次結果起於 2026-11-06T09:28:52.264Z，約 54.2 秒；精確機器紀錄以忽略目錄 results.json 為準。
 - 版本／日期檢查走完 53 筆 manifest × 2 語言，共 106 個本機靜態頁；M04-03、M04-05 均通過目前 v1.1.0 的核對。
 - 原有六項導覽回歸維持：CEH 中英、AASE 繁中；JS 開／關，各 320／390／768／1280 CSS px、root 字級 100%／200%、文字未裁切、焦點與導覽連結。
 - 所有 content/、src/ 及歷史 manifest，逐檔與基準 main 做位元組比較，完全相同。M04-08 分支保持獨立。
 
-首輪 helper 對日期總數的檢查過嚴，遇到舊章節額外的內容校對日期而失敗；已依既有 ArticleMetadata 欄位順序精確驗原發布／版本修訂兩欄，保留第三欄，並加入接受合法校對日期及拒絕過時修訂日的案例。首輪失敗 JSON／log 已保留，沒有改動教材來配合測試。
+首輪 helper 對日期總數的檢查過嚴，遇到舊章節額外的內容校對日期而失敗；已依既有 ArticleMetadata 中英欄位標籤精確驗原發布／版本修訂兩欄，保留第三欄，並加入接受合法校對日期、拒絕過時修訂日，以及禁止用校對日期冒充缺少的版本修訂日的案例。首輪失敗 JSON／log 已保留，沒有改動教材來配合測試。
 
 ## 待驗與界線
 

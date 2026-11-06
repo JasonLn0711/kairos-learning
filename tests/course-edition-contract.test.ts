@@ -31,6 +31,8 @@ test('an independent content-check date is allowed but cannot replace a revision
  const checked='<span>Content checked <time datetime="2026-10-23">2026-10-23</time></span>';
  assert.doesNotThrow(()=>assertRenderedEdition(metadata('1.1.0',row.publishedOn,current.date)+checked,expected,'checked'));
  assert.throws(()=>assertRenderedEdition(metadata('1.1.0',row.publishedOn,'2026-11-05')+checked,expected,'stale checked'),/publication and current revision/);
+ const missingRevision='<span>v1.1.0</span><span>First published <time datetime="2026-11-04">2026-11-04</time></span><span>Content checked <time datetime="2026-11-06">2026-11-06</time></span>';
+ assert.throws(()=>assertRenderedEdition(missingRevision,expected,'missing revision'),/publication and current revision/);
 });
 
 test('canonical changes cannot weaken identity, original publication or historical floors',()=>{
