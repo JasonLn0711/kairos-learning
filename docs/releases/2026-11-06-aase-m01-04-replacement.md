@@ -39,3 +39,11 @@ WRITE-01–10：來源與前版保存、逐段採用與修正、完整英譯、�
 [Pages 42241488413](https://github.com/JasonLn0711/kairos-learning/actions/runs/42241488413) attempt 1 的內容、223 項單元、型別、發布邊界、release 與下載校驗全部通過，上傳成功；部署於 2026-11-06 15:17:54–15:27:59 UTC 執行，停在 updating_pages，十分鐘後回報 Timeout reached, aborting! 並取消該次部署。工作已確認 completed／failure 後才啟動 attempt 2，沒有中斷仍在運行的工作。
 
 等候時瀏覽器回讀 HTTP 200，正式頁仍為 v1.0.2、新圖數量為 0；urllib 回讀收到 HTTP 403，未作成功證據。正式雙語全文與六圖仍待 attempt 2 部署後驗證。既有本機結果保存於原 checkout 的 `.local/aase/m0104-replacement-2026-11-06/local-browser/`；本次未以 Git 推送或本機通過代替正式部署完成。
+
+## 正式發布完成
+
+42241488413 attempt 2 於建立部署後收到 Deployment cancelled，確認終止後，以目前 main 的新提交 0294765 啟動 [Pages 42243815161](https://github.com/JasonLn0711/kairos-learning/actions/runs/42243815161)，已成功部署。新提交僅補充驗證與回執，教材與原驗證版本相同。前兩次失敗保留作為發布歷史，不推斷平台內部根因。
+
+正式站 `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0104.config.ts` 兩語 2 項全部通過（19.0 秒）：v1.1.0、九個 section 的全文與表格／程式碼、三題九選項、三張圖的節點與箭頭、四尺寸／200% 文字、鍵盤與焦點、無 JavaScript、全文及圖解搜尋文字、六個 SVG HTTP 200／逐位元組一致與文字邊界。來源原稿、三張 PNG 與舊版已保存，123 段對照與雙語內容完整性另經本機核對；本次請求的教材抽換與正式發布完成。
+
+[中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m01/concepts/m01-04/) · [英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m01/concepts/m01-04/)。正式截圖與測試結果保存在原 checkout `.local/aase/m0104-replacement-2026-11-06/production-browser/`，執行日誌為同目錄 `aase-m0104-production.log`。真人訪談、獨立理解與實體裝置驗收維持未評估。
