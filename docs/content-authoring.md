@@ -456,3 +456,12 @@ ApplicationCheckDemo 只在本課 analogy 與 scenario 啟用，表單對照接�
 供稿三題各 A–C，AASE 的 checks 受限支援三或四選項、等量解析、答案範圍及兩語數量一致；CEH 契約不變。保留舊題於前版，不新增評分、實際 Q&A 或作答紀錄。目錄標題同步，stable ID／slug／原發布日與翻譯閘門不改；練習用「任務契約表」避免表號錯位。
 
 AgentTestScenarios 只在 M01-02 testing 節啟用，沿 applicationReport 判斷固定的完整、缺漏、空白與先完整後清空輸入；預設最後一種。標示規格預期，不充作 app.py／pytest 的真實紀錄；無 JavaScript 保留預設及全情境表。正文／來源對照、單元、型別、publication-boundary、release 後，執行 playwright.aase-m0102.config.ts 與 M01 既有回歸；正式站設定 AASE_BASE_URL。[修訂回執](releases/2026-11-06-aase-m01-02-replacement.md)記錄規則、實測與待驗事項。
+
+<a id="aase-m0103-replacement-2026-11-06"></a>
+### AASE M01-03 個人工具與組織系統（2026-11-06）
+
+[完整來源](sources/aase/m01-03/replacement-2026-11-06/README.md)保留供稿、主要 PNG、v1.0.2、139 段採用對照與 SHA-256。正式 v1.1.0／revision 4 為十節加導言的完整雙語，四圖四表與三題 4／4／3 檢核；原發布日、stable ID、slug、readingId、翻譯閘門與練習保留。目錄標題同步至課綱與工作坊封裝，未把網站可讀當本人學習完成。
+
+沿既有 cards／step／flow：differences 的六筆 cards 由 OrganizationDimensions 呈現五個平行面向及共同成果，identity 的三筆 cards 由 DocumentAccessSimulation 呈現明列政策、三選單與固定規則；驗證器限制其數量及兩語形狀，不接受任意標記。圖解契約見[五面向共同支撐](diagram-design-system.md#aase-organization-dimensions)。simulatedDocumentAccess 只模擬三身分、兩文件、三操作，未知值拒絕，沒有實際登入或文件操作。預設小明／文件 A／讀取，無 JavaScript 保留結果與規則。
+
+第四節另假設兩人被授權修改同份文件，與第三節政策分開；原文版本衝突解法補明伺服器／資料層的原子比對更新。內容、單元、型別、publication-boundary、release 後，執行 playwright.aase-m0103.config.ts；正式站設定 AASE_BASE_URL，另驗 M01 英文及 M01-02 回歸。[回執](releases/2026-11-06-aase-m01-03-replacement.md)保存實測、部署與待驗界線。
