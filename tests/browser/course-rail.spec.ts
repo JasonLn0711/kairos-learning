@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 import {readFileSync} from 'node:fs';
+import {currentEdition,assertRenderedEdition} from '../helpers/course-edition-contract.ts';
 const cases=[
  {id:'ceh-zh',path:'/courses/ceh/v13/m04/concepts/m04-05/',count:21},
  {id:'ceh-en',path:'/en/courses/ceh/v13/m04/concepts/m04-05/',count:21},
@@ -39,15 +40,13 @@ for(const entry of cases)for(const javaScriptEnabled of [true,false]){
 }
 
 
-test('all patched bilingual editions retain original publication dates in rendered metadata',async({request})=>{
+test('all patched bilingual pages match canonical editions and retain their historical publication baseline',async({request})=>{
  const manifest=JSON.parse(readFileSync('docs/releases/2026-11-05-course-navigation-versions.json','utf8'));
  for(const row of manifest.items)for(const path of [row.path,row.path.replace(/^\/en/,'')]){
+  const expected=currentEdition(row,JSON.parse(readFileSync(row.file,'utf8')));
   const response=await request.get(path);expect(response.status(),path).toBe(200);
   const html=await response.text();const metadata=html.match(/<p class="[^"]*article-metadata[^"]*"[^>]*>([\s\S]*?)<\/p>/)?.[1];
   expect(metadata,path+' metadata').toBeTruthy();
-  expect(metadata).toContain('v'+row.after.contentVersion);
-  const times=[...metadata!.matchAll(/<time datetime="([^"]+)"/g)].map(m=>m[1]);
-  expect(times[0],path+' original publication').toBe(row.publishedOn);
-  expect(times[1],path+' version revision').toBe(row.after[row.dateKey]);
+  assertRenderedEdition(metadata!,expected,path);
  }
 });
