@@ -37,16 +37,16 @@ test('M04-01 replacement retains supplied source, all subsections, tables, comma
  assert.deepEqual(shape('zh'),shape('en'));
  const r=spawnSync('python3',['scripts/ceh26_m04_c01_content.py','--check'],{encoding:'utf8'});assert.equal(r.status,0,r.stdout+r.stderr);
 });
-test('C01–C05 and M04-08 are published; four pending units and reused C01 slug resolves only the new stable ID',()=>{
+test('C01–C05 and M04-07–08 are published; three pending units and reused C01 slug resolves only the new stable ID',()=>{
  for(const lang of ['zh','en'] as const){
   const prefix=lang==='en'?'/en':'';const route=`${prefix}/courses/ceh/v13/m04/concepts/m04-01/`;
   assert.equal(getPage(route)?.conceptTeaching?.id,id);const page=conceptCatalog.get(id,lang)!;assert.equal(page.navigation.previous?.id,'M03-08');assert.equal(page.navigation.next?.id,'CEH26-M04-C02');assert.equal(page.navigation.next?.href,`${prefix}/courses/ceh/v13/m04/concepts/m04-02/`);
   assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c01/`),null);
   for(let i=3;i<=10;i++)assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/ceh26-m04-c${String(i).padStart(2,'0')}/`),null);
-  for(const i of [6,7,9,10,11,12])assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(i).padStart(2,'0')}/`),null);
+  for(const i of [6,9,10,11,12])assert.equal(getPage(`${prefix}/courses/ceh/v13/m04/concepts/m04-${String(i).padStart(2,'0')}/`),null);
  }
  assert.equal(concepts.find(c=>c.id===id)?.displayId,'CEH M04-01');
- assert.equal(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')&&t.status==='published').length,6);
+ assert.equal(allConceptTeachings.filter(t=>t.id.startsWith('CEH26-M04-')&&t.status==='published').length,7);
 });
 
 test('all ten new M04 IDs map to conventional public slugs without exposing pending content or colliding with legacy IDs',()=>{
