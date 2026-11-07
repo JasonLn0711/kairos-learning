@@ -501,3 +501,11 @@ M02-02 v1.1.0 的五圖沿 `cards/flow` 正式資料：analogy cards 2、window 
 `MemoryMechanismsDiagram.svelte` 只在 `AASE-M02-C03` 使用既有 `cards`／`flow` 資料。六圖依序為辦公室四角色、五個 token 詞塊、兩節點壓縮、三節點檢索、四欄交接與六步跨日流程；`src/lib/aase.ts` 檢查節點數、種類與雙語結構。平行角色與交接欄位沒有箭頭；token 圖只連第四與第五格；其餘箭頭表示該圖定義的順序。圖 6 在第二天前加分隔。
 
 正文與節點為可搜尋 HTML；容器小於 34rem 時左右圖改上下，箭頭隨方向調整。固定的 12 個外部 SVG 由 `python3 scripts/aase_m0203_svg.py` 產生，`--check` 比較 bytes；沿用換行 helper、跳脫文字與元素白名單，不開放 runtime SVG markup。執行 `tests/aase-m0203-replacement.test.ts` 與 `npx playwright test --config playwright.aase-m0203.config.ts`；正式站使用 `AASE_BASE_URL`。四題採既有原生答案展開，不建立評分或學員完成狀態。來源、圖意差異與驗收見 [M02-03 回執](releases/2026-11-07-aase-m0203-replacement.md)。
+
+### AASE M02-05 Harness 圖解與全開放題（2026-11-07）
+
+M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9、3、3、5；分別為整體架構、前後三角色詳解及五步流程。`HarnessDiagram.svelte` 只負責此課，資料不含任意標記或座標。六面向平行，不是六步流程；Security／Observability 全程註記不新增流程節點。角色 body 用雙換行分段，正文直接可見。`scripts/aase_m0205_svg.py --check` 核對八份雙語匯出。
+
+既有 `openChecks` 可單獨構成理解檢核；至少需有一題 `checks` 或非空且合法的 `openChecks`，原題目 ID 唯一性、答案段落、雙語形狀與發布閘門仍須通過。M02-02 的混合題型保持；M02-05 三題採新 Q04～Q06，無評分、送出或虛構學習紀錄。共用引言改用「作答」涵蓋選擇題及開放題。
+
+執行 `tests/aase-m0205-replacement.test.ts`、`playwright.aase-m0205.config.ts` 與共用檢查；正式站以 `AASE_BASE_URL` 回讀。詳見 [來源對照](sources/aase/m02-05/replacement-2026-11-07/source-map.md)及[驗收紀錄](releases/2026-11-07-aase-m02-05-replacement.md)。
