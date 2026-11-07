@@ -96,6 +96,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='trace'?'flow':'cards')))fail('invalid harness figure');
       }
+      if(l.id==='AASE-M03-C01'&&l.revision>=6){
+        const expected:Record<string,number[]>={analogy:[2],structure:[5],acceptance:[2],workflow:[7],documents:[2,3],connection:[4]};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(['workflow','connection'].includes(s.id)||s.id==='documents'&&i===1?'flow':'cards')))fail('invalid problem statement figure');
+      }
       if(l.id==='AASE-M03-C02'&&l.revision>=4){
         const expected:Record<string,number>={roadmap:5,evidence:4,conflict:2};
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
