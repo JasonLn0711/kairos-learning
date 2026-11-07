@@ -33,3 +33,14 @@
 整合 `820ca10` 的 M02-03 修訂，保留雙方歷史及共用渲染分支。修正合併時題數斷言後，乾淨來源上的 `npm test` 為 241／241 通過；型別 0 errors／0 warnings，內容、發布閘門與靜態 release 均通過。一次單元檢查誤與會暫時改寫 fixture 的 publication-boundary 同時執行，產生 6 項 fixture 相關失敗；待閘門恢復正本後順序重跑已全數通過，未修改教材來迎合暫時 fixture。
 
 整合後 M02-04 中英瀏覽器 2／2 通過（7.7 秒），共用元件 M02-03 回歸 2／2 通過（10.1 秒）。整合前 M02-02 回歸 2／2 通過（11.0 秒）。前一正式 Pages 成功版本 `820ca10`，工作流程 run `42337142675`，可作歷史回復定位。
+
+## 正式發布與回讀
+
+- [PR #88](https://github.com/JasonLn0711/kairos-learning/pull/88) 已合併，保留來源提交 `1cf3a51`、實作 `54f2c4d`、整合 `c9d0d73` 與驗收 `106cee6`。
+- [遠端品質檢查](https://github.com/JasonLn0711/kairos-learning/actions/runs/42337340123) 成功。
+- [Pages 部署](https://github.com/JasonLn0711/kairos-learning/actions/runs/42337478396) 成功，實際部署 commit `fead837bc77a8b8080eb171fc2726a40595866d3`。
+- 2026-11-07 執行 `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0204.config.ts`，正式站中英 2／2 通過（18.3 秒）。完整正文、表格、程式、三題問答、練習與搜尋均核對；四寬度／200% 文字／無 JS／鍵盤／八 SVG bytes 及邊界檢查全數通過。線上 JSON 回執留在 `.local/aase/m0204/live/results.json`，本機回執另存 `local/results.json`。
+- [中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m02/concepts/m02-04/) 與 [英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m02/concepts/m02-04/) 顯示 v1.1.0，原發布日仍為 2026-11-05。
+- 部署後 `git push origin HEAD:main` 回報已同步，再 fetch 比對為 `0 0`。本回執追加為文件提交，不改網站產物；原工作區及其未提交修改保留。
+
+完成界線：本課雙語內容與圖示已發布且經正式回讀；實體手機、完整輔助科技認證、學員理解及真實 Agent 任務仍未評估。

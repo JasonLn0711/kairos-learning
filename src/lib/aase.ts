@@ -91,6 +91,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='hybrid'?'flow':'cards')))fail('invalid agent control figure');
       }
+      if(l.id==='AASE-M02-C05'&&l.revision>=4){
+        const expected:Record<string,number[]>={analogy:[9],'six-aspects':[3,3],trace:[5]};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='trace'?'flow':'cards')))fail('invalid harness figure');
+      }
       if(l.id==='AASE-M02-C06'&&l.revision>=4){
         const expected:Record<string,number>={analogy:5,sandbox:2,connection:6,verification:5};
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
@@ -111,7 +116,7 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
       if(!Array.isArray(t.openChecks)||!t.openChecks.length||t.openChecks.some(q=>!q||!new RegExp('^'+l.id+'-Q[0-9]{2}$').test(q.id)||!text(q.prompt)||!Array.isArray(q.answer)||!q.answer.length||!q.answer.every(text)))fail('invalid open check');
       const ids=[...l.checks.map(q=>q.id),...t.openChecks.map(q=>q.id)];if(new Set(ids).size!==ids.length)fail('duplicate open check');
     }
-    if(!l.checks.length||new Set(l.checks.map(q=>q.id)).size!==l.checks.length)fail('missing or duplicate checks');
+    if((!l.checks.length&&!t.openChecks?.length)||new Set(l.checks.map(q=>q.id)).size!==l.checks.length)fail('missing or duplicate checks');
     if(l.checks.some(q=>{const v=q.text[lang];return !q.id.startsWith(l.id+'-Q')||!v||Object.keys(q.text).some(k=>!Object.keys(l.text).includes(k))||!text(v.prompt)||![3,4].includes(v.options.length)||v.rationales.length!==v.options.length||!Number.isInteger(q.answer)||q.answer<0||q.answer>=v.options.length||[...v.options,...v.rationales].some(x=>!text(x));}))fail('invalid check');
     if(l.checks.some(q=>q.text.zh&&q.text.en&&(q.text.zh.options.length!==q.text.en.options.length||q.text.zh.rationales.length!==q.text.en.rationales.length)))fail('English check structure differs');
     const qaIds=new Set<string>();

@@ -18,10 +18,12 @@ Canonical owner：`content/aase/lessons/aase-m02-c06.json`。原文、四張 PNG
 
 | 規則／檢查 | 結果 |
 | --- | --- |
-| WRITE-01–10 | 九節、MCP 小節、兩表、JSON 與日誌、兩題逐項對照；中英文原理、例子、數字與邊界對應。原稿／四圖／前版六項 SHA-256 通過。 |
-| 內容、單元、型別 | `validate:content` 通過；245/245 tests；Svelte 0 errors／0 warnings。 |
-| HTML／FIG／A11Y | 瀏覽器、SVG 與目視驗收進行中，完成後補實測。 |
-| 發布邊界與靜態 release | 執行中，完成後補實測。 |
+| WRITE-01–08 | 九節、MCP 小節、兩表、JSON 與日誌、兩題逐項對照；中英文原理、例子、數字與邊界對應。原稿／四圖／前版六項 SHA-256 通過。 |
+| 內容、單元、型別 | `validate:content` 通過；248/248 tests；Svelte 0 errors／0 warnings。 |
+| HTML／FIG／A11Y | HTML-01–04、FIG-01–06、A11Y-01–03：雙語 Chromium 2/2 通過；320/390/768/1280 px、100%/200%、鍵盤與無 JS、完整正文與兩題答案、八圖精確下載／文字邊界檢查通過。桌面與手機圖解目視無裁切。 |
+| 發布邊界與靜態 release | publication-boundary 與 validate:release 通過；npm audit 無 high/critical，保留既有 5 low，未做破壞性依賴升級。 |
+
+整合 M02-05 後，248/248 單元測試、型別與發布邊界／release 均通過；M02-06 雙語 2/2（10.4s），M02-05 回歸 2/2（9.7s）。來源附件與封存逐位元組一致，紀錄相對連結檢查通過。
 
 ## 發布閘門
 

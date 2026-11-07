@@ -33,7 +33,7 @@ def render(f,n,lang):
   if i%cols==cols-1 or i==len(f['items'])-1:
    y=max(ends)+52
    if n==1 and i<len(f['items'])-1:arrow(y-28);y+=30
- if n!=1:y=text(f['description'],36,y+8,43)+24
+ if n!=1:y=text(f['description'],36,y+8,44)+24
  svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 {y}" role="img" aria-labelledby="title desc" lang="{lang}"><title id="title">{escape(f["caption"])}</title><desc id="desc">{escape(f["description"])}</desc><rect width="1040" height="{y}" fill="#fbfcfd"/><g fill="#18252c" font-family="Arial, Noto Sans CJK TC, sans-serif">'+''.join(nodes)+'</g></svg>\n'
  tree=ET.fromstring(svg)
  assert all(e.tag.split('}')[-1] in {'svg','title','desc','rect','g','text','path'} and not any(k.startswith('on') or k in ['href','style'] for k in e.attrib) for e in tree.iter())
