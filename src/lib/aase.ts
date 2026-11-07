@@ -80,6 +80,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='prepare'&&i===1?'flow':'cards')))fail('invalid context window figure');
         if(s.id==='budget-example'){const f=figures[0];if(!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.map(i=>i.body).join('|')!=='1,000|2,000|4,500|1,500|500')fail('invalid context budget defaults');}
       }
+      if(l.id==='AASE-M02-C04'&&l.revision>=4){
+        const expected:Record<string,number[]>={control:[4,6],stopping:[6],hybrid:[4]};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='hybrid'?'flow':'cards')))fail('invalid agent control figure');
+      }
       for(const b of s.blocks??[]){
         if(b.kind==='architecture'){assertArchitectureDiagram(b);}
         else if(b.kind==='flow'||b.kind==='cards'){if(!text(b.caption)||!text(b.description)||b.items.length<2||b.items.some(i=>!text(i.title)||!text(i.body)))fail('invalid figure');}
