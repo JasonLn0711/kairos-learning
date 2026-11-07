@@ -8,7 +8,7 @@ export type AaseSource = {id:string;title:string;url:string;checkedOn:string};
 export type AaseBlock = ConceptBlock | ArchitectureDiagramModel;
 export type AaseSection = {id:string;heading:string;paragraphs:string[];sourceIds?:string[];blocks?:AaseBlock[]};
 export type AaseExercise = {environment:string;steps:string[];expected:string;check:string;cleanup:string};
-export type AaseText = {summary:string;objectives:string[];sections:AaseSection[];exercise:AaseExercise;readingGuide:ReadingGuide};
+export type AaseText = {summary:string;objectives:string[];sections:AaseSection[];exercise:AaseExercise;readingGuide:ReadingGuide;openChecks?:{id:string;prompt:string;answer:string[]}[]};
 export type AaseLesson = {id:string;status:'draft'|'published';revision:number;contentVersion:string;publishedOn:string;date:string;qa:ConceptDiscussion[];text:{zh:AaseText;en?:AaseText};checks:ConceptCheck[];sourceIds:string[];translations?:{en:{status:'draft'|'published';publishedOn:string}}};
 export type AasePublishedLesson<L extends Locale = Locale> = Omit<AaseLesson,'text'|'translations'> & {text:Record<L,AaseText>};
 export type AaseCourseTranslation = {lang:'en';status:'draft'|'published';publishedOn:string;title:string;subtitle:string;modules:{id:string;title:string;artifact:string;concepts:{id:string;title:string;objective:string;practice:string;assessment:string}[]}[]};
@@ -74,6 +74,12 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(['pipeline','limits'].includes(s.id)?'flow':'cards'))fail('invalid token attention figure');}
         else if(figures.length)fail('invalid token attention figure');
       }
+      if(l.id==='AASE-M02-C02'&&l.revision>=4){
+        const expected:Record<string,number[]>={analogy:[2],window:[5],'budget-example':[5],prepare:[7,4]};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='prepare'&&i===1?'flow':'cards')))fail('invalid context window figure');
+        if(s.id==='budget-example'){const f=figures[0];if(!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.map(i=>i.body).join('|')!=='1,000|2,000|4,500|1,500|500')fail('invalid context budget defaults');}
+      }
       for(const b of s.blocks??[]){
         if(b.kind==='architecture'){assertArchitectureDiagram(b);}
         else if(b.kind==='flow'||b.kind==='cards'){if(!text(b.caption)||!text(b.description)||b.items.length<2||b.items.some(i=>!text(i.title)||!text(i.body)))fail('invalid figure');}
@@ -84,6 +90,10 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
     }
     const e=t.exercise;
     if(!e||!text(e.environment)||e.steps.length<3||e.steps.some(x=>!text(x))||![e.expected,e.check,e.cleanup].every(text))fail('incomplete exercise');
+    if(t.openChecks!==undefined){
+      if(!Array.isArray(t.openChecks)||!t.openChecks.length||t.openChecks.some(q=>!q||!new RegExp('^'+l.id+'-Q[0-9]{2}$').test(q.id)||!text(q.prompt)||!Array.isArray(q.answer)||!q.answer.length||!q.answer.every(text)))fail('invalid open check');
+      const ids=[...l.checks.map(q=>q.id),...t.openChecks.map(q=>q.id)];if(new Set(ids).size!==ids.length)fail('duplicate open check');
+    }
     if(!l.checks.length||new Set(l.checks.map(q=>q.id)).size!==l.checks.length)fail('missing or duplicate checks');
     if(l.checks.some(q=>{const v=q.text[lang];return !q.id.startsWith(l.id+'-Q')||!v||Object.keys(q.text).some(k=>!Object.keys(l.text).includes(k))||!text(v.prompt)||![3,4].includes(v.options.length)||v.rationales.length!==v.options.length||!Number.isInteger(q.answer)||q.answer<0||q.answer>=v.options.length||[...v.options,...v.rationales].some(x=>!text(x));}))fail('invalid check');
     if(l.checks.some(q=>q.text.zh&&q.text.en&&(q.text.zh.options.length!==q.text.en.options.length||q.text.zh.rationales.length!==q.text.en.rationales.length)))fail('English check structure differs');
@@ -106,7 +116,7 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
       return {...metadata,text:{[lang]:text[lang]!} as Record<L,AaseText>,checks:checks.map(q=>({...q,text:{[lang]:q.text[lang]}})),qa:qa.filter(q=>q.text[lang]).map(q=>({...q,text:{[lang]:q.text[lang]}}))} satisfies AasePublishedLesson<L>;
     });
     const publicConcepts=modules.flatMap(m=>m.concepts.map(c=>({...c,module:m.id,href:aaseConceptPath(m.id,c.slug,lang),lesson:publicLessons.find(l=>l.id===c.id)??null})));
-    const searchEntries:SearchEntry[]=publicConcepts.filter(c=>c.lesson).map(c=>{const l=c.lesson!,t=l.text[lang];return {id:c.id,lang,title:aaseConceptTitle(c),summary:t.summary,text:[...t.objectives,...Object.values(t.readingGuide),...t.sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>blockText(b,lang))]),...Object.values(t.exercise).flat(),...l.checks.flatMap(q=>[q.text[lang]!.prompt,...q.text[lang]!.options,...q.text[lang]!.rationales]),...l.qa.flatMap(q=>[q.text[lang]!.question,q.text[lang]!.originalQuestion??'',...q.text[lang]!.answer,...(q.text[lang]!.explanation??[]),...(q.text[lang]!.editorial??[])])].join(' '),href:c.href,label:`AASE ${c.module.toUpperCase()}`};});
+    const searchEntries:SearchEntry[]=publicConcepts.filter(c=>c.lesson).map(c=>{const l=c.lesson!,t=l.text[lang];return {id:c.id,lang,title:aaseConceptTitle(c),summary:t.summary,text:[...t.objectives,...Object.values(t.readingGuide),...t.sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.blocks??[]).flatMap(b=>blockText(b,lang))]),...Object.values(t.exercise).flat(),...(t.openChecks??[]).flatMap(q=>[q.prompt,...q.answer]),...l.checks.flatMap(q=>[q.text[lang]!.prompt,...q.text[lang]!.options,...q.text[lang]!.rationales]),...l.qa.flatMap(q=>[q.text[lang]!.question,q.text[lang]!.originalQuestion??'',...q.text[lang]!.answer,...(q.text[lang]!.explanation??[]),...(q.text[lang]!.editorial??[])])].join(' '),href:c.href,label:`AASE ${c.module.toUpperCase()}`};});
     return {title,subtitle,modules,concepts:publicConcepts,lessons:publicLessons,searchEntries};
   }
   const chinese=forLanguage('zh')!;

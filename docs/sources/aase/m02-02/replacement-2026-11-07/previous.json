@@ -1,0 +1,427 @@
+{
+  "id": "AASE-M02-C02",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "lost-middle",
+    "context-engineering"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "把上下文窗口當作每次生成可使用的有限工作空間，安排必要規格、工具結果與輸出預留，並用任務結果檢查資訊是否真的被有效使用。",
+      "objectives": [
+        "區分聊天介面保存的歷史與某次模型呼叫實際取得的上下文。",
+        "用明示假設的 token 預算，辨識超出容量及無關資訊擁擠的問題。",
+        "為長任務保留可重新讀取的規格、狀態與來源，避免只靠對話記憶。"
+      ],
+      "readingGuide": {
+        "goal": "為一次模型呼叫安排有限、相關且可回查的上下文。",
+        "startingPoint": "先把聊天歷史與目前真正需要的規格、程式和測試結果分開。",
+        "route": "讀工作桌類比，計算合成預算，再替一次修正任務設計工作包。",
+        "output": "一份註明假設的預算與含來源、版本、未決問題的任務摘要。"
+      },
+      "sections": [
+        {
+          "id": "window",
+          "heading": "聊天視窗看得到，不代表本次模型都讀得到",
+          "paragraphs": [
+            "Context Window（上下文窗口）是模型在某次計算中可處理的序列範圍。應用程式會決定送入哪些指令、對話、檔案片段與工具結果；聊天介面保留的完整歷史，未必全部進入這次呼叫。",
+            "實際限制也可能涉及輸出長度、圖片表示、工具訊息與服務端處理。要確認特定產品的上限，需查其模型、版本及 API 規則；本課不把某個數字套用到所有模型。"
+          ],
+          "sourceIds": [
+            "context-engineering"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像一次只能攤開有限文件的工作桌",
+          "paragraphs": [
+            "把上下文想成目前攤在桌上的資料。倉庫裡有更多文件，不代表你這一刻正在查看它們；桌面變大，也不保證你會找到夾在中間的一條規則。",
+            "協作任務可以分成外部正本與當前工作資料。spec.md 是可重新讀取的正本；對話裡某次提到的規則，則需要確認是否仍出現在目前上下文，以及是否已被更新。"
+          ]
+        },
+        {
+          "id": "budget-example",
+          "heading": "先說清楚假設，再計算預算",
+          "paragraphs": [
+            "下例假設窗口上限 8192 token，且把輸入與預留輸出合計計入同一上限。各項 token 數皆為教學指定數字，不是真實 tokenizer 或服務的量測；尚未計入的額外封裝，在實際服務中也要核對。",
+            "800＋1200＋4800＋1000＝7800，因此剩餘 392。若再加入 600 token 的內容，合計會變成 8400，超出此題假設 208。這只判斷容量條件，沒有判斷模型是否能正確完成任務。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜合成上下文預算",
+              "headers": [
+                "項目",
+                "指定 token 數",
+                "用途"
+              ],
+              "rows": [
+                [
+                  "規則與工具描述",
+                  "800",
+                  "描述任務邊界及可用工具"
+                ],
+                [
+                  "目前規格",
+                  "1200",
+                  "必要欄位與驗收條件"
+                ],
+                [
+                  "工具結果",
+                  "4800",
+                  "與本次修正有關的輸出"
+                ],
+                [
+                  "預留生成輸出",
+                  "1000",
+                  "在題設內保留回答空間"
+                ]
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "可選的 Python 預算核對",
+              "paragraphs": [
+                "環境：Python 3 標準函式庫即可。執行會顯示 reserved = 7800、remaining = 392、fits = True。"
+              ],
+              "code": "window = 8192\ninput_parts = {\"rules\": 800, \"spec\": 1200, \"tool_results\": 4800}\noutput_reserve = 1000\nreserved = sum(input_parts.values()) + output_reserve\nremaining = window - reserved\nprint(\"reserved =\", reserved)\nprint(\"remaining =\", remaining)\nprint(\"fits =\", remaining >= 0)"
+            }
+          ]
+        },
+        {
+          "id": "effective-use",
+          "heading": "容量與有效使用是兩項不同檢查",
+          "paragraphs": [
+            "Lost in the Middle 的研究在其多文件問答與鍵值檢索設定中，觀察到資訊位置可能影響表現。這提醒我們，內容能放進窗口，不等於所有資訊都被可靠使用；也不能把那組實驗的結果直接當成所有新模型的固定表現。",
+            "收件任務可以用具體案例驗證：必要欄位規則是否被正確套用？舊版本規格是否被誤用？若同時塞入大量無關日誌，應先選出和錯誤相關的片段，而不是只增加更多提醒。"
+          ],
+          "sourceIds": [
+            "lost-middle"
+          ]
+        },
+        {
+          "id": "prepare",
+          "heading": "替下一次呼叫準備可核對的工作包",
+          "paragraphs": [
+            "本課的工作包可包含目標、目前規格版本、相關程式片段、剛執行的測試結果、未決問題與停止條件。每一項都說明來源；摘要提到「測試通過」時，仍保留可回查的命令與結果。",
+            "長任務需要繼續時，先確認正本是否改變，再讀取必要片段並重新核對目前狀態。這個工作流程是本課的設計示例，不表示任何 Agent 已自動做到全部步驟。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜重建一次可用的任務上下文",
+              "description": "工作包是對當前任務的選材；完整來源仍可回查。",
+              "items": [
+                {
+                  "title": "辨識目前任務",
+                  "body": "本次只修正「完整後清空欄位仍可匯出」的問題。"
+                },
+                {
+                  "title": "讀取必要正本",
+                  "body": "取得 spec.md 的現行規則及相關程式，不沿用過期摘要。"
+                },
+                {
+                  "title": "加入必要證據",
+                  "body": "保留失敗案例、對應測試輸出與檔案版本。"
+                },
+                {
+                  "title": "預留並驗證",
+                  "body": "依服務規則安排容量；執行後仍按情境檢查結果。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "limits",
+          "heading": "避免把反覆重述當成完整記錄",
+          "paragraphs": [
+            "重複提醒可能有用，但無法保證資訊永遠保留，也不能代替規格正本。若規則改了，應更新文件並說明版本，不只是繼續在對話後方加上另一種說法。",
+            "下一篇會比較摘要壓縮、RAG 與持久記錄。它們可以幫助選擇或重建上下文，但仍有遺漏、過期與錯取資料的風險，需要對照工作結果。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "紙筆或 Python 3；所有 token 數都使用本課題設，不需呼叫真實模型。",
+        "steps": [
+          "將必要規格、對話歷史與工具結果分成正本、當前必需、可回查三類，說明分類理由。",
+          "核對 7800 的合成預算及剩餘 392；可選擇執行範例。",
+          "假設加入 600 token 的無關日誌，計算超出量，並決定哪些內容先移出當前工作包。",
+          "寫一份供下一次呼叫使用的任務摘要，含規格版本、來源、未決問題及仍需驗證的情境。"
+        ],
+        "expected": "合成預算的計算與一份可回查來源的工作包；不宣稱這是真實服務的 token 計量。",
+        "check": "能說明「內容能放入」與「任務確實做對」的差別，並指出下一次呼叫需要重新取得哪些資訊。",
+        "cleanup": "保留合成筆記；可刪除臨時預算程式，沒有建立外部模型或帳號。"
+      }
+    },
+    "en": {
+      "summary": "Treat the context window as finite working space for a generation call. Select specifications and tool results, reserve output space and check whether the task actually uses that information effectively.",
+      "objectives": [
+        "Distinguish chat history retained by the interface from context actually supplied to a model call.",
+        "Use an explicitly assumed token budget to identify capacity overflow and crowding by irrelevant material.",
+        "Retain rereadable specifications, state and sources for long tasks instead of relying only on conversation history."
+      ],
+      "readingGuide": {
+        "goal": "Prepare finite, relevant and traceable context for one model call.",
+        "startingPoint": "Separate chat history from the specifications, code and test results currently needed.",
+        "route": "Use the work-desk analogy, calculate a synthetic budget, then prepare a task packet for one correction.",
+        "output": "An assumption-labeled budget and a task summary with sources, versions and unresolved questions."
+      },
+      "sections": [
+        {
+          "id": "window",
+          "heading": "Visible Chat History May Not Reach This Call",
+          "paragraphs": [
+            "A context window is the sequence range a model can process in a calculation. The application chooses which instructions, messages, file excerpts and tool results to send. The complete history visible in a chat interface need not be included in the current call.",
+            "Actual constraints can also involve output length, image representations, tool messages and server-side processing. Check a particular product’s model, version and API rules for its limits; this course does not apply one number to every model."
+          ],
+          "sourceIds": [
+            "context-engineering"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Like a Desk with Room for Only Some Documents",
+          "paragraphs": [
+            "Think of context as the documents currently open on a desk. More documents in storage do not mean you are reading them now. A larger desk does not guarantee that you will find a rule buried in the middle.",
+            "Separate external authoritative records from current working material. spec.md is a record you can reread. A rule mentioned earlier in conversation needs checking for presence in current context and subsequent updates."
+          ]
+        },
+        {
+          "id": "budget-example",
+          "heading": "State the Assumptions Before Calculating",
+          "paragraphs": [
+            "This example assumes an 8192-token window and counts input plus reserved output against that same limit. All token counts are teaching inputs, not actual tokenizer or service measurements. Check additional message overhead in a real service too.",
+            "800 + 1200 + 4800 + 1000 = 7800, leaving 392. Adding 600 tokens gives 8400, exceeding the assumed limit by 208. This checks capacity, not whether the model performs the task correctly."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | A Synthetic Context Budget",
+              "headers": [
+                "Item",
+                "Assigned Tokens",
+                "Purpose"
+              ],
+              "rows": [
+                [
+                  "Rules and tool descriptions",
+                  "800",
+                  "Describe task boundaries and available tools."
+                ],
+                [
+                  "Current specification",
+                  "1200",
+                  "Required fields and acceptance conditions."
+                ],
+                [
+                  "Tool results",
+                  "4800",
+                  "Outputs relevant to this correction."
+                ],
+                [
+                  "Reserved generation output",
+                  "1000",
+                  "Leave response space under the stated assumptions."
+                ]
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Optional Python Budget Check",
+              "paragraphs": [
+                "Environment: Python 3 standard library. The program prints reserved = 7800, remaining = 392 and fits = True."
+              ],
+              "code": "window = 8192\ninput_parts = {\"rules\": 800, \"spec\": 1200, \"tool_results\": 4800}\noutput_reserve = 1000\nreserved = sum(input_parts.values()) + output_reserve\nremaining = window - reserved\nprint(\"reserved =\", reserved)\nprint(\"remaining =\", remaining)\nprint(\"fits =\", remaining >= 0)"
+            }
+          ]
+        },
+        {
+          "id": "effective-use",
+          "heading": "Capacity and Effective Use Need Separate Checks",
+          "paragraphs": [
+            "Lost in the Middle observed position-dependent performance in its multi-document question-answering and key-value retrieval settings. Fitting content into a window does not establish reliable use of all information. Those experiments also do not establish fixed performance for every newer model.",
+            "Use concrete intake cases: were required-field rules applied correctly, or was an old specification used? When logs contain much irrelevant material, select excerpts related to the failure before adding more reminders."
+          ],
+          "sourceIds": [
+            "lost-middle"
+          ]
+        },
+        {
+          "id": "prepare",
+          "heading": "Prepare a Traceable Packet for the Next Call",
+          "paragraphs": [
+            "A course task packet can contain the goal, current specification version, relevant code excerpts, newly executed test results, unresolved questions and stop conditions. State each item’s source. When a summary says “tests passed,” retain commands and results that can be inspected.",
+            "To continue a long task, check whether authoritative records changed, reread necessary excerpts and verify current state. This is a course workflow example, not a claim that any agent automatically performs every step."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Rebuild Usable Task Context",
+              "description": "The packet selects material for the current task while retaining access to full sources.",
+              "items": [
+                {
+                  "title": "Identify the current task",
+                  "body": "Fix only the issue where clearing a field after a successful check still allows export."
+                },
+                {
+                  "title": "Read necessary authoritative records",
+                  "body": "Retrieve current spec.md rules and relevant code instead of reusing an outdated summary."
+                },
+                {
+                  "title": "Include necessary evidence",
+                  "body": "Retain the failing case, corresponding test output and file versions."
+                },
+                {
+                  "title": "Reserve space and verify",
+                  "body": "Budget under the service’s rules, then check outcomes against scenarios after execution."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "limits",
+          "heading": "Repeated Reminders Are Not a Complete Record",
+          "paragraphs": [
+            "Repetition can help, but cannot guarantee that information stays available or replace the specification. Update the document and explain its version when rules change instead of adding another variation at the end of a conversation.",
+            "The next lesson compares compaction, RAG and persistent records. They can help select or rebuild context, but omissions, stale information and incorrect retrieval still require checking against task outcomes."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Paper or Python 3. Use only the assigned token counts; no actual model call is needed.",
+        "steps": [
+          "Classify specifications, history and tool results as authoritative records, currently necessary material or retrievable evidence, explaining your choices.",
+          "Check the synthetic budget of 7800 and remaining 392, optionally running the program.",
+          "Add 600 tokens of irrelevant logs, calculate overflow and decide what to remove from the current packet first.",
+          "Write a next-call task summary with specification version, sources, unresolved questions and scenarios still needing verification."
+        ],
+        "expected": "Synthetic budget calculations and a source-traceable task packet, without claiming real service token measurements.",
+        "check": "Explain the difference between fitting content and performing the task correctly, and identify information the next call must retrieve again.",
+        "cleanup": "Keep synthetic notes and optionally delete the temporary budget program. No external model or account is created."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M02-C02-Q01",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "聊天介面仍顯示很早以前的訊息，是否表示本次模型必定收到它？",
+          "options": [
+            "是，介面與模型輸入永遠相同",
+            "是，只要訊息沒有被使用者刪除",
+            "不需要知道，模型能自動恢復所有歷史",
+            "不能推定，應確認應用程式實際組裝的上下文"
+          ],
+          "rationales": [
+            "介面保存與模型實際輸入是不同層次。",
+            "未刪除不保證全部送入模型。",
+            "沒有足夠依據可保證所有歷史自動恢復。",
+            "這把判斷連回本次呼叫實際取得的資料。"
+          ]
+        },
+        "en": {
+          "prompt": "An early message remains visible in chat. Must the model have received it in this call?",
+          "options": [
+            "Yes; the interface and model input are always identical.",
+            "Yes, unless the user deleted it.",
+            "There is no need to check because the model restores every message automatically.",
+            "No; inspect the context the application actually assembled."
+          ],
+          "rationales": [
+            "Interface retention and actual model input are different layers.",
+            "Not deleting a message does not guarantee it is sent.",
+            "There is no basis for guaranteeing automatic restoration of all history.",
+            "This connects the judgment to information available in this call."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C02-Q02",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "依本課題設，7800 再加入 600，與 8192 上限相比如何？",
+          "options": [
+            "仍有 208 的餘裕",
+            "超出 208",
+            "剛好等於上限",
+            "因為模型較新所以無法計算"
+          ],
+          "rationales": [
+            "8400 大於 8192，不是仍有餘裕。",
+            "7800＋600－8192＝208。",
+            "兩者不相等。",
+            "這是已明示假設的算術，不依賴真實模型版本。"
+          ]
+        },
+        "en": {
+          "prompt": "Under the course assumptions, how does 7800 plus 600 compare with the 8192 limit?",
+          "options": [
+            "It leaves 208 tokens.",
+            "It exceeds the limit by 208.",
+            "It exactly equals the limit.",
+            "A newer model makes the arithmetic impossible."
+          ],
+          "rationales": [
+            "8400 is greater than 8192, not below it.",
+            "7800 + 600 − 8192 = 208.",
+            "The two values differ.",
+            "This arithmetic uses explicit assumptions, not a real model version."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C02-Q03",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "較大的窗口最直接改變什麼？",
+          "options": [
+            "保證所有重要規則都會正確套用",
+            "保證不再需要規格文件",
+            "在對應規則下能容納的序列範圍；有效使用仍需驗證",
+            "自動取得所有外部檔案的讀取權"
+          ],
+          "rationales": [
+            "容量不等於工作正確性。",
+            "仍需要可核對及更新的規格。",
+            "這分開容量條件與任務品質。",
+            "窗口大小不授予資料權限。"
+          ]
+        },
+        "en": {
+          "prompt": "What does a larger context window most directly change?",
+          "options": [
+            "It guarantees correct application of every important rule.",
+            "It removes the need for a specification.",
+            "The sequence range that can fit under applicable rules; effective use still needs verification.",
+            "It grants access to all external files."
+          ],
+          "rationales": [
+            "Capacity does not establish task correctness.",
+            "Specifications still need to be traceable and maintained.",
+            "This separates capacity from task quality.",
+            "Window size grants no data permissions."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
