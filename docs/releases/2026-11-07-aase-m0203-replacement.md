@@ -34,3 +34,7 @@ Canonical owner：`content/aase/lessons/aase-m02-c03.json`。完整原文、六�
 修改前成功部署：Pages run `42334885415`，commit `2e4a3fbd6d73e90e7bf22b89a82858a12c3db7d0`。本次待完成瀏覽器與目視檢查後，依現有 PR → 檢查 → main → Pages 流程發布，再回讀兩語全文與圖檔。
 
 實體手機、完整螢幕閱讀器與學員理解尚未驗證；不將 Chromium 模擬、測驗解說或部署成功視為上述驗收。
+
+## 主線整合驗證
+
+PR #86 檢查通過後，主線先合併 M02-02 PR #87（`75aa378`），造成共用 AaseLesson、內容驗證器、兩個歷史快照測試與撰稿指南衝突。整合時保留兩篇資料與各自圖解、M02-02 的開放題與預算控制、兩組驗證契約及文件段落。合併後 `npm test` 238/238、型別 0 errors／0 warnings、publication boundary、release 全數通過；M02-01、M02-02、M02-03 中英瀏覽器各 2/2 通過。兩篇正文分別與各自分支／主線來源一致，未互相覆寫。

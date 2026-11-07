@@ -486,6 +486,16 @@ v1.1.0 起，`TokenAttentionDiagram.svelte` 以既有 cards／flow 模型承接�
 
 SVG 由 `python3 scripts/aase_m0201_svg.py` 從正式 JSON 產生，`--check` 核對逐位元組一致。只有固定受審核元素及 escaped text，單檔小於 100000 bytes。下載圖 5 表示預設值，不跟隨瀏覽器互動。驗收執行 `npx playwright test --config playwright.aase-m0201.config.ts`；正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`，覆蓋雙語全文、四寬度、200% 文字、無 JS、鍵盤、SVG 邊界／文字重疊及下載 bytes。
 
+### AASE M02-02 上下文、預算與交接
+
+M02-02 v1.1.0 的五圖沿 `cards/flow` 正式資料：analogy cards 2、window cards 5、budget-example cards 5、prepare cards 7＋flow 4；`aase.ts` 檢查種類、順序、節點數與固定預算值。`ContextWindowDiagram` 只接受編號 1–5，資產路徑固定，不接受任意標記；選取虛線與工作流程箭頭的含義不同，窄版重排保持端點及順序。`scripts/aase_m0202_svg.py` 產生十個同源 SVG，`--check` 核對位元組，每檔小於 100000 bytes。
+
+`contextBudget` 的教學上限為 10000，固定分項 [1000,2000,4500,1500]，額外日誌接受 0–3000 整數。UI 步進 100、預設 500，保留 1800 與重設；無 JS 保留 9500／剩餘 500 並停用控制。分段條只顯示預算範圍，超出量用文字呈現。圖 4 的剪貼簿內容含七欄及教學假設，成功寫入後才顯示成功；失敗提示手動複製。
+
+`AaseText.openChecks` 是可選的開放題陣列，每題須有唯一課程 Qxx ID、非空 prompt 與非空 answer 段落；不能與選擇題 ID 重複。兩語沿 sameShape，搜尋收錄題目及答案。AaseLesson 在選擇題之後呈現原生 details 參考答案，不建成績或假提交狀態。本課原題封存，新增 Q04 選擇題及 Q05／Q06 開放題；qa 仍為空。
+
+來源與逐小節處理見 [M02-02 對照](sources/aase/m02-02/replacement-2026-11-07/source-map.md)。本課檢查用 `playwright.aase-m0202.config.ts`，正式站設定 `AASE_BASE_URL`；共用渲染變更另回歸 `playwright.aase-m0201.config.ts`。
+
 ### AASE M02-03 四種機制圖解
 
 `MemoryMechanismsDiagram.svelte` 只在 `AASE-M02-C03` 使用既有 `cards`／`flow` 資料。六圖依序為辦公室四角色、五個 token 詞塊、兩節點壓縮、三節點檢索、四欄交接與六步跨日流程；`src/lib/aase.ts` 檢查節點數、種類與雙語結構。平行角色與交接欄位沒有箭頭；token 圖只連第四與第五格；其餘箭頭表示該圖定義的順序。圖 6 在第二天前加分隔。
