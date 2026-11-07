@@ -42,11 +42,11 @@ def parse(lang,suffix):
  return dict(summary='從查詢身分、Base、Scope、欄位與分頁完成狀態判讀 LDAP 列舉，並用完整 LDAP／Kerberos 入門串起目錄、票證與授權。' if lang=='zh' else 'Interpret LDAP enumeration through identity, Base, Scope, attributes, and paging completion, with complete LDAP and Kerberos introductions connecting directories, tickets, and authorization.',sections=[],sourceBody=blocks)
 def wrap(s,width):
  lines=[];line='';size=0
- for c in s:
-  cost=1 if unicodedata.east_asian_width(c) in 'WF' else .62
-  if size+cost>width:lines.append(line);line='';size=0
-  line+=c;size+=cost
- if line:lines.append(line)
+ for token in re.findall(r'[\u2e80-\uffff]|[^\s\u2e80-\uffff]+\s*|\s',s):
+  cost=sum(1 if unicodedata.east_asian_width(c) in 'WF' else .62 for c in token)
+  if line and size+cost>width:lines.append(line.rstrip());line='';size=0
+  line+=token;size+=cost
+ if line.strip():lines.append(line.rstrip())
  return lines
 
 def svg(key,lang,v):
@@ -89,7 +89,7 @@ def svg(key,lang,v):
    h=max(text(left,30,y,420,22,True),text(right,540,y,420,22,True));y+=h+16
    y+=text('→ '+request,100,y,800)+12
    y+=text(('← ' if i<2 else '')+reply,100,y,800)+36
-   path(f'M30 {y-14}H970')
+   path(f'M30 {y-14}H970');y+=30
  else:
   for i,item in enumerate(items):
    y+=box(item,30,y,940)+20

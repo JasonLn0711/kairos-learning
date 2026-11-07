@@ -74,6 +74,8 @@ for(const lang of ['zh','en'])test(lang+': all ten figures retain readable HTML,
    const view=(svg as SVGSVGElement).viewBox.baseVal;
    const labels=[...svg.querySelectorAll('text')].map(t=>({text:t.textContent!,box:t.getBBox()}));
    const overlaps=labels.flatMap((a,i)=>labels.slice(i+1).filter(b=>a.box.x<b.box.x+b.box.width-.5&&a.box.x+a.box.width>b.box.x+.5&&a.box.y<b.box.y+b.box.height-.5&&a.box.y+a.box.height>b.box.y+.5).map(b=>a.text+' / '+b.text));
+   const separators=svg.querySelectorAll('path[d^="M30 "]');
+   for(const path of separators){const line=(path as SVGGraphicsElement).getBBox();if(line.height===0)for(const label of labels)if(line.y>label.box.y&&line.y<label.box.y+label.box.height)overlaps.push('Separator crosses '+label.text);}
    return overlaps.concat(labels.filter(({box:b})=>b.x<0||b.y<0||b.x+b.width>1000||b.y+b.height>view.height/.85).map(l=>l.text));
   });expect(bad).toEqual([]);await asset.locator('svg').screenshot({path:dir+'/'+lang+'-svg-'+(await figure.getAttribute('data-ldap'))+'.png'});await asset.close();
  }
