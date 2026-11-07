@@ -476,7 +476,7 @@ M01-04 v1.1.0 adopts the supplied introduction and eight complete sections in bo
 
 ## M04-09 其他列舉（2026-11-07）
 
-`CEH26-M04-C09` 首次公開 v1.0.0，顯示 M04-09。依[來源對照](sources/m04-09/source-review.md)維護完整十一節與四題；九張參考圖對應九組雙語原生圖解及十八個獨立 SVG。執行 `python3 scripts/m04_09_content.py` 從雙語成稿與 `diagrams.json` 生成正文及圖檔，`--check` 驗證同步。`OtherEnumerationDiagram` 只處理已知圖名及已驗證節點數，延用 `SourceBody.visual` 與既有 SVG sanitizer。NTP 同層節點是平行設備，BGP 五條 peer 關係以明列端點承接窄版；原生參考答案不建立學員進度。檢查入口為 `playwright.m04-09.config.ts`，正式站用 `M04_09_BASE_URL=https://learn.cs-kairos.com`。結果見[發布紀錄](releases/2026-11-07-m04-09.md)。
+`CEH26-M04-C09` 目前為 v1.1.0（revision 2），原發布 2026-11-07。依[本次來源對照](sources/m04-09/source-review.md)維護十一節、四表與四題，正解 B／B／C／B；第四題為 TFTP。十張本次附件衍生十組圖解，另加證據 ladder，合計十一組雙語 HTML／二十二張 SVG；首版與本次來源分開保管。`python3 scripts/m04_09_content.py --check` 核對雙語成稿、模型及匯出；程式圍欄轉為 code，子標題轉為既有 h3。`OtherEnumerationDiagram`、`SourceBody` 與 `concepts.ts` 共同約束圖名、版本、節點數與 flow/cards；BGP 新版四 AS 菱形與原版五 AS 拓樸分開。前版 SVG 保留，新增使用 `v1-1-0`。正文、搜尋、下載同源，無任意 HTML/SVG；`ip -6 neigh show` 使用具名、鍵盤可捲動的 code 區域。檢查入口 `playwright.m04-09.config.ts`，正式站用 `M04_09_BASE_URL=https://learn.cs-kairos.com`，詳見[本次回執](releases/2026-11-07-m04-09-replacement.md)。
 
 ### AASE M02-01 Token／Attention 圖解與互動
 
