@@ -39,3 +39,5 @@
 - [M02-04 Chatbot、Workflow 與 Agent 抽換](../releases/2026-11-07-aase-m0204-replacement.md)：八節、四圖、三題與完整來源對照。
 
 - [M02-05 Agent Harness 抽換](../releases/2026-11-07-aase-m02-05-replacement.md)：六個面向完整案例、四圖、三題開放檢核與來源對照。
+
+- [M02-06 工具、沙箱與觀測抽換](../releases/2026-11-07-aase-m0206-replacement.md)：九節、四圖、兩題及正式站驗證；[11/7 全 repo 整合](../releases/2026-11-07-repository-reconciliation.md)連至 Planning 今日紀錄。

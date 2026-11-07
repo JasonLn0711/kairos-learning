@@ -43,3 +43,7 @@ Canonical owner：`content/aase/lessons/aase-m02-c06.json`。原文、四張 PNG
 - 本機截圖／日誌位於 `.local/aase/m0206-local/`；正式站截圖、JSON 與回讀日誌位於 `.local/aase/m0206/`。合併後 fetch 核對 `HEAD...origin/main` 為 `0 0`；本回執另作文件提交，不改正式教材。未 force-push，原工作目錄的無關修改保留。
 
 正式頁：[中文](https://learn.cs-kairos.com/courses/aase/v1/m02/concepts/m02-06/)／[English](https://learn.cs-kairos.com/en/courses/aase/v1/m02/concepts/m02-06/)。下一個驗收範圍為實體裝置、完整螢幕閱讀器與學員理解；安全與重試示例保持合成教材界線。
+
+## Planning connection — 2026-11-07
+
+[全 repo 整合回執](2026-11-07-repository-reconciliation.md)保存本次全部本機變動的提交／合併及 Planning 日誌、專案與週計畫連結；原教材與正式站驗證仍以上方實際執行為準。
