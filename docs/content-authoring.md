@@ -231,3 +231,32 @@ user markup. Unregistered `visual` assets retain the existing semantic renderer.
 ## 結構化記憶體與分層圖解
 
 新增 `cells`、`stages`、`layers`、`reference`、`lifetime`、`access-path` 版型及受限 cells／released 欄位，契約、響應式規則與驗收統一依[圖解設計規範](diagram-design-system.md)。新增教學範圍與版型的實作見[記憶體基礎回執](releases/2026-11-01-nas-memory-foundations.md)。
+
+## M02-06 網路角色圖與 CIDR 模擬器
+
+此實作已採納為共用圖解參考模式；設計選擇、復用邊界與新互動驗收依[FIG-06／INT-01](diagram-design-system.md#m02-06-網路圖解與互動準則)。以下保留 M02-06 專屬資料及生成流程。
+
+M02-06 v1.1.0 直接替換第 2–4 節，第 8 節承接查詢練習與整合案例；第 5–7、9 節及原始 SVG／ZIP 保留。[修訂驗收](releases/2026-11-01-m02-06-network-revision.md)記錄採用範圍與來源差異。
+
+六張新圖沿用 `sourceBody.visual`，以已知 `/images/ceh/m02-06-<layout>-<lang>.svg` 路徑選取 [雙語圖解資料](../src/lib/m0206-network-diagrams.json)。版型只接受 network-map、prefix-bits、private-network、bgp-routing、cdn-origin、proxy-modes；節點數依序為 4、4、4、3、4、5。資料含 caption、description、nodes（title／body／tone）、labels、footer；兩語節點順序一致，IP、ASN 與位元數一致。任意路徑不會啟用新渲染器，文字由 Svelte 跳脫，不接收任意 HTML 或 SVG 標記。
+
+[NetworkDiagram](../src/lib/components/NetworkDiagram.svelte)用語意 HTML 與容器查詢重排；群組保留平行設備、條件回源、控制面與資料面差異。獨立 SVG 由 [產生器](../scripts/m0206_network.py)讀取同一資料，以固定桌面座標呈現，再經既有嚴格 serializer 產生受審核檔案。新圖使用原生 HTML 正文，不重複展示整張縮小的 SVG；舊 Traceroute 與證據流程圖繼續使用 ReviewedSvgVisual。
+
+[CidrExplorer](../src/lib/components/CidrExplorer.svelte)只計算固定 192.0.2.25 的 /24–/30；使用原生 range、可見標籤、鍵盤與 aria-live。無 JavaScript 時控制停用，/24 預設計算仍可閱讀。此模擬不發出網路請求、修改設定或保存學習進度。理解題使用既有原生參考答案收合，不提供虛構的送出／評分功能。
+
+維護順序：
+
+```sh
+python3 scripts/m0206_network.py
+python3 scripts/m0206_svg.py
+python3 scripts/m0206_content.py
+npm run generate:readable-diagrams
+npm run validate:content
+npm test
+npm run check
+node scripts/check-publication-boundary.mjs
+npm run validate:release
+npm run test:browser:m0206
+```
+
+第二步同步十二張新下載圖、原有受審核註冊表及獨立 network-svg.zip；不改寫原 bilingual-svg.zip。`--check` 驗證來源圖、序列化輸出與 ZIP 確定性。英文換行保留完整詞；瀏覽器檢查 SVG 文字在 viewBox 內且不與箭頭交疊。圖號 1–6 是這次網路角色補充的內部順序，舊圖以原標題辨識；stable section-* 錨點與既有課程路線保留。
