@@ -14,7 +14,7 @@ Canonical owner：`content/aase/lessons/aase-m02-c06.json`。原文、四張 PNG
 
 ## 驗證紀錄
 
-環境：Linux、Node v22.23.4、Chromium Playwright；雲端工作流程使用 Node 24。本機證據將保存於 `.local/aase/m0206-local/`，正式站回讀於 `.local/aase/m0206/`。
+環境：Linux、Node v22.23.4、Chromium Playwright；雲端工作流程使用 Node 24。本機證據保存於 `.local/aase/m0206-local/`，正式站回讀於 `.local/aase/m0206/`。
 
 | 規則／檢查 | 結果 |
 | --- | --- |
@@ -27,6 +27,19 @@ Canonical owner：`content/aase/lessons/aase-m02-c06.json`。原文、四張 PNG
 
 ## 發布閘門
 
-修改前最新成功部署為 [Pages run 42337478396](https://github.com/JasonLn0711/kairos-learning/actions/runs/42337478396)，commit `fead837bc77a8b8080eb171fc2726a40595866d3`。完成必要驗證後，依 PR → 檢查 → main → Pages 流程發布，再回讀兩語正文、圖檔與既有網站路徑。
+修改前最新成功部署為 [Pages run 42337478396](https://github.com/JasonLn0711/kairos-learning/actions/runs/42337478396)，commit `fead837bc77a8b8080eb171fc2726a40595866d3`。本次已完成 PR → 檢查 → main → Pages 流程及正式站回讀，證據如下。
 
 實體手機、完整螢幕閱讀器與學員理解尚未驗證；本次沒有真實工具安全性或寄信重試實驗。
+
+
+## 正式發布與回讀
+
+- 來源封存 `b5ecca3`；正文／圖解／測試 `981eccd`；兩課整合 `bc7715f`；SVG 標點修正 `cc9e21c`；保留 M02-05 發布回執後的 PR head `050ddc4164fb224bdf7506ffa7d05253c7cde9ff`。
+- [PR #90](https://github.com/JasonLn0711/kairos-learning/pull/90) 已合併；正式內容提交 `513cceae3cf3c90d932f74b05c978ce954e7d4f6`。
+- [Quality run 42338357903](https://github.com/JasonLn0711/kairos-learning/actions/runs/42338357903)：success；[Pages run 42338489004](https://github.com/JasonLn0711/kairos-learning/actions/runs/42338489004)：success。
+- `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0206.config.ts`：雙語 2/2 通過（21.2s）。逐段正文、兩題答案、四種寬度與兩種字級、鍵盤、無 JS、搜尋與八份 SVG bytes／文字邊界全部通過。
+- 正式站首頁、MATLAB 首頁與中英文課文 HTTP 200；不存在路徑 HTTP 404；六個既有 MATLAB ZIP 的 SHA-256 與清單一致。
+- 最後 SVG 標點修正後，本機八圖生成一致性及雙語瀏覽器 2/2（10.6s）通過；雲端重新完成全套品質與部署檢查。暫態建置曾因圖檔在建置期間更新出現 bytes 差異，固定產物後重驗通過，沒有把該失敗結果計為驗收。
+- 本機截圖／日誌位於 `.local/aase/m0206-local/`；正式站截圖、JSON 與回讀日誌位於 `.local/aase/m0206/`。合併後 fetch 核對 `HEAD...origin/main` 為 `0 0`；本回執另作文件提交，不改正式教材。未 force-push，原工作目錄的無關修改保留。
+
+正式頁：[中文](https://learn.cs-kairos.com/courses/aase/v1/m02/concepts/m02-06/)／[English](https://learn.cs-kairos.com/en/courses/aase/v1/m02/concepts/m02-06/)。下一個驗收範圍為實體裝置、完整螢幕閱讀器與學員理解；安全與重試示例保持合成教材界線。
