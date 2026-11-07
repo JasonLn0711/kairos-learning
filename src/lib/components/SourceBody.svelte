@@ -1,4 +1,6 @@
 <script lang="ts">
+  import NetworkDiagram from './NetworkDiagram.svelte';
+  import {networkDiagram} from '$lib/m0206-network';
   import ReadableDiagramText from './ReadableDiagramText.svelte';
   import {readingGuide} from '$lib/article-reading';
   import FtpDiagram from './FtpDiagram.svelte';
@@ -27,7 +29,7 @@
         <ReadableDiagramText src={block.src} {lang}/>
         <figcaption>{block.caption}</figcaption>
       </figure>
-    {:else if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
+    {:else if block.kind === 'dnsDiagram'}<DnsDiagram id={block.id} {lang}/>{:else if block.kind === 'visual' && networkDiagram(block.src)}<NetworkDiagram {block} {lang}/>{:else if block.kind === 'visual' && reviewedSvgMarkup(block.src)}<ReviewedSvgVisual {block} {lang}/>{:else if block.kind === 'visual'}<div class="source-visual"><ConceptBlocks blocks={[block.visual]}/><a href={block.src} download>{block.downloadLabel}</a></div>
     {:else if block.kind === 'accessDiagram'}<AccessDiagram texts={block.texts} src={block.src} />
     {:else if block.kind === 'heading'}<h2 id={block.id}><InlineText text={block.text} /></h2>
     {:else if block.kind === 'paragraph' && block.id}<h3 id={block.id}><InlineText text={block.text}/></h3>

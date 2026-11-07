@@ -6,62 +6,168 @@
 
 Imagine investigating a coffee shop's deliveries. The shop name helps people find it, the street address guides delivery, a district groups addresses, a carrier manages routes, and tracking records describe an individual shipment. Each item contributes a different part of the picture.
 
-This lesson follows M02-04 DNS (Domain Name System) and M02-05 email paths. We now move from names and messages to addresses and networks. All addresses, ASNs, domains and outputs below are synthetic teaching data. Practice is offline interpretation and local calculation. Active measurements belong to a separately approved, owned, isolated lab.
+This lesson follows M02-04 DNS (Domain Name System) and M02-05 email paths. We now move from names and messages to addresses and networks. Diagram addresses, ASNs and path outputs are synthetic. Optional local and public-record queries are recorded with their actual time and observation point. Active measurements belong to a separately approved, owned, isolated lab.
 
-## 2 | IP addresses and prefixes
+## 2 | IP addresses and prefixes: addresses and ranges
 
-IP (Internet Protocol) carries data using source and destination addresses. A packet is a unit of network data. A router forwards packets toward a next hop using routing information. Addresses can be assigned to interfaces; services can also use shared or virtual addresses.
+When you enter a website name, DNS, addresses and routing answer different questions. Use a parcel-delivery analogy to build the map, then verify each relationship.
 
-An IPv4 address has 32 bits and is commonly written as four decimal numbers, such as `192.0.2.25`. IPv6 has 128 bits; `2001:db8::25` uses a double colon to compress a run of zeros. A website may offer both families, so retain their observations separately. [IPv4 specification](https://www.rfc-editor.org/rfc/rfc791), [IPv6 specification](https://www.rfc-editor.org/rfc/rfc8200)
+![Diagram](figures/network-map.en.svg)
 
-CIDR (Classless Inter-Domain Routing) writes a range as an address and prefix length. In `192.0.2.0/24`, the first 24 bits form a common prefix. The remaining eight bits provide `2^8 = 256` addresses, from `192.0.2.0` to `192.0.2.255`. This counts the entire address range; assignable interface counts depend on the subnet's purpose and configuration. [CIDR specification](https://www.rfc-editor.org/rfc/rfc4632)
-
-An IPv4 /25 leaves seven bits and contains 128 addresses; a /24 leaves eight bits and contains 256. A longer prefix identifies a smaller range, like adding detail to an address narrows the district being described.
-
-| Information | Synthetic example | Interpretation |
+| Concept | Analogy | Actual role |
 |---|---|---|
-| Individual address | 192.0.2.25 | A network address |
-| Network prefix | 192.0.2.0/24 | A range containing that address |
-| Private network | 10.20.0.0/24 | A privately configured internal range |
-| IPv6 documentation address | 2001:db8::25 | An address reserved for examples |
+| DNS | Address directory | Resolves domain names to IP addresses and other records |
+| IP | Delivery address | Identifies network source and destination addresses |
+| CIDR / prefix | Neighborhood or address range | Represents a range of IP addresses |
+| AS / ASN | A delivery operator’s routing system and identifier | Identifies a network with a common external routing policy |
+| BGP | Route information exchanged between operators | Exchanges network reachability information between ASes |
+| CDN | Distributed delivery centers | Provides content or proxy services at edge nodes |
 
-RFC 1918 reserves `10.0.0.0/8`, `172.16.0.0/12` and `192.168.0.0/16` for private IPv4 use. Different organizations can use these internally. NAT (Network Address Translation) maps internal and external addressing; multiple devices or people may share an external address. Investigations correlate the external address, precise time, ports and appropriate system records. [Private addressing](https://www.rfc-editor.org/rfc/rfc1918), [Traditional NAT](https://www.rfc-editor.org/rfc/rfc3022)
+A website name, network address, resource registrant, routing operator and website operator may belong to different organizations. Sections 2–4 explain how to connect these roles with evidence.
 
-The ranges `192.0.2.0/24`, `198.51.100.0/24` and `203.0.113.0/24` are reserved IPv4 documentation examples. IPv6 uses `2001:db8::/32` for documentation. They support examples and offline calculations here. [IPv4 documentation ranges](https://www.rfc-editor.org/rfc/rfc5737), [IPv6 documentation prefix](https://www.rfc-editor.org/rfc/rfc3849)
+### 2.1 What is an IP address, and why do computers need one?
 
-![Diagram](figures/02-address-prefix-as.en.svg)
+Sending a parcel requires a destination address. Similarly, computers exchange packets using IP source and destination addresses. For example, 192.0.2.25 is an IPv4 address with four decimal octets, each from 0 to 255.
 
-## 3 | ASN: who manages the routing policy?
+| Type | Example | Length |
+|---|---|---|
+| IPv4 | 192.0.2.25 | 32 bits |
+| IPv6 | 2001:db8::25 | 128 bits |
 
-An AS (Autonomous System) presents a coherent external routing policy for a collection of networks. Its ASN (Autonomous System Number), such as our documentation example `AS64496`, is an identifier. Think of an AS as a carrier with its own routing rules and an ASN as that carrier system's identification number. [AS definition](https://www.rfc-editor.org/rfc/rfc1930)
+A bit has two possible values, 0 and 1. An IP address is usually assigned to a network interface; it can also serve a virtual service, load balancer or shared entry point. It does not permanently identify one computer.
 
-An ISP (Internet Service Provider), cloud platform, large enterprise or academic network may operate an AS. One AS can announce multiple prefixes, and one organization may operate several ASes. ASNs identify routing systems; IP addresses support packet addressing.
+### 2.2 What is a subnet or network prefix?
 
-BGP (Border Gateway Protocol) exchanges prefix reachability information between autonomous systems. Its AS_PATH is an attribute of a routing announcement. Traceroute uses probe responses to observe a path. Separate columns preserve the distinction between a routing announcement and a particular measurement. [BGP specification](https://www.rfc-editor.org/rfc/rfc4271)
+If an IP address is a street address, a prefix describes a neighborhood. Consider three lab devices:
 
-RIRs (Regional Internet Registries) provide registration information through RDAP (Registration Data Access Protocol). Results may describe IP ranges, ASNs, registered organizations, contact roles and update information; available fields depend on the registry. [ARIN RDAP guide](https://www.arin.net/resources/registry/whois/rdap/)
+```text
+192.0.2.10   Computer A
+192.0.2.20   Computer B
+192.0.2.25   Computer C
+```
 
-For example, a synthetic record assigns `192.0.2.0/24` to Example Edge, while routing data associates its origin with AS64496. Record the registered organization and observed routing origin separately. Then consult contracts, cloud settings and your asset inventory to establish your service relationship. AS64496 and AS64497 are documentation ASNs. [Documentation ASN reservations](https://www.rfc-editor.org/rfc/rfc5398)
+They share the first three octets, 192.0.2. CIDR (Classless Inter-Domain Routing) expresses a range as an address and prefix length, such as 192.0.2.0/24.
+
+![Diagram](figures/prefix-bits.en.svg)
+
+IPv4 has 32 bits; /24 fixes the first 24 as the common network prefix. This leaves 32 − 24 = 8 variable bits and 2⁸ = 256 addresses, from 192.0.2.0 through 192.0.2.255.
+
+A conventional IPv4 /24 LAN reserves its network and broadcast addresses, commonly leaving 254 host addresses. The “subtract two” rule does not apply to every prefix or use case.
+
+### 2.3 Why do /24, /25 and /26 describe different ranges?
+
+| Prefix | Address range | Total addresses |
+|---|---|---|
+| 192.0.2.0/24 | .0 through .255 | 256 |
+| 192.0.2.0/25 | .0 through .127 | 128 |
+| 192.0.2.0/26 | .0 through .63 | 64 |
+| 192.0.2.0/27 | .0 through .31 | 32 |
+
+Moving from /24 to /25 fixes one additional bit, halving the range. It does not add one address. Use the simulator beneath the bit diagram to see the containing prefix for the fixed address 192.0.2.25, from /24 through /30. It displays the prefix, count and endpoints; the /24 default remains readable without JavaScript.
+
+A prefix is a rule for describing and matching address ranges, not a physical box. Routers compare a destination with available forwarding entries. When prefixes overlap, longest-prefix matching selects the most specific matching entry. [CIDR and longest-prefix matching](https://www.rfc-editor.org/rfc/rfc4632).
+
+### 2.4 How do private and public IP addresses differ?
+
+Consider a lab with a computer, a NAS and a router:
+
+![Diagram](figures/private-network.en.svg)
+
+10.20.0.25 is a private IPv4 address. The private ranges are 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16. Organizations can reuse them internally; these addresses are not routed as destinations on the global public Internet.
+
+Private addressing does not establish safety or restrict access to the same room. Another campus can reach the NAS if inter-campus routing exists and the firewall permits it.
+
+NAT (Network Address Translation) can let multiple internal devices communicate through fewer public addresses. Address translation does not replace firewall policy or authentication. Addresses and prefixes help define permitted sources, destinations and segmentation boundaries.
+
+192.0.2.0/24 is reserved for documentation, not for deploying a public website. 2001:db8::/32 is the IPv6 documentation range. [Private IPv4](https://www.rfc-editor.org/rfc/rfc1918), [IPv4 documentation addresses](https://www.rfc-editor.org/rfc/rfc5737), [IPv6 documentation addresses](https://www.rfc-editor.org/rfc/rfc3849).
+
+## 3 | ASN: who manages a common routing policy?
+
+ASN connects an address range to external routing policy.
+
+### 3.1 Why do we need ASNs as well as IP addresses?
+
+A parcel sent from Taiwan to Tokyo may pass between delivery operators. Likewise, your computer can connect through an ISP, other operators’ networks and finally the destination network. Independently managed networks need a way to exchange which destinations are reachable through which neighbors.
+
+An AS (Autonomous System) presents a common external routing policy. Its ASN (Autonomous System Number) identifies that system. AS64496 is a documentation example, not an IP address or a computer number. One AS can announce many prefixes, and one company can operate multiple ASes. [AS definition](https://www.rfc-editor.org/rfc/rfc1930), [documentation ASNs](https://www.rfc-editor.org/rfc/rfc5398).
+
+### 3.2 How does BGP exchange reachability information?
+
+BGP (Border Gateway Protocol) exchanges network reachability information. Suppose a CDN operates AS64496 and provides reachability to 192.0.2.0/24. It can announce that route to a neighboring AS, allowing other networks to learn a path to the prefix.
+
+![Diagram](figures/bgp-routing.en.svg)
+
+BGP exchanges route information; routers forward packets using selected forwarding entries. BGP does not ask the entire Internet for directions for every user packet. Policy, business relationships, network configuration and route attributes affect selection, so the chosen route need not be geographically shortest. [BGP specification](https://www.rfc-editor.org/rfc/rfc4271).
+
+### 3.3 Does an ASN identify the website operator?
+
+Consider this synthetic record:
+
+```text
+IP: 192.0.2.25
+Containing prefix: 192.0.2.0/24
+IP resource registrant: Example Edge
+BGP origin AS: AS64496
+```
+
+It associates the prefix with Example Edge’s registration and shows AS64496 as the origin in the queried routing data. It does not establish that Example Edge operates the website. A coffee shop could operate the site while Example Edge supplies CDN, cloud or network services.
+
+| Source | Question it answers |
+|---|---|
+| DNS | Which addresses or names does the domain resolve to? |
+| RDAP / IP registration | Who is the IP resource registered to? |
+| BGP routing data | Which origin AS is observed announcing the prefix? |
+| Website and internal settings | Who operates the website and manages its backend? |
+
+RDAP (Registration Data Access Protocol) is a standard for accessing domain, IP and ASN registration data. BGP AS_PATH is an announcement attribute, not a measured traceroute; keep these observations separate. [ARIN RDAP](https://www.arin.net/resources/registry/whois/rdap/).
 
 ## 4 | Connect DNS, IP, CDN and service roles
 
-Continue the coffee-shop scenario with this synthetic evidence:
+Why might a website’s resolved IP identify an entry point rather than its backend server?
 
-```text
-Collected: 2026-11-01 08:00 +08:00
-DNS: shop.coffee.example A 192.0.2.25
-Registration: 192.0.2.0/24 → Example Edge
-Routing data: 192.0.2.0/24 → origin AS64496
-Owned service configuration: shop.coffee.example uses an edge proxy
-```
+### 4.1 Start with the website name
 
-A DNS A record points to IPv4; AAAA points to IPv6. These records connect a service name to an edge address, then to registration and routing information. A CDN (Content Delivery Network) serves content through distributed edge nodes. A reverse proxy receives and forwards client requests toward backend services. Public DNS may therefore identify these service nodes. [Cloudflare proxied DNS behavior](https://developers.cloudflare.com/dns/proxy-status/)
+Suppose you visit shop.coffee.example. The browser uses DNS resolution to obtain address information. Three common record types are:
 
-Keep four roles distinct: domain administrator, address registrant, routing provider and application operator. In shared cloud environments, different parties may perform each role. Appropriate official and owned records establish the relationship among them.
+| Record | Purpose | Example |
+|---|---|---|
+| A | Name to IPv4 address | 192.0.2.25 |
+| AAAA | Name to IPv6 address | 2001:db8::25 |
+| CNAME | Name to another name | cdn.coffee.example |
 
-A website can yield different observations by location, time, address family or load balancing. Anycast allows an address to be served from multiple locations, with routing directing traffic toward a serving node. Recording where and when a result was observed preserves its context. [Anycast service operation](https://www.rfc-editor.org/rfc/rfc4786)
+If the reply is 192.0.2.25, the browser can use that destination for a subsequent connection. With a CDN, it may be an edge-service address instead of the coffee shop’s origin host.
 
-![Diagram](figures/01-domain-network.en.svg)
+[DNS A/CNAME](https://www.rfc-editor.org/rfc/rfc1035), [AAAA](https://www.rfc-editor.org/rfc/rfc3596).
+
+### 4.2 What do a CDN and reverse proxy do?
+
+A CDN (Content Delivery Network) resembles distributed delivery centers: it can cache content, reduce response latency and reduce origin load. A reverse proxy receives client requests in front of a server and determines whether to forward them to a backend.
+
+![Diagram](figures/cdn-origin.en.svg)
+
+The browser first obtains a CDN address through DNS, then sends an HTTPS request to the CDN. A cache hit can answer directly; a request needing backend data may reach the origin. The resolved address can therefore be an entry point rather than the host storing data or running the application.
+
+### 4.3 When does Cloudflare conceal the origin address?
+
+DNS Only: in this example DNS returns the configured origin IP, and traffic bypasses the standard Cloudflare HTTP proxy.
+
+Proxied: DNS returns proxy IPs; supported web traffic reaches Cloudflare first and is forwarded to the origin when needed.
+
+![Diagram](figures/proxy-modes.en.svg)
+
+If an origin IP remains exposed and accepts direct external connections, a client may bypass the HTTP proxy. Review origin firewall rules, access controls and other exposure paths as well as the proxy setting.
+
+The standard Cloudflare HTTP proxy does not automatically protect SMB or SSH. Those services need an appropriate connection design, such as a VPN or a Cloudflare Zero Trust private network with authentication and access policies. [Proxy status](https://developers.cloudflare.com/dns/proxy-status/), [origin protection](https://developers.cloudflare.com/fundamentals/security/protect-your-origin-server/).
+
+[Cloudflare private networks](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/private-net/).
+
+### 4.4 Why can the same IP lead to different servers?
+
+Anycast allows service nodes in multiple locations to announce the same IP prefix. Think of delivery offices in Taipei, Tokyo and Singapore sharing one service address: routing policy directs a connection to one location.
+
+Two users seeing the same CDN IP need not reach the same data center. Anycast follows routing decisions and does not guarantee the geographically nearest node. Record observation time and location. [Anycast operation](https://www.rfc-editor.org/rfc/rfc4786).
+
+[Download the six diagrams in both languages](https://learn.cs-kairos.com/downloads/ceh-m02-06-network-svg.zip).
 
 ## 5 | Traceroute: ask different hops to report
 
@@ -157,6 +263,67 @@ Check three: Hop two contains only stars, while hop four returns a destination r
 Check four: A website resolves to a cloud edge address. Which three records would you preserve to establish its relationship with your service? Include sources and timestamps.
 
 Reference explanations accompany the website lesson. Actual learner responses can be recorded separately to guide further explanation.
+
+The following observations apply to Ubuntu. DNS and public-record queries send external requests. Local interface output may reveal private addresses; de-identify it before sharing. These commands do not change settings or scan services. The Python calculation is offline.
+
+### 8.1 | Query website DNS addresses
+
+```sh
+dig +short A learn.cs-kairos.com
+dig +short AAAA learn.cs-kairos.com
+dig +short CNAME learn.cs-kairos.com
+```
+
+The commands query IPv4, IPv6 and observable CNAME records respectively. An empty AAAA or CNAME result can reflect an absent record, flattening or proxy behavior. Remove +short to inspect status, resolver and response timing; an empty display alone does not prove absence. If dig is unavailable, begin with the offline exercise.
+
+### 8.2 | Inspect local addresses and routes
+
+```sh
+ip -br address
+ip route
+```
+
+The first command lists interface addresses; the second shows IPv4 routes. Identify private addresses such as 192.168.x.x or 10.x.x.x and the default gateway. Record actual output rather than assuming a gateway address.
+
+### 8.3 | Parse a prefix with Python
+
+```python
+from ipaddress import ip_interface
+
+interface = ip_interface("192.0.2.25/24")
+network = interface.network
+print("IP:", interface.ip)
+print("Network:", network)
+print("Start:", network.network_address)
+print("End:", network.broadcast_address)
+print("Addresses:", network.num_addresses)
+```
+
+Save as cidr.py and run python3 cidr.py. Expect IP: 192.0.2.25, Network: 192.0.2.0/24, Start: 192.0.2.0, End: 192.0.2.255 and Addresses: 256, on separate lines. Then use /30 and verify .24–.27 with four addresses. Remove cidr.py when finished if it is no longer needed.
+
+### 8.4 | Look up ASN evidence
+
+For a real public IP, use [RIPEstat](https://stat.ripe.net/) to inspect prefix and BGP information, and [RDAP](https://rdap.org/) or the relevant regional Internet registry to cross-check registration. These tools answer different questions; a single lookup does not establish the website operator, device location or security state.
+
+### 8.5 | Apply the evidence to NAS access
+
+For a lab NAS, organize the evidence into three layers. First, identify its private IP, VLAN, subnet mask, gateway and inter-subnet rules. Second, check public addressing, NAT, port forwarding, VPN and other remote-access paths. Third, connect DNS and proxy settings to actual services: identify which devices and policies protect SMB, SSH and HTTPS.
+
+This lets you ask which source networks can reach each service and which controls actually lie on that packet path. Record reachability, service roles and control placement separately so later acceptance has specific evidence to inspect.
+
+### 8.6 | Integrated case check
+
+A website resolves to the documentation address 192.0.2.25, inside 192.0.2.0/24. Routing data shows origin AS64496, and its operator reports using a CDN.
+
+Question 1: How many IPv4 addresses does /24 contain? Is 192.0.2.25 inside it?
+
+Question 2: Does AS64496 prove that its operator also operates the website? Why?
+
+Question 3: Does DNS pointing to a CDN reveal the actual origin IP? What further evidence is needed?
+
+Question 4: Does Cloudflare in front of the website establish equal protection for SMB on the same host?
+
+Write your reasoning, then open the integrated-case reference answers below. No answer is transmitted or saved as learner progress.
 
 ## 9 | What to take away
 

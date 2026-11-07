@@ -18,20 +18,27 @@ for lang,prefix in [('zh',''),('en','en/')]:
   units=([b['text']] if k in ['heading','paragraph','code'] else b['items'] if k=='list' else b['headers']+[v for r in b['rows'] for v in r] if k=='table' else [b['summary']]+b['paragraphs'] if k=='answer' else [b['visual']['caption'],b['visual']['description']]+[v for item in b['visual']['items'] for v in [item['title'],item['body']]] )
   for u in units:
    u=norm(u);at=text.find(u,cursor);assert at>=0,(lang,u);cursor=at+len(u)
- assert len(page.details)==5 and all('open' not in d for d in page.details)
- assert [d['id'] for d in page.details]==['answer-local-prefix', 'answer-address-count', 'answer-asn-role', 'answer-missing-reply', 'answer-service-correlation']
- assert raw.count('data-reviewed-svg=')==4
+ assert len(page.details)==9 and all('open' not in d for d in page.details)
+ assert [d['id'] for d in page.details]==['answer-local-prefix', 'answer-address-count', 'answer-asn-role', 'answer-missing-reply', 'answer-service-correlation','answer-integrated-prefix','answer-integrated-operator','answer-integrated-origin','answer-integrated-smb']
+ assert raw.count('data-reviewed-svg=')==2
+ assert raw.count('data-network-layout=')==6
+ assert 'cidr-prefix' in raw
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
  assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-05/' in raw
  assert f'/{prefix}courses/ceh/v13/m02/#m02-07' in raw
  assert not (ROOT/f'build/{prefix}courses/ceh/v13/m02/concepts/m02-07/index.html').exists()
  for b in [b for b in lesson['text'][lang]['sourceBody'] if b['kind']=='visual']:
-  assert bundle[b['src']] in raw
+  if '/m02-06-0' in b['src']:assert bundle[b['src']] in raw
   assert (ROOT/'site'/b['src'].lstrip('/')).read_bytes()==(ROOT/'build'/b['src'].lstrip('/')).read_bytes()
  idx=json.loads((ROOT/'build/search-index.json').read_text());entry=next(x for x in idx if x['id']=='M02-06' and x['lang']==lang)
  for label in labels[lang]:assert label in entry['text']
 p=ROOT/'site/downloads/ceh-m02-06-bilingual-svg.zip';assert p.read_bytes()==(ROOT/'build/downloads/ceh-m02-06-bilingual-svg.zip').read_bytes()
 with zipfile.ZipFile(p) as z:
  assert len(z.namelist())==8
- for src in bundle:assert z.read(Path(src).name)==(ROOT/'site'/src.lstrip('/')).read_bytes()
-print('PASS M02-06 bilingual full text order; 4 inline SVG per language; paired closed reference answers; search labels; exact assets/ZIP; pending M02-07. Browser/live checks NOT performed.')
+ for name in z.namelist():assert z.read(name)==(ROOT/'site/images/ceh'/name).read_bytes()
+p=ROOT/'site/downloads/ceh-m02-06-network-svg.zip'
+assert p.read_bytes()==(ROOT/'build/downloads/ceh-m02-06-network-svg.zip').read_bytes()
+with zipfile.ZipFile(p) as z:
+ assert len(z.namelist())==12
+ for name in z.namelist():assert z.read(name)==(ROOT/'site/images/ceh'/name).read_bytes()
+print('PASS M02-06 bilingual full text order; 6 reflowing diagrams and 2 retained SVGs per language; paired closed reference answers; search labels; exact assets/ZIP; pending M02-07. Browser/live checks NOT performed.')
