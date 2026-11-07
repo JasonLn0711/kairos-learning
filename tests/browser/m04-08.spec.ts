@@ -28,7 +28,7 @@ for(const lang of ['zh','en']){
   await page.keyboard.press('Enter');await expect(answer).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(answer).not.toHaveAttribute('open','');
   await page.keyboard.press('Shift+Tab');await page.keyboard.press('Tab');await expect(answer.locator('summary')).toBeFocused();
   await expect(page.locator('.next-links a').first()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m04/concepts/m04-07/');
-  await expect(page.locator('.next-links a').last()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m04/#ceh26-m04-c09');
+  await expect(page.locator('.next-links a').last()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m04/concepts/m04-09/');
   await page.goto(prefix+'/search/');await page.locator('input[type=search]').fill('sizeLimitExceeded');await expect(page.locator('.reading-list a[href="'+path+'"]')).toBeVisible();
  });
  test(lang+': no JavaScript retains selectable body, sources and native answer',async({browser})=>{
