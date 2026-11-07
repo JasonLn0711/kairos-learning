@@ -507,3 +507,11 @@ M02-02 v1.1.0 的五圖沿 `cards/flow` 正式資料：analogy cards 2、window 
 M02-04 v1.1.0 使用既有 cards／flow 資料；control 為 4／6 節點的兩圖、stopping 六欄控制卡、hybrid 四步流程，aase.ts 驗證種類、位置與數量。AgentControlDiagram 僅在本課啟用，固定分支保留互斥關係，失敗分支明示回到觀察及停止出口，權限兩欄窄版重排。文字由 Svelte 跳脫，沒有任意 HTML 或圖檔路徑。
 
 `scripts/aase_m0204_svg.py` 從正式雙語 JSON 產生八個 SVG；`--check` 核對 bytes，固定受審核元素、跳脫文字與小於 100000 bytes 邊界。正文、搜尋及 SVG 同源。三題 A–C 選擇題沿原生參考答案收合，不新增批改服務。來源、技術修正與驗收見 [M02-04 回執](releases/2026-11-07-aase-m0204-replacement.md)；瀏覽器入口 `playwright.aase-m0204.config.ts`，正式站以 `AASE_BASE_URL` 指定。
+
+### AASE M02-05 Harness 圖解與全開放題（2026-11-07）
+
+M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9、3、3、5；分別為整體架構、前後三角色詳解及五步流程。`HarnessDiagram.svelte` 只負責此課，資料不含任意標記或座標。六面向平行，不是六步流程；Security／Observability 全程註記不新增流程節點。角色 body 用雙換行分段，正文直接可見。`scripts/aase_m0205_svg.py --check` 核對八份雙語匯出。
+
+既有 `openChecks` 可單獨構成理解檢核；至少需有一題 `checks` 或非空且合法的 `openChecks`，原題目 ID 唯一性、答案段落、雙語形狀與發布閘門仍須通過。M02-02 的混合題型保持；M02-05 三題採新 Q04～Q06，無評分、送出或虛構學習紀錄。共用引言改用「作答」涵蓋選擇題及開放題。
+
+執行 `tests/aase-m0205-replacement.test.ts`、`playwright.aase-m0205.config.ts` 與共用檢查；正式站以 `AASE_BASE_URL` 回讀。詳見 [來源對照](sources/aase/m02-05/replacement-2026-11-07/source-map.md)及[驗收紀錄](releases/2026-11-07-aase-m02-05-replacement.md)。
