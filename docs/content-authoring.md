@@ -537,3 +537,9 @@ M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9�
 #### M02-02 四圖新稿後續抽換（2026-11-07）
 
 v1.1.1／revision 5 依新供稿抽換七節；原四張圖對應資料室、五項組成、容量與工作循環。保留七欄交接卡，因此資料仍維持五組已驗證 figures，公開工作循環 caption 為「圖 4」，資產路徑仍為 `m02-02-5-{lang}.svg`。新檢核為 Q07 四選項（C）與 Q08 開放題；舊題留於封存。原發布、有效錨點、預算算術與發布閘門維持。新來源、雙語逐小節對照、圖意差異及本次實測見[後續抽換回執](releases/2026-11-07-aase-m0202-followup.md)；前述 v1.1.0 記錄保留作歷史。
+
+### AASE M03-02 角色、訪談與證據分層
+
+M03-02 v1.1.0 以既有 cards／flow 承接三張參考圖：roadmap flow 5、evidence cards 4、conflict cards 2；`aase.ts` 限定位置、種類與數量。`StakeholderInterviewDiagram.svelte` 使用可搜尋 HTML、固定裝飾 SVG 及容器重排；只有五步流程有四個向下箭頭，四層證據與兩階段條件比較不建立因果或權限關係。圖 2 的雙段 body 保留主張與限制。六個下載 SVG 由 `python3 scripts/aase_m0302_svg.py` 產生，`--check` 比較 bytes、檢查受審核元素及大小上限。
+
+完整 problem.md 在雙語使用相同 code，英文另有完整逐欄解讀；四題原選項以新 Q04–Q07 呈現，沿原生參考答案，沒有評分與學習狀態。執行 `tests/aase-m0302-replacement.test.ts` 與 `playwright.aase-m0302.config.ts`，正式站設定 `AASE_BASE_URL`。詳見[來源與逐小節對照](sources/aase/m03-02/replacement-2026-11-07/source-map.md)及[發布回執](releases/2026-11-07-aase-m0302-replacement.md)。
