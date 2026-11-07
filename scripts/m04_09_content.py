@@ -4,18 +4,18 @@ from html import escape
 import json,re,sys,unicodedata
 from m0903_svg import sanitized_svg,NS
 R=Path(__file__).resolve().parents[1];S=R/'docs/sources/m04-09'
-COUNTS={'ladder':5,'stratum':3,'ntp-network':14,'ike':3,'sip':2,'bgp':5,'legacy':2,'case':3,'report':3}
+COUNTS={'roles':6,'stages':3,'ladder':5,'stratum':4,'ntp-network':14,'ike':3,'sip':2,'bgp':4,'telnet':2,'tftp':2,'report':3}
 ANSWERS={
 'zh':[
-'答案 B。IKE_SA_INIT 回應只證明初始協商收到回覆。A 尚缺身分驗證與資料通道證據；C 還把有限回應擴大成最高權限，沒有依據。',
-'答案 C。TLS 可保護該段 SIP 訊令；聲音走另外的媒體流程，還須確認 SRTP 等保護及金鑰協商。A 把訊令保護誤當媒體保護；B 把傳輸加密誤當撥號授權。',
-'答案 B。兩筆快取是目前本機的紀錄，可能過期、尚未發現其他鄰居，同一設備也可能有多個位址。A 不能代表完整資產；C 不能由缺少紀錄推斷其他設備的意圖。',
-'答案 C。Looking Glass 提供特定觀測點的路由資料。A 與 B 都把讀取公開資訊誤當管理授權；修改路由仍須另有權限。'],
+'答案 B。IKE_SA_INIT 回應只確認初始協商有回覆。A 還缺成功驗證身分的證據；C 也缺實際內網資源存取與授權證據。',
+'答案 B。SIP 訊令與語音媒體是兩條不同的工作線。A 將訊令 TLS 擴大成所有語音加密；C 只憑 5061 埠號也無法證明實際媒體保護。須另外確認 SRTP 等保護及金鑰協商。',
+'答案 C。本機目前有兩筆鄰居快取。A 無法代表完整設備數量；B 也不能從缺少快取推論其他設備被隱藏。尚未通訊、快取過期與同機多位址都影響紀錄。',
+'答案 B。伺服器設定及檔案權限仍限制可讀取的範圍。A 把沒有登入機制當成無限制讀取；C 更把回應擴大成任意修改。基本 TFTP 也沒有目錄瀏覽功能。'],
 'en':[
-'Answer B. An IKE_SA_INIT response establishes a reply to initial negotiation. A lacks authentication and data-channel evidence; C expands that limited reply into unsupported administrator privileges.',
-'Answer C. TLS can protect that SIP signaling segment. Audio follows a separate media flow whose protection, such as SRTP, and key negotiation need checking. A confuses signaling protection with media protection; B confuses transport encryption with call authorization.',
-'Answer B. Two entries describe the local cache now. Records can expire, other neighbors may not have been discovered, and one device may have several addresses. A does not establish a complete inventory; C infers intent from missing records without evidence.',
-'Answer C. A Looking Glass exposes routes from a particular observation point. A and B confuse public visibility with administrative authority; changing routes requires separate permissions.']}
+'Answer B. An IKE_SA_INIT reply establishes only a response to initial negotiation. A lacks successful authentication evidence; C also lacks actual authorized internal-resource access evidence.',
+'Answer B. SIP signaling and voice media are separate flows. A expands signaling TLS into encryption of all audio; C infers media protection from port 5061 alone. Check protection such as SRTP and key negotiation separately.',
+'Answer C. The local computer currently has two neighbor-cache records. A does not establish the complete device count; B cannot infer hidden devices from missing records. No prior communication, cache expiry and multiple addresses per device all affect the records.',
+'Answer B. Server configuration and file permissions still restrict readable files. A treats no sign-in as unrestricted reading; C expands a response into arbitrary modification. Basic TFTP also lacks directory browsing.']}
 REFS={3:[5905],4:[7296,4301],5:[3261,3550,3711],6:[4291,4861,4890],7:[4271,5398,6811],8:[854,1350,4251]}
 def parse(lang,models):
  suffix='zh-TW' if lang=='zh' else 'en';chunks=re.split(r'\n\s*\n',(S/f'teaching.{suffix}.md').read_text().strip())[1:];blocks=[];section=sub=0
@@ -25,8 +25,10 @@ def parse(lang,models):
   figure=re.fullmatch(r'\{\{figure:([a-z-]+)\}\}',chunk);answer=re.fullmatch(r'\{\{answer:([1-4])\}\}',chunk)
   if figure:
    name=figure[1];v=models[name][lang];assert len(v['items'])==COUNTS[name]
-   blocks.append(dict(kind='visual',src=f'/images/ceh/m04-09-{name}-{lang}-v1-0-0.svg',downloadLabel='下載 SVG 圖解' if lang=='zh' else 'Download SVG diagram',visual=v))
+   blocks.append(dict(kind='visual',src=f'/images/ceh/m04-09-{name}-{lang}-v1-1-0.svg',downloadLabel='下載 SVG 圖解' if lang=='zh' else 'Download SVG diagram',visual=v))
   elif answer:blocks.append(dict(kind='answer',id='answer-m0409-'+answer[1],summary='參考答案與解析' if lang=='zh' else 'Reference answer and explanation',paragraphs=[ANSWERS[lang][int(answer[1])-1]]))
+  elif chunk.startswith('```'):
+   assert chunk.endswith('```');blocks.append(dict(kind='code',text=chunk.split('\n',1)[1].rsplit('```',1)[0].strip()))
   elif chunk.startswith('## '):
    refs(section);section+=1;sub=0;blocks.append(dict(kind='heading',id=f'section-{section}',text=chunk[3:]))
   elif chunk.startswith('### '):
@@ -64,10 +66,23 @@ def svg(name,lang,v):
  y=40+text(28,38,v['caption'],26,944)+20
  items=v['items']
  if name=='bgp':
-  top=y;bottom=top+220
-  for d in [f'M300 {top+85}H370',f'M630 {top+85}H700',f'M170 {top+170}V{bottom}',f'M500 {top+170}V{bottom}',f'M300 {bottom+85}H370']:path(d)
-  for i,item in enumerate(items):box([40,370,700,40,370][i],top if i<3 else bottom,260,item,'#e4f3eb' if i<3 else '#f1f6fa',170)
-  y=bottom+195
+  # Four named corners retain the reference diamond; endpoint text also survives mobile reflow.
+  w=280
+  hs=[40+len(wrap(i['title'],w-32,23))*36+sum(len(wrap(p,w-32,20)) for p in i['body'].split('\n\n'))*32 for i in items]
+  h=max(hs);top=y;middle=top+h+75;bottom=middle+h+75
+  positions=[(30,middle),(360,top),(690,middle),(360,bottom)]
+  for x1,y1,x2,y2 in [(310,middle+h/2,360,top+h/2),(640,top+h/2,690,middle+h/2),(690,middle+h,640,bottom+h/2),(360,bottom+h/2,310,middle+h)]:path(f'M{x1} {y1}L{x2} {y2}',True)
+  for (x,yy),item in zip(positions,items):box(x,yy,w,item,h=h)
+  y=bottom+h+30
+ elif name in ['roles','stages','ike','telnet','tftp']:
+  cols=3 if name in ['stages','ike'] else 2;gap=35;w=(920-gap*(cols-1))/cols
+  for start in range(0,len(items),cols):
+   row=items[start:start+cols]
+   h=max(40+len(wrap(item['title'],w-32,23))*36+sum(len(wrap(p,w-32,20)) for p in item['body'].split('\n\n'))*32 for item in row)
+   for i,item in enumerate(row):
+    x=40+i*(w+gap);box(x,y,w,item,h=h)
+    if i and v['kind']=='flow':path(f'M{x-gap+5} {y+h/2}H{x-5}',True)
+   y+=h+25
  elif name=='ntp-network':
   groups=[items[:1],items[1:3],items[3:5],items[5:9],items[9:14]]
   for n,group in enumerate(groups):
@@ -87,10 +102,10 @@ def svg(name,lang,v):
 
 def generate():
  models=json.loads((S/'diagrams.json').read_text());assert set(models)==set(COUNTS)
- t=dict(id='CEH26-M04-C09',revision=1,contentVersion='1.0.0',date='2026-11-07',status='published',publishedOn='2026-11-07',qa=[],text={lang:parse(lang,models) for lang in ['zh','en']})
+ t=dict(id='CEH26-M04-C09',revision=2,contentVersion='1.1.0',date='2026-11-07',status='published',publishedOn='2026-11-07',qa=[],text={lang:parse(lang,models) for lang in ['zh','en']})
  targets={R/'content/concepts/ceh26-m04-c09.json':(json.dumps(t,ensure_ascii=False,indent=2)+'\n').encode()}
  for name,pair in models.items():
-  for lang,v in pair.items():targets[R/f'site/images/ceh/m04-09-{name}-{lang}-v1-0-0.svg']=svg(name,lang,v)
+  for lang,v in pair.items():targets[R/f'site/images/ceh/m04-09-{name}-{lang}-v1-1-0.svg']=svg(name,lang,v)
  return targets
 if __name__=='__main__':
  for p,data in generate().items():
