@@ -495,3 +495,9 @@ M02-02 v1.1.0 的五圖沿 `cards/flow` 正式資料：analogy cards 2、window 
 `AaseText.openChecks` 是可選的開放題陣列，每題須有唯一課程 Qxx ID、非空 prompt 與非空 answer 段落；不能與選擇題 ID 重複。兩語沿 sameShape，搜尋收錄題目及答案。AaseLesson 在選擇題之後呈現原生 details 參考答案，不建成績或假提交狀態。本課原題封存，新增 Q04 選擇題及 Q05／Q06 開放題；qa 仍為空。
 
 來源與逐小節處理見 [M02-02 對照](sources/aase/m02-02/replacement-2026-11-07/source-map.md)。本課檢查用 `playwright.aase-m0202.config.ts`，正式站設定 `AASE_BASE_URL`；共用渲染變更另回歸 `playwright.aase-m0201.config.ts`。
+
+### AASE M02-03 四種機制圖解
+
+`MemoryMechanismsDiagram.svelte` 只在 `AASE-M02-C03` 使用既有 `cards`／`flow` 資料。六圖依序為辦公室四角色、五個 token 詞塊、兩節點壓縮、三節點檢索、四欄交接與六步跨日流程；`src/lib/aase.ts` 檢查節點數、種類與雙語結構。平行角色與交接欄位沒有箭頭；token 圖只連第四與第五格；其餘箭頭表示該圖定義的順序。圖 6 在第二天前加分隔。
+
+正文與節點為可搜尋 HTML；容器小於 34rem 時左右圖改上下，箭頭隨方向調整。固定的 12 個外部 SVG 由 `python3 scripts/aase_m0203_svg.py` 產生，`--check` 比較 bytes；沿用換行 helper、跳脫文字與元素白名單，不開放 runtime SVG markup。執行 `tests/aase-m0203-replacement.test.ts` 與 `npx playwright test --config playwright.aase-m0203.config.ts`；正式站使用 `AASE_BASE_URL`。四題採既有原生答案展開，不建立評分或學員完成狀態。來源、圖意差異與驗收見 [M02-03 回執](releases/2026-11-07-aase-m0203-replacement.md)。
