@@ -1,69 +1,44 @@
-# CEH M04-09 | Other enumeration: NTP, IPsec, VoIP, IPv6 and BGP in plain language
+# M04-09 | Seven network protocol groups and enumeration: a plain-language lesson
 
-This lesson brings several network protocols together through one central idea:
+This lesson introduces NTP, IPsec, VoIP, IPv6, BGP, Telnet and TFTP. Although their roles differ, one idea connects them:
 
-“A device being willing to answer your question does not mean you can sign in to it, and certainly does not mean you control it.”
+Obtaining information from a network service does not establish that you can sign in; signing in does not establish that you are authorized to control it.
 
-The aim is to understand each service's job, the information it may disclose, and how far that information supports a conclusion, rather than simply memorize port numbers.
+That distinction is central to CEH M04, Enumeration. Place these technologies in one story to understand their network roles and how a security analyst should interpret evidence.
 
-## 1. Picture the network as a large office building
+This lesson continues M04-09’s protocol and evidence analysis with the network foundations a beginner needs.
 
-NTP: the building's reference clock.
+## 1. Imagine a network as an office building
 
-It keeps everyone's time aligned.
+Suppose you manage a building with 500 employees. It contains computers, telephones, access controls, network equipment and servers.
 
-IPsec / IKE: a protected passage into the building.
+{{figure:roles}}
 
-They negotiate identity and protection mechanisms to establish protected connections.
+These services do different jobs. A single interpretation rule cannot turn every response into a security vulnerability.
 
-VoIP / SIP: the telephone switchboard.
+## 2. What does CEH enumeration actually do?
 
-They help connect, transfer and end calls.
+Connect CEH M03, M04 and M05:
 
-IPv6: the office address system.
+{{figure:stages}}
 
-It lets devices identify neighbors and find routers.
+Finding an open port only suggests a service may be present. Obtaining information from that service still does not establish a vulnerability.
 
-BGP: route information between cities.
-
-It tells networks which destinations are reachable.
-
-Telnet / TFTP: the old management room and filing cabinet.
-
-They provide remote terminals or simple file transfer.
-
-These services all belong to a network, but perform different jobs.
-
-For example, asking the building's clock for the time and receiving an answer does not give you a building access card.
-
-That is the central distinction when interpreting enumeration evidence.
-
-## 2. Judge evidence at five different levels
-
-Imagine visiting a company's server room to learn about a server.
+The lesson distinguishes five evidence levels:
 
 {{figure:ladder}}
 
-This is a conceptual model of evidence strength. It does not mean every protocol follows this sequence or that every service has a sign-in mechanism.
+This is a framework for analyzing evidence strength, not a mandatory sequence that every protocol follows.
 
-Keep these distinctions in mind:
-
-- A response does not establish successful authentication.
-- Successful authentication does not grant every capability.
-- Reading data does not establish permission to change it.
-- Not seeing some data does not establish that it does not exist.
-
-Use this framework to understand the following seven protocol groups.
-
-## 3. NTP: why do networked computers need synchronized clocks?
+## 3. NTP: why does consistent time matter to security?
 
 NTP stands for Network Time Protocol.
 
-Think of an NTP server as a school's reference clock. Every classroom needs the same time for lessons; otherwise the bell rings while some classrooms believe class has not started.
+Imagine investigators reviewing three surveillance cameras whose clocks differ by several minutes.
 
-Why do computers need synchronized time too?
+All three may record the event, yet investigators can still reconstruct its sequence incorrectly.
 
-Suppose three company systems record the same event:
+Computers have the same problem. Suppose three devices record the same intrusion:
 
 | Device | Recorded time |
 | --- | --- |
@@ -71,253 +46,222 @@ Suppose three company systems record the same event:
 | Web server | 09:57:12 |
 | Database | 10:03:30 |
 
-If the clocks disagree, investigators may infer the wrong order of events during an intrusion investigation.
+Without time synchronization, a security investigation can reach the wrong conclusion.
 
-NTP therefore affects log analysis, authentication mechanisms and coordination between systems, as well as the clock displayed on a desktop.
+NTP commonly uses UDP 123 to synchronize devices with a time source.
 
-Common port: UDP 123.
+### What is stratum?
 
-### What does Stratum mean?
-
-Stratum describes the synchronization hierarchy: the level from which this clock obtains its time.
+Stratum describes the hierarchy of time synchronization sources.
 
 {{figure:stratum}}
 
-A reference clock can serve multiple first-level servers. Lower levels can also have multiple candidate upstream sources and same-level peer relationships. Stratum 3 and 4 extend that idea in the diagram. A device's level depends on its actually selected synchronization source; not every configured relationship is simultaneously an active upstream source.
-
 {{figure:ntp-network}}
 
-If an NTP server reports Stratum 2, it is declaring its position at the second level of the synchronization hierarchy.
+The hierarchy preserves same-level peering, multiple upstream sources and shared links. Devices at the same level are parallel roles. Each node names its source and peer endpoints; NTP’s selection procedure determines the actual source. The illustrated relationships guarantee neither accuracy nor management access.
 
-That does not establish its accuracy or security, or reveal all of its upstream servers.
+A smaller stratum number does not necessarily mean greater accuracy. Synchronization state, source quality and network delay also matter.
 
-For CEH, distinguish normal time service from access to management information.
+For CEH analysis, an NTP reply saying that it is 10:00 establishes a responsive time service. It does not establish permission to read management settings or change the time server.
 
-A server may provide the current time while withholding its version, configuration or connection information. That can be an appropriate security design.
+## 4. IPsec / IKE: why is a VPN response not a successful connection?
 
-## 4. IPsec / IKE: how does a VPN establish a protected channel?
+Imagine working at home and needing access to internal company systems.
 
-Suppose you work from home and want to connect to your company's internal network.
-
-The company does not grant internal access merely because someone requests a connection.
-
-A VPN can use IPsec to protect data. IKE handles the negotiation and authentication needed to establish that protection.
+A VPN can provide a protected network channel. IPsec is a common protection technology; IKE, Internet Key Exchange, negotiates protection and authenticates identities.
 
 {{figure:ike}}
 
-The diagram uses IKEv2. IKE_SA_INIT and IKE_AUTH name exchanges, not the Phase 1 and Phase 2 of IKEv1. The first CHILD_SA is normally negotiated during IKE_AUTH. Checking whether the data channel works is a verification task, not a mandatory third exchange type. A Security Association (SA) holds the agreed protection parameters and state; routing and access policies also need checking.
+Suppose you receive an `IKE_SA_INIT` response.
 
-A common mistaken conclusion is:
+You may report that the VPN service answered initial negotiation. You cannot report a successful VPN sign-in: authentication has not yet been established, and neither has permission to access internal resources.
 
-> I received an IKE_SA_INIT response, so I successfully signed in to the company VPN!
-
-The response establishes only that the endpoint answered this initial negotiation. It does not establish successful authentication.
-
-Even a successfully established VPN may permit access to only a small subset of company systems.
-
-Common related numbers:
+Another common source of confusion is the meaning of these numbers:
 
 | Number | Purpose |
 | --- | --- |
 | UDP 500 | IKE negotiation |
-| UDP 4500 | Commonly used for NAT traversal and encapsulated traffic |
-| IP Protocol 50 | ESP, protecting IPsec data |
-| IP Protocol 51 | AH, providing packet integrity and related protection |
+| UDP 4500 | Common NAT Traversal use |
+| IP Protocol 50 | ESP |
+| IP Protocol 51 | AH |
 
-IP Protocol 50 and 51 are not TCP or UDP ports 50 and 51.
+IP Protocol 50 is not Port 50. Ports are identifiers used by transports such as TCP and UDP; the IP Protocol Number identifies the protocol carried by an IP packet.
 
-Keeping protocol numbers separate from port numbers is a useful networking foundation.
+## 5. VoIP: why might audio remain exposed when telephone signaling is encrypted?
 
-## 5. VoIP / SIP: why might call signaling be encrypted while the voice is not?
+This distinction matters for telephone services, contact centers and call-recording systems.
 
-VoIP carries calls over IP networks.
-
-Enterprise desk phones, customer-service centers and telephone switchboards can use VoIP technology.
-
-Distinguish two responsibilities:
-
-SIP sets up the call; RTP commonly carries the audio.
-
-Imagine calling a colleague.
-
-First the system has to find the other party, make their phone ring and establish the call. These are primarily SIP responsibilities.
-
-Once connected, your speech must be transmitted continuously. That is commonly RTP's job.
+VoIP carries telephone services over an IP network. It involves two distinct jobs:
 
 {{figure:sip}}
 
-Using TLS for SIP is like putting telephone connection instructions inside a confidential envelope.
+Put simply:
 
-The actual voice travels in a separate data flow. If media uses ordinary RTP without suitable protection, the voice is not necessarily encrypted.
+SIP is like the telephone switchboard; RTP carries the actual spoken audio.
 
-SRTP is one common way to protect media; also verify the key negotiation and the actual connection.
+Suppose SIP uses TLS, but the audio media uses ordinary unencrypted RTP. At a network position that can observe the media packets, reconstructing the audio may still be possible.
 
-Common ports are UDP/TCP 5060 for SIP and TCP 5061 for SIP over TLS. Port 5061 alone cannot establish that protection is correctly in place.
+During a CEH review, observing TCP 5061, commonly SIP over TLS, therefore does not establish that the entire telephone system is encrypted.
 
-In CEH enumeration, a SIP service answering questions about supported features provides capability information. It does not establish access to an extension account or permission to place calls.
+Check SIP signaling, RTP/SRTP media, key exchange and access controls separately.
 
-## 6. IPv6: why do two neighbor entries not mean only two devices exist?
+## 6. IPv6: why do visible neighbors not represent every device?
 
-IPv6 is an IP addressing architecture with 128-bit addresses.
-
-You may see an address such as:
+IPv6 uses 128-bit addresses, for example:
 
 `fe80::1234:abcd:5678:9abc`
 
-This is one form of IPv6 address.
+`fe80::/10` is the Link-Local address range, primarily used for communication on the local link.
 
-### What is Neighbor Discovery?
+IPv6’s Neighbor Discovery, or ND, provides mechanisms comparable to finding neighbors and asking routers for information inside a building.
 
-Imagine moving to a neighborhood and wanting to know who is nearby and where the road leads.
-
-IPv6 Neighbor Discovery (ND) handles comparable questions.
-
-For example:
-
-- NS: asks about a neighbor associated with an IPv6 address.
-- NA: responds with or announces neighbor information.
-- RS: asks routers to identify themselves.
-- RA: a router announces network configuration information.
-
-These functions use ICMPv6 messages, not a special IPv6 TCP/UDP port.
-
-### Why is the neighbor list incomplete?
-
-Suppose your computer currently has this neighbor cache:
-
-| Local neighbor cache | Current entry |
+| Message | Plain-language meaning |
 | --- | --- |
-| Entry 1 | A router's IPv6 address |
-| Entry 2 | A nearby device's IPv6 address |
+| NS | Where is the neighbor at a particular IPv6 address? |
+| NA | Reply with or announce neighbor information. |
+| RS | Which routers are nearby? |
+| RA | A router provides network configuration information. |
 
-You can say, “The cache currently contains two entries.”
+These messages use ICMPv6, not TCP or UDP ports.
 
-You cannot conclude, “This network contains only two devices.”
+Suppose your computer’s neighbor table has only two entries. That establishes two current cache records, not that the entire area contains only two devices.
 
-Other devices may not have communicated with you, records may have expired, some devices may be on other links, and one device can have multiple IPv6 addresses.
+Other devices may not have communicated with you, records may have expired, and one device can have multiple IPv6 addresses.
 
-Another security consideration: an IPv6 firewall should not indiscriminately block all ICMPv6.
+On Ubuntu, inspect your own computer’s neighbor cache with:
 
-Some ICMPv6 messages are essential for normal communication, including Neighbor Discovery and Path MTU Discovery.
+```
+ip -6 neigh show
+```
 
-## 7. BGP: how does the Internet know which way to send data?
+This command primarily reads information retained by the local kernel; it does not scan the entire network. Run it in an Ubuntu terminal with iproute2 installed. Each row normally includes a neighbor address, interface and state; an empty cache may produce no rows. No real-device execution result is supplied here.
+
+Blocking all ICMPv6 does not automatically improve security. IPv6 neighbor discovery and Path MTU Discovery depend on particular ICMPv6 messages; blocking all of them can break connectivity.
+
+## 7. BGP: how does the Internet know where to send data?
 
 Imagine sending a parcel from Taiwan to the United States.
 
-The Taiwanese logistics company need not know every American alley. It needs to know which international logistics network should receive the parcel next.
+The Taiwanese logistics company need not know every American street. It needs to know which logistics network should receive the parcel next.
 
-BGP is comparable to route information exchanged between large networks.
+BGP, Border Gateway Protocol, similarly exchanges routes between large networks.
 
-Different organizations manage many of the Internet's networks. An Autonomous System (AS) represents networks operated under a common routing policy.
+Two terms are useful:
 
-Each AS has an Autonomous System Number (ASN).
+An AS, Autonomous System, is a group of IP networks managed under a common routing policy. An ASN is its identifying number.
 
-BGP exchanges reachability information: which IP prefixes can be reached through which networks.
+For example, the lesson uses this hypothetical path:
 
-Common port: TCP 179.
+`AS64500 → AS64497 → AS64496`
+
+It represents an AS path recorded in route information, not necessarily the physical routers that a packet will traverse.
+
+BGP commonly uses TCP 179. A public Looking Glass may show the routes visible from a particular observation point.
+
+Seeing that information does not authorize changing routes. Information visibility and administrative permission are distinct.
 
 {{figure:bgp}}
 
-The diagram retains the dual-upstream, transit and stub relationships, replacing the reference image's AS 100/200/400/500/600 with documentation ASNs. The highlighted route is selected for this example. Actual BGP selection depends on policy and attributes; simply counting links cannot establish the best path. Lines represent BGP peer relationships, not cable locations or a complete physical topology.
+The diagram uses documentation prefix 192.0.2.0/24 and documentation ASNs for all four ASes. Each external AS prepends its own number when advertising the route onward. This example successively produces 64500, 64497 64500, 64496 64497 64500, and 64498 64496 64497 64500. When the advertisement returns to AS64500, the receiver finds its own ASN already in the path and excludes the looping route. Arrows indicate route advertisements; ordinary packet forwarding toward the destination prefix differs from that advertisement direction. This is a simplified example, not measured routing or a complete account of route selection.
 
-### What is AS_PATH?
+BGP security also involves route hijacking, incorrect route announcements, prefix filtering and RPKI. RPKI can help validate whether an origin AS is authorized to announce a particular prefix; it cannot by itself establish the correctness of the entire AS_PATH.
 
-Think of AS_PATH as the AS path recorded in a route announcement.
+## 8. Telnet and TFTP: why do older technologies raise security concerns?
 
-For example, an observation point might see:
+### Telnet | Remote text terminal
 
-`AS 64500 → AS 64497 → AS 64496`
+Imagine operating another computer’s command line from your own computer. Traditional Telnet commonly uses TCP 23 and lacks the transport encryption expected today. Someone able to observe packets along the path may see usernames, passwords and commands.
 
-This is a hypothetical route using ASNs reserved for documentation.
+Modern remote administration normally favors SSH.
 
-It does not directly identify every physical router traversed by packets or reconstruct a company's complete internal network.
+### TFTP | Simple file transfer
 
-A public Looking Glass may let you inspect this routing information. That means you read data from a particular observation point, not that you have permission to change router settings.
+Imagine a device that knows a configuration filename and requests it from a server. TFTP commonly accepts initial requests on UDP 69, then uses separately selected UDP ports for the transfer.
 
-BGP security also involves prefix filtering, neighbor controls and RPKI.
+Basic TFTP has no standard user sign-in mechanism or general directory-browsing facility.
 
-RPKI can help check whether an origin AS is authorized to announce a particular IP prefix. It cannot, on its own, establish that the entire AS_PATH is correct.
+The absence of a login screen does not make every file readable or writable. The server can still restrict access by source, path and file permissions.
 
-## 8. Telnet and TFTP: why do older protocols deserve attention?
+Likewise, seeing a Telnet login screen does not establish remote terminal access.
 
-{{figure:legacy}}
+{{figure:telnet}}
 
-## 9. Compare the seven protocol groups
+{{figure:tftp}}
 
-| Protocol | Common port or protocol number | Information you may obtain | What it does not directly establish |
-| --- | --- | --- | --- |
-| NTP | UDP 123 | Time, synchronization level | Access to all management information |
-| IPsec / IKE | UDP 500/4500 | Negotiation information | Successful VPN sign-in |
-| SIP / VoIP | UDP/TCP 5060; TCP 5061 | Telephone service capabilities | Permission to call or encrypted voice |
-| IPv6 / ND | ICMPv6 | Neighbor and router clues | Complete device count |
-| BGP | TCP 179 | Prefixes and routing paths | Permission to modify routers |
-| Telnet | TCP 23 | Login prompt, service clues | Terminal access |
-| TFTP | UDP 69 initially | Result of a particular file transfer | Read/write access to every file |
+## 9. CEH summary of the seven protocol groups
 
-These are common values. A port number does not conclusively identify a protocol. Ports can change; verify the actual protocol content and configuration.
+| Protocol | Common identifier | Interpretation |
+| --- | --- | --- |
+| NTP | UDP 123 | A time reply does not establish management permission. |
+| IPsec / IKE | UDP 500, 4500 | A negotiation reply does not establish VPN sign-in. |
+| SIP | 5060, 5061 | Encrypted signaling does not establish encrypted audio. |
+| IPv6 / ND | ICMPv6 | The neighbor cache is not a complete asset inventory. |
+| BGP | TCP 179 | Seeing routes does not authorize modifying them. |
+| Telnet | TCP 23 | A login prompt does not establish successful login. |
+| TFTP | UDP 69 initially | A file service does not grant arbitrary read/write access. |
 
-## 10. Apply the lesson to a CEH security review
+SIP commonly uses UDP or TCP 5060, and TLS over TCP 5061. These are common values, not immutable rules. Discovering a port still requires identifying the actual service.
 
-In the Certified Ethical Hacker (CEH) learning route, enumeration helps you understand the information a target service provides.
+## 10. How do you write a professional CEH review conclusion?
 
-Professional security analysis cannot equate “the tool produced output” with “a vulnerability was found.”
+Suppose an authorized test environment contains a VPN server that answers `IKE_SA_INIT`.
 
-For example, in an authorized test environment you observe:
+An unsupported report might say:
 
-{{figure:case}}
+> A VPN vulnerability was found; an attacker may enter the internal network.
 
-A report should connect the following:
+The conclusion lacks sufficient evidence.
+
+A more precise record would read:
 
 {{figure:report}}
 
-An NTP server providing time on UDP 123 may be operating exactly as intended, without a vulnerability.
+This distinguishes normal service behavior, information disclosure, misconfiguration and vulnerabilities with an established security impact.
 
-Investigate unnecessary management-information exposure, configuration that conflicts with policy, and whether required services still work.
+## 11. Understanding check: can you interpret evidence like a CEH analyst?
 
-This separates normal function, information disclosure, configuration weaknesses and demonstrably exploitable security problems.
+### 1. A VPN server replies to IKE_SA_INIT. How do you interpret it?
 
-## 11. Check your understanding of evidence boundaries
+A. VPN sign-in succeeded.
 
-Four scenario questions. Choose an answer before opening each reference explanation. This page does not store answers or track learning progress.
+B. Only a response to initial negotiation has been established.
 
-### 1. What does an IKE_SA_INIT response from a VPN server establish?
-
-A. Successful sign-in to the company VPN.
-
-B. The server answered initial negotiation; successful sign-in remains unproven.
-
-C. The highest administrator privileges on the internal network.
+C. Access to the company’s internal network has been obtained.
 
 {{answer:1}}
 
-### 2. A company's SIP service uses TLS. What can you conclude?
+### 2. SIP uses TLS. Is that sufficient to establish encrypted call audio?
 
-A. Every call's audio is necessarily encrypted.
+A. Yes; all audio will be encrypted.
 
-B. Anyone can place calls.
+B. No; media transport protection still needs verification.
 
-C. That SIP signaling segment can be protected by TLS; media requires separate checks.
+C. Yes; using 5061 is sufficient.
 
 {{answer:2}}
 
-### 3. Your IPv6 neighbor cache has only two entries. What is the correct interpretation?
+### 3. Your IPv6 neighbor table has only two entries. What does that mean?
 
-A. The entire network has only two devices.
+A. The entire network contains only two devices.
 
-B. The local cache currently has two neighbor records; this is not a complete asset inventory.
+B. Other devices must be hidden.
 
-C. Other devices must be deliberately hiding.
+C. The local computer currently has two neighbor-cache records.
 
 {{answer:3}}
 
-### 4. You see BGP routes through a public Looking Glass. What does that establish?
+### 4. A TFTP server responds to requests. Does that mean any file can be downloaded?
 
-A. Permission to change router settings.
+A. Yes, because TFTP has no sign-in mechanism.
 
-B. Network administrator privileges.
+B. No; server configuration and file permissions still apply.
 
-C. Visibility into routes at a particular observation point, without management authority.
+C. Yes, and any file can also be modified.
 
 {{answer:4}}
 
-Enumeration uses limited responses to reach evidence-supported conclusions with a clear scope. Calling every visible fact a vulnerability defeats that purpose. This distinction also prepares you for M04-10, enumeration defenses.
+Answer first, then expand each reference answer and explanation. This page does not store answers or calculate learning progress.
+
+The skill to build is asking three questions about any new service: What did I actually observe? What does it establish? What further evidence supports a security conclusion?
+
+These questions support later work in CEH M05 vulnerability analysis, penetration testing and security audits by helping distinguish normal service behavior from vulnerabilities.
