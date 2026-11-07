@@ -473,3 +473,10 @@ M01-04 v1.1.0 adopts the supplied introduction and eight complete sections in bo
 `RequirementsInterviewDiagram.svelte` renders only this lesson's analogy/cards, workflow/flow and testing/cards as comparison, process and evidence. The catalog constrains them to exactly 2/5/3 nodes and matching kinds in both languages. The first figure compares parallel roles; only the second figure has four sequential arrows, with the last step highlighted. The third compares evidence requirements without completion arrows. Text is semantic HTML and enters the existing search catalog. CSS reflows the parallel columns according to available width; all teaching is directly visible.
 
 `scripts/aase_m0104_svg.py` reads these same three blocks to generate six escaped-text standalone SVGs under `site/images/aase/`. It accepts no runtime markup or external references, enforces the small fixed element set and 100000-byte limit, and supports `--check`. These exports are linked as images, not registered as arbitrary inline SVG. Fixed SVG geometry and responsive HTML are distinct. Regenerate after any figure text change; run `tests/aase-m0104-replacement.test.ts` and `npx playwright test --config playwright.aase-m0104.config.ts`, with `AASE_BASE_URL=https://learn.cs-kairos.com` for production. Evidence belongs in the [release receipt](releases/2026-11-06-aase-m01-04-replacement.md).
+
+
+### M04-09 其他列舉與證據界線（2026-11-07）
+
+`CEH26-M04-C09` 採公開課次 `M04-09`、短 slug `m04-09` 與初版 v1.0.0。[完整雙語來源](sources/m04-09/README.md)保留九節正文、單題編輯解答及採用差異；執行 `python3 scripts/m04_09_content.py --check` 核對兩語各 59 個 sourceBody 區塊。16 個來源連結保留於對應主張旁，正文直接可讀，答案原生收合，qa=[]；不加入圖解、互動或學員進度。
+
+C01–C09 共九篇開放，C10 保持目錄錨點；舊 stable-ID 路由與退役教材維持關閉。完成既有內容、單元、型別、發布邊界及 release 檢查後，執行 `npx playwright test --config playwright.m04-09.config.ts`；正式站設定 `M04_09_BASE_URL`。可用 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` 指定現有受信任 Chromium，預設仍用 Playwright 管理版本。[驗收回執](releases/2026-11-07-m04-09.md)區分本機與正式結果。

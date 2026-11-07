@@ -1,0 +1,557 @@
+{
+  "id": "CEH26-M04-C09",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-07",
+  "status": "published",
+  "publishedOn": "2026-11-07",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "辨認校時、VPN、語音、IPv6、路由與檔案服務的用途，區分回應、驗證、權限及待補證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "上一課從 LDAP 學到：查詢結果受到身分、範圍與條件限制。這一課把同樣的判讀方法用在校時、VPN、網路電話、IPv6 與路由服務，也補上 Telnet、TFTP。這是路線中的一個整合單元。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課要學會的事：先辨認服務的用途，再說清楚「這份回應證明了什麼、還缺什麼證據」。 不同協定會透露不同資訊，服務有回應、資料可讀、身分驗證成功及取得操作權限，分別需要證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. 先建立一張共同的判讀清單"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration，中文是「列舉」，是在授權範圍內，依服務的回應整理名稱、角色、設定或資源等資訊。這像詢問不同櫃檯：校時櫃檯回答時間，電話櫃檯處理通話，路由櫃檯交換網路可達性。拿到一種回應，不會自動取得其他櫃檯的權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "每次先問四件事："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "問的是哪一種操作？ 例如向 NTP 要時間，和查詢 NTP 的管理資訊，目的不同。",
+            "由誰、從哪裡問？ 網路來源、使用身分與權限，可能改變結果。",
+            "實際收到什麼？ 保留請求、回應、時間及工具顯示，不只抄「成功」或「開放」。",
+            "這份結果的範圍多大？ 一個欄位、一台服務或一個觀測點，通常不足以代表整個環境。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "連接埠是辨識線索。TCP、UDP 分別有自己的連接埠空間；預設埠可以更改，也可能由其他程式使用。以下的埠號用來理解常見部署，真正的服務仍要由協定回應與設定交叉確認。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. NTP：取得時間，和取得管理資料，是兩種能力"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NTP 是 Network Time Protocol，「網路時間協定」，讓電腦校對時間。時間正確，才有助於比對事件紀錄、排程及處理有時效的驗證。常見 NTP 使用 UDP 123。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般校時回應會包含時間戳記與 Stratum 等欄位。Stratum 可先理解成時間同步階層：例如 stratum 2 表示位於第二層的時間伺服器。它不是安全評分，也不是精準度或真實性的保證。 回應內容還要配合來源、同步狀態及實際設定判讀。[NTPv4 規格](https://www.rfc-editor.org/rfc/rfc5905.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有些實作另有管理查詢介面，可在條件允許時回傳版本、關聯或運作狀態。「能取得時間」不表示「能讀管理資訊」。管理者也可能保留校時功能，同時限制外部管理查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，合成紀錄顯示某伺服器回覆校時封包、stratum 為 2，但沒有任何管理查詢結果。可以說它在這次觀察中提供了 NTP 校時回應；不能寫成「已取得全部上游節點、版本及用戶端清單」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防護上，依用途限制管理查詢來源、停用不必要功能並維護版本。對公開校時服務，還要評估限速及反射放大風險：攻擊者可能偽造來源位址，讓伺服器把回應送給受害者；是否形成放大，以及倍數多少，取決於實際請求、回應與設定，不能從 UDP 123 開放直接推出。[NTP 安全與運作建議](https://www.rfc-editor.org/rfc/rfc8633.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗收時分別留下「核准用戶端仍能校時」及「未核准來源拿不到不必要管理資訊」的證據。兩者要同時滿足，才符合預期用途。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. IPsec／IKE：協商有回應，還沒證明 VPN 已登入"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPsec 是 Internet Protocol Security，一組在 IP 層保護通訊的協定，常用於 VPN。VPN 是 Virtual Private Network，「虛擬私人網路」，用來建立受控的遠端或站點間連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IKE 是 Internet Key Exchange，「網際網路金鑰交換」。可以把它想成建立 IPsec 通道前的協商程序：雙方選擇保護方式、交換金鑰材料，並完成相應的身分驗證。常見 IKE 使用 UDP 500；配合 NAT 穿越時常見 UDP 4500。NAT 是 Network Address Translation，「網路位址轉換」。[IKEv2 規格](https://www.rfc-editor.org/rfc/rfc7296.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "需要特別分清楚：ESP（Encapsulating Security Payload，封裝安全負載）與 AH（Authentication Header，驗證標頭）是 IPsec 的保護協定，分別使用 IP 協定編號 50 與 51。這裡的 50、51 不是 TCP／UDP 連接埠。 ESP 在適用的 NAT 穿越情境也可以包在 UDP 4500 裡。[IPsec 架構](https://www.rfc-editor.org/rfc/rfc4301.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 IKEv2，初始 IKE_SA_INIT 交換會協商演算法等資訊；後續 IKE_AUTH 才包含身分驗證的重要步驟。SA 是 Security Association，「安全關聯」，可理解成雙方使用的一組安全參數與狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若紀錄只到 IKE_SA_INIT 回應，合理結論是「此端點回應了這次初始協商」。還不能說測試者已通過身分驗證、建立了可用的資料通道，或能存取公司內網。甚至已連上 VPN，也仍須逐項核對哪些內部資源獲准存取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防護與驗證要對應不同階段：核對允許的協商方式、驗證方法及憑證，再以核准測試身分檢查通道與資源權限。保留連線狀態、驗證結果及政策紀錄，不把 IKE 封包回應當成登入成功；金鑰與驗證秘密不放入報告。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. VoIP／SIP：電話控制訊息，和聲音內容，要分開看"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VoIP 是 Voice over Internet Protocol，「網路語音」，讓語音透過 IP 網路傳送。SIP 是 Session Initiation Protocol，「會話初始協定」，常用來建立、修改及結束通話，像電話系統的接線流程。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SIP 常見 TCP／UDP 5060；使用 TLS 的 SIP 常見 TCP 5061。TLS 是 Transport Layer Security，「傳輸層安全協定」，用來保護這段訊令連線。服務也可採其他埠與部署方式，不能看到 5061 就直接認定實際連線已正確加密或驗證憑證。[SIP 規格](https://www.rfc-editor.org/rfc/rfc3261.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SIP 的 OPTIONS 等要求，可依實作與政策回傳服務能力或支援方法。不同回應有時能形成帳號或分機存在性的線索，但要核對回應語意及服務政策；收到驗證挑戰，也不代表密碼已通過，更不能直接推論可以撥打付費電話。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際聲音常由 RTP，Real-time Transport Protocol「即時傳輸協定」，另行傳送；媒體位置與埠號依會話協商決定。SIP 是控制通話的訊號，RTP 是常見的媒體承載方式。SIP 這一段用了 TLS，並不自動證明聲音也加密。 媒體保護要另外核對，例如是否正確採用 SRTP，也就是 Secure RTP「安全即時傳輸協定」。[RTP 規格](https://www.rfc-editor.org/rfc/rfc3550.html)｜[SRTP 規格](https://www.rfc-editor.org/rfc/rfc3711.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防護重點包括限制不必要的能力與帳號資訊揭露、驗證及撥號權限、合理限速，以及分別確認訊號與媒體的保護。驗收要看設定和獲准測試通話的實際結果，不能只看伺服器支援某功能的宣告。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. IPv6：鄰居資訊是局部觀察，不是完整設備名冊"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 是 Internet Protocol version 6，「第六版網際網路協定」，採 128 位元位址。它不是像 FTP 一樣的單一應用服務，所以不存在一個「IPv6 列舉專用連接埠」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同一條鏈路上的設備，會使用 ICMPv6 的 Neighbor Discovery，簡稱 ND，「鄰居探索」，處理鄰居位址解析、路由器探索等工作。ICMPv6 是 Internet Control Message Protocol for IPv6，中文是「IPv6 網際網路控制訊息協定」；NS（Neighbor Solicitation）／NA（Neighbor Advertisement）是鄰居詢問／公告，RS（Router Solicitation）／RA（Router Advertisement）是路由器詢問／公告。這些訊息扮演不同角色，不能把每個回應都當成一台新的伺服器。[IPv6 鄰居探索](https://www.rfc-editor.org/rfc/rfc4861.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在授權主機上查看本機鄰居快取，或分析已獲准擷取的封包，可能取得同鏈路鄰居及路由器的線索。快取反映已學到且目前保留的紀錄，不是整個網路的完整資產清單。設備也可能同時擁有多個 IPv6 位址；位址數量不能直接當設備數量。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如只看到兩筆鄰居快取，可以說本機此時保存兩筆相關紀錄；要盤點所有設備，還應與授權的資產、交換器及位址管理資料比對。一般 /64 子網路的位址空間非常大，也不適合沿用「從頭到尾逐個掃描」的想法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防護要同時維護 IPv4 與 IPv6 的政策，並保護路由器公告等關鍵控制流量。把所有 ICMPv6 一律擋掉，可能破壞正常連線，包含鄰居探索與路徑 MTU 探索等必要功能。MTU 是 Maximum Transmission Unit，「最大傳輸單元」，此處指鏈路可承載的最大 IP 封包大小；路徑 MTU 取決於沿途鏈路的限制。[ICMPv6 防火牆建議](https://www.rfc-editor.org/rfc/rfc4890.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗收應確認不需要的流量受到限制，同時必要的位址解析、路由器探索及封包大小調整仍能運作。阻擋規則存在，和正常服務仍可用，要各有證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. BGP：看見路由公告，不代表取得路由器控制權"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP 是 Border Gateway Protocol，「邊界閘道協定」，用來交換網路可達性資訊與相關屬性，常見於不同自治系統之間。AS 是 Autonomous System，「自治系統」，可先理解成採共同路由管理政策的一組網路，使用自治系統編號 ASN（Autonomous System Number）識別。BGP 常見 TCP 179。[BGP-4 規格](https://www.rfc-editor.org/rfc/rfc4271.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "路由資料中可能看到 Prefix，也就是位址前綴，以及 AS_PATH 等路徑屬性。公開 Looking Glass 或路由收集器，提供從特定網路觀測點看見的路由資訊；它們是觀測工具，不是給讀者路由器的管理登入權。[RouteViews 官方說明](https://api.routeviews.org/docs/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如某觀測點看見文件示意前綴 203.0.113.0/24，搭配文件示例 ASN 64496。這只用來說明欄位，並非聲稱這段位址真正在網際網路被如此公告。真實路由判讀要同時保留觀測點與時間，因為不同觀測點可能看見不同路由。[文件示例 ASN](https://www.rfc-editor.org/rfc/rfc5398.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AS_PATH 提供 BGP 路由屬性的資訊，不能單憑它畫出完整內部拓樸，也不能把每個 AS 直接當成封包實際經過的一台路由器。公開路由可見，不表示可以建立任意 BGP 鄰居連線或更改公告。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防護可包括限制核准的鄰居、前綴過濾與路由數量上限，避免錯誤或不合政策的公告。RPKI 是 Resource Public Key Infrastructure，「資源公開金鑰基礎建設」；配合路由來源驗證，可檢查某來源 AS 是否獲授權公告某個前綴。來源驗證不等於整條 AS_PATH 都已驗真。[路由來源驗證規範](https://www.rfc-editor.org/rfc/rfc6811.html)｜[BGP 運作安全建議](https://www.rfc-editor.org/rfc/rfc7454.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗收要比對設定、接收或送出的路由，以及預期的過濾結果。讀到一張路由表，不足以證明這些防護正在生效。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Telnet／TFTP：功能簡單，仍要分清實際可讀與可寫範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Telnet 是傳統的遠端終端機協定，常見 TCP 23。連線可能顯示歡迎訊息或登入提示，形成系統用途與產品資訊的線索。看到提示不代表登入成功。傳統未加密 Telnet 不提供登入內容的機密性保護；管理用途通常應改採合適的受保護替代方式，例如 SSH（Secure Shell，安全殼層協定），可提供受加密保護的遠端管理連線；再驗證舊入口確實停用或受限。[Telnet 規格](https://www.rfc-editor.org/rfc/rfc854.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TFTP 是 Trivial File Transfer Protocol，「簡易檔案傳輸協定」，常見於設備開機或設定檔傳送。它以 UDP 69 接收初始請求，後續資料傳輸使用雙方選定的傳輸識別碼（Transfer ID，簡稱 TID），實際對應 UDP 埠；不能把整段傳輸都想成固定走 69。[TFTP 規格](https://www.rfc-editor.org/rfc/rfc1350.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "基本 TFTP 沒有使用者登入驗證機制，也沒有一般檔案目錄瀏覽操作。但可取得哪些檔案、能否上傳，仍取決於伺服器、檔案與網路限制。「不需要輸入帳密」不等於「任何檔案都能下載」，更不等於可以改寫設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此應限制來源、服務目錄及不必要的寫入能力，敏感檔案改用適合的受保護傳輸方式。驗收時使用管理者事先放好的無敏感測試檔，分別確認允許讀取、禁止讀取及寫入政策；讀取授權不包含試寫，也不應靠猜測真實設定檔名來擴大範圍。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. 把線索串起來：一份合成查核紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是紙上推演，沒有對任何設備連線或實測。假設管理者已提供隔離實驗環境的合成紀錄："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "1. NTP 回覆一般校時要求，stratum 為 2；未提供管理查詢結果。",
+            "2. VPN 端點回覆 IKE_SA_INIT；紀錄沒有 IKE_AUTH 成功，也沒有資料通道測試。",
+            "3. SIP 服務經已驗證的 TLS 連線回覆能力資訊；未提供媒體封包與 SRTP 設定。",
+            "4. 本機鄰居快取有兩筆 IPv6 紀錄。",
+            "5. 某路由觀測點顯示一筆前綴與 AS_PATH。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "依這份合成紀錄，你可以寫：「紀錄中包含校時回應、初始 IKE 協商回應、受 TLS 保護的這段 SIP 能力回應、本機兩筆鄰居紀錄及一個觀測點的路由資訊。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著列出待補證據：NTP 管理介面的暴露範圍、VPN 的驗證及資源權限、語音媒體保護、完整資產盤點，以及路由政策與過濾的有效設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣的寫法讓管理者知道已確認的範圍，也知道下一步該查哪一層。把五種正常回應一口氣寫成「全面入侵成功」或「全部安全」，都會掩蓋真正需要處理的問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. 一個小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "只用上面的合成紀錄，請選出最有證據支持的結論，並用一句話說明理由："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A. IKE 有回應，代表 VPN 已登入並能存取內網。",
+            "B. SIP 連線採 TLS，代表通話聲音必定加密。",
+            "C. 鄰居快取只有兩筆，代表整個 IPv6 網路只有兩台設備。",
+            "D. 已確認特定操作有回應；登入權限、媒體加密及完整資產範圍仍需各自查證。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "本題是原創教學題，不是官方考題。請先選擇答案並說明理由，再展開參考解答；閱讀答案不代表已確認理解。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-response-evidence",
+          "summary": "參考解答：各項回應的證據界線",
+          "paragraphs": [
+            "參考答案：D。",
+            "題目記載的是幾個特定操作的回應，應分別保留它們的條件與範圍。IKE_SA_INIT 只支持初始協商有回應，還缺身分驗證與資源存取證據；這一段 SIP 使用 TLS，只支持該段訊號連線的保護，媒體是否加密要另外核對；兩筆 IPv6 鄰居快取只表示本機目前保存的紀錄，不能當成整個網路的設備總數。",
+            "因此，下一步是取得對應層次的驗證紀錄，而不是把回應推論成已登入、所有流量均加密或全網盤點完成。這是編輯提供的參考答案，不是學員的實際回答，也不代表理解確認或實作通過。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "本次練習只讀合成資料：先辨認操作、再對照實際回應、最後寫下結論與缺少的證據。沒有安裝工具或修改環境，因此沒有環境清理操作。Wireshark 這類封包分析工具可協助檢視已獲准的紀錄，但工具顯示仍須按協定與上下文判讀。真正連線測試另須先確認目標、操作、頻率、停止條件及資料保存範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課來源查核日期：2026-11-07。採上列 RFC 的協定定義及安全建議；實際設備支援與預設值仍須核對產品版本。下一單元為 M04-10「列舉防護」，將把不同服務的風險、防護及驗證方式整合起來。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Identify the roles of time, VPN, voice, IPv6, routing, and file services, and distinguish responses, authentication, permissions, and missing evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The previous lesson used LDAP to show that query results are constrained by identity, scope, and conditions. This lesson applies the same interpretive approach to time synchronization, VPNs, Internet telephony, IPv6, and routing services, and also covers Telnet and TFTP. It is an integrative unit in the learning path."
+        },
+        {
+          "kind": "paragraph",
+          "text": "What you should learn in this lesson: first identify the service's purpose, then explain clearly “what this response proves and what evidence is still missing.” Different protocols reveal different information. A service responding, data being readable, authentication succeeding, and operational permissions being obtained each require their own evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Start with a Shared Interpretation Checklist"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration means organizing information such as names, roles, settings, or resources from service responses within an authorized scope. Think of asking questions at different service counters: the time counter answers time queries, the telephone counter handles calls, and the routing counter exchanges network reachability information. Receiving one kind of response does not automatically give you permissions at the other counters."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ask four questions each time:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "What operation is being requested? For example, requesting the time from NTP and querying NTP management information serve different purposes.",
+            "Who is asking, and from where? The network source, identity used, and permissions may change the result.",
+            "What was actually received? Preserve the request, response, time, and tool output, rather than merely copying “success” or “open.”",
+            "How broad is this result's scope? A single field, service, or observation point is usually insufficient to represent the entire environment."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ports are identification clues. TCP and UDP each have their own port spaces; default ports can be changed or used by other programs. The port numbers below help explain common deployments, but the actual service still needs to be cross-checked against protocol responses and configuration."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. NTP: Obtaining the Time and Obtaining Management Data Are Two Different Capabilities"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NTP stands for Network Time Protocol and lets computers synchronize their clocks. Accurate time helps correlate event logs, manage schedules, and handle time-sensitive authentication. NTP commonly uses UDP 123."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An ordinary time-synchronization response contains fields such as timestamps and Stratum. As a starting point, think of Stratum as a level in the time-synchronization hierarchy: for example, stratum 2 denotes a time server at the second level. It is not a security rating or a guarantee of accuracy or authenticity. Interpret the response alongside its source, synchronization status, and actual configuration. [NTPv4 Specification](https://www.rfc-editor.org/rfc/rfc5905.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Some implementations also provide a management-query interface that can return version, association, or operational-status information when conditions permit. “Can obtain the time” does not mean “can read management information.” Administrators may retain time synchronization while restricting external management queries."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, suppose a synthetic record shows a server responding to a time-synchronization packet with stratum 2, but contains no management-query results. You can say that it provided an NTP time-synchronization response in this observation; you cannot write “all upstream nodes, version information, and the client list have been obtained.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For protection, restrict management-query sources according to purpose, disable unnecessary features, and keep versions maintained. For public time services, also assess rate limiting and reflection-amplification risks: an attacker may spoof a source address so that the server sends its response to a victim. Whether amplification occurs, and its factor, depend on the actual request, response, and configuration; they cannot be inferred simply from UDP 123 being open. [NTP Security and Operational Recommendations](https://www.rfc-editor.org/rfc/rfc8633.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "During acceptance testing, retain separate evidence that “approved clients can still synchronize time” and “unapproved sources cannot obtain unnecessary management information.” Both conditions must be satisfied to meet the intended purpose."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. IPsec/IKE: A Negotiation Response Does Not Yet Prove a VPN Login"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPsec stands for Internet Protocol Security, a suite of protocols that protect communications at the IP layer and are commonly used for VPNs. VPN stands for Virtual Private Network and is used to establish controlled remote-access or site-to-site connections."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IKE stands for Internet Key Exchange. Think of it as the negotiation process before an IPsec tunnel is established: both sides select protection methods, exchange keying material, and complete the corresponding authentication. IKE commonly uses UDP 500; UDP 4500 is common when NAT traversal is involved. NAT stands for Network Address Translation. [IKEv2 Specification](https://www.rfc-editor.org/rfc/rfc7296.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An important distinction: ESP (Encapsulating Security Payload) and AH (Authentication Header) are IPsec protection protocols that use IP protocol numbers 50 and 51, respectively. Here, 50 and 51 are not TCP/UDP ports. ESP can also be encapsulated in UDP 4500 in applicable NAT-traversal scenarios. [IPsec Architecture](https://www.rfc-editor.org/rfc/rfc4301.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In IKEv2, the initial IKE_SA_INIT exchange negotiates information such as algorithms; the subsequent IKE_AUTH exchange contains important authentication steps. SA stands for Security Association and can be understood as a set of security parameters and state used by both sides."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If the record ends at an IKE_SA_INIT response, the reasonable conclusion is “this endpoint responded to this initial negotiation.” You cannot yet say that the tester passed authentication, established a usable data tunnel, or can access the corporate intranet. Even after a VPN connection is established, you still need to check which internal resources are authorized for access, one by one."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Protection and verification should correspond to the different stages: check allowed negotiation methods, authentication methods, and certificates, then use an approved test identity to check the tunnel and resource permissions. Retain connection status, authentication results, and policy records rather than treating an IKE packet response as a successful login; do not include keys or authentication secrets in the report."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. VoIP/SIP: Examine Call-Control Messages and Audio Content Separately"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VoIP stands for Voice over Internet Protocol and carries voice over IP networks. SIP stands for Session Initiation Protocol and is commonly used to establish, modify, and end calls, much like the connection-handling process in a telephone system."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SIP commonly uses TCP/UDP 5060; SIP over TLS commonly uses TCP 5061. TLS stands for Transport Layer Security and protects this signaling connection segment. Services can also use other ports and deployment arrangements, so seeing 5061 does not establish that the actual connection is properly encrypted or that certificates have been validated. [SIP Specification](https://www.rfc-editor.org/rfc/rfc3261.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Requests such as SIP OPTIONS may return service capabilities or supported methods depending on the implementation and policy. Differences in responses can sometimes provide clues about whether an account or extension exists, but the response semantics and service policy must be checked. Receiving an authentication challenge does not mean a password has been accepted, and certainly does not directly establish permission to place chargeable calls."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The actual audio is often carried separately by RTP, the Real-time Transport Protocol; media locations and port numbers are determined through session negotiation. SIP provides call-control signaling, while RTP is a common way to carry media. Using TLS for this SIP segment does not automatically prove that the audio is encrypted too. Media protection requires separate verification, such as whether SRTP, or Secure RTP, is correctly used. [RTP Specification](https://www.rfc-editor.org/rfc/rfc3550.html) | [SRTP Specification](https://www.rfc-editor.org/rfc/rfc3711.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Protection priorities include restricting unnecessary disclosure of capabilities and account information, authentication and dialing permissions, reasonable rate limiting, and separately verifying signaling and media protection. Acceptance testing should examine configuration and the actual results of authorized test calls, rather than only the server's declaration that it supports a feature."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. IPv6: Neighbor Information Is a Local Observation, Not a Complete Device Inventory"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 stands for Internet Protocol version 6 and uses 128-bit addresses. It is not a single application service like FTP, so there is no “dedicated IPv6 enumeration port.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Devices on the same link use ICMPv6 Neighbor Discovery, abbreviated ND, for tasks such as neighbor address resolution and router discovery. ICMPv6 stands for Internet Control Message Protocol for IPv6; NS (Neighbor Solicitation)/NA (Neighbor Advertisement) solicit or advertise neighbors, while RS (Router Solicitation)/RA (Router Advertisement) solicit or advertise routers. These messages play different roles, so not every response should be treated as a new server. [IPv6 Neighbor Discovery](https://www.rfc-editor.org/rfc/rfc4861.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Viewing the local neighbor cache on an authorized host or analyzing packets whose capture has been authorized may provide clues about on-link neighbors and routers. The cache reflects records that have been learned and are currently retained; it is not a complete asset inventory for the entire network. A device may also have multiple IPv6 addresses at the same time; the number of addresses cannot be directly treated as the number of devices."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, if you see only two neighbor-cache entries, you can say that the local host currently retains two relevant records. To inventory all devices, you should also compare authorized asset, switch, and address-management data. The address space of a typical /64 subnet is enormous, so the idea of “scanning every address from beginning to end” is also unsuitable."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Protection requires maintaining policies for both IPv4 and IPv6 and protecting critical control traffic such as router advertisements. Blocking all ICMPv6 indiscriminately can break normal connectivity, including essential functions such as Neighbor Discovery and Path MTU Discovery. MTU stands for Maximum Transmission Unit and here refers to the largest IP packet size a link can carry; the path MTU depends on the limitations of the links along the path. [ICMPv6 Firewall Recommendations](https://www.rfc-editor.org/rfc/rfc4890.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acceptance testing should confirm that unnecessary traffic is restricted while essential address resolution, router discovery, and packet-size adjustment still work. Evidence is needed both that blocking rules exist and that normal services remain available."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. BGP: Seeing Route Announcements Does Not Mean Gaining Control of a Router"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP stands for Border Gateway Protocol and exchanges network reachability information and related attributes, commonly between different autonomous systems. AS stands for Autonomous System and can initially be understood as a set of networks under a common routing-management policy, identified by an ASN (Autonomous System Number). BGP commonly uses TCP 179. [BGP-4 Specification](https://www.rfc-editor.org/rfc/rfc4271.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Routing data may show a Prefix, meaning an address prefix, and path attributes such as AS_PATH. Public Looking Glass services or route collectors provide routing information seen from specific network observation points; they are observation tools, not a grant of router administration login access to their readers. [Official RouteViews Documentation](https://api.routeviews.org/docs/)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, suppose an observation point sees the documentation prefix 203.0.113.0/24 paired with the documentation ASN 64496. This merely illustrates the fields and does not claim that this address range is actually announced this way on the Internet. Real-world routing interpretation must retain both the observation point and time, because different observation points may see different routes. [Documentation ASNs](https://www.rfc-editor.org/rfc/rfc5398.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AS_PATH provides information about a BGP route attribute; it cannot by itself be used to draw a complete internal topology, nor can each AS be treated directly as one router that packets actually traverse. Public visibility of routes does not imply permission to establish arbitrary BGP neighbor connections or change announcements."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Protection may include restricting approved neighbors, prefix filtering, and route-count limits to prevent incorrect or policy-violating announcements. RPKI stands for Resource Public Key Infrastructure; together with route origin validation, it can check whether an origin AS is authorized to announce a prefix. Origin validation does not mean the entire AS_PATH has been authenticated. [Route Origin Validation Specification](https://www.rfc-editor.org/rfc/rfc6811.html) | [BGP Operational Security Recommendations](https://www.rfc-editor.org/rfc/rfc7454.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acceptance testing should compare configuration, received or advertised routes, and expected filtering results. Reading a routing table is not enough to prove that these protections are taking effect."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Telnet/TFTP: Even Simple Functions Require Distinguishing Actual Read and Write Scope"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Telnet is a traditional remote-terminal protocol that commonly uses TCP 23. A connection may display a welcome message or login prompt, providing clues about the system's purpose and product information. Seeing a prompt does not mean login has succeeded. Traditional unencrypted Telnet does not protect the confidentiality of login contents; administrative use should generally move to a suitable protected alternative such as SSH (Secure Shell), which can provide an encrypted remote-management connection. Then verify that the old entry point is actually disabled or restricted. [Telnet Specification](https://www.rfc-editor.org/rfc/rfc854.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TFTP stands for Trivial File Transfer Protocol and is commonly used for device booting or configuration-file transfers. It receives initial requests on UDP 69; subsequent data transfer uses Transfer IDs, abbreviated TIDs, selected by the two sides, which correspond to UDP ports. Do not think of the entire transfer as always using port 69. [TFTP Specification](https://www.rfc-editor.org/rfc/rfc1350.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Basic TFTP has no user-login authentication mechanism and no general file-directory browsing operation. However, which files can be retrieved and whether uploads are possible still depend on server, file, and network restrictions. “No username or password is required” does not mean “any file can be downloaded,” much less that configuration can be overwritten."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Therefore, restrict sources, service directories, and unnecessary write capabilities, and use a suitable protected transfer method for sensitive files. During acceptance testing, use a nonsensitive test file placed in advance by the administrator, and separately verify permitted reads, prohibited reads, and write policies. Read authorization does not include trial writes, and you should not expand the scope by guessing real configuration filenames."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Connect the Clues: A Synthetic Review Record"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following is a tabletop exercise; no device has been connected to or tested. Assume an administrator has provided synthetic records from an isolated lab environment:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "1. NTP responds to an ordinary time-synchronization request with stratum 2; no management-query results are provided.",
+            "2. A VPN endpoint responds to IKE_SA_INIT; the record contains neither successful IKE_AUTH nor a data-tunnel test.",
+            "3. A SIP service returns capability information over a validated TLS connection; no media packets or SRTP settings are provided.",
+            "4. The local neighbor cache contains two IPv6 entries.",
+            "5. A routing observation point shows a prefix and AS_PATH."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Based on this synthetic record, you can write: “The record includes a time-synchronization response, an initial IKE negotiation response, this segment's TLS-protected SIP capability response, two local neighbor entries, and routing information from one observation point.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, list the evidence still needed: the exposure scope of the NTP management interface, VPN authentication and resource permissions, voice-media protection, a complete asset inventory, and the effective configuration of routing policies and filtering."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Writing this way tells administrators both what has been confirmed and which layer to examine next. Describing five kinds of normal responses collectively as “complete compromise achieved” or “everything is secure” would obscure the actual issues that need attention."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. A Short Knowledge Check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Using only the synthetic record above, select the conclusion best supported by the evidence and explain your reason in one sentence:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A. An IKE response means the VPN is logged in and the internal network is accessible.",
+            "B. TLS on the SIP connection means the call audio must be encrypted.",
+            "C. Only two neighbor-cache entries means the entire IPv6 network contains only two devices.",
+            "D. Responses to specific operations have been confirmed; login permissions, media encryption, and the complete asset scope still require separate verification."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is an original teaching question, not an official exam item. Choose an answer and explain your reason before opening the reference answer; reading it does not establish understanding."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-response-evidence",
+          "summary": "Reference answer: evidence boundaries for each response",
+          "paragraphs": [
+            "Reference answer: D.",
+            "The question records responses to several specific operations, and their conditions and scope should be retained separately. IKE_SA_INIT only supports the conclusion that the initial negotiation received a response; evidence of authentication and resource access is still missing. TLS on this SIP segment only supports protection of that signaling connection segment; whether the media is encrypted requires separate verification. Two IPv6 neighbor-cache entries only indicate records currently retained by the local host and cannot be treated as the total number of devices across the network.",
+            "Therefore, the next step is to obtain verification records for the corresponding layers, rather than infer from the responses that login has succeeded, all traffic is encrypted, or a network-wide inventory is complete. This is an editor-provided reference answer, not the learner's actual response, and does not represent confirmed understanding or a passed practical exercise."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This exercise only reads synthetic data: first identify the operation, then compare the actual response, and finally write down the conclusion and missing evidence. No tools were installed and no environment was modified, so there are no environment-cleanup operations. Packet-analysis tools such as Wireshark can help inspect authorized records, but their output still needs to be interpreted according to the protocol and context. Actual connection testing additionally requires prior confirmation of the targets, operations, frequency, stopping conditions, and data-retention scope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Source verification date for this lesson: 2026-11-07. This lesson uses the protocol definitions and security recommendations in the RFCs listed above; actual device support and defaults still need to be checked against the product version. The next unit is M04-10, “Enumeration Countermeasures,” which will bring together the risks, protections, and verification methods for different services."
+        }
+      ]
+    }
+  }
+}
