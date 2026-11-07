@@ -28,3 +28,8 @@
 - 正式圖檔為 `/images/aase/m03-02-{1,2,3}-{zh,en}.svg`。本機與正式站證據另保存在主工作目錄忽略路徑 `.local/aase/m0302-replacement-2026-11-07/`，包含截圖、JSON、HTTP 回讀及命令日誌；來源及公開紀錄均在本 repo。原工作目錄的無關修改保留，未 force-push。
 
 正式課文：[繁體中文](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-02/)／[English](https://learn.cs-kairos.com/en/courses/aase/v1/m03/concepts/m03-02/)。本回執為部署後文件更新，不改變教材版本。實體裝置、完整螢幕閱讀器及學員理解尚未評估。
+
+<a id="kairos-five-release-closeout-2026-11-07"></a>
+## FIRST PRINCIPLE Planning 對帳連結
+
+本篇來源、實作與正式回讀正本維持於本 repo；[同日五篇發布對帳](2026-11-07-repository-reconciliation.md#kairos-five-release-closeout-2026-11-07)彙整各次證據及下一關，並連到 [11/7 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-07.md#kairos-five-release-closeout-2026-11-07)與[網站定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-five-release-closeout-2026-11-07)。本次補文件關聯，引用本篇既有驗收；學員理解與實體／真實服務驗收依原有界線保留。

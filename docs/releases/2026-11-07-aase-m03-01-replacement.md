@@ -47,3 +47,8 @@
 - 發布後遠端另有其他課次提交，已以 fast-forward 保留整合。這些提交沒有取代本課的來源、正文或圖解。此回執以獨立文件提交保存，使用 `[skip ci]`，不把文件回執宣稱為新的教材部署。
 
 本次教材抽換與正式站驗證完成。待驗界線維持：實體手機、完整輔助科技驗收、學員理解及真實收件工作流程成效；本次沒有新增批改服務或正式業務系統。
+
+<a id="kairos-five-release-closeout-2026-11-07"></a>
+## FIRST PRINCIPLE Planning 對帳連結
+
+本篇來源、實作與正式回讀正本維持於本 repo；[同日五篇發布對帳](2026-11-07-repository-reconciliation.md#kairos-five-release-closeout-2026-11-07)彙整各次證據及下一關，並連到 [11/7 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-07.md#kairos-five-release-closeout-2026-11-07)與[網站定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-five-release-closeout-2026-11-07)。本次補文件關聯，引用本篇既有驗收；學員理解與實體／真實服務驗收依原有界線保留。
