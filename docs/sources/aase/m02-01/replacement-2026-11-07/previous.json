@@ -1,0 +1,371 @@
+{
+  "id": "AASE-M02-C01",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "hf-tokenization",
+    "transformer-paper"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從文字如何切成 token，到向量、注意力與下一個 token 的產生，建立能解釋模型輸出及其限制的基本圖像。",
+      "objectives": [
+        "區分字元、詞語與模型使用的 token，避免用字數直接估算所有模型的容量。",
+        "說明 Transformer 中向量表示、位置資訊及 Attention 的基本作用。",
+        "用可重現的純數學範例理解加權組合，分清注意力權重與答案正確性。"
+      ],
+      "readingGuide": {
+        "goal": "說明模型處理文字的基本單位與加權機制，保留輸出驗證的界線。",
+        "startingPoint": "沿用三個必要欄位的合成收件要求；數學範例可只用紙筆。",
+        "route": "先分清 token，再讀簡化生成路線，最後核對加權計算及其限制。",
+        "output": "原理說明與兩組玩具計算結果，作為後續上下文設計的基礎。"
+      },
+      "sections": [
+        {
+          "id": "units",
+          "heading": "模型讀到的單位與人眼看到的字不同",
+          "paragraphs": [
+            "你把「請檢查收件資料」交給模型，它會先經過 tokenizer（分詞器），將文字轉成 token 的識別碼。token 可能對應一個字、詞片段、位元組序列或特殊標記；切法取決於詞彙表與演算法。空白、標點與中英文混用也會影響結果。",
+            "Hugging Face 的文件介紹 BPE、WordPiece、Unigram 等分詞方式。本課只需先掌握：同一句話在不同分詞器下可能有不同切法，不能把「一個中文字就是一個 token」當成通則。"
+          ],
+          "sourceIds": [
+            "hf-tokenization"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像先把文件編成能處理的零件",
+          "paragraphs": [
+            "可以把 token 想成文件被切成的零件編號，向量則是模型用來計算的數字表示。人看到「文件類型」，可能把它理解成一個欄位；模型使用的 token 邊界未必剛好等於這個概念。",
+            "例如把「收件資料」畫成「收件／資料」或「收／件／資／料」，可示意兩種不同粒度；這只是手工切分教具，不是任何真實 tokenizer 的量測結果。要知道實際數量，仍需指定模型與分詞器後測量。"
+          ]
+        },
+        {
+          "id": "transformer",
+          "heading": "向量、位置與注意力各自做什麼",
+          "paragraphs": [
+            "Transformer 將 token 轉成向量，結合位置資訊，並透過 Attention（注意力）讓某個位置依其他可見位置的表示更新自己的表示。它還有前饋網路等組件；Attention 不是整個模型。",
+            "2017 年 Transformer 原論文包含 encoder 與 decoder。本課以自回歸文字生成的解讀方式為主：模型依目前可用的序列產生下一個 token 的分布，再依解碼規則選取輸出。因果遮罩會限制解碼位置不能讀取尚未產生的未來 token。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜本課用來閱讀文字生成的簡化路線",
+              "description": "這是理解用途的簡化圖，不列出所有層、訓練方法或架構變體。",
+              "items": [
+                {
+                  "title": "文字轉 token",
+                  "body": "分詞器把文字轉成識別碼；切法由模型配置決定。"
+                },
+                {
+                  "title": "建立及更新表示",
+                  "body": "向量、位置資訊、注意力與其他網路層共同處理序列。"
+                },
+                {
+                  "title": "形成下一個 token 分布",
+                  "body": "模型輸出轉成候選 token 的機率分布；這不是事實查核分數。"
+                },
+                {
+                  "title": "解碼並接續",
+                  "body": "依解碼規則選取 token，再更新序列，直到停止條件。"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "attention-example",
+          "heading": "用兩個位置看加權組合",
+          "paragraphs": [
+            "注意力常以 query、key、value 描述：query 是當前位置用來比對的表示，key 用於計算匹配分數，value 是被加權組合的內容。簡化寫法是 softmax(QKᵀ／√dₖ)V；遮罩另限制哪些位置可見。softmax 會將分數轉成總和為 1 的權重。",
+            "下例直接給定兩個分數與純量 value，用來觀察加權結果；不是訓練過的 LLM，也沒有生成或查核文字。分數 [1, 0] 會得到約 [0.731, 0.269]，對 value [2, 6] 加權後約為 3.076。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "純 Python 注意力教具",
+              "paragraphs": [
+                "環境：Python 3，僅使用標準函式庫。可將程式另存為 attention_demo.py 後執行。"
+              ],
+              "code": "from math import exp\nscores = [1.0, 0.0]\nvalues = [2.0, 6.0]\nshift = max(scores)\nnumerators = [exp(x - shift) for x in scores]\nweights = [x / sum(numerators) for x in numerators]\nweighted_value = sum(w * value for w, value in zip(weights, values))\nprint(\"weights =\", [round(w, 3) for w in weights])\nprint(\"weighted_value =\", round(weighted_value, 3))"
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "limits",
+          "heading": "權重很高，不表示內容真實",
+          "paragraphs": [
+            "注意力權重描述這一次表示計算如何分配到可見位置，不等於模型對某句話的事實信心。下一個 token 的機率又是另一個分布，不能把兩者混為同一種證據。",
+            "收件範例中，模型可能產生一份語句通順的報告，但是否缺少文件類型，要由已確認的規則與實際輸入檢查。即使模型回答得很肯定，仍不能把欄位完整性、內容真實與正式受理當成相同狀態。"
+          ]
+        },
+        {
+          "id": "apply",
+          "heading": "把原理用在協作要求上",
+          "paragraphs": [
+            "請模型協助修改程式時，提供明確欄位名稱、規格、合成輸入及預期結果，比只要求「理解我的意思」更容易讓人審查輸出是否符合工作。模型能利用什麼資訊，也受這次輸入內容與後續工具結果影響。",
+            "不要用一次輸出的正確或錯誤推定所有情境。保留輸入、模型與工具環境、輸出及驗收情境，才能討論哪個部分需要修正。接下來一篇會處理這些資訊如何放進有限的上下文窗口。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "紙筆即可；可選用 Python 3 執行純數學教具，不需模型帳號、套件或網路。",
+        "steps": [
+          "把一句合成收件要求畫成兩種手工切分，註明不是實際 tokenizer 結果。",
+          "依圖 1 說明 token、向量表示、注意力及解碼各處理什麼問題。",
+          "手算或執行範例，核對權重約 [0.731, 0.269]、加權結果約 3.076。",
+          "將 scores 改為 [0.0, 0.0] 再計算，說明為何權重各 0.5、結果為 4.0，以及它沒有證明哪些模型能力。"
+        ],
+        "expected": "一份單位與機制的說明，及兩組可核對的玩具加權結果；不把它記為真實模型測試。",
+        "check": "能解釋 token 數為何需指定分詞器，並指出注意力權重、下一 token 機率與事實正確性之間的差別。",
+        "cleanup": "保留合成筆記；若建立 attention_demo.py，可刪除或納入個人練習，不產生外部資源。"
+      }
+    },
+    "en": {
+      "summary": "Follow text from tokenization through vectors, attention and next-token generation to explain model output and its limits.",
+      "objectives": [
+        "Distinguish characters, words and model tokens instead of estimating every model’s capacity from character counts.",
+        "Explain the basic roles of vector representations, position information and attention in a Transformer.",
+        "Use reproducible arithmetic to understand weighted combinations, separating attention weights from answer correctness."
+      ],
+      "readingGuide": {
+        "goal": "Explain the units and weighting mechanism used to process text while retaining the need to verify output.",
+        "startingPoint": "Use the synthetic request about three required intake fields; the arithmetic can be done on paper.",
+        "route": "Distinguish tokens, follow a simplified generation path, then check the weighted calculation and its limits.",
+        "output": "An explanation and two toy calculation results as a basis for later context design."
+      },
+      "sections": [
+        {
+          "id": "units",
+          "heading": "Model Units Differ from the Characters We See",
+          "paragraphs": [
+            "When you give a model “請檢查收件資料” (please check the intake data), a tokenizer converts the text into token IDs. A token may represent a character, part of a word, a byte sequence or a special marker. Boundaries depend on the vocabulary and algorithm; spaces, punctuation and mixed Chinese and English can affect the result.",
+            "Hugging Face describes tokenization methods including BPE, WordPiece and Unigram. The initial lesson is that the same sentence can be segmented differently by different tokenizers. One Chinese character per token is not a universal rule."
+          ],
+          "sourceIds": [
+            "hf-tokenization"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Like Encoding a Document as Processable Parts",
+          "paragraphs": [
+            "Think of tokens as identifiers for document parts, and vectors as numeric representations used in computation. A person may understand “文件類型” (document type) as one field; model token boundaries need not align with that concept.",
+            "For example, “收件資料” can be drawn as “收件／資料” or “收／件／資／料” to illustrate two granularities. These are hand-made teaching segmentations, not measurements from an actual tokenizer. Specify the model and tokenizer before measuring a real count."
+          ]
+        },
+        {
+          "id": "transformer",
+          "heading": "Vectors, Positions and Attention Have Different Roles",
+          "paragraphs": [
+            "A Transformer maps tokens to vectors, incorporates position information and uses attention to update a position’s representation using other visible positions. It also contains components such as feed-forward networks; attention is not the entire model.",
+            "The original 2017 Transformer paper includes an encoder and a decoder. This course focuses on reading autoregressive text generation: the model produces a next-token distribution from the available sequence, and decoding rules select output. A causal mask prevents a decoding position from accessing future tokens that have not yet been generated."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | A Simplified Path for Understanding Text Generation",
+              "description": "This teaching diagram omits many layers, training methods and architecture variants.",
+              "items": [
+                {
+                  "title": "Convert text to tokens",
+                  "body": "The tokenizer maps text to IDs according to the model configuration."
+                },
+                {
+                  "title": "Build and update representations",
+                  "body": "Vectors, positions, attention and other network layers process the sequence."
+                },
+                {
+                  "title": "Form a next-token distribution",
+                  "body": "Model output becomes probabilities over candidate tokens, not a fact-checking score."
+                },
+                {
+                  "title": "Decode and continue",
+                  "body": "Select a token using decoding rules and update the sequence until a stop condition."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "attention-example",
+          "heading": "A Weighted Combination of Two Positions",
+          "paragraphs": [
+            "Attention is often described through query, key and value. The query is the current position’s representation for comparison; keys help compute match scores; values supply the content combined with weights. A compact formula is softmax(QKᵀ/√dₖ)V, with masking separately controlling visible positions. Softmax turns scores into weights that sum to 1.",
+            "The example supplies two scores and scalar values to illustrate weighting. It is not a trained LLM and neither generates nor fact-checks text. Scores [1, 0] give approximately [0.731, 0.269]; weighting values [2, 6] gives approximately 3.076."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "A Pure-Python Attention Teaching Example",
+              "paragraphs": [
+                "Environment: Python 3 with only the standard library. Save the program as attention_demo.py and run it if desired."
+              ],
+              "code": "from math import exp\nscores = [1.0, 0.0]\nvalues = [2.0, 6.0]\nshift = max(scores)\nnumerators = [exp(x - shift) for x in scores]\nweights = [x / sum(numerators) for x in numerators]\nweighted_value = sum(w * value for w, value in zip(weights, values))\nprint(\"weights =\", [round(w, 3) for w in weights])\nprint(\"weighted_value =\", round(weighted_value, 3))"
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "limits",
+          "heading": "A Large Weight Does Not Establish Truth",
+          "paragraphs": [
+            "Attention weights describe the contribution of visible positions to this representation calculation. They are not factual confidence in a sentence. Next-token probabilities form another distribution; the two are different kinds of information.",
+            "A model may write a fluent intake report, but checking for a missing document type requires confirmed rules and actual input. A confident response does not make field completeness, truth and official acceptance the same state."
+          ]
+        },
+        {
+          "id": "apply",
+          "heading": "Apply the Mechanism to Collaboration",
+          "paragraphs": [
+            "When asking for a code change, provide explicit field names, specifications, synthetic inputs and expected results. These make the output easier to review than a request to “understand what I mean.” Available information also depends on this input and subsequent tool results.",
+            "One correct or incorrect output does not establish performance in every situation. Retain input, model and tool environment, output and acceptance scenarios to identify what needs correction. The next lesson considers how to fit this information into a finite context window."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Paper is sufficient. Optionally use Python 3 for the arithmetic; no model account, package or network is needed.",
+        "steps": [
+          "Draw two hand-made segmentations of a synthetic intake request and label them as illustrations, not actual tokenizer results.",
+          "Use Figure 1 to explain the roles of tokens, vector representations, attention and decoding.",
+          "Calculate by hand or run the example to confirm weights approximately [0.731, 0.269] and a weighted result approximately 3.076.",
+          "Change scores to [0.0, 0.0] and recalculate. Explain the equal 0.5 weights, result 4.0 and model capabilities this example does not establish."
+        ],
+        "expected": "An explanation of units and mechanisms with two checkable toy calculations, kept distinct from actual model testing.",
+        "check": "Explain why token counts require a specified tokenizer, and distinguish attention weights, next-token probabilities and factual correctness.",
+        "cleanup": "Keep synthetic notes. Delete attention_demo.py or retain it as a personal exercise; no external resources are created."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M02-C01-Q01",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "下列何者能正確描述 token？",
+          "options": [
+            "所有中文模型都以一字一 token 計算",
+            "token 就是完整句子",
+            "切分由分詞器及詞彙表決定，不能固定等同中文字數",
+            "只計算使用者看見的英文字"
+          ],
+          "rationales": [
+            "中文字與 token 沒有所有模型共用的一對一關係。",
+            "句子可能包含多個 token，也可能含特殊標記。",
+            "實際計數需要指定分詞器及完整輸入。",
+            "標點、空白與系統使用的特殊標記也可能影響計數。"
+          ]
+        },
+        "en": {
+          "prompt": "Which statement correctly describes tokens?",
+          "options": [
+            "Every Chinese model uses exactly one token per character.",
+            "A token is a complete sentence.",
+            "Segmentation depends on the tokenizer and vocabulary, so it cannot always equal the Chinese character count.",
+            "Only visible English words count."
+          ],
+          "rationales": [
+            "There is no universal one-to-one mapping between Chinese characters and tokens.",
+            "A sentence can contain several tokens and special markers.",
+            "Actual counts require the tokenizer and full input.",
+            "Punctuation, spaces and system special markers can also affect counts."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C01-Q02",
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "玩具範例的兩個分數相同時，value 為 2 與 6，結果為何？",
+          "options": [
+            "4，因為兩者各取得 0.5 權重",
+            "8，因為直接相加",
+            "6，因為最後一個位置必然正確",
+            "無法計算，因為必須連接 LLM"
+          ],
+          "rationales": [
+            "相同分數經 softmax 得到相同權重，0.5×2＋0.5×6＝4。",
+            "加權組合不是忽略權重直接相加。",
+            "此例沒有最後位置必勝的規則，也未在查核內容真假。",
+            "這是可離線計算的數學教具。"
+          ]
+        },
+        "en": {
+          "prompt": "In the toy example, equal scores weight values 2 and 6. What is the result?",
+          "options": [
+            "4, because each value receives weight 0.5.",
+            "8, because the values are simply added.",
+            "6, because the last position is always correct.",
+            "It cannot be calculated without connecting to an LLM."
+          ],
+          "rationales": [
+            "Equal scores yield equal softmax weights: 0.5×2 + 0.5×6 = 4.",
+            "A weighted combination includes weights.",
+            "The example contains no rule that the last position wins and performs no fact-checking.",
+            "This arithmetic can be performed offline."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C01-Q03",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "某位置的注意力權重很高，應如何解讀？",
+          "options": [
+            "該位置文字一定為真",
+            "它參與了這次表示計算的加權，仍需另外驗證工作結果",
+            "模型已完成資料授權檢查",
+            "這就是實際學員的信心分數"
+          ],
+          "rationales": [
+            "注意力不是事實查核分數。",
+            "這保留了計算意義，也保留外部驗證的責任。",
+            "授權由系統控制，不由注意力權重決定。",
+            "這個權重與學員作答信心是不同資料。"
+          ]
+        },
+        "en": {
+          "prompt": "How should a large attention weight for one position be interpreted?",
+          "options": [
+            "The text at that position must be true.",
+            "It contributes to this weighted representation calculation; task outcomes still need verification.",
+            "The model has completed data authorization checks.",
+            "It is an actual learner’s confidence score."
+          ],
+          "rationales": [
+            "Attention is not a fact-checking score.",
+            "This preserves the computational meaning and the need for external verification.",
+            "System controls determine authorization, not attention weights.",
+            "Attention weights and learner confidence are different data."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
