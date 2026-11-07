@@ -1,0 +1,2648 @@
+[
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 1,
+    "original": "# CEH M04-08｜LDAP／Active Directory 列舉：查到帳號，代表查完整了嗎？",
+    "adoption": "public-title-normalized",
+    "target": "top"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 2,
+    "original": "這一課的核心問題是：",
+    "adoption": "body-preserved",
+    "target": "top"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 3,
+    "original": "當你使用工具查詢一間公司的帳號資料，結果顯示有 2 個人，你能不能因此斷定，這間公司只有 2 個帳號？",
+    "adoption": "body-preserved",
+    "target": "top"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 4,
+    "original": "答案是：不行。",
+    "adoption": "body-preserved",
+    "target": "top"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 5,
+    "original": "因為你看到的結果，取決於你從哪裡查、用誰的身分查、設定什麼條件，以及查詢是否真的完成。",
+    "adoption": "body-preserved",
+    "target": "top"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 6,
+    "original": "這是 CEH（Certified Ethical Hacker）M04 Enumeration（列舉）非常重要的觀念，同時也是 Windows Server、企業網路管理、Active Directory（AD）和資安稽核的基礎。",
+    "adoption": "body-preserved",
+    "target": "top"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 7,
+    "original": "本次依據 [CS Kairos M04-08 正式教材](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-08/?utm_source=chatgpt.com) 進行白話教學，並補充實際企業環境、協定原理與 CEH 判讀方法。",
+    "adoption": "self-reference-replaced-with-primary-source-scope",
+    "target": "top"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 8,
+    "original": "## 一、先把 LDAP 想成公司的員工資料庫",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 9,
+    "original": "假設有一家公司，員工有 500 人，分成研發部、人事部、財務部等單位。",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 10,
+    "original": "人事部有一份員工名冊，記錄每個人的姓名、帳號、電子郵件、部門以及所屬群組。",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 11,
+    "original": "公司員工目錄",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 12,
+    "original": "example.test",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 13,
+    "original": "研發部",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 14,
+    "original": "小林",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 15,
+    "original": "小陳",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 16,
+    "original": "人事部",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 17,
+    "original": "小王",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 18,
+    "original": "小張",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 19,
+    "original": "財務部",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 20,
+    "original": "小李",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 21,
+    "original": "小黃",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 22,
+    "original": "簡化的示意圖：真實企業目錄可能還有子部門、電腦、群組和多個網域。",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-directory-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 23,
+    "original": "現在你走到公司人事部櫃檯，問：",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 24,
+    "original": "「請問研發部有哪些員工？」",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 25,
+    "original": "櫃檯回答：「小林、小陳。」",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 26,
+    "original": "你可能會認為研發部只有兩個人。但實際上，還可能有以下情況：",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 27,
+    "original": "- 櫃檯只查了研發部的直屬員工，沒有查下面的子部門。\n- 你的身分只能查看部分員工資料。\n- 系統每次最多顯示兩筆，後面還有更多。\n- 櫃檯依照你設定的條件，只找出某一類員工。",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 28,
+    "original": "所以，查到兩筆資料，不等於整個資料庫只有兩筆。",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 29,
+    "original": "這就是本課最重要的邏輯。",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 30,
+    "original": "## 二、LDAP 和 Active Directory 到底是什麼？",
+    "adoption": "body-preserved",
+    "target": "section-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 31,
+    "original": "這兩個名詞經常一起出現，但不是同一件事。",
+    "adoption": "body-preserved",
+    "target": "section-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 32,
+    "original": "| 名詞                                      | 白話意思              | 主要作用               |\n| --------------------------------------- | ----------------- | ------------------ |\n| LDAP                                    | 查詢員工名冊的溝通語言       | 告訴目錄系統要查什麼         |\n| Active Directory Domain Services（AD DS） | 企業的集中式帳號與目錄管理系統   | 管理使用者、群組、電腦及相關目錄資訊 |\n| Domain Controller（DC）                   | 提供網域身分驗證及目錄服務的伺服器 | 處理相關驗證及目錄請求        |\n| Enumeration                             | 依條件蒐集、整理資訊        | 盤點指定範圍內可見的帳號、群組等資訊 |",
+    "adoption": "body-preserved",
+    "target": "section-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 33,
+    "original": "例如，一位員工登入公司 Windows 電腦時，電腦可能需要透過網域控制站完成身分驗證；公司管理員也可能利用 LDAP 查詢某位員工所屬的群組。",
+    "adoption": "body-preserved",
+    "target": "section-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 34,
+    "original": "但要注意：AD 不只使用 LDAP。 在 Windows 網域環境中，Kerberos、DNS 等技術同樣重要。",
+    "adoption": "body-preserved",
+    "target": "section-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 35,
+    "original": "用一句話區分：",
+    "adoption": "body-preserved",
+    "target": "section-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 36,
+    "original": "AD 是管理資料與身分的系統，LDAP 是存取目錄資料的協定。",
+    "adoption": "body-preserved",
+    "target": "section-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 37,
+    "original": "## 三、先看懂目錄的結構：DN、OU、CN、DC",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 38,
+    "original": "LDAP 的資料不是像 Excel 那樣，單純把所有員工放在一張表裡，而是有階層結構。",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 39,
+    "original": "假設你看到：",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 40,
+    "original": "```\nCN=Lin,OU=People,DC=example,DC=test\n```",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 41,
+    "original": "這就是 Distinguished Name（DN），可以把它理解成「員工資料在目錄中的完整地址」。",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 42,
+    "original": "| 縮寫 | 意思                  | 白話解釋           |\n| -- | ------------------- | -------------- |\n| CN | Common Name         | 這筆資料的名稱，例如 Lin |\n| OU | Organizational Unit | 組織單位，例如 People |\n| DC | Domain Component    | 網域名稱的組成部分      |\n| DN | Distinguished Name  | 整筆資料在目錄中的識別路徑  |",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 43,
+    "original": "這串 DN 就像告訴你：",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 44,
+    "original": "「請到 example.test 公司目錄的 People 單位，找 Lin 這筆資料。」",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 45,
+    "original": "要小心：`DC=example` 的 DC 是 Domain Component，不是前面提到的 Domain Controller。兩者剛好縮寫相同。",
+    "adoption": "body-preserved",
+    "target": "directory-names"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 46,
+    "original": "## 四、Base、Scope、Filter、Attributes：LDAP 查詢的四大設定",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 47,
+    "original": "這一節是本課最需要理解的地方。",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 48,
+    "original": "假設你正在幫公司盤點帳號。你必須先告訴查詢系統：「從哪裡開始、查到多深、找什麼人，以及想看哪些資料。」",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 49,
+    "original": "## 一次 LDAP 查詢的四個問題",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 50,
+    "original": "01",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 51,
+    "original": "Base",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 52,
+    "original": "從哪裡開始查？",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 53,
+    "original": "People 單位",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 54,
+    "original": "02",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 55,
+    "original": "Scope",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 56,
+    "original": "往下查幾層？",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 57,
+    "original": "只查直屬或所有子層",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 58,
+    "original": "03",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 59,
+    "original": "Filter",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 60,
+    "original": "找符合什麼條件的人？",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 61,
+    "original": "只找使用者帳號",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 62,
+    "original": "04",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 63,
+    "original": "Attributes",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 64,
+    "original": "要讀取哪些欄位？",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 65,
+    "original": "姓名、電子郵件",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 66,
+    "original": "其中 Scope（搜尋範圍）又分成三種。",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 67,
+    "original": "| Scope       | 白話說明       | 搜尋深度       |\n| ----------- | ---------- | ---------- |\n| `base`      | 只檢查指定的那個項目 | 起點本身       |\n| `one-level` | 只查看直接下一層   | 不包含起點及更深子層 |\n| `subtree`   | 從起點往下逐層查詢  | 包含起點和所有後代  |",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 68,
+    "original": "這是 LDAP 標準搜尋模型，也是 Microsoft AD 查詢 API 所採用的基本概念。",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 69,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 70,
+    "original": "RFC Editor+1",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 71,
+    "original": "### 用一個互動例子理解 Scope",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-scope-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 72,
+    "original": "BaseOne-levelSubtree",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-scope-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 73,
+    "original": "符合本次搜尋深度的項目（尚未套用 Filter 或權限）",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-scope-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 74,
+    "original": "只看 People 的直接下一層",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-scope-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 75,
+    "original": "會檢查 Lin、Chen 和研發小組這個項目，但不會進一步查到 Wang、Li。",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-scope-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 76,
+    "original": "這裡就能發現一個重要陷阱：",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 77,
+    "original": "假設公司有 500 個使用者，你使用 `one-level` 只查到 20 人，就不能說公司只有 20 人。因為其他員工可能藏在下一層的子部門。",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 78,
+    "original": "另外，即使使用 `subtree`，也不代表一定查完整個公司的所有網域。Subtree 只能保證從你指定的 Base 往下搜尋，不會自動涵蓋整個 AD 樹系。",
+    "adoption": "body-preserved",
+    "target": "section-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 79,
+    "original": "## 五、RootDSE 和 Global Catalog：為什麼有不同查詢入口？",
+    "adoption": "body-preserved",
+    "target": "section-3"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 80,
+    "original": "想像一家跨國企業，在台灣、美國、日本分別有員工管理系統。",
+    "adoption": "body-preserved",
+    "target": "section-3"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 81,
+    "original": "你向台灣的管理員詢問，得到的資料不一定包含美國、日本的全部員工。",
+    "adoption": "body-preserved",
+    "target": "section-3"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 82,
+    "original": "AD 也有類似問題。",
+    "adoption": "body-preserved",
+    "target": "section-3"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 83,
+    "original": "### RootDSE：伺服器的服務說明牌",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 84,
+    "original": "RootDSE 是 LDAP 伺服器提供自身資訊的特殊項目。",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 85,
+    "original": "你可以透過它了解伺服器支援哪些功能，以及目錄的相關入口。",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 86,
+    "original": "例如 `defaultNamingContext` 可以幫你知道預設網域的查詢起點。",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 87,
+    "original": "但讀到 RootDSE 不代表有權限讀取所有員工帳號，也不代表取得了完整的 AD 地圖。",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 88,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 89,
+    "original": "Microsoft Learn",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 90,
+    "original": "### Global Catalog（GC）：跨網域的索引",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 91,
+    "original": "GC 可以理解為一份跨網域的索引，讓你不用每次都先知道資料位於哪個網域。",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 92,
+    "original": "但它有一個重要限制：GC 對其他網域通常保留每個物件的部分屬性，不是所有欄位的完整副本。",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 93,
+    "original": "所以查 GC 時沒有看到某個欄位，未必表示原始目錄沒有這個資料。",
+    "adoption": "body-preserved",
+    "target": "section-3-sub-2"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 94,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 95,
+    "original": "Microsoft Learn",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 96,
+    "original": "## 六、LDAP Bind、權限與 TLS：登入成功不代表什麼都能查",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 97,
+    "original": "假設你拿公司員工證進入辦公大樓。",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 98,
+    "original": "門禁確認你是員工，並不代表你可以進入董事長辦公室、機房或財務室。",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 99,
+    "original": "LDAP 也要分清楚三種不同問題。",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 100,
+    "original": "| 安全概念                     | 白話意思     | 能證明什麼                  |\n| ------------------------ | -------- | ---------------------- |\n| Authentication（驗證）       | 你是誰？     | 目前採用何種驗證身分             |\n| Authorization（授權）        | 你能看什麼？   | 可存取哪些物件或欄位             |\n| Transport Security（傳輸安全） | 傳輸途中安全嗎？ | 有沒有提供加密、完整性與伺服器身分驗證等保護 |",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 101,
+    "original": "LDAP 的 Bind 與身分驗證狀態有關。即使 Bind 成功，也不能推論目前身分可以讀取所有資料。",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 102,
+    "original": "另外，LDAP 的傳輸安全常見下列方式。",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 103,
+    "original": "| 技術              | 常見 Port  | 重點                            |\n| --------------- | -------- | ----------------------------- |\n| LDAP            | TCP 389  | 協定本身不代表已加密                    |\n| LDAP + StartTLS | TCP 389  | 在 LDAP 連線上協商啟動 TLS            |\n| LDAPS           | TCP 636  | 連線開始就使用 TLS                   |\n| LDAP Signing    | 依驗證與傳輸方式 | 為適用的非 TLS SASL 連線提供訊息完整性及來源驗證 |",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 104,
+    "original": "LDAP Signing 不等於加密。",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 105,
+    "original": "簽章比較像防止文件被偷偷修改；加密則是讓傳輸內容不容易被旁人看懂。TLS 可提供機密性、完整性和伺服器身分驗證，但必須正確建立 TLS 連線並驗證憑證。",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 106,
+    "original": "而在 Microsoft AD 中，LDAP Signing 主要適用於非 TLS 的 SASL 工作階段，不應誤認它是所有 LDAP 連線都額外套用的獨立保護。",
+    "adoption": "body-preserved",
+    "target": "section-4"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 107,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 108,
+    "original": "RFC Editor+1",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 109,
+    "original": "## 七、最重要的案例：`sizeLimitExceeded` 是什麼？",
+    "adoption": "body-preserved",
+    "target": "section-5"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 110,
+    "original": "回到正式教材的情境。",
+    "adoption": "body-preserved",
+    "target": "section-5"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 111,
+    "original": "你被授權查詢公司 People 單位的帳號，工具顯示：",
+    "adoption": "body-preserved",
+    "target": "section-5"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 112,
+    "original": "LDAP Search Result",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 113,
+    "original": "未完整取得結果",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 114,
+    "original": "Base",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 115,
+    "original": "OU=People,...",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 116,
+    "original": "Scope",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 117,
+    "original": "subtree",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 118,
+    "original": "Requested attribute",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 119,
+    "original": "cn",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 120,
+    "original": "Size limit",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 121,
+    "original": "2",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 122,
+    "original": "| Entry 1 | Lin  |\n| ------- | ---- |\n| Entry 2 | Chen |",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 123,
+    "original": "Result Code",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 124,
+    "original": "4",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 125,
+    "original": "sizeLimitExceeded",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 126,
+    "original": "這是教學用合成資料，並非實際查詢結果。",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-result-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 127,
+    "original": "`sizeLimitExceeded` 的意思是：「這次搜尋達到筆數限制，沒有正常收完。」",
+    "adoption": "body-preserved",
+    "target": "section-5"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 128,
+    "original": "RFC 4511 確實定義了 `success = 0`、`timeLimitExceeded = 3`、`sizeLimitExceeded = 4` 等結果代碼。",
+    "adoption": "body-preserved",
+    "target": "section-5"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 129,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 130,
+    "original": "RFC Editor",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 131,
+    "original": "因此，你目前只能確認：這次查詢取得了兩筆資料，但完整數量尚未確定。",
+    "adoption": "body-preserved",
+    "target": "section-5"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 132,
+    "original": "更重要的是，因為你只要求回傳 `cn`，所以沒有電子郵件欄位並不能證明員工沒有電子郵件。",
+    "adoption": "body-preserved",
+    "target": "section-5"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 133,
+    "original": "### 那要怎麼把後面的資料查出來？",
+    "adoption": "body-preserved",
+    "target": "section-5-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 134,
+    "original": "可以使用 Paging（分頁搜尋）。",
+    "adoption": "body-preserved",
+    "target": "section-5-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 135,
+    "original": "想像有一本 500 頁的名冊，一次只允許印出 100 頁。你就要分五次取回，並且確認有沒有全部收到。",
+    "adoption": "body-preserved",
+    "target": "section-5-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 136,
+    "original": "LDAP 的分頁搜尋可以透過伺服器提供的續查資訊（cookie）讀取下一批資料。",
+    "adoption": "body-preserved",
+    "target": "section-5-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 137,
+    "original": "第 1 頁",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-paging-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 138,
+    "original": "取得 100 筆",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-paging-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 139,
+    "original": "第 2 頁",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-paging-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 140,
+    "original": "取得 100 筆",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-paging-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 141,
+    "original": "後續頁面",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-paging-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 142,
+    "original": "直到查詢結束",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-paging-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 143,
+    "original": "每頁 100 筆是示例中的分頁大小，不代表實際總數。",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-paging-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 144,
+    "original": "但分頁只解決「資料分批取回」的問題，不會提升查詢者的權限，也不會自動擴大搜尋範圍。",
+    "adoption": "body-preserved",
+    "target": "section-5-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 145,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 146,
+    "original": "Microsoft Learn",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 147,
+    "original": "這裡還要記住一句話：",
+    "adoption": "body-preserved",
+    "target": "section-5-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 148,
+    "original": "`success` 代表這次 LDAP 操作成功完成，不代表你已經完成整個公司的帳號盤點。",
+    "adoption": "body-preserved",
+    "target": "section-5-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 149,
+    "original": "## 八、從 CEH 的觀點，為什麼需要學這個？",
+    "adoption": "body-preserved",
+    "target": "section-6"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 150,
+    "original": "在 CEH M04 Enumeration 中，最重要的是學會「根據服務回應判斷資訊暴露與可見範圍」。",
+    "adoption": "body-preserved",
+    "target": "section-6"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 151,
+    "original": "假設你正在執行一項經過授權的企業資安評估。你發現某個低權限帳號能夠查詢員工姓名、群組與組織架構。",
+    "adoption": "body-preserved",
+    "target": "section-6"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 152,
+    "original": "這時你要思考的不是單純「我查到幾個帳號」，而是：",
+    "adoption": "body-preserved",
+    "target": "section-6"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 153,
+    "original": "這些資訊是否原本就預期讓該帳號讀取？會不會暴露超出業務需要的資訊？目前看到的結果是否完整？又有哪些資料根本沒有被查詢？",
+    "adoption": "body-preserved",
+    "target": "section-6"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 154,
+    "original": "在防守方的角度，應該記錄查詢身分、伺服器、時間、Base、Scope、Filter、Attributes、結果代碼及分頁完成狀態，並以最小權限控制資料可見範圍。",
+    "adoption": "body-preserved",
+    "target": "section-6"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 155,
+    "original": "而且，看到大量 LDAP 查詢也不能直接判定正在遭受攻擊。合法的資產盤點與目錄同步服務，也可能產生大量查詢。",
+    "adoption": "body-preserved",
+    "target": "section-6"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 156,
+    "original": "### 最後整理：判斷 LDAP 查詢是否完整的六問框架",
+    "adoption": "body-preserved",
+    "target": "section-6-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 157,
+    "original": "| 要確認的問題                      | 如果沒確認，可能誤判什麼？ |\n| --------------------------- | ------------- |\n| 1. 用誰的身分查？                  | 以為低權限看到的就是全部  |\n| 2. Base 在哪裡？                | 把某單位誤當整個網域    |\n| 3. Scope 有多深？               | 漏掉子部門         |\n| 4. Filter 與 Attributes 是什麼？ | 漏掉符合其他條件的人或欄位 |\n| 5. 結果代碼與分頁狀態如何？             | 把未完成的結果當成完整   |\n| 6. 是否涵蓋所有必要目錄與網域？           | 以為單一網域等於整間公司  |",
+    "adoption": "body-preserved",
+    "target": "section-6-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 158,
+    "original": "這套邏輯不只適用於 LDAP，也能應用在其他服務列舉、API 分頁、資料庫查詢及資產盤點：先界定觀察範圍，再判斷證據支持什麼結論。",
+    "adoption": "body-preserved",
+    "target": "section-6-sub-1"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 159,
+    "original": "## 理解測驗｜CEH M04-08",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 160,
+    "original": "假設你是一位受委託的資安稽核人員，正在盤點企業的 AD 帳號。",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 161,
+    "original": "你使用已驗證的低權限帳號，經過有效的 TLS 連線執行 LDAP 查詢：",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 162,
+    "original": "查詢紀錄",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 163,
+    "original": "Base: OU=People,DC=example,DC=test\\\nScope: one-level\\\nAttributes: cn\\\nResult: 20 entries\\\nResult Code: success (0)",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 164,
+    "original": "同事看完後說：「我們已經確認 People 單位及所有子部門總共只有 20 個人，而且這些人都沒有電子郵件。」",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 165,
+    "original": "請你回答三個問題：",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 166,
+    "original": "Q1. 同事的結論有哪些地方不正確？",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 167,
+    "original": "Q2. 如果要查詢 People 單位下所有子部門的員工，應優先調整哪一個查詢設定？",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 168,
+    "original": "Q3. 既然結果顯示 `success (0)`，為什麼仍然不能保證這 20 筆就是全部？",
+    "adoption": "body-preserved",
+    "target": "section-7"
+  },
+  {
+    "source": "pasted-text-1.txt",
+    "paragraph": 169,
+    "original": "你可以直接回答 Q1～Q3。我會依照 CEH 的觀念逐題批改，並解釋背後的 Windows AD、LDAP 和資安工程原理。",
+    "adoption": "conversation-replaced-with-editorial-answers",
+    "target": "answer-ldap-completeness"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 1,
+    "original": "# LDAP 是什麼？從零開始的白話教學",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 2,
+    "original": "LDAP 可以把它想成「公司查詢員工名冊的一套標準溝通方法」。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 3,
+    "original": "假設一家公司有 3,000 名員工，每個人都有電腦帳號、密碼、電子郵件、部門和不同的系統權限。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 4,
+    "original": "公司不可能要求每套系統都自己維護一份員工資料。否則員工一離職，IT 人員可能要去十幾套系統刪除他的帳號。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 5,
+    "original": "因此，公司會建立集中式的「目錄服務」（Directory Service），而 LDAP 就是讓其他軟體可以跟這個目錄服務溝通的協定。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 6,
+    "original": "## 一、先從一間公司的實際情況理解",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 7,
+    "original": "假設有一家「Kairos 科技公司」。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 8,
+    "original": "公司中央員工目錄",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-central-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 9,
+    "original": "記錄帳號、姓名、部門、群組等資訊",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-central-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 10,
+    "original": "員工電腦",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-central-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 11,
+    "original": "檔案系統",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-central-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 12,
+    "original": "內部網站",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-central-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 13,
+    "original": "各系統可以透過 LDAP 向中央目錄查詢資料。實際登入與授權流程也可能使用 Kerberos 等其他協定。",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-central-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 14,
+    "original": "現在有位員工叫小明。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 15,
+    "original": "小明打開公司內部系統，輸入帳號 `ming` 和密碼。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 16,
+    "original": "這套系統不一定自己保存小明的密碼，而是可能透過 LDAP 與中央目錄服務確認身分。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 17,
+    "original": "系統可以詢問：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 18,
+    "original": "- 有沒有 `ming` 這個帳號？\n- 他是不是合法的使用者？\n- 他屬於哪個部門？\n- 他是不是管理員群組的成員？",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 19,
+    "original": "中央目錄依照驗證方式、權限和查詢條件回應，系統再決定小明能否進入以及能使用哪些功能。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 20,
+    "original": "這樣就能集中管理員工帳號，而不是每套軟體都重做一次。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 21,
+    "original": "## 二、LDAP 的英文全名是什麼？",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 22,
+    "original": "LDAP = Lightweight Directory Access Protocol",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 23,
+    "original": "拆開來看：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 24,
+    "original": "| 英文          | 中文   | 白話理解                 |\n| ----------- | ---- | -------------------- |\n| Lightweight | 輕量型  | 相對早期 X.500 目錄存取方式較簡化 |\n| Directory   | 目錄   | 像一本有組織的員工電話簿         |\n| Access      | 存取   | 查詢、讀取，或在授權下修改資料      |\n| Protocol    | 通訊協定 | 雙方講話都遵守的共同規則         |",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 25,
+    "original": "這裡有個非常重要的觀念：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 26,
+    "original": "LDAP 本身不是一套資料庫，也不是一台伺服器，而是一種通訊協定。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 27,
+    "original": "這是 IETF RFC 4511 與 Microsoft LDAP 文件中的基本定位。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 28,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 29,
+    "original": "RFC Editor+1",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 30,
+    "original": "## 三、LDAP、Active Directory、Domain Controller 有什麼不同？",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 31,
+    "original": "這三個名詞最容易搞混。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 32,
+    "original": "我們把它們想成一間公司的行政系統。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 33,
+    "original": "| 名詞                    | 角色             | 比喻            |\n| --------------------- | -------------- | ------------- |\n| LDAP                  | 通訊協定           | 向人事部詢問資料的標準語言 |\n| Active Directory（AD）  | 目錄及身分管理系統      | 公司的人事與帳號管理體系  |\n| Domain Controller（DC） | 提供 AD 網域服務的伺服器 | 實際提供服務的人事辦公室  |",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 34,
+    "original": "例如，Windows Server 可以部署 Active Directory Domain Services（AD DS）。其他應用程式可以透過 LDAP 查詢其目錄資訊。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 35,
+    "original": "但 AD 並不只有 LDAP，還會運用 Kerberos、DNS、Group Policy 等技術。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 36,
+    "original": "而 LDAP 也不是只能搭配 Microsoft AD。OpenLDAP 等其他目錄服務同樣支援 LDAP。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 37,
+    "original": "## 四、LDAP 裡面的資料長什麼樣？",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 38,
+    "original": "假設公司保存小明的資料。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 39,
+    "original": "員工資料：小明",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-entry-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 40,
+    "original": "示意 LDAP Entry（目錄項目）",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-entry-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 41,
+    "original": "| cn   | 小明                 |\n| ---- | ------------------ |\n| uid  | ming               |\n| mail | ming\\@example.test |\n| ou   | Engineering        |",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-entry-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 42,
+    "original": "這是簡化的通用 LDAP 示意。不同目錄服務採用的帳號屬性不一定相同，例如 AD 常使用 sAMAccountName。",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-entry-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 43,
+    "original": "LDAP 會用 DN（Distinguished Name）表示一筆資料在目錄中的位置。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 44,
+    "original": "例如：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 45,
+    "original": "```\ncn=Ming,ou=People,dc=example,dc=test\n```",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 46,
+    "original": "這串文字可以這樣讀：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 47,
+    "original": "- `cn=Ming`：找 Ming 這個項目。\n- `ou=People`：它位於 People 組織單位。\n- `dc=example,dc=test`：所屬的網域目錄是 example.test。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 48,
+    "original": "你可以把 DN 想成一個人的完整地址，不只是他的姓名。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 49,
+    "original": "## 五、一次 LDAP 查詢是怎麼發生的？",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 50,
+    "original": "假設公司管理員想知道研發部有哪些員工。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 51,
+    "original": "1\\. 應用程式或管理員",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-search-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 52,
+    "original": "我要查詢研發部員工",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-search-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 53,
+    "original": "2\\. 送出 LDAP Search",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-search-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 54,
+    "original": "指定搜尋位置、範圍與條件",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-search-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 55,
+    "original": "3\\. 目錄伺服器",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-search-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 56,
+    "original": "根據條件與存取權限查詢資料",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-search-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 57,
+    "original": "4\\. 回傳結果",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-search-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 58,
+    "original": "小明、小華、小美……以及查詢狀態",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-search-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 59,
+    "original": "LDAP Search 有四個基本觀念：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 60,
+    "original": "| 設定         | 問題       | 例子       |\n| ---------- | -------- | -------- |\n| Base       | 從哪裡開始找？  | People   |\n| Scope      | 往下找多深？   | 包含全部子部門  |\n| Filter     | 找符合什麼條件？ | 只找使用者    |\n| Attributes | 要哪些資料欄位？ | 姓名、Email |",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 61,
+    "original": "例如 LDAP 的篩選條件：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 62,
+    "original": "```\n(cn=Ming)\n```",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 63,
+    "original": "意思是：找出 `cn` 等於 `Ming` 的目錄項目。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 64,
+    "original": "再例如：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 65,
+    "original": "```\n(mail=*)\n```",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 66,
+    "original": "意思是：找出有 `mail` 屬性的項目。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 67,
+    "original": "在正式環境中，LDAP 還有 Bind（建立驗證身分）、Modify（修改）、Add（新增）等操作；具體能否執行取決於伺服器與權限設定。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 68,
+    "original": "## 六、LDAP 安全嗎？為什麼 CEH 需要學它？",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 69,
+    "original": "LDAP 本身不保證傳輸已加密，因此安全設定很重要。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 70,
+    "original": "| 方式              | 常見 TCP Port | 安全重點                 |\n| --------------- | ----------- | -------------------- |\n| LDAP            | 389         | 不能只因使用 LDAP 就認為資料已加密 |\n| LDAP + StartTLS | 389         | 在既有連線上協商 TLS         |\n| LDAPS           | 636         | 一開始就建立 TLS 保護        |",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 71,
+    "original": "使用 TLS 時，也需要正確驗證伺服器憑證，才不會錯誤地信任冒充的伺服器。Microsoft 也建議使用適當的 TLS 或 SASL 保護 LDAP 通訊。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 72,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 73,
+    "original": "Microsoft Learn+1",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 74,
+    "original": "從 CEH（道德駭客）角度，LDAP 很值得學，因為企業目錄可能記錄大量組織資訊。若權限設定不當，未經授權的人可能取得本不應開放的帳號與群組資訊。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 75,
+    "original": "但要記得：",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 76,
+    "original": "查得到某個帳號，不代表知道他的密碼；能成功登入 LDAP，也不代表擁有管理員權限。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 77,
+    "original": "## 七、最後用四個問題整理",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-7"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 78,
+    "original": "1. LDAP 是什麼？ 一套讓軟體存取目錄服務的通訊協定。\n2. LDAP 用來做什麼？ 查詢帳號、群組、組織資料，並支援身分驗證及授權管理的相關流程。\n3. LDAP 和 AD 一樣嗎？ 不一樣。LDAP 是協定，AD 是微軟的目錄與身分管理技術。\n4. LDAP 是不是安全的？ 取決於驗證、存取權限及傳輸保護等設定。",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-7"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 79,
+    "original": "## 小測驗：確認你是否真的理解",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-8"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 80,
+    "original": "1\\. 一間公司使用 Active Directory 管理員工帳號。另一套內部系統需要查詢員工資料，通常可以使用什麼協定？",
+    "adoption": "body-preserved",
+    "target": "ldap-introduction-sub-8"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 81,
+    "original": "LDAP",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 82,
+    "original": "HDMI",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 83,
+    "original": "USB",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 84,
+    "original": "2\\. 如果 LDAP 查詢找到小明的帳號，代表什麼？",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 85,
+    "original": "已經取得小明的密碼",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 86,
+    "original": "確認查詢範圍內有符合條件且可見的帳號資料",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 87,
+    "original": "已取得公司管理員權限",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 88,
+    "original": "3\\. LDAP 與 Active Directory 的關係，哪個比較正確？",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 89,
+    "original": "兩者是完全相同的產品",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 90,
+    "original": "LDAP 是協定；AD 是可支援 LDAP 的目錄管理系統",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 91,
+    "original": "LDAP 只能在 Windows 使用",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 92,
+    "original": "檢查答案與查看解析",
+    "adoption": "native-reference-answer",
+    "target": "answer-ldap-ldap"
+  },
+  {
+    "source": "pasted-text-2.txt",
+    "paragraph": 93,
+    "original": "學完 LDAP 後，下一個最有價值的主題是 Active Directory 如何利用 LDAP、Kerberos 和 DNS 共同完成企業帳號登入與權限管理。這能把 CEH 的列舉知識與真正的 Windows 網路工程串在一起。",
+    "adoption": "body-preserved",
+    "target": "directory-overview"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 1,
+    "original": "# Kerberos 是什麼？從零開始的白話教學",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 2,
+    "original": "Kerberos 是一種「身分驗證協定」（Authentication Protocol）。它最重要的特色是：透過加密票證（Ticket），讓你不必每次存取公司系統都重新輸入密碼。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 3,
+    "original": "你可以把 Kerberos 想成「公司的中央門禁與通行證制度」。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 4,
+    "original": "前面學過的 LDAP 是用來查詢公司員工名冊；Kerberos 則是用來證明「你確實是某位員工」。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 5,
+    "original": "先記住兩句話：",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 6,
+    "original": "- LDAP：查詢你是誰、屬於哪個部門。\n- Kerberos：使用加密票證證明你的身分。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 7,
+    "original": "兩者經常一起出現在 Active Directory（AD）環境，但負責不同工作。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 8,
+    "original": "## 一、為什麼公司需要 Kerberos？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 9,
+    "original": "假設 Kairos 科技公司有 3,000 名員工，每個人每天需要使用許多系統。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 10,
+    "original": "員工小明",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-sso-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 11,
+    "original": "上午 9:00 登入公司電腦",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-sso-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 12,
+    "original": "檔案伺服器",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-sso-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 13,
+    "original": "資料庫",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-sso-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 14,
+    "original": "內部網站",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-sso-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 15,
+    "original": "問題：每進入一套系統，都要重新輸入帳號密碼嗎？",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-sso-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 16,
+    "original": "如果所有系統都支援適當的 Kerberos 整合，就可以減少重複登入。",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-sso-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 17,
+    "original": "傳統上，如果每套系統各自處理帳號和密碼，就可能造成大量重複驗證與密碼管理問題。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 18,
+    "original": "Kerberos 提供另一個方式：第一次登入時，先向可信任的中央驗證服務證明身分，取得一張可以用來申請其他票證的憑證。之後要存取不同服務，再取得相應的服務票證。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 19,
+    "original": "這也是它能支援 Single Sign-On（SSO，單一登入）的原因。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-1"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 20,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 21,
+    "original": "Microsoft Learn+1",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 22,
+    "original": "## 二、用「遊樂園通行證」理解 Kerberos",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 23,
+    "original": "假設你去一座大型遊樂園。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 24,
+    "original": "遊樂園有三個區域：雲霄飛車、海盜船和水族館。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 25,
+    "original": "你的入園流程可以分成三個階段。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 26,
+    "original": "第一階段：先證明你是合法遊客",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 27,
+    "original": "你到入口驗證身分，工作人員發給你一張「可以申請各區門票的通行證」。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 28,
+    "original": "這張通行證就像 Kerberos 的 TGT（Ticket-Granting Ticket）。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 29,
+    "original": "第二階段：取得指定設施的門票",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 30,
+    "original": "你想搭雲霄飛車，就拿通行證到票務中心，申請一張雲霄飛車專用的門票。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 31,
+    "original": "這張門票就是 Service Ticket（服務票證）。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 32,
+    "original": "第三階段：進入指定設施",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 33,
+    "original": "你到雲霄飛車入口，出示專用門票。工作人員確認票證有效後，再依照設施規定決定是否讓你搭乘。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 34,
+    "original": "這就像目標服務驗證 Kerberos 票證，並進一步檢查存取權限。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 35,
+    "original": "最關鍵的是：你不必每次都回入口重新證明身分，但也不是拿到通行證就能自由進入所有區域。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 36,
+    "original": "TGT 用來申請服務票證；Service Ticket 則用來向特定服務證明身分。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-2"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 37,
+    "original": "## 三、Kerberos 真正的運作原理",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 38,
+    "original": "Kerberos 主要涉及三個角色。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 39,
+    "original": "| 角色     | 英文名稱                         | 功能        |\n| ------ | ---------------------------- | --------- |\n| 使用者／電腦 | Client                       | 想要存取資源    |\n| 中央驗證中心 | KDC（Key Distribution Center） | 驗證身分、核發票證 |\n| 服務伺服器  | Service Server               | 驗證票證並提供服務 |",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 40,
+    "original": "在 Windows Active Directory 環境中，KDC 通常執行於 Domain Controller（DC，網域控制站）。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 41,
+    "original": "KDC 內部又分為兩個邏輯功能：AS（Authentication Service）負責核發 TGT，TGS（Ticket-Granting Service）負責核發服務票證。它們不一定是兩台不同的電腦。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 42,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 43,
+    "original": "Microsoft Learn+1",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 44,
+    "original": "## Kerberos 的三階段票證流程",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 45,
+    "original": "小明的電腦",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 46,
+    "original": "KDC / AS",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 47,
+    "original": "請求初始票證並證明身分",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 48,
+    "original": "取得 TGT",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 49,
+    "original": "階段 1：初始驗證（AS Exchange）",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 50,
+    "original": "小明的電腦",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 51,
+    "original": "KDC / TGS",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 52,
+    "original": "使用 TGT 申請檔案伺服器票證",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 53,
+    "original": "取得 Service Ticket",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 54,
+    "original": "階段 2：服務票證申請（TGS Exchange）",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 55,
+    "original": "小明的電腦",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 56,
+    "original": "檔案伺服器",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 57,
+    "original": "出示服務票證與驗證資訊",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 58,
+    "original": "驗證成功後，依權限存取",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 59,
+    "original": "階段 3：服務身分驗證（AP Exchange）",
+    "adoption": "figure",
+    "target": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 60,
+    "original": "這個流程是 Kerberos V5 的基本設計，定義於 [IETF RFC 4120](https://www.rfc-editor.org/rfc/rfc4120?utm_source=chatgpt.com)。",
+    "adoption": "canonical-rfc-url",
+    "target": "kerberos-introduction-sub-3"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 61,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 62,
+    "original": "RFC Editor",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 63,
+    "original": "### 那麼，加密到底發生在哪裡？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 64,
+    "original": "Kerberos 並不是把密碼直接交給所有伺服器。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 65,
+    "original": "以常見的密碼式驗證來說：",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 66,
+    "original": "1. 小明的電腦使用密碼衍生出的金鑰，證明自己掌握正確的驗證資訊。\n2. KDC 驗證後，核發加密的 TGT 與對應的工作階段金鑰資訊。\n3. 小明需要存取檔案伺服器時，用 TGT 向 KDC 申請服務票證。\n4. KDC 核發由目標服務可驗證的加密票證。\n5. 檔案伺服器檢查票證及相關驗證資訊。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 67,
+    "original": "因此，在標準密碼式 Kerberos 流程中，使用者的明文密碼不需要直接在網路上傳送給服務伺服器。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 68,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 69,
+    "original": "Microsoft Learn",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 70,
+    "original": "而且票證還有有效期限、加密保護與防止重播的驗證機制。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 71,
+    "original": "不過，Kerberos 主要負責身分驗證，不能因此認為所有後續應用資料都自動加密。資料傳輸是否受到保護，仍取決於應用協定，例如 HTTPS、SMB 加密或其他安全設定。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-4"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 72,
+    "original": "## 四、為什麼 Kerberos 很在意電腦時間？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 73,
+    "original": "這是資訊工程和 CEH 特別重要的知識。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 74,
+    "original": "假設小明的電腦時間是上午 9:00，但公司的 Domain Controller 認為現在是上午 9:20。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 75,
+    "original": "Kerberos 使用時間戳記來協助抵抗重播攻擊（Replay Attack）。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 76,
+    "original": "如果時間差距太大，伺服器可能拒絕驗證，因為它無法信任驗證資訊的時間有效性。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 77,
+    "original": "在一般 Windows AD 設定中，預設允許的時間偏差通常是 5 分鐘，而且可以依政策調整。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 78,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 79,
+    "original": "Microsoft Learn+1",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 80,
+    "original": "這也解釋了為什麼企業網路很重視 NTP（Network Time Protocol）與 Windows 時間同步服務。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 81,
+    "original": "你在 CEH M04 學習 NTP 列舉時，可以將兩者連在一起理解：時間同步不只是讓電腦時鐘準確，它也可能直接影響身分驗證的可靠性。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-5"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 82,
+    "original": "## 五、LDAP、Kerberos、Active Directory、DNS 如何一起運作？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 83,
+    "original": "這四者的分工可以用一張表串起來。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 84,
+    "original": "| 技術               | 核心問題         | 主要功能            |\n| ---------------- | ------------ | --------------- |\n| DNS              | 伺服器在哪裡？      | 名稱解析與服務定位       |\n| LDAP             | 目錄裡有哪些資料？    | 查詢使用者、群組及其他目錄資訊 |\n| Kerberos         | 如何證明你的身分？    | 利用加密票證進行驗證      |\n| Active Directory | 誰來管理這些身分與目錄？ | 提供網域帳號、目錄與管理機制  |",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 85,
+    "original": "舉個例子：",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 86,
+    "original": "當小明登入公司 Windows 網域電腦，並且打開共用資料夾時，DNS 可協助找到網域服務或目標主機；Kerberos 可以完成身分驗證；AD 提供相關帳號和群組資訊；目標檔案伺服器再依權限決定能否讀取檔案。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 87,
+    "original": "LDAP 可能用於目錄查詢，但不是每次 Windows 網域登入都必須由用戶端直接發出 LDAP 查詢。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-6"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 88,
+    "original": "## 六、從 CEH 角度，Kerberos 有哪些安全風險？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-7"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 89,
+    "original": "Kerberos 是成熟的身分驗證協定，但不代表它不會被攻擊。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-7"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 90,
+    "original": "| 風險              | 白話意思                         | 主要防禦方向                   |\n| --------------- | ---------------------------- | ------------------------ |\n| Pass-the-Ticket | 偷走可用票證後，冒用票證持有者              | 保護端點、憑證與票證儲存環境           |\n| Kerberoasting   | 利用某些服務票證，嘗試離線猜測弱服務帳號密碼       | 強密碼、gMSA、適當加密演算法         |\n| Golden Ticket   | 在取得高度敏感的 Kerberos 金鑰後，偽造 TGT | 嚴格保護網域控制站與 KRBTGT 金鑰     |\n| Replay Attack   | 重送截取到的驗證訊息                   | 時間戳記、Authenticator 與重播檢查 |",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-7"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 91,
+    "original": "這些名稱不需要一次全部背起來。先記住安全邏輯：",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-7"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 92,
+    "original": "Kerberos 降低了每次傳送密碼的需求，但如果端點、票證或核心金鑰被竊取，仍然可能發生身分冒用。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-7"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 93,
+    "original": "在 Windows 網域稽核中，事件 ID 4768 可以用來觀察 TGT 申請，4769 則與服務票證申請有關。這些紀錄可協助辨識異常驗證活動，但單一事件本身不能直接證明遭到攻擊。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-7"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 94,
+    "original": "[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\\&sz=32)",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 95,
+    "original": "Microsoft Learn",
+    "adoption": "citation-widget-replaced",
+    "target": "section-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 96,
+    "original": "## 七、你可以在 Windows 電腦上看到 Kerberos 票證嗎？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 97,
+    "original": "可以。在你有權操作的 Windows 環境中，開啟 PowerShell 或命令提示字元：",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 98,
+    "original": "```\nklist\n```",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 99,
+    "original": "若你使用的是有 Kerberos 票證的登入工作階段，這個指令可以列出目前快取中的票證資訊，例如票證對應的服務、有效起訖時間等。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 100,
+    "original": "如果沒有看到票證，不一定代表 Kerberos 壞掉；也可能是目前使用本機帳號、尚未存取需要 Kerberos 的服務，或該工作階段使用其他驗證方式。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 101,
+    "original": "這個指令只是讀取資訊，不會主動修改網域設定。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-8"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 102,
+    "original": "## 八、三個觀念，確認你真的學會 Kerberos",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 103,
+    "original": "1\\. 小明登入公司電腦後，想要存取檔案伺服器。Kerberos 通常會讓他先使用什麼來申請服務票證？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 104,
+    "original": "TGT",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 105,
+    "original": "LDAP 查詢結果",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 106,
+    "original": "IP 位址",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 107,
+    "original": "2\\. 小明已經通過 Kerberos 驗證，是否代表他能讀取公司所有機密檔案？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 108,
+    "original": "是，驗證成功就擁有全部權限",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 109,
+    "original": "否，仍需由目標服務檢查授權",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 110,
+    "original": "3\\. 電腦與 Domain Controller 的時間相差 20 分鐘，可能造成什麼問題？",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 111,
+    "original": "Kerberos 可能因時間偏差而拒絕驗證",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 112,
+    "original": "LDAP 會自動刪除使用者",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 113,
+    "original": "所有服務票證永久有效",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 114,
+    "original": "檢查答案與查看解析",
+    "adoption": "native-reference-answer",
+    "target": "answer-ldap-kerberos"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 115,
+    "original": "本課最重要的結論：Kerberos 不負責決定你能看哪些機密資料，而是讓系統能夠安全地驗證「你是誰」。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  },
+  {
+    "source": "pasted-text-3.txt",
+    "paragraph": 116,
+    "original": "接下來最值得深入的是 Kerberos 的兩種票證——TGT 與 Service Ticket——以及為什麼知道密碼、持有票證、擁有系統權限，是三件不同的事。",
+    "adoption": "body-preserved",
+    "target": "kerberos-introduction-sub-9"
+  }
+]

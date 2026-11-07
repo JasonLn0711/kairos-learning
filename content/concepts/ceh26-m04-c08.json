@@ -1,462 +1,3470 @@
 {
   "id": "CEH26-M04-C08",
-  "revision": 2,
-  "contentVersion": "1.0.1",
-  "date": "2026-11-06",
+  "revision": 3,
+  "contentVersion": "1.1.0",
+  "date": "2026-11-07",
   "status": "published",
   "publishedOn": "2026-11-06",
   "qa": [],
   "text": {
     "zh": {
-      "summary": "核對 LDAP 查詢的身分、起點、範圍、欄位及結束狀態，判讀帳號盤點是否完整。",
+      "summary": "從查詢身分、Base、Scope、欄位與分頁完成狀態判讀 LDAP 列舉，並用完整 LDAP／Kerberos 入門串起目錄、票證與授權。",
       "sections": [],
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "先說結論：LDAP 查詢得到的是「這個身分，在這次查詢條件與限制下看見的資料」。要把它當成完整盤點，還得確認查詢範圍、權限、回傳欄位，以及結果是否收完。"
+          "text": "這一課的核心問題是："
         },
         {
           "kind": "paragraph",
-          "text": "這一課接續 LDAP 的基礎，回顧目錄位置、搜尋範圍及登入，並用一個新的合成案例，把它們串成「如何判讀結果」的完整流程。只討論合法授權的隔離環境，不對第三方目標操作。"
+          "text": "當你使用工具查詢一間公司的帳號資料，結果顯示有 2 個人，你能不能因此斷定，這間公司只有 2 個帳號？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "答案是：不行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你看到的結果，取決於你從哪裡查、用誰的身分查、設定什麼條件，以及查詢是否真的完成。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 CEH（Certified Ethical Hacker）M04 Enumeration（列舉）非常重要的觀念，同時也是 Windows Server、企業網路管理、Active Directory（AD）和資安稽核的基礎。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課以合成企業情境解釋協定原理與 CEH 判讀方法，並以文末的一手規範核對技術界線。"
+        },
+        {
+          "kind": "heading",
+          "id": "directory-overview",
+          "text": "一、先把 LDAP 想成公司的員工資料庫"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設有一家公司，員工有 500 人，分成研發部、人事部、財務部等單位。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "人事部有一份員工名冊，記錄每個人的姓名、帳號、電子郵件、部門以及所屬群組。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-directory-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜公司員工目錄",
+            "description": "連線表示目錄的隸屬關係，三個部門彼此平行；真實目錄還可能包含子部門、電腦、群組和多個網域。",
+            "items": [
+              {
+                "title": "公司員工目錄",
+                "body": "example.test"
+              },
+              {
+                "title": "研發部",
+                "body": "小林、小陳"
+              },
+              {
+                "title": "人事部",
+                "body": "小王、小張"
+              },
+              {
+                "title": "財務部",
+                "body": "小李、小黃"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在你走到公司人事部櫃檯，問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請問研發部有哪些員工？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "櫃檯回答：「小林、小陳。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能會認為研發部只有兩個人。但實際上，還可能有以下情況："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "櫃檯只查了研發部的直屬員工，沒有查下面的子部門。",
+            "你的身分只能查看部分員工資料。",
+            "系統每次最多顯示兩筆，後面還有更多。",
+            "櫃檯依照你設定的條件，只找出某一類員工。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，查到兩筆資料，不等於整個資料庫只有兩筆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是本課最重要的邏輯。"
         },
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "1. 把目錄想成公司的通訊錄"
+          "text": "二、LDAP 和 Active Directory 到底是什麼？"
         },
         {
           "kind": "paragraph",
-          "text": "通訊錄可能記錄同仁姓名、帳號、所屬部門與群組。你問櫃檯「研發部有哪些人」，櫃檯給了兩個名字，並不代表全公司只有兩個人：你問的範圍、可看的資料和是否還有下一頁，都會影響答案。"
+          "text": "這兩個名詞經常一起出現，但不是同一件事。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "名詞",
+            "白話意思",
+            "主要作用"
+          ],
+          "rows": [
+            [
+              "LDAP",
+              "查詢員工名冊的溝通語言",
+              "告訴目錄系統要查什麼"
+            ],
+            [
+              "Active Directory Domain Services（AD DS）",
+              "企業的集中式帳號與目錄管理系統",
+              "管理使用者、群組、電腦及相關目錄資訊"
+            ],
+            [
+              "Domain Controller（DC）",
+              "提供網域身分驗證及目錄服務的伺服器",
+              "處理相關驗證及目錄請求"
+            ],
+            [
+              "Enumeration",
+              "依條件蒐集、整理資訊",
+              "盤點指定範圍內可見的帳號、群組等資訊"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "LDAP，全名 Lightweight Directory Access Protocol，中文是「輕量型目錄存取協定」，就是程式向目錄查詢資料的一套溝通規則。Active Directory Domain Services，簡稱 AD DS，中文是「Active Directory 網域服務」，是微軟管理帳號、電腦與相關目錄資訊的服務。LDAP 是溝通方式，AD DS 是提供目錄服務的系統，兩者不是同義詞。"
+          "text": "例如，一位員工登入公司 Windows 電腦時，電腦可能需要透過網域控制站完成身分驗證；公司管理員也可能利用 LDAP 查詢某位員工所屬的群組。"
         },
         {
           "kind": "paragraph",
-          "text": "列舉，英文 Enumeration，在這裡是依條件整理可取得的目錄項目與屬性。防守方可用它盤點帳號及檢查資訊暴露；未經授權的人若讀到過多資料，也可能藉此了解組織結構。所以要控制誰能看什麼，不能只想著把協定一律關掉。"
+          "text": "但要注意：AD 不只使用 LDAP。 在 Windows 網域環境中，Kerberos、DNS 等技術同樣重要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "用一句話區分："
+        },
+        {
+          "kind": "paragraph",
+          "text": "AD 是管理資料與身分的系統，LDAP 是存取目錄資料的協定。"
+        },
+        {
+          "kind": "heading",
+          "id": "directory-names",
+          "text": "三、先看懂目錄的結構：DN、OU、CN、DC"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 的資料不是像 Excel 那樣，單純把所有員工放在一張表裡，而是有階層結構。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你看到："
+        },
+        {
+          "kind": "code",
+          "text": "CN=Lin,OU=People,DC=example,DC=test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 Distinguished Name（DN），可以把它理解成「員工資料在目錄中的完整地址」。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "縮寫",
+            "意思",
+            "白話解釋"
+          ],
+          "rows": [
+            [
+              "CN",
+              "Common Name",
+              "這筆資料的名稱，例如 Lin"
+            ],
+            [
+              "OU",
+              "Organizational Unit",
+              "組織單位，例如 People"
+            ],
+            [
+              "DC",
+              "Domain Component",
+              "網域名稱的組成部分"
+            ],
+            [
+              "DN",
+              "Distinguished Name",
+              "整筆資料在目錄中的識別路徑"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這串 DN 就像告訴你："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請到 example.test 公司目錄的 People 單位，找 Lin 這筆資料。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要小心：DC=example 的 DC 是 Domain Component，不是前面提到的 Domain Controller。兩者剛好縮寫相同。"
         },
         {
           "kind": "heading",
           "id": "section-2",
-          "text": "2. 先弄清楚你到底問了什麼"
+          "text": "四、Base、Scope、Filter、Attributes：LDAP 查詢的四大設定"
         },
         {
           "kind": "paragraph",
-          "text": "目錄中的一筆資料叫 Entry，中文可理解為「項目」；項目內的姓名、郵件等欄位叫 Attribute，也就是「屬性」。DN 是 Distinguished Name，「識別名稱」，用來描述項目在目錄階層中的位置。"
+          "text": "這一節是本課最需要理解的地方。"
         },
         {
           "kind": "paragraph",
-          "text": "例如合成資料 CN=Lin,OU=People,DC=example,DC=test，可讀成：example.test 目錄內 People 組織單位中的 Lin 項目。這裡 CN 是通用名稱，OU 是組織單位，DC 是網域名稱的組成部分。另一種常見用語 Domain Controller 也縮寫 DC，意思是「網域控制站」，不要與 DN 裡的 DC= 欄位混淆。"
+          "text": "假設你正在幫公司盤點帳號。你必須先告訴查詢系統：「從哪裡開始、查到多深、找什麼人，以及想看哪些資料。」"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-parameters-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜一次 LDAP 查詢的四個問題",
+            "description": "四個設定共同界定查詢，並列卡片不表示執行先後。",
+            "items": [
+              {
+                "title": "01 · Base",
+                "body": "從哪裡開始查？例如 People 單位。"
+              },
+              {
+                "title": "02 · Scope",
+                "body": "往下查幾層？只查直屬或包含所有子層。"
+              },
+              {
+                "title": "03 · Filter",
+                "body": "找符合什麼條件的人？例如只找使用者帳號。"
+              },
+              {
+                "title": "04 · Attributes",
+                "body": "要讀取哪些欄位？例如姓名、電子郵件。"
+              }
+            ]
+          }
         },
         {
           "kind": "paragraph",
-          "text": "一次搜尋至少要看清四件事："
+          "text": "其中 Scope（搜尋範圍）又分成三種。"
         },
         {
-          "kind": "list",
-          "items": [
-            "Base：從哪個項目開始找。",
-            "Scope：搜尋多深。base 只看起點本身；one-level 只看下一層，不含起點；subtree 看起點與底下各層。",
-            "Filter：只挑符合什麼條件的項目，例如特定類型或名稱。",
-            "Requested attributes：要求回傳哪些欄位。"
+          "kind": "table",
+          "headers": [
+            "Scope",
+            "白話說明",
+            "搜尋深度"
+          ],
+          "rows": [
+            [
+              "base",
+              "只檢查指定的那個項目",
+              "起點本身"
+            ],
+            [
+              "one-level",
+              "只查看直接下一層",
+              "不包含起點及更深子層"
+            ],
+            [
+              "subtree",
+              "從起點往下逐層查詢",
+              "包含起點和所有後代"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "這像向櫃檯說：「以研發部為起點，只查直接隸屬的人，只要符合某條件者，給我姓名即可。」你沒查子部門，也沒要求郵件欄位，就不能拿結果宣稱「子部門沒人、這些人都沒有郵件」。"
+          "text": "這是 LDAP 標準搜尋模型，也是 Microsoft AD 查詢 API 所採用的基本概念。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-sub-1",
+          "text": "用同一棵目錄比較三種 Scope"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-scope-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜同一棵目錄的三種搜尋深度",
+            "description": "連線只表示父子關係。綠框為 one-level 的候選：Lin、Chen、研發小組；尚未套用 Filter 或權限。base 只查 People；subtree 包含六個項目，不能自動跨到其他網域。",
+            "items": [
+              {
+                "title": "People",
+                "body": "查詢起點；base 的唯一候選"
+              },
+              {
+                "title": "Lin",
+                "body": "People 的直接子項目"
+              },
+              {
+                "title": "Chen",
+                "body": "People 的直接子項目"
+              },
+              {
+                "title": "研發小組",
+                "body": "People 的直接子項目；另有子項目"
+              },
+              {
+                "title": "Wang",
+                "body": "研發小組的子項目"
+              },
+              {
+                "title": "Li",
+                "body": "研發小組的子項目"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡就能發現一個重要陷阱："
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司有 500 個使用者，你使用 one-level 只查到 20 人，就不能說公司只有 20 人。因為其他員工可能藏在下一層的子部門。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，即使使用 subtree，也不代表一定查完整個公司的所有網域。Subtree 只能保證從你指定的 Base 往下搜尋，不會自動涵蓋整個 AD 樹系。"
         },
         {
           "kind": "heading",
           "id": "section-3",
-          "text": "3. AD 裡，查詢入口也有差別"
+          "text": "五、RootDSE 和 Global Catalog：為什麼有不同查詢入口？"
         },
         {
           "kind": "paragraph",
-          "text": "AD 的網域是組織目錄的一個管理範圍；樹系是由一個或多個網域構成的整體架構。這裡先記住：一個網域不必然等於整個樹系。"
+          "text": "想像一家跨國企業，在台灣、美國、日本分別有員工管理系統。"
         },
         {
           "kind": "paragraph",
-          "text": "RootDSE 是 LDAP 伺服器用來提供自身資訊的特殊項目，可以把它想成櫃檯的「服務說明牌」。它能告訴你伺服器有哪些目錄分割區、支援哪些能力。在 AD 中，defaultNamingContext 可幫你找到該伺服器的預設網域目錄起點。讀到說明牌，不代表已經拿到所有帳號，也不代表匿名身分可讀整份通訊錄。"
+          "text": "你向台灣的管理員詢問，得到的資料不一定包含美國、日本的全部員工。"
         },
         {
           "kind": "paragraph",
-          "text": "Global Catalog，簡稱 GC，中文是「通用類別目錄」，則像跨網域的索引。它能協助跨網域找物件，但對其他網域持有的是部分屬性的副本，不是每個物件所有欄位都在裡面。"
+          "text": "AD 也有類似問題。"
         },
         {
           "kind": "paragraph",
-          "text": "因此，某欄位沒出現在 GC 查詢結果中，可能與它未包含在該部分屬性集合有關。應再核對查詢欄位、資料所在目錄及讀取權限，不能直接說原始資料不存在。"
+          "id": "section-3-sub-1",
+          "text": "RootDSE：伺服器的服務說明牌"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RootDSE 是 LDAP 伺服器提供自身資訊的特殊項目。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以透過它了解伺服器支援哪些功能，以及目錄的相關入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 defaultNamingContext 可以幫你知道預設網域的查詢起點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但讀到 RootDSE 不代表有權限讀取所有員工帳號，也不代表取得了完整的 AD 地圖。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-sub-2",
+          "text": "Global Catalog（GC）：跨網域的索引"
+        },
+        {
+          "kind": "paragraph",
+          "text": "GC 可以理解為一份跨網域的索引，讓你不用每次都先知道資料位於哪個網域。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但它有一個重要限制：GC 對其他網域通常保留每個物件的部分屬性，不是所有欄位的完整副本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以查 GC 時沒有看到某個欄位，未必表示原始目錄沒有這個資料。"
         },
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "4. 帳號登入、讀取權限、傳輸保護是三件事"
+          "text": "六、LDAP Bind、權限與 TLS：登入成功不代表什麼都能查"
         },
         {
           "kind": "paragraph",
-          "text": "LDAP 的 Bind 是建立或變更連線驗證狀態的操作。你要記錄實際採用的驗證方式及身分，不能只看到「Bind 成功」四個字，就認定自己以某個帳號登入、而且什麼都能看。"
+          "text": "假設你拿公司員工證進入辦公大樓。"
         },
         {
           "kind": "paragraph",
-          "text": "想成公司櫃檯就很好理解："
+          "text": "門禁確認你是員工，並不代表你可以進入董事長辦公室、機房或財務室。"
         },
         {
-          "kind": "list",
-          "items": [
-            "驗證：你是誰，或目前是不是匿名身分。",
-            "授權：這個身分可讀哪些項目與欄位。",
-            "傳輸保護：查詢與資料在路上會不會被偷看或竄改。"
+          "kind": "paragraph",
+          "text": "LDAP 也要分清楚三種不同問題。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "安全概念",
+            "白話意思",
+            "能證明什麼"
+          ],
+          "rows": [
+            [
+              "Authentication（驗證）",
+              "你是誰？",
+              "目前採用何種驗證身分"
+            ],
+            [
+              "Authorization（授權）",
+              "你能看什麼？",
+              "可存取哪些物件或欄位"
+            ],
+            [
+              "Transport Security（傳輸安全）",
+              "傳輸途中安全嗎？",
+              "有沒有提供加密、完整性與伺服器身分驗證等保護"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "TLS，中文是「傳輸層安全協定」，可保護傳輸。LDAPS 通常在 TCP 636 連線開始時使用 TLS；StartTLS 則可在 TCP 389 的 LDAP 連線上啟動 TLS。不要只靠埠號判斷安全，要確認實際保護有成功建立，且伺服器憑證驗證正確。"
+          "text": "LDAP 的 Bind 與身分驗證狀態有關。即使 Bind 成功，也不能推論目前身分可以讀取所有資料。"
         },
         {
           "kind": "paragraph",
-          "text": "另有 LDAP signing，也就是「LDAP 簽章」，主要用於驗證訊息完整性與來源。簽章不等於加密：內容未被竄改，和旁人看不到內容，是不同保證。 實際防護要核對作業系統版本、驗證方式與生效設定，不套用「所有 AD 預設都一樣」的說法。"
+          "text": "另外，LDAP 的傳輸安全常見下列方式。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "技術",
+            "常見 Port",
+            "重點"
+          ],
+          "rows": [
+            [
+              "LDAP",
+              "TCP 389",
+              "協定本身不代表已加密"
+            ],
+            [
+              "LDAP + StartTLS",
+              "TCP 389",
+              "在 LDAP 連線上協商啟動 TLS"
+            ],
+            [
+              "LDAPS",
+              "TCP 636",
+              "連線開始就使用 TLS"
+            ],
+            [
+              "LDAP Signing",
+              "依驗證與傳輸方式",
+              "為適用的非 TLS SASL 連線提供訊息完整性及來源驗證"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP Signing 不等於加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "簽章比較像防止文件被偷偷修改；加密則是讓傳輸內容不容易被旁人看懂。TLS 可提供機密性、完整性和伺服器身分驗證，但必須正確建立 TLS 連線並驗證憑證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而在 Microsoft AD 中，LDAP Signing 主要適用於非 TLS 的 SASL 工作階段，不應誤認它是所有 LDAP 連線都額外套用的獨立保護。"
         },
         {
           "kind": "heading",
           "id": "section-5",
-          "text": "5. 新案例：畫面有資料，不等於搜尋做完了"
+          "text": "七、最重要的案例：sizeLimitExceeded 是什麼？"
         },
         {
           "kind": "paragraph",
-          "text": "以下完全是教學用的合成紀錄，沒有連線、沒有實測，也不代表任何真實公司的資料。"
+          "text": "回到正式教材的情境。"
         },
         {
           "kind": "paragraph",
-          "text": "你獲准盤點隔離實驗網域中 People 組織單位底下的帳號。工具顯示："
+          "text": "你被授權查詢公司 People 單位的帳號，工具顯示："
         },
         {
-          "kind": "list",
-          "items": [
-            "查詢起點：OU=People,DC=example,DC=test。",
-            "搜尋範圍：subtree。",
-            "篩選條件：本次帳號盤點指定的條件。",
-            "回傳欄位：只有 cn，也就是通用名稱。",
-            "本次搜尋的筆數限制：2。",
-            "顯示兩筆名稱：Lin、Chen。",
-            "最後狀態：sizeLimitExceeded，結果代碼 4。"
-          ]
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-result-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜LDAP Search Result：未完整取得結果",
+            "description": "教學合成資料。收到兩筆只證明本次可見結果；代碼 4 表示達到筆數限制，不能推論目錄只有兩人。只要求 cn，也不能推論沒有 mail。",
+            "items": [
+              {
+                "title": "Base",
+                "body": "OU=People,..."
+              },
+              {
+                "title": "Scope",
+                "body": "subtree"
+              },
+              {
+                "title": "Requested attribute",
+                "body": "cn"
+              },
+              {
+                "title": "Size limit",
+                "body": "2"
+              },
+              {
+                "title": "Entry 1",
+                "body": "Lin"
+              },
+              {
+                "title": "Entry 2",
+                "body": "Chen"
+              },
+              {
+                "title": "Result Code",
+                "body": "4 · sizeLimitExceeded"
+              }
+            ]
+          }
         },
         {
           "kind": "paragraph",
-          "text": "觀察：你收到兩筆符合本次條件、且本次身分可見的項目；搜尋因筆數限制沒有正常收完。"
+          "text": "sizeLimitExceeded 的意思是：「這次搜尋達到筆數限制，沒有正常收完。」"
         },
         {
           "kind": "paragraph",
-          "text": "可以下的結論：目前取得兩筆結果，但完整數量尚未確認。"
+          "text": "RFC 4511 確實定義了 success = 0、timeLimitExceeded = 3、sizeLimitExceeded = 4 等結果代碼。"
         },
         {
           "kind": "paragraph",
-          "text": "不能下的結論：People 底下總共只有兩個帳號；整個網域只有兩個帳號；這兩人沒有郵件；他們能登入任何特定應用程式。"
+          "text": "因此，你目前只能確認：這次查詢取得了兩筆資料，但完整數量尚未確定。"
         },
         {
           "kind": "paragraph",
-          "text": "你應先保留原始查詢條件、身分、結果及結束狀態。後續若仍在授權範圍內，可使用工具支援的分頁搜尋，逐頁取回資料，而不是為了讓數字變多就直接改動正式伺服器的限制。"
+          "text": "更重要的是，因為你只要求回傳 cn，所以沒有電子郵件欄位並不能證明員工沒有電子郵件。"
         },
         {
           "kind": "paragraph",
-          "text": "Paging 是「分頁」：資料分批回來，工具用伺服器提供的續查資訊取得下一批。頁面大小是每批上限，不是帳號總數。只看第一頁，或沒有確認工具把後續頁面取完，都不能當作完整結果。 分頁也不會自動擴大你的讀取權限或搜尋範圍。"
+          "id": "section-5-sub-1",
+          "text": "那要怎麼把後面的資料查出來？"
         },
         {
           "kind": "paragraph",
-          "text": "即使最後顯示 success，也只表示這次操作成功；它不是「整個組織所有資料都盤點完畢」的保證。盤點是否完整，還要回頭對照你原先要回答的問題。"
+          "text": "當伺服器支援且查詢條件允許時，可以使用 Paging（分頁搜尋）。分頁大小與整次查詢的 sizeLimit 是不同設定；不能把同一個總筆數限制原封不動保留，再假定分頁會自動繞過它。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像有一本 500 頁的名冊，一次只允許印出 100 頁。你就要分五次取回，並且確認有沒有全部收到。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 的分頁搜尋可以透過伺服器提供的續查資訊（cookie）讀取下一批資料。每次都要檢查結果狀態，並確認最後收到空 cookie 才能判定該分頁序列結束；中斷、錯誤或遺失續查資訊都要記錄。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-paging-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "圖 5｜分批取得結果並確認結束",
+            "description": "箭頭表示分頁續查，不代表提升權限或擴大範圍。每頁 100 筆只是示例；檢查結果代碼與最後的空 cookie，總數仍須依實際回傳計算。",
+            "items": [
+              {
+                "title": "第 1 頁",
+                "body": "取得 100 筆，保留伺服器續查 cookie。"
+              },
+              {
+                "title": "第 2 頁",
+                "body": "帶回前頁 cookie，再取一批；示例為 100 筆。"
+              },
+              {
+                "title": "後續頁面",
+                "body": "逐批核對狀態，直到最後收到空 cookie。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "但分頁只解決「資料分批取回」的問題，不會提升查詢者的權限，也不會自動擴大搜尋範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡還要記住一句話："
+        },
+        {
+          "kind": "paragraph",
+          "text": "success 代表這次 LDAP 操作成功完成，不代表你已經完成整個公司的帳號盤點。"
         },
         {
           "kind": "heading",
           "id": "section-6",
-          "text": "6. 防守方應留下什麼證據？"
+          "text": "八、從 CEH 的觀點，為什麼需要學這個？"
         },
         {
           "kind": "paragraph",
-          "text": "以下是這個案例的驗證做法，不是聲稱已完成的設定："
+          "text": "在 CEH M04 Enumeration 中，最重要的是學會「根據服務回應判斷資訊暴露與可見範圍」。"
         },
         {
-          "kind": "list",
-          "items": [
-            "查詢可重現：記錄時間、伺服器、使用身分、起點、範圍、篩選條件與欄位；不記錄密碼或秘密。",
-            "結果有收完：保留最後結果代碼、分頁是否完成及工具錯誤，將「收到幾筆」與「是否完整」分開。",
-            "可見範圍合理：用管理者事先建立的合成測試資料核對低權限帳號可見內容；讀不到的原因保留待確認，不自行提高權限。",
-            "連線確實受保護：核對實際 TLS 連線及憑證驗證，而非只看連線位址寫了 636；若查簽章，另確認適用的驗證方式與有效設定。",
-            "異常判讀有上下文：大量目錄查詢值得調查，但盤點工具也會合法查詢。把來源、身分、時間及既有作業排程一起看，不能只憑「有 LDAP 查詢」判定入侵。"
+          "kind": "paragraph",
+          "text": "假設你正在執行一項經過授權的企業資安評估。你發現某個低權限帳號能夠查詢員工姓名、群組與組織架構。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時你要思考的不是單純「我查到幾個帳號」，而是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些資訊是否原本就預期讓該帳號讀取？會不會暴露超出業務需要的資訊？目前看到的結果是否完整？又有哪些資料根本沒有被查詢？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在防守方的角度，應該記錄查詢身分、伺服器、時間、Base、Scope、Filter、Attributes、結果代碼及分頁完成狀態，並以最小權限控制資料可見範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且，看到大量 LDAP 查詢也不能直接判定正在遭受攻擊。合法的資產盤點與目錄同步服務，也可能產生大量查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-sub-1",
+          "text": "最後整理：判斷 LDAP 查詢是否完整的六問框架"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "要確認的問題",
+            "如果沒確認，可能誤判什麼？"
+          ],
+          "rows": [
+            [
+              "1. 用誰的身分查？",
+              "以為低權限看到的就是全部"
+            ],
+            [
+              "2. Base 在哪裡？",
+              "把某單位誤當整個網域"
+            ],
+            [
+              "3. Scope 有多深？",
+              "漏掉子部門"
+            ],
+            [
+              "4. Filter 與 Attributes 是什麼？",
+              "漏掉符合其他條件的人或欄位"
+            ],
+            [
+              "5. 結果代碼與分頁狀態如何？",
+              "把未完成的結果當成完整"
+            ],
+            [
+              "6. 是否涵蓋所有必要目錄與網域？",
+              "以為單一網域等於整間公司"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "這課要帶走的一句話：先問「我用誰的身分、從哪裡、按什麼條件查，結果收完了嗎」，再解釋查到的數字。"
+          "text": "這套邏輯不只適用於 LDAP，也能應用在其他服務列舉、API 分頁、資料庫查詢及資產盤點：先界定觀察範圍，再判斷證據支持什麼結論。"
         },
         {
           "kind": "heading",
           "id": "section-7",
-          "text": "小檢核，一題就好"
+          "text": "理解測驗｜CEH M04-08"
         },
         {
           "kind": "paragraph",
-          "text": "同事用已驗證的低權限帳號，經過有效 TLS 連線，對 People 組織單位做 one-level 搜尋，只要求姓名。工具顯示兩筆結果及 success，他說：「People 底下連同所有子部門只有兩個人，而且都沒有郵件。」"
+          "text": "假設你是一位受委託的資安稽核人員，正在盤點企業的 AD 帳號。"
         },
         {
           "kind": "paragraph",
-          "text": "這個結論有哪兩處超出證據？你會先核對哪兩個查詢設定？"
+          "text": "你使用已驗證的低權限帳號，經過有效的 TLS 連線執行 LDAP 查詢："
+        },
+        {
+          "kind": "paragraph",
+          "text": "查詢紀錄"
+        },
+        {
+          "kind": "code",
+          "text": "Base: OU=People,DC=example,DC=test\nScope: one-level\nAttributes: cn\nResult: 20 entries\nResult Code: success (0)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同事看完後說：「我們已經確認 People 單位及所有子部門總共只有 20 個人，而且這些人都沒有電子郵件。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請你回答三個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q1. 同事的結論有哪些地方不正確？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q2. 如果要查詢 People 單位下所有子部門的員工，應優先調整哪一個查詢設定？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q3. 既然結果顯示 success (0)，為什麼仍然不能保證這 20 筆就是全部？"
         },
         {
           "kind": "answer",
           "id": "answer-ldap-completeness",
-          "summary": "參考答案",
+          "summary": "參考答案與解析",
           "paragraphs": [
-            "第一處是範圍。one-level 只查 People 直接下一層，不會搜尋更深的子部門；應先核對 scope 是否符合「含所有子部門」的盤點目的，必要時在原授權範圍內用 subtree。",
-            "第二處是欄位。這次只要求姓名，結果沒有郵件欄位，不能證明對方沒有郵件；應核對 requested attributes 是否包含要查的郵件屬性。即使有要求但仍缺少，也要再查資料及權限等原因，不能猜。",
-            "TLS 保護傳輸，登入確認的身分與權限影響可見內容；兩者都不會自動修正搜尋範圍或補上沒要求的欄位。success 代表本次操作成功，不代表公司的盤點問題已完整回答。"
+            "Q1：one-level 只涵蓋 People 的直接下一層，不包含 People 本身與更深子部門。cn 是唯一要求回傳的欄位，沒有 mail 不能證明員工沒有電子郵件。20 筆是目前身分與查詢條件下的結果，不能當成整個單位所有人的總數。",
+            "Q2：優先把 Scope 改為 subtree，保留正確的 Base，並核對 Filter、所需 Attributes、身分可見性與所有必要目錄。subtree 包含起點及所有後代，但不自動涵蓋其他網域。",
+            "Q3：success (0) 只證明本次操作在指定條件下成功完成。盤點完整性還要核對身分、Base、Scope、Filter、Attributes、筆數／時間限制、分頁最後的空 cookie，以及是否涵蓋所有必要目錄與網域。有效 TLS 保護傳輸，不會提升讀取權限。"
           ]
         },
         {
           "kind": "heading",
-          "id": "section-8",
-          "text": "來源與適用範圍"
+          "id": "ldap-introduction",
+          "text": "補充 A｜LDAP 是什麼？從零開始的白話教學"
         },
         {
           "kind": "paragraph",
-          "text": "本課查核日期：2026/11/06。採 LDAPv3 規範與 Microsoft AD DS 文件，不假設不同 Windows 版本的安全預設完全一致。"
+          "text": "LDAP 可以把它想成「公司查詢員工名冊的一套標準溝通方法」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設一家公司有 3,000 名員工，每個人都有電腦帳號、密碼、電子郵件、部門和不同的系統權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司不可能要求每套系統都自己維護一份員工資料。否則員工一離職，IT 人員可能要去十幾套系統刪除他的帳號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，公司會建立集中式的「目錄服務」（Directory Service），而 LDAP 就是讓其他軟體可以跟這個目錄服務溝通的協定。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-1",
+          "text": "一、先從一間公司的實際情況理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設有一家「Kairos 科技公司」。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-central-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 6｜公司中央員工目錄",
+            "description": "連線表示共同使用中央目錄，不表示每次登入必經 LDAP。各系統可查詢目錄；登入與授權也可能使用 Kerberos 等其他協定。",
+            "items": [
+              {
+                "title": "公司中央員工目錄",
+                "body": "記錄帳號、姓名、部門、群組等資訊"
+              },
+              {
+                "title": "員工電腦",
+                "body": "可查詢中央目錄"
+              },
+              {
+                "title": "檔案系統",
+                "body": "可查詢中央目錄"
+              },
+              {
+                "title": "內部網站",
+                "body": "可查詢中央目錄"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在有位員工叫小明。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "小明打開公司內部系統，輸入帳號 ming 和密碼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這套系統不一定自己保存小明的密碼，而是可能透過 LDAP 與中央目錄服務確認身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "系統可以詢問："
         },
         {
           "kind": "list",
           "items": [
-            "[RFC 4511：LDAPv3 協定，2006/06](https://www.rfc-editor.org/rfc/rfc4511.html)：搜尋請求、結束狀態與結果代碼。",
-            "[RFC 4513：驗證與安全機制，2006/06](https://www.rfc-editor.org/rfc/rfc4513.html)：驗證狀態、存取控制及傳輸保護。",
-            "[Microsoft：搜尋範圍，2020/08/17](https://learn.microsoft.com/en-us/windows/win32/ad/search-scope)。",
-            "[Microsoft：RootDSE，2024/02/07](https://learn.microsoft.com/en-us/windows/win32/adsi/rootdse)。",
-            "[Microsoft：Global Catalog，2020/08/17](https://learn.microsoft.com/en-us/windows/win32/ad/global-catalog)。",
-            "[Microsoft：分頁搜尋，2018/05/31](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/paging-search-results)。",
-            "[Microsoft：LDAP 簽章與保護差異，2026/10/02](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/ldap-signing)。"
+            "有沒有 ming 這個帳號？",
+            "他是不是合法的使用者？",
+            "他屬於哪個部門？",
+            "他是不是管理員群組的成員？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "中央目錄依照驗證方式、權限和查詢條件回應，系統再決定小明能否進入以及能使用哪些功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣就能集中管理員工帳號，而不是每套軟體都重做一次。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-2",
+          "text": "二、LDAP 的英文全名是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP = Lightweight Directory Access Protocol"
+        },
+        {
+          "kind": "paragraph",
+          "text": "拆開來看："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "英文",
+            "中文",
+            "白話理解"
+          ],
+          "rows": [
+            [
+              "Lightweight",
+              "輕量型",
+              "相對早期 X.500 目錄存取方式較簡化"
+            ],
+            [
+              "Directory",
+              "目錄",
+              "像一本有組織的員工電話簿"
+            ],
+            [
+              "Access",
+              "存取",
+              "查詢、讀取，或在授權下修改資料"
+            ],
+            [
+              "Protocol",
+              "通訊協定",
+              "雙方講話都遵守的共同規則"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有個非常重要的觀念："
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 本身不是一套資料庫，也不是一台伺服器，而是一種通訊協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 IETF RFC 4511 與 Microsoft LDAP 文件中的基本定位。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-3",
+          "text": "三、LDAP、Active Directory、Domain Controller 有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三個名詞最容易搞混。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們把它們想成一間公司的行政系統。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "名詞",
+            "角色",
+            "比喻"
+          ],
+          "rows": [
+            [
+              "LDAP",
+              "通訊協定",
+              "向人事部詢問資料的標準語言"
+            ],
+            [
+              "Active Directory（AD）",
+              "目錄及身分管理系統",
+              "公司的人事與帳號管理體系"
+            ],
+            [
+              "Domain Controller（DC）",
+              "提供 AD 網域服務的伺服器",
+              "實際提供服務的人事辦公室"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，Windows Server 可以部署 Active Directory Domain Services（AD DS）。其他應用程式可以透過 LDAP 查詢其目錄資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 AD 並不只有 LDAP，還會運用 Kerberos、DNS、Group Policy 等技術。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而 LDAP 也不是只能搭配 Microsoft AD。OpenLDAP 等其他目錄服務同樣支援 LDAP。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-4",
+          "text": "四、LDAP 裡面的資料長什麼樣？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司保存小明的資料。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-entry-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 7｜員工資料：小明",
+            "description": "簡化的通用 LDAP Entry（目錄項目）。不同目錄的帳號屬性可能不同，例如 AD 常使用 sAMAccountName；ou 欄位不取代 DN 的位置識別。",
+            "items": [
+              {
+                "title": "cn",
+                "body": "小明"
+              },
+              {
+                "title": "uid",
+                "body": "ming"
+              },
+              {
+                "title": "mail",
+                "body": "ming@example.test"
+              },
+              {
+                "title": "ou",
+                "body": "Engineering"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 會用 DN（Distinguished Name）表示一筆資料在目錄中的位置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "cn=Ming,ou=People,dc=example,dc=test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這串文字可以這樣讀："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "cn=Ming：找 Ming 這個項目。",
+            "ou=People：它位於 People 組織單位。",
+            "dc=example,dc=test：所屬的網域目錄是 example.test。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 DN 想成一個人的完整地址，不只是他的姓名。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-5",
+          "text": "五、一次 LDAP 查詢是怎麼發生的？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司管理員想知道研發部有哪些員工。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-search-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "圖 8｜一次 LDAP 查詢如何發生",
+            "description": "箭頭表示這個查詢的處理順序。回傳內容與查詢狀態要一起判讀，不能把成功回應當成全部資料可見。",
+            "items": [
+              {
+                "title": "1 · 應用程式或管理員",
+                "body": "我要查詢研發部員工。"
+              },
+              {
+                "title": "2 · 送出 LDAP Search",
+                "body": "指定搜尋位置、範圍與條件。"
+              },
+              {
+                "title": "3 · 目錄伺服器",
+                "body": "根據條件與存取權限查詢資料。"
+              },
+              {
+                "title": "4 · 回傳結果",
+                "body": "小明、小華、小美……以及查詢狀態。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP Search 有四個基本觀念："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "設定",
+            "問題",
+            "例子"
+          ],
+          "rows": [
+            [
+              "Base",
+              "從哪裡開始找？",
+              "People"
+            ],
+            [
+              "Scope",
+              "往下找多深？",
+              "包含全部子部門"
+            ],
+            [
+              "Filter",
+              "找符合什麼條件？",
+              "只找使用者"
+            ],
+            [
+              "Attributes",
+              "要哪些資料欄位？",
+              "姓名、Email"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 LDAP 的篩選條件："
+        },
+        {
+          "kind": "code",
+          "text": "(cn=Ming)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是：找出 cn 等於 Ming 的目錄項目。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再例如："
+        },
+        {
+          "kind": "code",
+          "text": "(mail=*)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "意思是：找出有 mail 屬性的項目。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在正式環境中，LDAP 還有 Bind（建立驗證身分）、Modify（修改）、Add（新增）等操作；具體能否執行取決於伺服器與權限設定。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-6",
+          "text": "六、LDAP 安全嗎？為什麼 CEH 需要學它？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 本身不保證傳輸已加密，因此安全設定很重要。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "方式",
+            "常見 TCP Port",
+            "安全重點"
+          ],
+          "rows": [
+            [
+              "LDAP",
+              "389",
+              "不能只因使用 LDAP 就認為資料已加密"
+            ],
+            [
+              "LDAP + StartTLS",
+              "389",
+              "在既有連線上協商 TLS"
+            ],
+            [
+              "LDAPS",
+              "636",
+              "一開始就建立 TLS 保護"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用 TLS 時，也需要正確驗證伺服器憑證，才不會錯誤地信任冒充的伺服器。Microsoft 也建議使用適當的 TLS 或 SASL 保護 LDAP 通訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "從 CEH（道德駭客）角度，LDAP 很值得學，因為企業目錄可能記錄大量組織資訊。若權限設定不當，未經授權的人可能取得本不應開放的帳號與群組資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要記得："
+        },
+        {
+          "kind": "paragraph",
+          "text": "查得到某個帳號，不代表知道他的密碼；能成功登入 LDAP，也不代表擁有管理員權限。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-7",
+          "text": "七、最後用四個問題整理"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "LDAP 是什麼？ 一套讓軟體存取目錄服務的通訊協定。",
+            "LDAP 用來做什麼？ 查詢帳號、群組、組織資料，並支援身分驗證及授權管理的相關流程。",
+            "LDAP 和 AD 一樣嗎？ 不一樣。LDAP 是協定，AD 是微軟的目錄與身分管理技術。",
+            "LDAP 是不是安全的？ 取決於驗證、存取權限及傳輸保護等設定。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-8",
+          "text": "小測驗：確認你是否真的理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 一間公司使用 Active Directory 管理員工帳號。另一套內部系統需要查詢員工資料，通常可以使用什麼協定？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "HDMI"
+        },
+        {
+          "kind": "paragraph",
+          "text": "USB"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 如果 LDAP 查詢找到小明的帳號，代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "已經取得小明的密碼"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認查詢範圍內有符合條件且可見的帳號資料"
+        },
+        {
+          "kind": "paragraph",
+          "text": "已取得公司管理員權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. LDAP 與 Active Directory 的關係，哪個比較正確？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者是完全相同的產品"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 是協定；AD 是可支援 LDAP 的目錄管理系統"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 只能在 Windows 使用"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ldap-ldap",
+          "summary": "參考答案與解析",
+          "paragraphs": [
+            "第 1 題：LDAP。LDAP 是目錄存取協定；HDMI 與 USB 是不同用途的介面，不能據此查詢 AD 目錄。",
+            "第 2 題：確認查詢範圍內有符合條件且可見的帳號資料。這不提供密碼，也不授予管理員權限。",
+            "第 3 題：LDAP 是協定；AD 是可支援 LDAP 的目錄管理系統。兩者不是同一產品，OpenLDAP 等系統也可使用 LDAP。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "學完 LDAP 後，下一個最有價值的主題是 Active Directory 如何利用 LDAP、Kerberos 和 DNS 共同完成企業帳號登入與權限管理。這能把 CEH 的列舉知識與真正的 Windows 網路工程串在一起。"
+        },
+        {
+          "kind": "heading",
+          "id": "kerberos-introduction",
+          "text": "補充 B｜Kerberos 是什麼？從零開始的白話教學"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos 是一種「身分驗證協定」（Authentication Protocol）。它最重要的特色是：透過加密票證（Ticket），讓你不必每次存取公司系統都重新輸入密碼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 Kerberos 想成「公司的中央門禁與通行證制度」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "前面學過的 LDAP 是用來查詢公司員工名冊；Kerberos 則是用來證明「你確實是某位員工」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先記住兩句話："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "LDAP：查詢你是誰、屬於哪個部門。",
+            "Kerberos：使用加密票證證明你的身分。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者經常一起出現在 Active Directory（AD）環境，但負責不同工作。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-1",
+          "text": "一、為什麼公司需要 Kerberos？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Kairos 科技公司有 3,000 名員工，每個人每天需要使用許多系統。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-sso-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 9｜每套系統都要重新輸入密碼嗎？",
+            "description": "員工小明上午 9:00 登入公司電腦。三個服務彼此平行；只有適當整合 Kerberos 的系統才能減少重複登入，服務仍各自檢查授權。",
+            "items": [
+              {
+                "title": "員工小明",
+                "body": "上午 9:00 登入公司電腦"
+              },
+              {
+                "title": "檔案伺服器",
+                "body": "使用對應服務票證"
+              },
+              {
+                "title": "資料庫",
+                "body": "使用對應服務票證"
+              },
+              {
+                "title": "內部網站",
+                "body": "使用對應服務票證"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳統上，如果每套系統各自處理帳號和密碼，就可能造成大量重複驗證與密碼管理問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos 提供另一個方式：第一次登入時，先向可信任的中央驗證服務證明身分，取得一張可以用來申請其他票證的憑證。之後要存取不同服務，再取得相應的服務票證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是它能支援 Single Sign-On（SSO，單一登入）的原因。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-2",
+          "text": "二、用「遊樂園通行證」理解 Kerberos"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你去一座大型遊樂園。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "遊樂園有三個區域：雲霄飛車、海盜船和水族館。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的入園流程可以分成三個階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一階段：先證明你是合法遊客"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你到入口驗證身分，工作人員發給你一張「可以申請各區門票的通行證」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這張通行證就像 Kerberos 的 TGT（Ticket-Granting Ticket）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二階段：取得指定設施的門票"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你想搭雲霄飛車，就拿通行證到票務中心，申請一張雲霄飛車專用的門票。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這張門票就是 Service Ticket（服務票證）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三階段：進入指定設施"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你到雲霄飛車入口，出示專用門票。工作人員確認票證有效後，再依照設施規定決定是否讓你搭乘。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像目標服務驗證 Kerberos 票證，並進一步檢查存取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最關鍵的是：你不必每次都回入口重新證明身分，但也不是拿到通行證就能自由進入所有區域。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TGT 用來申請服務票證；Service Ticket 則用來向特定服務證明身分。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-3",
+          "text": "三、Kerberos 真正的運作原理"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos 主要涉及三個角色。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "角色",
+            "英文名稱",
+            "功能"
+          ],
+          "rows": [
+            [
+              "使用者／電腦",
+              "Client",
+              "想要存取資源"
+            ],
+            [
+              "中央驗證中心",
+              "KDC（Key Distribution Center）",
+              "驗證身分、核發票證"
+            ],
+            [
+              "服務伺服器",
+              "Service Server",
+              "驗證票證並提供服務"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Windows Active Directory 環境中，KDC 通常執行於 Domain Controller（DC，網域控制站）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "KDC 內部又分為兩個邏輯功能：AS（Authentication Service）負責核發 TGT，TGS（Ticket-Granting Service）負責核發服務票證。它們不一定是兩台不同的電腦。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-tickets-zh-v1-1-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "圖 10｜Kerberos 的三階段票證流程",
+            "description": "前兩階段箭頭分別表示請求與回覆；第三階段出示票證後由服務檢查授權，「依權限存取」不是固定的 AP 回覆封包。若要求雙向驗證，服務可回傳 AP_REP。AS／TGS 是 KDC 的邏輯功能；省略預先驗證往返、金鑰細節及快取重用。",
+            "items": [
+              {
+                "title": "小明的電腦 → KDC / AS",
+                "body": "階段 1 · AS Exchange\n請求初始票證並證明身分\n取得 TGT"
+              },
+              {
+                "title": "小明的電腦 → KDC / TGS",
+                "body": "階段 2 · TGS Exchange\n使用 TGT 申請檔案伺服器票證\n取得 Service Ticket"
+              },
+              {
+                "title": "小明的電腦 → 檔案伺服器",
+                "body": "階段 3 · AP Exchange\n出示服務票證與 Authenticator\n驗證成功後，依權限存取"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個流程是 Kerberos V5 的基本設計，定義於 [IETF RFC 4120](https://www.rfc-editor.org/rfc/rfc4120.html)。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-4",
+          "text": "那麼，加密到底發生在哪裡？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos 並不是把密碼直接交給所有伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以常見的密碼式驗證來說："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "小明的電腦使用密碼衍生出的金鑰，證明自己掌握正確的驗證資訊。",
+            "KDC 驗證後，核發加密的 TGT 與對應的工作階段金鑰資訊。",
+            "小明需要存取檔案伺服器時，用 TGT 向 KDC 申請服務票證。",
+            "KDC 核發由目標服務可驗證的加密票證。",
+            "檔案伺服器檢查票證及相關驗證資訊。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，在標準密碼式 Kerberos 流程中，使用者的明文密碼不需要直接在網路上傳送給服務伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且票證還有有效期限、加密保護與防止重播的驗證機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，Kerberos 主要負責身分驗證，不能因此認為所有後續應用資料都自動加密。資料傳輸是否受到保護，仍取決於應用協定，例如 HTTPS、SMB 加密或其他安全設定。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-5",
+          "text": "四、為什麼 Kerberos 很在意電腦時間？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是資訊工程和 CEH 特別重要的知識。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設小明的電腦時間是上午 9:00，但公司的 Domain Controller 認為現在是上午 9:20。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos 使用時間戳記來協助抵抗重播攻擊（Replay Attack）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果時間差距太大，伺服器可能拒絕驗證，因為它無法信任驗證資訊的時間有效性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在一般 Windows AD 設定中，預設允許的時間偏差通常是 5 分鐘，而且可以依政策調整。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也解釋了為什麼企業網路很重視 NTP（Network Time Protocol）與 Windows 時間同步服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你在 CEH M04 學習 NTP 列舉時，可以將兩者連在一起理解：時間同步不只是讓電腦時鐘準確，它也可能直接影響身分驗證的可靠性。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-6",
+          "text": "五、LDAP、Kerberos、Active Directory、DNS 如何一起運作？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這四者的分工可以用一張表串起來。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "技術",
+            "核心問題",
+            "主要功能"
+          ],
+          "rows": [
+            [
+              "DNS",
+              "伺服器在哪裡？",
+              "名稱解析與服務定位"
+            ],
+            [
+              "LDAP",
+              "目錄裡有哪些資料？",
+              "查詢使用者、群組及其他目錄資訊"
+            ],
+            [
+              "Kerberos",
+              "如何證明你的身分？",
+              "利用加密票證進行驗證"
+            ],
+            [
+              "Active Directory",
+              "誰來管理這些身分與目錄？",
+              "提供網域帳號、目錄與管理機制"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "舉個例子："
+        },
+        {
+          "kind": "paragraph",
+          "text": "當小明登入公司 Windows 網域電腦，並且打開共用資料夾時，DNS 可協助找到網域服務或目標主機；Kerberos 可以完成身分驗證；AD 提供相關帳號和群組資訊；目標檔案伺服器再依權限決定能否讀取檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 可能用於目錄查詢，但不是每次 Windows 網域登入都必須由用戶端直接發出 LDAP 查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-7",
+          "text": "六、從 CEH 角度，Kerberos 有哪些安全風險？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos 是成熟的身分驗證協定，但不代表它不會被攻擊。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "風險",
+            "白話意思",
+            "主要防禦方向"
+          ],
+          "rows": [
+            [
+              "Pass-the-Ticket",
+              "偷走可用票證後，冒用票證持有者",
+              "保護端點、憑證與票證儲存環境"
+            ],
+            [
+              "Kerberoasting",
+              "利用某些服務票證，嘗試離線猜測弱服務帳號密碼",
+              "強密碼、gMSA、適當加密演算法"
+            ],
+            [
+              "Golden Ticket",
+              "在取得高度敏感的 Kerberos 金鑰後，偽造 TGT",
+              "嚴格保護網域控制站與 KRBTGT 金鑰"
+            ],
+            [
+              "Replay Attack",
+              "重送截取到的驗證訊息",
+              "時間戳記、Authenticator 與重播檢查"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些名稱不需要一次全部背起來。先記住安全邏輯："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos 降低了每次傳送密碼的需求，但如果端點、票證或核心金鑰被竊取，仍然可能發生身分冒用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Windows 網域稽核中，事件 ID 4768 可以用來觀察 TGT 申請，4769 則與服務票證申請有關。這些紀錄可協助辨識異常驗證活動，但單一事件本身不能直接證明遭到攻擊。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-8",
+          "text": "七、你可以在 Windows 電腦上看到 Kerberos 票證嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以。在你有權操作的 Windows 環境中，開啟 PowerShell 或命令提示字元："
+        },
+        {
+          "kind": "code",
+          "text": "klist"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若你使用的是有 Kerberos 票證的登入工作階段，這個指令可以列出目前快取中的票證資訊，例如票證對應的服務、有效起訖時間等。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果沒有看到票證，不一定代表 Kerberos 壞掉；也可能是目前使用本機帳號、尚未存取需要 Kerberos 的服務，或該工作階段使用其他驗證方式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個指令只是讀取資訊，不會主動修改網域設定。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-9",
+          "text": "八、三個觀念，確認你真的學會 Kerberos"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 小明登入公司電腦後，想要存取檔案伺服器。Kerberos 通常會讓他先使用什麼來申請服務票證？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TGT"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 查詢結果"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 位址"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 小明已經通過 Kerberos 驗證，是否代表他能讀取公司所有機密檔案？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是，驗證成功就擁有全部權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "否，仍需由目標服務檢查授權"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 電腦與 Domain Controller 的時間相差 20 分鐘，可能造成什麼問題？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos 可能因時間偏差而拒絕驗證"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP 會自動刪除使用者"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所有服務票證永久有效"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ldap-kerberos",
+          "summary": "參考答案與解析",
+          "paragraphs": [
+            "第 1 題：TGT。用戶端使用 TGT 向 KDC 的 TGS 申請指定服務的票證；LDAP 查詢結果與 IP 位址不能取代它。",
+            "第 2 題：否，仍需由目標服務檢查授權。驗證身分與准許讀取某個檔案是不同判斷。",
+            "第 3 題：Kerberos 可能因時間偏差而拒絕驗證。20 分鐘超過常見的 5 分鐘預設容許值，但仍須核對實際政策；不會因此自動刪除 LDAP 使用者，也不會讓票證永久有效。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課最重要的結論：Kerberos 不負責決定你能看哪些機密資料，而是讓系統能夠安全地驗證「你是誰」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來最值得深入的是 Kerberos 的兩種票證——TGT 與 Service Ticket——以及為什麼知道密碼、持有票證、擁有系統權限，是三件不同的事。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "一手來源與適用範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本次查核日期為 2026-11-07。範例為合成資料；未對任何目錄執行 LDAP 查詢，也未在 Windows 執行 klist。讀取命令的說明、教材測試與實際企業驗證分開記錄。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "[RFC 4511: LDAP search and result codes](https://www.rfc-editor.org/rfc/rfc4511.html)",
+            "[RFC 4513: LDAP authentication and TLS](https://www.rfc-editor.org/rfc/rfc4513.html)",
+            "[RFC 2696: paged results and cookies](https://www.rfc-editor.org/rfc/rfc2696.html)",
+            "[Microsoft: RootDSE](https://learn.microsoft.com/en-us/windows/win32/adsi/rootdse)",
+            "[Microsoft: Global Catalog](https://learn.microsoft.com/en-us/windows/win32/ad/binding-to-the-global-catalog)",
+            "[Microsoft: LDAP signing](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/ldap-signing)",
+            "[RFC 4120: Kerberos V5](https://www.rfc-editor.org/rfc/rfc4120.html)",
+            "[Microsoft: Kerberos overview](https://learn.microsoft.com/en-us/windows-server/security/kerberos/kerberos-authentication-overview)",
+            "[Microsoft: clock synchronization tolerance](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/maximum-tolerance-for-computer-clock-synchronization)",
+            "[Microsoft: klist](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/klist)",
+            "[Microsoft: event 4768](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4768)",
+            "[Microsoft: event 4769](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4769)"
           ]
         }
       ]
     },
     "en": {
-      "summary": "Check an LDAP query's identity, base, scope, attributes, and final status to assess whether an account inventory is complete.",
+      "summary": "Interpret LDAP enumeration through identity, Base, Scope, attributes, and paging completion, with complete LDAP and Kerberos introductions connecting directories, tickets, and authorization.",
       "sections": [],
       "sourceBody": [
         {
           "kind": "paragraph",
-          "text": "The key point: an LDAP query returns “the data this identity can see under this query's conditions and limits.” Before treating it as a complete inventory, verify the search scope, permissions, requested attributes, and whether all results were retrieved."
+          "text": "This lesson asks a central question:"
         },
         {
           "kind": "paragraph",
-          "text": "This lesson builds on LDAP fundamentals: directory locations, search scope, and authentication. A new synthetic case brings them together into a complete process for interpreting results. The discussion covers legally authorized, isolated environments only; it performs no operations against third-party targets."
+          "text": "If a tool querying a company's accounts returns 2 people, can you conclude that the company has only 2 accounts?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No."
+        },
+        {
+          "kind": "paragraph",
+          "text": "What you see depends on where you search, which identity you use, the conditions you specify, and whether the search actually finishes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a core idea in CEH (Certified Ethical Hacker) M04 Enumeration and a foundation for Windows Server, enterprise network administration, Active Directory (AD), and security audits."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The lesson uses synthetic enterprise scenarios to explain protocol mechanisms and CEH interpretation, with technical boundaries checked against the primary references at the end."
+        },
+        {
+          "kind": "heading",
+          "id": "directory-overview",
+          "text": "1. Think of a directory as a company's employee register"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a company with 500 employees across Engineering, Human Resources, Finance, and other departments."
+        },
+        {
+          "kind": "paragraph",
+          "text": "HR maintains a register of names, accounts, email addresses, departments, and group memberships."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-directory-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 1 | Company employee directory",
+            "description": "Lines indicate directory containment; the three departments are peers. Real directories may include subdepartments, computers, groups, and multiple domains.",
+            "items": [
+              {
+                "title": "Company directory",
+                "body": "example.test"
+              },
+              {
+                "title": "Engineering",
+                "body": "Lin, Chen"
+              },
+              {
+                "title": "Human Resources",
+                "body": "Wang, Zhang"
+              },
+              {
+                "title": "Finance",
+                "body": "Li, Huang"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "You walk up to the HR desk and ask:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Who works in Engineering?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The desk replies: “Lin and Chen.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You might infer that Engineering has only two people. Several other explanations are possible:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "The desk checked only direct members, leaving out people in subdepartments.",
+            "Your identity can view only some employee records.",
+            "The system displays at most two records at a time, with more still to retrieve.",
+            "Your conditions select only a particular type of employee."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finding two records therefore does not establish that the entire directory contains only two."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That distinction guides the rest of the lesson."
         },
         {
           "kind": "heading",
           "id": "section-1",
-          "text": "1. Think of the directory as a company address book"
+          "text": "2. What are LDAP and Active Directory?"
         },
         {
           "kind": "paragraph",
-          "text": "An address book might contain employees' names, accounts, departments, and groups. If you ask reception “Who is in Engineering?” and receive two names, that does not mean the entire company has only two people. The scope of your question, the information you may see, and whether another page remains all affect the answer."
+          "text": "These terms often appear together, but name different things."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Term",
+            "Plain meaning",
+            "Main purpose"
+          ],
+          "rows": [
+            [
+              "LDAP",
+              "A language for querying the employee register",
+              "Tell a directory what information to retrieve"
+            ],
+            [
+              "Active Directory Domain Services (AD DS)",
+              "A centralized enterprise account and directory system",
+              "Manage users, groups, computers, and related directory information"
+            ],
+            [
+              "Domain Controller (DC)",
+              "A server providing domain authentication and directory services",
+              "Handle authentication and directory requests"
+            ],
+            [
+              "Enumeration",
+              "Collecting and organizing information under stated conditions",
+              "Inventory visible accounts, groups, and other information within a defined scope"
+            ]
+          ]
         },
         {
           "kind": "paragraph",
-          "text": "LDAP stands for Lightweight Directory Access Protocol. It is a set of communication rules that programs use to query directories. Active Directory Domain Services, or AD DS, is Microsoft's service for managing accounts, computers, and related directory information. LDAP is a communication method; AD DS is a system providing directory services. They are not synonyms."
+          "text": "For example, when an employee signs in to a company Windows computer, it may authenticate through a domain controller. An administrator may also use LDAP to query the employee's group memberships."
         },
         {
           "kind": "paragraph",
-          "text": "Here, enumeration means organizing the directory entries and attributes available under specified conditions. Defenders can use it to inventory accounts and assess information exposure. Someone without authorization who can read excessive information may also learn about the organization's structure. Control who can see what; simply disabling the protocol everywhere is not the whole answer."
+          "text": "AD uses more than LDAP. Kerberos and DNS also play important roles in Windows domains."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A concise distinction is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AD manages directory data and identities; LDAP is a protocol for accessing directory data."
+        },
+        {
+          "kind": "heading",
+          "id": "directory-names",
+          "text": "3. Read the directory structure: DN, OU, CN, and DC"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Directory data has a hierarchy, rather than simply putting every employee into one spreadsheet table."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you see:"
+        },
+        {
+          "kind": "code",
+          "text": "CN=Lin,OU=People,DC=example,DC=test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a Distinguished Name (DN). Think of it as the complete address of an employee record in the directory."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Abbreviation",
+            "Meaning",
+            "Plain explanation"
+          ],
+          "rows": [
+            [
+              "CN",
+              "Common Name",
+              "The entry's name, such as Lin"
+            ],
+            [
+              "OU",
+              "Organizational Unit",
+              "An organizational container, such as People"
+            ],
+            [
+              "DC",
+              "Domain Component",
+              "A component of a domain name"
+            ],
+            [
+              "DN",
+              "Distinguished Name",
+              "The identifying path of the complete entry"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read the DN as:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“In the example.test directory, open the People organizational unit and find the Lin entry.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The DC in DC=example means Domain Component. It does not mean Domain Controller; the abbreviations happen to coincide."
         },
         {
           "kind": "heading",
           "id": "section-2",
-          "text": "2. First establish exactly what you asked"
+          "text": "4. Base, Scope, Filter, and Attributes: four search settings"
         },
         {
           "kind": "paragraph",
-          "text": "A directory record is an Entry; fields such as its name and email are Attributes. DN stands for Distinguished Name and describes an entry's location in the directory hierarchy."
+          "text": "These settings are central to interpreting a search."
         },
         {
           "kind": "paragraph",
-          "text": "For example, the synthetic DN CN=Lin,OU=People,DC=example,DC=test identifies the Lin entry in the People organizational unit of the example.test directory. CN means common name, OU means organizational unit, and DC denotes a component of the domain name. Domain Controller is also abbreviated DC; distinguish that meaning from a DN's DC= component."
+          "text": "To inventory company accounts, specify where to start, how deeply to search, which entries to match, and which fields to return."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-parameters-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 2 | Four questions in an LDAP search",
+            "description": "These settings jointly define the query; peer cards do not imply execution order.",
+            "items": [
+              {
+                "title": "01 · Base",
+                "body": "Where to start? For example, People."
+              },
+              {
+                "title": "02 · Scope",
+                "body": "How deep? Immediate children or all descendants."
+              },
+              {
+                "title": "03 · Filter",
+                "body": "Which entries match? For example, users only."
+              },
+              {
+                "title": "04 · Attributes",
+                "body": "Which fields? For example, name and email."
+              }
+            ]
+          }
         },
         {
           "kind": "paragraph",
-          "text": "For each search, establish at least four things:"
+          "text": "Scope has three basic values."
         },
         {
-          "kind": "list",
-          "items": [
-            "Base: the entry from which the search starts.",
-            "Scope: how deep to search. base examines only the starting entry; one-level examines only its immediate children, excluding the starting entry; subtree examines the starting entry and all levels beneath it.",
-            "Filter: the conditions an entry must match, such as a specified type or name.",
-            "Requested attributes: the fields to return."
+          "kind": "table",
+          "headers": [
+            "Scope",
+            "Plain explanation",
+            "Search depth"
+          ],
+          "rows": [
+            [
+              "base",
+              "Examine only the specified entry",
+              "The starting entry itself"
+            ],
+            [
+              "one-level",
+              "Examine immediate children",
+              "Excludes the starting entry and deeper descendants"
+            ],
+            [
+              "subtree",
+              "Search from the start through its descendants",
+              "Includes the starting entry and all descendants"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "This is like telling reception: “Start with Engineering, examine only its immediate members, select those matching a condition, and give me their names only.” If you did not search subdepartments or request email, the results cannot establish that the subdepartments are empty or these people have no email."
+          "text": "This is the standard LDAP search model, also reflected in Microsoft AD query APIs."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-sub-1",
+          "text": "Compare three scopes on the same directory tree"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-scope-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 3 | Three search depths on the same tree",
+            "description": "Lines show parent-child relationships. Green outlines mark one-level candidates: Lin, Chen, and the research group, before Filter or permissions. base examines People only; subtree includes all six entries, without automatically covering other domains.",
+            "items": [
+              {
+                "title": "People",
+                "body": "Search base; the only base-scope candidate"
+              },
+              {
+                "title": "Lin",
+                "body": "Immediate child of People"
+              },
+              {
+                "title": "Chen",
+                "body": "Immediate child of People"
+              },
+              {
+                "title": "Research group",
+                "body": "Immediate child of People, with children of its own"
+              },
+              {
+                "title": "Wang",
+                "body": "Child of the research group"
+              },
+              {
+                "title": "Li",
+                "body": "Child of the research group"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "This reveals a common inventory error:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If a company has 500 users and a one-level search returns 20, you cannot conclude that the company has only 20. Other people may belong to deeper subdepartments."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even subtree does not necessarily cover every domain in the company. It searches downward from the specified Base; it does not automatically cover the entire AD forest."
         },
         {
           "kind": "heading",
           "id": "section-3",
-          "text": "3. In AD, the query entry point also matters"
+          "text": "5. RootDSE and Global Catalog: why do query entry points differ?"
         },
         {
           "kind": "paragraph",
-          "text": "An AD domain is one administrative scope within an organization's directory; a forest is the overall structure containing one or more domains. Remember: one domain does not necessarily represent the entire forest."
+          "text": "Imagine a multinational company with employee systems in Taiwan, the United States, and Japan."
         },
         {
           "kind": "paragraph",
-          "text": "RootDSE is a special entry through which an LDAP server provides information about itself. Think of it as reception's service information sign. It can identify the server's directory partitions and supported capabilities. In AD, defaultNamingContext helps locate that server's default domain naming context. Reading the sign does not retrieve every account or establish that an anonymous identity can read the whole address book."
+          "text": "Asking the Taiwan administrator may not return every employee in the other two countries."
         },
         {
           "kind": "paragraph",
-          "text": "The Global Catalog, or GC, is like an index spanning domains. It helps find objects across domains, but its replicas for other domains contain only a subset of attributes. It does not contain every field of every object."
+          "text": "AD has a similar scope issue."
         },
         {
           "kind": "paragraph",
-          "text": "A field missing from a GC query result may therefore be absent from that partial attribute set. Check the requested attributes, the directory holding the data, and read permissions before concluding that the original data does not exist."
+          "id": "section-3-sub-1",
+          "text": "RootDSE: the server's service information sign"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RootDSE is a special entry through which an LDAP server provides information about itself."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It can describe supported capabilities and directory entry points."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, defaultNamingContext helps identify the default domain's search base."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reading RootDSE does not grant permission to read every employee account or provide a complete map of AD."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-sub-2",
+          "text": "Global Catalog (GC): an index across domains"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of GC as an index across domains, useful when you do not already know which domain holds a record."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Its limitation matters: for other domains, GC generally holds a subset of each object's attributes, rather than a full copy of every field."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A missing field in a GC response therefore need not mean that the original directory lacks that information."
         },
         {
           "kind": "heading",
           "id": "section-4",
-          "text": "4. Authentication, read permissions, and transport protection are three separate things"
+          "text": "6. LDAP Bind, permissions, and TLS: signing in does not grant universal visibility"
         },
         {
           "kind": "paragraph",
-          "text": "LDAP Bind establishes or changes a connection's authentication state. Record the actual authentication method and identity. The words “Bind successful” alone do not establish that you authenticated as a particular account or can read everything."
+          "text": "Imagine entering an office building with an employee badge."
         },
         {
           "kind": "paragraph",
-          "text": "The reception analogy helps separate these concepts:"
+          "text": "Passing the entrance check does not authorize entry to the executive office, server room, or finance office."
         },
         {
-          "kind": "list",
-          "items": [
-            "Authentication: who you are, or whether the current identity is anonymous.",
-            "Authorization: which entries and attributes this identity may read.",
-            "Transport protection: whether queries and data can be observed or altered in transit."
+          "kind": "paragraph",
+          "text": "Separate three questions in LDAP as well."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Security concept",
+            "Plain question",
+            "What it establishes"
+          ],
+          "rows": [
+            [
+              "Authentication",
+              "Who are you?",
+              "The authentication identity currently in use"
+            ],
+            [
+              "Authorization",
+              "What may you see?",
+              "Which objects or fields that identity can access"
+            ],
+            [
+              "Transport Security",
+              "Is communication protected in transit?",
+              "Whether protections such as encryption, integrity, and server authentication are established"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "TLS stands for Transport Layer Security and can protect data in transit. LDAPS commonly uses TLS from the start of a TCP 636 connection; StartTLS can initiate TLS on a TCP 389 LDAP connection. Do not judge security from the port number alone. Verify that protection was actually established and the server certificate was validated correctly."
+          "text": "LDAP Bind concerns the connection's authentication state. Even a successful Bind does not establish permission to read all data."
         },
         {
           "kind": "paragraph",
-          "text": "LDAP signing primarily verifies message integrity and authenticity. Signing is not encryption: preventing unnoticed alteration and preventing others from reading content are different guarantees. Check the operating-system version, authentication method, and effective settings rather than assuming identical security defaults across all AD installations."
+          "text": "Common LDAP transport arrangements include the following."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Technology",
+            "Common port",
+            "Main point"
+          ],
+          "rows": [
+            [
+              "LDAP",
+              "TCP 389",
+              "The protocol name alone does not establish encryption"
+            ],
+            [
+              "LDAP + StartTLS",
+              "TCP 389",
+              "Negotiate TLS on an existing LDAP connection"
+            ],
+            [
+              "LDAPS",
+              "TCP 636",
+              "Use TLS from the beginning of the connection"
+            ],
+            [
+              "LDAP Signing",
+              "Depends on authentication and transport",
+              "Message integrity and authenticity for applicable non-TLS SASL sessions"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP Signing is not encryption."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Signing resembles protection against unnoticed document changes; encryption prevents outsiders from readily reading its contents. TLS can provide confidentiality, integrity, and server authentication, provided it is correctly established and the certificate is validated."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In Microsoft AD, LDAP Signing primarily applies to non-TLS SASL sessions. Do not treat it as an independent extra layer applied to every LDAP connection."
         },
         {
           "kind": "heading",
           "id": "section-5",
-          "text": "5. A new case: seeing data does not mean the search finished"
+          "text": "7. The central case: what does sizeLimitExceeded mean?"
         },
         {
           "kind": "paragraph",
-          "text": "The following records are entirely synthetic teaching material. No connection or test was performed, and they represent no real company's data."
+          "text": "Return to the lesson's scenario."
         },
         {
           "kind": "paragraph",
-          "text": "You are authorized to inventory accounts beneath the People organizational unit in an isolated lab domain. The tool reports:"
+          "text": "You are authorized to query accounts in the company's People unit. The tool displays:"
         },
         {
-          "kind": "list",
-          "items": [
-            "Search base: OU=People,DC=example,DC=test.",
-            "Search scope: subtree.",
-            "Filter: the conditions specified for this account inventory.",
-            "Requested attributes: cn only, meaning common name.",
-            "Entry limit for this search: 2.",
-            "Two names displayed: Lin and Chen.",
-            "Final status: sizeLimitExceeded, result code 4."
-          ]
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-result-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 4 | LDAP Search Result: incomplete results",
+            "description": "Synthetic teaching data. Two entries establish only the visible results received. Code 4 indicates a size limit, not a directory containing only two people. Requesting cn alone cannot establish the absence of mail.",
+            "items": [
+              {
+                "title": "Base",
+                "body": "OU=People,..."
+              },
+              {
+                "title": "Scope",
+                "body": "subtree"
+              },
+              {
+                "title": "Requested attribute",
+                "body": "cn"
+              },
+              {
+                "title": "Size limit",
+                "body": "2"
+              },
+              {
+                "title": "Entry 1",
+                "body": "Lin"
+              },
+              {
+                "title": "Entry 2",
+                "body": "Chen"
+              },
+              {
+                "title": "Result Code",
+                "body": "4 · sizeLimitExceeded"
+              }
+            ]
+          }
         },
         {
           "kind": "paragraph",
-          "text": "Observation: you received two entries matching this query's conditions and visible to its identity. The entry limit prevented the search from finishing normally."
+          "text": "sizeLimitExceeded means the search hit a record limit and did not retrieve a normally completed result set."
         },
         {
           "kind": "paragraph",
-          "text": "Supported conclusion: two results have been obtained; the complete count remains unconfirmed."
+          "text": "RFC 4511 defines result codes including success = 0, timeLimitExceeded = 3, and sizeLimitExceeded = 4."
         },
         {
           "kind": "paragraph",
-          "text": "Unsupported conclusions: People contains exactly two accounts; the entire domain contains only two accounts; these two people have no email; or they can sign in to any particular application."
+          "text": "You can confirm that this query retrieved two records. The complete count remains unknown."
         },
         {
           "kind": "paragraph",
-          "text": "First preserve the original query conditions, identity, results, and final status. If further work remains within authorization, use the tool's supported paged search to retrieve results page by page. Do not change production server limits merely to increase the count."
+          "text": "Because you requested only cn, the absence of an email field cannot establish that those employees have no email address."
         },
         {
           "kind": "paragraph",
-          "text": "Paging returns data in batches; the tool uses continuation information supplied by the server to obtain the next batch. The page size limits each batch, not the total account count. The first page alone, or an unverified assumption that the tool retrieved subsequent pages, cannot establish completeness. Paging also does not automatically expand your read permissions or search scope."
+          "id": "section-5-sub-1",
+          "text": "How can you retrieve subsequent results?"
         },
         {
           "kind": "paragraph",
-          "text": "Even a final success status means only that this operation succeeded. It does not guarantee that all of the organization's data has been inventoried. Assess completeness against the question the inventory was intended to answer."
+          "text": "Paging can help when supported by the server and permitted by the search conditions. Page size and the whole search's sizeLimit are different settings: retaining the same total limit does not make paging automatically bypass it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a 500-page register that can be printed only 100 pages at a time. You need five batches and must verify receipt of all of them."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP paging can use continuation information, called a cookie, returned by the server. Check each result status and confirm a final empty cookie before declaring the paging sequence finished. Record interruptions, errors, or lost continuation information."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-paging-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Figure 5 | Retrieve batches and confirm completion",
+            "description": "Arrows indicate paging continuation, without increasing permissions or scope. A page size of 100 is illustrative. Check result codes and the final empty cookie; calculate the total from actual returned entries.",
+            "items": [
+              {
+                "title": "Page 1",
+                "body": "Retrieve 100 entries and retain the server continuation cookie."
+              },
+              {
+                "title": "Page 2",
+                "body": "Send the previous cookie and retrieve another batch; 100 in this example."
+              },
+              {
+                "title": "Subsequent pages",
+                "body": "Check each result status until the final empty cookie."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Paging retrieves data in batches. It does not increase your permissions or expand the search scope automatically."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Also remember:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "success means that this LDAP operation completed successfully. It does not establish that the company's entire account inventory is complete."
         },
         {
           "kind": "heading",
           "id": "section-6",
-          "text": "6. What evidence should defenders retain?"
+          "text": "8. Why does this matter for CEH?"
         },
         {
           "kind": "paragraph",
-          "text": "The following are verification methods for this case, not claims of completed configuration:"
+          "text": "CEH M04 Enumeration teaches you to interpret information exposure and visibility from service responses."
         },
         {
-          "kind": "list",
-          "items": [
-            "Reproducible query: record time, server, identity, base, scope, filter, and attributes; retain no passwords or secrets.",
-            "Complete retrieval: preserve the final result code, paging completion, and tool errors. Separate “how many entries arrived” from “whether retrieval was complete.”",
-            "Appropriate visibility: use synthetic test data created beforehand by an administrator to check what a low-privilege account can see. Leave unexplained read failures open for investigation; do not raise your own privileges.",
-            "Actual connection protection: verify the real TLS connection and certificate validation rather than relying on an address containing 636. When checking signing, separately confirm the applicable authentication method and effective settings.",
-            "Context for anomaly interpretation: large directory queries merit investigation, but legitimate inventory tools also perform them. Consider source, identity, time, and established job schedules together; an LDAP query alone does not establish an intrusion."
+          "kind": "paragraph",
+          "text": "Suppose an authorized enterprise assessment finds that a low-privilege account can query employee names, groups, and organizational structure."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Go beyond simply counting the returned accounts:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Was this identity intended to read that information? Does visibility exceed business needs? Are the results complete? Which data was never requested?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Defenders should record identity, server, time, Base, Scope, Filter, Attributes, result code, and paging completion, while applying least privilege to directory visibility."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Large volumes of LDAP queries alone do not establish an attack. Legitimate asset inventories and directory synchronization services can also generate many queries."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-sub-1",
+          "text": "A six-question framework for judging completeness"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Question to verify",
+            "Possible error if omitted"
+          ],
+          "rows": [
+            [
+              "1. Which identity made the query?",
+              "Treating a low-privilege view as the whole directory"
+            ],
+            [
+              "2. Where is the Base?",
+              "Treating one organizational unit as an entire domain"
+            ],
+            [
+              "3. How deep is the Scope?",
+              "Missing subdepartments"
+            ],
+            [
+              "4. What are the Filter and Attributes?",
+              "Missing other matching populations or unrequested fields"
+            ],
+            [
+              "5. What are the result code and paging status?",
+              "Treating unfinished results as complete"
+            ],
+            [
+              "6. Are all required directories and domains covered?",
+              "Treating one domain as the entire company"
+            ]
           ]
         },
         {
           "kind": "paragraph",
-          "text": "Take away this question: “Which identity did I use, where did I start, what conditions did I specify, and did I retrieve all results?” Answer it before interpreting the count."
+          "text": "The same reasoning applies to other service enumeration, paginated APIs, database queries, and asset inventories: define the observation scope, then decide what the evidence supports."
         },
         {
           "kind": "heading",
           "id": "section-7",
-          "text": "One small check"
+          "text": "Comprehension check | CEH M04-08"
         },
         {
           "kind": "paragraph",
-          "text": "A colleague uses an authenticated low-privilege account over a valid TLS connection to perform a one-level search of the People organizational unit, requesting names only. The tool displays two results and success. The colleague says, “People and all its subdepartments contain only two people, and neither has email.”"
+          "text": "You are a commissioned security auditor inventorying enterprise AD accounts."
         },
         {
           "kind": "paragraph",
-          "text": "Which two parts of that conclusion exceed the evidence? Which two query settings would you check first?"
+          "text": "An authenticated low-privilege account performs this LDAP query over a valid TLS connection:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Query record"
+        },
+        {
+          "kind": "code",
+          "text": "Base: OU=People,DC=example,DC=test\nScope: one-level\nAttributes: cn\nResult: 20 entries\nResult Code: success (0)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A colleague says: “We have confirmed that People and every subdepartment contain only 20 people in total, and none has an email address.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer three questions:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q1. What is wrong with the colleague's conclusions?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q2. Which search setting should you adjust first to include all subdepartments beneath People?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Q3. Why does success (0) still not prove that these 20 entries are the complete inventory?"
         },
         {
           "kind": "answer",
           "id": "answer-ldap-completeness",
-          "summary": "Reference answer",
+          "summary": "Reference answers and explanations",
           "paragraphs": [
-            "The first issue is scope. one-level searches only People's immediate children, excluding deeper subdepartments. First check whether scope matches the inventory's aim of including all subdepartments; use subtree if necessary within the original authorization.",
-            "The second issue is attributes. This search requested only names. The absence of an email field in the result cannot establish that a person has no email. Check whether requested attributes includes the intended email attribute. Even if it was requested but remains absent, investigate the data and permissions rather than guessing.",
-            "TLS protects transport; the authenticated identity and its permissions affect visibility. Neither automatically corrects the search scope or adds unrequested attributes. success means this operation succeeded, not that the company's inventory question has been answered completely."
+            "Q1: one-level covers only immediate children of People, excluding People itself and deeper subdepartments. cn is the only requested attribute; missing mail does not establish that employees lack email addresses. The 20 entries are results visible to this identity under these query conditions, rather than a count of everyone in the unit.",
+            "Q2: First change Scope to subtree, retain the correct Base, and verify Filter, required Attributes, identity visibility, and all required directories. subtree includes the base and its descendants without automatically covering other domains.",
+            "Q3: success (0) establishes only successful completion of this operation under its specified conditions. Inventory completeness still requires checking identity, Base, Scope, Filter, Attributes, size/time limits, the final empty paging cookie, and coverage of every required directory and domain. Valid TLS protects transport without increasing read permissions."
           ]
         },
         {
           "kind": "heading",
-          "id": "section-8",
-          "text": "Sources and applicability"
+          "id": "ldap-introduction",
+          "text": "Supplement A | What is LDAP? An introduction from first principles"
         },
         {
           "kind": "paragraph",
-          "text": "Lesson fact-check date: 2026/11/06. This lesson uses LDAPv3 specifications and Microsoft AD DS documentation, without assuming identical security defaults across Windows versions."
+          "text": "Think of LDAP as a standard way of asking a company's employee directory for information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a company with 3,000 employees, each with a computer account, password, email address, department, and permissions for different systems."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Maintaining a separate employee record in every application is difficult. When someone leaves, IT might otherwise have to delete their account from more than a dozen systems."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A centralized Directory Service addresses this management problem; LDAP is a protocol that lets other software communicate with it."
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-1",
+          "text": "1. Start with a company scenario"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a company called Kairos Technology."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-central-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 6 | Central company employee directory",
+            "description": "Lines show shared use of a central directory, rather than a mandatory LDAP path for every sign-in. Systems can query it; sign-in and authorization workflows may also use Kerberos or other protocols.",
+            "items": [
+              {
+                "title": "Central employee directory",
+                "body": "Accounts, names, departments, groups, and related information"
+              },
+              {
+                "title": "Employee computer",
+                "body": "Can query the central directory"
+              },
+              {
+                "title": "File system",
+                "body": "Can query the central directory"
+              },
+              {
+                "title": "Internal website",
+                "body": "Can query the central directory"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "An employee named Ming works there."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ming opens an internal system and enters the account ming and a password."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The system may authenticate through the central directory using LDAP instead of storing Ming's password itself."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It can ask:"
         },
         {
           "kind": "list",
           "items": [
-            "[RFC 4511: LDAPv3 protocol, 2006/06](https://www.rfc-editor.org/rfc/rfc4511.html): search requests, final status, and result codes.",
-            "[RFC 4513: authentication and security mechanisms, 2006/06](https://www.rfc-editor.org/rfc/rfc4513.html): authentication state, access control, and transport protection.",
-            "[Microsoft: search scope, 2020/08/17](https://learn.microsoft.com/en-us/windows/win32/ad/search-scope).",
-            "[Microsoft: RootDSE, 2024/02/07](https://learn.microsoft.com/en-us/windows/win32/adsi/rootdse).",
-            "[Microsoft: Global Catalog, 2020/08/17](https://learn.microsoft.com/en-us/windows/win32/ad/global-catalog).",
-            "[Microsoft: paging search results, 2018/05/31](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ldap/paging-search-results).",
-            "[Microsoft: LDAP signing and protection differences, 2026/10/02](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/ldap-signing)."
+            "Does the account ming exist?",
+            "Is the user authenticated successfully?",
+            "Which department does the user belong to?",
+            "Is the user a member of an administrator group?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The directory responds according to the authentication method, permissions, and query conditions. The application then decides whether Ming may enter and which functions are available."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Accounts can thus be managed centrally rather than recreated independently in every application."
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-2",
+          "text": "2. What does LDAP stand for?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP = Lightweight Directory Access Protocol"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Break the name into its parts:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "English word",
+            "Meaning",
+            "Plain interpretation"
+          ],
+          "rows": [
+            [
+              "Lightweight",
+              "Simplified",
+              "Simpler than earlier X.500 directory access approaches"
+            ],
+            [
+              "Directory",
+              "Organized information",
+              "Like an organized employee phone book"
+            ],
+            [
+              "Access",
+              "Data access",
+              "Query, read, or modify data when authorized"
+            ],
+            [
+              "Protocol",
+              "Communication rules",
+              "Shared rules followed by both parties"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep the classification clear:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP is a communication protocol, rather than a database product or an individual server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is its basic role in IETF RFC 4511 and Microsoft's LDAP documentation."
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-3",
+          "text": "3. How do LDAP, Active Directory, and a Domain Controller differ?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These three names are easy to confuse."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use a company's administrative system as an analogy."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Term",
+            "Role",
+            "Analogy"
+          ],
+          "rows": [
+            [
+              "LDAP",
+              "Communication protocol",
+              "Standard language for asking HR for information"
+            ],
+            [
+              "Active Directory (AD)",
+              "Directory and identity management system",
+              "The company's personnel and account management system"
+            ],
+            [
+              "Domain Controller (DC)",
+              "Server providing AD domain services",
+              "The office actually providing the service"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Windows Server can host Active Directory Domain Services (AD DS). Other applications can use LDAP to query its directory information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "AD also uses technologies including Kerberos, DNS, and Group Policy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP can work with directory services other than Microsoft AD, including OpenLDAP."
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-4",
+          "text": "4. What does LDAP data look like?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the company stores Ming's record."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-entry-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 7 | Employee record: Ming",
+            "description": "A simplified generic LDAP Entry. Account attributes vary between directories; AD commonly uses sAMAccountName. An ou attribute does not replace the DN identifying the entry location.",
+            "items": [
+              {
+                "title": "cn",
+                "body": "Ming"
+              },
+              {
+                "title": "uid",
+                "body": "ming"
+              },
+              {
+                "title": "mail",
+                "body": "ming@example.test"
+              },
+              {
+                "title": "ou",
+                "body": "Engineering"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "A Distinguished Name (DN) identifies an entry's position in the directory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "cn=Ming,ou=People,dc=example,dc=test"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read this as:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "cn=Ming: find the Ming entry.",
+            "ou=People: it is in the People organizational unit.",
+            "dc=example,dc=test: the domain directory is example.test."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of the DN as a complete address, rather than just a person's name."
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-5",
+          "text": "5. How does an LDAP search happen?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose an administrator wants to find Engineering employees."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-search-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Figure 8 | How an LDAP search happens",
+            "description": "Arrows show processing order for this search. Interpret entries together with final status; a successful response does not establish universal visibility.",
+            "items": [
+              {
+                "title": "1 · Application or administrator",
+                "body": "Find Engineering employees."
+              },
+              {
+                "title": "2 · Send LDAP Search",
+                "body": "Specify search base, depth, and conditions."
+              },
+              {
+                "title": "3 · Directory server",
+                "body": "Search according to conditions and access permissions."
+              },
+              {
+                "title": "4 · Return results",
+                "body": "Ming, Hua, Mei, and others, together with search status."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP Search has four basic settings:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Setting",
+            "Question",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Base",
+              "Where do we start?",
+              "People"
+            ],
+            [
+              "Scope",
+              "How deeply do we search?",
+              "Include all subdepartments"
+            ],
+            [
+              "Filter",
+              "Which entries match?",
+              "Users only"
+            ],
+            [
+              "Attributes",
+              "Which fields do we want?",
+              "Name and email"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, the LDAP filter:"
+        },
+        {
+          "kind": "code",
+          "text": "(cn=Ming)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finds entries whose cn equals Ming."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Another example:"
+        },
+        {
+          "kind": "code",
+          "text": "(mail=*)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finds entries with a mail attribute."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP also includes operations such as Bind (establish authentication state), Modify, and Add. Whether an operation is permitted depends on server configuration and permissions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-6",
+          "text": "6. Is LDAP secure, and why does CEH cover it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP alone does not establish encryption in transit, so security settings matter."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Method",
+            "Common TCP port",
+            "Security point"
+          ],
+          "rows": [
+            [
+              "LDAP",
+              "389",
+              "Using LDAP does not by itself establish encrypted data"
+            ],
+            [
+              "LDAP + StartTLS",
+              "389",
+              "Negotiate TLS on the existing connection"
+            ],
+            [
+              "LDAPS",
+              "636",
+              "Establish TLS from the start"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "With TLS, validate the server certificate correctly to avoid trusting an impersonating server. Microsoft also recommends appropriate TLS or SASL protection for LDAP communication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For CEH, LDAP matters because enterprise directories can hold extensive organizational information. Incorrect permissions may expose accounts and groups to people who should not see them."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finding an account does not reveal its password, and successful LDAP authentication does not establish administrator privileges."
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-7",
+          "text": "7. Review with four questions"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "What is LDAP? A communication protocol for software to access directory services.",
+            "What is it used for? Query accounts, groups, and organizational information, and support related authentication and authorization management workflows.",
+            "Is LDAP the same as AD? No. LDAP is a protocol; AD is Microsoft's directory and identity management technology.",
+            "Is LDAP secure? That depends on authentication, access permissions, and transport protection settings."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "ldap-introduction-sub-8",
+          "text": "Short quiz: check your understanding"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. A company uses Active Directory for employee accounts. Which protocol can another internal system typically use to query employee data?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "HDMI"
+        },
+        {
+          "kind": "paragraph",
+          "text": "USB"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. What does finding Ming's account through LDAP establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You have obtained Ming's password"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Matching, visible account data exists within the query scope"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You have company administrator privileges"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Which description of LDAP and Active Directory is correct?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "They are identical products"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP is a protocol; AD is a directory management system supporting LDAP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP works only on Windows"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ldap-ldap",
+          "summary": "Reference answers and explanations",
+          "paragraphs": [
+            "Question 1: LDAP. LDAP is a directory access protocol; HDMI and USB serve different interface purposes and do not establish an AD directory query.",
+            "Question 2: Matching, visible account data exists within the query scope. This neither provides the password nor grants administrator privileges.",
+            "Question 3: LDAP is a protocol; AD is a directory management system supporting LDAP. They are different things, and systems such as OpenLDAP also support LDAP."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, connect LDAP, Kerberos, and DNS to understand enterprise sign-in and permission management in Active Directory. This links CEH enumeration to practical Windows network engineering."
+        },
+        {
+          "kind": "heading",
+          "id": "kerberos-introduction",
+          "text": "Supplement B | What is Kerberos? An introduction from first principles"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos is an Authentication Protocol. It uses encrypted tickets so users do not have to enter a password again for every integrated company system they access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of it as the company's central identity check and pass system."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP can query the employee directory; Kerberos helps prove that someone really is the claimed employee."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep these roles in mind:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "LDAP: query identity records and department information.",
+            "Kerberos: prove identity using encrypted tickets."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Both often appear in Active Directory (AD), with different responsibilities."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-1",
+          "text": "1. Why does a company need Kerberos?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine Kairos Technology has 3,000 employees who use many systems each day."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-sso-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 9 | Must every system ask for the password again?",
+            "description": "Ming signs in to the company computer at 9:00 AM. The three services are peers. Appropriate Kerberos integration can reduce repeated sign-ins, while each service still checks authorization.",
+            "items": [
+              {
+                "title": "Employee Ming",
+                "body": "Signs in to the company computer at 9:00 AM"
+              },
+              {
+                "title": "File server",
+                "body": "Use its corresponding service ticket"
+              },
+              {
+                "title": "Database",
+                "body": "Use its corresponding service ticket"
+              },
+              {
+                "title": "Internal website",
+                "body": "Use its corresponding service ticket"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "If every system independently handles accounts and passwords, repeated authentication and password administration become substantial problems."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos offers another approach: at initial sign-in, prove identity to a trusted central authentication service and obtain a credential for requesting other tickets. Obtain a corresponding service ticket when accessing a particular service."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This supports Single Sign-On (SSO)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-2",
+          "text": "2. Understand Kerberos through amusement park passes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine visiting a large amusement park."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It has a roller coaster, a pirate ship ride, and an aquarium."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your visit involves three stages."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stage 1: establish that you are an authorized visitor"
+        },
+        {
+          "kind": "paragraph",
+          "text": "At the entrance, staff verify your identity and issue a pass that lets you request tickets for individual attractions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This pass resembles a Kerberos Ticket-Granting Ticket (TGT)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stage 2: obtain a ticket for a particular attraction"
+        },
+        {
+          "kind": "paragraph",
+          "text": "To ride the roller coaster, take the pass to the ticket office and request a roller coaster ticket."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is analogous to a Service Ticket."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stage 3: enter the specified attraction"
+        },
+        {
+          "kind": "paragraph",
+          "text": "At the roller coaster entrance, present the dedicated ticket. Staff validate it and apply the attraction's access rules before letting you ride."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Similarly, a target service validates a Kerberos ticket and then checks access permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You do not need to return to the park entrance for every identity check. However, the initial pass does not grant unrestricted entry to every attraction."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A TGT requests service tickets; a Service Ticket proves identity to a particular service."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-3",
+          "text": "3. How Kerberos actually works"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos involves three main roles."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Role",
+            "English name",
+            "Function"
+          ],
+          "rows": [
+            [
+              "User / computer",
+              "Client",
+              "Requests access to resources"
+            ],
+            [
+              "Central authentication service",
+              "KDC (Key Distribution Center)",
+              "Authenticates identities and issues tickets"
+            ],
+            [
+              "Resource server",
+              "Service Server",
+              "Validates tickets and provides the service"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "In Windows Active Directory, the KDC usually runs on a Domain Controller (DC)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The KDC contains two logical functions: AS (Authentication Service) issues TGTs; TGS (Ticket-Granting Service) issues service tickets. They need not be separate computers."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-08-tickets-en-v1-1-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Figure 10 | Three stages of Kerberos ticket use",
+            "description": "The first two stages show request and reply. In stage three the service checks authorization; access according to permissions is not a fixed AP reply packet. Mutual authentication can use AP_REP. AS/TGS are logical KDC functions; pre-authentication round trips, key details, and cache reuse are simplified.",
+            "items": [
+              {
+                "title": "Ming's computer → KDC / AS",
+                "body": "Stage 1 · AS Exchange\nRequest an initial ticket and prove identity\nReceive a TGT"
+              },
+              {
+                "title": "Ming's computer → KDC / TGS",
+                "body": "Stage 2 · TGS Exchange\nUse the TGT to request a file-server ticket\nReceive a Service Ticket"
+              },
+              {
+                "title": "Ming's computer → File server",
+                "body": "Stage 3 · AP Exchange\nPresent the service ticket and Authenticator\nAfter validation, access according to permissions"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the basic Kerberos V5 design described in [IETF RFC 4120](https://www.rfc-editor.org/rfc/rfc4120.html)."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-4",
+          "text": "Where does encryption occur?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos does not simply hand your password to every server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In a common password-based authentication flow:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Ming's computer uses a password-derived key to prove possession of the required authentication information.",
+            "After verification, the KDC issues an encrypted TGT and corresponding session-key information.",
+            "To access the file server, Ming uses the TGT to request a service ticket from the KDC.",
+            "The KDC issues an encrypted ticket that the target service can validate.",
+            "The file server checks the ticket and associated authentication information."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "In the standard password-based Kerberos flow, the user's plaintext password need not be sent over the network directly to the service server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Tickets also have validity periods, encryption protection, and authentication mechanisms that resist replay."
+        },
+        {
+          "kind": "paragraph",
+          "text": "However, Kerberos primarily authenticates identities. It does not establish that all subsequent application data is automatically encrypted. Check the application protocol, such as HTTPS or SMB encryption, and its security settings."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-5",
+          "text": "4. Why does Kerberos care about computer time?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connection matters in computer engineering and CEH."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose Ming's computer shows 9:00 AM while the Domain Controller shows 9:20 AM."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos uses timestamps to help resist Replay Attacks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "With an excessive time difference, a server may reject authentication because the authentication information falls outside its accepted time window."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Typical Windows AD policy defaults allow 5 minutes of clock skew, and policy can change this tolerance."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This helps explain the importance of Network Time Protocol (NTP) and Windows time synchronization in enterprise networks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Connect this to NTP enumeration in CEH M04: clock synchronization can directly affect authentication reliability, beyond displaying the correct time."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-6",
+          "text": "5. How do LDAP, Kerberos, Active Directory, and DNS work together?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A table connects their responsibilities."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Technology",
+            "Main question",
+            "Main function"
+          ],
+          "rows": [
+            [
+              "DNS",
+              "Where is the server?",
+              "Resolve names and locate services"
+            ],
+            [
+              "LDAP",
+              "What information is in the directory?",
+              "Query users, groups, and other directory information"
+            ],
+            [
+              "Kerberos",
+              "How can identity be proved?",
+              "Authenticate through encrypted tickets"
+            ],
+            [
+              "Active Directory",
+              "Who manages identities and directory data?",
+              "Provide domain accounts, directories, and management mechanisms"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When Ming signs in to a Windows domain computer and opens a shared folder, DNS can help find domain services or the target host; Kerberos can authenticate; AD supplies relevant account and group information; the file server applies permissions to decide whether access is allowed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP may serve directory queries, but not every Windows domain sign-in requires the client to issue a direct LDAP query."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-7",
+          "text": "6. What Kerberos security risks matter for CEH?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos is a mature authentication protocol, but remains exposed to attacks under certain conditions."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Risk",
+            "Plain explanation",
+            "Main defensive direction"
+          ],
+          "rows": [
+            [
+              "Pass-the-Ticket",
+              "Impersonate a holder by stealing usable tickets",
+              "Protect endpoints, credentials, and ticket storage"
+            ],
+            [
+              "Kerberoasting",
+              "Use certain service tickets to attempt offline guesses of weak service-account passwords",
+              "Strong passwords, gMSA, and appropriate encryption algorithms"
+            ],
+            [
+              "Golden Ticket",
+              "Forge TGTs after obtaining highly sensitive Kerberos keys",
+              "Strictly protect domain controllers and KRBTGT keys"
+            ],
+            [
+              "Replay Attack",
+              "Resend intercepted authentication messages",
+              "Timestamps, Authenticators, and replay checks"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "You do not need to memorize every label at once. Understand the security relationship:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos reduces repeated password transmission, but stolen endpoints, tickets, or core keys can still enable impersonation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In Windows domain auditing, event ID 4768 helps observe TGT requests, while 4769 concerns service-ticket requests. These records help investigate authentication anomalies; a single event alone does not establish an attack."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-8",
+          "text": "7. Can you inspect Kerberos tickets on Windows?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Yes. In a Windows environment you are authorized to use, open PowerShell or Command Prompt:"
+        },
+        {
+          "kind": "code",
+          "text": "klist"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If the current logon session has Kerberos tickets, this command lists cached ticket information, including the corresponding services and validity start and end times."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An empty list does not necessarily mean Kerberos is broken. You might be using a local account, have not accessed a service requiring Kerberos, or be in a session using another authentication method."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This form of the command reads information and does not actively modify domain settings."
+        },
+        {
+          "kind": "paragraph",
+          "id": "kerberos-introduction-sub-9",
+          "text": "8. Three concepts to check your Kerberos understanding"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. After signing in, Ming wants to access a file server. What does Kerberos normally use first to request a service ticket?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TGT"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP search results"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP address"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Does successful Kerberos authentication mean Ming may read every confidential company file?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Yes, authentication grants every permission"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No, the target service must still check authorization"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. What can happen if a computer and its Domain Controller differ by 20 minutes?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos may reject authentication because of clock skew"
+        },
+        {
+          "kind": "paragraph",
+          "text": "LDAP automatically deletes users"
+        },
+        {
+          "kind": "paragraph",
+          "text": "All service tickets become permanently valid"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-ldap-kerberos",
+          "summary": "Reference answers and explanations",
+          "paragraphs": [
+            "Question 1: TGT. The client uses it to request a ticket for the specified service from the KDC's TGS. LDAP results and an IP address cannot replace it.",
+            "Question 2: No, the target service must still check authorization. Establishing identity and permitting a particular file read are separate decisions.",
+            "Question 3: Kerberos may reject authentication because of clock skew. Twenty minutes exceeds the common five-minute default, though effective policy still needs checking. It does not automatically delete LDAP users or make tickets permanently valid."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Kerberos establishes who an identity is; access to confidential information still requires the service's authorization decision."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The two ticket types, TGT and Service Ticket, also show why knowing a password, holding a ticket, and having system permissions are separate facts."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "Primary sources and scope"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fact-check date: 2026-11-07. Examples are synthetic. No LDAP directory queries or Windows klist commands were executed. Command documentation, teaching-site tests, and actual enterprise validation are separate evidence layers."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "[RFC 4511: LDAP search and result codes](https://www.rfc-editor.org/rfc/rfc4511.html)",
+            "[RFC 4513: LDAP authentication and TLS](https://www.rfc-editor.org/rfc/rfc4513.html)",
+            "[RFC 2696: paged results and cookies](https://www.rfc-editor.org/rfc/rfc2696.html)",
+            "[Microsoft: RootDSE](https://learn.microsoft.com/en-us/windows/win32/adsi/rootdse)",
+            "[Microsoft: Global Catalog](https://learn.microsoft.com/en-us/windows/win32/ad/binding-to-the-global-catalog)",
+            "[Microsoft: LDAP signing](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/ldap-signing)",
+            "[RFC 4120: Kerberos V5](https://www.rfc-editor.org/rfc/rfc4120.html)",
+            "[Microsoft: Kerberos overview](https://learn.microsoft.com/en-us/windows-server/security/kerberos/kerberos-authentication-overview)",
+            "[Microsoft: clock synchronization tolerance](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/maximum-tolerance-for-computer-clock-synchronization)",
+            "[Microsoft: klist](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/klist)",
+            "[Microsoft: event 4768](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4768)",
+            "[Microsoft: event 4769](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4769)"
           ]
         }
       ]

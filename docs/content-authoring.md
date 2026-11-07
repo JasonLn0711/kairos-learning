@@ -40,7 +40,7 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
-Current M04 contract (2026-11-05): ten new stable IDs; C01–C05 are published and C06–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C05 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
+Current M04 contract (2026-11-07): ten new stable IDs; C01–C10 are published. Old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 resolve only their corresponding new stable IDs after the shared publication gate. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
 
 `content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
@@ -543,3 +543,11 @@ v1.1.1／revision 5 依新供稿抽換七節；原四張圖對應資料室、五
 M03-02 v1.1.0 以既有 cards／flow 承接三張參考圖：roadmap flow 5、evidence cards 4、conflict cards 2；`aase.ts` 限定位置、種類與數量。`StakeholderInterviewDiagram.svelte` 使用可搜尋 HTML、固定裝飾 SVG 及容器重排；只有五步流程有四個向下箭頭，四層證據與兩階段條件比較不建立因果或權限關係。圖 2 的雙段 body 保留主張與限制。六個下載 SVG 由 `python3 scripts/aase_m0302_svg.py` 產生，`--check` 比較 bytes、檢查受審核元素及大小上限。
 
 完整 problem.md 在雙語使用相同 code，英文另有完整逐欄解讀；四題原選項以新 Q04–Q07 呈現，沿原生參考答案，沒有評分與學習狀態。執行 `tests/aase-m0302-replacement.test.ts` 與 `playwright.aase-m0302.config.ts`，正式站設定 `AASE_BASE_URL`。詳見[來源與逐小節對照](sources/aase/m03-02/replacement-2026-11-07/source-map.md)及[發布回執](releases/2026-11-07-aase-m0302-replacement.md)。
+
+## M04-08：LDAP 完整抽換與 Kerberos 入門（v1.1.0）
+
+正本位於 [本次來源目錄](sources/m04-08/replacement-2026-11-07/README.md)，完整中英稿經 `scripts/m04_08_content.py` 轉為既有 sourceBody。十張參考圖共用 `diagram-models.json`，`LdapDiagram.svelte` 只接受固定 `m04-08-(directory|parameters|scope|result|paging|central|entry|search|sso|tickets)-(zh|en)-v1-1-0.svg` 路徑。節點數依序為 4／4／6／7／3／4／4／4／4／3；僅 paging／search／tickets 使用 flow，其餘 cards。
+
+directory／central／sso 是一個根與三個平行子節點；scope 再將 Wang／Li 歸在第三個子節點下，綠框只代表 one-level 候選，圖說明列 base／subtree 與 Filter／權限界線。parameters 是 2×2 並列設定。entry／result 使用語意 dl 資料列；paging／search 是有順序箭頭的流程。tickets 的每項 title 固定拆為 `Client → Peer` 兩端，body 為階段／請求／回覆或授權結果三行；最後一項不畫回覆箭頭。模型驗證拒絕錯誤節點數及票證交換形狀，全部字串由 Svelte 跳脫，SVG 沿既有 sanitizer 匯出。
+
+保持舊公開網址、原發布日與八個既有 section 主題錨點。新增 directory-overview、directory-names、ldap-introduction、kerberos-introduction；補充內部章節採 h3。三組參考答案用原生 details，qa=[]，沒有假測驗控制。`verify-m04-08-source.py --check` 驗證 378 個原始段落與附件雜湊；`playwright.m04-08.config.ts` 核對兩語全文、四尺寸、200% 文字、無 JavaScript、鍵盤及全部下載。正式站以 M04_08_BASE_URL 指定。[發布與驗收回執](releases/2026-11-07-m04-08-replacement.md)分層記錄證據。
