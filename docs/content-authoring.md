@@ -526,6 +526,14 @@ M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9�
 
 `CEH26-M04-C10` 首次公開 v1.0.0，採用九節雙語供稿。`python3 scripts/m04_10_content.py` 由成稿及圖解資料生成正文與六份 SVG，`--check` 核對同步。三張圖沿用 `SourceBody.visual`：rights 為三項平行能力、controls 為四項解釋順序、acceptance 為三個合成案例。驗證器限制課程 ID、種類、節點數及案例四段結構。`EnumerationDefenseDiagram` 只切換既有合成資料，不連線、不保存作答；無 JavaScript 保留預設與全部案例全文，停用 radio。答案沿原生展開。來源與差異見[逐節對照](sources/m04-10/source-map.md)，檢查入口 `playwright.m04-10.config.ts`，正式站設定 `M04_10_BASE_URL`；結果見[發布紀錄](releases/2026-11-07-m04-10.md)。
 
+
+### AASE M03-01 問題陳述（2026-11-07）
+
+[完整供稿與對照](sources/aase/m03-01/replacement-2026-11-07/README.md)保留原文、七張 PNG 及 Git v1.0.4。v1.1.0 為導言加十節完整雙語，七圖、兩表、十節 problem.md 原樣範例、三題三選項與一題開放追問。保留身份、舊章節錨點、原發布日及翻譯閘門；原題在前版留存，新題使用 Q04–Q07。
+
+`ProblemStatementDiagram.svelte` 僅用於本課既有 cards／flow。aase.ts 限定 analogy 2、structure 5、acceptance 2、workflow 7、documents 2＋3、connection 4 節點及種類。平行比較不接箭頭；As-Is／To-Be 是兩組獨立流程，修正步驟明示條件；problem→spec→implementation 三卡於寬版呈兩層、窄版縱排。沒有任意標記或資產路徑。`python3 scripts/aase_m0301_svg.py --check` 核對十四個同源受審核 SVG；各小於 100000 bytes。
+
+執行 `tests/aase-m0301-replacement.test.ts` 與 `playwright.aase-m0301.config.ts`；正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`。歷史遷移測試讀取保存的前版，當前教材由新測試檢查。完整實測與發布狀態見 [回執](releases/2026-11-07-aase-m03-01-replacement.md)。
 #### M02-02 四圖新稿後續抽換（2026-11-07）
 
 v1.1.1／revision 5 依新供稿抽換七節；原四張圖對應資料室、五項組成、容量與工作循環。保留七欄交接卡，因此資料仍維持五組已驗證 figures，公開工作循環 caption 為「圖 4」，資產路徑仍為 `m02-02-5-{lang}.svg`。新檢核為 Q07 四選項（C）與 Q08 開放題；舊題留於封存。原發布、有效錨點、預算算術與發布閘門維持。新來源、雙語逐小節對照、圖意差異及本次實測見[後續抽換回執](releases/2026-11-07-aase-m0202-followup.md)；前述 v1.1.0 記錄保留作歷史。

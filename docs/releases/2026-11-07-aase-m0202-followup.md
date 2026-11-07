@@ -37,4 +37,12 @@
 
 ## 發布證據
 
-待本次 PR 與 Pages 完成後填入實際提交、工作流程及正式回讀結果；本段目前不宣稱已部署。前次成功 Pages 為 42338489004，僅供回復定位。
+[PR #91](https://github.com/JasonLn0711/kairos-learning/pull/91) 已合併，正式部署提交為 `be8b32bcb6a761cdc24e282204111ea6a7509904`。來源封存 `6dcd3b3`、教材／圖檔／測試 `b1685ea`、本機回執 `887bebd` 分別保留。
+
+- [遠端品質檢查 42386317034](https://github.com/JasonLn0711/kairos-learning/actions/runs/42386317034)：success。
+- [Pages 42386458594](https://github.com/JasonLn0711/kairos-learning/actions/runs/42386458594)：success，發布 `be8b32b`，總時間 1 分 43 秒。前次成功 Pages 為 42338489004，僅供回復定位。
+- 正式[中文頁](https://learn.cs-kairos.com/courses/aase/v1/m02/concepts/m02-02/)及[英文頁](https://learn.cs-kairos.com/en/courses/aase/v1/m02/concepts/m02-02/)回讀 v1.1.1、七節全文、所有小節／表格／程式／練習、Q07／Q08 與參考答案，以及搜尋文字，全部符合本次正式 JSON。
+- `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0202.config.ts` 正式雙語 2／2 通過（20.0 秒）：四寬度與 200% 文字、無 JS、鍵盤、容量端點／滿額／超出與重設、剪貼簿成功／拒絕均通過。
+- 十份正式 SVG 均成功取得，文字無越界／重疊，bytes 與本次生成檔完全一致；圖 1 文字亦位於卡片邊界內。正式回讀 JSON 報告及截圖保留於隔離 worktree `.local/aase/m0202/`，另複製到主工作區 `.local/aase/m0202-followup/production/`。
+
+本次教學修改已發布。最後回執只更新文件，不改動已驗收的網站程式與圖檔；推送後再 fetch 確認與 `origin/main` 的 divergence。主工作區同期的 M03-01／M04-08／M04-10 等其他教材修改均未納入本次提交。實體裝置、完整螢幕閱讀器與學員理解仍未評估。
