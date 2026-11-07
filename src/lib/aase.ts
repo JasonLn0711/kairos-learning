@@ -74,6 +74,12 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(['pipeline','limits'].includes(s.id)?'flow':'cards'))fail('invalid token attention figure');}
         else if(figures.length)fail('invalid token attention figure');
       }
+      if(l.id==='AASE-M02-C03'&&l.revision>=4){
+        const expected:Record<string,number>={office:4,'kv-cache':5,'summary-and-notes':2,retrieval:3,memory:4,workflow:6};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(['summary-and-notes','retrieval','workflow'].includes(s.id)?'flow':'cards'))fail('invalid memory mechanisms figure');}
+        else if(figures.length)fail('invalid memory mechanisms figure');
+      }
       for(const b of s.blocks??[]){
         if(b.kind==='architecture'){assertArchitectureDiagram(b);}
         else if(b.kind==='flow'||b.kind==='cards'){if(!text(b.caption)||!text(b.description)||b.items.length<2||b.items.some(i=>!text(i.title)||!text(i.body)))fail('invalid figure');}

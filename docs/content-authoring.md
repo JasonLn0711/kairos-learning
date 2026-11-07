@@ -485,3 +485,9 @@ v1.1.0 起，`TokenAttentionDiagram.svelte` 以既有 cards／flow 模型承接�
 圖 1／6 是垂直流程；圖 2 是兩組平行切分；圖 3 是四維向量，窄版兩欄；圖 4 是三個平行角色；圖 5 結合可操作的算術教具與明示的靜態預設。`attention-demo.ts` 固定 Value 2／6，分數有限域 −4 至 4，採減最大值的穩定 Softmax，先算完整精度再捨入。無 JavaScript 時保留 [1,0] 的結果與說明，停用控制。不保存學員進度，不代表真實模型實驗。
 
 SVG 由 `python3 scripts/aase_m0201_svg.py` 從正式 JSON 產生，`--check` 核對逐位元組一致。只有固定受審核元素及 escaped text，單檔小於 100000 bytes。下載圖 5 表示預設值，不跟隨瀏覽器互動。驗收執行 `npx playwright test --config playwright.aase-m0201.config.ts`；正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`，覆蓋雙語全文、四寬度、200% 文字、無 JS、鍵盤、SVG 邊界／文字重疊及下載 bytes。
+
+### AASE M02-03 四種機制圖解
+
+`MemoryMechanismsDiagram.svelte` 只在 `AASE-M02-C03` 使用既有 `cards`／`flow` 資料。六圖依序為辦公室四角色、五個 token 詞塊、兩節點壓縮、三節點檢索、四欄交接與六步跨日流程；`src/lib/aase.ts` 檢查節點數、種類與雙語結構。平行角色與交接欄位沒有箭頭；token 圖只連第四與第五格；其餘箭頭表示該圖定義的順序。圖 6 在第二天前加分隔。
+
+正文與節點為可搜尋 HTML；容器小於 34rem 時左右圖改上下，箭頭隨方向調整。固定的 12 個外部 SVG 由 `python3 scripts/aase_m0203_svg.py` 產生，`--check` 比較 bytes；沿用換行 helper、跳脫文字與元素白名單，不開放 runtime SVG markup。執行 `tests/aase-m0203-replacement.test.ts` 與 `npx playwright test --config playwright.aase-m0203.config.ts`；正式站使用 `AASE_BASE_URL`。四題採既有原生答案展開，不建立評分或學員完成狀態。來源、圖意差異與驗收見 [M02-03 回執](releases/2026-11-07-aase-m0203-replacement.md)。
