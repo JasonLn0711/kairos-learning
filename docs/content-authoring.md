@@ -522,6 +522,11 @@ M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9�
 
 八個 SVG 由 `python3 scripts/aase_m0206_svg.py` 產生，`--check` 核對 bytes；固定受審核元素、跳脫文字與大小上限。HTML 與搜尋同源，手機依容器寬度重排，沒有新評分或學習狀態。保留 MCP 協定示例，新增簡化工具請求／回覆與原稿合成日誌；一題選擇題及一題 openChecks 沿原生參考答案展開。單元檢查 `tests/aase-m0206-replacement.test.ts`，瀏覽器用 `playwright.aase-m0206.config.ts`，正式站設定 `AASE_BASE_URL`。來源對照與驗收見 [M02-06 回執](releases/2026-11-07-aase-m0206-replacement.md)。
 
+## M04-10 列舉防護（2026-11-07）
+
+`CEH26-M04-C10` 首次公開 v1.0.0，採用九節雙語供稿。`python3 scripts/m04_10_content.py` 由成稿及圖解資料生成正文與六份 SVG，`--check` 核對同步。三張圖沿用 `SourceBody.visual`：rights 為三項平行能力、controls 為四項解釋順序、acceptance 為三個合成案例。驗證器限制課程 ID、種類、節點數及案例四段結構。`EnumerationDefenseDiagram` 只切換既有合成資料，不連線、不保存作答；無 JavaScript 保留預設與全部案例全文，停用 radio。答案沿原生展開。來源與差異見[逐節對照](sources/m04-10/source-map.md)，檢查入口 `playwright.m04-10.config.ts`，正式站設定 `M04_10_BASE_URL`；結果見[發布紀錄](releases/2026-11-07-m04-10.md)。
+
+
 ### AASE M03-01 問題陳述（2026-11-07）
 
 [完整供稿與對照](sources/aase/m03-01/replacement-2026-11-07/README.md)保留原文、七張 PNG 及 Git v1.0.4。v1.1.0 為導言加十節完整雙語，七圖、兩表、十節 problem.md 原樣範例、三題三選項與一題開放追問。保留身份、舊章節錨點、原發布日及翻譯閘門；原題在前版留存，新題使用 Q04–Q07。
