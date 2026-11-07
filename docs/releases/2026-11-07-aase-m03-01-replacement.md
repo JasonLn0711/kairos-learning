@@ -35,3 +35,15 @@
 ## 發布與下一驗證
 
 正式 Git／Pages／站點回讀於實際完成後追加。本回執的本機測試不代替部署結果。實體手機、完整輔助科技驗收與學員理解仍待實際驗證；沒有執行真實收件業務或聲稱效率提升。
+
+## 正式發布確認
+
+- 來源提交 `7e82143`，教材／圖解／驗證提交 `cf632d4`；合併遠端 M02-02 為 `1cb135b5229bb3c03a45b28cd16276f5a0babdc6`。只在 `docs/content-authoring.md` 末尾出現追加文字衝突，兩段維護說明均保留。
+- 合併後型別 0 errors／0 warnings、單元 251／251、publication-boundary、release、M03-01 雙語瀏覽器 2／2 均再次通過；M02-06 共用渲染回歸 2／2 通過。
+- `git push origin HEAD:main` 成功；推送後 fetch 及 divergence 為 `0 0`，沒有重寫歷史。
+- [Pages 42386830191](https://github.com/JasonLn0711/kairos-learning/actions/runs/42386830191) 對應 `1cb135b`，遠端完整 CI 與部署結論為 `success`。
+- 2026-11-07 執行 `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0301.config.ts`：**2／2 通過，20.4 秒**。正式站逐節全文、表格、完整模板、題目解析、四種寬度、200% 字級、無 JS、鍵盤、搜尋及十四張 SVG 下載 bytes 均與本次驗證版本一致；SVG 文字無越界或重疊。
+- 公開頁：[繁中 M03-01](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-01/)／[English M03-01](https://learn.cs-kairos.com/en/courses/aase/v1/m03/concepts/m03-01/)。
+- 發布後遠端另有其他課次提交，已以 fast-forward 保留整合。這些提交沒有取代本課的來源、正文或圖解。此回執以獨立文件提交保存，使用 `[skip ci]`，不把文件回執宣稱為新的教材部署。
+
+本次教材抽換與正式站驗證完成。待驗界線維持：實體手機、完整輔助科技驗收、學員理解及真實收件工作流程成效；本次沒有新增批改服務或正式業務系統。
