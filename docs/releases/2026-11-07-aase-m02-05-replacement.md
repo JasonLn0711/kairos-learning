@@ -36,3 +36,10 @@
 - `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0205.config.ts`：中英 2 tests passed，16.2s。逐段正文、三題答案、四尺寸與兩種字級、無 JS、鍵盤、搜尋及八份 SVG 位元組回讀通過。
 - 本機整合後 M02-05 2 tests passed（8.9s）；M02-04 2 tests passed（8.8s）；M02-02 混合題型回歸 2 tests passed（7.9s）。
 - 合併後已 fetch 並確認 `HEAD...origin/main` 為 `0 0`；本回執另作文件提交，不改正式內容。未 force-push，主工作目錄的無關修改保留。下一個驗收範圍是實體裝置與完整螢幕閱讀器，不阻擋已通過的靜態教材發布。
+
+<a id="planning-closeout-2026-11-07"></a>
+## FIRST PRINCIPLE Planning closeout — 2026-11-07
+
+教材、原稿、四張 PNG、八份 SVG、測試與發布證據正本留在 Kairos Learning。稀缺資源是來源忠實度、備課注意力及驗證時間；Planning 保存定位、成果、容量與下一關。[11/7 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-07.md#aase-m0205-release-2026-11-07) ↔ [網站專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#aase-m0205-release-2026-11-07) ↔ [W45](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#aase-m0205-release-2026-11-07) ↔ [整合路由](https://github.com/JasonLn0711/planning-everything-track/blob/main/docs/14-local-integrations.md#aase-m0205-release-2026-11-07)形成反向索引。
+
+Jason 提供原稿、圖示與抽換要求；Agent 完成編輯、實作、測試及發布。這次僅補文件與連結，引用上述既有網站驗收，不重跑或改寫成新一次部署。容量仍 Unknown，未推定個人工時或本人學習完成。[簡報定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-11-kairos-presentations.md#aase-m0205-release-2026-11-07)與[工作坊定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-12-cib-ai-software-workshop.md#aase-m0205-release-2026-11-07)提供備課素材入口；後續由 Jason 在選定教學範圍或提出閱讀卡點時，回各 owner 記錄採用與驗收，不自動新增製作、交件或真人驗收承諾。

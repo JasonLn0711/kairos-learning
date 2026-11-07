@@ -44,3 +44,9 @@
 - 部署後 `git push origin HEAD:main` 回報已同步，再 fetch 比對為 `0 0`。本回執追加為文件提交，不改網站產物；原工作區及其未提交修改保留。
 
 完成界線：本課雙語內容與圖示已發布且經正式回讀；實體手機、完整輔助科技認證、學員理解及真實 Agent 任務仍未評估。
+
+## FIRST PRINCIPLE Planning 連結
+
+2026-11-07 依 Jason 後續要求，將本次成果連到 Planning 的[當日日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-07.md#aase-m0204-release-2026-11-07)、[網站專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#aase-m0204-release-2026-11-07)、[W45](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#aase-m0204-release-2026-11-07)與[整合路由](https://github.com/JasonLn0711/planning-everything-track/blob/main/docs/14-local-integrations.md#aase-m0204-release-2026-11-07)。原稿、圖檔、程式與驗證仍由 Kairos 持有；Planning 僅保存狀態、容量、證據定位及下一關。
+
+稀缺資源為備課注意力、來源忠實度及版本／驗證可信度。簡報與工作坊定位提供後續復用入口，採用、真人投影、主辦交件與學員理解各自待驗；容量維持 Unknown，沒有新增個人工時、學習完成或排程。本輪只建立文件連結，未重跑既有網站驗收；相關發布收據由 Planning 日誌補列。
