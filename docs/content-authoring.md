@@ -477,3 +477,11 @@ M01-04 v1.1.0 adopts the supplied introduction and eight complete sections in bo
 ## M04-09 其他列舉（2026-11-07）
 
 `CEH26-M04-C09` 首次公開 v1.0.0，顯示 M04-09。依[來源對照](sources/m04-09/source-review.md)維護完整十一節與四題；九張參考圖對應九組雙語原生圖解及十八個獨立 SVG。執行 `python3 scripts/m04_09_content.py` 從雙語成稿與 `diagrams.json` 生成正文及圖檔，`--check` 驗證同步。`OtherEnumerationDiagram` 只處理已知圖名及已驗證節點數，延用 `SourceBody.visual` 與既有 SVG sanitizer。NTP 同層節點是平行設備，BGP 五條 peer 關係以明列端點承接窄版；原生參考答案不建立學員進度。檢查入口為 `playwright.m04-09.config.ts`，正式站用 `M04_09_BASE_URL=https://learn.cs-kairos.com`。結果見[發布紀錄](releases/2026-11-07-m04-09.md)。
+
+### AASE M02-01 Token／Attention 圖解與互動
+
+v1.1.0 起，`TokenAttentionDiagram.svelte` 以既有 cards／flow 模型承接六張圖，`aase.ts` 限定章節、種類與節點數：pipeline flow 6、units cards 2、analogy cards 4、attention cards 3、attention-example cards 2、limits flow 4。其餘章節不接受這個專用圖解；內容仍只能提供經驗證的文字，不提供任意標記或資產路徑。中英沿用相同結構、數值與閱讀順序。
+
+圖 1／6 是垂直流程；圖 2 是兩組平行切分；圖 3 是四維向量，窄版兩欄；圖 4 是三個平行角色；圖 5 結合可操作的算術教具與明示的靜態預設。`attention-demo.ts` 固定 Value 2／6，分數有限域 −4 至 4，採減最大值的穩定 Softmax，先算完整精度再捨入。無 JavaScript 時保留 [1,0] 的結果與說明，停用控制。不保存學員進度，不代表真實模型實驗。
+
+SVG 由 `python3 scripts/aase_m0201_svg.py` 從正式 JSON 產生，`--check` 核對逐位元組一致。只有固定受審核元素及 escaped text，單檔小於 100000 bytes。下載圖 5 表示預設值，不跟隨瀏覽器互動。驗收執行 `npx playwright test --config playwright.aase-m0201.config.ts`；正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`，覆蓋雙語全文、四寬度、200% 文字、無 JS、鍵盤、SVG 邊界／文字重疊及下載 bytes。
