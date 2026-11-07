@@ -522,6 +522,11 @@ M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9�
 
 八個 SVG 由 `python3 scripts/aase_m0206_svg.py` 產生，`--check` 核對 bytes；固定受審核元素、跳脫文字與大小上限。HTML 與搜尋同源，手機依容器寬度重排，沒有新評分或學習狀態。保留 MCP 協定示例，新增簡化工具請求／回覆與原稿合成日誌；一題選擇題及一題 openChecks 沿原生參考答案展開。單元檢查 `tests/aase-m0206-replacement.test.ts`，瀏覽器用 `playwright.aase-m0206.config.ts`，正式站設定 `AASE_BASE_URL`。來源對照與驗收見 [M02-06 回執](releases/2026-11-07-aase-m0206-replacement.md)。
 
+## M04-10 列舉防護（2026-11-07）
+
+`CEH26-M04-C10` 首次公開 v1.0.0，採用九節雙語供稿。`python3 scripts/m04_10_content.py` 由成稿及圖解資料生成正文與六份 SVG，`--check` 核對同步。三張圖沿用 `SourceBody.visual`：rights 為三項平行能力、controls 為四項解釋順序、acceptance 為三個合成案例。驗證器限制課程 ID、種類、節點數及案例四段結構。`EnumerationDefenseDiagram` 只切換既有合成資料，不連線、不保存作答；無 JavaScript 保留預設與全部案例全文，停用 radio。答案沿原生展開。來源與差異見[逐節對照](sources/m04-10/source-map.md)，檢查入口 `playwright.m04-10.config.ts`，正式站設定 `M04_10_BASE_URL`；結果見[發布紀錄](releases/2026-11-07-m04-10.md)。
+
+
 ### AASE M03-01 問題陳述（2026-11-07）
 
 [完整供稿與對照](sources/aase/m03-01/replacement-2026-11-07/README.md)保留原文、七張 PNG 及 Git v1.0.4。v1.1.0 為導言加十節完整雙語，七圖、兩表、十節 problem.md 原樣範例、三題三選項與一題開放追問。保留身份、舊章節錨點、原發布日及翻譯閘門；原題在前版留存，新題使用 Q04–Q07。
@@ -532,6 +537,12 @@ M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9�
 #### M02-02 四圖新稿後續抽換（2026-11-07）
 
 v1.1.1／revision 5 依新供稿抽換七節；原四張圖對應資料室、五項組成、容量與工作循環。保留七欄交接卡，因此資料仍維持五組已驗證 figures，公開工作循環 caption 為「圖 4」，資產路徑仍為 `m02-02-5-{lang}.svg`。新檢核為 Q07 四選項（C）與 Q08 開放題；舊題留於封存。原發布、有效錨點、預算算術與發布閘門維持。新來源、雙語逐小節對照、圖意差異及本次實測見[後續抽換回執](releases/2026-11-07-aase-m0202-followup.md)；前述 v1.1.0 記錄保留作歷史。
+
+### AASE M03-02 角色、訪談與證據分層
+
+M03-02 v1.1.0 以既有 cards／flow 承接三張參考圖：roadmap flow 5、evidence cards 4、conflict cards 2；`aase.ts` 限定位置、種類與數量。`StakeholderInterviewDiagram.svelte` 使用可搜尋 HTML、固定裝飾 SVG 及容器重排；只有五步流程有四個向下箭頭，四層證據與兩階段條件比較不建立因果或權限關係。圖 2 的雙段 body 保留主張與限制。六個下載 SVG 由 `python3 scripts/aase_m0302_svg.py` 產生，`--check` 比較 bytes、檢查受審核元素及大小上限。
+
+完整 problem.md 在雙語使用相同 code，英文另有完整逐欄解讀；四題原選項以新 Q04–Q07 呈現，沿原生參考答案，沒有評分與學習狀態。執行 `tests/aase-m0302-replacement.test.ts` 與 `playwright.aase-m0302.config.ts`，正式站設定 `AASE_BASE_URL`。詳見[來源與逐小節對照](sources/aase/m03-02/replacement-2026-11-07/source-map.md)及[發布回執](releases/2026-11-07-aase-m0302-replacement.md)。
 
 ## M04-08：LDAP 完整抽換與 Kerberos 入門（v1.1.0）
 
