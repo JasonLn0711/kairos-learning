@@ -515,3 +515,9 @@ M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9�
 既有 `openChecks` 可單獨構成理解檢核；至少需有一題 `checks` 或非空且合法的 `openChecks`，原題目 ID 唯一性、答案段落、雙語形狀與發布閘門仍須通過。M02-02 的混合題型保持；M02-05 三題採新 Q04～Q06，無評分、送出或虛構學習紀錄。共用引言改用「作答」涵蓋選擇題及開放題。
 
 執行 `tests/aase-m0205-replacement.test.ts`、`playwright.aase-m0205.config.ts` 與共用檢查；正式站以 `AASE_BASE_URL` 回讀。詳見 [來源對照](sources/aase/m02-05/replacement-2026-11-07/source-map.md)及[驗收紀錄](releases/2026-11-07-aase-m02-05-replacement.md)。
+
+### AASE M02-06 工具、沙箱與驗收證據
+
+`ToolEvidenceDiagram.svelte` 僅在本課渲染四組 cards/flow：analogy flow 5、sandbox cards 2、connection cards 6、verification cards 5；`aase.ts` 檢查位置、種類、節點數與雙語形狀。圖 1 的主管任務與五步流程有五個向下箭頭；圖 2 是平行權限範圍；圖 3 是課程索引；圖 4 保留每列獨立執行狀態，均不誤畫成完成流程。
+
+八個 SVG 由 `python3 scripts/aase_m0206_svg.py` 產生，`--check` 核對 bytes；固定受審核元素、跳脫文字與大小上限。HTML 與搜尋同源，手機依容器寬度重排，沒有新評分或學習狀態。保留 MCP 協定示例，新增簡化工具請求／回覆與原稿合成日誌；一題選擇題及一題 openChecks 沿原生參考答案展開。單元檢查 `tests/aase-m0206-replacement.test.ts`，瀏覽器用 `playwright.aase-m0206.config.ts`，正式站設定 `AASE_BASE_URL`。來源對照與驗收見 [M02-06 回執](releases/2026-11-07-aase-m0206-replacement.md)。
