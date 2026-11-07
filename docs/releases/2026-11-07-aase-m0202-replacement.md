@@ -15,7 +15,7 @@ Canonical owner 為 `content/aase/lessons/aase-m02-c02.json`。完整原稿、�
 
 ## 本機證據
 
-2026-11-07，Linux／Chromium Playwright。截圖及 JSON 報告在忽略目錄 `.local/aase/m0202/`；測試程式為 `tests/context-budget.test.ts`、`tests/aase-m0202-replacement.test.ts`、`tests/browser/aase-m0202.spec.ts`。
+2026-11-07，Linux／Chromium Playwright。本機截圖、日誌及 JSON 報告保存在忽略目錄 `.local/aase/m0202-local/`，正式站回讀證據在 `.local/aase/m0202/`；測試程式為 `tests/context-budget.test.ts`、`tests/aase-m0202-replacement.test.ts`、`tests/browser/aase-m0202.spec.ts`。
 
 | 規則／檢查 | 實測結果 |
 | --- | --- |
@@ -36,4 +36,12 @@ Canonical owner 為 `content/aase/lessons/aase-m02-c02.json`。完整原稿、�
 
 ## 發布
 
-本機驗收完成；遠端品質檢查、PR 合併、正式部署與正式站回讀待回填。不得以本機結果替代正式站證據。
+[PR #87](https://github.com/JasonLn0711/kairos-learning/pull/87) 已合併。來源封存提交 `08c1d70`、教材／互動／測試 `f7fa692`、採用與本機驗收 `2f135d4`，合併及正式部署提交為 `75aa3785f4d649addecad960325b6bf10df62b1a`。
+
+- [遠端品質檢查 42336691780](https://github.com/JasonLn0711/kairos-learning/actions/runs/42336691780)：success。
+- [正式 Pages 42336864034](https://github.com/JasonLn0711/kairos-learning/actions/runs/42336864034)：success，發布上述合併提交。
+- 正式 [中文版](https://learn.cs-kairos.com/courses/aase/v1/m02/concepts/m02-02/) 與 [英文版](https://learn.cs-kairos.com/en/courses/aase/v1/m02/concepts/m02-02/) 的完整正文、練習、選擇題與兩題開放題參考答案、v1.1.0、五圖、預算互動、剪貼簿成功／拒絕分支、四種寬度／200% 文字、鍵盤與無 JS 均通過。兩項整合測試共 20.4 秒。
+- 十個正式 SVG 均 HTTP 200，可鍵盤開啟、無文字越界／重疊，圖 1 文字在卡片內；下載 bytes 與此次工作樹檔案一致。
+- 發布前的成功版本定位為 [42334885415](https://github.com/JasonLn0711/kairos-learning/actions/runs/42334885415)／`2e4a3fb`；此定位沒有被當成本次驗收證據。
+
+合併後已 fetch／ff-only 同步 `origin/main`，divergence `0 0`。最後回執為文件提交，網站程式與資產保持已驗收版本。所有作業在獨立 worktree 完成，主工作區原有未提交內容保留。
