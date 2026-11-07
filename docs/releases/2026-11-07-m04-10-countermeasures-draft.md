@@ -8,7 +8,7 @@ Prepared from fresh main `bb445be` on 2026-11-07. C09 was already published by P
 
 WRITE-01–05 and WRITE-08–10 are covered by paragraph-level adoption, paired technical conditions and near-claim primary sources. WRITE-06 uses initial content version 1.0.0, revision 1, content revision date 2026-11-07. The draft `publishedOn` is a proposed release date, not a claim of first publication; confirm the actual first publication date before release. WRITE-07 retains the existing public attribution. No figures, executable examples, renderer, dependencies, security permissions or deployment workflow are changed (FIG/INT changes not applicable).
 
-The exact source remains in the authorized private archive; public files contain no private message identifiers, learner responses or private delivery timestamps. The source hash records preservation independently from website adoption.
+The [exact teaching original](https://github.com/JasonLn0711/ceh-cehp-certification-notes-2026/blob/a3524afa46cef2824a1cd3999982b630006dc2ca/source/2026-11-07-m04-10/teaching.zh-TW.md) is preserved in the CEH source archive. Private delivery metadata and learner records remain outside public Git; public files contain no private message identifiers, learner responses or private delivery timestamps. The source hash records preservation independently from website adoption.
 
 ## Acceptance scope
 
