@@ -1,0 +1,418 @@
+{
+  "id": "AASE-M02-C05",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "mcp-tools"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "以六個工程面向檢查模型周圍的執行系統，追蹤一次收件專案修正需要哪些上下文、工具、控制、環境、安全與觀察證據。",
+      "objectives": [
+        "用六個面向解釋 Agent Harness，而不把它當成模型本身或統一產品標準。",
+        "追蹤一次工具回合中各面向負責的工作。",
+        "指出失敗時應補查的環境、控制與證據，避免只修改提示詞。"
+      ],
+      "readingGuide": {
+        "goal": "用六個平行面向解釋 Agent 任務如何被支援與限制。",
+        "startingPoint": "先沿用讀規格、改一個檔案、重跑測試的合成任務。",
+        "route": "先理解 Harness，再追蹤六面向分工，最後用故障反查缺少的證據。",
+        "output": "architecture.md 的 Harness 責任圖與一份可接手的故障追查說明。"
+      },
+      "sections": [
+        {
+          "id": "harness",
+          "heading": "模型周圍還有一套讓工作發生的系統",
+          "paragraphs": [
+            "Agent Harness 在本課指包覆模型、支援任務執行的程式與環境安排。模型產生下一步建議，周圍系統負責提供資料、呼叫工具、執行限制、保存結果與判斷是否繼續。",
+            "這裡採用六個面向作為課程分析框架：Context、Tools、Orchestration、Execution Environment、Security、Observability。它來自本課規劃，不宣稱是所有框架都必須採用的六個獨立模組或通用標準。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像一張工作單背後的工具與工作場所",
+          "paragraphs": [
+            "把修改任務想成工作單。只把工作單交給一位會寫程式的人，還不夠完成交付；他還需要拿到正確文件、可用工具、允許操作的工作場所，以及知道誰驗收。",
+            "如果測試命令根本無法執行，反覆要求「更仔細測試」不會建立缺少的環境。若檔案被改到錯誤目錄，也應檢查工具的根目錄與執行限制，而不只責怪模型沒有理解。"
+          ]
+        },
+        {
+          "id": "six-aspects",
+          "heading": "六個面向共同支援一次任務",
+          "paragraphs": [
+            "下圖六張卡是平行檢查面向。安全與可觀測性應跨越任務流程，不是最後才加上的兩個步驟；同一個程式元件也可能同時承擔數個面向。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜本課的 Harness 六面向",
+              "description": "卡片表示責任分工，不表示六個依序執行的階段。",
+              "items": [
+                {
+                  "title": "Context：當前資料",
+                  "body": "規格版本、相關程式、工具結果及未決問題，決定本次可參考什麼。"
+                },
+                {
+                  "title": "Tools：可呼叫能力",
+                  "body": "清楚描述輸入、輸出、錯誤與副作用，讓請求能被檢查。"
+                },
+                {
+                  "title": "Orchestration：流程控制",
+                  "body": "安排回合、任務狀態、成功條件、重試及停止出口。"
+                },
+                {
+                  "title": "Execution Environment：執行環境",
+                  "body": "實際工作目錄、依賴、程序、檔案與網路配置。"
+                },
+                {
+                  "title": "Security：權限與邊界",
+                  "body": "限制資料與動作，處理敏感操作及跨界要求。"
+                },
+                {
+                  "title": "Observability：可觀測性",
+                  "body": "用紀錄及觀察看見工具實際執行、結果、版本與失敗。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trace",
+          "heading": "追蹤一次「讀規格、改檔、重跑」",
+          "paragraphs": [
+            "假設目前目標是修正舊報告失效：Context 提供規格與失敗情境；Tools 提供讀檔、修改及測試能力；流程控制決定一次處理哪個切片；環境提供可用的 Python 與測試依賴。安全配置限制修改與資料範圍；可觀測性保留工具結果與版本。",
+            "MCP 的工具規格可作為一個介面例子：它定義工具描述、輸入及結果等交換方式。但能交換訊息，不代表測試環境存在、權限已正確限制，或結果已通過人的驗收。這些仍要由執行系統及操作者實際確認。"
+          ],
+          "sourceIds": [
+            "mcp-tools"
+          ]
+        },
+        {
+          "id": "diagnose",
+          "heading": "失敗時先找出缺少哪一種證據",
+          "paragraphs": [
+            "「找不到 tests/」可能來自工作目錄、檔案未準備或任務設定錯誤；「工具回報錯誤但最後仍顯示成功」則需要檢查錯誤傳遞與完成判定。先保留實際訊息，再定位受影響面向。",
+            "把六面向畫在一張紙上，並不代表已具備這些控制。只有在指定環境中實際配置、執行並留下可核對結果，才能說明某個控制已被測試。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜合成故障的追查入口",
+              "headers": [
+                "觀察",
+                "先核對什麼",
+                "不宜直接推定什麼"
+              ],
+              "rows": [
+                [
+                  "測試命令找不到",
+                  "環境依賴、目錄、可執行工具及退出狀態",
+                  "模型已測試，只是忘了附輸出"
+                ],
+                [
+                  "改動越過專案範圍",
+                  "工具路徑解析、檔案權限與修改紀錄",
+                  "提示寫不要越界就已完成隔離"
+                ],
+                [
+                  "重讀舊規格",
+                  "目前上下文、檔案版本與狀態更新方式",
+                  "只要窗口更大就會讀到正確版本"
+                ],
+                [
+                  "重試後仍無法完成",
+                  "錯誤分類、重試條件、預算及交接狀態",
+                  "繼續重試一定能成功"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "handoff",
+          "heading": "讓下一位接手者知道系統如何運行",
+          "paragraphs": [
+            "在 architecture.md 增加一份 Harness 說明：資料從哪裡來、工具如何暴露、程序在哪裡執行、誰限制權限、如何看見失敗及如何停止。遇到未配置的部分，直接標為待實作。",
+            "本課重點是能解釋一次任務的系統邊界，不要求在這一篇造出通用 Agent 框架。下一篇會放大單次工具呼叫，檢查參數、執行限制與紀錄之間的關係。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "文字編輯器；沿用合成收件修正任務，不必安裝 Agent 框架或 MCP 伺服器。",
+        "steps": [
+          "在 architecture.md 畫六面向卡片，每張寫出收件修正任務需要的資料或控制。",
+          "沿「讀 spec.md、修改指定檔案、重跑測試」追蹤各面向責任，將尚未配置者標為待實作。",
+          "挑表 1 的一個故障，列出需要取得的工具結果、版本或環境證據。",
+          "請同儕指出一個可見性不足或無法停止的情境，再修正交接說明。"
+        ],
+        "expected": "六面向的責任圖、一次工具回合追蹤與一份有依據的故障追查清單。",
+        "check": "能區分模型建議、工具介面、真實執行環境及驗收；不把架構圖視為運行或隔離證明。",
+        "cleanup": "只保留合成設計，不建立外部框架、憑證或正式權限。"
+      }
+    },
+    "en": {
+      "summary": "Inspect the execution system around a model through six engineering aspects: context, tools, orchestration, environment, security and observability.",
+      "objectives": [
+        "Explain an agent harness through six aspects without treating it as the model itself or a universal product standard.",
+        "Trace what each aspect contributes to a tool round.",
+        "Identify missing environment, control and evidence checks instead of changing only the prompt."
+      ],
+      "readingGuide": {
+        "goal": "Use six parallel aspects to explain how agent work is supported and constrained.",
+        "startingPoint": "Use a synthetic task that reads a specification, changes one file and reruns tests.",
+        "route": "Understand the harness, trace its six aspects, then diagnose missing evidence from a failure.",
+        "output": "A harness responsibility diagram in architecture.md and a traceable diagnostic handoff."
+      },
+      "sections": [
+        {
+          "id": "harness",
+          "heading": "A System Around the Model Makes Actions Happen",
+          "paragraphs": [
+            "In this course, an agent harness is the program and environment arrangement surrounding a model to support task execution. The model suggests a next step; the surrounding system provides information, calls tools, enforces restrictions, retains results and decides whether to continue.",
+            "The course uses six analysis aspects: Context, Tools, Orchestration, Execution Environment, Security and Observability. This comes from the course plan, not a claim that every framework must contain six independent modules or follow a universal standard."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Like the Tools and Workplace Behind a Work Order",
+          "paragraphs": [
+            "Think of a correction as a work order. Giving it to a programmer is insufficient for delivery: they also need the right documents, tools, an authorized workplace and an acceptance owner.",
+            "Repeating “test more carefully” cannot supply a missing test environment. A change in the wrong directory calls for inspecting tool roots and execution limits, beyond whether the model understood the request."
+          ]
+        },
+        {
+          "id": "six-aspects",
+          "heading": "Six Aspects Support One Task",
+          "paragraphs": [
+            "The six cards are parallel inspection aspects. Security and observability apply throughout the task, not as final add-on steps. One program component can serve several aspects."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | The Course’s Six Harness Aspects",
+              "description": "Cards show responsibilities, not six sequential execution stages.",
+              "items": [
+                {
+                  "title": "Context: current information",
+                  "body": "Specification versions, relevant code, tool results and unresolved questions determine what can be consulted."
+                },
+                {
+                  "title": "Tools: callable capabilities",
+                  "body": "Describe inputs, outputs, errors and side effects so requests can be checked."
+                },
+                {
+                  "title": "Orchestration: control flow",
+                  "body": "Manage rounds, task state, success criteria, retries and stop exits."
+                },
+                {
+                  "title": "Execution Environment",
+                  "body": "Actual working directories, dependencies, processes, files and network configuration."
+                },
+                {
+                  "title": "Security: permissions and boundaries",
+                  "body": "Constrain data and actions, including sensitive operations and requests beyond scope."
+                },
+                {
+                  "title": "Observability",
+                  "body": "Use records and observations to inspect actual tool execution, results, versions and failures."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trace",
+          "heading": "Trace “Read, Change, Rerun”",
+          "paragraphs": [
+            "Suppose the goal is stale-report invalidation. Context supplies the specification and failing scenario; Tools provide reading, editing and testing; orchestration chooses a slice; the environment supplies Python and test dependencies. Security limits changes and data access, while observability retains tool results and versions.",
+            "MCP’s tools specification is one interface example, defining descriptions, inputs and result exchange. Exchanging messages does not establish an available test environment, correct permission restrictions or human acceptance. The execution system and operator must confirm those separately."
+          ],
+          "sourceIds": [
+            "mcp-tools"
+          ]
+        },
+        {
+          "id": "diagnose",
+          "heading": "Identify Which Evidence Is Missing",
+          "paragraphs": [
+            "“tests/ not found” may reflect the working directory, missing files or task setup. “The tool failed but the final status says success” calls for checking error propagation and completion decisions. Retain the actual message before locating the affected aspects.",
+            "Drawing six aspects on paper does not implement those controls. Configure and execute them in a specified environment, retaining checkable results, before claiming a particular control was tested."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Starting Points for Synthetic Failure Diagnosis",
+              "headers": [
+                "Observation",
+                "Check First",
+                "Unsupported Immediate Conclusion"
+              ],
+              "rows": [
+                [
+                  "Test command unavailable",
+                  "Dependencies, working directory, executable tools and exit status.",
+                  "The model tested but forgot the output."
+                ],
+                [
+                  "Changes exceed the project scope",
+                  "Tool path resolution, file permissions and change records.",
+                  "A prompt prohibition established isolation."
+                ],
+                [
+                  "Old specification is read",
+                  "Current context, file versions and state-update mechanisms.",
+                  "A larger window guarantees the correct version."
+                ],
+                [
+                  "Retries still fail to complete",
+                  "Error classification, retry conditions, budget and handoff state.",
+                  "Further retries must succeed."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "handoff",
+          "heading": "Explain How the System Operates",
+          "paragraphs": [
+            "Add a harness description to architecture.md: information sources, exposed tools, process location, permission enforcement, visibility into failures and stopping. Mark unconfigured parts as pending implementation.",
+            "The goal is to explain task boundaries, not to build a general-purpose agent framework in this lesson. The next lesson examines one tool call, its parameters, execution restrictions and records."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "A text editor and the synthetic intake correction. No agent framework or MCP server installation is needed.",
+        "steps": [
+          "Draw six aspect cards in architecture.md with the data or controls the correction requires.",
+          "Trace reading spec.md, changing a named file and rerunning tests; mark unconfigured responsibilities as pending implementation.",
+          "Choose a Table 1 failure and list the tool results, versions or environment evidence needed.",
+          "Have a peer identify a visibility or stopping gap, then revise the handoff description."
+        ],
+        "expected": "A six-aspect responsibility diagram, a tool-round trace and an evidence-based diagnostic checklist.",
+        "check": "Distinguish model suggestions, tool interfaces, execution environments and acceptance. A diagram does not prove operation or isolation.",
+        "cleanup": "Keep the synthetic design only. Do not create external frameworks, credentials or production permissions."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M02-C05-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "本課六面向應如何理解？",
+          "options": [
+            "所有產品都一定有六個相同程序",
+            "本課的分析框架，實際元件可同時承擔多個面向",
+            "模型內部的六層神經網路",
+            "依卡片順序執行即可保證安全"
+          ],
+          "rationales": [
+            "這不是統一部署標準。",
+            "它幫助分清責任，並不規定一對一的元件配置。",
+            "這些是系統面向，不是模型網路層數。",
+            "安全與觀察跨越流程，畫圖也不構成控制保證。"
+          ]
+        },
+        "en": {
+          "prompt": "How should the course’s six aspects be understood?",
+          "options": [
+            "Every product must have six identical processes.",
+            "They are a course analysis framework; actual components can serve multiple aspects.",
+            "They are six neural-network layers inside a model.",
+            "Executing the cards in order guarantees safety."
+          ],
+          "rationales": [
+            "This is not a universal deployment standard.",
+            "The framework distinguishes responsibilities without requiring one component per aspect.",
+            "These are system aspects, not model layers.",
+            "Security and observation span the flow, and drawing a diagram guarantees no controls."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C05-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "測試命令不存在時，較適合先做什麼？",
+          "options": [
+            "要求模型重複宣告已測試",
+            "刪除測試需求",
+            "核對環境、工作目錄與工具執行結果",
+            "只增加上下文 token 數"
+          ],
+          "rationales": [
+            "回報文字不能建立可執行環境。",
+            "這改變了驗收契約，沒有修復環境問題。",
+            "這能取得定位問題的必要證據。",
+            "容量與命令可否執行不是同一個問題。"
+          ]
+        },
+        "en": {
+          "prompt": "A test command is unavailable. What should be checked first?",
+          "options": [
+            "Ask the model to repeat that testing is complete.",
+            "Remove the test requirement.",
+            "Inspect the environment, working directory and tool execution results.",
+            "Increase only the context token count."
+          ],
+          "rationales": [
+            "A statement cannot create an executable environment.",
+            "That changes acceptance instead of fixing the environment.",
+            "Those checks provide evidence needed for diagnosis.",
+            "Capacity and command availability are different problems."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C05-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "工具有 MCP 介面，代表哪些事情已被保證？",
+          "options": [
+            "所有資料權限都正確",
+            "已有完整本機測試環境",
+            "所有操作都可還原",
+            "上述都不能只由介面存在而推定"
+          ],
+          "rationales": [
+            "授權仍需實際配置與驗證。",
+            "介面不會自動安裝環境依賴。",
+            "副作用及還原能力需另外定義。",
+            "訊息交換、環境、安全與驗收各有自己的證據。"
+          ]
+        },
+        "en": {
+          "prompt": "What is guaranteed merely by a tool having an MCP interface?",
+          "options": [
+            "All data permissions are correct.",
+            "A complete local test environment exists.",
+            "Every action can be rolled back.",
+            "None of the above follows from the interface alone."
+          ],
+          "rationales": [
+            "Authorization needs configuration and verification.",
+            "An interface does not install dependencies.",
+            "Side effects and recovery need separate definitions.",
+            "Message exchange, environment, security and acceptance each require evidence."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
