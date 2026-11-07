@@ -10,6 +10,8 @@ def render(f,n,lang):
  nodes=[]
  def text(value,x,y,width,size=20,bold=False):
   lines=wrap(value,width)
+  if len(lines)>1 and lines[-1] in ['.','。']:
+   lines[-2]+=lines[-1];lines.pop()
   for j,line in enumerate(lines):nodes.append(f'<text x="{x}" y="{y+j*36}" font-size="{size}" font-weight="{650 if bold else 400}">{escape(line)}</text>')
   return y+len(lines)*36
  def arrow(y):nodes.append(f'<path d="M520 {y}v26m-7-7 7 7 7-7" fill="none" stroke="#637982" stroke-width="2"/>')
