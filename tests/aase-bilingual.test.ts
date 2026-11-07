@@ -101,8 +101,8 @@ test('M03 English preserves Chinese sources, synthetic records, checks and versi
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
   assert.equal(l.contentVersion,n===1?'1.0.4':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
-  const en=n===2?{text:{en:l.text.en}}:getPage('/en/courses/aase/v1/m03/concepts/m03-0'+n+'/')!.aaseConcept!.lesson!;
-  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual(en.text.en.sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
+  const en=getPage('/en/courses/aase/v1/m03/concepts/m03-0'+n+'/')!.aaseConcept!.lesson!;
+  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual((n===2?l.text.en:en.text.en).sections.flatMap((s:any)=>s.blocks??[]).flatMap((b:any)=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
  }
 });
 
