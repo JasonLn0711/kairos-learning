@@ -1,0 +1,264 @@
+# Kerberos 是什麼？從零開始的白話教學
+
+Kerberos 是一種「身分驗證協定」（Authentication Protocol）。它最重要的特色是：透過加密票證（Ticket），讓你不必每次存取公司系統都重新輸入密碼。
+
+你可以把 Kerberos 想成「公司的中央門禁與通行證制度」。
+
+前面學過的 LDAP 是用來查詢公司員工名冊；Kerberos 則是用來證明「你確實是某位員工」。
+
+先記住兩句話：
+
+- LDAP：查詢你是誰、屬於哪個部門。
+- Kerberos：使用加密票證證明你的身分。
+
+兩者經常一起出現在 Active Directory（AD）環境，但負責不同工作。
+
+## 一、為什麼公司需要 Kerberos？
+
+假設 Kairos 科技公司有 3,000 名員工，每個人每天需要使用許多系統。
+
+員工小明
+
+上午 9:00 登入公司電腦
+
+檔案伺服器
+
+資料庫
+
+內部網站
+
+問題：每進入一套系統，都要重新輸入帳號密碼嗎？
+
+如果所有系統都支援適當的 Kerberos 整合，就可以減少重複登入。
+
+傳統上，如果每套系統各自處理帳號和密碼，就可能造成大量重複驗證與密碼管理問題。
+
+Kerberos 提供另一個方式：第一次登入時，先向可信任的中央驗證服務證明身分，取得一張可以用來申請其他票證的憑證。之後要存取不同服務，再取得相應的服務票證。
+
+這也是它能支援 Single Sign-On（SSO，單一登入）的原因。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+## 二、用「遊樂園通行證」理解 Kerberos
+
+假設你去一座大型遊樂園。
+
+遊樂園有三個區域：雲霄飛車、海盜船和水族館。
+
+你的入園流程可以分成三個階段。
+
+第一階段：先證明你是合法遊客
+
+你到入口驗證身分，工作人員發給你一張「可以申請各區門票的通行證」。
+
+這張通行證就像 Kerberos 的 TGT（Ticket-Granting Ticket）。
+
+第二階段：取得指定設施的門票
+
+你想搭雲霄飛車，就拿通行證到票務中心，申請一張雲霄飛車專用的門票。
+
+這張門票就是 Service Ticket（服務票證）。
+
+第三階段：進入指定設施
+
+你到雲霄飛車入口，出示專用門票。工作人員確認票證有效後，再依照設施規定決定是否讓你搭乘。
+
+這就像目標服務驗證 Kerberos 票證，並進一步檢查存取權限。
+
+最關鍵的是：你不必每次都回入口重新證明身分，但也不是拿到通行證就能自由進入所有區域。
+
+TGT 用來申請服務票證；Service Ticket 則用來向特定服務證明身分。
+
+## 三、Kerberos 真正的運作原理
+
+Kerberos 主要涉及三個角色。
+
+| 角色     | 英文名稱                         | 功能        |
+| ------ | ---------------------------- | --------- |
+| 使用者／電腦 | Client                       | 想要存取資源    |
+| 中央驗證中心 | KDC（Key Distribution Center） | 驗證身分、核發票證 |
+| 服務伺服器  | Service Server               | 驗證票證並提供服務 |
+
+在 Windows Active Directory 環境中，KDC 通常執行於 Domain Controller（DC，網域控制站）。
+
+KDC 內部又分為兩個邏輯功能：AS（Authentication Service）負責核發 TGT，TGS（Ticket-Granting Service）負責核發服務票證。它們不一定是兩台不同的電腦。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+## Kerberos 的三階段票證流程
+
+小明的電腦
+
+KDC / AS
+
+請求初始票證並證明身分
+
+取得 TGT
+
+階段 1：初始驗證（AS Exchange）
+
+小明的電腦
+
+KDC / TGS
+
+使用 TGT 申請檔案伺服器票證
+
+取得 Service Ticket
+
+階段 2：服務票證申請（TGS Exchange）
+
+小明的電腦
+
+檔案伺服器
+
+出示服務票證與驗證資訊
+
+驗證成功後，依權限存取
+
+階段 3：服務身分驗證（AP Exchange）
+
+這個流程是 Kerberos V5 的基本設計，定義於 [IETF RFC 4120](https://www.rfc-editor.org/rfc/rfc4120?utm_source=chatgpt.com)。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\&sz=32)
+
+RFC Editor
+
+
+
+### 那麼，加密到底發生在哪裡？
+
+Kerberos 並不是把密碼直接交給所有伺服器。
+
+以常見的密碼式驗證來說：
+
+1. 小明的電腦使用密碼衍生出的金鑰，證明自己掌握正確的驗證資訊。
+2. KDC 驗證後，核發加密的 TGT 與對應的工作階段金鑰資訊。
+3. 小明需要存取檔案伺服器時，用 TGT 向 KDC 申請服務票證。
+4. KDC 核發由目標服務可驗證的加密票證。
+5. 檔案伺服器檢查票證及相關驗證資訊。
+
+因此，在標準密碼式 Kerberos 流程中，使用者的明文密碼不需要直接在網路上傳送給服務伺服器。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn
+
+
+
+而且票證還有有效期限、加密保護與防止重播的驗證機制。
+
+不過，Kerberos 主要負責身分驗證，不能因此認為所有後續應用資料都自動加密。資料傳輸是否受到保護，仍取決於應用協定，例如 HTTPS、SMB 加密或其他安全設定。
+
+## 四、為什麼 Kerberos 很在意電腦時間？
+
+這是資訊工程和 CEH 特別重要的知識。
+
+假設小明的電腦時間是上午 9:00，但公司的 Domain Controller 認為現在是上午 9:20。
+
+Kerberos 使用時間戳記來協助抵抗重播攻擊（Replay Attack）。
+
+如果時間差距太大，伺服器可能拒絕驗證，因為它無法信任驗證資訊的時間有效性。
+
+在一般 Windows AD 設定中，預設允許的時間偏差通常是 5 分鐘，而且可以依政策調整。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+這也解釋了為什麼企業網路很重視 NTP（Network Time Protocol）與 Windows 時間同步服務。
+
+你在 CEH M04 學習 NTP 列舉時，可以將兩者連在一起理解：時間同步不只是讓電腦時鐘準確，它也可能直接影響身分驗證的可靠性。
+
+## 五、LDAP、Kerberos、Active Directory、DNS 如何一起運作？
+
+這四者的分工可以用一張表串起來。
+
+| 技術               | 核心問題         | 主要功能            |
+| ---------------- | ------------ | --------------- |
+| DNS              | 伺服器在哪裡？      | 名稱解析與服務定位       |
+| LDAP             | 目錄裡有哪些資料？    | 查詢使用者、群組及其他目錄資訊 |
+| Kerberos         | 如何證明你的身分？    | 利用加密票證進行驗證      |
+| Active Directory | 誰來管理這些身分與目錄？ | 提供網域帳號、目錄與管理機制  |
+
+舉個例子：
+
+當小明登入公司 Windows 網域電腦，並且打開共用資料夾時，DNS 可協助找到網域服務或目標主機；Kerberos 可以完成身分驗證；AD 提供相關帳號和群組資訊；目標檔案伺服器再依權限決定能否讀取檔案。
+
+LDAP 可能用於目錄查詢，但不是每次 Windows 網域登入都必須由用戶端直接發出 LDAP 查詢。
+
+## 六、從 CEH 角度，Kerberos 有哪些安全風險？
+
+Kerberos 是成熟的身分驗證協定，但不代表它不會被攻擊。
+
+| 風險              | 白話意思                         | 主要防禦方向                   |
+| --------------- | ---------------------------- | ------------------------ |
+| Pass-the-Ticket | 偷走可用票證後，冒用票證持有者              | 保護端點、憑證與票證儲存環境           |
+| Kerberoasting   | 利用某些服務票證，嘗試離線猜測弱服務帳號密碼       | 強密碼、gMSA、適當加密演算法         |
+| Golden Ticket   | 在取得高度敏感的 Kerberos 金鑰後，偽造 TGT | 嚴格保護網域控制站與 KRBTGT 金鑰     |
+| Replay Attack   | 重送截取到的驗證訊息                   | 時間戳記、Authenticator 與重播檢查 |
+
+這些名稱不需要一次全部背起來。先記住安全邏輯：
+
+Kerberos 降低了每次傳送密碼的需求，但如果端點、票證或核心金鑰被竊取，仍然可能發生身分冒用。
+
+在 Windows 網域稽核中，事件 ID 4768 可以用來觀察 TGT 申請，4769 則與服務票證申請有關。這些紀錄可協助辨識異常驗證活動，但單一事件本身不能直接證明遭到攻擊。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn
+
+
+
+## 七、你可以在 Windows 電腦上看到 Kerberos 票證嗎？
+
+可以。在你有權操作的 Windows 環境中，開啟 PowerShell 或命令提示字元：
+
+```
+klist
+```
+
+若你使用的是有 Kerberos 票證的登入工作階段，這個指令可以列出目前快取中的票證資訊，例如票證對應的服務、有效起訖時間等。
+
+如果沒有看到票證，不一定代表 Kerberos 壞掉；也可能是目前使用本機帳號、尚未存取需要 Kerberos 的服務，或該工作階段使用其他驗證方式。
+
+這個指令只是讀取資訊，不會主動修改網域設定。
+
+## 八、三個觀念，確認你真的學會 Kerberos
+
+1\. 小明登入公司電腦後，想要存取檔案伺服器。Kerberos 通常會讓他先使用什麼來申請服務票證？
+
+TGT
+
+LDAP 查詢結果
+
+IP 位址
+
+2\. 小明已經通過 Kerberos 驗證，是否代表他能讀取公司所有機密檔案？
+
+是，驗證成功就擁有全部權限
+
+否，仍需由目標服務檢查授權
+
+3\. 電腦與 Domain Controller 的時間相差 20 分鐘，可能造成什麼問題？
+
+Kerberos 可能因時間偏差而拒絕驗證
+
+LDAP 會自動刪除使用者
+
+所有服務票證永久有效
+
+檢查答案與查看解析
+
+本課最重要的結論：Kerberos 不負責決定你能看哪些機密資料，而是讓系統能夠安全地驗證「你是誰」。
+
+接下來最值得深入的是 Kerberos 的兩種票證——TGT 與 Service Ticket——以及為什麼知道密碼、持有票證、擁有系統權限，是三件不同的事。

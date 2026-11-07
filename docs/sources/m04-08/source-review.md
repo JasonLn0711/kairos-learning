@@ -27,3 +27,13 @@
 ## 維護
 
 網站以 `python3 scripts/m04_08_content.py --check` 檢查完整主稿到 sourceBody 的一致性。出版前先完成 PR review、瀏覽器驗證，再按既有發布閘門設定實際發布日。9999-12-31 是 draft 模型的關閉日期占位，不能作為首次發布紀錄。隔離預覽使用 2026-11-06 合成日期，產物留在忽略的 .local 目錄，正式來源由 finally 還原為 draft。
+
+## 2026-11-07 完整抽換與入門補充
+
+以本次三份供稿與十張圖為主，逐章逐小節保留原理、案例、表格、DN／Filter／klist 範例、分支與測驗選項；完整英譯同深度呈現。新增範圍升為 v1.1.0／revision 3，保留原發布日。詳細修正、圖形對照與逐段證據在 [本次來源紀錄](replacement-2026-11-07/README.md)。
+
+本次重新回讀 RFC 4511、4513、2696、4120，以及 Microsoft RootDSE、Global Catalog、LDAP signing、Kerberos authentication overview、Maximum tolerance for computer clock synchronization、klist、4768、4769 一手文件。公開正文末列出各文件正式 URL；查核日期 2026-11-07。Microsoft 文件雖顯示登入提示，工具仍實際取得對應技術正文；未把提示視為已讀證據。
+
+查詢的六個維度、三種 scope、結果代碼 0／3／4、389／636、非 TLS SASL signing、分頁最後空 cookie、TGT／Service Ticket／Authenticator、AS／TGS 邏輯角色、授權分離與應用資料加密邊界均有相應段落。Windows 預設 5 分鐘與可調政策保留版本／政策條件；9:00／9:20 與 20 分鐘為合成情境。
+
+安全風險表為高層防禦解釋，未增加取得票證、離線猜測或偽造票證的操作方法。`klist` 僅說明無參數讀取目前工作階段快取；未執行 Windows 命令，未做 LDAP 目標查詢。正文參考答案是編輯解說，不是使用者作答紀錄。
