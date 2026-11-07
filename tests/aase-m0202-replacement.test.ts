@@ -4,21 +4,21 @@ import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {createAaseCatalog} from '../src/lib/aase.ts';
 const read=(p:string)=>JSON.parse(readFileSync(p,'utf8'));
-const root='docs/sources/aase/m02-02/replacement-2026-11-07/';
+const root='docs/sources/aase/m02-02/replacement-2026-11-07-followup/';
 const lesson=read('content/aase/lessons/aase-m02-c02.json'),before=read(root+'previous.json');
 const build=(l:any)=>createAaseCatalog(read('content/aase/course.json'),[l],read('content/aase/sources.json'),'2026-11-07',read('content/aase/course.en.json'));
 test('M02-02 preserves source bytes, publication and anchors, with the supplied mixed question formats',()=>{
- assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,before.revision+1);assert.equal(lesson.publishedOn,before.publishedOn);assert.deepEqual(lesson.translations,before.translations);assert.equal(lesson.date,'2026-11-07');assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.1.1');assert.equal(lesson.revision,before.revision+1);assert.equal(lesson.publishedOn,before.publishedOn);assert.deepEqual(lesson.translations,before.translations);assert.equal(lesson.date,'2026-11-07');assert.deepEqual(lesson.qa,[]);
  const raw=readFileSync(root+'pasted-text-1.txt','utf8');
  for(const lang of ['zh','en']){
   const t=lesson.text[lang];assert.equal(t.sections.length,7);
   for(const s of before.text[lang].sections)assert.ok(t.sections.some((x:any)=>x.id===s.id));
   const figures=t.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>b.kind==='flow'||b.kind==='cards');assert.deepEqual(figures.map((f:any)=>f.items.length),[2,5,5,7,4]);
-  assert.equal(t.openChecks.length,2);assert.equal(lesson.checks.length,1);assert.equal(lesson.checks[0].text[lang].options.length,3);
+  assert.equal(t.openChecks.length,1);assert.equal(lesson.checks.length,1);assert.equal(lesson.checks[0].text[lang].options.length,4);
   assert.ok(!JSON.stringify(t).includes('8192'));assert.ok(!JSON.stringify(t).includes('7800'));
  }
  for(const option of lesson.checks[0].text.zh.options)assert.ok(raw.includes(option));
- for(const q of lesson.text.zh.openChecks)assert.ok(raw.includes(q.prompt));assert.equal(lesson.checks[0].answer,1);assert.doesNotThrow(()=>build(lesson));
+ for(const q of lesson.text.zh.openChecks)assert.ok(raw.includes(q.prompt));assert.equal(lesson.checks[0].answer,2);assert.doesNotThrow(()=>build(lesson));
  assert.equal(spawnSync('sha256sum',['-c','SHA256SUMS.txt'],{cwd:root}).status,0);
 });
 test('open questions require unique stable IDs, nonempty answers and paired teaching shape',()=>{

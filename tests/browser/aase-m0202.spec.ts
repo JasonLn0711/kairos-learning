@@ -17,7 +17,7 @@ async function completeBody(page:Page,lang:'zh'|'en'){
  const practice=page.locator('#practice').locator('..');for(const value of Object.values(lesson.text[lang].exercise).flat())await expect(practice).toContainText(String(value));
 }
 for(const lang of ['zh','en'] as const)test(`${lang}: full source, five diagram relationships, exports, keyboard, reflow and no JavaScript`,async({page,browser,baseURL,request})=>{
- const path=`${lang==='en'?'/en':''}/courses/aase/v1/m02/concepts/m02-02/`;const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.0');await completeBody(page,lang);await expect(page.locator('.context-diagram')).toHaveCount(5);
+ const path=`${lang==='en'?'/en':''}/courses/aase/v1/m02/concepts/m02-02/`;const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.1');await completeBody(page,lang);await expect(page.locator('.context-diagram')).toHaveCount(5);
  const demo=page.locator('[data-context-budget]'),input=demo.locator('input');await expect(input).toBeEnabled();await expect(demo.locator('[data-budget-used]')).toHaveText('9,500 / 10,000');
  await input.focus();await page.keyboard.press('ArrowRight');await expect(input).toHaveValue('600');await expect(demo.locator('[data-budget-used]')).toHaveText('9,600 / 10,000');expect(await input.evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
  await page.keyboard.press('Tab');await expect(demo.getByRole('button').first()).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(input).toBeFocused();
