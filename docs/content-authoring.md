@@ -501,3 +501,9 @@ M02-02 v1.1.0 的五圖沿 `cards/flow` 正式資料：analogy cards 2、window 
 `MemoryMechanismsDiagram.svelte` 只在 `AASE-M02-C03` 使用既有 `cards`／`flow` 資料。六圖依序為辦公室四角色、五個 token 詞塊、兩節點壓縮、三節點檢索、四欄交接與六步跨日流程；`src/lib/aase.ts` 檢查節點數、種類與雙語結構。平行角色與交接欄位沒有箭頭；token 圖只連第四與第五格；其餘箭頭表示該圖定義的順序。圖 6 在第二天前加分隔。
 
 正文與節點為可搜尋 HTML；容器小於 34rem 時左右圖改上下，箭頭隨方向調整。固定的 12 個外部 SVG 由 `python3 scripts/aase_m0203_svg.py` 產生，`--check` 比較 bytes；沿用換行 helper、跳脫文字與元素白名單，不開放 runtime SVG markup。執行 `tests/aase-m0203-replacement.test.ts` 與 `npx playwright test --config playwright.aase-m0203.config.ts`；正式站使用 `AASE_BASE_URL`。四題採既有原生答案展開，不建立評分或學員完成狀態。來源、圖意差異與驗收見 [M02-03 回執](releases/2026-11-07-aase-m0203-replacement.md)。
+
+### AASE M02-04 控制流程與任務控制卡
+
+M02-04 v1.1.0 使用既有 cards／flow 資料；control 為 4／6 節點的兩圖、stopping 六欄控制卡、hybrid 四步流程，aase.ts 驗證種類、位置與數量。AgentControlDiagram 僅在本課啟用，固定分支保留互斥關係，失敗分支明示回到觀察及停止出口，權限兩欄窄版重排。文字由 Svelte 跳脫，沒有任意 HTML 或圖檔路徑。
+
+`scripts/aase_m0204_svg.py` 從正式雙語 JSON 產生八個 SVG；`--check` 核對 bytes，固定受審核元素、跳脫文字與小於 100000 bytes 邊界。正文、搜尋及 SVG 同源。三題 A–C 選擇題沿原生參考答案收合，不新增批改服務。來源、技術修正與驗收見 [M02-04 回執](releases/2026-11-07-aase-m0204-replacement.md)；瀏覽器入口 `playwright.aase-m0204.config.ts`，正式站以 `AASE_BASE_URL` 指定。
