@@ -1,6 +1,6 @@
 # AASE M02-05 Agent Harness 全文與四圖抽換
 
-2026-11-07；正本 repo：kairos-learning。教材：[中文](https://learn.cs-kairos.com/courses/aase/v1/m02/concepts/m02-05/)／[英文](https://learn.cs-kairos.com/en/courses/aase/v1/m02/concepts/m02-05/)。本次狀態：本機驗證完成，正式發布回執待補。
+2026-11-07；正本 repo：kairos-learning。教材：[中文](https://learn.cs-kairos.com/courses/aase/v1/m02/concepts/m02-05/)／[英文](https://learn.cs-kairos.com/en/courses/aase/v1/m02/concepts/m02-05/)。本次狀態：正式發布完成，中英文頁面與八份 SVG 回讀通過。
 
 ## 來源與範圍
 
@@ -30,4 +30,9 @@
 
 ## 正式發布回執
 
-待必要檢查通過後推送、合併及部署，接著回讀兩個正式頁面與八份 SVG；回執補上提交、CI、Pages run 及遠端歷史同步結果。
+- 來源提交 `9e624fc`；教材／圖解／測試 `205dd76`；來源對照與本機紀錄 `1466dcc`；保留遠端 M02-04 的合併提交 `7f36594`。
+- [PR #89](https://github.com/JasonLn0711/kairos-learning/pull/89) 已合併；正式內容提交 `86dd21d6247037b1297083381e4c6cffb8cd3c7d`。
+- [Quality run 42337947871](https://github.com/JasonLn0711/kairos-learning/actions/runs/42337947871)：success；[Pages run 42338065065](https://github.com/JasonLn0711/kairos-learning/actions/runs/42338065065)：success。
+- `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0205.config.ts`：中英 2 tests passed，16.2s。逐段正文、三題答案、四尺寸與兩種字級、無 JS、鍵盤、搜尋及八份 SVG 位元組回讀通過。
+- 本機整合後 M02-05 2 tests passed（8.9s）；M02-04 2 tests passed（8.8s）；M02-02 混合題型回歸 2 tests passed（7.9s）。
+- 合併後已 fetch 並確認 `HEAD...origin/main` 為 `0 0`；本回執另作文件提交，不改正式內容。未 force-push，主工作目錄的無關修改保留。下一個驗收範圍是實體裝置與完整螢幕閱讀器，不阻擋已通過的靜態教材發布。
