@@ -18,4 +18,13 @@
 - `npx playwright test --config playwright.aase-m0302.config.ts`：雙語 2/2 通過（8.5 秒）。逐段全文、小節、所有表格／code／選項／解析、四寬度、兩字級、鍵盤可見焦點／答案 Enter 與 Space／局部捲動、無 JS 與搜尋全文皆通過；六份 SVG 實際開啟、邊界與重疊及 bytes 通過。
 - 截圖在 `.local/aase/m0302/`（忽略目錄）；人工檢視中文流程桌面、四層證據桌面／手機、階段比較手機，以及英文流程手機、四層證據桌面與 SVG、階段比較桌面。圖 1 四箭頭與末步淡綠、圖 2 無箭頭與分層限制、圖 3 兩欄轉單欄保持語意。
 
-正式發布結果待執行後補記。實體裝置、完整螢幕閱讀器及學員理解尚未評估。
+## 整合、發布與正式回讀
+
+- 來源提交 `51bb765`、正文／圖解／測試提交 `290523a`、來源對照與本機回執 `1a2fc01`；後續測試型別修正 `7a3bfd8`。遠端更新以合併 `3586781`、`82fc819` 保留，M03-01 的新圖解與歷史測試也完整保留。
+- 整合後 `npm test` 254/254 通過、型別 0 errors／0 warnings、publication-boundary 與 release 檢查通過；M03-02 雙語瀏覽器 2/2（7.2 秒）、M03-01 雙語 2/2（9.9 秒）；先前共用元件回歸為 M02-06 2/2（8.6 秒）、CEH M04-02 與退役路由 22/22（23.0 秒）。
+- [PR #94](https://github.com/JasonLn0711/kairos-learning/pull/94) 已合併，正式內容 commit 為 `3e150cd1b918838c774b1434190152bbc45a1a35`。[PR 品質檢查](https://github.com/JasonLn0711/kairos-learning/actions/runs/42386996572)與[正式部署](https://github.com/JasonLn0711/kairos-learning/actions/runs/42387164471)均成功。部署在 2026-11-07 23:38（Asia/Taipei）完成；正式合併也保留當時遠端已完成的 CEH M04-10。
+- `AASE_BASE_URL=https://learn.cs-kairos.com npx playwright test --config playwright.aase-m0302.config.ts`：正式站雙語 2/2 通過（18.8 秒）。版本 v1.1.0、逐段正文、全部小節／表格／code／選項與解析、四種寬度／兩字級、無 JS、鍵盤與六圖 bytes／文字邊界皆通過。人工再檢視正式站中文圖 2 手機與英文圖 3 桌面截圖。
+- 2026-11-07 23:39 正式 HTTP 回讀：首頁、MATLAB 首頁、中英文課文均 200，不存在路徑 404；六個既有 MATLAB／reference ZIP 的 SHA-256 與原清單一致。Python urllib 首次讀首頁得到 403；後續 curl 與真實瀏覽器皆成功，此初次拒絕不計為通過證據，未變更站台存取設定。
+- 正式圖檔為 `/images/aase/m03-02-{1,2,3}-{zh,en}.svg`。本機與正式站證據另保存在主工作目錄忽略路徑 `.local/aase/m0302-replacement-2026-11-07/`，包含截圖、JSON、HTTP 回讀及命令日誌；來源及公開紀錄均在本 repo。原工作目錄的無關修改保留，未 force-push。
+
+正式課文：[繁體中文](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-02/)／[English](https://learn.cs-kairos.com/en/courses/aase/v1/m03/concepts/m03-02/)。本回執為部署後文件更新，不改變教材版本。實體裝置、完整螢幕閱讀器及學員理解尚未評估。
