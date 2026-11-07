@@ -32,3 +32,9 @@
 本輪只新增規範、工作表、忽略規則與連結紀錄，正式教材及執行程式與合併前遠端一致。本輪 248/248 單元測試、Svelte 0 errors／0 warnings、validate:content 及 git diff --check 通過。21 個新增本機／跨 repo 連結及明示錨點核對通過。Planning 的 186 筆知識索引、11/7 agenda、repository validation 通過，保留 44 個既有警告、0 個新增。正式教材／程式未改動，本輪沒有重跑瀏覽器、建置或部署；前一輪正式站證據維持原日期與範圍。
 
 下一關由 Jason 正常閱讀時提供答案或卡點；實體手機、完整螢幕閱讀器、學員理解及真實工具安全驗證維持待驗。規範發布不代表全站已逐篇重驗，不啟動既有延後的課程或實驗。
+
+## Git publication receipt
+
+Kairos 七個新增提交已透過 `git push origin HEAD:main` 推送至 `6115fe0`，fetch 後 `0 0`；主工作目錄乾淨，Python 快取保持本機且已忽略。以 ancestor 檢查確認三個本機保存提交與原遠端 `d8f3a66` 均留在 main 歷史。此次正式樹的差異僅為 `.gitignore` 與規範／工作表／索引／回執文件。
+
+Planning 成果提交 `517672c7`；推送前遇遠端 `b4cfa100` 新增簡報部署狀態，合併後連同回執推送至 `a9bfd46f`，fetch 後 `0 0`。兩邊沒有 force-push。Planning 只提交三個相關檔案；原工作目錄同步本次新增段落，其餘既有工作保留。此最終回執另作文件提交，保持教材與驗證界線。
