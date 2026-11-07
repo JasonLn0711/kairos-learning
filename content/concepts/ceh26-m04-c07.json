@@ -1,0 +1,1839 @@
+{
+  "id": "CEH26-M04-C07",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-06",
+  "status": "published",
+  "publishedOn": "2026-11-06",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "SNMP 查詢結果取決於身分、操作與可存取範圍；分開判讀通訊保護、讀取權限、寫入權限與不存在的證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "這一課最重要的概念是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMP 是讓電腦向網路設備詢問管理資訊的機制。但是，你查到的資料，只代表「你用這個身分、這種操作，在這次授權範圍內看得到什麼」，不代表設備裡只有這些資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們用一間公司的網路設備來理解整堂課。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、SNMP 是什麼？為什麼需要它？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你在一家醫院擔任資訊工程師。醫院有 100 台交換器（Switch）、20 台路由器（Router），還有許多伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天主管問你："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我們醫院現在有沒有交換器故障？哪些網路介面斷線了？設備運作多久了？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你總不能每天跑到每台交換器旁邊，接上鍵盤或管理線，一台一台確認。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以工程師需要一個「中央監控系統」，讓它可以遠端詢問設備。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 SNMP（Simple Network Management Protocol） 的用途。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/snmp-manager-zh.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "一個 Manager，三種平行設備",
+            "description": "簡化示意：一個管理端，可以向多種網路設備查詢狀態。設備是否回答、回答哪些欄位，仍由設定與權限決定。",
+            "items": [
+              {
+                "title": "監控系統 Manager",
+                "body": "查詢 GET ↓；回覆 ↑"
+              },
+              {
+                "title": "交換器 Switch",
+                "body": "透過 SNMP Agent 回答獲准查詢的資訊"
+              },
+              {
+                "title": "路由器 Router",
+                "body": "透過 SNMP Agent 回答獲准查詢的資訊"
+              },
+              {
+                "title": "伺服器 Server",
+                "body": "透過 SNMP Agent 回答獲准查詢的資訊"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，監控系統可以定期詢問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「交換器 A，你叫什麼名字？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "「交換器 B，你的第 3 個網路介面現在正常嗎？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "「路由器 C，你目前記錄的流量計數是多少？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "透過 SNMP，設備就可以回傳相應資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡要分清楚：SNMP 不是遠端桌面，也不是一般的 SSH 登入。它主要透過一套標準化的管理物件，讀取狀態，並在支援與授權的情況下修改某些設定。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、Manager、Agent、MIB、OID 到底是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這四個名詞很容易混淆，我們繼續用醫院比喻。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "專有名詞",
+            "白話文",
+            "在醫院的比喻"
+          ],
+          "rows": [
+            [
+              "Manager",
+              "發出管理要求的系統",
+              "醫院中央管理室"
+            ],
+            [
+              "Agent",
+              "設備上負責處理要求的程式",
+              "每棟樓的設備管理員"
+            ],
+            [
+              "MIB",
+              "定義有哪些管理物件、資料型別及意義",
+              "管理資料的欄位規格書"
+            ],
+            [
+              "OID",
+              "指定某個管理物件的數字編號",
+              "每個欄位的編號"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意，這裡的 Agent 不等於 AI Agent。它是設備上的管理協定程式。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-sub-1",
+          "text": "1. MIB：欄位規格書"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設醫院管理室制定了一份表格："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "意義",
+            "範例"
+          ],
+          "rows": [
+            [
+              "sysName",
+              "設備名稱",
+              "lab-switch-01"
+            ],
+            [
+              "sysLocation",
+              "設備所在位置",
+              "training-room"
+            ],
+            [
+              "sysUpTime",
+              "SNMP 網路管理部分重新初始化後的經過時間",
+              "60000 TimeTicks"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "MIB 就像這份表格的「規格定義」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它說明 sysName 是什麼、資料類型是什麼、可以怎麼被存取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是 MIB 不是設備實際資料的完整副本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如同你有醫院的人事資料欄位規格書，不代表你已取得全部員工的個人資料。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-sub-2",
+          "text": "2. OID：精確指出你想查哪個欄位"
+        },
+        {
+          "kind": "paragraph",
+          "text": "電腦怎麼知道你要詢問 sysName，而不是 sysLocation？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "靠 OID（Object Identifier）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`1.3.6.1.2.1.1.5.0`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這串數字就是 `sysName.0` 的 OID。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "物件實例",
+            "OID",
+            "問題"
+          ],
+          "rows": [
+            [
+              "sysUpTime.0",
+              "1.3.6.1.2.1.1.3.0",
+              "管理部分運作了多久？"
+            ],
+            [
+              "sysName.0",
+              "1.3.6.1.2.1.1.5.0",
+              "設備叫什麼名字？"
+            ],
+            [
+              "sysLocation.0",
+              "1.3.6.1.2.1.1.6.0",
+              "設備被設定在哪個位置？"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你會發現，這三個數字幾乎一樣，只有後段不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "原因是 OID 使用樹狀階層，像電腦的資料夾路徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在這三個純量物件中，最後的 `.0` 代表指定實例；如果是網路介面表格，則可能是介面索引，例如 `.1`、`.2`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以不能認為所有 OID 都要加 `.0`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 2578](https://www.rfc-editor.org/rfc/rfc2578.html) · [RFC 3418](https://www.rfc-editor.org/rfc/rfc3418.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、GET、GETNEXT、WALK、SET：四種不同的查詢觀念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當我們知道要查哪個 OID，接下來就要決定怎麼查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "GET"
+        },
+        {
+          "kind": "paragraph",
+          "text": "指定查詢某個欄位"
+        },
+        {
+          "kind": "paragraph",
+          "text": "像問櫃檯：「請告訴我 A 設備的名稱。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果有權限且資料存在，就取得該值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "GETNEXT"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查下一個可存取的欄位"
+        },
+        {
+          "kind": "paragraph",
+          "text": "像問櫃檯：「按照資料編號，下一項我能查的資料是什麼？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定是數字直接加一，也可能跳過無權讀取的欄位。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "WALK"
+        },
+        {
+          "kind": "paragraph",
+          "text": "沿一段 OID 範圍連續查詢"
+        },
+        {
+          "kind": "paragraph",
+          "text": "像請櫃檯依序提供某一類設備的可查資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "WALK 是工具執行多次查詢的方式，不是獨立的 SNMP 訊息種類。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SET"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要求修改資料"
+        },
+        {
+          "kind": "paragraph",
+          "text": "像跟櫃檯說：「請把 A 設備的位置改成另一個房間。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "是否能修改，取決於物件實作與目前授權。不能因為 GET 成功，就認為 SET 也可以。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "補充：Net-SNMP 的 `snmpwalk` 使用 GETNEXT；`snmpbulkwalk` 使用 GETBULK 批次取得資料。兩者都是沿 OID 範圍取得一系列值的工具。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最重要的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "GET 成功只證明能讀。WALK 取得清單只證明這次可見。SET 是另一種需要額外權限的操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通訊埠也可以順便記下來：SNMP 查詢端點通常使用 UDP 161，Trap／Inform 通知的接收端通常使用 UDP 162。這是慣例，不代表所有環境都只能這樣配置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Net-SNMP snmpwalk](https://www.net-snmp.org/docs/man/snmpwalk.html) · [Net-SNMP snmpbulkwalk](https://www.net-snmp.org/docs/man/snmpbulkwalk.html) · [RFC 3417](https://www.rfc-editor.org/rfc/rfc3417.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、SNMPv1、v2c、v3：為什麼版本會影響資安？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是一位醫院網路管理員。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你每天都要透過網路向交換器查詢資訊。這時有兩個完全不同的問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一個是：「設備如何確定你有資格詢問？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二個是：「詢問過程中，別人是否可能看到你傳送的資訊？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就帶到 SNMP 的版本與安全機制。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-sub-1",
+          "text": "SNMPv1／v2c：像拿著通關口令問櫃檯"
+        },
+        {
+          "kind": "paragraph",
+          "text": "早期的 SNMP 常使用一組叫做 `community string` 的字串。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 `public`、`private`，或管理者自行設定的字串。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "設備可以根據字串及相關設定決定如何處理要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但有一個問題：傳統 SNMPv1／v2c 本身不會加密這些字串和管理內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以具備適當網路觀察位置的人，有機會從封包看到相關資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且不要被名稱誤導：`public` 不是必然允許全世界讀取，`private` 也不是必然有修改權限。實際權限由設定決定。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-sub-2",
+          "text": "SNMPv3：把驗證身分與保護內容分開"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMPv3 常見的 USM 安全模型有三個安全層級。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "USM 安全層級",
+            "保護"
+          ],
+          "rows": [
+            [
+              "noAuthNoPriv",
+              "無認證、無加密"
+            ],
+            [
+              "authNoPriv",
+              "有認證、無加密"
+            ],
+            [
+              "authPriv",
+              "有認證、有加密"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "authNoPriv 的認證機制也提供受保護訊息的完整性檢查；authPriv 再增加內容機密性保護。三種層級都不能直接代表可讀寫哪些管理物件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再用寄信解釋："
+        },
+        {
+          "kind": "paragraph",
+          "text": "noAuthNoPriv 就像沒有可靠身分驗證，也沒有密封保護的信件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "authNoPriv 就像寄件者身分可以驗證，信件是否遭修改也有檢查機制，但內容仍可能被旁人閱讀。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "authPriv 則再把內容放進加密信封中。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以："
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMPv3 不一定有加密。必須進一步確認實際安全層級，例如 authPriv，以及所使用的演算法與設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這裡還有另一個重要觀念：即使使用 authPriv，也不能推論使用者可以存取所有設備資料。傳輸保護和存取權限是兩件事。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3414](https://www.rfc-editor.org/rfc/rfc3414.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、MIB view：為什麼兩個人查同一台設備，結果卻不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 M04-07 最關鍵的部分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設醫院有一台交換器，裡面有三項資料："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "設備名稱：`lab-switch-01`",
+            "設備位置：`training-room`",
+            "管理部分經過時間：`60000 TimeTicks`"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在有兩位經過授權的工作人員。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "同一台交換器 lab-switch-01",
+            "monitor-a：日常監控",
+            "admin-b：額外獲准讀取位置"
+          ],
+          "rows": [
+            [
+              "設備名稱",
+              "lab-switch-01",
+              "lab-switch-01"
+            ],
+            [
+              "管理經過時間",
+              "60000 TimeTicks",
+              "60000 TimeTicks"
+            ],
+            [
+              "設備位置",
+              "不提供",
+              "training-room"
+            ],
+            [
+              "寫入權限",
+              "本案例沒有 write view",
+              "未由本表證明"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 monitor-a 問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「設備位置在哪裡？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "設備不提供該物件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 admin-b 問一模一樣的問題，卻得到 `training-room`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你能說第一位使用者查不到，是因為設備根本沒有設定位置嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為資料實際存在，只是第一位使用者沒有讀取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 MIB view（管理物件可存取範圍） 的意義。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不是控制畫面長什麼樣子，而是控制指定身分的操作能接觸哪些管理物件。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-sub-1",
+          "text": "VACM 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VACM（View-based Access Control Model）就是處理這種存取控制的機制之一。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能根據使用者的安全身分、群組、安全模型、安全層級、context（要查詢的管理資料集合），以及執行什麼操作，選擇對應權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中有三個很重要的範圍："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "權限範圍",
+            "白話意思"
+          ],
+          "rows": [
+            [
+              "Read view",
+              "允許讀哪些資料"
+            ],
+            [
+              "Write view",
+              "允許改哪些資料"
+            ],
+            [
+              "Notify view",
+              "哪些物件可納入傳送的通知"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三個範圍不是同一回事。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再延伸一個重點：假設 MIB 定義 `sysName` 是 `read-write`，這只是規格上允許讀寫該類物件，不是說 monitor-a 就能修改它。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以想像一份醫院的人事表格，本來設計成可以修改員工電話，但不代表任何能打開表格的人都有編輯權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3415 VACM](https://www.rfc-editor.org/rfc/rfc3415.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、noSuchObject、noSuchInstance、endOfMibView 和 timeout 有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 CEH 的列舉過程中，我們不能只看「有沒有查到」，還要看「設備究竟回覆了什麼」。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "回覆",
+            "白話文意思",
+            "能不能證明設備沒有這項資料？"
+          ],
+          "rows": [
+            [
+              "`noSuchObject`",
+              "這次可存取範圍內，找不到相符的物件",
+              "不能"
+            ],
+            [
+              "`noSuchInstance`",
+              "有對應的物件類型，但指定的實例找不到",
+              "不能推論整個物件不存在"
+            ],
+            [
+              "`endOfMibView`",
+              "順著 OID 往後找，已沒有下一項可存取資料",
+              "不能"
+            ],
+            [
+              "`timeout`",
+              "沒等到設備回覆",
+              "不能，連原因都還不確定"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "前三者是 SNMPv2c／v3 操作中會見到的回覆例外；timeout 則是請求沒有在預期時間取得回應，不是一樣的協定回覆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "用圖書館來理解："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`noSuchObject` 像查詢系統說：「在你能檢索的目錄裡，找不到這個書目。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`noSuchInstance` 像系統認得這一類書目，但你指定的那個編號沒有對應項目。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`endOfMibView` 像你沿著目錄順序查找，已經沒有下一筆可以提供的紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`timeout` 則像你打電話給圖書館，但沒有人接電話。你根本不知道是電話線壞掉、圖書館休息，還是對方拒絕接聽。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-sub-1",
+          "text": "為什麼這很重要？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為資安人員需要區分三件事："
+        },
+        {
+          "kind": "paragraph",
+          "text": "沒有看到、沒有權限看到，以及確認不存在，是不同的證據狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個觀念不只適用 SNMP，也適用你前面學過的 SMB、NFS，甚至未來的 LDAP／Active Directory 列舉。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3416](https://www.rfc-editor.org/rfc/rfc3416.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、完整解讀教材的合成案例"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們把以下四筆查詢紀錄放在一起看。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "紙上案例身分",
+            "查詢",
+            "回覆"
+          ],
+          "rows": [
+            [
+              "monitor-a / SNMPv3 authNoPriv",
+              "GET sysName.0",
+              "lab-switch-01"
+            ],
+            [
+              "monitor-a / SNMPv3 authNoPriv",
+              "GET sysUpTime.0",
+              "60000 TimeTicks"
+            ],
+            [
+              "monitor-a / SNMPv3 authNoPriv",
+              "GET sysLocation.0",
+              "noSuchObject"
+            ],
+            [
+              "另一個已獲准讀取位置的身分",
+              "GET sysLocation.0",
+              "training-room"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們應該怎麼推理？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一，monitor-a 能查到名稱和時間，代表它在這次條件下可以取得這兩項管理資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二，monitor-a 查不到位置，原本存在多種可能性。但是管理者核對權限設定，發現位置被排除在 monitor-a 的 read view 之外。再由另一個獲准身分查到位置，便提供了資料存在且不對 monitor-a 開放的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三，monitor-a 沒有 write view，兩位使用者也都沒執行 SET。因此這份紀錄不能證明誰有能力修改名稱、位置或其他資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四，authNoPriv 代表有訊息認證及完整性保護，但內容沒有加密。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-sub-1",
+          "text": "為什麼 60000 TimeTicks 不能直接說設備重開機？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 TimeTicks 的單位是百分之一秒。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "60000 ÷ 100 = 600 秒 = 10 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題是 `sysUpTime` 量測的是設備的網路管理部分最後重新初始化之後經過的時間。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此它可能與設備重新開機有關，也可能是管理部分重新初始化。單靠這個數字無法證明整台設備在 10 分鐘前重開機。這是 RFC 3418 對該物件的正式定義。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3418 sysUpTime](https://www.rfc-editor.org/rfc/rfc3418.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、CEH 的觀點：我們到底在列舉什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "從 CEH M04 Enumeration（列舉）的角度來看，SNMP 是另一個能提供系統資訊的服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在明確授權的資安盤點或測試中，可以透過它理解設備名稱、管理介面、某些版本資訊及網路狀態等。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但列舉取得資訊，不代表取得控制權，更不代表已經找到可利用的弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如查到設備的韌體版本，只能把它當作後續漏洞查核的線索。還需要比對產品型號、受影響版本、修補情況以及實際配置，才能判定漏洞是否適用。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-sub-1",
+          "text": "如果你是醫院資安負責人，應該怎麼防護？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防護重點不是把所有 SNMP 都關閉，而是先確認是否有監控需求，再限制管理來源與權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "需要 SNMP 時，優先評估使用適當設定的 SNMPv3 authPriv，並限制誰能連線、哪些 OID 能讀取、哪些可以寫入。一般監控帳號通常不需要寫入權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗收時應在授權範圍內確認正常的查詢可成功，受限制的物件沒有洩露，使用的安全層級符合要求。也要保留查核證據，但不要把 community string、認證密碼或金鑰放進公開紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有一個很重要的資安思維："
+        },
+        {
+          "kind": "paragraph",
+          "text": "好的權限設計，不是每個人都看得到所有資料，而是每個人只取得完成工作所需要的資訊。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、用一個框架記住整堂課"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMP 安全性可以分成四個層次來判斷："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "層次",
+            "判斷",
+            "核對條件"
+          ],
+          "rows": [
+            [
+              "01",
+              "能否連線？",
+              "網路路徑、服務、UDP 埠與相關設定"
+            ],
+            [
+              "02",
+              "通訊有沒有保護？",
+              "SNMP 版本、認證、完整性與加密"
+            ],
+            [
+              "03",
+              "能讀取哪些資料？",
+              "身分、context、read view 與實作"
+            ],
+            [
+              "04",
+              "能不能修改資料？",
+              "物件可寫性、write view 與實際授權"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這四層要分開判讀，不能因為其中一層成立，就推論後面幾層全部成立。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "十、理解檢核：換你當資安工程師"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情境一：某設備使用 SNMPv3 authNoPriv，管理者說「我們已經使用 v3，所以管理資料一定加密」。你同意嗎？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想想版本和 security level 的差別。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情境二：帳號 A 查不到設備位置，帳號 B 卻查得到。你認為應檢查什麼設定，才能確認原因？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想想身分、context 與 read view。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情境三：MIB 標示 sysName 為 read-write，而帳號 A 可以 GET sysName。這能證明它可以 SET 修改名稱嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想想規格能力與實際寫入授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以整理這三題的答案，帶到教學討論中請老師批改。此頁不會傳送或儲存作答。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一課最值得帶到下一單元的能力，是學會區分實際觀察到的結果、權限造成的限制，以及還沒有證據支持的推論。這也是後續理解 LDAP／Active Directory 列舉時的重要基礎。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "SNMP results depend on identity, operation, and accessible scope. Assess communication protection, read access, write access, and evidence of absence separately.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The central idea of this lesson is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMP lets a computer ask network devices for management information. The data you retrieve shows what this identity, operation, and authorization scope allowed you to see on this occasion. It does not establish that the device contains only those data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "We will use one organization's network equipment throughout the lesson."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. What is SNMP, and why do we need it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine working as an IT engineer at a hospital with 100 switches, 20 routers, and many servers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your supervisor asks:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Have any switches failed? Which network interfaces are down? How long have the devices been running?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You cannot visit every switch, connect a keyboard or management cable, and check each one every day."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Engineers therefore need a central monitoring system that can ask devices remotely."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is the purpose of SNMP (Simple Network Management Protocol)."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/snmp-manager-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "One Manager, three parallel device types",
+            "description": "Simplified diagram: one Manager can query several kinds of network equipment. Whether a device answers, and which fields it returns, still depends on configuration and permissions.",
+            "items": [
+              {
+                "title": "Monitoring system Manager",
+                "body": "GET request ↓; response ↑"
+              },
+              {
+                "title": "Switch",
+                "body": "SNMP Agent returns authorized information"
+              },
+              {
+                "title": "Router",
+                "body": "SNMP Agent returns authorized information"
+              },
+              {
+                "title": "Server",
+                "body": "SNMP Agent returns authorized information"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, the monitoring system can periodically ask:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Switch A, what is your name?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Switch B, is your third network interface up?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Router C, what traffic counter value do you currently report?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The device can return the corresponding information through SNMP."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMP is not a remote desktop or a general SSH login. It primarily uses standardized management objects to read status and, where supported and authorized, change certain settings."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. What are Manager, Agent, MIB, and OID?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These four terms are easy to confuse. Continue with the hospital analogy."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Term",
+            "Plain meaning",
+            "Hospital analogy"
+          ],
+          "rows": [
+            [
+              "Manager",
+              "System sending management requests",
+              "Central management office"
+            ],
+            [
+              "Agent",
+              "Program on a device that handles requests",
+              "Equipment attendant in each building"
+            ],
+            [
+              "MIB",
+              "Definitions of management objects, their types, and meanings",
+              "Specification for management-data fields"
+            ],
+            [
+              "OID",
+              "Numeric identifier for a management object",
+              "Identifier for each field"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The Agent here is a management-protocol program on the device, not an AI Agent."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-sub-1",
+          "text": "1. MIB: the field specification"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the hospital management office defines this form:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Field",
+            "Meaning",
+            "Example"
+          ],
+          "rows": [
+            [
+              "sysName",
+              "Device name",
+              "lab-switch-01"
+            ],
+            [
+              "sysLocation",
+              "Configured device location",
+              "training-room"
+            ],
+            [
+              "sysUpTime",
+              "Time since the network-management portion was reinitialized",
+              "60000 TimeTicks"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The MIB is like the specification for this form."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It describes what sysName means, its data type, and how it can be accessed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A MIB is not a complete copy of the device's current data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Having a specification for hospital personnel fields does not mean possessing every employee's personal records."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-sub-2",
+          "text": "2. OID: identify exactly which field you want"
+        },
+        {
+          "kind": "paragraph",
+          "text": "How does the computer know that you want sysName rather than sysLocation?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It uses an OID (Object Identifier)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`1.3.6.1.2.1.1.5.0`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This numeric identifier identifies `sysName.0`."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Object instance",
+            "OID",
+            "Question"
+          ],
+          "rows": [
+            [
+              "sysUpTime.0",
+              "1.3.6.1.2.1.1.3.0",
+              "How long has the management portion been running?"
+            ],
+            [
+              "sysName.0",
+              "1.3.6.1.2.1.1.5.0",
+              "What is the device called?"
+            ],
+            [
+              "sysLocation.0",
+              "1.3.6.1.2.1.1.6.0",
+              "Where is the device configured to be located?"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The numbers are almost identical; only their later components differ."
+        },
+        {
+          "kind": "paragraph",
+          "text": "OIDs form a hierarchical tree, rather like folder paths."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For these three scalar objects, the final `.0` selects the instance. A network-interface table may instead use an interface index such as `.1` or `.2`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not assume that every OID needs `.0` appended."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 2578](https://www.rfc-editor.org/rfc/rfc2578.html) · [RFC 3418](https://www.rfc-editor.org/rfc/rfc3418.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. GET, GETNEXT, WALK, and SET: four different ideas"
+        },
+        {
+          "kind": "paragraph",
+          "text": "After identifying the OID, decide how to query it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "GET"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Request a particular field."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Like asking a service desk: “Please tell me device A's name.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If access is permitted and the data exists, you receive its value."
+        },
+        {
+          "kind": "paragraph",
+          "text": "GETNEXT"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Request the next accessible field."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Like asking: “In identifier order, what is the next item I can access?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not simply add one to a number; inaccessible objects may be skipped."
+        },
+        {
+          "kind": "paragraph",
+          "text": "WALK"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Repeatedly query along an OID range."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Like asking the desk to provide the accessible records for a category in order."
+        },
+        {
+          "kind": "paragraph",
+          "text": "WALK describes a tool performing multiple queries. It is not a separate SNMP message type."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SET"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Request a data change."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Like saying: “Please change device A's location to another room.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Whether this succeeds depends on the object's implementation and the current authorization. A successful GET does not establish that SET is permitted."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Net-SNMP's `snmpwalk` uses GETNEXT; `snmpbulkwalk` uses GETBULK to retrieve values in batches. Both tools retrieve a series of values within an OID range."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The practical distinction is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A successful GET establishes read access. A WALK list establishes what was visible this time. SET is a separate operation requiring additional permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMP query endpoints commonly use UDP 161. Trap/Inform notification receivers commonly use UDP 162. These are conventions, not the only possible configurations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Net-SNMP snmpwalk](https://www.net-snmp.org/docs/man/snmpwalk.html) · [Net-SNMP snmpbulkwalk](https://www.net-snmp.org/docs/man/snmpbulkwalk.html) · [RFC 3417](https://www.rfc-editor.org/rfc/rfc3417.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. SNMPv1, v2c, and v3: why does the version affect security?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine being the hospital's network administrator."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You query switches over the network every day. Two separate questions arise:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First: “How does the device determine that you are entitled to ask?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second: “Can someone else see the information exchanged?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These questions lead to SNMP versions and security mechanisms."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-sub-1",
+          "text": "SNMPv1/v2c: asking the desk with a shared passphrase"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Earlier SNMP versions commonly use a string called a `community string`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Examples include `public`, `private`, or an administrator-defined string."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The device uses the string and related settings to decide how to handle the request."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Traditional SNMPv1/v2c does not itself encrypt these strings or the management content."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Someone with an appropriate network observation position may therefore see this information in packets."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The names do not assign permissions: `public` does not necessarily allow everyone to read, and `private` does not necessarily grant write access. Configuration determines actual permissions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-sub-2",
+          "text": "SNMPv3: separate authentication from content protection"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The common USM security model for SNMPv3 provides three security levels."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "USM security level",
+            "Protection"
+          ],
+          "rows": [
+            [
+              "noAuthNoPriv",
+              "No authentication and no encryption"
+            ],
+            [
+              "authNoPriv",
+              "Authentication without encryption"
+            ],
+            [
+              "authPriv",
+              "Authentication and encryption"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The authentication mechanism in authNoPriv also checks protected-message integrity. authPriv adds confidentiality protection. None of these levels alone tells you which management objects may be read or written."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of sending a letter:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "noAuthNoPriv resembles a letter without reliable sender authentication or a sealed envelope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "authNoPriv lets the recipient authenticate the sender and check for modification, while others may still read the contents."
+        },
+        {
+          "kind": "paragraph",
+          "text": "authPriv additionally puts the contents inside an encrypted envelope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Therefore:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SNMPv3 does not always mean encryption. Check the actual security level, such as authPriv, and the algorithms and settings used."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even authPriv does not establish access to all device data. Transport/message protection and object access permissions answer different questions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3414](https://www.rfc-editor.org/rfc/rfc3414.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. MIB view: why do two people querying the same device get different results?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the central access-control question in M04-07."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a hospital switch contains three values:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Device name: `lab-switch-01`",
+            "Device location: `training-room`",
+            "Management elapsed time: `60000 TimeTicks`"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two staff members have authorized identities."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Same switch: lab-switch-01",
+            "monitor-a: routine monitoring",
+            "admin-b: additionally allowed to read location"
+          ],
+          "rows": [
+            [
+              "Device name",
+              "lab-switch-01",
+              "lab-switch-01"
+            ],
+            [
+              "Management elapsed time",
+              "60000 TimeTicks",
+              "60000 TimeTicks"
+            ],
+            [
+              "Device location",
+              "Not provided",
+              "training-room"
+            ],
+            [
+              "Write permission",
+              "No write view in this case",
+              "Not established by this table"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose monitor-a asks:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Where is this device located?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The device does not provide that object."
+        },
+        {
+          "kind": "paragraph",
+          "text": "admin-b asks exactly the same question and receives `training-room`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Can you conclude that the first user failed because the device had no configured location?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The data exists, but the first user is not allowed to read it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is the purpose of a MIB view: a scope of accessible management objects."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It controls which management objects a given identity's operation can reach; it does not define the appearance of a screen."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-sub-1",
+          "text": "What is VACM?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VACM (View-based Access Control Model) is one mechanism for making these access decisions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It can select permissions using the security identity, group, security model, security level, context (the management-data collection being queried), and operation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Three important scopes are:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Permission scope",
+            "Plain meaning"
+          ],
+          "rows": [
+            [
+              "Read view",
+              "Objects that may be read"
+            ],
+            [
+              "Write view",
+              "Objects that may be changed"
+            ],
+            [
+              "Notify view",
+              "Objects that may be included in outgoing notifications"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These three scopes are separate."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If the MIB defines sysName as `read-write`, the specification permits that class of object to support reading and writing. It does not grant monitor-a permission to modify it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A hospital personnel form may be designed to allow phone-number edits, but everyone who can open it does not automatically have editing permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3415 VACM](https://www.rfc-editor.org/rfc/rfc3415.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. How do noSuchObject, noSuchInstance, endOfMibView, and timeout differ?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In CEH enumeration, record what the device actually returned rather than only whether something was found."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Result",
+            "Plain meaning",
+            "Does it prove the device lacks these data?"
+          ],
+          "rows": [
+            [
+              "`noSuchObject`",
+              "No matching object in the accessible scope of this request",
+              "No"
+            ],
+            [
+              "`noSuchInstance`",
+              "A corresponding object type exists, but the specified instance is absent",
+              "It does not establish that the whole object type is absent"
+            ],
+            [
+              "`endOfMibView`",
+              "No next accessible item remains in OID order",
+              "No"
+            ],
+            [
+              "`timeout`",
+              "No reply arrived within the expected time",
+              "No; the cause is still unknown"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The first three are protocol exceptions encountered in SNMPv2c/v3 operations. A timeout is the absence of a timely response, not the same kind of protocol reply."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use a library analogy:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`noSuchObject` resembles: “No such catalog entry exists within the catalog you can search.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`noSuchInstance` resembles recognizing the entry type but finding no item with that specific identifier."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`endOfMibView` resembles reaching the point where no further accessible catalog entry can be provided."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`timeout` resembles calling the library and getting no answer. You do not know whether the line failed, the library is closed, or the call was declined."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-sub-1",
+          "text": "Why does the distinction matter?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Security staff need to distinguish three evidence states:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not observed, not authorized to observe, and confirmed absent are different conclusions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This also applies to SMB, NFS, and later LDAP/Active Directory enumeration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3416](https://www.rfc-editor.org/rfc/rfc3416.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Interpret the complete synthetic case"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Put the following four query records together."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Tabletop identity",
+            "Query",
+            "Response"
+          ],
+          "rows": [
+            [
+              "monitor-a / SNMPv3 authNoPriv",
+              "GET sysName.0",
+              "lab-switch-01"
+            ],
+            [
+              "monitor-a / SNMPv3 authNoPriv",
+              "GET sysUpTime.0",
+              "60000 TimeTicks"
+            ],
+            [
+              "monitor-a / SNMPv3 authNoPriv",
+              "GET sysLocation.0",
+              "noSuchObject"
+            ],
+            [
+              "Another identity authorized to read location",
+              "GET sysLocation.0",
+              "training-room"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "How should we reason about these observations?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, monitor-a retrieved the name and time. This establishes access to those two management values under the conditions of these requests."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second, failure to retrieve location initially has several possible explanations. The administrator checks the access configuration and finds that location is excluded from monitor-a's read view. Retrieval by another authorized identity then provides evidence that the data exists and is unavailable to monitor-a."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third, monitor-a has no write view, and neither identity performed SET. These records do not establish anyone's ability to change the name, location, or other values."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fourth, authNoPriv provides message authentication and integrity protection without content encryption."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-sub-1",
+          "text": "Why does 60000 TimeTicks not directly establish a device reboot?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A TimeTick is one hundredth of a second."
+        },
+        {
+          "kind": "paragraph",
+          "text": "60000 ÷ 100 = 600 seconds = 10 minutes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "sysUpTime measures time since the device's network-management portion was last reinitialized."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That may coincide with a device reboot, or it may reflect management reinitialization. This value alone cannot establish that the entire device rebooted ten minutes ago. RFC 3418 formally defines this object."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3418 sysUpTime](https://www.rfc-editor.org/rfc/rfc3418.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. The CEH perspective: what are we enumerating?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In CEH M04 Enumeration, SNMP is another service that can provide system information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Explicitly authorized inventories or security tests can use it to understand device names, management interfaces, some version information, and network status."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Retrieving information does not establish control or an exploitable vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a firmware version is a lead for vulnerability checking. Compare the product model, affected versions, patch status, and actual configuration before concluding that a vulnerability applies."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-8-sub-1",
+          "text": "How should a hospital security lead protect it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Start by identifying monitoring needs, then restrict management sources and permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Where SNMP is needed, evaluate appropriately configured SNMPv3 authPriv and restrict who can connect, which OIDs can be read, and which can be written. Routine monitoring identities generally do not need write access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Within the authorized scope, verify that intended queries succeed, restricted objects are not disclosed, and the security level meets requirements. Retain evidence without publishing community strings, authentication passwords, or keys."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The access-control principle is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Give each person the information needed for the job."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. A four-layer framework for the lesson"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Assess SNMP security in four separate layers:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Layer",
+            "Question",
+            "Conditions to check"
+          ],
+          "rows": [
+            [
+              "01",
+              "Can it be reached?",
+              "Network path, service, UDP ports, configuration"
+            ],
+            [
+              "02",
+              "Is communication protected?",
+              "SNMP version, authentication, integrity, encryption"
+            ],
+            [
+              "03",
+              "Which data may be read?",
+              "Identity, context, read view, implementation"
+            ],
+            [
+              "04",
+              "May data be modified?",
+              "Object writability, write view, actual authorization"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Assess each layer separately. Evidence for one layer does not establish all subsequent layers."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10. Understanding check: your turn as the security engineer"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scenario 1: A device uses SNMPv3 authNoPriv. Its administrator says, “We use v3, so management data must be encrypted.” Do you agree? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider the distinction between version and security level."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scenario 2: Identity A cannot retrieve device location, while identity B can. Which settings should you check to establish the reason?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider identity, context, and read view."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scenario 3: The MIB marks sysName as read-write, and identity A can GET sysName. Does that establish permission to change it with SET?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider specification capability and actual write authorization."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Prepare your three answers for a teaching discussion and ask your teacher to review them. This page does not transmit or store responses."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Carry forward the ability to distinguish observed results, restrictions caused by permissions, and inferences that still lack evidence. It also prepares you for LDAP/Active Directory enumeration."
+        }
+      ]
+    }
+  }
+}

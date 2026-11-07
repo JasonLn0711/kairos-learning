@@ -1,0 +1,875 @@
+{
+  "id": "AASE-M02-C01",
+  "status": "published",
+  "revision": 4,
+  "contentVersion": "1.1.0",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-07",
+  "sourceIds": [
+    "hf-tokenization",
+    "transformer-paper"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從文字如何切成 token，到向量、注意力與下一個 token 的產生，建立能解釋模型輸出及其限制的基本圖像。",
+      "objectives": [
+        "區分字元、詞語與模型使用的 token，避免用字數直接估算所有模型的容量。",
+        "說明 Transformer 中向量表示、位置資訊及 Attention 的基本作用。",
+        "用可重現的純數學範例理解加權組合，分清注意力權重與答案正確性。"
+      ],
+      "readingGuide": {
+        "goal": "說明模型處理文字的基本單位與加權機制，保留輸出驗證的界線。",
+        "startingPoint": "沿用三個必要欄位的合成收件要求；數學範例可只用紙筆。",
+        "route": "先讀完整生成流程，再分清 Token、向量與注意力，操作加權計算，最後核對驗證責任。",
+        "output": "原理說明與兩組玩具計算結果，作為後續上下文設計的基礎。"
+      },
+      "sections": [
+        {
+          "id": "pipeline",
+          "heading": "一、先看完整流程：AI 收到一句話後，發生什麼事？",
+          "paragraphs": [
+            "為什麼 AI 可以回答得非常流暢，甚至能寫程式、分析文件，卻仍然可能一本正經地說錯話？答案要從 AI 如何處理文字開始理解。",
+            "先記住一個核心觀念：模型把文字轉換成數字，透過大量數學運算，產生接下來的內容。",
+            "假設你對 AI 說：「請幫我檢查這份申請資料，有沒有缺少必填欄位。」下圖把文字生成的處理流程簡化為六個節點。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜文字如何變成回答",
+              "description": "箭頭表示簡化的處理順序。最後的回答可能對，也可能錯；這個流程本身不保證已按照業務規則完成驗證。",
+              "items": [
+                {
+                  "title": "你輸入文字",
+                  "body": "「請檢查申請資料」"
+                },
+                {
+                  "title": "① Tokenizer：切成 Token",
+                  "body": "把文字分成模型能處理的單位，再轉為編號。"
+                },
+                {
+                  "title": "② 轉成向量，加上位置資訊",
+                  "body": "讓文字成為可運算的數字表示。"
+                },
+                {
+                  "title": "③ Transformer 運算",
+                  "body": "Attention 與其他神經網路層反覆處理資訊。"
+                },
+                {
+                  "title": "④ 預測下一個 Token",
+                  "body": "算出各種可能輸出的機率，依生成策略選擇。"
+                },
+                {
+                  "title": "⑤ 形成回答",
+                  "body": "「這份資料缺少文件類型。」"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "hf-tokenization",
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "units",
+          "heading": "二、Token 是什麼？把它想成 AI 使用的文字零件",
+          "paragraphs": [
+            "人類看到「申請資料不完整」，通常會直接理解它的意思。但模型要對文字進行矩陣運算，必須先把它換成可計算的表示。第一步就是 Tokenization（Token 化）。",
+            "想像你在玩樂高。一座完整城堡由許多小積木組成；文字也會依照分詞器的規則，轉成較小的單位。每個 Token 都會對應一個 ID，就像每個積木都有自己的編號。",
+            "一個中文字不一定是一個 Token。一個 Token 可能包含多個字，也可能對應部分字元的位元組序列。不同模型使用的 Tokenizer 可能不同，所以同一句話的 Token 數量也可能不同。",
+            "這會影響使用方式：輸入長度限制（Context Window，上下文視窗）及許多 API 的費用計算，都與 Token 數量有關。實際計數須指定模型、Tokenizer 及完整輸入。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 2｜「收件資料」的兩種假設切分",
+              "description": "兩組是平行比較，並非先後步驟；這些切分是教學示意，並非實際模型結果。",
+              "items": [
+                {
+                  "title": "切成 2 個 Token",
+                  "body": "收件 ／ 資料"
+                },
+                {
+                  "title": "切成 4 個 Token",
+                  "body": "收 ／ 件 ／ 資 ／ 料"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "hf-tokenization"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "三、向量是什麼？為什麼要把文字變成一串數字？",
+          "paragraphs": [
+            "假設模型已把「文件」轉成一個 Token ID，光有編號還不夠。就像身分證號碼雖是一串數字，光看號碼卻不能直接知道一個人的工作或喜好。模型會進一步把 Token ID 轉成一組數字，稱為 Embedding（嵌入向量）。",
+            "可以把每個文字零件想成帶著一張有許多欄位的數字卡片。這些數字是供模型運算的表示，並非人類預先指定的語意欄位，例如「重要性＝0.2」。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 3｜「文件」的假設性向量",
+              "description": "實際模型通常有更多維度。這四個數字僅用於教學，不表示真實的 Token 向量，也不是四項人工定義的屬性。",
+              "items": [
+                {
+                  "title": "0.2",
+                  "body": "第 1 維"
+                },
+                {
+                  "title": "−0.7",
+                  "body": "第 2 維"
+                },
+                {
+                  "title": "1.1",
+                  "body": "第 3 維"
+                },
+                {
+                  "title": "0.4",
+                  "body": "第 4 維"
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "position",
+              "heading": "位置資訊：相同文字，順序可以改變意思",
+              "paragraphs": [
+                "「主管把文件交給承辦人」和「承辦人把文件交給主管」，使用幾乎相同的字，意思卻不同。",
+                "模型需要 Position Information（位置資訊）來區別文字排列及其關係。不同 Transformer 架構會用不同方式加入位置資訊。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "attention",
+          "heading": "四、Attention 是什麼？為什麼 AI 要參考其他文字？",
+          "paragraphs": [
+            "想像你是一位承辦人，看見合成資料：「申請編號：SYN-001；申請人：DEMO-A；文件類型：沒有填寫」。有人問：「這份申請資料完整嗎？」",
+            "你不能只看申請編號與申請人都填了，就回答完整。你必須把「文件類型」與「沒有填寫」連在一起理解，再對照必填規則。",
+            "Attention（注意力機制）在計算某個位置的資訊時，讓模型參考其他可見位置的資訊，再決定如何加權組合。這是數學機制，並非人類的注意力，也不保證模型理解你的業務規則。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "id": "query-key-value",
+              "heading": "Query、Key、Value 是什麼？",
+              "paragraphs": [
+                "先用圖書館查資料的方式理解：查詢需求用來比對索引線索，再依匹配程度取回並組合內容。真正的 Transformer 中，Q、K、V 都是模型透過數學運算產生的向量。"
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 4｜Q、K、V 的圖書館比喻",
+              "description": "三列說明不同角色。圖書館是比喻；模型實際計算的是向量。",
+              "items": [
+                {
+                  "title": "Q｜Query：我要找什麼？",
+                  "body": "像讀者拿著查詢需求，準備比對線索。"
+                },
+                {
+                  "title": "K｜Key：有哪些可以比對的線索？",
+                  "body": "像每本書的索引資訊，用來判斷匹配程度。"
+                },
+                {
+                  "title": "V｜Value：要取回什麼資訊？",
+                  "body": "像根據匹配程度，從各本書取得並組合內容。"
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "self-attention",
+              "heading": "從匹配分數到新的資訊表示",
+              "paragraphs": [
+                "第一步，使用 Query 和 Key 計算匹配分數。第二步，經過 Softmax，轉換成加總等於 1 的權重。第三步，使用這些權重對 Value 做加權組合。第四步，將新的資訊表示交給後續神經網路處理。",
+                "這是 Self-Attention（自注意力）的核心機制：同一序列內的位置彼此參考，不一定是在參考外部資料。常見的縮放點積寫法是 softmax(QKᵀ/√dₖ)V；遮罩另行限制可見位置。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "attention-example",
+          "heading": "五、Softmax 與 Attention 的數學，實際體驗一次",
+          "paragraphs": [
+            "先用兩個位置 A、B：匹配分數分別為 1、0，Value 分別為 2、6。Softmax 會把匹配分數轉成權重。下方可以調整分數，觀察加權組合如何改變。",
+            "本例的公式是 wA＝exp(a)／(exp(a)＋exp(b))，wB＝1−wA，結果＝wA×2＋wB×6。預設權重約為 0.731、0.269，結果約為 3.076。先以完整精度計算，再四捨五入顯示；顯示值相乘的式子使用約等號。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "固定的兩個 Value 與預設分數",
+              "headers": [
+                "項目",
+                "A",
+                "B"
+              ],
+              "rows": [
+                [
+                  "匹配分數",
+                  "1",
+                  "0"
+                ],
+                [
+                  "Value",
+                  "2",
+                  "6"
+                ]
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 5｜調整 Attention 分數",
+              "description": "固定 Value 為 2、6；以下是分數 [1, 0] 的靜態預設圖。權重約為 73.1%、26.9%，加權結果約為 3.076。互動教具只演示純數學加權，沒有執行真實模型、向量或縮放點積計算。",
+              "items": [
+                {
+                  "title": "A：分數 1；Value 2",
+                  "body": "Softmax 權重約 73.1%。"
+                },
+                {
+                  "title": "B：分數 0；Value 6",
+                  "body": "Softmax 權重約 26.9%。"
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "softmax-observations",
+              "heading": "如何判讀調整結果",
+              "paragraphs": [
+                "A 的分數較高時，結果較靠近 2；B 的分數較高時，結果較靠近 6。兩邊分數相同時，各占 50%，結果就是 4。",
+                "分數為 0，不代表權重為 0；Softmax 比較的是相對分數。真實模型的 Value 是向量，這裡用單一數字讓你看清楚加權組合，不能據此判定模型能力。"
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "python-example",
+              "heading": "離線重算：純 Python 範例",
+              "paragraphs": [
+                "環境為 Python 3 標準函式庫。將程式存為 attention_demo.py，執行 python3 attention_demo.py。預期輸出 weights = [0.731, 0.269] 與 weighted_value = 3.076。改用分數 [0.0, 0.0] 後，應得到 [0.5, 0.5] 與 4.0。"
+              ],
+              "code": "from math import exp\nscores = [1.0, 0.0]\nvalues = [2.0, 6.0]\nshift = max(scores)\nnumerators = [exp(x - shift) for x in scores]\nweights = [x / sum(numerators) for x in numerators]\nweighted_value = sum(w * value for w, value in zip(weights, values))\nprint(\"weights =\", [round(w, 3) for w in weights])\nprint(\"weighted_value =\", round(weighted_value, 3))"
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "transformer",
+          "heading": "六、Transformer 是什麼？Attention 是其中一個重要零件",
+          "paragraphs": [
+            "現在把 Token、向量與 Attention 放在一起看。可以把 Transformer 想成一整座資訊處理工廠，Attention 是其中一種處理設備。",
+            "典型 Transformer 也有 Feed-Forward Network（前饋網路），對每個位置的表示做更複雜的非線性轉換；Residual Connection（殘差連接），讓資訊與梯度更容易通過多層網路；Normalization（正規化），幫助維持數值與訓練穩定性；以及 Multi-Head Attention（多頭注意力），讓不同注意力頭各自學習資訊關係。",
+            "模型經過多層計算，逐步形成適合後續預測的表示。不同 Transformer 的架構並不完全相同：GPT 類文字生成模型通常採 Decoder-only；其他模型也可能採 Encoder-only 或 Encoder–Decoder。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "id": "autoregression",
+              "heading": "那 AI 為什麼是一個字、一個字慢慢回答？",
+              "paragraphs": [
+                "更精確地說，這類自回歸模型通常是一個 Token 接著一個 Token 地產生。例如「這份資料缺少文件類型。」並不表示每個中文字各是一個生成步驟。",
+                "每一步都根據目前可見內容，計算下一個 Token 的機率分布，再依生成策略選擇。新 Token 加進上下文後，繼續計算，直到停止條件。這稱為 Autoregressive Generation（自回歸生成）；因果遮罩讓某個生成位置看不到尚未生成的未來 Token。",
+                "既然在預測下一個 Token，為什麼還能推理或寫程式？大量訓練可能讓模型學到語法、知識關聯、程式結構及複雜的問題解決模式，而不只相鄰文字的關係。具備這些能力仍不代表每次輸出都可靠。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "limits",
+          "heading": "七、AI 很會回答，仍須驗證回答是否為真",
+          "paragraphs": [
+            "先分清楚 Attention 權重、Token 生成機率及結果驗證。三者回答不同的問題，不能互相替代。",
+            "回到收件案例：申請編號與申請人代號都有填，但文件類型是空白。AI 可能流暢地回答：「這份資料已全部填寫完成，符合審核要求。」",
+            "這句話可能同時犯兩個錯誤：第一，未正確指出必填欄位缺漏；第二，把資料完整性與正式審核通過混為一談。因此開發 AI 協作系統時，模型文字輸出仍須對照業務事實。",
+            "可靠的收件系統應以可測試的明確程式規則檢查必填欄位，並讓 AI 解釋缺漏、協助整理或提出修正建議。這連接到 M01：人負責定義規則與驗收條件，AI 可協助部分工作，完成與否須有證據。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "三種不同的判斷",
+              "headers": [
+                "概念",
+                "它回答什麼問題？",
+                "能否直接證明正確？"
+              ],
+              "rows": [
+                [
+                  "Attention 權重",
+                  "這次運算如何組合其他位置資訊？",
+                  "不能"
+                ],
+                [
+                  "Token 生成機率",
+                  "目前上下文下，哪些 Token 較可能產生？",
+                  "不能"
+                ],
+                [
+                  "結果驗證",
+                  "輸出是否符合真實資料、規則與證據？",
+                  "需要另外檢查"
+                ]
+              ]
+            },
+            {
+              "kind": "flow",
+              "caption": "圖 6｜先驗證，再讓 AI 解釋",
+              "description": "箭頭表示工作分工與資料流。欄位完整性檢查不等於正式審核通過。",
+              "items": [
+                {
+                  "title": "原始申請資料",
+                  "body": "SYN-001／DEMO-A／文件類型空白"
+                },
+                {
+                  "title": "程式規則驗證",
+                  "body": "檢查申請編號、申請人代號及文件類型是否都已填寫。"
+                },
+                {
+                  "title": "驗證結果：缺少文件類型",
+                  "body": "保留規則檢查的實際結果。"
+                },
+                {
+                  "title": "AI 協助使用者理解",
+                  "body": "「目前無法標記為完整，請補上文件類型。」"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "apply",
+          "heading": "八、今天真正需要記住的六句話",
+          "paragraphs": [
+            "Token：AI 處理文字的基本單位，不一定等於一個字。Embedding：把 Token 轉成可供神經網路運算的向量。",
+            "Position：讓模型區分文字順序。Attention：計算不同位置資訊如何加權組合。",
+            "Transformer：整合 Attention、前饋網路與其他組件的神經網路架構。Verification：透過規格、資料或外部證據驗證 AI 的答案。",
+            "如果只能記住一個觀念：Token 是處理單位，Transformer 是運算架構，Attention 是其中的資訊組合機制；它們都不能取代事實查證。",
+            "實際協作時，提供明確欄位、規格、合成輸入與預期結果，保留模型及工具環境、輸出與驗收情境。一個正確或錯誤輸出不足以推論所有情境的表現；下一課再看如何把所需資訊放入有限的上下文視窗。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "紙筆即可；可選用 Python 3 執行純數學教具，不需模型帳號、套件或網路。",
+        "steps": [
+          "把一句合成收件要求畫成兩種手工切分，註明不是實際 tokenizer 結果。",
+          "依圖 1 說明 token、向量表示、注意力及解碼各處理什麼問題。",
+          "手算或執行範例，核對權重約 [0.731, 0.269]、加權結果約 3.076。",
+          "將 scores 改為 [0.0, 0.0] 再計算，說明為何權重各 0.5、結果為 4.0，以及它沒有證明哪些模型能力。"
+        ],
+        "expected": "一份單位與機制的說明，及兩組可核對的玩具加權結果；不把它記為真實模型測試。",
+        "check": "能解釋 token 數為何需指定分詞器，並指出注意力權重、下一 token 機率與事實正確性之間的差別。",
+        "cleanup": "保留合成筆記；若建立 attention_demo.py，可刪除或納入個人練習，不產生外部資源。"
+      }
+    },
+    "en": {
+      "summary": "Follow text from tokenization through vectors, attention and next-token generation to explain model output and its limits.",
+      "objectives": [
+        "Distinguish characters, words and model tokens instead of estimating every model’s capacity from character counts.",
+        "Explain the basic roles of vector representations, position information and attention in a Transformer.",
+        "Use reproducible arithmetic to understand weighted combinations, separating attention weights from answer correctness."
+      ],
+      "readingGuide": {
+        "goal": "Explain the units and weighting mechanism used to process text while retaining the need to verify output.",
+        "startingPoint": "Use the synthetic request about three required intake fields; the arithmetic can be done on paper.",
+        "route": "Follow the generation path, distinguish tokens, vectors and attention, try the weighted calculation, then check verification responsibilities.",
+        "output": "An explanation and two toy calculation results as a basis for later context design."
+      },
+      "sections": [
+        {
+          "id": "pipeline",
+          "heading": "1. The Whole Path: What Happens After AI Receives a Sentence?",
+          "paragraphs": [
+            "Why can AI respond fluently, write code and analyze documents, yet still state something wrong with confidence? Start with how it processes text.",
+            "Keep one central idea in mind: the model converts text to numbers and performs many mathematical operations to produce what comes next.",
+            "Suppose you ask AI: “Please check this application for missing required fields.” The diagram simplifies text generation into six nodes."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | How Text Becomes a Response",
+              "description": "Arrows show a simplified processing order. The final response may be right or wrong; this path alone does not establish validation against business rules.",
+              "items": [
+                {
+                  "title": "You enter text",
+                  "body": "“Please check the application.”"
+                },
+                {
+                  "title": "1. Tokenizer: split into tokens",
+                  "body": "Split text into units the model can process, then map them to IDs."
+                },
+                {
+                  "title": "2. Vectors and position information",
+                  "body": "Turn text into numeric representations for computation."
+                },
+                {
+                  "title": "3. Transformer computation",
+                  "body": "Attention and other neural network layers repeatedly process information."
+                },
+                {
+                  "title": "4. Predict the next token",
+                  "body": "Compute probabilities of possible outputs and select using a decoding strategy."
+                },
+                {
+                  "title": "5. Form a response",
+                  "body": "“The document type is missing from this application.”"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "hf-tokenization",
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "units",
+          "heading": "2. Tokens: The Text Pieces AI Uses",
+          "paragraphs": [
+            "A person usually reads “申請資料不完整” (“the application is incomplete”) and understands it directly. To perform matrix operations on text, a model first needs a computable representation. The first step is tokenization.",
+            "Imagine building with LEGO. A complete castle consists of small bricks; similarly, a tokenizer divides text into smaller units according to its rules. Each token maps to an ID, like a numbered brick.",
+            "One Chinese character does not necessarily equal one token. A token may contain several characters or represent a byte sequence covering part of a character. Models may use different tokenizers, so the same sentence may have different token counts.",
+            "This affects usage: context-window limits and many API pricing calculations depend on token counts. An actual count requires a specified model, tokenizer and complete input."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Two Hypothetical Splits of “收件資料”",
+              "description": "The groups are parallel alternatives, not sequential steps. These splits are teaching illustrations, not actual model results.",
+              "items": [
+                {
+                  "title": "Split into 2 tokens",
+                  "body": "收件 / 資料"
+                },
+                {
+                  "title": "Split into 4 tokens",
+                  "body": "收 / 件 / 資 / 料"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "hf-tokenization"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "3. Vectors: Why Turn Text into a List of Numbers?",
+          "paragraphs": [
+            "Suppose “文件” (“document”) has been mapped to a token ID. An ID alone is not enough. An identity number, for example, does not directly reveal someone’s occupation or preferences. The model maps the token ID to a list of numbers called an embedding.",
+            "Think of each text piece as carrying a card with many numeric fields. These numbers are representations for model computation, not semantic fields assigned by humans, such as “importance = 0.2.”"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 3 | A Hypothetical Vector for “文件”",
+              "description": "Real models usually have more dimensions. These four numbers are illustrative, not an actual token vector or four manually defined attributes.",
+              "items": [
+                {
+                  "title": "0.2",
+                  "body": "Dimension 1"
+                },
+                {
+                  "title": "−0.7",
+                  "body": "Dimension 2"
+                },
+                {
+                  "title": "1.1",
+                  "body": "Dimension 3"
+                },
+                {
+                  "title": "0.4",
+                  "body": "Dimension 4"
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "position",
+              "heading": "Position: Order Can Change the Meaning",
+              "paragraphs": [
+                "“主管把文件交給承辦人” (“the supervisor gives the document to the case officer”) and “承辦人把文件交給主管” (“the case officer gives the document to the supervisor”) use almost the same characters but have different meanings.",
+                "The model needs position information to distinguish order and relationships. Different Transformer architectures incorporate position information in different ways."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "attention",
+          "heading": "4. Attention: Why Refer to Other Text Positions?",
+          "paragraphs": [
+            "Imagine a case officer reading synthetic data: “Application ID: SYN-001; applicant: DEMO-A; document type: not filled in.” Someone asks whether the application is complete.",
+            "You cannot conclude that it is complete just because the application ID and applicant are present. You must connect “document type” with “not filled in,” then check the required-field rules.",
+            "Attention lets a model refer to information at other visible positions when computing a representation at one position, then determine how to weight and combine that information. This mathematical mechanism is not human attention and does not guarantee understanding of your business rules."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "id": "query-key-value",
+              "heading": "What Are Query, Key and Value?",
+              "paragraphs": [
+                "Use a library analogy: a query is compared with index clues, then content is retrieved and combined according to the match. In a real Transformer, Q, K and V are vectors produced by mathematical operations."
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 4 | The Library Analogy for Q, K and V",
+              "description": "The three rows describe different roles. The library is an analogy; the model operates on vectors.",
+              "items": [
+                {
+                  "title": "Q | Query: what am I looking for?",
+                  "body": "Like a reader carrying a query to compare with clues."
+                },
+                {
+                  "title": "K | Key: what clues can be compared?",
+                  "body": "Like each book’s index information used to determine a match."
+                },
+                {
+                  "title": "V | Value: what information is retrieved?",
+                  "body": "Like taking and combining content from books according to their match."
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "self-attention",
+              "heading": "From Match Scores to a New Representation",
+              "paragraphs": [
+                "First, compute match scores using queries and keys. Second, apply softmax to obtain weights that sum to 1. Third, combine values using those weights. Fourth, pass the new representation to subsequent neural network processing.",
+                "This is the core of self-attention: positions within the same sequence refer to one another, rather than necessarily retrieving external information. A common scaled dot-product expression is softmax(QKᵀ/√dₖ)V; a mask separately restricts visible positions."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "attention-example",
+          "heading": "5. Try the Arithmetic of Softmax and Attention",
+          "paragraphs": [
+            "Start with two positions, A and B: their match scores are 1 and 0, and their values are 2 and 6. Softmax converts scores to weights. Adjust the scores below to observe how the weighted combination changes.",
+            "Here, wA = exp(a)/(exp(a) + exp(b)), wB = 1 − wA, and the result = wA×2 + wB×6. Default weights are approximately 0.731 and 0.269, giving approximately 3.076. Calculations use full precision before display rounding; an expression using displayed weights therefore uses an approximation sign."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Fixed Values and Default Scores",
+              "headers": [
+                "Item",
+                "A",
+                "B"
+              ],
+              "rows": [
+                [
+                  "Match score",
+                  "1",
+                  "0"
+                ],
+                [
+                  "Value",
+                  "2",
+                  "6"
+                ]
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 5 | Adjust Attention Scores",
+              "description": "Values are fixed at 2 and 6. This static diagram shows default scores [1, 0], weights about 73.1% and 26.9%, and a weighted result about 3.076. The interactive tool illustrates arithmetic weighting, not execution of a real model, vectors or scaled dot products.",
+              "items": [
+                {
+                  "title": "A: score 1; value 2",
+                  "body": "Softmax weight approximately 73.1%."
+                },
+                {
+                  "title": "B: score 0; value 6",
+                  "body": "Softmax weight approximately 26.9%."
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "softmax-observations",
+              "heading": "How to Read the Changes",
+              "paragraphs": [
+                "When A has the higher score, the result is closer to 2; when B has the higher score, it is closer to 6. Equal scores give 50% each and a result of 4.",
+                "A score of 0 does not imply a weight of 0: softmax compares relative scores. Real model values are vectors. Scalar values make this combination easy to inspect, but the example cannot establish model capability."
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "python-example",
+              "heading": "Recalculate Offline with Pure Python",
+              "paragraphs": [
+                "Use Python 3 and its standard library. Save the program as attention_demo.py and run python3 attention_demo.py. Expect weights = [0.731, 0.269] and weighted_value = 3.076. With scores [0.0, 0.0], expect [0.5, 0.5] and 4.0."
+              ],
+              "code": "from math import exp\nscores = [1.0, 0.0]\nvalues = [2.0, 6.0]\nshift = max(scores)\nnumerators = [exp(x - shift) for x in scores]\nweights = [x / sum(numerators) for x in numerators]\nweighted_value = sum(w * value for w, value in zip(weights, values))\nprint(\"weights =\", [round(w, 3) for w in weights])\nprint(\"weighted_value =\", round(weighted_value, 3))"
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "transformer",
+          "heading": "6. Transformer: Attention Is One Important Component",
+          "paragraphs": [
+            "Now consider tokens, vectors and attention together. Think of a Transformer as an information-processing factory, with attention as one type of equipment.",
+            "A typical Transformer also contains feed-forward networks, which apply more complex nonlinear transformations at each position; residual connections, which help information and gradients pass through multiple layers; normalization, which supports numerical and training stability; and multi-head attention, whose heads learn information relationships separately.",
+            "Multiple layers gradually form representations suitable for subsequent predictions. Transformer architectures vary: GPT-style text generators usually use decoder-only architectures, while other models may use encoder-only or encoder–decoder architectures."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "id": "autoregression",
+              "heading": "Why Does AI Appear to Answer One Character at a Time?",
+              "paragraphs": [
+                "More precisely, this type of autoregressive model typically generates one token after another. For example, producing “這份資料缺少文件類型。” (“the document type is missing”) does not mean each Chinese character is a separate generation step.",
+                "At each step, the model computes a next-token probability distribution from the currently visible content and selects a token using a decoding strategy. It appends the token to the context and continues until a stopping condition. This is autoregressive generation; a causal mask prevents a generation position from seeing future tokens that have not yet been generated.",
+                "How can next-token prediction support reasoning or programming? Extensive training can teach grammar, knowledge relationships, code structure and complex problem-solving patterns, beyond relationships between adjacent text. These capabilities still do not make every output reliable."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "transformer-paper"
+          ]
+        },
+        {
+          "id": "limits",
+          "heading": "7. Fluent Answers Still Need Verification",
+          "paragraphs": [
+            "Distinguish attention weights, token-generation probabilities and verification. They answer different questions and cannot substitute for one another.",
+            "Return to the intake example: the application ID and applicant code are present, but the document type is blank. AI might fluently say, “This application is fully completed and meets the approval requirements.”",
+            "That sentence can contain two errors: failing to identify a missing required field, and conflating data completeness with formal approval. In an AI collaboration system, model output must therefore be checked against business facts.",
+            "A reliable intake system should check required fields with explicit, testable program rules, while AI explains missing data, organizes information or suggests corrections. This connects to M01: people define rules and acceptance criteria, AI can assist with some work, and completion requires evidence."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Three Different Judgments",
+              "headers": [
+                "Concept",
+                "What question does it answer?",
+                "Does it directly establish correctness?"
+              ],
+              "rows": [
+                [
+                  "Attention weights",
+                  "How does this computation combine information from other positions?",
+                  "No"
+                ],
+                [
+                  "Token-generation probability",
+                  "Which tokens are more likely in the current context?",
+                  "No"
+                ],
+                [
+                  "Verification",
+                  "Does the output match actual data, rules and evidence?",
+                  "Requires a separate check"
+                ]
+              ]
+            },
+            {
+              "kind": "flow",
+              "caption": "Figure 6 | Validate First, Then Let AI Explain",
+              "description": "Arrows show responsibilities and data flow. A field-completeness check does not establish formal approval.",
+              "items": [
+                {
+                  "title": "Original application data",
+                  "body": "SYN-001 / DEMO-A / document type blank"
+                },
+                {
+                  "title": "Program-rule validation",
+                  "body": "Check whether application ID, applicant code and document type are all filled in."
+                },
+                {
+                  "title": "Validation result: document type missing",
+                  "body": "Retain the actual rule-check result."
+                },
+                {
+                  "title": "AI helps the user understand",
+                  "body": "“This cannot currently be marked complete. Please add the document type.”"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "apply",
+          "heading": "8. Six Statements to Remember",
+          "paragraphs": [
+            "Token: a basic unit for processing text, not necessarily one character. Embedding: maps a token to a vector for neural network computation.",
+            "Position: lets the model distinguish text order. Attention: computes how information at different positions is weighted and combined.",
+            "Transformer: a neural network architecture integrating attention, feed-forward networks and other components. Verification: checks AI answers against specifications, data or external evidence.",
+            "If you remember one idea: tokens are processing units, Transformer is the computational architecture, and attention is its information-combination mechanism. None replaces fact-checking.",
+            "In practice, provide explicit fields, specifications, synthetic inputs and expected results. Retain the model and tool environment, output and acceptance scenarios. One correct or incorrect output does not establish performance in every situation. The next lesson examines how to fit relevant information into a finite context window."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Paper is sufficient. Optionally use Python 3 for the arithmetic; no model account, package or network is needed.",
+        "steps": [
+          "Draw two hand-made segmentations of a synthetic intake request and label them as illustrations, not actual tokenizer results.",
+          "Use Figure 1 to explain the roles of tokens, vector representations, attention and decoding.",
+          "Calculate by hand or run the example to confirm weights approximately [0.731, 0.269] and a weighted result approximately 3.076.",
+          "Change scores to [0.0, 0.0] and recalculate. Explain the equal 0.5 weights, result 4.0 and model capabilities this example does not establish."
+        ],
+        "expected": "An explanation of units and mechanisms with two checkable toy calculations, kept distinct from actual model testing.",
+        "check": "Explain why token counts require a specified tokenizer, and distinguish attention weights, next-token probabilities and factual correctness.",
+        "cleanup": "Keep synthetic notes. Delete attention_demo.py or retain it as a personal exercise; no external resources are created."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M02-C01-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "假設某句話剛好有 20 個中文字，是否一定消耗 20 個 Token？為什麼？",
+          "options": [
+            "一定，中文字和 Token 是一對一",
+            "不一定，取決於模型使用的 Tokenizer",
+            "一定，只要沒有標點符號"
+          ],
+          "rationales": [
+            "中文字與 Token 沒有固定的一對一關係。",
+            "實際切分由指定的 Tokenizer 決定。",
+            "即使沒有標點，切分仍取決於 Tokenizer。"
+          ]
+        },
+        "en": {
+          "prompt": "If a sentence contains exactly 20 Chinese characters, must it use 20 tokens? Why?",
+          "options": [
+            "Yes: Chinese characters and tokens map one-to-one.",
+            "Not necessarily: it depends on the model’s tokenizer.",
+            "Yes, as long as there is no punctuation."
+          ],
+          "rationales": [
+            "There is no fixed one-to-one mapping.",
+            "Actual segmentation depends on the specified tokenizer.",
+            "Even without punctuation, segmentation depends on the tokenizer."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C01-Q02",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "兩個 Value 分別為 2 與 6，如果 Attention 權重都是 0.5，結果是多少？",
+          "options": [
+            "2",
+            "4",
+            "6"
+          ],
+          "rationales": [
+            "這會忽略 Value 6 的一半貢獻。",
+            "0.5×2＋0.5×6＝4。",
+            "兩者權重相同，不能只保留 Value 6。"
+          ]
+        },
+        "en": {
+          "prompt": "Two values are 2 and 6. If both attention weights are 0.5, what is the result?",
+          "options": [
+            "2",
+            "4",
+            "6"
+          ],
+          "rationales": [
+            "This ignores the contribution of half of value 6.",
+            "0.5×2 + 0.5×6 = 4.",
+            "Equal weights do not select only value 6."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C01-Q03",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "模型給某個位置很高的 Attention 權重，代表什麼？",
+          "options": [
+            "那段資訊一定是真的",
+            "那段資訊一定最重要",
+            "那個位置在此次加權運算中占比較大"
+          ],
+          "rationales": [
+            "權重沒有證明事實為真。",
+            "單次計算權重不能證明普遍的重要性。",
+            "這描述本次加權的計算意義，結果仍須驗證。"
+          ]
+        },
+        "en": {
+          "prompt": "What does a high attention weight at one position mean?",
+          "options": [
+            "That information must be true.",
+            "That information must be the most important.",
+            "That position has a larger share in this weighted computation."
+          ],
+          "rationales": [
+            "The weight does not establish truth.",
+            "A weight in one calculation does not establish universal importance.",
+            "This describes the computation; outcomes still require verification."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C01-Q04",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "開發 AI 收件系統，最可靠的必填欄位驗證方式是哪個？",
+          "options": [
+            "只要 AI 回答流暢就算通過",
+            "使用明確的程式規則檢查，讓 AI 協助解釋",
+            "看 AI 產生答案時的機率有多高"
+          ],
+          "rationales": [
+            "流暢程度不代表欄位完整。",
+            "可測試的規則檢查承接已定義的條件，AI 解釋其結果。",
+            "生成機率不能替代業務驗證。"
+          ]
+        },
+        "en": {
+          "prompt": "For an AI intake system, which is the most reliable way to validate required fields?",
+          "options": [
+            "Pass whenever AI responds fluently.",
+            "Check with explicit program rules and let AI help explain.",
+            "Look at the probability of AI’s generated answer."
+          ],
+          "rationales": [
+            "Fluency does not establish field completeness.",
+            "Testable rule checks apply defined conditions; AI explains the result.",
+            "Generation probability cannot replace business validation."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}

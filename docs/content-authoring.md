@@ -40,6 +40,8 @@ All lessons, module quizzes and wrong-answer review consume the same question ob
 
 ## One-concept reading route — October 23
 
+Current M04 contract (2026-11-05): ten new stable IDs; C01–C05 are published and C06–C10 remain pending; old source and renderer examples below are historical references stored outside the build. Legacy teaching and image assets are retired. Public slugs m04-01–m04-10 are reused only for their corresponding new stable IDs after publication; C01–C05 are currently published. [Migration receipt](releases/2026-11-04-m04-route-reset.md).
+
 `content/concepts.json` is the ordered registry of stable IDs, modules and bilingual titles. Pending concepts have registry entries but no published teaching. Each teaching lives in `content/concepts/<lowercase-id>.json`; its `id` must match a registry entry. `src/lib/concepts.ts` validates the data and applies the shared status/date gate to routes, search, navigation and public page data. No original lesson reference or route-code edit is needed to publish the next concept.
 
 Teaching fields: `id`, positive `revision`, `date` (content revision date), `status` (`draft` or `published`), `publishedOn`, and `text.zh` / `text.en`, each with `summary` and `sections` (`id`, `heading`, `paragraphs`). Both languages use the same section IDs. Keep published IDs and URLs stable. M04-01 revision 2 preserves the seven-section teaching scope, with reviewed technical corrections; exact supplied originals remain in their designated source archives.
@@ -53,7 +55,7 @@ Shortest update workflow:
 3. Run `npm run validate:content`, `npm test`, `npm run check`, `node scripts/check-publication-boundary.mjs` and `npm run validate:release`. The boundary check renders an isolated second-concept fixture, removes it, tests draft/future exclusion, then rebuilds clean production output. Reserved fixture IDs M04-98 and M04-99 are never production curriculum.
 4. Check mobile/desktop, bilingual body and Q&A, previous/next links, search and missing IDs. Publish through the existing PR/Pages workflow; read back the exact public URL and record the deployment commit/run in private progress and the thin daily index.
 
-Routes, search and navigation resolve by concept ID. Pending neighbors link to their module-index anchor. Registry order determines adjacency across modules, so add later modules in the intended editorial sequence. Each module retains its own concept count; M04 has twelve core topics followed by M05, with seven optional recognition/risk topics.
+Routes, search and navigation resolve by concept ID. Pending neighbors link to their module-index anchor. Registry order determines adjacency across modules, so add later modules in the intended editorial sequence. Each module retains its own concept count; M04 now has ten units identified as `CEH26-M04-C01` through `CEH26-M04-C10`, followed by M05. The historical twelve-page route is retired; see [migration and recovery](releases/2026-11-04-m04-route-reset.md). A registry entry without teaching has no article route or search entry. To publish a reviewed unit, add its bilingual teaching JSON with the exact new ID and use the existing status/date gate. Never reuse legacy M04 IDs for new meanings.
 
 Sections may include `blocks`: semantic `table` (caption, headers, rows), `step` (heading, paragraphs, optional code), or `details` (legacy data kind, rendered as an ordinary visible section). Keep bilingual structure aligned. Optional `checks` contains teaching tests, each with a stable ID, zero-based answer, and bilingual prompt, four options and four rationales. Tests and their directly visible explanations are distinct from `qa`; reading an answer neither submits a learner response nor confirms understanding.
 
@@ -61,7 +63,7 @@ Revision 3 adds text-first `flow` and `cards` blocks, each with a caption, descr
 
 ## Responsive teaching diagrams — adopted October 25
 
-Use the verified [M04-01 v6 simulation card](https://learn.cs-kairos.com/courses/ceh/v13/m04/concepts/m04-01/) as the default presentation pattern when a concept benefits from a diagram. This is a visual preference, not a requirement to illustrate every paragraph or rebuild older lessons. It does not change test authorization, delivery order, learner understanding or publication permission. The [CEH teaching bridge](https://github.com/JasonLn0711/ceh-cehp-certification-notes-2026/blob/main/docs/public-teaching-bridge-2026-10-23.md#responsive-teaching-diagrams) links this standard to the learning workflow.
+Historical reference (retired from the public site on 2026-11-04): use the archived [M04-01 simulation card](../archive/ceh/m04-legacy-2026-11-04/content/concepts/m04-01.json) as a presentation reference when a concept benefits from a diagram. This is a visual preference, not a requirement to illustrate every paragraph or rebuild older lessons. It does not change test authorization, delivery order, learner understanding or publication permission. The [CEH teaching bridge](https://github.com/JasonLn0711/ceh-cehp-certification-notes-2026/blob/main/docs/public-teaching-bridge-2026-10-23.md#responsive-teaching-diagrams) links this standard to the learning workflow.
 
 ### Choose the appropriate form
 
@@ -78,9 +80,9 @@ Use a process diagram for a sequence, parallel cards for independent operations 
 
 ### Existing implementation and reference asset
 
-[AccessDiagram.svelte](../src/lib/components/AccessDiagram.svelte) renders the responsive card; [SourceBody.svelte](../src/lib/components/SourceBody.svelte) places it in the original text order. The `accessDiagram` block in [M04-01 content](../content/concepts/m04-01.json) contains the original eight text segments. The catalog includes them in search. The current block is a validated, specific simulation-card shape; adapt the schema deliberately when another diagram needs different semantics rather than forcing unrelated content into it.
+[AccessDiagram.svelte](../archive/ceh/m04-legacy-2026-11-04/src/lib/components/AccessDiagram.svelte) renders the responsive card; [SourceBody.svelte](../src/lib/components/SourceBody.svelte) places it in the original text order. The `accessDiagram` block in [M04-01 content](../archive/ceh/m04-legacy-2026-11-04/content/concepts/m04-01.json) contains the original eight text segments. The catalog includes them in search. The current block is a validated, specific simulation-card shape; adapt the schema deliberately when another diagram needs different semantics rather than forcing unrelated content into it.
 
-The [standalone SVG source](../site/images/ceh/m04-01-access-results.svg) and [published SVG](https://learn.cs-kairos.com/images/ceh/m04-01-access-results.svg) are **1,855 bytes** at this reference version. The verified minimum text contrast is 5.4:1. [Implementation commit](https://github.com/JasonLn0711/kairos-learning/commit/3fba077d5691b98972100ecb95e084ef3cf11a61) and [successful deployment](https://github.com/JasonLn0711/kairos-learning/actions/runs/40163169848) identify the baseline; remeasure after any asset change.
+The [standalone SVG source](../archive/ceh/m04-legacy-2026-11-04/site/images/ceh/m04-01-access-results.svg) and [archived SVG](../archive/ceh/m04-legacy-2026-11-04/site/images/ceh/m04-01-access-results.svg) are **1,855 bytes** at this reference version. The verified minimum text contrast is 5.4:1. [Implementation commit](https://github.com/JasonLn0711/kairos-learning/commit/3fba077d5691b98972100ecb95e084ef3cf11a61) and [successful deployment](https://github.com/JasonLn0711/kairos-learning/actions/runs/40163169848) identify the baseline; remeasure after any asset change.
 
 ### Acceptance and publication
 
@@ -97,9 +99,9 @@ There are two coordinated representations, not one automatically responsive SVG:
 1. **The page illustration is semantic HTML with CSS.** [QAIllustration.svelte](../src/lib/components/QAIllustration.svelte) renders figure/caption, text nodes, cards and connection labels from [bilingual diagram data](../src/lib/qa-illustrations.json). CSS Grid lays out clients/consumers in two columns; at `max-width:420px` it switches to one column. Flex wrapping moves status text onto another line. Text reflows rather than shrinking a desktop picture. Explicit connection endpoints remain readable after stacking, so the mobile layout does not imply A connects to B or consumer B forwards to C.
 2. **The downloadable illustration is a standalone SVG file** under `site/images/ceh/m04-01-qa-*.svg`. Its `viewBox` defines a fixed coordinate system; a viewer can scale it proportionally, but this file does **not** independently rearrange its nodes on mobile. The page does not display the standalone file as its main responsive illustration. SVG title/description and visible text describe the diagram. Simple rectangles, paths and text keep each file around 1–3 KB without embedded raster pixels, fonts or JavaScript. Those byte counts describe the SVG assets, not the entire webpage or framework bundle.
 
-The earlier [AccessDiagram.svelte](../src/lib/components/AccessDiagram.svelte) similarly uses HTML/CSS for the full card, with small inline SVG icons (`viewBox="0 0 24 24"`). At 420px, results wrap onto their own row. Its entire card is a download link with a complete accessible label; the underlying figure has a full text alternative and hides duplicated decorative content from assistive technology. New Q&A figures instead expose their real text and caption directly, hide decorative symbols, and provide an explicit download link. Enter activates focused links; native Q&A summary controls support Enter/Space. Visible focus outlines and labels/icons supplement colors. These are basic accessibility checks, not a claim of comprehensive screen-reader certification.
+The earlier [AccessDiagram.svelte](../archive/ceh/m04-legacy-2026-11-04/src/lib/components/AccessDiagram.svelte) similarly uses HTML/CSS for the full card, with small inline SVG icons (`viewBox="0 0 24 24"`). At 420px, results wrap onto their own row. Its entire card is a download link with a complete accessible label; the underlying figure has a full text alternative and hides duplicated decorative content from assistive technology. New Q&A figures instead expose their real text and caption directly, hide decorative symbols, and provide an explicit download link. Enter activates focused links; native Q&A summary controls support Enter/Space. Visible focus outlines and labels/icons supplement colors. These are basic accessibility checks, not a claim of comprehensive screen-reader certification.
 
-**Content placement and maintenance:** the original Q&A remains in [M04-01 JSON](../content/concepts/m04-01.json). [QAAnswer.svelte](../src/lib/components/QAAnswer.svelte) currently identifies the specific SMB status sequence and architecture A/B labels, inserting figures at those exact positions. It replaces the six status labels with equivalent figure text once, preserving source order. This is a deliberately scoped placement rule, not an automatic diagram generator for arbitrary prose. If the source labels change or another lesson needs figures, update and test an explicit mapping rather than assuming the current matching rule generalizes. [SourceBody.svelte](../src/lib/components/SourceBody.svelte) provides the separate typed `accessDiagram`/`visual` route used in lesson bodies.
+**Content placement and maintenance:** the original Q&A remains in [M04-01 JSON](../archive/ceh/m04-legacy-2026-11-04/content/concepts/m04-01.json). [QAAnswer.svelte](../src/lib/components/QAAnswer.svelte) currently identifies the specific SMB status sequence and architecture A/B labels, inserting figures at those exact positions. It replaces the six status labels with equivalent figure text once, preserving source order. This is a deliberately scoped placement rule, not an automatic diagram generator for arbitrary prose. If the source labels change or another lesson needs figures, update and test an explicit mapping rather than assuming the current matching rule generalizes. [SourceBody.svelte](../src/lib/components/SourceBody.svelte) provides the separate typed `accessDiagram`/`visual` route used in lesson bodies.
 
 The JSON/component and standalone SVG are currently maintained together; there is **no committed automatic SVG-generation pipeline**. When changing a diagram, update both language data and paired SVG files, compare their meaning, verify original text/search retention, and remeasure bytes and text bounds. Ordinary HTML text can be selected/searched; the original answers and editorial text also feed the existing search catalog. Supplemental labels do not automatically enter that search index merely because they appear in a component.
 
@@ -121,9 +123,9 @@ The M04-01 Q&A examples place status cards and the SMB/Kafka architecture figure
 
 Follow the [approved semantic content-version policy and legacy history](proposals/concept-content-versioning-2026-10-25.md). M04-01 uses `contentVersion: "2.0.0"` as an explicit migration baseline from legacy v8, retaining integer `revision: 8`. Other concepts keep their existing labels. Content version, revision, Git commit, deployment date and shared UI release have distinct meanings. Diagrams that only clarify existing wording are patch changes; new teaching content is minor. Original history and learner states remain intact.
 
-### M04-01 whole-page visual presentation patch
+### Historical M04-01 whole-page visual presentation patch
 
-Version 2.0.1 (internal revision 9) adds eight optional visual aids while preserving all original body/Q&A wording, order and tests. [M0401Visual.svelte](../src/lib/components/M0401Visual.svelte) reads [the bilingual visual manifest](../src/lib/m0401-visuals.json); cards reflow from two columns to one at 540px, and ordered flows remain vertical. Originally these visual aids used closed disclosures. The October 25 direct-reading preference below supersedes that behavior: figures and their labels now render directly, including inside an opened parent Q&A. All labels join the concept search text. Sixteen fixed-layout SVG downloads remain separate from the reflowing HTML.
+Version 2.0.1 (internal revision 9) adds eight optional visual aids while preserving all original body/Q&A wording, order and tests. [M0401Visual.svelte](../archive/ceh/m04-legacy-2026-11-04/src/lib/components/M0401Visual.svelte) reads [the bilingual visual manifest](../archive/ceh/m04-legacy-2026-11-04/src/lib/m0401-visuals.json); cards reflow from two columns to one at 540px, and ordered flows remain vertical. Originally these visual aids used closed disclosures. The October 25 direct-reading preference below supersedes that behavior: figures and their labels now render directly, including inside an opened parent Q&A. All labels join the concept search text. Sixteen fixed-layout SVG downloads remain separate from the reflowing HTML.
 
 Coverage: five independent questions (no mandatory sequence); IP/port/protocol and distinct evidence; share plus NTFS permissions; protocol-information map; UNC parts; simplified SMB process; SMB/Samba/NAS roles; file/event/AI responsibilities. Existing status and SMB/Kafka diagrams remain. Commands, full source tables, API/audit details, risk prose and tests stay in their original form for copying and precise reading. No new conceptual conclusion is added, so this batch is one patch increment.
 
@@ -260,3 +262,262 @@ npm run test:browser:m0206
 ```
 
 第二步同步十二張新下載圖、原有受審核註冊表及獨立 network-svg.zip；不改寫原 bilingual-svg.zip。`--check` 驗證來源圖、序列化輸出與 ZIP 確定性。英文換行保留完整詞；瀏覽器檢查 SVG 文字在 viewBox 內且不與箭頭交疊。圖號 1–6 是這次網路角色補充的內部順序，舊圖以原標題辨識；stable section-* 錨點與既有課程路線保留。
+
+## M03-01 隨文傳輸圖解（2026-11-03）
+
+[M03-01 v1.1.0 修訂回執](releases/2026-11-03-m03-01-transport.md)記錄九節正文替換、三題參考答案、四張參考圖與原版保存。[正式圖解模型](sources/m03-01/diagram-models.json)只含 overview、handshake、transport、tuple 四種版型，兩語節點數依序為 3、3、2、5；端點與 TCP 交握方向、TCP 重傳及 UDP 遺失須共同驗證。
+
+`python3 scripts/m0301_diagrams.py` 產生受限資料副本與來源 SVG；再依序執行 `m0301_svg.py`、`m0301_content.py`。SVG 沿用既有 fail-closed serializer，viewBox 維持 900×624，繪圖座標以等比 transform 保留參考圖比例。`TransportDiagram.svelte` 使用同一份資料輸出可選取 HTML，窄欄重排，不把縮小 SVG 當成手機正文。下載 SVG 與 ZIP 保留桌面關係；來源原版在 `archive-v1.0.0/`。
+
+驗收：內容、單元、型別、發布邊界、靜態輸出，加上 `npx playwright test --config playwright.footprints.config.ts`。圖解原生顯示，三題參考答案預設收合；`qa` 維持空陣列。原發布日不變，修訂與學習進度分開記錄。
+
+## M03-02 ICMP／ARP 白話教學與比較圖
+
+v1.1.0 依 2026-11-03 供稿替換主機探索、ICMP、ARP 說明，補充 Ubuntu 觀察練習與三題情境檢核；原發布日與 section-1 至 section-9 保留。兩語各七個原生參考答案預設收合，`qa` 仍為空。原稿與參考圖保存於 [來源紀錄](sources/m03-02/revision-2026-11-03.md)。
+
+[discovery-diagrams.json](sources/m03-02/discovery-diagrams.json)只提供兩種已知版型：outcomes 為三張卡，next-hop 為兩張卡；每卡含 2 或 3 個 endpoint（title、address）、相鄰節點的有向 edge（source、target、label、solid／dashed）、claim 與 notes。ICMP 前兩卡有去回兩條 edge，第三卡只有送出但未確認交付的虛線。ARP 本地卡去回兩條 edge，遠端卡依序交付閘道與遠端；後者是資料轉送，不是 ARP 跨路由器。
+
+產生器驗證關係與純資料，HTML 與 SVG 共用同一來源。`DiscoveryDiagram.svelte` 僅依四個已知資產路徑選取模型，以 Svelte 跳脫文字；不接受任意 SVG 或 HTML。650px 以上圖欄並排比較，較窄時按 DOM 順序重排；各卡寬度不足時 endpoint 與方向箭頭改成直向。原圖保留參考圖的桌面分組與雙向／轉送關係，採 852×600 viewBox 與內部等比例座標，沿用既有 SVG sanitizer，不放寬審核邊界。原圖下載可放大，HTML 節點保持正文大小。
+
+維護順序：
+
+```sh
+python3 scripts/m0302_discovery.py
+python3 scripts/m0302_svg.py
+python3 scripts/m0302_content.py
+npm run validate:content
+npm test
+npm run check
+node scripts/check-publication-boundary.mjs
+npm run validate:release
+npm run test:browser:m0302
+```
+
+新圖四份 SVG 可逐張下載；舊八份 SVG 與原 ZIP 保留。`m0302_discovery.py --check` 驗證來源 SVG 與 HTML 模型同步，`m0302_svg.py --check` 驗證受審核產物與搜尋標籤。瀏覽器驗收檢查雙語四尺寸、200% 文字、無 JavaScript、鍵盤操作、下載位元組與 SVG 文字邊界。依專案 AGENTS.md，文章修訂包含該次修改的提交與部署授權；完成驗證後接續發布，再執行正式站回讀。本機驗收不能代替正式站回讀。[修訂回執](releases/2026-11-03-m03-02-discovery.md)
+
+
+### M03-02 ARP 補充 v1.2.0
+
+[ARP 補充回執](releases/2026-11-03-m03-02-arp-supplement.md)記錄 5–6 節旁文、8.3–8.4 查詢／學習路線及 9.2 四題整合檢核；兩語各十一題參考答案。圖 1／2 及全部 visual 區塊、ICMP 第 1–4 節、原七題答案保留，以來源目錄的雜湊與 v1.1.0 JSON 比對。此次只需執行 `m0302_content.py` 產生教材；圖解產生器以 `--check` 驗證，無需改寫既有圖檔。
+
+## M03-03 掃描判讀與本機範例
+
+M03-03 v1.1.0 的四張隨文圖使用 `src/lib/m0303-scan-diagrams.json`，由 `ScanDiagram.svelte` 顯示可換行 HTML，`scripts/m0303_diagrams.py` 產生同資料 SVG，再由 `scripts/m0303_svg.py` 經既有嚴格 serializer 匯出與封裝。限定 connect／syn／udp／positions；兩種 TCP 流程方向固定 right、left、right，最後分別為 ACK、RST；UDP 四卡為替代結果，位置三列為獨立路徑。來源文稿經 `scripts/m0303_content.py` 轉為既有 sourceBody，保留標題與答案錨點。舊 footprint 註冊移除本課，避免重複呈現過期圖解。
+
+維護時依序執行三支 m0303 產生器、`npm test`、`npm run check`、發布邊界及 release 檢查，再用 `npx playwright test --config playwright.m0303.config.ts` 驗收。正式站設 `CEH_BASE_URL=https://learn.cs-kairos.com`。來源與差異見 [source review](sources/m03-03/source-review.md)，驗收見 [修訂回執](releases/2026-11-03-m03-03-replacement.md)。
+
+## M03-04 狀態判讀 v1.1.0
+
+來源與舊版保存在 [source review](sources/m03-04/source-review.md)所列目錄。修改兩語 Markdown 後執行 `python3 scripts/m0304_content.py`；本次沿用全部受審核圖，不需重製 SVG。依序完成內容、單元、型別、發布邊界及 release 驗證，再執行 `npx playwright test --config playwright.m0304.config.ts`；正式站以 `CEH_BASE_URL=https://learn.cs-kairos.com` 回讀。驗證範圍與限制見[修訂回執](releases/2026-11-03-m03-04-replacement.md)。
+
+### M03-04 v1.1.1 小節完整性
+
+依使用者更正，供稿各章內的小節必須完整呈現，不能用章級摘要取代。`detailed-section-map.json` 對應 64 個中英標題；中文全文以原供稿加上 `detailed-editorial-changes.json` 的明列修正核對。沿用既有 h2／h3 sourceBody，不改共用渲染器；33 個命令／ASCII 區塊保留可選取文字與鍵盤局部捲動。[本次回執](releases/2026-11-03-m03-04-detailed.md)取代上一版對教學深度的完成主張。
+
+## M03-05 完整服務辨識教材 v1.1.0
+
+供稿完整保存在 [來源目錄](sources/m03-05/README.md)，63 個雙語章節／小節以 detailed-section-map.json 對應；中文全文依原稿加明列技術修正核對。修改兩語 Markdown 後執行 `python3 scripts/m0305_content.py`，原有圖解僅以 `m0305_diagrams.py --check` 核對。完成內容、單元、型別、發布邊界及 release 檢查，再用 `npx playwright test --config playwright.m0305.config.ts` 驗收；正式站設定 CEH_BASE_URL。本機實測、四個答案、原圖保存與部署界線見[修訂回執](releases/2026-11-03-m03-05-replacement.md)。
+
+
+## M03-06 完整作業系統指紋教材 v1.1.0
+
+[來源紀錄](sources/m03-06/README.md)保留原供稿、v1.0.0 舊版、69 個雙語章節／小節對照及明列修正。編輯兩語 Markdown 後執行 `python3 scripts/m0306_content.py`；兩張既有圖及四題參考答案保留，圖檔以 `m0306_diagrams.py --check` 核對。來源全文對照、單元、型別、發布邊界與 release 通過後，執行 `npx playwright test --config playwright.m0306.config.ts`，正式站設定 `CEH_BASE_URL`。沿用 sourceBody 標題與原生局部捲動，不新增框架；[修訂回執](releases/2026-11-03-m03-06-replacement.md)區分本機與正式驗收。
+
+## M03-07 完整 Nmap 教材 v1.1.0
+
+[來源紀錄](sources/m03-07/README.md)保留完整供稿、v1.0.0 原版及逐項修正，31 個雙語章節／小節以 detailed-section-map.json 對應。修改兩語 Markdown 後執行 `python3 scripts/m0307_content.py`；四張共用模型圖以 `python3 scripts/m0307_diagrams.py` 產生，兩者皆支援 `--check`。完成內容、單元、型別、發布邊界及 release 驗證，再用 `npx playwright test --config playwright.m0307.config.ts` 驗收；正式站設定 `CEH_BASE_URL`。[修訂回執](releases/2026-11-03-m03-07-replacement.md)區分本機實測、發布回讀及參考圖結構比對。
+
+## 新版 M04 第一課（2026-11-04）
+
+`CEH26-M04-C01` 使用正式網址 `concepts/m04-01/`，顯示別名為 `CEH M04-01`；內部 stable ID 與舊教材分開，舊正文不恢復。完整雙語原稿、單題參考答案與雜湊在 [來源目錄](sources/ceh26-m04-c01/README.md)。以 `python3 scripts/ceh26_m04_c01_content.py --check` 核對原稿產物。沿既有 sourceBody 與 publication gate，qa 為空；參考答案不代表學員回答。C03–C10 仍只有目錄。當前目錄公開數量依 catalog 計算；歷史全待發布狀態保留在遷移回執。
+
+### M04 公開 slug 契約
+
+依使用者明確要求，`conceptSlug` 將內部 `CEH26-M04-C01…C10` 對應到 `m04-01…m04-10`，`conceptPath` 是路由、目錄、導覽、搜尋與 sitemap 的共用入口。不要以公開 slug 反推 stable ID，也不要建立 legacy teaching ID。catalog 檢查公開路徑碰撞；沒有公開 teaching 的項目仍只有目錄錨點。中英相同規則；原 `/concepts/ceh26-m04-c01/` 明確 404，不產生第二份正文或另設 client-only redirect。canonical／hreflang／page JSON 均指向目前正式 slug。網址修正以 C01 v1.0.1 記錄，原發布日保留，正文／原稿與 qa 不變；[遷移回執](releases/2026-11-04-m04-public-slugs.md)保留先前網址歷史。
+
+## 新版 M04 第二課 DNS（2026-11-04）
+
+`CEH26-M04-C02` 顯示為 `CEH M04-02`，公開路徑固定 `concepts/m04-02/`，不公開 ceh26 前綴 slug。完整繁中原稿 SHA-256 為 `744c93e7d07c7a82131aaae007957decd1dccf4a6339c2322feda45d67c9471d`，與英譯及參考答案保存在[來源目錄](sources/ceh26-m04-c02/README.md)。執行 `python3 scripts/ceh26_m04_c02_content.py --check` 核對既有 sourceBody 產物。十一節正文直接顯示，唯一參考答案預設收合；qa 為空。C01 不變，C03–C10 保持待發布，舊 DNS 原稿／Q&A／SVG 留在非輸出歸檔。
+
+### M04-02 完整供稿與兩張參考圖 v1.1.0
+
+[修訂來源](sources/ceh26-m04-c02/revision-2026-11-04/README.md)保留本次完整供稿、兩張PNG及v1.0.0原版；75個雙語章／小節錨點承接完整教學，舊section-1至section-11繼續有效。先修改完整雙語稿、逐節對照與圖解資料，再執行ceh26_m04_c02_diagrams.py及ceh26_m04_c02_content.py；兩者支援--check。verify-ceh26-m04-c02.py逐行核對中文採用界線與雙語來源至資料的順序。圖解使用既有visual模型，只有四個dns-*-v1-1-0.svg已知路徑啟用DnsEvidenceDiagram；文字由Svelte跳脫並納入既有搜尋。主文與圖解直接顯示，四題編輯參考解答沿answer-dns-evidence原生收合，qa維持空陣列。新版公開slug、C01與C03–C10發布閘門保留。驗收與發布見[v1.1.0回執](releases/2026-11-04-ceh26-m04-c02-full-replacement.md)。
+
+## 新版 M04 第三課 FTP／SMTP（2026-11-04）
+
+`CEH26-M04-C03` 沿用短網址 `concepts/m04-03/`；完整中英原稿、答案與雜湊在 [來源目錄](sources/ceh26-m04-c03/README.md)。執行 ceh26_m04_c03_content.py 與 ceh26_m04_c03_diagrams.py 的 --check 核對全文、兩組平行角色／權限圖及下載。十一節正文直接呈現，一題答案預設收合，qa 維持空陣列。C01、C02 正文不變，C04–C10 待發布，舊版歸檔不公開。[發布紀錄](releases/2026-11-04-ceh26-m04-c03.md)。
+
+## AASE v1 獨立系列（2026-11-05）
+
+AASE 使用 `content/aase/course.json` 的九模組、49 概念目錄及獨立 `AASE-Mxx-Cyy` 識別碼，不共用 CEH 的 Mxx-yy 正本。教材寫於 `content/aase/lessons/`，來源位於 `content/aase/sources.json`。`src/lib/aase.ts` 驗證欄位、日期、情境答案與課程總量，沿用 `isPublic` 的狀態／日期閘門；目錄的 `pending` 是規劃狀態，是否可閱讀由通過閘門的教材決定。
+
+初批明確為繁體中文先行；該批沒有英文路由、語言切換或虛構英文 alternates。後續雙語能力依下方「AASE 雙語出版」契約；未完成的概念仍不產生英文頁。未發布正文不進頁面資料、導覽或搜尋。概念前後篇尚未完成時，連到對應模組錨點；不產生空白教材頁。既有 CEH 雙語及 SVG 邊界保持原契約。
+
+`AaseLesson.svelte` 沿共用 `TeachingArticle` 呈現結構化文字與程式碼，圖解使用 CEH 的 flow／cards 與 `ConceptBlocks`；不接受原始 HTML／SVG 注入。圖解的節點與搜尋文字來自同一教材資料，手機重排，答案用原生 details。讀者自我檢核不記錄成績，不冒充互動測驗或實作通過。
+
+工作坊正本在 `resources/aase/`；起始骨架與教師參考解答分開。`npm run package:aase` 產生固定時間戳 ZIP 與 SHA256；`python3 scripts/package-aase.py --check` 核對每個檔案與位元組。修改工作坊後重新封裝。新增產業案例只用合成資料及核實的規則，不複製整套工程教材。
+
+驗證：內容、單元、型別、`node scripts/check-publication-boundary.mjs`、`npm run validate:release`；另執行工作坊 pytest 與 `npm run test:browser:aase`。瀏覽器設定會啟動本機靜態網站與 Streamlit，需先依資源 README 安裝 `.local/aase-venv`。正式站以 `AASE_BASE_URL=https://learn.cs-kairos.com` 回讀網站與下載；遠端模式明確跳過本機 Streamlit 測試，不把靜態代管視為 Python 後端。
+
+### AASE 與 CEH 共用版型、欄位（2026-11-05）
+
+依使用者要求，兩套教材透過 `TeachingArticle.svelte` 共用摘要、資訊列、閱讀導引、本文目錄、`article.prose`、概念 Q&A 及 `.next-links`，透過 `CourseRail.svelte` 共用章節側欄。版型不硬寫課程名稱或 CEH 路徑；AASE 以自己的模組、stable ID 與網址傳入，CEH 原識別碼及內容保留。
+
+AASE 四篇資料升為 v1.0.1，對齊 CEH 的 `id`、`revision`、`contentVersion`、`date`、`publishedOn`、`status`、`text.zh.summary`、`text.zh.sections`、`checks[].text.zh`、`qa[].text.zh`。段落沿 `id`／`heading`／`paragraphs`，圖解與步驟使用同一 `ConceptBlock` 型別及 `ConceptBlocks.svelte`；檢核題沿零起算 answer、四選項與四解析。AASE 額外保留 `text.zh.objectives`、`exercise`、`readingGuide` 與來源欄位，讓原有學習證據仍可編輯及搜尋。`revisedOn` 改為 CEH 的 `date`，正文不再放在頂層。遷移前原稿見 [保存紀錄](sources/aase/layout-2026-11-05/README.md)。
+
+`qa` 代表收到的實際問題，與編輯理解檢核 `checks` 分開；版型遷移的四篇均為 `[]`，顯示與 CEH 相同的待補訊息。單語 Q&A 由共用元件依現有語言顯示，支持 question、originalQuestion、answer、explanation、editorial 及既有受限 Markdown 格式；不產生假英文。CEH 原有雙語驗證不放寬，該批 AASE 驗證只接受已確認的繁中欄位；後續英文欄位與逐語言閘門見下方雙語契約。
+
+維護時執行既有內容、型別、單元與發布邊界；AASE 瀏覽器測試比對兩課程的共用欄位、實際計算樣式與側欄目的地。因觸及共用教材元件，另執行 `npx playwright test --config playwright.ceh26-m04-c02.config.ts`，確認 CEH 雙語、Q&A、SVG 下載及短網址保留。[本次回執](releases/2026-11-05-aase-ceh-layout.md)
+
+
+## 新版 M04 第五課 NetBIOS／RPC（2026-11-05）
+
+`CEH26-M04-C05` 使用 `concepts/m04-05/`，完整雙語、兩份原始輸入與 SHA-256 在[來源目錄](sources/ceh26-m04-c05/README.md)。執行 `python3 scripts/ceh26_m04_c05_content.py --check` 核對全文；七節正文直接可讀，一題原生參考答案預設收合，qa 空陣列。C05 初次發布集合為 C01–C03、C05；C04 同步後目前為 C01–C05，C06–C10 仍 pending。C05 前一項連至 C04 正文，後一項連至 C06 待發布目錄錨點，舊 stable-ID URL 與舊教學歸檔不公開。[回執](releases/2026-11-05-ceh26-m04-c05.md)區分本機驗收、已知共用側欄200%文字差距及正式發布。
+
+### AASE 架構圖區塊（2026-11-05）
+
+AASE章節正文可使用受限`architecture`區塊，外層教材欄位及CEH版型不變。`AaseBlocks`只將新區塊交給`ArchitectureDiagram`，原flow／cards／table／step仍交給未修改的ConceptBlocks；CEH資料型別、驗證與渲染器不放寬。
+
+正式模型與驗證在src/lib/architecture-diagram.ts：level限定context／container；caption、description、boundary為文字；nodes為2–8個唯一id／title／body／kind／inside；relations為1–12條from／to／label。kind限定person、software-system、container、data-store；拒絕多餘欄位、未知端點、自連、重複及未連結節點。Context恰有一個系統內software-system，每條關係都連到該主系統；Container內只接受應用容器或資料儲存，不以檔名自動視為服務。
+
+HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查詢重排雙欄與箭頭，文字與搜尋由同一資料產生。沒有任意HTML／SVG、座標、事件或圖片路徑，也沒有新增SVG匯出。圖例需明說系統範圍不代表安全信任邊界，關係列不表示時序。標籤元件支持zh／en，該批AASE正文僅已確認繁中；後續英譯由雙語契約逐篇開放，不因元件有英文標籤就產生路由。
+
+執行architecture-diagram.test.ts的資料拒絕與搜尋／發布測試、既有內容／型別／發布邊界／release及AASE瀏覽器檢查。瀏覽器逐節核對節點分組、關係端點與標籤，四尺寸、200%文字、無JavaScript及手機／桌面圖解；同時保留原教材與CEH回歸。[發布回執](releases/2026-11-05-aase-m06.md)記錄實際影響及未驗事項。
+
+### 英文共用課程導覽（2026-11-05）
+
+英文 .with-rail 側欄與前後篇連結使用 overflow-wrap:anywhere；900px 以下 rail-content 高度上限為 10rem，540px 以下前後篇直向排列。維持完整標題、目的地及局部捲動，不以隱藏文字或省略號解決溢出。中文不匹配本次樣式。修改後執行 `npx playwright test --config playwright.course-rail.config.ts`，正式站設定 RAIL_BASE_URL；涵蓋 CEH 中英、AASE 中文、有／無 JavaScript、四尺寸及 200% 根字級。
+
+53 筆 CEH 資料依 WRITE-06 提升 patch，原發布日及非版本內容雜湊保留；17 筆舊式 lesson 的語意版號遷移基準另記。[回執](releases/2026-11-05-english-course-navigation.md)及[逐筆清單](releases/2026-11-05-course-navigation-versions.json)保留版本來源。M03-02 歷史 CSS 雜湊核對修訂前保存檔，不改寫原雜湊。該次導覽修正未開啟 AASE 英文全文或路由；後續開放狀態依下方契約及回執。
+
+### AASE 雙語出版（2026-11-05）
+
+中文課綱仍在 course.json；course.en.json 提供相同九模組／49 stable ID 的英文目錄文字，依 ID 與順序核對，不能覆寫分鐘、深度或 slug。英文課程本身有 status／publishedOn；各篇 AaseLesson 的 text.en 及 checks[].text.en 完整後，另附 translations.en.status／publishedOn，並受原文章全域狀態／日期約束。translations.en.publishedOn 控制英文開放時機；資訊列仍以兩語共用的原 publishedOn、contentVersion 及 date 呈現，不把翻譯閘門日期冒充版本修訂日。
+
+forLanguage(lang) 只投影當前語言的公開正文、解析及實際 Q&A，不以中文代填英文。課程關閉時沒有英文路由／搜尋；翻譯缺件、draft 或 future 時只有目錄項目，前後篇落至該語言模組錨點。真正成對的頁面才有 language link 與三個 alternates，canonical／sitemap／搜尋共用 catalog。qa 可保留尚未翻譯的實際中文問題，英文只呈現已翻譯者；無問題就保留空陣列。
+
+兩語章節 ID、順序、段落數、目標與練習步數、區塊形狀、程式碼、來源 ID、圖解節點／關係及答案鍵對應。驗證器的結構核對不取代編輯語意核對。ArchitectureDiagram 與搜尋文字接收同一語言參數。來源與前版保存依 WRITE-04／06；初批 M01-01 v1.0.2 保留中文正文與檢核並新增英譯；後續 M01-02–04 各升 v1.0.1，原中文同樣不改，M01 四篇英文齊備，M02 六篇亦新增對應並升 v1.0.1；M03 五篇新增完整對應（M03-01 升 v1.0.3，其餘四篇 v1.0.1），M04 六篇新增完整對應（M04-05 升 v1.0.2，其餘五篇 v1.0.1），M05 五篇新增完整對應（M05-03 升 v1.0.3，其餘四篇 v1.0.1），M06 六篇新增完整對應並升 v1.0.1，M07 七篇新增完整對應並升 v1.0.1，M08 六篇新增完整對應並升 v1.0.1，M09 四篇新增完整對應並升 v1.0.1，中英文 49 篇正文均已實作。詳細出版狀態見 [M01 英文回執](releases/2026-11-05-aase-m01-en.md)、[M02 英文回執](releases/2026-11-05-aase-m02-en.md)、[M03 英文回執](releases/2026-11-05-aase-m03-en.md)、[M04 英文回執](releases/2026-11-05-aase-m04-en.md)及 [M05 英文回執](releases/2026-11-05-aase-m05-en.md)、[M06 英文回執](releases/2026-11-05-aase-m06-en.md)、[M07 英文回執](releases/2026-11-05-aase-m07-en.md)、[M08 英文回執](releases/2026-11-05-aase-m08-en.md)、[M09 英文回執](releases/2026-11-05-aase-m09-en.md)。
+
+先跑內容、單元、型別，再執行 publication-boundary（含英文課程與翻譯 draft／future 的真正建置）及 release；接續 `npx playwright test --config playwright.aase-bilingual.config.ts`、完整 AASE 及 CEH 共用版型回歸。正式站以 AASE_BASE_URL 執行新套件。測試輸出與建置不可同時改寫同一產物目錄；先等建置結束再啟動瀏覽器。英文工作坊 HTML 與 ZIP 內語言分開核對，未翻譯 ZIP 必須明示。[發布回執](releases/2026-11-05-aase-bilingual-foundation.md)記錄實際範圍。
+
+## 新版 M04 第四課 SMB 複習與診斷（2026-11-05）
+
+`CEH26-M04-C04` 使用短網址 `concepts/m04-04/`；完整中英公開稿、單題答案、六個雙語錨點與雜湊在 [來源目錄](sources/ceh26-m04-c04/README.md)。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對全文。沿用 sourceBody，本文直接閱讀、參考答案預設收合、qa 為空。以文字及清單呈現拒絕階段、實際身分與傳輸保護；本次無新增圖解或互動。C01–C03 與 C05 正文保留，C06–C10 待發布，舊版歸檔不公開。[驗收與發布紀錄](releases/2026-11-05-ceh26-m04-c04.md)。
+
+### M04-04 全文抽換與標題（2026-11-05）
+
+依 WRITE-08，C04 的公開 `displayId` 為 `M04-04`，內部 `CEH26-M04-C04` 與短網址保留。資料驗證接受既有 `CEH M04-xx` 及新 `M04-xx` 顯示值，仍須與 stable ID 課次一致；後續修訂採新格式。
+
+完整原文、參考 PNG、編輯處理與英文稿在 [抽換來源](sources/ceh26-m04-c04/replacement-2026-11-05/README.md)，舊稿保留原處及 Git 歷史。執行 `python3 scripts/ceh26_m04_c04_content.py --check` 核對雙語正文與四個 SVG。v1.1.0 增加完整教學範圍，原發布日不變。正文為十一章、十一個表格、39 段程式／文字範例、兩圖及四題理解檢核；一個預設收合的編輯參考答案，qa 保持空陣列。
+
+圖解沿既有 `visual` 資料形狀；固定四個 `m04-04-{stages|evidence}-{zh|en}-v1-1-0.svg` 路徑交由 `SmbDiagram` 以跳脫文字呈現。flow 是五個依序關卡，每卡一個成功範圍及推論界線；cards 是五筆三欄證據對照，手機逐筆堆疊。SVG 僅由固定元素、幾何與跳脫文字產生，再經既有 `m0903_svg` sanitizer，沒有任意標記、影像或事件。HTML、搜尋及 SVG 來自同一資料；SVG 固定桌面版面，頁面 HTML 依容器重排。
+
+內容、單元、型別、publication-boundary、release 及 C04 瀏覽器檢查依序執行；共用 SourceBody 另跑 C02 回歸。驗證與正式站回讀見 [本次回執](releases/2026-11-05-ceh26-m04-c04-replacement.md)。
+
+### M04-05 完整 NetBIOS／RPC 教學 v1.1.0
+
+[替換來源](sources/ceh26-m04-c05/replacement-2026-11-05/README.md)保存完整供稿、三張參考 PNG、前版與明列公開稿調整。38 個中英章／小節、9 表、37 個程式／文字區塊均沿 sourceBody；公開課次 M04-05，stable ID 與 slug 保留。三張圖由 diagram-models.json 提供 HTML、搜尋與 SVG 文字；RpcEvidenceDiagram 只接六個已知圖檔路徑，rpc-diagram-groups.json 定義平行三卡／兩卡、五階段流程與底部界線，窄欄直向重排。SVG 產生器沿既有 sanitizer。先執行 ceh26_m04_c05_content.py、ceh26_m04_c05_diagrams.py，再以 verify-ceh26-m04-c05.py 核對完整來源、錨點、雜湊及產物。三題編輯參考答案沿既有原生收合，qa=[]。驗收與發布見 [回執](releases/2026-11-05-ceh26-m04-c05-full-replacement.md)。
+
+### AASE 公開課次與模組篇數（2026-11-05）
+
+依 WRITE-08，`aase-labels.ts` 共用讀者課次與標題；stable ID、URL 與 readingId 保留。主標題、資訊列、目錄、前後篇及搜尋使用 `Mxx-yy`，課程名稱仍在導覽與站點資訊。`AaseCourse` 依目前模組篩選可用概念，僅存在未開放概念時顯示準備中。49 筆各升 patch，正文、圖解、來源、原發布日期及翻譯閘門不變；[本批回執](releases/2026-11-05-aase-short-titles.md)記錄實測及發布狀態。
+
+### M04-03 完整白話教學 v1.1.0（2026-11-05）
+
+[抽換來源](sources/ceh26-m04-c03/replacement-2026-11-05/README.md)保存完整供稿、兩張 PNG、修訂前 JSON 與明列公開稿調整。公開 displayId 為 M04-03，stable ID／slug 與 2026-11-04 原發布日保留；十一章之外完整保留第二部分、重點整理與理解檢核。中英各 330 區塊、6 表、22 段命令／文字範例，五段編輯解答沿單一原生收合，qa=[]。
+
+兩圖沿 visual 模型，只在四個 m04-03-{protocols|evidence}-{zh|en}-v1-1-0.svg 固定路徑啟用 FtpSmtpDiagram。第一圖保留 FTP 雙通道及 SMTP 三角色／兩段連線；第二圖三張卡並列判讀。手機按相同分組重排，不將平行通道／證據分類轉成先後流程。兩語同一模型供 HTML、搜尋及 SVG，SVG 經既有 sanitizer；原有圖檔與 ZIP 保留歷史，不覆寫。
+
+執行 ceh26_m04_c03_content.py、ceh26_m04_c03_diagrams.py 的 --check，再依內容、單元、型別、publication-boundary、release、C03 瀏覽器與 C02 共用元件回歸順序驗證。正式站設定 CEH_BASE_URL，回讀兩語正文與四個 SVG；實測與未驗界線見[本次回執](releases/2026-11-05-ceh26-m04-c03-replacement.md)。
+
+<a id="aase-m0101-replacement-2026-11-06"></a>
+### AASE M01-01 完整供稿與表單比較（2026-11-06）
+
+M01-01 v1.1.0 的[完整來源與逐節對照](sources/aase/m01-01/replacement-2026-11-06/README.md)保留原文、兩張 PNG、前版 v1.0.3 與雜湊。正文沿既有 AASE 結構，導言及七節、兩表、AppTest h3 與四選項有完整中英對應；stable ID、slug、原發布日、練習、QA 與翻譯閘門保留。舊的版型／英文初版／短標題遷移測試核對前版保存檔，新版另由 aase-m0101-replacement.test.ts 核對來源與修訂範圍，不改寫歷史原稿。
+
+ApplicationCheckDemo 只在本課 analogy 與 scenario 啟用，表單對照接收現有 cards 資料；其餘 AASE blocks 與 CEH 不改。比較圖以 HTML／CSS 保留平行關係、輸入欄位、主要／次要操作及錯誤摘要／欄位提示；無任意 HTML／SVG，沒有新匯出格式。情境控制只切固定合成資料，本機 JSON 匯出由 applicationReport 核對三個非空白欄位，缺漏時不提供下載。無 JavaScript 保留預設缺漏與兩情境結果表，停用控制；不發請求、不寫入申請或成績。
+
+維護時依序執行內容、單元、型別、publication-boundary、release，以及 `npx playwright test --config playwright.aase-m0101.config.ts`；正式站設定 `AASE_BASE_URL`。共用 AaseLesson 改動另核對既有 AASE bilingual M01-01 與 CEH C02 回歸。[修訂回執](releases/2026-11-06-aase-m01-01-replacement.md)記錄實際結果與待驗項目。
+
+<a id="ceh26-m04-c06-nfs-2026-11-06"></a>
+### M04-06 Unix/Linux 使用者與 NFS（2026-11-06）
+
+本課採 `CEH26-M04-C06` stable ID、公開課次 `M04-06` 與既有短 slug，完整中英供稿、附圖、修訂前目錄、171 段採用對照及雜湊在[來源紀錄](sources/ceh26-m04-c06/replacement-2026-11-06/README.md)。開始時新版只有目錄，故以 v1.0.0 初次發布；退役的舊 M04-06 SMTP 留原歸檔，內容與日期不混用。修改 teaching／answer 兩語 Markdown 與 diagram-models.json，再執行 `python3 scripts/ceh26_m04_c06_content.py`；`--check` 已列入 release，核對 124 區塊與八份受審核 SVG。
+
+圖 1／2 沿既有 flow／cards；圖 3／4 只在 `m04-06-{mount|permissions}-{zh|en}-v1-0-0.svg` 固定路徑啟用 NfsEvidenceDiagram。mount 為 Client→Server 的虛線請求，手機維持端點與方向；permissions 使用 600／640／644／777 原生選單，permissionBits 拒絕其他輸入，無 JavaScript 保留 600 與全模式對照。SVG 對照固定顯示全模式，不隨當前選擇改寫。文字由同一 visual 模型進入 HTML、搜尋及下載；產生器沿既有 sanitizer，不放寬 SVG 或任意標記邊界。
+
+新增正文使新版 M04 開放 C01–C06 與 C08，共七篇、三項待發布；C05 下一篇改連本課，C07／C09／C10 發布閘門保留。相鄰與目錄測試須同步核對公開路由、搜尋、sitemap 及 stable-ID URL 404，不將已發布 C08 當作待發布。內容、單元、型別、publication-boundary、release 後依序執行 `npx playwright test --config playwright.ceh26-m04-c06.config.ts` 及 C02／C05 回歸；正式站設定 `CEH_BASE_URL`。[回執](releases/2026-11-06-ceh26-m04-c06-nfs.md)記錄各層證據，題目與工具驗證均不代表本人理解或 NFS 實機安全。
+
+<a id="aase-m0102-replacement-2026-11-06"></a>
+### AASE M01-02 完整責任分工教材（2026-11-06）
+
+[本次來源與逐段對照](sources/aase/m01-02/replacement-2026-11-06/README.md)保留原文、v1.0.2 前版、外部圖源取得狀態及使用者確認。正式 JSON 為 v1.1.0，七節加導言／課後結語完整雙語，四圖沿既有 cards／flow、四表與六項任務契約。角色與責任為平行卡片；證據及交接為編號流程，不引入任意 HTML／SVG 或新的圖解格式。
+
+供稿三題各 A–C，AASE 的 checks 受限支援三或四選項、等量解析、答案範圍及兩語數量一致；CEH 契約不變。保留舊題於前版，不新增評分、實際 Q&A 或作答紀錄。目錄標題同步，stable ID／slug／原發布日與翻譯閘門不改；練習用「任務契約表」避免表號錯位。
+
+AgentTestScenarios 只在 M01-02 testing 節啟用，沿 applicationReport 判斷固定的完整、缺漏、空白與先完整後清空輸入；預設最後一種。標示規格預期，不充作 app.py／pytest 的真實紀錄；無 JavaScript 保留預設及全情境表。正文／來源對照、單元、型別、publication-boundary、release 後，執行 playwright.aase-m0102.config.ts 與 M01 既有回歸；正式站設定 AASE_BASE_URL。[修訂回執](releases/2026-11-06-aase-m01-02-replacement.md)記錄規則、實測與待驗事項。
+
+<a id="aase-m0103-replacement-2026-11-06"></a>
+### AASE M01-03 個人工具與組織系統（2026-11-06）
+
+[完整來源](sources/aase/m01-03/replacement-2026-11-06/README.md)保留供稿、主要 PNG、v1.0.2、139 段採用對照與 SHA-256。正式 v1.1.0／revision 4 為十節加導言的完整雙語，四圖四表與三題 4／4／3 檢核；原發布日、stable ID、slug、readingId、翻譯閘門與練習保留。目錄標題同步至課綱與工作坊封裝，未把網站可讀當本人學習完成。
+
+沿既有 cards／step／flow：differences 的六筆 cards 由 OrganizationDimensions 呈現五個平行面向及共同成果，identity 的三筆 cards 由 DocumentAccessSimulation 呈現明列政策、三選單與固定規則；驗證器限制其數量及兩語形狀，不接受任意標記。圖解契約見[五面向共同支撐](diagram-design-system.md#aase-organization-dimensions)。simulatedDocumentAccess 只模擬三身分、兩文件、三操作，未知值拒絕，沒有實際登入或文件操作。預設小明／文件 A／讀取，無 JavaScript 保留結果與規則。
+
+第四節另假設兩人被授權修改同份文件，與第三節政策分開；原文版本衝突解法補明伺服器／資料層的原子比對更新。內容、單元、型別、publication-boundary、release 後，執行 playwright.aase-m0103.config.ts；正式站設定 AASE_BASE_URL，另驗 M01 英文及 M01-02 回歸。[回執](releases/2026-11-06-aase-m01-03-replacement.md)保存實測、部署與待驗界線。
+
+## AASE M01-04 source replacement — 2026-11-06
+
+M01-04 v1.1.0 adopts the supplied introduction and eight complete sections in both languages. The [source bundle](sources/aase/m01-04/replacement-2026-11-06/README.md) retains 123 paragraph records, three reference PNGs and the previous v1.0.2 lesson. Existing publication gates, lesson identity, source anchors, objectives and synthetic practice remain. Three new three-option checks use new Q1–Q3 IDs and B/C/B answers; answers remain native disclosures, without submission or progress tracking.
+
+`RequirementsInterviewDiagram.svelte` renders only this lesson's analogy/cards, workflow/flow and testing/cards as comparison, process and evidence. The catalog constrains them to exactly 2/5/3 nodes and matching kinds in both languages. The first figure compares parallel roles; only the second figure has four sequential arrows, with the last step highlighted. The third compares evidence requirements without completion arrows. Text is semantic HTML and enters the existing search catalog. CSS reflows the parallel columns according to available width; all teaching is directly visible.
+
+`scripts/aase_m0104_svg.py` reads these same three blocks to generate six escaped-text standalone SVGs under `site/images/aase/`. It accepts no runtime markup or external references, enforces the small fixed element set and 100000-byte limit, and supports `--check`. These exports are linked as images, not registered as arbitrary inline SVG. Fixed SVG geometry and responsive HTML are distinct. Regenerate after any figure text change; run `tests/aase-m0104-replacement.test.ts` and `npx playwright test --config playwright.aase-m0104.config.ts`, with `AASE_BASE_URL=https://learn.cs-kairos.com` for production. Evidence belongs in the [release receipt](releases/2026-11-06-aase-m01-04-replacement.md).
+
+## M04-09 其他列舉（2026-11-07）
+
+`CEH26-M04-C09` 首次公開 v1.0.0，顯示 M04-09。依[來源對照](sources/m04-09/source-review.md)維護完整十一節與四題；九張參考圖對應九組雙語原生圖解及十八個獨立 SVG。執行 `python3 scripts/m04_09_content.py` 從雙語成稿與 `diagrams.json` 生成正文及圖檔，`--check` 驗證同步。`OtherEnumerationDiagram` 只處理已知圖名及已驗證節點數，延用 `SourceBody.visual` 與既有 SVG sanitizer。NTP 同層節點是平行設備，BGP 五條 peer 關係以明列端點承接窄版；原生參考答案不建立學員進度。檢查入口為 `playwright.m04-09.config.ts`，正式站用 `M04_09_BASE_URL=https://learn.cs-kairos.com`。結果見[發布紀錄](releases/2026-11-07-m04-09.md)。
+
+### AASE M02-01 Token／Attention 圖解與互動
+
+v1.1.0 起，`TokenAttentionDiagram.svelte` 以既有 cards／flow 模型承接六張圖，`aase.ts` 限定章節、種類與節點數：pipeline flow 6、units cards 2、analogy cards 4、attention cards 3、attention-example cards 2、limits flow 4。其餘章節不接受這個專用圖解；內容仍只能提供經驗證的文字，不提供任意標記或資產路徑。中英沿用相同結構、數值與閱讀順序。
+
+圖 1／6 是垂直流程；圖 2 是兩組平行切分；圖 3 是四維向量，窄版兩欄；圖 4 是三個平行角色；圖 5 結合可操作的算術教具與明示的靜態預設。`attention-demo.ts` 固定 Value 2／6，分數有限域 −4 至 4，採減最大值的穩定 Softmax，先算完整精度再捨入。無 JavaScript 時保留 [1,0] 的結果與說明，停用控制。不保存學員進度，不代表真實模型實驗。
+
+SVG 由 `python3 scripts/aase_m0201_svg.py` 從正式 JSON 產生，`--check` 核對逐位元組一致。只有固定受審核元素及 escaped text，單檔小於 100000 bytes。下載圖 5 表示預設值，不跟隨瀏覽器互動。驗收執行 `npx playwright test --config playwright.aase-m0201.config.ts`；正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`，覆蓋雙語全文、四寬度、200% 文字、無 JS、鍵盤、SVG 邊界／文字重疊及下載 bytes。
+
+### AASE M02-02 上下文、預算與交接
+
+M02-02 v1.1.0 的五圖沿 `cards/flow` 正式資料：analogy cards 2、window cards 5、budget-example cards 5、prepare cards 7＋flow 4；`aase.ts` 檢查種類、順序、節點數與固定預算值。`ContextWindowDiagram` 只接受編號 1–5，資產路徑固定，不接受任意標記；選取虛線與工作流程箭頭的含義不同，窄版重排保持端點及順序。`scripts/aase_m0202_svg.py` 產生十個同源 SVG，`--check` 核對位元組，每檔小於 100000 bytes。
+
+`contextBudget` 的教學上限為 10000，固定分項 [1000,2000,4500,1500]，額外日誌接受 0–3000 整數。UI 步進 100、預設 500，保留 1800 與重設；無 JS 保留 9500／剩餘 500 並停用控制。分段條只顯示預算範圍，超出量用文字呈現。圖 4 的剪貼簿內容含七欄及教學假設，成功寫入後才顯示成功；失敗提示手動複製。
+
+`AaseText.openChecks` 是可選的開放題陣列，每題須有唯一課程 Qxx ID、非空 prompt 與非空 answer 段落；不能與選擇題 ID 重複。兩語沿 sameShape，搜尋收錄題目及答案。AaseLesson 在選擇題之後呈現原生 details 參考答案，不建成績或假提交狀態。本課原題封存，新增 Q04 選擇題及 Q05／Q06 開放題；qa 仍為空。
+
+來源與逐小節處理見 [M02-02 對照](sources/aase/m02-02/replacement-2026-11-07/source-map.md)。本課檢查用 `playwright.aase-m0202.config.ts`，正式站設定 `AASE_BASE_URL`；共用渲染變更另回歸 `playwright.aase-m0201.config.ts`。
+
+### AASE M02-03 四種機制圖解
+
+`MemoryMechanismsDiagram.svelte` 只在 `AASE-M02-C03` 使用既有 `cards`／`flow` 資料。六圖依序為辦公室四角色、五個 token 詞塊、兩節點壓縮、三節點檢索、四欄交接與六步跨日流程；`src/lib/aase.ts` 檢查節點數、種類與雙語結構。平行角色與交接欄位沒有箭頭；token 圖只連第四與第五格；其餘箭頭表示該圖定義的順序。圖 6 在第二天前加分隔。
+
+正文與節點為可搜尋 HTML；容器小於 34rem 時左右圖改上下，箭頭隨方向調整。固定的 12 個外部 SVG 由 `python3 scripts/aase_m0203_svg.py` 產生，`--check` 比較 bytes；沿用換行 helper、跳脫文字與元素白名單，不開放 runtime SVG markup。執行 `tests/aase-m0203-replacement.test.ts` 與 `npx playwright test --config playwright.aase-m0203.config.ts`；正式站使用 `AASE_BASE_URL`。四題採既有原生答案展開，不建立評分或學員完成狀態。來源、圖意差異與驗收見 [M02-03 回執](releases/2026-11-07-aase-m0203-replacement.md)。
+
+### AASE M02-04 控制流程與任務控制卡
+
+M02-04 v1.1.0 使用既有 cards／flow 資料；control 為 4／6 節點的兩圖、stopping 六欄控制卡、hybrid 四步流程，aase.ts 驗證種類、位置與數量。AgentControlDiagram 僅在本課啟用，固定分支保留互斥關係，失敗分支明示回到觀察及停止出口，權限兩欄窄版重排。文字由 Svelte 跳脫，沒有任意 HTML 或圖檔路徑。
+
+`scripts/aase_m0204_svg.py` 從正式雙語 JSON 產生八個 SVG；`--check` 核對 bytes，固定受審核元素、跳脫文字與小於 100000 bytes 邊界。正文、搜尋及 SVG 同源。三題 A–C 選擇題沿原生參考答案收合，不新增批改服務。來源、技術修正與驗收見 [M02-04 回執](releases/2026-11-07-aase-m0204-replacement.md)；瀏覽器入口 `playwright.aase-m0204.config.ts`，正式站以 `AASE_BASE_URL` 指定。
+
+### AASE M02-05 Harness 圖解與全開放題（2026-11-07）
+
+M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9、3、3、5；分別為整體架構、前後三角色詳解及五步流程。`HarnessDiagram.svelte` 只負責此課，資料不含任意標記或座標。六面向平行，不是六步流程；Security／Observability 全程註記不新增流程節點。角色 body 用雙換行分段，正文直接可見。`scripts/aase_m0205_svg.py --check` 核對八份雙語匯出。
+
+既有 `openChecks` 可單獨構成理解檢核；至少需有一題 `checks` 或非空且合法的 `openChecks`，原題目 ID 唯一性、答案段落、雙語形狀與發布閘門仍須通過。M02-02 的混合題型保持；M02-05 三題採新 Q04～Q06，無評分、送出或虛構學習紀錄。共用引言改用「作答」涵蓋選擇題及開放題。
+
+執行 `tests/aase-m0205-replacement.test.ts`、`playwright.aase-m0205.config.ts` 與共用檢查；正式站以 `AASE_BASE_URL` 回讀。詳見 [來源對照](sources/aase/m02-05/replacement-2026-11-07/source-map.md)及[驗收紀錄](releases/2026-11-07-aase-m02-05-replacement.md)。
+
+### AASE M02-06 工具、沙箱與驗收證據
+
+`ToolEvidenceDiagram.svelte` 僅在本課渲染四組 cards/flow：analogy flow 5、sandbox cards 2、connection cards 6、verification cards 5；`aase.ts` 檢查位置、種類、節點數與雙語形狀。圖 1 的主管任務與五步流程有五個向下箭頭；圖 2 是平行權限範圍；圖 3 是課程索引；圖 4 保留每列獨立執行狀態，均不誤畫成完成流程。
+
+八個 SVG 由 `python3 scripts/aase_m0206_svg.py` 產生，`--check` 核對 bytes；固定受審核元素、跳脫文字與大小上限。HTML 與搜尋同源，手機依容器寬度重排，沒有新評分或學習狀態。保留 MCP 協定示例，新增簡化工具請求／回覆與原稿合成日誌；一題選擇題及一題 openChecks 沿原生參考答案展開。單元檢查 `tests/aase-m0206-replacement.test.ts`，瀏覽器用 `playwright.aase-m0206.config.ts`，正式站設定 `AASE_BASE_URL`。來源對照與驗收見 [M02-06 回執](releases/2026-11-07-aase-m0206-replacement.md)。

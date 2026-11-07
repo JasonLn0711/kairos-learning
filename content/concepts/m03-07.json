@@ -1,0 +1,2895 @@
+{
+  "id": "M03-07",
+  "revision": 3,
+  "contentVersion": "1.1.1",
+  "date": "2026-11-05",
+  "status": "published",
+  "publishedOn": "2026-11-03",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從授權範圍、掃描設定與原始結果，練習可查核的 Nmap 判讀與本機實驗。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-07｜Nmap、掃描設定與結果判讀：白話文完整教學"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一章的核心觀念是：Nmap 不只是用來找出哪些 Port 有開啟，更重要的是知道自己檢查了什麼、沒有檢查什麼，以及結果究竟能證明什麼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是從「會操作資安工具」進一步成為「能夠執行專業資安檢測」的關鍵。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本教學依據 [CS Kairos Learn — M03-07](https://learn.cs-kairos.com/courses/ceh/v13/m03/concepts/m03-07/?utm_source=chatgpt.com#answer-scope) 的九個章節，並對照 Nmap 官方文件整理。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先建立完整概念：Nmap 就像大樓安全巡查員"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是負責大樓安全的管理員。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "大樓有 100 扇門，但今天主管只授權你檢查第 1 號和第 2 號門。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你檢查後發現："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "第 1 號門：可以開啟。",
+            "第 2 號門：無法開啟。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候，你能不能告訴主管：「整棟大樓都非常安全」？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當然不行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你只檢查了兩扇門，剩下的 98 扇門根本沒有檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 也是一樣的道理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你今天只掃描一台主機的 TCP 8000 與 8001："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "8000 顯示 `open`",
+            "8001 顯示 `closed`"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你只能說這兩個 TCP Port 在這次掃描條件下呈現什麼狀態，不能直接推論整台主機沒有弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-1",
+          "text": "Nmap 的完整工作流程"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-07-workflow-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "flow",
+            "caption": "圖 1｜從授權到可核對的結果",
+            "description": "箭頭代表工作順序。每一步限定下一步的範圍，不代表完成掃描就證明安全。",
+            "items": [
+              {
+                "title": "授權與問題",
+                "body": "確認目標、排除項目、時段、來源與停止條件。"
+              },
+              {
+                "title": "最小必要設定",
+                "body": "選定協定、連接埠及方法，逐項確認附加功能。"
+              },
+              {
+                "title": "保留原始結果",
+                "body": "保存命令、版本、時間、回應、警告與未完成範圍。"
+              },
+              {
+                "title": "比對與核實",
+                "body": "以管理端設定、程序及日誌核對，再決定下一步。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "圖 1｜從授權、檢測到核實，形成可追溯的資安檢查流程"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把這個流程理解成四個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Scope（範圍）： 我被允許檢查哪些設備？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Configuration（設定）： 我準備怎麼檢查？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Evidence（證據）： 我實際觀察到什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Verification（核實）： 這些觀察可以支持哪些結論？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這四個問題，就是 M03-07 的主軸。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、授權範圍（Scope）：有鑰匙，不代表可以檢查每一間房間"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你是醫院的資安工程師，醫院有三台 NAS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主管只授權你檢查第一台 NAS 的 TCP 8000 與 8001，目的是確認兩個服務入口是否正常。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那麼，你不能因為「另外兩台 NAS 也連得上」，就順便掃描它們。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有一個非常重要的差別："
+        },
+        {
+          "kind": "paragraph",
+          "text": "技術上做得到，不等於管理上被允許。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "正式進行掃描前，至少要確認以下資訊："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "項目",
+            "白話解釋",
+            "範例"
+          ],
+          "rows": [
+            [
+              "Target",
+              "要檢查誰",
+              "指定的一台 NAS"
+            ],
+            [
+              "Scope",
+              "可以檢查的範圍",
+              "TCP 8000、8001"
+            ],
+            [
+              "Method",
+              "使用什麼方法",
+              "TCP Connect"
+            ],
+            [
+              "Source",
+              "從哪裡檢查",
+              "實驗室內網電腦"
+            ],
+            [
+              "Time Window",
+              "什麼時候檢查",
+              "核准的維護時段"
+            ],
+            [
+              "Stop Condition",
+              "什麼情況停止",
+              "服務異常、系統告警"
+            ],
+            [
+              "Evidence",
+              "結果放在哪裡",
+              "指定的稽核紀錄目錄"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼要記錄來源位置？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你從醫院內網連接 NAS，與從網際網路連接同一台 NAS，可能得到完全不同的結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "圖 2｜示意情境：內部觀察到 open，不代表外部一定能直接連線；filtered 也不代表服務已關閉。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這其實就是前面 M03-02 與 M03-03 學到的概念：封包會經過不同網路路徑，而防火牆可能對不同來源套用不同規則。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，掃描結果一定要連同來源、時間與方法一起解讀。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-07-positions-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜同一入口，兩個觀察位置",
+            "description": "實線為內網探測路徑；虛線為外部可能被過濾的探測路徑，不表示已抵達 NAS。人工示例須以路徑與日誌核實。",
+            "items": [
+              {
+                "title": "NAS：TCP 8000",
+                "body": "同一目標，兩條獨立觀察路徑。"
+              },
+              {
+                "title": "內部管理電腦 → NAS TCP 8000",
+                "body": "人工示例：open。只支持這次內網來源能連線。"
+              },
+              {
+                "title": "經核准的外部位置 → 同一 NAS",
+                "body": "人工示例：filtered。無法確定入口是否開啟；需核對防火牆與路徑。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、四個掃描設定問題：學會看懂 Nmap 命令"
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材提供了這一行命令："
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材範例｜本機測試"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -n -sT -p 8000,8001 --reason -oN lab-check.nmap -oX lab-check.xml 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "看起來很長，但你可以將它拆解成八個部分："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "命令",
+            "白話文意思"
+          ],
+          "rows": [
+            [
+              "`nmap`",
+              "啟動 Nmap 工具"
+            ],
+            [
+              "`-n`",
+              "不進行反向 DNS 名稱查詢"
+            ],
+            [
+              "`-sT`",
+              "使用 TCP 完整連線方式掃描"
+            ],
+            [
+              "`-p 8000,8001`",
+              "只檢查兩個 Port"
+            ],
+            [
+              "`--reason`",
+              "顯示為什麼判斷為 open、closed 等狀態"
+            ],
+            [
+              "`-oN lab-check.nmap`",
+              "保存一般文字格式"
+            ],
+            [
+              "`-oX lab-check.xml`",
+              "保存 XML 格式"
+            ],
+            [
+              "`127.0.0.1`",
+              "檢查執行命令的本機環境"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "3.1 `-p`：我要檢查哪些門？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你已經知道 Port 是作業系統用來將網路流量交給對應服務的入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 讓你指定要檢查哪些入口。"
+        },
+        {
+          "kind": "code",
+          "text": "# 只檢查 TCP 80\nnmap -sT -p 80 127.0.0.1\n\n# 檢查兩個 TCP Port\nnmap -sT -p 8000,8001 127.0.0.1\n\n# 檢查 TCP Port 8000 到 8010\nnmap -sT -p 8000-8010 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外兩個常見選項："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`-p-`：檢查 TCP Port 1 到 65535（搭配 TCP 掃描方法時）。",
+            "`-F`：快速模式，只檢查較少的常見 Port，並不是對相同 Port 範圍進行更快速的掃描。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "考試重點：沒有指定檢查的 Port，不能因為結果沒有列出，就認定它是關閉的。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 `-sT`：我要怎麼敲門？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡直接連結前面 M03-03 的 TCP Connect、SYN 與 UDP 掃描。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "掃描方式",
+            "白話文比喻",
+            "核心概念"
+          ],
+          "rows": [
+            [
+              "`-sT`",
+              "敲門，建立完整連線",
+              "TCP Connect Scan"
+            ],
+            [
+              "`-sS`",
+              "敲門，確認有人回應，但不完成連線",
+              "TCP SYN Scan"
+            ],
+            [
+              "`-sU`",
+              "傳送訊息，看對方有沒有反應",
+              "UDP Scan"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用 `-sT` 時，Nmap 會請作業系統使用 `connect()` 嘗試建立 TCP 連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果目標接受連線，通常會判定為 `open`；如果目標明確拒絕，例如回應 RST，通常會判定為 `closed`；如果封包被過濾而無法確定結果，可能是 `filtered`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "特別注意：`-sS` 沒有完成 TCP 三向交握，不代表不會被 IDS、IPS 或日誌偵測到。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 `-n`：不要浪費時間反查名稱"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Nmap 發現一台主機 IP 是 `192.168.1.10`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能額外嘗試進行 Reverse DNS Lookup（反向 DNS 查詢），看能不能查出主機名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-n` 就是告訴 Nmap：「這次不需要反查名稱，專心進行指定檢查。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請注意，它不代表不需要 DNS 才能解析你輸入的網域名稱，也不是隱藏 IP 的功能。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "3.4 `--reason`：告訴我判斷的依據"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你詢問實習生："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你為什麼認為這扇門是關的？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實習生只回答：「因為我覺得它是關的。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種回報很難查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`--reason` 則會讓 Nmap 顯示它據以判斷主機或 Port 狀態的回應資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 TCP RST 或 TCP SYN/ACK 等。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這讓你不只看到結論，也能了解工具為何得出這個結論。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、重要選項：`-sn`、`-Pn`、`-sV`、`-O`、`-A`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節尤其重要，因為這些選項容易混淆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把檢測分成三個層次："
+        },
+        {
+          "kind": "paragraph",
+          "text": "圖 3｜掃描的三個資訊層次。每增加一個層次，可能需要更多探測、資源與授權。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-07-layers-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "flow",
+            "caption": "圖 3｜掃描的三個資訊層次",
+            "description": "箭頭表示資訊由主機、入口到身分逐步細化；不是每次都要執行全部階段。-sn 省略埠掃描，-Pn 跳過一般探索判定。",
+            "items": [
+              {
+                "title": "主機探索：-sn／-Pn",
+                "body": "-sn 不掃連接埠；-Pn 跳過一般探索判定，不是存活證據。"
+              },
+              {
+                "title": "連接埠與狀態：-sT／-p",
+                "body": "指定方法與入口，判讀 open、closed、filtered 及其理由。"
+              },
+              {
+                "title": "服務與系統：-sV／-O",
+                "body": "額外探測提供身分線索；由管理端核實實際服務及系統。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "4.1 `-sn`：只查主機，不掃 Port"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sn 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個選項的意思是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我想知道目標是否有回應，這次不進行 Port Scan。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "把它想成在大樓門口確認有沒有人，而不是逐一檢查大樓裡的門。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以使用 `-sn` 的報告，不能宣稱已檢查所有 Port。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 `-Pn`：不先確認主機是否存活，直接嘗試掃描"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -Pn -sT -p 8000,8001 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般情況下，Nmap 會先做主機探索，再決定是否進行後續掃描。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-Pn` 則會跳過一般主機探索判定，把指定目標當作後續掃描的候選。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像主管告訴你："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「不用先確認這棟樓有沒有人，直接依照核准範圍檢查指定的門。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要記住兩個陷阱："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`-Pn` 不代表主機真的存活。",
+            "`-Pn` 不代表可以繞過防火牆。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且在同一個區域網路內，底層通訊仍可能需要 ARP 來取得下一站的 MAC 位址。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 `-sV`：辨識正在提供的服務"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -sV -p 8000 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你知道 TCP 8000 是開啟的，但不知道裡面是什麼程式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-sV` 會進一步嘗試辨識服務與版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與 M03-05 的 Service Fingerprinting（服務指紋辨識）相連。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過要區分："
+        },
+        {
+          "kind": "paragraph",
+          "text": "8000 是 Port 編號；服務名稱和版本是另外需要確認的資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尤其沒有執行版本探測時，Nmap 顯示的 `SERVICE` 欄位可能只是依據常見 Port 對照資料庫得到的名稱，不能直接當成軟體的實際身分。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 `-O`：嘗試辨識作業系統"
+        },
+        {
+          "kind": "code",
+          "text": "sudo nmap -O -p 8000,8001 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是另行核准 OS 探測時的參數範例。`-p` 指定連接埠掃描清單；`-O` 仍可能增加 TCP、UDP 與 ICMP 探測，不能把它視為只檢查兩個 TCP 入口的原實驗。[Nmap：OS 探測方法](https://nmap.org/book/osdetect-methods.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個大寫 `O` 是 OS Detection。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 會觀察不同網路探測的回應特徵，嘗試推測目標使用哪一類作業系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 Linux、Windows 或 FreeBSD。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這正好延伸前一課 M03-06 的作業系統指紋辨識。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但推測結果不保證正確，尤其經過防火牆、NAT 或特定網路設備時，觀察可能受到影響。實務上還是要用管理端資訊核實。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-5",
+          "text": "4.5 `-A`：一次啟動多種額外檢測"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個參數很容易被誤解。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-A` 不是「讓原本相同的掃描變得更準確」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它會額外啟動多種功能，包括："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`-sV`：服務版本探測。",
+            "`-O`：作業系統辨識。",
+            "`-sC`：預設 NSE 腳本掃描。",
+            "`--traceroute`：路由路徑追蹤。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "部分功能可能需要額外權限，而且預設腳本可能對服務造成較多互動。因此應在核准範圍內使用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH 記憶重點： `-A` 是增加檢測功能的集合選項，不是提高準確度的保證，也不是調整速度的參數。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、掃描速度：越快不一定越準確"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節是在教你 Timing、Timeout 與 Retry。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你在打電話給朋友。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你撥過去，兩秒沒接，就認定「朋友不在家」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但其實他可能只是還沒拿起電話。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路掃描也是同樣的道理。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "三個關鍵概念"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "名稱",
+            "白話解釋"
+          ],
+          "rows": [
+            [
+              "Timeout（逾時）",
+              "等了多久，才認為沒有取得預期回應"
+            ],
+            [
+              "Retry（重試）",
+              "沒有收到回應，再嘗試幾次"
+            ],
+            [
+              "Timing Template（時間範本）",
+              "控制掃描等待、並行及其他時間相關行為"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 有六種常見時間範本："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "選項",
+            "名稱",
+            "概念"
+          ],
+          "rows": [
+            [
+              "`-T0`",
+              "Paranoid",
+              "非常緩慢"
+            ],
+            [
+              "`-T1`",
+              "Sneaky",
+              "緩慢"
+            ],
+            [
+              "`-T2`",
+              "Polite",
+              "較保守"
+            ],
+            [
+              "`-T3`",
+              "Normal",
+              "一般預設"
+            ],
+            [
+              "`-T4`",
+              "Aggressive",
+              "較積極"
+            ],
+            [
+              "`-T5`",
+              "Insane",
+              "非常積極"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -T3 -p 8000,8001 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 `-T3` 是時間設定，不是安全等級。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你把等待時間設定得太短，對方還沒回應，Nmap 就已經放棄等待。這可能造成遺漏或降低判讀可信度。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "相反地，如果探測頻率太高，也可能對網路或服務增加負擔。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以在正式工作中，應把時間範本、逾時、重試限制與中斷情況記錄下來。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、結果保存：為什麼截圖不夠？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你做了一份資安報告，只附上一張顯示 `8000/tcp open` 的螢幕截圖。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主管可能會問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你什麼時候掃描的？從哪台電腦掃描？用什麼方法？當時有沒有出現錯誤？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這張截圖通常無法完整回答。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以 Nmap 提供多種輸出格式。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "參數",
+            "格式",
+            "主要用途"
+          ],
+          "rows": [
+            [
+              "`-oN`",
+              "一般文字",
+              "人工閱讀、檢查"
+            ],
+            [
+              "`-oX`",
+              "XML",
+              "程式解析、自動化比對"
+            ],
+            [
+              "`-oA`",
+              "三種格式",
+              "一次產生 `.nmap`、`.xml`、`.gnmap`"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 `.gnmap` 是舊式 grepable 格式，官方已不建議新整合優先使用；需要自動化處理時，較建議使用 XML。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "一份真正可以查核的掃描紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我建議至少包含以下資訊："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 掃描工作單"
+        },
+        {
+          "kind": "paragraph",
+          "text": "範例"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "工作欄位",
+            "範例"
+          ],
+          "rows": [
+            [
+              "目標",
+              "`127.0.0.1`"
+            ],
+            [
+              "協定",
+              "TCP"
+            ],
+            [
+              "Port",
+              "8000、8001"
+            ],
+            [
+              "掃描方法",
+              "TCP Connect"
+            ],
+            [
+              "執行位置",
+              "本機實驗環境"
+            ],
+            [
+              "時間",
+              "實際開始／結束時間與時區"
+            ],
+            [
+              "Nmap 版本",
+              "實際版本號"
+            ],
+            [
+              "原始證據",
+              "文字檔及 XML"
+            ],
+            [
+              "其他紀錄",
+              "完整命令、警告、錯誤、中斷"
+            ],
+            [
+              "未檢測",
+              "其他 Port、UDP、外部路徑等"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "最重要的原則：保留原始資料，再製作分析報告。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果需要對外分享，應另外建立移除敏感資訊的副本，而不是直接修改唯一的原始證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、結果判讀：工具觀察、工具推測與事實核實不同"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在進入 M03-07 最重要的技術判讀。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材提供一個人工合成的案例："
+        },
+        {
+          "kind": "code",
+          "text": "目標：隔離實驗環境的本機\n掃描：TCP Connect\n\nPORT       STATE\n8000/tcp   open\n8001/tcp   closed"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不是實際掃描結果，而是用來練習判讀的範例。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 `open` 到底證明什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當 Nmap 顯示："
+        },
+        {
+          "kind": "code",
+          "text": "8000/tcp open"
+        },
+        {
+          "kind": "paragraph",
+          "text": "代表在這次掃描條件下，Nmap 判斷 TCP 8000 有服務接受連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是這個結果不能直接證明："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "服務是 HTTP、HTTPS 或其他協定。",
+            "服務的實際版本。",
+            "這個服務存在漏洞。",
+            "攻擊者能利用漏洞取得權限。",
+            "網際網路上的人也能連上這個服務。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些都是額外需要驗證的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 `closed` 與 `filtered` 的差別"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡使用一個門口保全的比喻："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "狀態",
+            "比喻",
+            "技術意義"
+          ],
+          "rows": [
+            [
+              "`open`",
+              "門有人應答、願意接待",
+              "有服務接受該次連線探測"
+            ],
+            [
+              "`closed`",
+              "有人明確告訴你這扇門不開放",
+              "該次探測收到表示無服務接聽的回應"
+            ],
+            [
+              "`filtered`",
+              "你被擋在前面，無法確認門內情況",
+              "封包受到過濾等影響，無法判定 Port 是否開啟"
+            ],
+            [
+              "`open|filtered`",
+              "不知道是有人但沒回應，還是被擋住",
+              "某些方法無法區分開啟與過濾"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意：上表是概念比喻；實際狀態判定依賴掃描方法及網路回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是為什麼不能把 `filtered` 當成 `closed`。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "7.3 三種證據層次"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-07-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜三種證據角色分開記錄",
+            "description": "以下是平行比較，沒有先後箭頭。每張卡說明不同證據能支持的結論。",
+            "items": [
+              {
+                "title": "單次觀察",
+                "body": "在指定來源、時間與方法下，8000/tcp 接受連線。"
+              },
+              {
+                "title": "工具推論",
+                "body": "服務或系統候選需要相應探測；埠號本身不等於版本。"
+              },
+              {
+                "title": "管理端核實",
+                "body": "由負責人核對執行中程序、設定及日誌，對齊設備與時間。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡可以建立一個研究及資安稽核都很好用的框架："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "證據層次",
+            "範例",
+            "可以支持的結論"
+          ],
+          "rows": [
+            [
+              "直接觀察",
+              "TCP 8000 是 open",
+              "該次測試觀察到入口接受連線"
+            ],
+            [
+              "工具推論",
+              "`-sV` 推測為某版本 HTTP Server",
+              "可能的服務身分，仍需核實"
+            ],
+            [
+              "管理端核實",
+              "管理者查閱程序、組態與日誌",
+              "核對實際服務、版本及配置"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三者不應混為一談。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尤其是學術研究，這也對應到 Measurement（測量）、Inference（推論）與 Validation（驗證）的區別。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、如何將 Nmap 用在真正的防護驗收？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以實驗室三台 NAS 為例，假設我們的需求是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「NAS 的管理介面只允許內部管理電腦使用，外部網路不應直接連線。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那麼，光執行 Nmap 是不夠的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "比較完整的流程如下："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 定義預期行為"
+        },
+        {
+          "kind": "paragraph",
+          "text": "指定哪些來源應該能連線，哪些來源不應直接連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 從核准位置實際測量"
+        },
+        {
+          "kind": "paragraph",
+          "text": "從內網及經核准的外部測試位置，分別保存掃描結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 比對防火牆與管理端日誌"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認觀察結果是否符合預期規則，而不是只看 Nmap 顯示 open 或 filtered。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 調整並重新測試"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若發現不符合預期的入口，由管理者修正設定，再用可比較的測試條件驗證，同時確認必要服務沒有受到影響。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你的 NAS 是透過 Cloudflare Tunnel 與 Access 提供遠端存取，還需要額外驗證身分驗證、個別 NAS 的授權與應用程式存取規則。Nmap 對 NAS IP 的 Port Scan，不能取代對 Tunnel 後方應用程式的存取控制測試。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣才能讓掃描結果成為有意義的防護驗收證據，而不只是一份 Port 清單。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、在自己的 Ubuntu 上進行安全實驗"
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材原本採用紙上判讀。以下額外補充一個只針對本機 `127.0.0.1` 的實驗，讓你觀察完整流程。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實驗目的：建立自己的服務，觀察 open、closed 與原始證據"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-1",
+          "text": "步驟 1：建立一個乾淨的測試資料夾"
+        },
+        {
+          "kind": "paragraph",
+          "text": "環境：自己管理的 Ubuntu，已安裝 Python 3 與 Nmap。先確認 TCP 8000 未被占用；8001 若已有服務，保留觀察結果，不任意停止其他程式。出現非預期服務、警告或錯誤時，停止並保留紀錄。以下命令只使用本機迴路位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Ubuntu 第一個終端機輸入："
+        },
+        {
+          "kind": "code",
+          "text": "mkdir -p ~/nmap-local-demo\ncd ~/nmap-local-demo\npython3 -m http.server 8000 --bind 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這會建立一個簡單 HTTP Server，監聽本機 TCP 8000。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "終端機保持開啟。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "步驟 2：在第二個終端機執行 Nmap"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先檢查 Nmap 是否已安裝："
+        },
+        {
+          "kind": "code",
+          "text": "nmap --version"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著在第二個終端機切換到相同資料夾；先確認這些輸出檔名尚未使用，以免覆寫舊證據："
+        },
+        {
+          "kind": "code",
+          "text": "cd ~/nmap-local-demo"
+        },
+        {
+          "kind": "paragraph",
+          "text": "執行："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -n -sT -p 8000,8001 --reason \\\n  -oN lab-check.nmap \\\n  -oX lab-check.xml \\\n  127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設沒有其他程式使用 8001，預期可能看到類似："
+        },
+        {
+          "kind": "code",
+          "text": "PORT       STATE    SERVICE\n8000/tcp   open     http-alt\n8001/tcp   closed   vcom-tunnel"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 `SERVICE` 名稱可能是依 Port 對照資料庫推定，不代表已經執行 `-sV` 驗證服務身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際輸出依你的本機環境為準。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-3",
+          "text": "步驟 3：觀察原始紀錄"
+        },
+        {
+          "kind": "code",
+          "text": "cat lab-check.nmap"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再檢查 XML："
+        },
+        {
+          "kind": "code",
+          "text": "head -n 30 lab-check.xml"
+        },
+        {
+          "kind": "paragraph",
+          "text": "觀察兩者的格式差異。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-4",
+          "text": "步驟 4：停止服務後，再掃描一次"
+        },
+        {
+          "kind": "paragraph",
+          "text": "回到第一個終端機，按下 `Ctrl+C` 停止 HTTP Server。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "然後在第二個終端機執行："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -n -sT -p 8000,8001 --reason -oN lab-after.nmap -oX lab-after.xml 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 8000 沒有其他程式接手監聽，你應該會觀察到它由 `open` 轉成 `closed`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個練習讓你直接看到："
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務狀態改變 → 網路回應改變 → Nmap 判讀改變。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且也能理解為什麼掃描時間、來源與執行環境都需要被記錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "清理：確認第一個終端機的 HTTP Server 已停止；依保留需求保存兩組文字與 XML 紀錄。測試資料夾只放練習資料，避免 HTTP Server 意外提供其他檔案。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "十、CEH M03-07 一頁重點整理"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "指令／觀念",
+            "必須記住的意思"
+          ],
+          "rows": [
+            [
+              "`-p`",
+              "指定掃描的 Port"
+            ],
+            [
+              "`-p-`",
+              "掃描指定協定的 Port 1–65535"
+            ],
+            [
+              "`-F`",
+              "較少常見 Port 的快速模式"
+            ],
+            [
+              "`-sT`",
+              "TCP Connect Scan"
+            ],
+            [
+              "`-sS`",
+              "TCP SYN Scan"
+            ],
+            [
+              "`-sU`",
+              "UDP Scan"
+            ],
+            [
+              "`-sn`",
+              "只做主機探索，不做 Port Scan"
+            ],
+            [
+              "`-Pn`",
+              "跳過一般主機探索判定，進行後續掃描"
+            ],
+            [
+              "`-sV`",
+              "服務版本辨識"
+            ],
+            [
+              "`-O`",
+              "作業系統辨識"
+            ],
+            [
+              "`-A`",
+              "啟用多項進階掃描功能"
+            ],
+            [
+              "`-n`",
+              "不反查 DNS 名稱"
+            ],
+            [
+              "`--reason`",
+              "顯示狀態判定依據"
+            ],
+            [
+              "`-T0`～`-T5`",
+              "時間行為範本"
+            ],
+            [
+              "`-oN`",
+              "保存文字結果"
+            ],
+            [
+              "`-oX`",
+              "保存 XML 結果"
+            ],
+            [
+              "`-oA`",
+              "同時保存三種格式"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "官方補充資料：[Nmap Reference Guide](https://nmap.org/book/man.html?utm_source=chatgpt.com)、[Nmap Host Discovery](https://nmap.org/book/man-host-discovery.html?utm_source=chatgpt.com)、[Nmap Output](https://nmap.org/book/man-output.html?utm_source=chatgpt.com)。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "理解檢核：三個實務情境"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請先自行思考，不必急著查看教材的參考解答。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題一｜掃描範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你只掃描 TCP 8000 與 8001，兩者都是 closed。主管問：「這台主機是不是沒有任何網路服務？」你會怎麼回答？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題二｜掃描設定"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同事認為 -Pn 可以繞過防火牆，而 -A 可以讓掃描結果百分之百準確。這兩個說法各有什麼問題？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題三｜防護驗收"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你從內網掃描 NAS 的 TCP 8000 是 open，從外部掃描卻是 filtered。你會如何解釋，並提出哪兩項後續驗證？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本章最值得帶走的能力，是在看到任何 Nmap 結果時，都能清楚說出：「這份結果是怎麼得到的、證據支持什麼，以及哪些事情仍然不知道。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這項能力會直接延伸到後續的 CEH M04 列舉（Enumeration）、M05 弱點分析（Vulnerability Analysis），以及實際的滲透測試與資安稽核工作。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "sources",
+          "text": "官方參考來源"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Nmap：連接埠與狀態](https://nmap.org/book/man-port-scanning-basics.html)；[掃描方法](https://nmap.org/book/man-port-scanning-techniques.html)；[連接埠選擇](https://nmap.org/book/man-port-specification.html)；[附加功能](https://nmap.org/book/man-misc-options.html)；[時間與效能](https://nmap.org/book/man-performance.html)；[服務辨識](https://nmap.org/book/man-version-detection.html)；[OS 辨識](https://nmap.org/book/man-os-detection.html)。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-scope",
+          "summary": "參考解答：兩個埠代表整台主機嗎？",
+          "paragraphs": [
+            "不能。證據只涵蓋指定來源、時間、TCP方法與8000、8001兩個埠。其他TCP埠、UDP及其他觀察位置都沒有被這次資料涵蓋。適合的紀錄是「本次指定兩個TCP埠未觀察到open」，另列未測範圍；不要改寫成整台主機沒有服務。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-discovery",
+          "summary": "參考解答：-sn、-Pn 各做什麼？",
+          "paragraphs": [
+            "-sn 做主機探索但不做連接埠掃描；-Pn 跳過一般探索判定，讓指定目標進入後續掃描。兩個選項本身都不是存活證據，還要看實際回應與判定依據。-Pn 不會把關機設備變成存活，也不會自動穿越防火牆；本地網路仍可能涉及ARP位址解析。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-features",
+          "summary": "參考解答：加入 -A 前要確認什麼？",
+          "paragraphs": [
+            "先核對核准目的是否涵蓋版本、系統、預設腳本及路徑追蹤等附加功能，以及目標、負載、時段與停止條件。-A擴充功能集合，不只是同一個兩埠連線測試的精準度開關，也不是時間範本。只需要確認入口可連線時，保留最小必要方法即可。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-comparison",
+          "summary": "參考解答：open 與 filtered 怎麼比較？",
+          "paragraphs": [
+            "兩份原始結果都保留，分別記下來源位置、時間、目標、協定、埠、方法、版本與警告；比較防火牆及服務紀錄，找出路徑或條件差異。open支持該次方法看見服務接受連線；filtered表示該次無法確定是否開啟。未核對前，不把差異直接寫成服務關閉或成功入侵。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Connect authorized scope, settings and original evidence to defensible Nmap interpretation and a local experiment.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-07 | Nmap, Scan Settings and Result Interpretation: A Plain-Language Guide"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The central idea of this chapter is that Nmap helps you understand which ports are open, what you examined, what you left unexamined, and what the results can actually establish."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is how operating a security tool develops into performing a defensible security assessment."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This guide builds on the nine sections of [CS Kairos Learn — M03-07](https://learn.cs-kairos.com/courses/ceh/v13/m03/concepts/m03-07/#answer-scope) and the official Nmap documentation."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Build the complete picture: Nmap as a building safety inspector"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine that you manage safety in a building."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The building has 100 doors, but today's authorization covers only doors 1 and 2."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your inspection finds:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Door 1 can be opened.",
+            "Door 2 cannot be opened."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Can you report that the entire building is safe?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You cannot support that conclusion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You checked two doors; the other 98 remain unexamined."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap works on the same principle."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you scan only TCP 8000 and 8001 on one host:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "8000 is reported as `open`.",
+            "8001 is reported as `closed`."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can describe those two TCP port states under the conditions of that scan. You cannot conclude that the entire host has no vulnerabilities."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-1-1",
+          "text": "The complete Nmap workflow"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-07-workflow-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Figure 1｜From permission to verifiable results",
+            "description": "Arrows show work order. Each stage bounds the next; completing a scan does not establish overall security.",
+            "items": [
+              {
+                "title": "Permission and question",
+                "body": "Confirm targets, exclusions, time, source and stop conditions."
+              },
+              {
+                "title": "Minimum settings",
+                "body": "Choose protocol, ports and method; check each added capability."
+              },
+              {
+                "title": "Preserve raw results",
+                "body": "Keep command, version, time, responses, warnings and unfinished scope."
+              },
+              {
+                "title": "Compare and verify",
+                "body": "Check management settings, processes and logs before deciding what follows."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Figure 1 | A traceable security-checking workflow from authorization and measurement to verification"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of the workflow as four questions:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Scope: Which devices am I allowed to examine?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Configuration: How will I examine them?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Evidence: What did I actually observe?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Verification: Which conclusions do those observations support?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These four questions organize M03-07."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Authorized scope: having a key does not authorize every room"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are a hospital security engineer responsible for an environment containing three NAS devices."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your manager authorizes only TCP 8000 and 8001 on the first NAS, to check whether those two service entry points behave as expected."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Being able to reach the other two NAS devices does not authorize you to scan them as well."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The distinction affects what you may do:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Technical ability does not establish administrative permission."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Before a formal scan, confirm at least the following:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Item",
+            "Plain-language meaning",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Target",
+              "What will be examined?",
+              "One specified NAS"
+            ],
+            [
+              "Scope",
+              "What is permitted?",
+              "TCP 8000 and 8001"
+            ],
+            [
+              "Method",
+              "How will it be checked?",
+              "TCP Connect"
+            ],
+            [
+              "Source",
+              "Where will the check originate?",
+              "A laboratory internal-network computer"
+            ],
+            [
+              "Time Window",
+              "When may it run?",
+              "The approved maintenance window"
+            ],
+            [
+              "Stop Condition",
+              "What requires stopping?",
+              "Service disruption or system alerts"
+            ],
+            [
+              "Evidence",
+              "Where will results be kept?",
+              "The designated audit-record directory"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Why record the source location?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Connecting to a NAS from a hospital's internal network and connecting to the same NAS from the Internet may produce completely different results."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Figure 2 | Illustrative scenario: an internal `open` result does not establish direct external access; `filtered` does not establish that the service is shut down."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connects to M03-02 and M03-03: packets traverse different paths, and firewalls may apply different rules to different sources."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Interpret every scan result together with its source, time and method."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-07-positions-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 2 | Two observation positions",
+            "description": "Solid: internal probe path. Dashed: external probe may be filtered; delivery is unproven. Verify this synthetic example with paths and logs.",
+            "items": [
+              {
+                "title": "NAS: TCP 8000",
+                "body": "One target, two independent observation paths."
+              },
+              {
+                "title": "Internal computer → NAS TCP 8000",
+                "body": "Synthetic: open. Supports access from this internal source only."
+              },
+              {
+                "title": "Approved external source → same NAS",
+                "body": "Synthetic: filtered. Check path and firewall; service state is uncertain."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. Four scan-setting questions: read an Nmap command"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The lesson uses this command:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Lesson example | Local testing"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -n -sT -p 8000,8001 --reason -oN lab-check.nmap -oX lab-check.xml 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Break it into eight parts:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Command element",
+            "Plain-language meaning"
+          ],
+          "rows": [
+            [
+              "`nmap`",
+              "Start Nmap"
+            ],
+            [
+              "`-n`",
+              "Disable reverse DNS name lookups"
+            ],
+            [
+              "`-sT`",
+              "Use TCP Connect scanning"
+            ],
+            [
+              "`-p 8000,8001`",
+              "Examine only these two ports"
+            ],
+            [
+              "`--reason`",
+              "Show the reason for state judgments such as open or closed"
+            ],
+            [
+              "`-oN lab-check.nmap`",
+              "Save normal text output"
+            ],
+            [
+              "`-oX lab-check.xml`",
+              "Save XML output"
+            ],
+            [
+              "`127.0.0.1`",
+              "Examine the local environment running the command"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "3.1 `-p`: which doors will I check?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A port lets the operating system deliver network traffic to the corresponding service."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap lets you specify which entry points to examine."
+        },
+        {
+          "kind": "code",
+          "text": "# Examine only TCP 80\nnmap -sT -p 80 127.0.0.1\n\n# Examine two TCP ports\nnmap -sT -p 8000,8001 127.0.0.1\n\n# Examine TCP ports 8000 through 8010\nnmap -sT -p 8000-8010 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two other common options:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`-p-`: examine TCP ports 1 through 65535 when paired with a TCP scanning method.",
+            "`-F`: fast mode examines fewer common ports; it does not simply scan the same port range faster."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Exam point: a port outside the selected range cannot be classified as closed merely because it does not appear in the output."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 `-sT`: how will I knock?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connects directly to the TCP Connect, SYN and UDP methods in M03-03."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Method",
+            "Plain-language analogy",
+            "Core concept"
+          ],
+          "rows": [
+            [
+              "`-sT`",
+              "Knock and establish a complete connection",
+              "TCP Connect Scan"
+            ],
+            [
+              "`-sS`",
+              "Knock and check for a response without completing the connection",
+              "TCP SYN Scan"
+            ],
+            [
+              "`-sU`",
+              "Send a message and examine the response",
+              "UDP Scan"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "With `-sT`, Nmap asks the operating system to attempt a TCP connection using `connect()`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acceptance generally leads to `open`; explicit rejection, such as an RST, generally leads to `closed`. Filtering that prevents a determination may lead to `filtered`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A SYN scan that does not complete the TCP three-way handshake may still be detected by IDS, IPS or logging systems."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 `-n`: skip reverse name lookups"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose Nmap discovers the host address `192.168.1.10`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It may perform a Reverse DNS Lookup to try to find a host name."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-n` tells Nmap to skip that reverse lookup and focus on the specified checks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not remove the need to resolve a domain name supplied as a target, and it does not hide an IP address."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "3.4 `--reason`: show the basis of the judgment"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine asking a trainee:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Why do you think this door is closed?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The trainee replies, “Because I think it is.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "That report is difficult to audit."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`--reason` displays the response information Nmap used to judge a host or port state."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Examples include a TCP RST or TCP SYN/ACK."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can inspect both the conclusion and the tool's basis for reaching it."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Important options: `-sn`, `-Pn`, `-sV`, `-O`, `-A`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These options are easy to confuse because they change different parts of the check."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of detection as three information layers:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Figure 3 | Three information layers of scanning. Each added layer may require more probes, resources and authorization."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-07-layers-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Figure 3 | Three information layers",
+            "description": "Arrows show increasingly specific information, not mandatory execution. -sn omits port scanning; -Pn skips the usual discovery decision.",
+            "items": [
+              {
+                "title": "Host discovery: -sn / -Pn",
+                "body": "-sn skips port scans; -Pn skips the discovery decision, not firewall rules."
+              },
+              {
+                "title": "Ports and states: -sT / -p",
+                "body": "Choose method and ports; interpret states with their reasons."
+              },
+              {
+                "title": "Service and OS: -sV / -O",
+                "body": "Extra probes suggest identities. Verify them using management evidence."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "4.1 `-sn`: discover hosts without a port scan"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sn 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This option means:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Determine whether the target responds; do not perform a port scan this time.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of checking for a response at the building entrance rather than inspecting the doors inside."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A report produced with `-sn` cannot claim that every port was examined."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 `-Pn`: attempt the scan without first establishing host availability"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -Pn -sT -p 8000,8001 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Normally, Nmap performs host discovery before deciding whether to continue scanning."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-Pn` skips the usual discovery decision and treats specified targets as candidates for the subsequent scan."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It is like a manager saying:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“Proceed directly to the approved doors without first checking whether anyone is in the building.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember two limits:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`-Pn` does not prove that a host is alive.",
+            "`-Pn` does not bypass a firewall."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "On a local network, lower-level communication may still require ARP to obtain the next hop's MAC address."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 `-sV`: identify the service being provided"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -sV -p 8000 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you know TCP 8000 is open but do not know which program is listening."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-sV` attempts to identify the service and version."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connects to Service Fingerprinting in M03-05."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep these facts separate:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "8000 is a port number; the service name and version need their own evidence."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Without version probing, the `SERVICE` field may come from the common-port database. That name alone does not establish the software's actual identity."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 `-O`: attempt operating-system identification"
+        },
+        {
+          "kind": "code",
+          "text": "sudo nmap -O -p 8000,8001 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This parameter example requires separate authorization for OS probing. `-p` selects the port-scan list; `-O` may add TCP, UDP and ICMP probes, so this is not the original two-TCP-entry experiment. [Nmap: OS probing methods](https://nmap.org/book/osdetect-methods.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The uppercase `O` means OS Detection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap examines response characteristics from different probes to infer the target's operating-system family."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Examples include Linux, Windows and FreeBSD."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This extends the operating-system fingerprinting discussion in M03-06."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The inference may be wrong, especially when firewalls, NAT or particular network devices affect the observations. Verify it using administrator-side information."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-5",
+          "text": "4.5 `-A`: enable several additional checks together"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This parameter is easy to misinterpret."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-A` does not guarantee greater accuracy for an otherwise unchanged scan."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It enables additional capabilities, including:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`-sV`: service-version detection.",
+            "`-O`: operating-system detection.",
+            "`-sC`: default NSE script scanning.",
+            "`--traceroute`: route tracing."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Some capabilities may need extra privileges. Default scripts may interact more extensively with services, so use them within the approved scope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH memory point: `-A` groups additional detection features. It is neither an accuracy guarantee nor a timing parameter."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Scan speed: faster does not guarantee better measurement"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This section explains Timing, Timeout and Retry."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine calling a friend."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You wait two seconds and conclude that the friend is not at home."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The friend may simply not have reached the telephone yet."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Network scanning has the same waiting problem."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "Three key concepts"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Term",
+            "Plain-language meaning"
+          ],
+          "rows": [
+            [
+              "Timeout",
+              "How long to wait before treating the expected response as missing"
+            ],
+            [
+              "Retry",
+              "How many additional attempts to make when no response arrives"
+            ],
+            [
+              "Timing Template",
+              "A preset governing waiting, parallelism and other timing behavior"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap has six common timing templates:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Option",
+            "Name",
+            "General idea"
+          ],
+          "rows": [
+            [
+              "`-T0`",
+              "Paranoid",
+              "Very slow"
+            ],
+            [
+              "`-T1`",
+              "Sneaky",
+              "Slow"
+            ],
+            [
+              "`-T2`",
+              "Polite",
+              "More conservative"
+            ],
+            [
+              "`-T3`",
+              "Normal",
+              "Normal default"
+            ],
+            [
+              "`-T4`",
+              "Aggressive",
+              "More aggressive"
+            ],
+            [
+              "`-T5`",
+              "Insane",
+              "Very aggressive"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sT -T3 -p 8000,8001 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-T3` is a timing setting, not a safety level."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If the waiting period is too short, Nmap may give up before a response arrives, causing omissions or reducing confidence in the interpretation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A very high probing rate can also increase network or service load."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For formal work, record the template, timeout and retry limits, and any interruption."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Saving results: why a screenshot is insufficient"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a security report contains only a screenshot showing `8000/tcp open`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A manager may ask:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“When did you scan it, from which computer, using which method, and were there any errors?”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The screenshot usually cannot answer all of these questions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap therefore provides several output formats."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Parameter",
+            "Format",
+            "Main purpose"
+          ],
+          "rows": [
+            [
+              "`-oN`",
+              "Normal text",
+              "Human reading and checking"
+            ],
+            [
+              "`-oX`",
+              "XML",
+              "Programmatic parsing and automated comparisons"
+            ],
+            [
+              "`-oA`",
+              "Three formats",
+              "Produce `.nmap`, `.xml` and `.gnmap` together"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The older `.gnmap` grepable format is deprecated for new integrations. Prefer XML for automated processing."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-1",
+          "text": "A scan record that can be audited"
+        },
+        {
+          "kind": "paragraph",
+          "text": "At minimum, keep the following information:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap scan worksheet"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Example"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Record field",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Target",
+              "`127.0.0.1`"
+            ],
+            [
+              "Protocol",
+              "TCP"
+            ],
+            [
+              "Ports",
+              "8000 and 8001"
+            ],
+            [
+              "Method",
+              "TCP Connect"
+            ],
+            [
+              "Execution location",
+              "Local laboratory environment"
+            ],
+            [
+              "Time",
+              "Actual start/end times and time zone"
+            ],
+            [
+              "Nmap version",
+              "Actual version number"
+            ],
+            [
+              "Original evidence",
+              "Text and XML files"
+            ],
+            [
+              "Other records",
+              "Full command, warnings, errors and interruptions"
+            ],
+            [
+              "Not examined",
+              "Other ports, UDP and external paths"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Preserve original data before preparing the analytical report."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For external sharing, create a separate redacted copy rather than modifying the only original evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Interpreting results: observation, inference and verification"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The distinction between tool observation, inference and verified facts guides technical interpretation in M03-07."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The lesson provides a synthetic case:"
+        },
+        {
+          "kind": "code",
+          "text": "Target: localhost in an isolated laboratory environment\nScan: TCP Connect\n\nPORT       STATE\n8000/tcp   open\n8001/tcp   closed"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is an interpretation exercise, not an actual scan result."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-1",
+          "text": "7.1 What does `open` establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When Nmap displays:"
+        },
+        {
+          "kind": "code",
+          "text": "8000/tcp open"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Under that scan's conditions, Nmap judged that a service accepted connections on TCP 8000."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That result alone does not establish:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Whether the protocol is HTTP, HTTPS or something else.",
+            "The actual service version.",
+            "Whether the service has a vulnerability.",
+            "Whether an attacker can exploit it to gain privileges.",
+            "Whether users on the Internet can reach it."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each requires additional verification."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-2",
+          "text": "7.2 Distinguish `closed` from `filtered`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use a security guard at a doorway as an analogy:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "State",
+            "Analogy",
+            "Technical meaning"
+          ],
+          "rows": [
+            [
+              "`open`",
+              "Someone answers and accepts visitors",
+              "A service accepts this connection probe"
+            ],
+            [
+              "`closed`",
+              "Someone explicitly says the door is unavailable",
+              "The response indicates no service listening for this probe"
+            ],
+            [
+              "`filtered`",
+              "You cannot get past an obstruction to check the door",
+              "Filtering or related effects prevent determining whether the port is open"
+            ],
+            [
+              "`open|filtered`",
+              "Someone may be silent, or the message may be blocked",
+              "Some methods cannot distinguish open from filtered"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are conceptual analogies; actual classification depends on the scan method and network responses."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is why `filtered` cannot be treated as `closed`."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-3",
+          "text": "7.3 Three evidence layers"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-07-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 4｜Keep three evidence roles separate",
+            "description": "These are parallel comparisons, without sequence arrows. Each card shows the conclusion a different evidence type supports.",
+            "items": [
+              {
+                "title": "Single observation",
+                "body": "8000/tcp accepted a connection from the specified source, time and method."
+              },
+              {
+                "title": "Tool inference",
+                "body": "Service or OS candidates need relevant probes; a port number is not a version."
+              },
+              {
+                "title": "Management verification",
+                "body": "The owner checks running processes, settings and logs for the same device and time."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "This framework is useful in both research and security audits:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Evidence layer",
+            "Example",
+            "Supported conclusion"
+          ],
+          "rows": [
+            [
+              "Direct observation",
+              "TCP 8000 is open",
+              "This test observed an entry point accepting connections"
+            ],
+            [
+              "Tool inference",
+              "`-sV` suggests a particular HTTP server version",
+              "A possible service identity requiring verification"
+            ],
+            [
+              "Administrator verification",
+              "An administrator checks processes, configuration and logs",
+              "Cross-check the actual service, version and configuration"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep these layers distinct."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In research, this corresponds to Measurement, Inference and Validation."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Use Nmap in a defensive acceptance check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider a laboratory with three NAS devices and this requirement:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“NAS administration interfaces should be available only to internal management computers; external networks must not connect directly.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Running Nmap alone does not establish acceptance."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A fuller process is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Define expected behavior."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Specify which sources should connect and which should not have direct access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Measure from approved locations."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Save separate results from internal and approved external test positions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Compare firewall and administrator-side logs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Check whether observations match the intended rules rather than relying solely on open or filtered labels."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Adjust and retest."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Have administrators correct unexpected exposure, repeat under comparable conditions, and confirm that required services still work."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If remote access uses Cloudflare Tunnel and Access, also verify authentication, authorization for each NAS and application-access rules. A port scan of a NAS IP does not replace access-control testing of an application behind a Tunnel."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connects scan observations to a meaningful defensive acceptance decision."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Run a safe experiment on your own Ubuntu system"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The original lesson used a paper interpretation exercise. This additional experiment targets only local `127.0.0.1` so that you can observe the workflow."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Purpose: create your own service and observe open, closed and original evidence."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-1",
+          "text": "Step 1: create a clean test directory"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Environment: your own Ubuntu system with Python 3 and Nmap installed. Confirm that TCP 8000 is free. If another service uses 8001, retain the observation without stopping unrelated programs. Stop and retain records if unexpected services, warnings or errors appear. All commands below target loopback only."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In the first Ubuntu terminal, enter:"
+        },
+        {
+          "kind": "code",
+          "text": "mkdir -p ~/nmap-local-demo\ncd ~/nmap-local-demo\npython3 -m http.server 8000 --bind 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This starts a simple HTTP server listening on local TCP 8000."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep that terminal open."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-2",
+          "text": "Step 2: run Nmap in a second terminal"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First check whether Nmap is installed:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap --version"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In the second terminal, change to the same directory. Confirm that these output names are unused to avoid overwriting earlier evidence:"
+        },
+        {
+          "kind": "code",
+          "text": "cd ~/nmap-local-demo"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Run:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -n -sT -p 8000,8001 --reason \\\n  -oN lab-check.nmap \\\n  -oX lab-check.xml \\\n  127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Assuming nothing else uses 8001, you may see output resembling:"
+        },
+        {
+          "kind": "code",
+          "text": "PORT       STATE    SERVICE\n8000/tcp   open     http-alt\n8001/tcp   closed   vcom-tunnel"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The `SERVICE` names may be port-database labels; they do not establish that `-sV` verified the service identities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your actual output depends on your local environment."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-3",
+          "text": "Step 3: inspect the original records"
+        },
+        {
+          "kind": "code",
+          "text": "cat lab-check.nmap"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Then inspect XML:"
+        },
+        {
+          "kind": "code",
+          "text": "head -n 30 lab-check.xml"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Compare the formats."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-9-4",
+          "text": "Step 4: stop the service and scan again"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Return to the first terminal and press `Ctrl+C` to stop the HTTP server."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In the second terminal, run:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -n -sT -p 8000,8001 --reason -oN lab-after.nmap -oX lab-after.xml 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "If no other program takes over port 8000, you should observe it change from `open` to `closed`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This exercise lets you observe:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Service-state change → network-response change → Nmap interpretation change."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It also explains why scan time, source and execution environment belong in the record."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Cleanup: confirm that the first terminal's HTTP server has stopped. Retain both text/XML pairs according to your evidence needs. Keep only practice data in the test directory so the HTTP server cannot inadvertently serve other files."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10. CEH M03-07 one-page review"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Command or concept",
+            "Meaning to remember"
+          ],
+          "rows": [
+            [
+              "`-p`",
+              "Specify the ports to scan"
+            ],
+            [
+              "`-p-`",
+              "Scan ports 1–65535 for the selected protocol"
+            ],
+            [
+              "`-F`",
+              "Fast mode using fewer common ports"
+            ],
+            [
+              "`-sT`",
+              "TCP Connect Scan"
+            ],
+            [
+              "`-sS`",
+              "TCP SYN Scan"
+            ],
+            [
+              "`-sU`",
+              "UDP Scan"
+            ],
+            [
+              "`-sn`",
+              "Host discovery without port scanning"
+            ],
+            [
+              "`-Pn`",
+              "Skip the usual host-discovery decision and continue scanning"
+            ],
+            [
+              "`-sV`",
+              "Service-version detection"
+            ],
+            [
+              "`-O`",
+              "Operating-system detection"
+            ],
+            [
+              "`-A`",
+              "Enable several advanced scanning capabilities"
+            ],
+            [
+              "`-n`",
+              "Disable reverse DNS lookups"
+            ],
+            [
+              "`--reason`",
+              "Display reasons for state judgments"
+            ],
+            [
+              "`-T0`–`-T5`",
+              "Timing templates"
+            ],
+            [
+              "`-oN`",
+              "Save normal text output"
+            ],
+            [
+              "`-oX`",
+              "Save XML output"
+            ],
+            [
+              "`-oA`",
+              "Save three output formats together"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Official additional reading: [Nmap Reference Guide](https://nmap.org/book/man.html), [Nmap Host Discovery](https://nmap.org/book/man-host-discovery.html), [Nmap Output](https://nmap.org/book/man-output.html)."
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "Understanding check: three practical scenarios"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think through these before opening the lesson's reference answers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 1 | Scan scope"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You scanned only TCP 8000 and 8001, and both were closed. A manager asks whether the host has no network services at all. How would you answer?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 2 | Scan settings"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A colleague says `-Pn` bypasses firewalls and `-A` guarantees completely accurate results. What is wrong with each claim?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 3 | Defensive acceptance"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An internal scan of NAS TCP 8000 reports open, but an external scan reports filtered. How would you explain this, and which two follow-up checks would you propose?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "When reading any Nmap result, practice explaining how it was obtained, which conclusions its evidence supports, and which facts remain unknown."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That ability carries into CEH M04 Enumeration, M05 Vulnerability Analysis, penetration testing and security auditing."
+        },
+        {
+          "kind": "paragraph",
+          "id": "sources",
+          "text": "Official references"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[Nmap: port states](https://nmap.org/book/man-port-scanning-basics.html); [scan methods](https://nmap.org/book/man-port-scanning-techniques.html); [port selection](https://nmap.org/book/man-port-specification.html); [additional capabilities](https://nmap.org/book/man-misc-options.html); [timing and performance](https://nmap.org/book/man-performance.html); [service detection](https://nmap.org/book/man-version-detection.html); [OS detection](https://nmap.org/book/man-os-detection.html)."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-scope",
+          "summary": "Reference answer: Do two ports represent the whole host?",
+          "paragraphs": [
+            "No. The evidence covers the specified source, time, TCP method and ports 8000/8001. Other TCP ports, UDP and other observation positions are outside this record. Write “Neither of the two specified TCP ports was observed open in this test,” and list the untested scope. Do not convert that into a host-wide absence of services."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-discovery",
+          "summary": "Reference answer: What do -sn and -Pn do?",
+          "paragraphs": [
+            "-sn performs host discovery without a port scan. -Pn skips the usual discovery decision and places specified targets into subsequent scanning. Neither option by itself is evidence of liveness; inspect actual responses and classification reasons. -Pn neither makes a powered-off device alive nor automatically passes a firewall. Local operation can still involve ARP address resolution."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-features",
+          "summary": "Reference answer: What should be checked before adding -A?",
+          "paragraphs": [
+            "Check whether the approved purpose covers version detection, OS identification, default scripts, traceroute and the associated target, load, timing and stop conditions. -A expands the feature set, rather than merely increasing the accuracy of the same two-port connection test. It is not a timing template. If the goal is only endpoint connectivity, retain the minimum necessary method."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-comparison",
+          "summary": "Reference answer: How should open and filtered be compared?",
+          "paragraphs": [
+            "Keep both raw results with source position, time, target, protocol, port, method, version and warnings. Compare firewall and service logs to investigate path or condition differences. Open supports accepting connections as observed by that test; filtered means the test could not determine whether the port was open. Before verification, do not rewrite the difference as service shutdown or successful intrusion."
+          ]
+        }
+      ]
+    }
+  }
+}

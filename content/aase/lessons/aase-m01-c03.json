@@ -1,0 +1,1031 @@
+{
+  "id": "AASE-M01-C03",
+  "status": "published",
+  "revision": 4,
+  "contentVersion": "1.1.0",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-06",
+  "sourceIds": [
+    "owasp-authorization",
+    "owasp-tls",
+    "gherkin",
+    "mdn-if-match"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從單人本機原型擴大到多人共用時，重新確認角色、資料存取、保存、維運與交接要求，避免把一個可運行的網址當成完整組織系統。",
+      "objectives": [
+        "指出個人工具與組織共用系統在使用情境與責任上的差異。",
+        "區分登入、資料授權與資料保存的要求。",
+        "為十人共用情境列出未實作事項及進入下一階段的條件。"
+      ],
+      "readingGuide": {
+        "goal": "辨識原型變成共用系統時新增的需求與驗證界線。",
+        "startingPoint": "沿用本機單人收件原型，假設十位同仁希望共用。",
+        "route": "比較使用情境，再分清登入與授權，最後寫出下一階段的需求及驗收條件。",
+        "output": "architecture.md 的共用需求附錄、權限表與兩條授權情境。"
+      },
+      "sections": [
+        {
+          "id": "start",
+          "heading": "個人工具與組織系統有什麼不同？",
+          "paragraphs": [
+            "這一課最重要的觀念是：",
+            "一個程式自己用得很好，不代表十個人一起用也會很好。把程式放到網路上，只是讓別人連得進來，不代表它已經能安全地讓大家一起工作。",
+            "我們用一個生活故事，理解這背後的軟體工程、資安與系統設計觀念。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "一、為什麼一個人用沒問題，十個人用就可能出事？",
+          "paragraphs": [
+            "想像你是一位辦公室承辦人，每天要收很多文件。你覺得很麻煩，於是請 AI 幫你寫了一個「文件缺漏檢查系統」。",
+            "一開始只有你自己使用，事情很簡單：",
+            "你上傳文件，系統幫你檢查有沒有漏掉姓名、日期、附件，然後產生一份報告。",
+            "有一天主管說：「這個很好用！可以給整個辦公室使用嗎？」",
+            "你請 AI 把程式部署到一個網址，例如：",
+            "https://documents.example.com",
+            "十個同事都能開啟網站。",
+            "看起來大功告成了，對不對？",
+            "不一定。",
+            "因為接下來可能出現幾種情況：",
+            "小明上傳的文件，小美竟然也能看到。",
+            "小美可以下載其他承辦人的文件。",
+            "兩個人同時修改一份文件，結果其中一人的修改消失了。",
+            "伺服器重新啟動後，昨天上傳的資料全部不見。",
+            "原本寫程式的人離職，其他人不知道怎麼修復系統。",
+            "你會發現，原本的「文件檢查」功能其實沒有壞。",
+            "壞的是整個團隊使用這套工具時，沒有建立必要的規則與保護措施。",
+            "這就是本課的核心問題。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜個人工具與十人共用的情境比較",
+              "description": "兩張卡平行比較使用情境；人數本身不是安全判定，擴大使用時要重新確認需求與證據。",
+              "items": [
+                {
+                  "title": "情境 A：自己使用",
+                  "body": "只有你自己收件、檢查、修改與下載。"
+                },
+                {
+                  "title": "情境 B：十個人共用",
+                  "body": "大家同時使用，但每個人的工作與權限不同。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "differences",
+          "heading": "二、從五個面向，理解個人工具與組織系統",
+          "paragraphs": [
+            "我們可以把組織系統的需求分成五個問題。",
+            "這五個面向不一定要用五套不同軟體完成，但設計時都必須考慮。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 2｜一個能讓多人使用的系統",
+              "description": "不只是功能正確，還要能協作、管理與維護。五個平行面向共同支撐成果；連線不代表先後步驟、已證實因果或已完成驗收。",
+              "items": [
+                {
+                  "title": "身分",
+                  "body": "誰在使用？"
+                },
+                {
+                  "title": "權限",
+                  "body": "能做什麼？"
+                },
+                {
+                  "title": "資料",
+                  "body": "存在哪裡？"
+                },
+                {
+                  "title": "協作",
+                  "body": "同時操作？"
+                },
+                {
+                  "title": "維護",
+                  "body": "誰負責？"
+                },
+                {
+                  "title": "安全、可靠、可交接",
+                  "body": "五個面向共同考慮，不是五套不同軟體或先後流程。"
+                }
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 1｜五個共同考慮的面向",
+              "headers": [
+                "面向",
+                "白話文的意思",
+                "例子"
+              ],
+              "rows": [
+                [
+                  "身分",
+                  "知道現在是誰在操作",
+                  "小明或小美登入"
+                ],
+                [
+                  "權限",
+                  "決定這個人能做什麼",
+                  "小明不能刪除別人的文件"
+                ],
+                [
+                  "資料",
+                  "確保資料保存正確",
+                  "重開機後資料仍存在"
+                ],
+                [
+                  "協作",
+                  "多人同時操作不出錯",
+                  "修改不會互相覆蓋"
+                ],
+                [
+                  "維護",
+                  "系統出問題仍有人能處理",
+                  "有備份、負責人與交接文件"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "identity",
+          "heading": "三、登入成功，不代表什麼資料都能看",
+          "paragraphs": [
+            "這裡有兩個非常重要的資安名詞。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "id": "authentication",
+              "heading": "1. Authentication：身分驗證",
+              "paragraphs": [
+                "白話文就是：你是誰？",
+                "例如小明輸入帳號密碼，系統確認他確實是小明。",
+                "這就像你進公司時刷員工證。"
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "authorization",
+              "heading": "2. Authorization：授權",
+              "paragraphs": [
+                "白話文就是：你可以做什麼？",
+                "小明雖然是公司員工，但他不一定能進人事室，也不一定能看主管的薪資資料。",
+                "換句話說：",
+                "身分驗證：確認你是員工。",
+                "授權：決定你可以進哪些房間、拿哪些文件。",
+                "我們用一個可以點擊的例子來理解。"
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "模擬：文件權限檢查",
+              "description": "本教學自行設定：承辦人可讀取、修改、刪除自己的文件；主管為唯讀複核者，可讀兩份但不能修改或刪除。",
+              "items": [
+                {
+                  "title": "小明（承辦 A）",
+                  "body": "自己的文件 A：可讀、改、刪。文件 B：不可讀、改、刪。"
+                },
+                {
+                  "title": "小美（承辦 B）",
+                  "body": "自己的文件 B：可讀、改、刪。文件 A：不可讀、改、刪。"
+                },
+                {
+                  "title": "主管（複核者）",
+                  "body": "文件 A／B：可讀；不可修改或刪除。"
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "resource-authorization",
+              "heading": "從角色走到每一份文件的授權",
+              "paragraphs": [
+                "你可以試試看，把登入身分切換成小美，再選擇讀取文件 A。",
+                "這個設計背後還有一個進階觀念：",
+                "權限不只是看角色，也可能要看「這筆資料是誰的」。",
+                "例如：",
+                "RBAC（Role-Based Access Control）：根據角色決定權限。",
+                "資源層級授權（Resource-level Authorization）：針對每一份文件檢查誰有權存取。",
+                "在真正的系統中，通常需要把兩者結合。例如「你是承辦人」還不夠，還要判斷「這份文件是不是你負責的」。"
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "server-enforcement",
+              "heading": "重要：把按鈕藏起來，不等於權限安全",
+              "paragraphs": [
+                "假設小美的畫面沒有「刪除文件」按鈕，是不是就代表她不能刪除文件？",
+                "不一定。",
+                "有些人可能不透過網頁按鈕，而是直接向系統的 API 發送刪除請求。",
+                "所以真正重要的是：負責執行操作的伺服器，也必須重新檢查權限。",
+                "這是前端 UI 與後端安全控制的重大差別。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization"
+          ]
+        },
+        {
+          "id": "concurrency",
+          "heading": "四、多人同時使用，會產生什麼問題？",
+          "paragraphs": [
+            "我們再看一個常見的情境。",
+            "假設小明與小美都獲得授權，可以修改同一份文件。",
+            "本節是另一個合成情境，另外授權兩人修改同一份文件；與上一節「承辦人只操作自己文件」的固定模擬規則分開。",
+            "兩人同時修改同一份資料",
+            "09:00 小明打開文件，看到「缺少簽名」。",
+            "09:01 小美打開同一份文件，也看到「缺少簽名」。",
+            "09:02 小明修改成「已補簽名」，並儲存。",
+            "09:03 小美根據舊畫面修改其他欄位，再儲存整份資料。",
+            "可能的結果：小明的修改被蓋掉。",
+            "因為小美儲存時仍使用舊版本，可能把小明剛完成的更新覆寫。",
+            "這類問題叫做 Lost Update（更新遺失），屬於 Concurrency（並行操作）的議題。",
+            "解法可以是：每份文件記錄版本號碼。小明修改後版本從 1 變成 2，小美再試圖用版本 1 儲存時，系統會偵測衝突，請她重新確認，而不是直接覆蓋。",
+            "這也是為什麼「我自己測試沒有問題」不能證明「多人一起用沒有問題」。",
+            "技術補充：版本比對與更新必須在伺服器／資料層以原子操作或交易一起保證；只在前端先比較版本、再獨立寫入，仍可能發生競爭。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 3｜兩位已授權承辦人仍可能發生更新遺失",
+              "description": "編號代表本合成案例的時間順序。版本衝突需由伺服器／資料層處理；此圖沒有執行實際並行測試。",
+              "items": [
+                {
+                  "title": "09:00｜小明讀取版本 1",
+                  "body": "看到「缺少簽名」。"
+                },
+                {
+                  "title": "09:01｜小美讀取版本 1",
+                  "body": "同樣看到「缺少簽名」。"
+                },
+                {
+                  "title": "09:02｜小明儲存成版本 2",
+                  "body": "內容改為「已補簽名」。"
+                },
+                {
+                  "title": "09:03｜小美仍用版本 1 儲存",
+                  "body": "若系統無聲覆寫，就可能遺失小明更新；正確設計應偵測衝突，請重新確認。"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mdn-if-match"
+          ]
+        },
+        {
+          "id": "storage",
+          "heading": "五、資料存在哪裡？重開機後還在嗎？",
+          "paragraphs": [
+            "想像你拿一張紙寫東西，有兩種方式。",
+            "第一種，你寫在白板上。白板擦掉，內容就沒了。",
+            "第二種，你寫在正式文件裡並存檔，重新打開還可以看。",
+            "軟體裡也有類似差別。",
+            "Memory（記憶體）：程式執行時暫時放資料的地方。通常程式結束，資料就不再保留。",
+            "Persistent Storage（持久化儲存）：例如經妥善設定的資料庫或持久磁碟，讓資料在程式結束之後仍然保存。",
+            "Backup（備份）：額外保存可用的資料副本，降低誤刪、故障等造成的損失。",
+            "Restore（還原）：真正把資料從備份恢復出來。",
+            "要注意的是，資料存在資料庫，不代表已經有備份；有備份，也不代表已經證明可以還原。",
+            "例如文件收件系統收到一百份重要文件。如果伺服器故障，必須知道如何把資料救回來，不能只依靠當初開發工具的那個人。"
+          ]
+        },
+        {
+          "id": "https",
+          "heading": "六、HTTPS 能解決這些問題嗎？",
+          "paragraphs": [
+            "不能全部解決。",
+            "假設你使用 HTTPS 連到文件系統。",
+            "HTTPS 的作用，主要是保護資料在網路傳送時的機密性、完整性，以及在憑證驗證正確的條件下協助確認伺服器身分。",
+            "但 HTTPS 不會幫你決定小美能不能看小明的文件。",
+            "可以這樣記：",
+            "它們不是互相替代的技術，而是解決不同層次的問題。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 2｜不同層次的保護機制",
+              "headers": [
+                "保護機制",
+                "解決的問題"
+              ],
+              "rows": [
+                [
+                  "HTTPS",
+                  "資料傳送途中會不會被竊聽或篡改？"
+                ],
+                [
+                  "Authentication",
+                  "現在使用系統的人是誰？"
+                ],
+                [
+                  "Authorization",
+                  "這個人能操作哪些文件？"
+                ],
+                [
+                  "Backup / Restore",
+                  "資料遺失時能不能救回？"
+                ],
+                [
+                  "Concurrency Control",
+                  "多人修改會不會互相覆蓋？"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-tls"
+          ]
+        },
+        {
+          "id": "case",
+          "heading": "七、怎麼證明「十個人真的可以一起使用」？",
+          "paragraphs": [
+            "這裡要接回前兩堂 AASE 課程的精神：",
+            "AI 說它做好了，不等於我們已經驗證完成。",
+            "軟體工程常使用 Given–When–Then，把需求寫成可以測試的條件。",
+            "例如：",
+            "其中，拒絕未授權操作的測試，稱為 Negative Test（負向測試）。",
+            "這很重要：不能只測試「合法的人能不能成功」，還要測試「不該成功的人，會不會被確實阻止」。",
+            "每個測試都應保留實際執行的證據，例如測試結果、日誌或可檢查的紀錄。只有寫出測試案例，仍不能宣稱已經通過。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 3｜共用需求的驗收情境",
+              "headers": [
+                "測試",
+                "預期結果"
+              ],
+              "rows": [
+                [
+                  "小明讀取自己的文件 A",
+                  "允許"
+                ],
+                [
+                  "小美讀取未獲授權的文件 A",
+                  "拒絕，且不洩漏內容"
+                ],
+                [
+                  "兩人同時修改同份文件",
+                  "不會無聲覆蓋他人的更新"
+                ],
+                [
+                  "系統重新啟動",
+                  "已確認儲存的資料仍存在"
+                ],
+                [
+                  "使用備份進行還原",
+                  "能夠恢復指定版本的資料"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "gherkin"
+          ]
+        },
+        {
+          "id": "gate",
+          "heading": "八、如果現在只有一個 Streamlit 原型，應該怎麼做？",
+          "paragraphs": [
+            "不需要馬上建立複雜的企業級系統。",
+            "先分清楚三種階段：",
+            "階段一：個人原型",
+            "一個人在本機，使用合成資料，先驗證文件缺漏檢查功能。",
+            "階段二：受控多人測試",
+            "定義角色、資料隔離、存取規則，讓少數測試帳號執行允許與拒絕的操作。",
+            "階段三：組織正式使用",
+            "確認真實資料的使用規則，處理資料持久化、備份還原、多人協作、權限管理及維護交接，並取得驗證證據。",
+            "這三個階段不代表每個專案都要花很多錢或建立龐大的基礎設施。系統應該依照使用人數、資料敏感程度、失效後果和組織需求，採用相稱的設計。",
+            "教材目前的 Streamlit 程式仍是單人、合成資料的本機原型。不能因為 Streamlit 可以部署到網路，就假設它已經具備正式帳號、資料隔離、多人授權與持久資料庫。",
+            "多人身分、授權、持久資料庫與備份還原仍屬待實作／待驗證的需求；本課模擬不是這些控制的實作。"
+          ]
+        },
+        {
+          "id": "connections",
+          "heading": "九、把前三堂課連在一起",
+          "paragraphs": [
+            "三堂課其實形成一個完整的軟體工程思考方式：",
+            "先定義成果 → 分配責任 → 設計使用規則 → 執行測試 → 用證據確認可交付。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 4｜前三堂課的問題",
+              "headers": [
+                "課程",
+                "最重要的問題"
+              ],
+              "rows": [
+                [
+                  "M01-01｜先看成品",
+                  "我們到底要幫使用者解決什麼問題？"
+                ],
+                [
+                  "M01-02｜AI 與人類分工",
+                  "AI 可以做什麼？人類必須確認什麼？"
+                ],
+                [
+                  "M01-03｜個人工具與組織系統",
+                  "當更多人使用時，系統是否仍然安全、正確、可靠？"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "review",
+          "heading": "十、理解檢核",
+          "paragraphs": [
+            "以下三題可以幫你確認是否真正理解本課，而不只是記住名詞。先自行判斷，再展開本頁的參考答案；本站不提交答案、自動批改或記錄成績。",
+            "這一課最值得帶走的判斷標準是：軟體是否準備好讓團隊使用，不能只看功能會不會動，還要看不同的人能否在正確的權限下，安全且可靠地完成工作。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "文字編輯器與虛構 A、B、複核者三種角色；不建立真實帳號或共用服務。",
+        "steps": [
+          "在 architecture.md 列出單人原型目前已具備及未實作的能力。",
+          "用合成資料 A、B 畫一張角色—資料—操作權限表，將未確認的規則標為假設。",
+          "寫一條允許讀取與一條拒絕讀取的 Given／When／Then，說明應在哪裡檢查權限。",
+          "列出資料保存、同時使用、備份及維運的待確認問題，指定下一步由誰核對。"
+        ],
+        "expected": "一份共用版需求差異表、兩條授權情境與清楚的進入下一階段條件。",
+        "check": "同儕能分清已在原型實作的完整性規則，與尚未實作的多人授權要求；沒有執行時不標示測試通過。",
+        "cleanup": "只保留合成角色與資料代號；不要為紙上練習分享實際資料或改動正式系統權限。"
+      }
+    },
+    "en": {
+      "summary": "When a local single-user prototype becomes shared software, revisit roles, data access, retention, operations and handoff rather than treating a working URL as a complete organizational system.",
+      "objectives": [
+        "Identify differences in use and responsibility between personal tools and shared organizational systems.",
+        "Distinguish login, data authorization and data retention requirements.",
+        "List unimplemented work and conditions for the next stage of a ten-user shared scenario."
+      ],
+      "readingGuide": {
+        "goal": "Identify new requirements and verification boundaries when a prototype becomes a shared system.",
+        "startingPoint": "Start with the local single-user intake prototype and suppose ten colleagues want to share it.",
+        "route": "Compare use contexts, distinguish login from authorization, then write requirements and acceptance conditions for the next stage.",
+        "output": "A shared-use appendix in architecture.md, a permission matrix and two authorization scenarios."
+      },
+      "sections": [
+        {
+          "id": "start",
+          "heading": "How Do Personal Tools Differ from Organizational Systems?",
+          "paragraphs": [
+            "The central idea of this lesson is:",
+            "A program that works well for one person does not automatically work well for ten. Putting it online provides a reachable entry point, not proof that people can work together safely.",
+            "Use an everyday story to explore the software engineering, security and system-design questions behind this distinction."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "1. Why Might Ten Users Encounter Problems That One User Does Not?",
+          "paragraphs": [
+            "Imagine handling many incoming documents at an office. To reduce repetitive work, you ask AI to create a missing-document checking system.",
+            "At first, you are its only user, so the workflow appears simple:",
+            "You upload documents, the system checks for missing names, dates and attachments, and it generates a report.",
+            "One day a supervisor says, “This is useful! Can the whole office use it?”",
+            "You ask AI to deploy it at an address such as:",
+            "https://documents.example.com",
+            "Ten colleagues can open the website.",
+            "Is the job complete?",
+            "Not necessarily.",
+            "Several problems may appear:",
+            "Xiaomei can see documents uploaded by Xiaoming.",
+            "Xiaomei can download documents belonging to other administrators.",
+            "Two people edit the same document, and one person’s changes disappear.",
+            "After the server restarts, yesterday’s uploads are gone.",
+            "The original developer leaves, and nobody else knows how to recover the system.",
+            "The document-checking feature itself may still work.",
+            "The missing pieces are the rules and protections needed when a team uses the tool.",
+            "That is the central problem of this lesson."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Compare a personal tool with shared use by ten people",
+              "description": "The cards compare scenarios in parallel. Headcount alone does not determine security; expanded use needs revised requirements and evidence.",
+              "items": [
+                {
+                  "title": "Scenario A: personal use",
+                  "body": "You alone receive, check, edit and download documents."
+                },
+                {
+                  "title": "Scenario B: ten people sharing",
+                  "body": "People use the system at the same time, with different tasks and permissions."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "differences",
+          "heading": "2. Five Dimensions of Personal Tools and Organizational Systems",
+          "paragraphs": [
+            "Organizational-system needs can be examined through five questions.",
+            "These dimensions need not be implemented by five separate products, but each needs consideration during design."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | A system that supports multiple users",
+              "description": "Beyond correct features, it needs collaboration, management and maintenance. The five parallel dimensions jointly support the outcome. Lines do not show a sequence, proven causation or completed acceptance.",
+              "items": [
+                {
+                  "title": "Identity",
+                  "body": "Who is using it?"
+                },
+                {
+                  "title": "Permissions",
+                  "body": "What may they do?"
+                },
+                {
+                  "title": "Data",
+                  "body": "Where is it stored?"
+                },
+                {
+                  "title": "Collaboration",
+                  "body": "Working at the same time?"
+                },
+                {
+                  "title": "Maintenance",
+                  "body": "Who is responsible?"
+                },
+                {
+                  "title": "Safe, reliable, ready for handoff",
+                  "body": "Consider the five dimensions together; they are not five separate products or sequential steps."
+                }
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 1 | Five dimensions to consider together",
+              "headers": [
+                "Dimension",
+                "Plain-language meaning",
+                "Example"
+              ],
+              "rows": [
+                [
+                  "Identity",
+                  "Know who is acting.",
+                  "Xiaoming or Xiaomei signs in."
+                ],
+                [
+                  "Permissions",
+                  "Decide what this person may do.",
+                  "Xiaoming cannot delete another person’s documents."
+                ],
+                [
+                  "Data",
+                  "Keep data correctly.",
+                  "Saved data survives a restart."
+                ],
+                [
+                  "Collaboration",
+                  "Coordinate simultaneous work.",
+                  "Changes do not overwrite each other."
+                ],
+                [
+                  "Maintenance",
+                  "Keep someone able to handle failures.",
+                  "Backups, an owner and handoff documentation."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "identity",
+          "heading": "3. Logging In Does Not Grant Access to Every Record",
+          "paragraphs": [
+            "Two security terms are important here."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "id": "authentication",
+              "heading": "1. Authentication",
+              "paragraphs": [
+                "Who are you?",
+                "For example, Xiaoming enters account credentials and the system verifies his identity.",
+                "This is like presenting an employee badge when entering a company."
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "authorization",
+              "heading": "2. Authorization",
+              "paragraphs": [
+                "What may you do?",
+                "Being an employee does not necessarily allow Xiaoming into personnel records or give him access to a supervisor’s salary information.",
+                "In other words:",
+                "Authentication establishes the employee identity.",
+                "Authorization determines which rooms and documents that identity may access.",
+                "Use the interactive example below."
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Simulation: document permission checking",
+              "description": "Teaching policy: administrators may read, edit and delete their own documents. The supervisor is a read-only reviewer who can read both documents but cannot edit or delete either.",
+              "items": [
+                {
+                  "title": "Xiaoming (Administrator A)",
+                  "body": "Own document A: read, edit and delete. Document B: no read, edit or delete."
+                },
+                {
+                  "title": "Xiaomei (Administrator B)",
+                  "body": "Own document B: read, edit and delete. Document A: no read, edit or delete."
+                },
+                {
+                  "title": "Supervisor (Reviewer)",
+                  "body": "Documents A/B: read only; no editing or deletion."
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "resource-authorization",
+              "heading": "From roles to authorization for each document",
+              "paragraphs": [
+                "Try switching to Xiaomei and requesting to read document A.",
+                "There is a further design idea here:",
+                "Permission can depend on who owns the record as well as the role.",
+                "For example:",
+                "RBAC (Role-Based Access Control) determines permissions from roles.",
+                "Resource-level authorization checks access to each individual document.",
+                "Real systems commonly need both. Being an administrator is not enough; the system also needs to check whether the document is assigned to that person."
+              ]
+            },
+            {
+              "kind": "step",
+              "id": "server-enforcement",
+              "heading": "Important: hiding a button does not enforce secure authorization",
+              "paragraphs": [
+                "If Xiaomei’s screen has no delete button, does that establish that she cannot delete a document?",
+                "Not necessarily.",
+                "Someone may send a delete request directly to an API without using a webpage button.",
+                "The server that performs the operation must check authorization again.",
+                "That is a critical distinction between frontend UI and backend enforcement."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization"
+          ]
+        },
+        {
+          "id": "concurrency",
+          "heading": "4. What Can Go Wrong When People Work at the Same Time?",
+          "paragraphs": [
+            "Consider another common situation.",
+            "Assume Xiaoming and Xiaomei are both authorized to edit the same document.",
+            "This is a separate synthetic case that explicitly authorizes both people to edit the same document; it is distinct from the preceding simulation’s fixed owner-only administrator policy.",
+            "Two people edit the same record:",
+            "09:00: Xiaoming opens the document and sees “signature missing.”",
+            "09:01: Xiaomei opens the same document and also sees “signature missing.”",
+            "09:02: Xiaoming changes it to “signature supplied” and saves.",
+            "09:03: Xiaomei edits another field using the old screen and saves the whole record.",
+            "Xiaoming’s update may be overwritten.",
+            "Xiaomei is saving an older version, which may replace the update Xiaoming just made.",
+            "This is a lost update, a concurrency issue.",
+            "One approach is to store a version number with each document. After Xiaoming saves, version 1 becomes version 2. If Xiaomei tries to save version 1, the system detects a conflict and requests review instead of silently overwriting the newer record.",
+            "That is why “it worked when I tested it alone” does not establish safe shared use.",
+            "Technical note: version comparison and update must be guaranteed together by an atomic operation or transaction at the server/data layer. Checking in the frontend and then writing separately can still race."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 3 | Two authorized users can still lose an update",
+              "description": "Numbering shows time order in this synthetic case. Handle version conflicts at the server/data layer; this figure is not a live concurrency test.",
+              "items": [
+                {
+                  "title": "09:00 | Xiaoming reads version 1",
+                  "body": "He sees “signature missing.”"
+                },
+                {
+                  "title": "09:01 | Xiaomei reads version 1",
+                  "body": "She also sees “signature missing.”"
+                },
+                {
+                  "title": "09:02 | Xiaoming saves version 2",
+                  "body": "He changes the record to “signature supplied.”"
+                },
+                {
+                  "title": "09:03 | Xiaomei saves from version 1",
+                  "body": "A silent overwrite can lose Xiaoming’s update. Detect the conflict and request review instead."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mdn-if-match"
+          ]
+        },
+        {
+          "id": "storage",
+          "heading": "5. Where Is the Data, and Does It Survive a Restart?",
+          "paragraphs": [
+            "Think of two ways to record information.",
+            "You can write on a whiteboard. Once it is erased, the contents are gone.",
+            "Or you can save a formal document and reopen it later.",
+            "Software has a similar distinction.",
+            "Memory temporarily holds data while a program runs. Data held only there usually does not survive program termination.",
+            "Persistent storage, such as an appropriately configured database or persistent disk, retains data after the program ends.",
+            "Backup means keeping additional usable copies to reduce loss from deletion, failures and similar events.",
+            "Restore means actually recovering data from a backup.",
+            "A database does not establish that a backup exists, and a backup does not establish that restoration has been demonstrated.",
+            "If an intake system receives 100 important documents and the server fails, recovery needs a known method rather than dependence on the original developer alone."
+          ]
+        },
+        {
+          "id": "https",
+          "heading": "6. Does HTTPS Solve These Problems?",
+          "paragraphs": [
+            "Not all of them.",
+            "Suppose you connect to the document system over HTTPS.",
+            "HTTPS primarily protects confidentiality and integrity in transit and, when certificates are correctly validated, helps authenticate the server.",
+            "It does not decide whether Xiaomei may read Xiaoming’s document.",
+            "Keep the mechanisms separate:",
+            "They address different layers and do not replace one another."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 2 | Protection mechanisms address different problems",
+              "headers": [
+                "Mechanism",
+                "Question it addresses"
+              ],
+              "rows": [
+                [
+                  "HTTPS",
+                  "Can data in transit be eavesdropped on or tampered with?"
+                ],
+                [
+                  "Authentication",
+                  "Who is using the system?"
+                ],
+                [
+                  "Authorization",
+                  "Which documents may this identity act on?"
+                ],
+                [
+                  "Backup / Restore",
+                  "Can lost data be recovered?"
+                ],
+                [
+                  "Concurrency Control",
+                  "Can simultaneous edits overwrite one another?"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-tls"
+          ]
+        },
+        {
+          "id": "case",
+          "heading": "7. How Can We Verify That Ten People Can Work Together?",
+          "paragraphs": [
+            "Return to the principle established in the first two AASE lessons:",
+            "An AI completion claim does not establish completed verification.",
+            "Software engineering often uses Given–When–Then to express requirements as testable conditions.",
+            "For example:",
+            "A test that rejects an unauthorized action is a negative test.",
+            "Test whether authorized users succeed and whether users who should not succeed are actually blocked.",
+            "Each test needs actual execution evidence, such as results, logs or inspectable records. Writing a test case alone does not establish that it passed."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 3 | Acceptance scenarios for shared use",
+              "headers": [
+                "Test",
+                "Expected result"
+              ],
+              "rows": [
+                [
+                  "Xiaoming reads his own document A.",
+                  "Allow."
+                ],
+                [
+                  "Xiaomei reads document A without authorization.",
+                  "Deny without disclosing its contents."
+                ],
+                [
+                  "Two users edit the same document.",
+                  "Do not silently overwrite another person’s update."
+                ],
+                [
+                  "The system restarts.",
+                  "Previously confirmed saved data remains available."
+                ],
+                [
+                  "Restore from a backup.",
+                  "Recover the specified data version."
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "gherkin"
+          ]
+        },
+        {
+          "id": "gate",
+          "heading": "8. What Should We Do with a Single-User Streamlit Prototype?",
+          "paragraphs": [
+            "There is no need to immediately build a complicated enterprise system.",
+            "Distinguish three stages:",
+            "Stage 1: personal prototype",
+            "One person uses synthetic data locally to check the missing-document feature.",
+            "Stage 2: controlled multi-user testing",
+            "Define roles, data isolation and access rules, then have a small set of test accounts exercise both allowed and denied operations.",
+            "Stage 3: organizational production use",
+            "Confirm real-data usage rules, persistence, backup and restore, collaboration, permission management and maintenance handoff, with corresponding verification evidence.",
+            "These stages do not require every project to be expensive or use large infrastructure. Choose a proportionate design based on user numbers, data sensitivity, failure consequences and organizational needs.",
+            "The course’s Streamlit program remains a local, single-user prototype with synthetic data. Deployability alone does not establish production accounts, data isolation, multi-user authorization or a persistent database.",
+            "Multi-user identities, authorization, persistent databases and backup/restore remain requirements awaiting implementation or verification. This lesson’s simulation does not implement those controls."
+          ]
+        },
+        {
+          "id": "connections",
+          "heading": "9. Connecting the First Three Lessons",
+          "paragraphs": [
+            "The three lessons form a connected software engineering approach:",
+            "Define outcomes → assign responsibilities → design usage rules → execute tests → use evidence to confirm deliverable scope."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 4 | Questions from the first three lessons",
+              "headers": [
+                "Lesson",
+                "Main question"
+              ],
+              "rows": [
+                [
+                  "M01-01 | See the product first",
+                  "Which user problem are we solving?"
+                ],
+                [
+                  "M01-02 | AI and human responsibilities",
+                  "What can AI do, and what must people confirm?"
+                ],
+                [
+                  "M01-03 | Personal tools and organizational systems",
+                  "Does the system remain safe, correct and reliable as more people use it?"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "review",
+          "heading": "10. Understanding Check",
+          "paragraphs": [
+            "The three questions below check understanding rather than terminology alone. Answer first and then expand the reference explanations; this site does not submit, automatically grade or record answers.",
+            "Judge readiness for team use by whether different people can complete their work safely and reliably under appropriate permissions, as well as whether the feature runs."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "A text editor and fictional roles A, B and reviewer. Do not create real accounts or a shared service.",
+        "steps": [
+          "List the prototype’s implemented and unimplemented capabilities in architecture.md.",
+          "Use synthetic records A and B to create a role–data–action permission matrix, marking unconfirmed rules as assumptions.",
+          "Write one allowed-read and one denied-read Given/When/Then scenario and identify where permission checks belong.",
+          "List questions about retention, simultaneous use, backups and operations, assigning who should check them next."
+        ],
+        "expected": "A shared-use requirements comparison, two authorization scenarios and clear conditions for the next stage.",
+        "check": "A peer can distinguish implemented completeness rules from unimplemented shared-user authorization. Do not mark tests passed without execution.",
+        "cleanup": "Keep only synthetic roles and record identifiers. Do not share actual data or change production permissions for a tabletop exercise."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M01-C03-Q01",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "小明和小美都能登入同一套系統，但小美嘗試讀取小明的私人文件。最主要應由哪一項機制決定是否拒絕？",
+          "options": [
+            "HTTPS",
+            "Authentication（身分驗證）",
+            "Authorization（授權）",
+            "Backup（備份）"
+          ],
+          "rationales": [
+            "HTTPS 保護傳輸，不決定每份文件的存取權。",
+            "登入辨識身分，不自動授權讀取別人的文件。",
+            "C：授權須依身分、目標文件與操作決定是否拒絕。",
+            "備份處理復原，不替代存取控制。"
+          ]
+        },
+        "en": {
+          "prompt": "Xiaoming and Xiaomei can both sign in, but Xiaomei tries to read Xiaoming’s private document. Which mechanism should primarily decide whether to deny access?",
+          "options": [
+            "HTTPS",
+            "Authentication",
+            "Authorization",
+            "Backup"
+          ],
+          "rationales": [
+            "HTTPS protects transport; it does not decide access to each document.",
+            "Identifying a user does not grant access to another person’s documents.",
+            "C: authorization evaluates the identity, target document and requested operation.",
+            "Backups support recovery rather than access control."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M01-C03-Q02",
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "假設兩位承辦人同時修改同一份資料，其中一人的內容被另一人覆蓋。主要是哪一類問題？",
+          "options": [
+            "Concurrency（並行操作）",
+            "HTTPS 憑證",
+            "密碼強度",
+            "畫面顏色設計"
+          ],
+          "rationales": [
+            "A：這是並行操作中的更新遺失，需要版本衝突等控制。",
+            "憑證不會協調同時修改的資料版本。",
+            "密碼強度不決定更新如何合併或拒絕。",
+            "配色無法修正資料競爭。"
+          ]
+        },
+        "en": {
+          "prompt": "Two administrators edit the same record and one person’s content is overwritten. What kind of problem is this?",
+          "options": [
+            "Concurrency",
+            "HTTPS certificates",
+            "Password strength",
+            "Page color design"
+          ],
+          "rationales": [
+            "A: lost updates are a concurrency issue requiring controls such as version-conflict detection.",
+            "Certificates do not coordinate record versions.",
+            "Password strength does not determine how updates are combined or rejected.",
+            "Colors do not resolve data races."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M01-C03-Q03",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "AI 已完成文件缺漏檢查功能，也成功部署到網址。現在可以宣布十人共用版完成嗎？",
+          "options": [
+            "可以，有網址就是正式系統",
+            "可以，只要 UI 做得漂亮",
+            "還不行，必須驗證多人權限、資料、協作與維護需求"
+          ],
+          "rationales": [
+            "網址只提供連線入口，不能證明多人需求。",
+            "介面外觀不代替授權、持久化或維護證據。",
+            "C：需有相稱的多人操作、資料保存／還原及維護驗證證據。"
+          ]
+        },
+        "en": {
+          "prompt": "AI completed the missing-document feature and deployed it at a URL. Is the ten-user version complete?",
+          "options": [
+            "Yes; a URL makes it a production system.",
+            "Yes, if the UI looks polished.",
+            "Not yet; multi-user permissions, data, collaboration and maintenance requirements need verification."
+          ],
+          "rationales": [
+            "A URL is an entry point, not evidence for shared-use requirements.",
+            "Appearance does not replace authorization, persistence or maintenance evidence.",
+            "C: proportionate evidence is needed for multi-user operations, persistence/recovery and maintenance."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}

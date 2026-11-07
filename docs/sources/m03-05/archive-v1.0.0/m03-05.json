@@ -1,0 +1,917 @@
+{
+  "id": "M03-05",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-03",
+  "status": "published",
+  "publishedOn": "2026-11-03",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從連接埠名稱、服務回應到內部套件紀錄，建立有證據的服務版本與修補判斷。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-05｜服務版本與 Banner：怎麼知道開著的入口在提供什麼服務？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一句話結論：連接埠告訴你入口在哪，服務回應提供辨識線索；把回應、測試條件與設備端資料對起來，才能更可靠地確認服務及修補狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上一單元的重點是 Open、Closed、Filtered：這次測試看到了什麼連接埠狀態。今天接著回答一個問題：入口開著之後，裡面究竟是什麼服務、什麼版本？"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1｜先用店面招牌理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像同一條街上有一間店："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 門牌是 443 號，這只是地址線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 你按門鈴，有人回應，表示這次能聯絡到這個入口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 對方說「這裡是晨光書店」，你取得店家自我介紹。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 你依規則詢問營業項目，從回答方式辨認它提供哪些服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 最後，管理者出示登記資料與實際營業紀錄，你再核對是否一致。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路服務也類似。Port（連接埠）是網路程式接收通訊的入口編號；Service（服務）是入口提供的功能，例如網頁、郵件或遠端管理；Version（版本）是軟體的版本識別。三者有關聯，但不能只憑一個入口號碼，就把服務、產品及完整版本都填好。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 TCP 443 常用於 HTTPS。TCP（傳輸控制協定）提供有連線的可靠傳輸；HTTPS是經過 TLS（傳輸層安全性協定）保護的 HTTP 網頁通訊。自訂服務也可以使用 TCP 443；一般網頁服務也可以設在其他連接埠。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2｜Banner 是什麼？取得它有什麼用？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Banner（服務識別訊息）是服務對外回傳、可用來辨識自身的文字或資訊。Banner Grabbing（擷取服務識別訊息）就是取得這些回應，作為資產盤點與後續查核的線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不是只指登入畫面的歡迎標語。常見例子包括："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "回應位置",
+            "可能看到的內容",
+            "可以先記錄什麼"
+          ],
+          "rows": [
+            [
+              "SSH 的識別行",
+              "`SSH-2.0-ExampleSSH_1.2`",
+              "宣告的 SSH 協定及軟體識別"
+            ],
+            [
+              "郵件服務的開場回覆",
+              "`220 mail.example.test ...`",
+              "回應碼、主機名稱及服務自述"
+            ],
+            [
+              "HTTP 回應標頭",
+              "`Server: ExampleWeb/1.2`",
+              "這次回覆帶出的產品／版本字串"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "以上字串是合成示例，不是實際掃描結果。SSH 是 Secure Shell，用來建立安全遠端連線；HTTP 是 Hypertext Transfer Protocol，網頁用來交換請求與回應的協定；標頭是描述請求或回應的欄位。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Banner 的價值是讓你開始有依據地盤點：這個端點可能提供什麼、是否出現未預期的服務、要找哪位管理者核對。它也可能省略版本、被管理者修改，或出自前面的代理服務。因此，先保留原始回應，再標註它支持到哪一層結論。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3｜「等服務先說話」與「送出探測」有何不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "取得識別資料時，有些服務會在連線建立後先傳送開場訊息；另一些服務要收到符合協定的請求，才會回答。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Probe（探測訊息）是為了觀察服務行為而送出的資料。Service Detection（服務辨識）會分析回應內容；Version Detection（版本辨識）進一步嘗試辨認產品、版本及相關資訊。Banner 擷取是其中一種方法，不涵蓋所有辨識技術。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 是網路探索與安全稽核工具。它的服務辨識流程可能先建立 TCP 連線、等待服務自行回覆，再依服務情況送出探測。官方所稱的 NULL probe（空探測），在這個情境是連線建立後不先送應用層探測內容、先等回應。它仍然會建立網路連線，不能當成完全不接觸目標的被動蒐集。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "相較之下，分析一份原本已合法取得的封包紀錄，而不另外連到目標，是不同的觀察方式。無論採哪一種，都要遵守授權、資料使用與保留範圍。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4｜Nmap 的 SERVICE 欄位，證據從哪裡來？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先分清楚兩種來源："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 依連接埠對照常見名稱：工具可能根據連接埠與協定的對照表，顯示常見服務名稱。這是分類線索，不是已驗證程式身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 依實際回應辨識：啟用 Nmap 的 `-sV` 後，工具會嘗試使用回應與特徵資料庫判別服務及版本。這比只看入口號碼多了一層證據，但仍要檢查結果與測試條件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下列只供理解參數，不是要求掃描外部主機："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 8080 <已明確授權的隔離實驗主機>"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-sV` 表示服務／版本辨識；`-p 8080` 限定連接埠 8080。尖括號內容是說明文字，不能直接當成位址執行。要實作，應先確認目標、服務、測試時段、探測方式及停止條件都在授權內。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "版本探測會和服務互動，不能保證零影響；部分設備可能把探測內容當成實際工作。初學練習不覆寫工具的預設排除設定，也不使用包含其他功能的 `-A` 來代替本課的 `-sV`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "工具可能得到完整匹配，也可能只有部分線索。Nmap 的 softmatch（初步服務匹配）可協助縮小後續探測範圍；它不等於確認了精確版本，也不是可自行換算成「九成正確」的分數。辨識不到時，保留「未能確認」比猜填版本更有用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "版本辨識與 OS Fingerprinting（作業系統指紋辨識）也要分開。前者主要看應用服務回應；後者如 Nmap 的 `-O`，會利用網路協定堆疊的回應特徵推測作業系統。服務回應中的平台線索可以保留，但不能直接代替作業系統查核。下一單元才會深入 OS 指紋。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-05-evidence-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "flow",
+            "caption": "服務辨識的四層證據",
+            "description": "箭頭表示查核順序，不表示自動取得權限或已證實弱點。每一步都保留來源與限制。",
+            "items": [
+              {
+                "title": "1｜入口名稱",
+                "body": "連接埠對照表提供常見名稱，尚未驗證服務身分。"
+              },
+              {
+                "title": "2｜回應線索",
+                "body": "保存 Banner 與探測回應，標註工具的辨識結果。"
+              },
+              {
+                "title": "3｜內部核對",
+                "body": "確認代理位置、執行中服務、完整套件版本及設定。"
+              },
+              {
+                "title": "4｜修補判定",
+                "body": "對照供應商公告、回補修正與成立條件，再記錄結論。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5｜為什麼看到版本，還不能直接宣布有漏洞？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Vulnerability（弱點）是可能被利用的安全缺陷。要確認某個弱點是否適用，除了版本線索，還需要核對產品、套件來源、修補紀錄、設定與成立條件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩個常見原因："
+        },
+        {
+          "kind": "heading",
+          "id": "section-5-proxy",
+          "text": "A. 你看到的可能是前面的代理"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reverse Proxy（反向代理）是代替後端服務接收用戶端請求的前端。Backend／Origin（後端／來源伺服器）則是後方實際處理部分工作的服務。"
+        },
+        {
+          "kind": "code",
+          "text": "用戶端 → 反向代理 → 後端應用程式\n          ↑ 這裡可能產生或調整回應標頭"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，從外部看到的 `Server` 字串，可能描述前端，也可能是轉送或修改過的資訊。它不能單獨證明後端套件的精確版本。HTTP 規範也允許不提供 `Server` 欄位，並建議避免透露不必要的細節。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-05-proxy-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "flow",
+            "caption": "請求路徑與版本證據",
+            "description": "箭頭只表示此合成架構的請求轉送方向。外部回應可能出自代理，不能直接代表後端版本；回應的回傳方向在此省略。",
+            "items": [
+              {
+                "title": "1｜用戶端",
+                "body": "向核准入口提出請求，記錄使用的主機名稱。"
+              },
+              {
+                "title": "2｜反向代理",
+                "body": "代替後端接收請求，可能產生或調整回應標頭。"
+              },
+              {
+                "title": "3｜後端服務",
+                "body": "處理轉送的工作；精確套件版本須另外向管理端核對。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5-backport",
+          "text": "B. 舊版號可能已回補安全修正"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Backport（回補修正）是把新版中的特定修正帶回較舊的維護版本，而不一定改成相同的上游主版本號。Upstream（上游）可理解為原始軟體專案；作業系統供應商可能另外維護自己的套件版本與修補紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，一個看似舊的字串，可能對應已修補的供應商套件。反過來，看不到版本也不代表安全。下一步是用設備端的完整套件版本及供應商公告核對，而不是單靠字串排序做結論。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6｜完整合成案例：把推測變成可追查紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你受託盤點隔離教學環境中的 TCP 8080。以下全部是教學資料："
+        },
+        {
+          "kind": "code",
+          "text": "觀察一：8080/tcp open\n觀察二：HTTP 回應含 Server: ExampleWeb/1.2\n觀察三：架構文件顯示前方有反向代理\n管理端資料：後端套件為 example-app 4.0-vendor3\n修補狀態：尚待核對供應商公告與安裝紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "比較兩種紀錄方式："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 跳太快：「後端使用 ExampleWeb 1.2，而且有漏洞。」這把前端回應、後端產品與漏洞三件事混在一起。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 可查核：「在指定測試位置與時間，TCP 8080 接受連線；HTTP 回應自述 ExampleWeb/1.2。架構文件顯示有反向代理，這個字串尚不能用來確認後端版本。管理端列出 example-app 4.0-vendor3；下一步核對執行中服務與套件、供應商修補公告及設定。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡也承接 M03 的章後重點：Port State（連接埠狀態）是觀測結果，不是入侵結果。`open`、可讀取 Banner、成功辨認產品，都不等於已取得登入權限或證明能利用弱點。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7｜管理者如何防護，又如何留下驗收證據？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務識別資訊的管理，應和實際維護一起做："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "工作",
+            "實際用途",
+            "可以保留的證據"
+          ],
+          "rows": [
+            [
+              "盤點必要服務與負責人",
+              "找出不需要或不明的入口",
+              "經確認的資產、用途及負責人清單"
+            ],
+            [
+              "移除不必要的詳細 Banner",
+              "減少對外透露內部細節",
+              "調整前後的回應與設定紀錄"
+            ],
+            [
+              "依來源限制存取",
+              "讓管理入口只對核准來源開放",
+              "存取規則及相同條件下的驗證結果"
+            ],
+            [
+              "核對套件並修補",
+              "處理真正的安全缺陷",
+              "完整套件版本、供應商公告、安裝與重啟紀錄"
+            ],
+            [
+              "觀察異常探測",
+              "發現未預期的連線與辨識行為",
+              "服務、代理與防火牆日誌；時間與來源對照"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "隱藏 Banner 是資訊揭露管理，不是修補的替代品。另外，更新套件後仍應確認執行中的程序是否已使用新版本；只看到磁碟上有新套件，還不足以確認服務已重新載入。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一筆有用的辨識紀錄，至少包括：授權範圍、目標與傳輸協定／連接埠、來源位置、使用的主機名稱、時間與時區、工具版本及參數、原始回應、觀察到的產品字串、可支持的推論、內部核對資料，以及待確認事項。分享時移除帳密、工作階段資訊與不必要的個資。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8｜今天的安全練習與小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天不需要對任何主機發送封包。用第 6 節的合成資料，自己寫三行："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 觀察：我實際取得了哪些回應或文件？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 推論：這些線索目前支持什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 待確認：還需要哪份管理端資料，才能完成版本與修補查核？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再試著回答四題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 掃描結果出現 `443/tcp open https`，在不知道服務名稱來源時，為什麼不能直接填上網頁伺服器產品與版本？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Nmap 建立 TCP 連線後，只等待服務開場訊息，為什麼仍不是完全不接觸目標的被動蒐集？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 外部回應寫 `ExampleWeb/1.2`，但前方有反向代理、供應商又可能回補修正。確認後端是否受某弱點影響時，你至少要補哪三類證據？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 管理者把版本 Banner 隱藏後，可以把「弱點已修復」標成完成嗎？應該如何分開驗收？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天帶走的觀念：入口號碼 → 回應線索 → 內部核對 → 修補判定。每一步都保留證據與限制，就能把服務辨識用在真正的盤點與防護上。"
+        },
+        {
+          "kind": "heading",
+          "id": "sources",
+          "text": "來源與查核範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本單元沿用指定主稿的 M03-05「Service Version & Banner Grabbing」與 M03 章後觀測結果原則；技術補充查核日期：2026-11-03。官方文件是持續更新頁面，未以網頁內容冒稱特定已安裝工具版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Nmap：服務與版本辨識](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Nmap：版本辨識技術與探測流程](https://nmap.org/book/vscan-technique.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Nmap：探測資料庫與 softmatch](https://nmap.org/book/vscan-fileformat.html#vscan-db-softmatch)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Nmap：作業系統辨識](https://nmap.org/book/man-os-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [RFC 9110：HTTP Server 欄位（2022，§10.2.4）](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.4)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Red Hat：安全修正的 Backport 政策](https://access.redhat.com/security/updates/backporting)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "參考答案會隨網站教材發布，正式頁核驗後再提供解答網址；這裡先保留題目供你練習。公布答案不代表你已作答或學會。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-port-label",
+          "summary": "參考解答：1. 入口編號與服務身分",
+          "paragraphs": [
+            "`open` 描述這次測試取得的連接埠狀態。`https` 可能只是依埠號對照的常見名稱，也可能來自額外的服務辨識；先查明產生方式。即使取得與 HTTPS 相符的回應，也要進一步核對產品、完整版本及部署位置。比較穩妥的記錄是保留原始輸出與探測方法，將尚未驗證的產品、版本列為待確認。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-null-probe",
+          "summary": "參考解答：2. 已建立連線就已接觸目標",
+          "paragraphs": [
+            "TCP 連線建立會與目標交換網路封包，服務也可能留下連線紀錄。NULL probe 的「空」是尚未先送應用層探測內容，不是完全沒有互動。因此仍需取得授權並考慮服務影響；分析已合法取得的既有流量、沒有發出新連線，才是另一種被動觀察方式。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-backend-evidence",
+          "summary": "參考解答：3. 補齊後端與修補證據",
+          "paragraphs": [
+            "至少取得三類資料：第一，代理與後端的架構及回應產生位置，釐清字串在描述誰；第二，後端實際執行的程式、完整套件版本與供應商修訂號；第三，供應商安全公告、回補與安裝紀錄，以及弱點適用的設定條件。必要時確認服務已重新載入修補版本。把外部回應和內部證據分開記錄，再判斷是否受影響。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-banner-patching",
+          "summary": "參考解答：4. 分開驗收資訊揭露與修補",
+          "paragraphs": [
+            "隱藏版本可以標記為「已減少版本資訊揭露」，前提是調整後的實際回應已驗證。但「弱點已修復」需要另一組證據：套件與公告對照、修補安裝結果、執行中版本與必要設定檢查，並於授權範圍內完成相應驗證。兩項工作可以一起安排，不能互相代替。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Connect port labels, service responses and internal package records to evidence-based service-version and patch assessments.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-05 | Service Versions and Banners: What Does an Open Entry Point Actually Provide?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In one sentence: a port locates an entry point, while service responses provide identification clues; compare responses, test conditions and device-side records to establish the service and its patch status more reliably."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The previous unit explained Open, Closed and Filtered: what port state this particular test observed. This unit asks the next question: once an entry point is open, what service and version are behind it?"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1 | Start with a shop sign"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a shop on a street:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Its street number is 443. That is an address clue."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Someone answers the doorbell. You can reach this entrance on this occasion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- They say, “This is Morning Light Bookshop.” You have a self-description."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Following the agreed rules, you ask what it offers and identify its services from the replies."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Finally, the manager provides registration and operating records, which you compare with what you observed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Network services are similar. A port is a numbered entry point through which a network program receives communications. A service provides a function, such as websites, email or remote administration. A version identifies a software release. These are related, but one entry-point number cannot establish the service, product and complete version by itself."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, TCP 443 commonly carries HTTPS. TCP (Transmission Control Protocol) provides reliable, connection-oriented transport. HTTPS is HTTP web communication protected by TLS (Transport Layer Security). A custom service can also use TCP 443, and a web service can use another port."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2 | What is a banner, and why collect it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A banner is text or information a service returns that can help identify it. Banner grabbing collects these responses as clues for asset inventory and further verification."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It is not limited to a welcome message on a login screen. Examples include:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Response location",
+            "Possible content",
+            "What to record initially"
+          ],
+          "rows": [
+            [
+              "SSH identification line",
+              "`SSH-2.0-ExampleSSH_1.2`",
+              "The declared SSH protocol and software identification"
+            ],
+            [
+              "Mail service greeting",
+              "`220 mail.example.test ...`",
+              "Response code, hostname and service self-description"
+            ],
+            [
+              "HTTP response header",
+              "`Server: ExampleWeb/1.2`",
+              "Product/version string in this particular response"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These strings are synthetic examples, not actual scan results. SSH means Secure Shell and supports secure remote connections. HTTP means Hypertext Transfer Protocol, the protocol used to exchange web requests and responses. Headers are fields describing a request or response."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A banner helps you begin an evidence-based inventory: what an endpoint might offer, whether an unexpected service is present, and which administrator should verify it. A banner may omit a version, be customized by an administrator, or come from a proxy in front of the application. Preserve the original response first, then identify how far it supports your conclusion."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3 | Waiting for a greeting versus sending a probe"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Some services send a greeting after a connection is established. Others answer only after receiving a correctly formed protocol request."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A probe is data sent to observe a service's behavior. Service detection analyzes responses. Version detection also attempts to identify a product, release and related information. Banner grabbing is one technique within this broader process, not the whole process."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap is a network exploration and security auditing tool. Its service-detection process may establish a TCP connection and wait for an initial response before sending probes appropriate to the service. In this context, its NULL probe means waiting after connection establishment without first sending application-layer probe data. It still establishes a network connection, so it is not passive collection that never contacts the target."
+        },
+        {
+          "kind": "paragraph",
+          "text": "By contrast, analyzing previously and lawfully collected packet records without making a new connection is a different observation method. Both approaches remain subject to authorization, data-use and retention limits."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4 | Where does the evidence behind Nmap's SERVICE column come from?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Distinguish two sources:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. A familiar name from a port table: the tool may show a common service name based on the transport protocol and port number. This is a classification clue, not verified program identity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Identification from actual responses: with Nmap's `-sV`, the tool attempts to identify the service and version using responses and a signature database. This adds evidence beyond the entry-point number, but the result and test conditions still need review."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following only explains parameters; it is not an instruction to scan an external host:"
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sV -p 8080 <explicitly-authorized-isolated-lab-host>"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-sV` requests service/version detection; `-p 8080` limits the port selection to 8080. The angle-bracket text is an explanatory placeholder, not an address to execute unchanged. Before a real exercise, confirm that the target, service, time window, probing method and stop conditions are authorized."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Version probes interact with the service and are not guaranteed to have no effect; some devices may treat probe content as real work. Beginner exercises should not override the tool's default exclusions or substitute the broader `-A` option for this unit's `-sV`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The tool may obtain a full match or only partial clues. Nmap's softmatch narrows the subsequent probes using a preliminary service-type match. It does not establish an exact version or provide a score you may independently translate into “90% certain.” If identification is incomplete, keeping “not confirmed” is more useful than inventing a version."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Version detection and OS fingerprinting are separate tasks. OS means operating system. Service/version detection primarily uses application responses; OS fingerprinting, such as Nmap's `-O`, infers the operating system from network-stack response characteristics. Platform clues in service replies are useful to preserve, but do not replace operating-system verification. The next unit develops OS fingerprinting further."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-05-evidence-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Four layers of service evidence",
+            "description": "Arrows show the verification order, not automatic access or a confirmed vulnerability. Preserve sources and limits at each step.",
+            "items": [
+              {
+                "title": "1 | Port label",
+                "body": "A port-name table suggests a common service; it does not verify its identity."
+              },
+              {
+                "title": "2 | Response clues",
+                "body": "Keep banners and probe responses, and record the tool’s identification."
+              },
+              {
+                "title": "3 | Internal checks",
+                "body": "Verify proxy placement, the running service, full package version and settings."
+              },
+              {
+                "title": "4 | Patch assessment",
+                "body": "Check vendor advisories, backported fixes and required conditions before concluding."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5 | Why does a visible version not immediately confirm a vulnerability?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A vulnerability is a security weakness that may be exploitable. Determining whether a particular weakness applies requires more than a version clue: verify the product, package source, patch history, configuration and necessary conditions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two common reasons follow."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5-proxy",
+          "text": "A. You may be observing a front-end proxy"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A reverse proxy accepts client requests on behalf of services behind it. A backend/origin server is a service behind that front end that performs some of the actual processing."
+        },
+        {
+          "kind": "code",
+          "text": "Client → Reverse proxy → Backend application\n          ↑ This layer may generate or modify response headers"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An externally visible `Server` string may therefore describe the front end or contain forwarded or modified information. It cannot establish an exact backend package version by itself. HTTP also permits omitting `Server` and recommends avoiding unnecessary detail."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-05-proxy-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Request path and version evidence",
+            "description": "Arrows show request forwarding in this synthetic design only. An external response may come from the proxy, not identify the backend version. Return-response arrows are omitted.",
+            "items": [
+              {
+                "title": "1 | Client",
+                "body": "Send a request to the approved entry point and record the hostname used."
+              },
+              {
+                "title": "2 | Reverse proxy",
+                "body": "Accept requests for the backend and possibly generate or change response headers."
+              },
+              {
+                "title": "3 | Backend service",
+                "body": "Handle forwarded work; verify the exact package version separately with the administrator."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-5-backport",
+          "text": "B. An older version number may include backported fixes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Backporting brings a specific fix from a newer release into an older maintained release without necessarily adopting the same upstream major version number. Upstream refers here to the original software project; operating-system vendors may maintain their own package revisions and patch records."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An apparently old string may therefore correspond to a patched vendor package. Conversely, the absence of a visible version does not establish security. Compare the complete device-side package version with vendor advisories instead of deciding solely by sorting version strings."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6 | A complete synthetic case: turn an inference into a traceable record"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are authorized to inventory TCP 8080 in an isolated teaching environment. All the following are teaching data:"
+        },
+        {
+          "kind": "code",
+          "text": "Observation 1: 8080/tcp open\nObservation 2: HTTP response includes Server: ExampleWeb/1.2\nObservation 3: Architecture records show a reverse proxy in front\nManagement record: Backend package is example-app 4.0-vendor3\nPatch status: Vendor advisories and installation records still need checking"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Compare two records:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- A premature conclusion: “The backend runs ExampleWeb 1.2 and is vulnerable.” This conflates the front-end response, backend product and vulnerability determination."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- A verifiable record: “At the specified source location and time, TCP 8080 accepted a connection; the HTTP response identified itself as ExampleWeb/1.2. Architecture records show a reverse proxy, so this string does not yet confirm the backend version. Management records list example-app 4.0-vendor3. Next, correlate the running service with its package, vendor patch advisories and configuration.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This also applies the M03 chapter supplement: a port state is an observation, not evidence of compromise. An `open` state, a readable banner and a successful product identification do not establish login access or prove exploitability."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7 | How can administrators defend services and preserve validation evidence?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Manage service-identification information alongside actual maintenance:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Work",
+            "Purpose",
+            "Evidence to retain"
+          ],
+          "rows": [
+            [
+              "Inventory necessary services and owners",
+              "Identify unnecessary or unexplained entry points",
+              "Confirmed assets, purposes and owners"
+            ],
+            [
+              "Remove unnecessarily detailed banners",
+              "Reduce exposure of internal details",
+              "Before/after responses and configuration records"
+            ],
+            [
+              "Restrict access by source",
+              "Expose administration entry points only to approved sources",
+              "Access rules and validation under comparable conditions"
+            ],
+            [
+              "Verify and patch packages",
+              "Address actual security defects",
+              "Complete package versions, vendor advisories, installation and restart records"
+            ],
+            [
+              "Observe unexpected probes",
+              "Detect unanticipated connections and identification activity",
+              "Service, proxy and firewall logs correlated by time and source"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Hiding a banner manages information disclosure; it does not replace patching. After updating a package, also confirm that the running process uses the new version. A new package on disk alone does not establish that the service has reloaded it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A useful identification record includes authorization scope; target, transport protocol and port; source location; hostname used; time and time zone; tool version and parameters; original response; observed product string; supported inference; internal records; and outstanding questions. Remove passwords, session information and unnecessary personal data before sharing."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8 | A safe exercise and understanding checks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No network packets are required today. Using the synthetic records in section 6, write three lines:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Observation: which responses or documents did I actually obtain?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Inference: what do those clues currently support?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Outstanding verification: which management-side records are still needed to verify versions and patches?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Then try four questions:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. A scan displays `443/tcp open https`. If you do not know how the service name was obtained, why should you not fill in a web-server product and version immediately?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Nmap establishes a TCP connection and only waits for a greeting. Why is that still not passive collection that never contacts the target?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. An external response says `ExampleWeb/1.2`, but there is a reverse proxy and the vendor may backport fixes. What three or more categories of evidence should you obtain to determine whether a particular weakness affects the backend?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. After hiding the version banner, may an administrator mark “vulnerability fixed” as complete? How should these two outcomes be validated separately?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Takeaway: entry-point number → response clue → internal verification → patch assessment. Preserve evidence and limits at each step to use service identification for real inventory and defense."
+        },
+        {
+          "kind": "heading",
+          "id": "sources",
+          "text": "Sources and verification scope"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This unit follows the designated source outline's M03-05 “Service Version & Banner Grabbing” and the M03 observation principle. Technical supplements were checked on 2026-11-03. Official web documentation is continuously updated; its contents are not presented as proof of a particular installed tool version."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Nmap: Service and Version Detection](https://nmap.org/book/man-version-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Nmap: Version Detection Technique](https://nmap.org/book/vscan-technique.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Nmap: Probe Database and softmatch](https://nmap.org/book/vscan-fileformat.html#vscan-db-softmatch)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Nmap: OS Detection](https://nmap.org/book/man-os-detection.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [RFC 9110: HTTP Server field (2022, §10.2.4)](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.4)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- [Red Hat: Backporting Security Fixes](https://access.redhat.com/security/updates/backporting)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reference answers are published with the website lesson. The chat delivery leaves the questions first and provides the answer URL only after production verification. Publishing answers does not mean the reader has submitted an answer or mastered the unit."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-port-label",
+          "summary": "Reference answer: 1. Entry-point number and service identity",
+          "paragraphs": [
+            "`open` describes the port state observed in this test. `https` may be a familiar name from a port table or a result of additional service detection; first establish how it was produced. Even a response consistent with HTTPS requires further checks for the product, complete version and deployment position. Preserve the original output and probing method, and leave unverified product/version fields pending."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-null-probe",
+          "summary": "Reference answer: 2. An established connection already contacts the target",
+          "paragraphs": [
+            "Establishing TCP exchanges network packets with the target and may create service logs. “NULL” means that no application-layer probe content has yet been sent, not that no interaction occurred. Authorization and service-impact considerations still apply. Analyzing previously and lawfully collected traffic without making a new connection is a different, passive observation method."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-backend-evidence",
+          "summary": "Reference answer: 3. Complete the backend and patch evidence",
+          "paragraphs": [
+            "Obtain at least three categories: first, proxy/backend architecture and the origin of the response string, to establish which layer it describes; second, the backend's running program, complete package version and vendor revision; third, vendor advisories, backport and installation records, and the configuration conditions required for the weakness to apply. Where relevant, confirm that the service has reloaded the patched version. Record external responses separately from internal evidence before assessing applicability."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-banner-patching",
+          "summary": "Reference answer: 4. Validate disclosure reduction and patching separately",
+          "paragraphs": [
+            "Hiding the version can be recorded as “version disclosure reduced” after checking the actual post-change response. “Vulnerability fixed” needs separate evidence: package/advisory comparison, patch installation results, running-version and configuration checks, and the corresponding authorized validation. Both tasks can be scheduled together, but neither substitutes for the other."
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,905 @@
+{
+  "id": "AASE-M01-C02",
+  "status": "published",
+  "revision": 4,
+  "contentVersion": "1.1.0",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-06",
+  "sourceIds": [
+    "nist-ai-rmf-core",
+    "pytest-usage",
+    "owasp-authorization",
+    "linux-unlink"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "把規則決定、程式修改、工具執行與成果驗收分開，讓 AI 協作任務有明確的負責人、可用權限與停止條件。",
+      "objectives": [
+        "區分模型產生的建議、工具實際做過的操作與已驗證的結果。",
+        "替一個收件檢核修改任務分配人與 Agent 的責任。",
+        "寫出可修改範圍、驗收依據與遇到歧義時的停止條件。"
+      ],
+      "readingGuide": {
+        "goal": "為一次 Agent 修改任務建立清楚的人機分工與驗收契約。",
+        "startingPoint": "先想一條規格：缺少文件類型時，不得匯出完整報告。",
+        "route": "先分配責任，再追蹤規格、修改、執行與驗收；最後寫出任務契約。",
+        "output": "problem.md 的責任分工附錄與一份可審查的 Agent 任務契約。"
+      },
+      "sections": [
+        {
+          "id": "start",
+          "heading": "AI 可以幫你做事，但誰來負責？",
+          "paragraphs": [
+            "這一課最重要的觀念是：",
+            "AI 可以幫你寫程式、修改功能、執行測試，但不能因為 AI 說「我完成了」，你就相信工作真的完成。",
+            "我們用一個生活例子理解：你請一位能力很強的新同事來幫忙，他很會做事，但不知道你們公司的規定。",
+            "這堂課要學會五件事：",
+            "1. 哪些事情交給 AI，哪些事情必須由人決定？",
+            "2. AI 說「已完成」，到底代表什麼？",
+            "3. 為什麼測試通過，程式還是可能有問題？",
+            "4. 為什麼告訴 AI「不可以做」，不等於它真的做不到？",
+            "5. 怎麼交代工作，才能讓 AI 交出可以驗收的成果？"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "一、AI 就像能力很強的新同事，不是主管",
+          "paragraphs": [
+            "假設你在政府機關上班，負責審查民眾送來的申請資料。",
+            "你們要做一個軟體，讓承辦人輸入：",
+            "申請編號",
+            "申請人代號",
+            "文件類型",
+            "三個欄位都填好，才能匯出「完整報告」。",
+            "現在你請 AI 幫你開發這套系統。",
+            "假設 AI 說：「我覺得文件類型不重要，沒有填也可以匯出。」",
+            "這時候就有問題了。",
+            "因為 AI 可能很會寫程式，卻不知道你們機關的規定。AI 的技術能力，不等於它有權決定業務規則。",
+            "這也是為什麼我們不能只跟 AI 說：「幫我做一個收件系統就好。」",
+            "要說清楚什麼叫正確，什麼叫完成。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜AI 的工作與人的工作",
+              "description": "兩種角色並列比較；能力、規則決定與交付責任分開，不表示 AI 已取得發布或資料使用權。",
+              "items": [
+                {
+                  "title": "AI 的工作",
+                  "body": "「你告訴我規則，我可以幫你設計畫面、寫程式、修正錯誤、執行測試。」"
+                },
+                {
+                  "title": "人的工作",
+                  "body": "「我負責決定業務規則、確認修改範圍、檢查證據，最後決定能不能交付。」"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "responsibilities",
+          "heading": "二、一件任務，其實有四種不同的責任",
+          "paragraphs": [
+            "我們可以把工作拆成四個部分：",
+            "這四個工作可以是同一個人負責，也可以由不同的人負責。",
+            "例如你自己是需求負責人、AI 是工程師、電腦負責執行測試，最後還是你驗收。",
+            "關鍵不在於有幾個人，而在於這四種責任不能混淆。",
+            "例如你請 AI 修改文件類型驗證功能，但它順便改掉了登入權限。",
+            "即使畫面看起來正常，你也需要知道這件事。",
+            "所以我們會要求 AI 提供 Diff，確認修改範圍。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 2｜四種責任分開記錄",
+              "description": "四張卡代表不同責任，可由同一人兼任或不同角色分擔；不是四個人數，也不是互相替代的證據。",
+              "items": [
+                {
+                  "title": "① 人決定規則",
+                  "body": "什麼欄位必填？什麼結果才算正確？"
+                },
+                {
+                  "title": "② AI 修改程式",
+                  "body": "依照規格開發，列出改了哪些地方。"
+                },
+                {
+                  "title": "③ 系統控制權限並留下紀錄",
+                  "body": "控制可以操作什麼，記錄實際做了什麼。"
+                },
+                {
+                  "title": "④ 人驗收成果",
+                  "body": "檢查程式和測試證據，決定是否交付。"
+                }
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 1｜三個新名詞",
+              "headers": [
+                "名詞",
+                "白話文意思"
+              ],
+              "rows": [
+                [
+                  "spec.md",
+                  "規格說明書，把已確認需求轉成可檢查條件，告訴工程師要做成什麼樣子。"
+                ],
+                [
+                  "Diff",
+                  "修改前後的對照表，讓你知道 AI 到底改了什麼"
+                ],
+                [
+                  "Coding Agent",
+                  "不只會聊天，還能在授權環境中讀取、修改程式和操作工具的 AI"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "nist-ai-rmf-core"
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "三、AI 說完成了，不代表真的完成：三個層次",
+          "paragraphs": [
+            "這是整堂課最值得牢記的概念。",
+            "想像你請汽車維修廠修車。",
+            "第一層：建議（Suggestion）",
+            "師傅說：「我建議更換電瓶。」",
+            "只是提出解決方法，還沒有動手修理。",
+            "第二層：實際操作（Execution）",
+            "師傅真的拆下舊電瓶、換上新電瓶。",
+            "代表做過事情，但還不代表原本問題已解決。",
+            "第三層：驗證通過（Verification）",
+            "師傅測試啟動、檢查供電，確認原本故障不再出現。",
+            "才能說有證據支持修理成功。",
+            "軟體工程也完全一樣。",
+            "假設 AI 告訴你：",
+            "「我已經修改完程式，並且使用 pytest 測試通過。」",
+            "你要確認三件事：",
+            "真的改過嗎？ 有沒有實際的程式變更？",
+            "真的執行過嗎？ 有沒有執行命令和輸出紀錄？",
+            "測到正確的事情嗎？ 測試是否涵蓋你真正關心的情境？",
+            "pytest 是一個 Python 測試工具，讓電腦自動檢查程式結果是不是符合預期。",
+            "但 AI 只是把 pytest 這個字打在回答裡，不代表它真的執行了測試。",
+            "甚至真的執行 pytest，看到所有測試通過，也不代表它測到了所有需要的情況。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 3｜建議、實際操作、驗證通過",
+              "description": "依序核對各層證據；操作發生不自動證明問題解決，驗證也只支持受測規則與情境。",
+              "items": [
+                {
+                  "title": "Suggestion｜建議",
+                  "body": "師傅說建議更換電瓶：提出方法，尚未修理。"
+                },
+                {
+                  "title": "Execution｜實際操作",
+                  "body": "師傅真的換上新電瓶：操作已發生，故障仍需檢查。"
+                },
+                {
+                  "title": "Verification｜驗證通過",
+                  "body": "測試啟動與供電，留下支持原故障已排除的證據。"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "pytest-usage"
+          ]
+        },
+        {
+          "id": "testing",
+          "heading": "四、為什麼測試全部通過，系統還是可能有錯？",
+          "paragraphs": [
+            "我們繼續使用申請資料的例子。",
+            "原本規定：文件類型沒有填寫，就不可以匯出完整報告。",
+            "假設 AI 只寫了一個測試：",
+            "「三個欄位都有填寫，應該可以匯出。」",
+            "這個測試通過了。",
+            "但你還不知道「沒有填文件類型」時，系統會怎麼處理。",
+            "因此我們需要不同情境的測試。",
+            "以下四情境互動呈現規格預期的結果，不是實際程式測試紀錄。",
+            "四種情境：全部填寫、缺少文件類型、只輸入空白、先完整，再清空。",
+            "特別注意：就算剛才成功產生報告，修改資料後也必須重新驗證，不能繼續使用舊的完整狀態。",
+            "預期驗收結果：舊的完整狀態失效，禁止完整匯出。",
+            "其中第四種「先完整，再清空」，是非常重要的測試。",
+            "因為有些程式只會在第一次按下檢查時更新狀態。",
+            "原本填寫完整時，系統記住「可以匯出」。後來你把資料刪除，系統卻忘記重新檢查。",
+            "這叫做 Stale State（過期狀態）。",
+            "你可以把它想成：",
+            "原本你拿到一張有效的入場券，後來資格被取消，但驗票系統還沿用舊紀錄，繼續讓你進入。",
+            "所以測試不應只看「正常時能不能用」，也應檢查「情況改變後，系統會不會跟著更新」。",
+            "更深一層：就算四個測試全部通過，如果一開始 spec.md 的業務規則就寫錯了，程式仍然可能是錯的。測試證明的是符合受測規則，不會自動證明規則本身正確。"
+          ]
+        },
+        {
+          "id": "boundaries",
+          "heading": "五、跟 AI 說不能做，和真正讓它做不到，是兩回事",
+          "paragraphs": [
+            "假設你交代一位新同事：",
+            "「你只能進入辦公室，不可以進入機密資料室。」",
+            "但是你又把整棟大樓的萬用鑰匙交給他。",
+            "這樣真的安全嗎？",
+            "當然不夠。",
+            "因為口頭交代是一回事，實際權限是另外一回事。",
+            "在 AI 軟體工程中，也是一樣。",
+            "這就帶出兩個重要概念。",
+            "最小權限（Least Privilege）：每個人或 AI，只拿到完成工作真正需要的權限。",
+            "沙箱（Sandbox）：為程式設置有限制的活動空間，例如限定可讀寫的目錄、可執行的工具和網路範圍。",
+            "不過沙箱並非絕對保證，仍要確認它的設定、隔離邊界與實際效果。",
+            "所以我們會建立兩層防護：",
+            "第一層是工作要求：告訴 AI 該做什麼、不該做什麼。",
+            "第二層是技術限制：即使 AI 出錯，也盡量不讓它接觸不必要的資源。",
+            "這個概念不只適用於 AI，也適用於作業系統、網路管理、資安及自動化系統。",
+            "技術補充：限制必須依實際環境驗證。例如 Unix 類系統的刪除通常取決於父目錄的寫入與搜尋權限，不只檔案是否唯讀；獨立工作目錄也要有真正的隔離設定，才構成權限邊界。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 2｜工作指令與系統權限",
+              "headers": [
+                "工作指令（Prompt）",
+                "系統權限（Permission）"
+              ],
+              "rows": [
+                [
+                  "告訴 AI 不要刪除資料",
+                  "檔案系統不授予刪除權限"
+                ],
+                [
+                  "告訴 AI 不要上網",
+                  "透過環境限制網路存取"
+                ],
+                [
+                  "告訴 AI 只能改某些檔案",
+                  "使用檔案權限或隔離工作區限制"
+                ],
+                [
+                  "告訴 AI 不要發布網站",
+                  "不提供正式部署憑證或發布權限"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization",
+            "linux-unlink"
+          ]
+        },
+        {
+          "id": "contract",
+          "heading": "六、真正會使用 AI 的人，會先寫一份「任務契約」",
+          "paragraphs": [
+            "假設你要讓 AI 修正剛才那個收件系統。",
+            "比較差的指令是：",
+            "「幫我把匯出功能修好，記得測試。」",
+            "比較好的方法，是把工作交代成六個部分：",
+            "AI 工作任務契約範例",
+            "這樣的好處是，AI 不必猜測你到底要什麼，你也知道最後應該檢查什麼。",
+            "而且當 AI 做錯時，你可以精準指出問題：",
+            "「當文件類型清空後，原本的匯出按鈕仍然可以使用。這不符合規格，請修正並重新測試這個情境。」",
+            "這會比「你做錯了，再做好一點」有效得多。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 3｜AI 工作任務契約範例",
+              "headers": [
+                "目標",
+                "文件類型缺漏，禁止匯出完整報告。"
+              ],
+              "rows": [
+                [
+                  "依據",
+                  "按照 spec.md，不要自行增加規則。"
+                ],
+                [
+                  "範圍",
+                  "只能修改 app.py、rules.py、tests/ 中相關測試。"
+                ],
+                [
+                  "驗收",
+                  "檢查完整、缺漏、空白、舊狀態失效四種情境。"
+                ],
+                [
+                  "停止條件",
+                  "需求不明、需要正式資料或超出權限時，停止並回報。"
+                ],
+                [
+                  "交付證據",
+                  "修改差異、實際測試命令、結果及剩餘限制。"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "misunderstandings",
+          "heading": "七、這堂課真正要建立的工程觀念",
+          "paragraphs": [
+            "你可以把整堂課整理成一條邏輯：",
+            "人制定規則 → AI 依規格工作 → 系統限制權限 → 工具留下證據 → 人根據證據驗收。",
+            "延伸到未來真正的 AI Agent 系統，你會發現這其實同時牽涉到四個領域：",
+            "最重要的區分是：AI 有能力完成某項操作（Capability），不等於它被授權執行（Authorization）；已經執行，也不等於成果正確（Verification）。",
+            "這三者是不同的。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 4｜一件可追溯的 AI 協作任務",
+              "description": "編號表示工作依據與交接順序；遇到規則不明可回到需求決策，不表示一次通過就完成正式上線。",
+              "items": [
+                {
+                  "title": "人制定規則",
+                  "body": "確認業務需求與正確條件。"
+                },
+                {
+                  "title": "AI 依規格工作",
+                  "body": "在授權範圍內產生可審查的修改。"
+                },
+                {
+                  "title": "系統限制權限",
+                  "body": "以實際隔離、工具與資源權限限制操作。"
+                },
+                {
+                  "title": "工具留下證據",
+                  "body": "保存實際命令、輸出與修改版本。"
+                },
+                {
+                  "title": "人根據證據驗收",
+                  "body": "核對結果、限制與是否可以交付。"
+                }
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 4｜本課連結的四個領域",
+              "headers": [
+                "領域",
+                "在這堂課學到的核心"
+              ],
+              "rows": [
+                [
+                  "Software Engineering",
+                  "需求、程式修改、測試與驗收"
+                ],
+                [
+                  "AI Agent",
+                  "AI 如何接受任務並操作工具"
+                ],
+                [
+                  "Cybersecurity",
+                  "最小權限、沙箱和權限邊界"
+                ],
+                [
+                  "AI Governance",
+                  "誰負責決策、誰負責執行、如何追溯證據"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "review",
+          "heading": "課後理解測驗",
+          "paragraphs": [
+            "先自行判斷三題，再展開下方「理解檢核」的參考解析；本站不提交答案、自動評分或記錄成績。",
+            "這一課的學習成果，不是能寫出多複雜的提示詞，而是能夠清楚回答：AI 被要求做什麼、被允許做什麼、實際做了什麼，以及我們憑什麼相信成果正確。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "文字編輯器與本課合成收件情境；不需開通 Agent 或外部服務。",
+        "steps": [
+          "在 problem.md 加入責任分工小節，分配規則決定、程式修改、工具操作與驗收。",
+          "依任務契約表 寫一份 Agent 任務契約，指定一條缺漏情境與可修改檔案。",
+          "假設收到「已完成」摘要，列出還需要哪些命令、Diff 或操作證據，才能判定這條情境通過。",
+          "請同儕扮演 Agent，指出一項應停止詢問的歧義，再修正契約。"
+        ],
+        "expected": "一份能交給另一人理解的任務契約，附責任分工、至少一個停止條件與驗收依據。",
+        "check": "同儕能說出誰決定規則、Agent 可以改哪裡，以及成功摘要還需要什麼證據；未實際執行時保持待驗證。",
+        "cleanup": "保留合成契約與去識別化回饋；不要加入實際帳號、憑證或業務資料。"
+      }
+    },
+    "en": {
+      "summary": "Separate rule decisions, code changes, tool execution and acceptance so an AI-assisted task has clear owners, permissions and stop conditions.",
+      "objectives": [
+        "Distinguish model suggestions, actions actually performed by tools and verified results.",
+        "Assign human and agent responsibilities for an intake-checking change.",
+        "Define the allowed change scope, acceptance criteria and stop conditions for ambiguity."
+      ],
+      "readingGuide": {
+        "goal": "Define human–agent responsibilities and an acceptance contract for one change task.",
+        "startingPoint": "Begin with one requirement: a missing document type must prevent a complete-report export.",
+        "route": "Assign responsibilities, trace the specification through changes, execution and acceptance, then write a task contract.",
+        "output": "A responsibility appendix in problem.md and a reviewable agent task contract."
+      },
+      "sections": [
+        {
+          "id": "start",
+          "heading": "AI Can Help You Work, but Who Is Responsible?",
+          "paragraphs": [
+            "The central idea of this lesson is:",
+            "AI can write code, change features and run tests, but an AI statement that “I finished” does not establish that the work is complete.",
+            "Think of asking a very capable new colleague for help. They know how to do the work but do not know your organization’s rules.",
+            "This lesson addresses five questions:",
+            "1. Which tasks can AI perform, and which decisions must people make?",
+            "2. What does an AI claim of completion actually mean?",
+            "3. Why can software still have problems after its tests pass?",
+            "4. Why does telling AI not to act differ from making the action unavailable?",
+            "5. How can you delegate work so that AI delivers something you can inspect and accept?"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "1. AI Is Like a Skilled New Colleague, Not the Manager",
+          "paragraphs": [
+            "Imagine working at a government agency and reviewing applications submitted by members of the public.",
+            "You need software in which an administrator enters:",
+            "Application ID",
+            "Applicant code",
+            "Document type",
+            "All three fields must be filled before a “complete report” can be exported.",
+            "Now you ask AI to develop this system.",
+            "Suppose AI says, “I do not think document type matters, so export can be allowed when it is blank.”",
+            "That creates a problem.",
+            "AI may be good at programming without knowing the agency’s rules. Technical capability does not grant authority to decide business rules.",
+            "That is why “just build an intake system for me” is not enough direction.",
+            "Define what counts as correct and what counts as complete."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | AI’s work and people’s work",
+              "description": "Compare the roles in parallel. Capability, rule decisions and delivery responsibility are distinct; AI has not automatically received release or data-use authority.",
+              "items": [
+                {
+                  "title": "AI’s work",
+                  "body": "“Tell me the rules, and I can help design screens, write code, fix bugs and run tests.”"
+                },
+                {
+                  "title": "People’s work",
+                  "body": "“I decide business rules, confirm the change scope, inspect evidence and decide whether the result can be delivered.”"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "responsibilities",
+          "heading": "2. One Task Has Four Different Responsibilities",
+          "paragraphs": [
+            "Divide the work into four responsibilities:",
+            "One person may hold all four responsibilities, or different people may hold them.",
+            "For example, you may own requirements, AI may implement the code, and the computer may run tests, while you still accept the result.",
+            "The number of people matters less than keeping the responsibilities distinct.",
+            "For example, you ask AI to change document-type validation, but it also changes login permissions.",
+            "You need to know about that change even if the interface appears normal.",
+            "Request a diff so you can inspect the actual change scope."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Record four responsibilities separately",
+              "description": "The cards represent responsibilities that one person or several roles may hold. They do not represent a required headcount or interchangeable evidence.",
+              "items": [
+                {
+                  "title": "① People decide rules",
+                  "body": "Which fields are required? What result counts as correct?"
+                },
+                {
+                  "title": "② AI changes code",
+                  "body": "Develop to the specification and identify the changes."
+                },
+                {
+                  "title": "③ The system controls permissions and records actions",
+                  "body": "Restrict available actions and record what actually happened."
+                },
+                {
+                  "title": "④ People accept the result",
+                  "body": "Inspect code and test evidence and decide whether to deliver."
+                }
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 1 | Three terms",
+              "headers": [
+                "Term",
+                "Plain-language meaning"
+              ],
+              "rows": [
+                [
+                  "spec.md",
+                  "The specification translates confirmed needs into checkable conditions and tells the implementer what to build."
+                ],
+                [
+                  "Diff",
+                  "A before/after comparison showing what AI changed."
+                ],
+                [
+                  "Coding Agent",
+                  "AI that can read and change code and use tools in an authorized environment, beyond conversation alone."
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "nist-ai-rmf-core"
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "3. A Completion Claim Has Three Distinct Levels",
+          "paragraphs": [
+            "This distinction is central to the lesson.",
+            "Imagine asking a repair shop to fix a car.",
+            "Level 1: Suggestion",
+            "The mechanic says, “I recommend replacing the battery.”",
+            "A possible solution has been proposed; no repair has happened yet.",
+            "Level 2: Execution",
+            "The mechanic actually removes the old battery and installs a new one.",
+            "An action has happened, but the original problem may still remain.",
+            "Level 3: Verification",
+            "The mechanic tests starting and power delivery and checks that the original fault no longer occurs.",
+            "The evidence can then support a claim that the repair succeeded.",
+            "The same distinction applies to software engineering.",
+            "Suppose AI tells you:",
+            "“I changed the code and the pytest tests passed.”",
+            "Check three things:",
+            "Was anything actually changed? Is there an actual code diff?",
+            "Was anything actually executed? Are the command and its output recorded?",
+            "Was the relevant behavior tested? Do the tests cover the scenario you care about?",
+            "pytest is a Python testing tool that automates checks of whether program results match expectations.",
+            "Typing “pytest” in a reply does not establish that AI ran it.",
+            "Even an actual pytest run in which every test passes does not establish coverage of every required situation."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 3 | Suggestion, execution and verification",
+              "description": "Check the evidence at each level. An action does not automatically resolve a problem; verification supports only the rules and scenarios tested.",
+              "items": [
+                {
+                  "title": "Suggestion",
+                  "body": "The mechanic recommends replacing the battery: a method is proposed, but no repair has happened."
+                },
+                {
+                  "title": "Execution",
+                  "body": "The mechanic installs a new battery: an action occurred, but the fault still needs checking."
+                },
+                {
+                  "title": "Verification",
+                  "body": "Starting and power tests provide evidence that the original fault has been resolved."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "pytest-usage"
+          ]
+        },
+        {
+          "id": "testing",
+          "heading": "4. Why Can a System Be Wrong When All Tests Pass?",
+          "paragraphs": [
+            "Continue with the application-data example.",
+            "The rule says that missing document type must prevent complete-report export.",
+            "Suppose AI writes only one test:",
+            "“When all three fields are filled, export should be allowed.”",
+            "That test passes.",
+            "You still do not know what happens when document type is missing.",
+            "Tests need different scenarios.",
+            "The four-scenario interaction below shows specification expectations, not an execution record from an actual application test.",
+            "The four scenarios are: all fields filled, missing document type, whitespace only, and complete first then cleared.",
+            "Even after a report was successfully produced, edited data must be revalidated; the previous complete state must not remain valid.",
+            "Expected acceptance result: invalidate the old complete state and block complete-report export.",
+            "The fourth case, “complete first, then cleared,” is especially useful.",
+            "Some programs update their state only when the check button is pressed for the first time.",
+            "The system remembers “export allowed” when the input is complete. After data is deleted, it fails to check again.",
+            "This is stale state.",
+            "Think of this analogy:",
+            "You originally receive a valid admission ticket. Your eligibility is later withdrawn, but the entry system still uses the old record and admits you.",
+            "Test both normal operation and whether the system updates when conditions change.",
+            "Even if all four tests pass, incorrect business rules in spec.md can still produce the wrong system. Tests support conformance to the rules and scenarios they exercise; they do not automatically establish that the rules themselves are correct."
+          ]
+        },
+        {
+          "id": "boundaries",
+          "heading": "5. Telling AI Not to Act and Preventing It from Acting Are Different",
+          "paragraphs": [
+            "Imagine telling a new colleague:",
+            "“You may enter the office, but you may not enter the confidential records room.”",
+            "You then give them a master key to the whole building.",
+            "Is that sufficient protection?",
+            "No.",
+            "A verbal instruction and actual permissions are different things.",
+            "The same applies to AI-assisted software engineering.",
+            "Two concepts follow:",
+            "Least privilege: a person or AI receives only the permissions needed for the task.",
+            "Sandbox: a constrained space for program execution, such as limited readable/writable directories, available tools and network access.",
+            "A sandbox is not an absolute guarantee. Check its configuration, isolation boundaries and actual effects.",
+            "Use two layers of protection:",
+            "The first is the work instruction: explain what AI should and should not do.",
+            "The second is technical restriction: limit access to unnecessary resources even if AI makes a mistake.",
+            "This principle also applies to operating systems, network administration, cybersecurity and automation.",
+            "Technical note: verify restrictions in the actual environment. On Unix-like systems, deletion generally depends on write and search permissions on the parent directory, rather than just whether the file is read-only. A separate working directory needs actual isolation settings to form a permission boundary."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 2 | Work instructions and system permissions",
+              "headers": [
+                "Work instruction (Prompt)",
+                "System permission"
+              ],
+              "rows": [
+                [
+                  "Tell AI not to delete data.",
+                  "Do not grant deletion permission in the file system."
+                ],
+                [
+                  "Tell AI not to access the internet.",
+                  "Restrict network access through the environment."
+                ],
+                [
+                  "Tell AI to change only certain files.",
+                  "Enforce file permissions or a genuinely isolated workspace."
+                ],
+                [
+                  "Tell AI not to publish the website.",
+                  "Provide no production deployment credentials or release permission."
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization",
+            "linux-unlink"
+          ]
+        },
+        {
+          "id": "contract",
+          "heading": "6. Write a Task Contract Before Delegating to AI",
+          "paragraphs": [
+            "Suppose you want AI to fix the intake system.",
+            "A weak instruction is:",
+            "“Fix the export feature and remember to test it.”",
+            "Describe the task in six parts instead:",
+            "Example AI task contract",
+            "AI then has less need to guess what you want, and you know what to inspect at delivery.",
+            "When something goes wrong, identify the discrepancy precisely:",
+            "“After document type is cleared, the export button is still usable. This violates the specification. Correct it and rerun this scenario.”",
+            "That gives more actionable direction than “you got it wrong; make it better.”"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 3 | Example AI task contract",
+              "headers": [
+                "Goal",
+                "Missing document type prevents complete-report export."
+              ],
+              "rows": [
+                [
+                  "Basis",
+                  "Follow spec.md; do not invent additional rules."
+                ],
+                [
+                  "Scope",
+                  "Change only app.py, rules.py and related tests in tests/."
+                ],
+                [
+                  "Acceptance",
+                  "Check complete, missing, whitespace-only and stale-state invalidation cases."
+                ],
+                [
+                  "Stop conditions",
+                  "Stop and report unclear requirements, a need for production data or actions beyond authority."
+                ],
+                [
+                  "Delivery evidence",
+                  "Diff, actual test commands, results and remaining limits."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "misunderstandings",
+          "heading": "7. The Engineering Judgment This Lesson Builds",
+          "paragraphs": [
+            "Connect the lesson’s ideas in one chain:",
+            "People define rules → AI works to the specification → the system restricts permissions → tools retain evidence → people accept the result based on evidence.",
+            "For real AI agent systems, this connects four areas:",
+            "Capability to perform an action does not establish authorization to perform it. Execution also does not establish correctness through verification.",
+            "These are three distinct questions."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 4 | A traceable AI-assisted task",
+              "description": "Numbering shows the order of justification and handoff. Return to requirements decisions when rules are unclear; one pass does not establish production readiness.",
+              "items": [
+                {
+                  "title": "People define rules",
+                  "body": "Confirm business needs and correctness conditions."
+                },
+                {
+                  "title": "AI works to the specification",
+                  "body": "Produce reviewable changes within authorized scope."
+                },
+                {
+                  "title": "The system restricts permissions",
+                  "body": "Enforce actual isolation, tool permissions and resource access."
+                },
+                {
+                  "title": "Tools retain evidence",
+                  "body": "Record actual commands, output and the changed version."
+                },
+                {
+                  "title": "People accept based on evidence",
+                  "body": "Check results, limits and whether delivery is appropriate."
+                }
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 4 | Four connected areas",
+              "headers": [
+                "Area",
+                "Core idea from this lesson"
+              ],
+              "rows": [
+                [
+                  "Software Engineering",
+                  "Requirements, code changes, testing and acceptance."
+                ],
+                [
+                  "AI Agent",
+                  "How AI receives tasks and operates tools."
+                ],
+                [
+                  "Cybersecurity",
+                  "Least privilege, sandboxes and permission boundaries."
+                ],
+                [
+                  "AI Governance",
+                  "Decision ownership, execution ownership and traceable evidence."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "review",
+          "heading": "After-Lesson Understanding Check",
+          "paragraphs": [
+            "Answer the three questions yourself, then expand the reference explanations in the understanding check below. This site does not submit, automatically grade or record answers.",
+            "The learning outcome is being able to explain what AI was asked to do, what it was allowed to do, what it actually did and which evidence supports the result. Prompt complexity alone does not establish that judgment."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "A text editor and the course’s synthetic intake scenario; no agent account or external service is needed.",
+        "steps": [
+          "Add a responsibility section to problem.md, assigning rule decisions, code changes, tool operations and acceptance.",
+          "Use the task-contract table to write an agent task contract with one missing-data scenario and allowed files.",
+          "Suppose you receive a “complete” summary. List the commands, diff or task evidence still needed to decide whether the scenario passed.",
+          "Have a peer act as the agent, identify an ambiguity that requires stopping to ask, then revise the contract."
+        ],
+        "expected": "A task contract another person can understand, including responsibilities, at least one stop condition and an acceptance basis.",
+        "check": "A peer can identify who decides rules, what the agent may change and which evidence a success summary still needs. Keep unexecuted work unverified.",
+        "cleanup": "Retain the synthetic contract and de-identified feedback. Exclude actual accounts, credentials and business data."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M01-C02-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "AI 說：「我已經執行 pytest，全部測試通過。」但沒有任何執行紀錄。你應該怎麼做？",
+          "options": [
+            "AI 說通過就當成通過",
+            "要求實際命令、輸出，以及測試涵蓋哪些情境",
+            "要 AI 再說一次它是否確定"
+          ],
+          "rationales": [
+            "完成宣告是回報，尚未證明工具實際執行。",
+            "B：核對對應版本的實際命令、輸出與涵蓋情境，才能判讀驗證範圍。",
+            "再次保證仍未補上執行證據。"
+          ]
+        },
+        "en": {
+          "prompt": "AI says, “I ran pytest and all tests passed,” but provides no execution record. What should you do?",
+          "options": [
+            "Treat the tests as passed because AI says so.",
+            "Request actual commands, output and the scenarios covered.",
+            "Ask AI to repeat whether it is certain."
+          ],
+          "rationales": [
+            "A completion claim is a report; it does not establish actual tool execution.",
+            "B: inspect commands and output for the corresponding version and the scenarios they cover.",
+            "Another assurance still supplies no execution evidence."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M01-C02-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "你要求 AI 只能修改 app.py，但給它的工具能修改整個專案。這代表什麼？",
+          "options": [
+            "已經完成技術上的權限限制",
+            "只要 AI 答應，就不需要檢查權限",
+            "提示詞限制與實際系統權限不一致"
+          ],
+          "rationales": [
+            "工作要求沒有自動改變檔案或工具權限。",
+            "口頭承諾不能替代技術限制及實際檢查。",
+            "C：Prompt 的範圍與環境實際可做的事不同，須核對並設定權限。"
+          ]
+        },
+        "en": {
+          "prompt": "You tell AI to change only app.py, but its tools can modify the entire project. What does that mean?",
+          "options": [
+            "A technical permission boundary is already enforced.",
+            "If AI agrees, permissions need no checking.",
+            "The prompt’s scope and actual system permissions differ."
+          ],
+          "rationales": [
+            "A work instruction does not automatically change file or tool permissions.",
+            "A promise does not replace technical restrictions or inspection.",
+            "C: the stated scope differs from what the environment permits; check and configure permissions."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M01-C02-Q03",
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "三個欄位填齊後可以匯出，接著清空文件類型，仍可以匯出舊報告。主要問題是什麼？",
+          "options": [
+            "過期狀態沒有被重新驗證",
+            "頁面配色錯誤",
+            "AI 沒有寫足夠長的說明文件"
+          ],
+          "rationales": [
+            "A：輸入改變後，先前完整狀態必須失效，依目前資料重新判斷。",
+            "配色不會修正舊狀態沿用的邏輯。",
+            "文件長度不能替代狀態更新與回歸檢查。"
+          ]
+        },
+        "en": {
+          "prompt": "After all three fields are filled, export is allowed. Document type is then cleared, but the old report can still be exported. What is the main problem?",
+          "options": [
+            "Stale state was not revalidated.",
+            "The page colors are wrong.",
+            "AI did not write a long enough explanation."
+          ],
+          "rationales": [
+            "A: input changes must invalidate the previous complete state and trigger a decision based on current data.",
+            "Colors do not correct the stale-state logic.",
+            "Documentation length does not replace state updates and regression checks."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}

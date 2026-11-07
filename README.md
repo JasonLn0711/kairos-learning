@@ -61,3 +61,9 @@ Learn 的觀點專欄承接有教學價值的事件解讀與實作反思；個�
 [本次成果、驗證與跨 repo 關聯](docs/releases/2026-11-01-perspectives-standards.md)記錄實際結果及後續驗收。
 
 M01–M02 的 16 篇教材採用雙語閱讀導引與可換行圖解；[資料契約](docs/content-authoring.md#m01m02-閱讀導引與可換行圖解)及[逐頁驗收紀錄](docs/releases/2026-11-01-m01-m02-readability.md)說明本機成果與發布狀態。
+
+## AI 協作軟體工程（AASE v1）
+
+[編輯入口](docs/aase/README.md)連結九模組／49 概念的完整課程設計、四篇先導教材與 10 小時工作坊。課程目錄使用獨立 ID 與發布閘門；繁體中文先行，未完成全文維持準備中。工作坊本機執行，不由 GitHub Pages 提供 Python 後端。
+
+修改 `resources/aase/` 後執行 `npm run package:aase`；依工作坊 README 安裝 `.local/aase-venv`，執行 `npm run test:browser:aase`。一般發布仍須完成既有內容、型別、單元、發布邊界及 release 檢查。[內容契約](docs/content-authoring.md)提供維護細節。

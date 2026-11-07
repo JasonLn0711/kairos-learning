@@ -1,0 +1,89 @@
+import {createHash} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
+import {reviewedSvgMarkup} from '../src/lib/reviewed-svg.ts';
+import svgLabels from '../src/lib/m0301-svg-labels.json' with {type:'json'};
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createConceptCatalog,type SourceBlock} from '../src/lib/concepts.ts';
+import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
+const lesson=allConceptTeachings.find(t=>t.id==='M03-01')!;
+const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
+test('M03-01 complete bilingual lesson, four diagrams, paired closed-answer data records and next linked unit',()=>{
+ assert.equal(lesson.contentVersion,'1.1.1');assert.equal(lesson.revision,3);assert.deepEqual(lesson.qa,[]);
+ const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-01');
+ for(const lang of ['zh','en'] as const){
+  const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
+  assert.equal(body.filter(b=>b.kind==='heading'&&/^section-\d+$/.test(b.id??'')).length,9);
+  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-layer-roles','answer-handshake-login','answer-realtime-loss']);
+  const text=body.flatMap(flatten).join('\n');
+  for(const term of ['TCP','UDP','IP'])assert.ok(text.toLowerCase().includes(term.toLowerCase()));
+  assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
+  const page=catalog.get('M03-01',lang)!;
+  assert.equal(page.navigation.previous?.id,'M02-08');assert.ok(page.navigation.previous?.href);
+  assert.equal(page.navigation.next?.id,'M03-02');assert.equal(page.navigation.next?.href,null);
+  assert.equal(catalog.get('M03-02',lang),null);
+  const search=catalog.searchEntries.find(e=>e.id==='M03-01'&&e.lang===lang)!;
+  for(const b of body.filter(b=>b.kind==='answer'))for(const p of b.paragraphs)assert.ok(search.text.includes(p));
+ }
+ const shape=(lang:'zh'|'en')=>lesson.text[lang].sourceBody!.filter(b=>b.kind==='heading'||b.kind==='answer'||b.kind==='visual'||b.kind==='table').map(b=>({kind:b.kind,id:'id'in b?b.id:undefined,rows:b.kind==='table'?b.rows.map(r=>r.length):undefined}));
+ assert.deepEqual(shape('zh'),shape('en'));
+});
+test('M03-01 source teaching text is retained in order with formatting-only normalization',()=>{
+ for(const [lang,suffix] of [['zh','zh-TW'],['en','en']] as const){
+  const text=lesson.text[lang].sourceBody!.flatMap(flatten).join('\n');let cursor=0;
+  for(let line of readFileSync(`docs/sources/m03-01/M03-01-teaching.${suffix}.md`,'utf8').split('\n')){
+   line=line.trim();if(!line||line==='---'||line.startsWith('```')||line.startsWith('![')||/^[| :\-]+$/.test(line))continue;
+   const values=line.startsWith('|')?line.slice(1,-1).split('|'):[line.replace(/^#{1,3} /,'').replace(/^- /,'')];
+   for(let value of values){value=value.replaceAll('**','').trim();const at=text.indexOf(value,cursor);assert.ok(at>=0,`${lang}: missing or reordered ${value}`);cursor=at+value.length;}
+  }
+ }
+});
+
+test('M03-01 reviewed inline bundle and search labels match deterministic allowlisted assets',()=>{
+ const result=spawnSync('python3',['scripts/m0301_svg.py','--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stdout+result.stderr);
+ const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-01');
+ for(const lang of ['zh','en'] as const){
+  const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,4);
+  for(const b of body.filter(b=>b.kind==='visual')){
+   const svg=readFileSync('site'+b.src,'utf8');assert.equal(reviewedSvgMarkup(b.src),svg);assert.ok(Buffer.byteLength(svg)<100000);
+   assert.ok(!/<(?:script|foreignObject|image|use)\b|\bon\w+=|\bhref=/i.test(svg));
+  }
+  const search=catalog.searchEntries.find(e=>e.id==='M03-01'&&e.lang===lang)!;
+  for(const label of svgLabels[lang])assert.ok(search.text.includes(label));
+ }
+});
+
+test('M03-01 reference answers preserve the paired source documents',()=>{
+ for(const [lang,suffix] of [['zh','zh-TW'],['en','en']] as const){
+  const answers=lesson.text[lang].sourceBody!.filter(b=>b.kind==='answer');
+  const source=readFileSync(`docs/sources/m03-01/M03-01-answers.${suffix}.md`,'utf8');
+  const parts=source.split('\n## ').slice(1);assert.equal(parts.length,answers.length);
+  for(let i=0;i<parts.length;i++){const [heading,...paragraphs]=parts[i].trim().split('\n\n');assert.ok(heading.startsWith(answers[i].id));assert.deepEqual(answers[i].paragraphs,paragraphs);}
+ }
+});
+
+test('M03-01 downloads retain bounded geometry while HTML owns readable labels',()=>{
+ const component=readFileSync('src/lib/components/ReviewedSvgVisual.svelte','utf8');
+ assert.ok(component.includes('.diagram-canvas.compact-text{width:min(100%,33.333333em)}'));
+ for(const lang of ['zh','en'] as const)for(const b of lesson.text[lang].sourceBody!.filter(b=>b.kind==='visual')){
+  const svg=readFileSync('site'+b.src,'utf8');const sizes=[...svg.matchAll(/font-size="([0-9.]+)"/g)].map(m=>Number(m[1]));
+  assert.ok(Math.max(...sizes)<=48);assert.ok(/viewBox="0 0 900 624"/.test(svg));
+ }
+});
+
+
+
+
+test('M03-01 reference layouts preserve endpoint direction, retransmission, loss and all five fields',()=>{
+ const models=JSON.parse(readFileSync('src/lib/m0301-diagrams.json','utf8'));
+ for(const lang of ['zh','en']){
+  const figures=Object.entries(models).filter(([src])=>src.endsWith(`-${lang}.svg`)).map(([,d])=>d) as any[];
+  assert.deepEqual(figures.map(d=>d.layout),['overview','handshake','transport','tuple']);
+  assert.deepEqual(figures.map(d=>d.nodes.length),[3,3,2,5]);
+  assert.deepEqual(figures[1].nodes.map((n:any)=>n.title),['SYN','SYN + ACK','ACK']);
+  assert.deepEqual(figures[3].nodes.map((n:any)=>n.body[0]),['192.0.2.10','53000','198.51.100.20','443','TCP']);
+  assert.equal(figures[2].nodes[0].body.length,6);assert.equal(figures[2].nodes[1].body.length,6);
+ }
+ const result=spawnSync('python3',['scripts/m0301_diagrams.py','--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stdout+result.stderr);
+});

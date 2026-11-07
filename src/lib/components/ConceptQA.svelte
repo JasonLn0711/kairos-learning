@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { ConceptTeaching } from '$lib/concepts';
+  import type { ConceptDiscussion } from '$lib/concepts';
   import type { Locale } from '$lib/model';
   import QAAnswer from './QAAnswer.svelte';
   import InlineText from './InlineText.svelte';
-  let { qa, lang }: { qa: NonNullable<ConceptTeaching['qa']>; lang: Locale } = $props();
+  let { qa, lang }: { qa: ConceptDiscussion[]; lang: Locale } = $props();
   let container: HTMLElement;
   onMount(() => {
     const revealHash = () => {
@@ -23,12 +23,12 @@
   });
 </script>
 <div bind:this={container}>
-  {#each qa as item}
+  {#each qa.filter(q=>q.text[lang]) as item}
     <details class="concept-qa" id={'qa-'+item.id}>
-      <summary>{item.text[lang].question}</summary>
-      {#if item.text[lang].originalQuestion}<p class="qa-original-question">{item.text[lang].originalQuestion}</p>{/if}
-      {#if item.format==='markdown'}<QAAnswer source={item.text[lang].answer.join('\n\n')} id={'qa-'+item.id} explanation={item.text[lang].explanation??[]} {lang}/>{:else}{#each item.text[lang].answer as answer}<p><InlineText text={answer} /></p>{/each}{/if}
-      {#if item.text[lang].editorial?.length}<section class="qa-editorial"><h3>{lang==='zh'?'校訂與補充（編輯）':'Editorial clarifications and sources'}</h3>{#each item.text[lang].editorial??[] as text}<p><InlineText {text}/></p>{/each}</section>{/if}
+      <summary>{item.text[lang]!.question}</summary>
+      {#if item.text[lang]!.originalQuestion}<p class="qa-original-question">{item.text[lang]!.originalQuestion}</p>{/if}
+      {#if item.format==='markdown'}<QAAnswer source={item.text[lang]!.answer.join('\n\n')} id={'qa-'+item.id} explanation={item.text[lang]!.explanation??[]} {lang}/>{:else}{#each item.text[lang]!.answer as answer}<p><InlineText text={answer} /></p>{/each}{/if}
+      {#if item.text[lang]!.editorial?.length}<section class="qa-editorial"><h3>{lang==='zh'?'校訂與補充（編輯）':'Editorial clarifications and sources'}</h3>{#each item.text[lang]!.editorial??[] as text}<p><InlineText {text}/></p>{/each}</section>{/if}
     </details>
   {/each}
 </div>

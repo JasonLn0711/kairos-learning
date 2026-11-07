@@ -25,8 +25,8 @@ for lang,prefix in [('zh',''),('en','en/')]:
  assert 'cidr-prefix' in raw
  assert not re.search('Sentinel_|libfile_|CalpicoFile_|sandbox:',raw)
  assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-05/' in raw
- assert f'/{prefix}courses/ceh/v13/m02/#m02-07' in raw
- assert not (ROOT/f'build/{prefix}courses/ceh/v13/m02/concepts/m02-07/index.html').exists()
+ assert f'/{prefix}courses/ceh/v13/m02/concepts/m02-07/' in raw
+ assert (ROOT/f'build/{prefix}courses/ceh/v13/m02/concepts/m02-07/index.html').exists()
  for b in [b for b in lesson['text'][lang]['sourceBody'] if b['kind']=='visual']:
   if '/m02-06-0' in b['src']:assert bundle[b['src']] in raw
   assert (ROOT/'site'/b['src'].lstrip('/')).read_bytes()==(ROOT/'build'/b['src'].lstrip('/')).read_bytes()
@@ -41,4 +41,4 @@ assert p.read_bytes()==(ROOT/'build/downloads/ceh-m02-06-network-svg.zip').read_
 with zipfile.ZipFile(p) as z:
  assert len(z.namelist())==12
  for name in z.namelist():assert z.read(name)==(ROOT/'site/images/ceh'/name).read_bytes()
-print('PASS M02-06 bilingual full text order; 6 reflowing diagrams and 2 retained SVGs per language; paired closed reference answers; search labels; exact assets/ZIP; pending M02-07. Browser/live checks NOT performed.')
+print('PASS M02-06 bilingual full text order; 6 reflowing diagrams and 2 retained SVGs per language; paired closed reference answers; search labels; exact assets/ZIP; linked M02-07. Browser/live checks NOT performed.')

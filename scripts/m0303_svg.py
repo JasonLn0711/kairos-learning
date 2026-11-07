@@ -1,0 +1,37 @@
+"""Deterministic M03-03 assets through the shared fail-closed SVG serializer."""
+from pathlib import Path
+import json,re,sys,xml.etree.ElementTree as ET
+from m0903_svg import sanitized_svg,NS
+ROOT=Path(__file__).resolve().parents[1]
+NAMES=['01-connect-flow', '02-syn-flow', '03-udp-responses', '04-evidence-layers', '05-scan-positions']
+def generate():
+ bundle={};labels={'zh':[],'en':[]}
+ for lang,suffix in [('zh','zh-TW'),('en','en')]:
+  for num,name in enumerate(NAMES,1):
+   root=ET.fromstring((ROOT/f'docs/sources/m03-03/figures/{name}.{suffix}.svg').read_text());prefix=f'm0303-f{num}-{lang}-'
+   root.attrib.pop('style',None) # Responsive display CSS is owned by ReviewedSvgVisual.
+   for node in root.iter():
+    for k,v in list(node.attrib.items()):
+     if k=='id':node.set(k,prefix+v)
+     elif k in ['aria-labelledby','aria-describedby']:node.set(k,' '.join(prefix+x for x in v.split()))
+     elif 'url(#' in v:node.set(k,re.sub(r'url\(#([^)]*)\)',lambda m:'url(#'+prefix+m[1]+')',v))
+   src=f'/images/ceh/m03-03-{name}-{lang}.svg'
+   markup=sanitized_svg(ET.tostring(root,encoding='unicode'),prefix)
+   bundle[src]=markup
+   labels[lang]+= [' '.join(''.join(n.itertext()).split()) for n in root.iter() if n.tag in {f'{{{NS}}}title',f'{{{NS}}}desc',f'{{{NS}}}text'}]
+ return bundle,labels
+if __name__=='__main__':
+ bundle,labels=generate();targets={ROOT/'src/lib/m0303-inline-svg.json':json.dumps(bundle,ensure_ascii=False,indent=2)+'\n',ROOT/'src/lib/m0303-svg-labels.json':json.dumps(labels,ensure_ascii=False,indent=2)+'\n'}
+ for src,markup in bundle.items():targets[ROOT/'site'/src.lstrip('/')]=markup
+ for target,value in targets.items():
+  if '--check' in sys.argv:assert target.read_text()==value,str(target)
+  else:target.write_text(value)
+ import zipfile,io
+ output=io.BytesIO()
+ with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
+  for src,markup in sorted(bundle.items()):
+   info=zipfile.ZipInfo(Path(src).name,(2026,11,3,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;z.writestr(info,markup)
+ target=ROOT/'site/downloads/ceh-m03-03-bilingual-svg.zip'
+ if '--check' in sys.argv:assert target.read_bytes()==output.getvalue()
+ else:target.write_bytes(output.getvalue())
+ print('10 M03-03 assets and inline/search bundles match strict serializer')

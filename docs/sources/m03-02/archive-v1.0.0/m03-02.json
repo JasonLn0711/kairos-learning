@@ -1,0 +1,873 @@
+{
+  "id": "M03-02",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-02",
+  "status": "published",
+  "publishedOn": "2026-11-03",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從 ICMP 與 ARP 的分工，建立有位置、時間與下一步的主機探索紀錄。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-02｜主機探索：ICMP 與 ARP"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1｜先記住這個結論"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主機探索（Host Discovery）是在已授權的範圍內，確認哪些網路位址目前有回應，再把回應方式、觀察位置與時間記錄下來。ICMP 協助觀察 IP 通訊的回應；ARP 協助在本地乙太網路找到 IPv4 下一站的 MAC 位址。兩者回答不同問題，搭配使用，能建立更清楚的資產與連線紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上一課 M03-01 把 IP、TCP／UDP、連接埠與服務分開了。今天先往前一步：在研究「提供什麼服務」之前，怎麼判斷「這個位址有什麼活動跡象」？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你到一棟辦公大樓送文件。你可能先打電話問對方是否有人接聽，再到同一樓層問「哪個辦公室使用這個分機」。打電話與詢問同樓層窗口，是兩種觀察方式；接到電話的人、轉接總機與真正收件人，也要分清楚。以下使用合成網路，不對外部設備操作。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2｜探索的成果：一筆有情境的觀察"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Host（主機）泛指網路上的端點，例如電腦、伺服器或印表機；路由器等網路設備也可能回應探測。Probe（探測訊息）是為了觀察狀態而送出的特定訊息；Response（回應）是收到的結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一筆實用的紀錄包含："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 從哪裡觀察：例如已授權的測試電腦、所屬網段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 看哪個目標：指定 IP 位址與資產範圍。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 使用哪種方式：ICMP Echo、ARP，或其他核准的方法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 何時與多久：時間、時區、等待時間及重試次數。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 收到什麼：回應來源、類型、內容及延遲。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 下一步：對照資產清冊、設備紀錄或核准的服務檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "「08:00，從測試網段收到某位址的 ICMP Echo Reply」比「這台一定正常」更能協助同事接續工作。設備通訊、應用程式可用性、登入權限是不同層次，適合分欄記錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 是網路探索工具；它的官方文件將主機探索描述為縮小需要進一步檢查的目標清單，而且探索方式涵蓋多種協定。[Nmap 主機探索說明](https://nmap.org/book/man-host-discovery.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3｜ICMP：IP 網路的狀態回報"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ICMP（Internet Control Message Protocol，網際網路控制訊息協定）用來傳遞 IP 通訊相關的控制與診斷訊息。你可以把它想成配送過程中的狀態通知。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見訊息有三種："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Echo Request／Echo Reply：回音請求／回音回覆，用來觀察往返通訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Destination Unreachable：目的地無法到達，回報特定的傳遞問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Time Exceeded：超過時間限制，例如封包的 TTL 用盡；TTL 是封包可經過路由跳數的限制欄位。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ICMP 以訊息「類型與代碼」描述狀態；TCP／UDP 則另有連接埠欄位。分析時把協定及其欄位一起看，才能選對判讀方式。[RFC 792：ICMP](https://www.rfc-editor.org/rfc/rfc792)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "平常的 ping 程式常使用回音請求與回音回覆。以 IPv4 為例，Echo Request 的 Type 是 8，Echo Reply 的 Type 是 0。請求裡的識別碼、序號與資料，協助程式對應回覆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如下面是紙上示意，不是實際執行結果："
+        },
+        {
+          "kind": "paragraph",
+          "text": "測試端 → 192.0.2.20：Echo Request，序號 1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "192.0.2.20 → 測試端：Echo Reply，序號 1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "往返時間：2 毫秒"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RTT（Round-Trip Time，往返時間）包含訊息送出、對方處理與回傳的時間。連續幾次結果可以觀察當時的延遲與遺失情形；不同時段或路徑，結果可能不同。ping 的顯示格式也依作業系統而異。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-02-01-icmp-echo-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜ICMP Echo 往返觀察",
+            "description": "回音請求與回音回覆配對，保存觀察位置、時間、識別資訊與延遲。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "回音請求與回音回覆配對，保存觀察位置、時間、識別資訊與延遲。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4｜如何讀懂「有回覆」與「等待逾時」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "收到對應的回音回覆，可以記為「在此時間與觀察位置，該位址的回音通訊可達」。若收到路由器的無法到達訊息，就記錄路由器位址與回報類型，接著檢查路由或政策。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Timeout（逾時）表示在設定的等待期間沒有收到預期回覆。接下來依情境檢查：設備是否休眠、線路或路由是否可用、封包是否遺失、設備或防火牆是否允許此類回應。資產清冊、端點管理紀錄與其他核准觀察能協助縮小原因。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如公司印表機正在列印，但管理政策關閉了回音回覆。你可以同時記錄「列印服務有作業紀錄」與「本次 Echo 探測逾時」；兩筆資訊各自描述不同的觀察。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是資安工作常用的判讀方式：先寫收到的證據，再選擇下一個查核動作。ICMP 錯誤訊息的產生與傳遞本來就有條件；保留逾時狀態，能讓後續調查更精準。[RFC 1122：主機通訊需求](https://www.rfc-editor.org/rfc/rfc1122)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5｜ARP：在本地找到下一站的 MAC 位址"
+        },
+        {
+          "kind": "paragraph",
+          "text": "乙太網路（Ethernet）在本地傳送的是 Frame（訊框）。訊框有來源與目的 MAC 位址；MAC（Media Access Control，媒體存取控制）位址用來識別鏈路上的網路介面。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ARP（Address Resolution Protocol，位址解析協定）在常見的 IPv4 乙太網路中，把下一站的 IPv4 位址對應到 MAC 位址。它像是在同一個配送區域問：「哪個介面使用這個 IP？請告訴我你的收件地址。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "合成環境：A 與 B 位於同一本地乙太網路；A 是 192.0.2.10，B 是 192.0.2.20。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. A 需要把資料交給 B，先查本機是否已有對應紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 需要解析時，A 發送 ARP Request，詢問誰使用 192.0.2.20。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 一般請求以 Broadcast（廣播）送到該廣播範圍；符合目標的設備回應 ARP Reply。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. A 取得對應 MAC 後，便能填入乙太網路訊框的目的位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ARP 訊息中的 IP 是查詢與回覆的資料欄位；ARP 本身直接由乙太網路承載。它和「把 ICMP 放在 IP 封包裡傳送」的結構不同。[RFC 826：ARP](https://www.rfc-editor.org/rfc/rfc826)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ARP Cache（ARP 快取）是暫存的 IP／MAC 對應表。讀到快取時，同時注意它可能來自先前通訊；新收到的回覆與既有快取，是不同時間的觀察。設備移動、位址變更或快取更新，都可能改變對應關係。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-02-02-local-arp-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜ARP 解析本地 IPv4 下一站",
+            "description": "A與B位於同一本地乙太網路，A依需要詢問B的MAC並建立本地訊框。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "A與B位於同一本地乙太網路，A依需要詢問B的MAC並建立本地訊框。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6｜同網段與跨網段：ARP 到底在問誰？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節把上一課的 IP 與今天的 ARP 串起來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 A 的設定為 192.0.2.10/24，路由表將 192.0.2.0/24 視為直接相連網路，預設閘道是 192.0.2.1。/24 表示網路前綴長度為 24 位元；本例的相關位址都經過規劃，僅供紙上教學。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情境一：A 要送給 192.0.2.20。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "路由選擇指出目標在本地，A 解析 192.0.2.20 的 MAC，再將訊框交給對方。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "情境二：A 要送給遠端的 198.51.100.20。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "路由選擇指出下一站是預設閘道，A 解析的是 192.0.2.1 的 MAC。這時 IP 封包的目的地仍是遠端目標；本地訊框的目的地則是閘道介面。閘道收到後再依路由轉送。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "記憶方式是：IP 目的地描述這趟 IP 傳送要去哪裡；本地訊框的目的 MAC 描述這一段交給誰。實際環境依路由表、介面與網路設定決定下一站。[RFC 1122：本地／遠端判定](https://www.rfc-editor.org/rfc/rfc1122)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，直接 ARP 探索適合本地鏈路；跨路由網路的探索需要採用能到達目標的核准方法。VLAN（Virtual LAN，虛擬區域網路）等設計會劃分二層廣播範圍。Proxy ARP（代理 ARP）則由設備替其他位址回覆，遇到此配置時，把回覆者與目標資產另外核對。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 使用 Neighbor Discovery（鄰居探索，ND），透過 ICMPv6 完成鄰居位址解析等工作；它有自己的訊息與運作規則。今天先記住 IPv4 常見 ARP 與 IPv6 ND 的分工即可。[RFC 4861：IPv6 鄰居探索](https://www.rfc-editor.org/rfc/rfc4861)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-02-03-remote-next-hop-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜遠端 IP 與本地下一站 MAC",
+            "description": "遠端傳送時，IP目的地維持遠端目標，本地乙太網路訊框則交給路由選定的閘道。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "遠端傳送時，IP目的地維持遠端目標，本地乙太網路訊框則交給路由選定的閘道。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7｜完整案例：把三筆觀察整理成下一步"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下均為合成資料，假設你已獲准檢查實驗室隔離網路中的三台測試設備。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A：192.0.2.20，在同一本地網路收到 ARP Reply；ICMP Echo 等待逾時。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B：192.0.2.30，在同一本地網路收到 ARP Reply，也收到 ICMP Echo Reply。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C：198.51.100.20，位於遠端測試網段；目前只查到本機閘道 192.0.2.1 的 ARP 對應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A 可以記成：「本地收到此 IPv4 位址的 ARP 回覆；Echo 本次逾時。下一步核對設備識別、代理 ARP 設定與 ICMP 政策。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B 可以記成：「本地位址解析與 Echo 往返均有回應，附時間及來源。若任務還要確認服務，接續核准的服務檢查。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C 可以記成：「已取得本地下一跳閘道的 MAC。遠端目標的活動狀態留待指定的端到端查核。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你會發現，三筆紀錄都有價值：A 幫助區分鏈路回覆與 Echo 政策；B 提供兩種互相補充的觀察；C 說明本地交付路徑已經解析到哪一步。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "工具使用也沿用這個邏輯。Nmap 的 -sn 表示做主機探索而略過一般連接埠掃描；實際採用的探測會依本地／遠端、權限、協定及選項而變。-Pn 則是略過主機探索、讓後續指定檢查繼續處理目標。學習時先讀懂選項目的，再在核准範圍設定；本課採紙上判讀。[Nmap 主機探索選項](https://nmap.org/book/man-host-discovery.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-02-04-observe-verify-record-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜把探索結果接到可查核紀錄",
+            "description": "先保存回覆或逾時，再對照資產與政策；需要時做授權服務檢查，最後留下結果與負責人。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "先保存回覆或逾時，再對照資產與政策；需要時做授權服務檢查，最後留下結果與負責人。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8｜防護與可驗收的證據"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主機探索對管理者的用途，是把「清冊上的設備」與「目前網路看到的設備」連起來。可從四件事落實："
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 明確範圍：記錄允許的網段、來源、時段、速率與停止條件；對敏感設備採管理者核准的低影響方法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 清楚政策：依營運需求設定 ICMP 與管理連線；保留必要診斷訊息的設計依據。路由器也使用 ICMP 回報特定錯誤，政策需要考量正常通訊。[RFC 1812：IPv4 路由器需求](https://www.rfc-editor.org/rfc/rfc1812)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 交叉核對：把探測結果與資產清冊、交換器埠、DHCP 租約或端點管理紀錄比對。DHCP 是動態分配網路設定的協定；租約紀錄提供分配時間的線索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- 留下證據：保存來源、目的地、協定、時間、回應與採取的動作；異常對應交給負責人查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一個可驗收的成果可以是：「三個授權測試位址皆有當次觀察紀錄；有回應者已核對設備歸屬；逾時者已列查核原因與負責人；測試沒有超出核定範圍。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種紀錄也能串回 M02-08：觀察、推論與行動分開，後續修改政策時再用相同條件複查。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9｜小檢核與今天帶走的觀念"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先用自己的話回答，參考答案會隨正式網站教材提供。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 同一本地網路的設備有 ARP Reply，但 ping 逾時。你會如何寫出觀察，以及下一步查核？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. A 要傳送到遠端網段，下一跳是預設閘道。A 用 ARP 查詢的是遠端主機，還是閘道的 MAC？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 一筆 ARP 快取和剛收到的 ARP 回覆，在紀錄時間上應如何區分？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 已收到 ICMP Echo Reply；若任務要確認網站能正常提供服務，下一步要補哪一類檢查？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "今天最重要的是：先確定觀察位置與下一站，再選擇探測方式；收到回應就記錄回應代表的狀態，逾時就保留條件並安排查核。ICMP 協助觀察 IP 通訊，ARP 協助完成本地 IPv4 位址解析。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一單元 M03-03 再接 TCP Connect、SYN 與 UDP 掃描，把「有活動跡象的位址」接到「各連接埠如何回應」。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-timeout",
+          "summary": "參考解答：小檢核一",
+          "paragraphs": [
+            "參考答案：「在指定時間與本地測試位置，收到該 IPv4 位址的 ARP Reply；本次 ICMP Echo 在設定等待期間逾時。」接著核對設備歸屬、是否有代理 ARP、ICMP 政策與路徑。ARP 回覆與 Echo 逾時各自保留，必要時由核准的服務檢查補充。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-next-hop",
+          "summary": "參考解答：小檢核二",
+          "paragraphs": [
+            "參考答案：查詢閘道的 MAC。路由表決定這一段先把訊框交給預設閘道，因此本地目的 MAC 是閘道介面；IP 封包的目的地仍是遠端目標。閘道收到後再依路由往下一站轉送。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-cache-time",
+          "summary": "參考解答：小檢核三",
+          "paragraphs": [
+            "參考答案：既有快取記錄「讀取快取的時間」，以及系統可提供的建立／更新時間或狀態；未知時間如實列待核。新收到的 ARP Reply 記實際接收時間、來源、目標及回應內容。兩者分開保存，方便理解對應關係的時效。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-service-check",
+          "summary": "參考解答：小檢核四",
+          "paragraphs": [
+            "參考答案：補做任務允許的網站服務檢查，例如核對 HTTP／HTTPS 連線與回應、TLS 憑證及預定頁面功能。依任務再檢查登入與授權。保存服務網址、方法、時間與實際結果，讓 Echo 往返與應用可用性各有證據。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Use ICMP and ARP observations to record host discovery with location, time and a justified next step.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-02 | Host Discovery: ICMP and ARP"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1 | The core idea"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Host discovery identifies which network addresses currently respond within an authorized scope, recording the response method, observation point, and time. ICMP helps observe responses related to IP communication. ARP helps find the MAC address of the next IPv4 hop on a local Ethernet network. They answer different questions; together they support clearer asset and connectivity records."
+        },
+        {
+          "kind": "paragraph",
+          "text": "M03-01 separated IP, TCP/UDP, ports, and services. Today we take the preceding step: before investigating which services are available, how do we observe activity associated with an address?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine delivering documents to an office building. You might first call to see who answers, then ask on the same floor which office uses a particular extension. Calling and asking a local contact are two observation methods. Distinguish the person answering, the forwarding switchboard, and the intended recipient. The examples below use a synthetic network and involve no external-device operations."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2 | The output: an observation with context"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A host is a network endpoint such as a computer, server, or printer. Network devices such as routers may also respond to probes. A probe is a specific message sent to observe a condition; a response is the result received."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A useful record includes:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Observation point: for example, the authorized test computer and its network segment."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Target: the specified IP address and asset scope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Method: ICMP Echo, ARP, or another approved method."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Timing: date, time zone, timeout, and retry count."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Result: response source, type, content, and delay."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Next step: comparison with the asset register, device records, or an approved service check."
+        },
+        {
+          "kind": "paragraph",
+          "text": "“At 08:00, an ICMP Echo Reply was received from this address from the test network” gives colleagues a more useful starting point than “this machine is definitely healthy.” Device communication, application availability, and login permissions belong to separate layers and separate record fields."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap is a network-discovery tool. Its official documentation describes host discovery as narrowing the targets requiring further investigation and supports discovery across several protocols. [Nmap host discovery](https://nmap.org/book/man-host-discovery.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3 | ICMP: status reporting for IP networks"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ICMP, Internet Control Message Protocol, carries control and diagnostic messages related to IP communication. Think of it as status notifications during delivery."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Three common message types are:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Echo Request/Echo Reply: a request and corresponding reply used to observe round-trip communication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Destination Unreachable: reports a particular delivery problem."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Time Exceeded: reports an exceeded time limit, such as an exhausted TTL. TTL is the field limiting how many router hops a packet can traverse."
+        },
+        {
+          "kind": "paragraph",
+          "text": "ICMP describes status with message types and codes. TCP and UDP have their own port fields. Read the protocol together with its fields to choose the appropriate interpretation. [RFC 792: ICMP](https://www.rfc-editor.org/rfc/rfc792)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The ping program commonly uses Echo Request and Echo Reply. For IPv4, an Echo Request has Type 8 and an Echo Reply has Type 0. The identifier, sequence number, and data help match replies with requests."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following is a paper example, not an actual execution result:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Test endpoint → 192.0.2.20: Echo Request, sequence 1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "192.0.2.20 → test endpoint: Echo Reply, sequence 1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Round-trip time: 2 milliseconds"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RTT, round-trip time, includes sending the message, processing at the other endpoint, and returning the response. A series of results can reveal delay and loss at that time; other times and routes may yield different results. Ping output format also depends on the operating system."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-02-01-icmp-echo-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "1 | Observe an ICMP Echo round trip",
+            "description": "Match requests and replies and record observation point, time, identifying fields and delay.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Match requests and replies and record observation point, time, identifying fields and delay."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4 | Interpret replies and timeouts"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A corresponding Echo Reply supports the observation that Echo communication with the address was reachable from this location at this time. If a router returns an unreachable message, record its address and the reported type, then examine routing or policy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A timeout means the expected response was not received within the configured waiting period. Investigate the relevant possibilities: device sleep, link or route availability, packet loss, and device or firewall response policy. The asset register, endpoint-management records, and other authorized observations help narrow the cause."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a company printer may be printing while management policy disables Echo Replies. Record both “print-service job records are present” and “this Echo probe timed out.” Each describes a different observation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a practical security-analysis habit: record received evidence first, then choose the next verification step. ICMP error generation and delivery have their own conditions. Preserving the timeout status makes subsequent investigation more precise. [RFC 1122: host communication requirements](https://www.rfc-editor.org/rfc/rfc1122)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5 | ARP: find the next hop's MAC address locally"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ethernet delivers frames on a local link. A frame carries source and destination MAC addresses. MAC means Media Access Control; a MAC address identifies a network interface on the link."
+        },
+        {
+          "kind": "paragraph",
+          "text": "ARP, Address Resolution Protocol, maps a next-hop IPv4 address to a MAC address in a typical IPv4 Ethernet environment. It resembles asking within a local delivery area: which interface uses this IP address, and what is its delivery address?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Synthetic setting: A and B share a local Ethernet network. A is 192.0.2.10 and B is 192.0.2.20."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. A needs to deliver data to B and first checks for an existing local mapping."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. When resolution is needed, A sends an ARP Request asking who uses 192.0.2.20."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. A typical request is broadcast within the broadcast domain. A device matching the target responds with an ARP Reply."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Once A obtains the MAC mapping, it can fill in the Ethernet frame's destination address."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP addresses inside ARP are query and response fields. ARP itself is carried directly by Ethernet. This differs from carrying ICMP inside an IP packet. [RFC 826: ARP](https://www.rfc-editor.org/rfc/rfc826)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An ARP cache temporarily stores IP-to-MAC mappings. A cache entry may come from earlier communication. A newly received reply and an existing entry represent observations at different times. Device movement, address changes, and cache updates can change the mapping."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-02-02-local-arp-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "2 | Resolve a local IPv4 next hop with ARP",
+            "description": "A and B share a local Ethernet network. A resolves B’s MAC when needed and builds the local frame.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "A and B share a local Ethernet network. A resolves B’s MAC when needed and builds the local frame."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6 | Local and remote networks: whose address does ARP resolve?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This section connects the previous lesson's IP concepts with ARP."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Assume A is configured as 192.0.2.10/24. Its routing table treats 192.0.2.0/24 as directly connected, and its default gateway is 192.0.2.1. The /24 indicates a 24-bit network prefix. All addresses in this example are planned documentation data for paper-based teaching."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scenario 1: A sends to 192.0.2.20."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Routing selects the local destination. A resolves the MAC address for 192.0.2.20 and delivers the frame to it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scenario 2: A sends to remote address 198.51.100.20."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Routing selects the default gateway as the next hop. A resolves the MAC address for 192.0.2.1. The IP packet still targets the remote destination; the local frame targets the gateway interface. The gateway then forwards according to its routes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember: the destination IP describes where this IP delivery is going; the local destination MAC describes whom this link hands the frame to. Actual next-hop selection follows routing tables, interfaces, and network configuration. [RFC 1122: local/remote decision](https://www.rfc-editor.org/rfc/rfc1122)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Direct ARP discovery therefore applies to the local link. Discovery across routed networks requires an approved method that can reach the target. A VLAN, Virtual LAN, can divide Layer 2 broadcast domains. With proxy ARP, a device answers on behalf of other addresses; verify the responder and the target asset separately when that configuration is present."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 uses Neighbor Discovery, or ND, with ICMPv6 for functions including neighbor-address resolution. It has its own messages and operating rules. For now, retain the distinction between common IPv4 ARP and IPv6 ND. [RFC 4861: IPv6 Neighbor Discovery](https://www.rfc-editor.org/rfc/rfc4861)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-02-03-remote-next-hop-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "3 | Remote IP and local next-hop MAC",
+            "description": "For a remote destination, the IP packet targets the remote address while the local Ethernet frame goes to the selected gateway.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "For a remote destination, the IP packet targets the remote address while the local Ethernet frame goes to the selected gateway."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7 | Worked example: turn three observations into next steps"
+        },
+        {
+          "kind": "paragraph",
+          "text": "All data below is synthetic. Assume authorization to examine three test devices in an isolated laboratory network."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A: 192.0.2.20 responds to ARP on the local network; ICMP Echo times out."
+        },
+        {
+          "kind": "paragraph",
+          "text": "B: 192.0.2.30 responds to both local ARP and ICMP Echo."
+        },
+        {
+          "kind": "paragraph",
+          "text": "C: 198.51.100.20 is on a remote test network; currently only the ARP mapping for local gateway 192.0.2.1 has been found."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For A, record: “An ARP Reply for this IPv4 address was received locally. This Echo attempt timed out. Next, verify device identity, proxy ARP configuration, and ICMP policy.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For B, record: “Local address resolution and Echo round-trip communication both responded, with time and source recorded. If the task includes service availability, continue with an approved service check.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For C, record: “The local next-hop gateway's MAC address has been obtained. Activity at the remote target awaits the specified end-to-end check.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each record is useful. A separates link-layer responses from Echo policy. B supplies two complementary observations. C shows how far local delivery resolution has progressed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Tool interpretation follows the same logic. In Nmap, -sn performs host discovery while skipping ordinary port scanning. The actual probes depend on local/remote placement, privileges, protocol, and options. -Pn skips host discovery and allows the specified subsequent checks to proceed against targets. Understand the option's purpose first, then configure it within approved scope. This lesson uses paper interpretation. [Nmap discovery options](https://nmap.org/book/man-host-discovery.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-02-04-observe-verify-record-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "4 | Turn discovery into verifiable records",
+            "description": "Preserve replies or timeouts, corroborate assets and policy, perform authorized service checks as needed, and retain results and owners.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Preserve replies or timeouts, corroborate assets and policy, perform authorized service checks as needed, and retain results and owners."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8 | Controls and verifiable results"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For administrators, host discovery connects the devices listed in the asset register with the devices currently observed on the network. Put four practices into operation:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Clear scope: record allowed networks, sources, times, rates, and stopping conditions. Use administrator-approved low-impact methods for sensitive devices."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Clear policy: configure ICMP and management access for operational needs and document why required diagnostic messages are permitted. Routers also use ICMP to report certain errors, so policy should support normal communication. [RFC 1812: IPv4 router requirements](https://www.rfc-editor.org/rfc/rfc1812)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Corroboration: compare probe results with the asset register, switch ports, DHCP leases, or endpoint-management records. DHCP dynamically assigns network settings; leases provide clues about allocation times."
+        },
+        {
+          "kind": "paragraph",
+          "text": "- Evidence: retain source, destination, protocol, time, response, and actions. Refer unusual mappings to the responsible owner for review."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An acceptable result might be: “All three authorized test addresses have current observation records; responsive addresses have been checked against device ownership; timeout cases have investigation questions and owners; testing stayed within approved scope.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connects back to M02-08: keep observations, interpretations, and actions separate, and repeat checks under comparable conditions after policy changes."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9 | Checks and the takeaway"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer in your own words first. Reference answers accompany the formal website material."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. A device on the same local network returns an ARP Reply, but ping times out. How would you record the observation and the next check?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. A sends to a remote network through its default gateway. Does A use ARP to resolve the remote host's MAC or the gateway's MAC, and why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. How should the observation times of an existing ARP cache entry and a newly received ARP Reply be distinguished?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. An ICMP Echo Reply has been received. If the task is to confirm that a website provides its service correctly, what additional type of check is needed?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The key idea: establish the observation point and next hop before choosing a probe. Record the state represented by a response. Preserve timeout conditions and arrange verification. ICMP helps observe IP communication; ARP performs local IPv4 address resolution."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Next, M03-03 introduces TCP Connect, SYN, and UDP scanning, connecting addresses with activity indications to the responses of their individual ports."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-arp-timeout",
+          "summary": "Reference answer: Check 1",
+          "paragraphs": [
+            "Record: “At the specified time and local observation point, an ARP Reply for the IPv4 address was received; this ICMP Echo attempt timed out within the configured wait.” Next, check device ownership, proxy ARP, ICMP policy, and the path. Retain both observations separately and add an approved service check if needed."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-next-hop",
+          "summary": "Reference answer: Check 2",
+          "paragraphs": [
+            "Resolve the gateway's MAC. Routing selects the default gateway for delivery over this local link, so the frame targets the gateway interface while the IP packet still targets the remote destination. The gateway then forwards toward the next hop according to its routes."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-cache-time",
+          "summary": "Reference answer: Check 3",
+          "paragraphs": [
+            "For a cached entry, record when it was read and any creation/update time or state the system provides; keep unknown times explicitly pending. For a new ARP Reply, record its actual reception time, source, target, and contents. Preserve them separately to assess the mapping's freshness."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-service-check",
+          "summary": "Reference answer: Check 4",
+          "paragraphs": [
+            "Perform the website-service checks authorized by the task: for example, examine HTTP/HTTPS connectivity and responses, TLS certificate validation, and expected page functionality. Include login and authorization where relevant. Record the URL, method, time, and result so Echo communication and application availability each have their own evidence."
+          ]
+        }
+      ]
+    }
+  }
+}

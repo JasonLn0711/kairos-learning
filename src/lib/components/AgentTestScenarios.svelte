@@ -1,0 +1,22 @@
+<script lang="ts">
+ import {onMount} from 'svelte';
+ import {agentTestScenarios} from '$lib/agent-test-scenarios';
+ import {applicationReport} from '$lib/application-check-demo';
+ let {lang='zh'}:{lang?:'zh'|'en'}=$props();
+ let ready=$state(false),selected=$state<keyof typeof agentTestScenarios>('cleared');onMount(()=>{ready=true;});
+ const data=$derived(agentTestScenarios[selected]);
+ const allowed=$derived(applicationReport(data)!==null);
+ const t=$derived(lang==='zh'?{title:'互動練習：四個測試情境的規格預期',note:'以下呈現規格預期的結果，不是實際 app.py／pytest 測試紀錄。固定合成資料，不傳送、儲存或評分。',cases:{complete:'全部填寫',missing:'缺少文件類型',whitespace:'只輸入空白',cleared:'先完整，再清空'},id:'申請編號',code:'申請人代號',type:'文件類型',empty:'文件類型缺漏',space:'空白字元 × 3（trim 後為空）',value:'合成申請表',allow:'允許完整匯出',deny:'禁止完整匯出',expected:'預期驗收結果',stale:'前一步三欄完整；清空文件類型後，舊的完整狀態失效，禁止完整匯出。',current:'依目前三個必填欄位重新判斷，不沿用先前結果。',static:'未啟用 JavaScript：保留「先完整，再清空」與全部情境對照；切換停用。',scenario:'情境'}:{title:'Interactive exercise: specification expectations for four test scenarios',note:'These are specification expectations, not an execution record from app.py or pytest. Fixed synthetic data only; nothing is submitted, stored or graded.',cases:{complete:'All fields filled',missing:'Missing document type',whitespace:'Whitespace only',cleared:'Complete first, then cleared'},id:'Application ID',code:'Applicant code',type:'Document type',empty:'Document type missing',space:'3 spaces (empty after trim)',value:'Synthetic application form',allow:'Allow complete-report export',deny:'Block complete-report export',expected:'Expected acceptance result',stale:'The preceding input was complete. After document type is cleared, the old complete state is invalid and complete-report export is blocked.',current:'Recheck the current three required fields; do not reuse a previous result.',static:'Without JavaScript, the cleared scenario and all reference cases remain readable; switching is disabled.',scenario:'Scenario'});
+</script>
+<section class="agent-scenarios" aria-label={t.title}>
+ <h3>{t.title}</h3><p>{t.note}</p>
+ <div class="scenario-buttons">{#each Object.keys(agentTestScenarios) as id}{@const key=id as keyof typeof agentTestScenarios}<button disabled={!ready} aria-pressed={selected===key} data-scenario={key} onclick={()=>selected=key}>{t.cases[key]}</button>{/each}</div>
+ <dl><div><dt>{t.id}</dt><dd>{data.applicationId}</dd></div><div><dt>{t.code}</dt><dd>{data.applicantCode}</dd></div><div><dt>{t.type}</dt><dd>{selected==='whitespace'?t.space:data.documentType?t.value:t.empty}</dd></div></dl>
+ <div role="status" class="expectation"><strong>{t.expected}：{allowed?t.allow:t.deny}</strong><p>{selected==='cleared'?t.stale:t.current}</p></div>
+ <noscript><p>{t.static}</p></noscript>
+ <!-- svelte-ignore a11y_no_noninteractive_tabindex (The scenario table needs keyboard scrolling.) -->
+ <div class="table-scroll" role="region" aria-label={t.title} tabindex="0"><table><caption>{t.scenario} → {t.expected}</caption><thead><tr><th scope="col">{t.scenario}</th><th scope="col">{t.type}</th><th scope="col">{t.expected}</th></tr></thead><tbody>{#each Object.keys(agentTestScenarios) as id}{@const key=id as keyof typeof agentTestScenarios}<tr><th scope="row">{t.cases[key]}</th><td>{key==='whitespace'?t.space:agentTestScenarios[key].documentType?t.value:t.empty}</td><td>{applicationReport(agentTestScenarios[key])?t.allow:t.deny}{key==='cleared'?'；'+t.stale:''}</td></tr>{/each}</tbody></table></div>
+</section>
+<style>
+ .agent-scenarios{margin:1.5rem 0;padding:1rem;border:1px solid #b7c9df;border-radius:10px;background:#f5f8fc;color:#173450;overflow-wrap:anywhere}h3{font-size:1.2rem;line-height:1.75}.scenario-buttons{display:flex;flex-wrap:wrap;gap:.75rem;margin:1rem 0}button{font:inherit;line-height:1.75;padding:.6rem .8rem;border:1px solid #496584;border-radius:5px;background:white;color:#173450;white-space:normal;text-align:left}button[aria-pressed=true]{background:#173450;color:white}button:disabled{background:#e8edf3;color:#526071}button:focus-visible{outline:3px solid #d66b00;outline-offset:3px}dl>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;margin:.6rem 0}dt{font-weight:650}dd{margin:0}.expectation{padding:1rem;background:white;border-left:4px solid #4977a5}.expectation p{margin:.6rem 0 0}.table-scroll{max-width:100%;overflow:auto;margin:1rem 0}table{border-collapse:collapse;width:100%}caption{text-align:left}th,td{padding:.65rem;text-align:left;vertical-align:top;border-bottom:1px solid #b7c9df;min-width:8rem}
+</style>

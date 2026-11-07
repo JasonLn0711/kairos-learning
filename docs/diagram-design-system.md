@@ -98,3 +98,12 @@ M02-06 的 `CidrExplorer` 固定 IPv4 為 192.0.2.25，僅接受整數 /24–/30
 互動計算測試涵蓋支援範圍、上下界與非法輸入；鍵盤實測 Tab／Shift+Tab、方向鍵及原生控制支援的 Home／End。M02-06 的七個前綴應逐一核對網段、總數與起訖位址。SVG 檢查文字未超出 viewBox、未遮擋箭頭，並核對下載內容與資料；幾何測試通過後仍需目視圖意。
 
 參考 [M02-06 瀏覽器測試](../tests/browser/m0206.spec.ts)及[修訂回執](releases/2026-11-01-m02-06-network-revision.md)。既有測試與歷史回執提供檢查方法；新文章仍須記錄本次實測結果、未驗項目與正式站回讀，不沿用舊結果宣稱通過。
+
+<a id="aase-organization-dimensions"></a>
+## AASE M01-03：五面向共同支撐圖
+
+使用者參考圖為五個平行節點→共同母線→共同成果，沒有方向箭頭。沿既有 ConceptVisual cards，items 固定六筆，順序是身分／權限／資料／協作／維護／共同成果；title、body、caption、description 都是同一教材 JSON 的跳脫文字，兩語結構一致，並直接進入搜尋。AASE 驗證器對此課 differences 段限制一個六 item cards；其他 cards、CEH 型別與 SVG 審核邊界保持。
+
+OrganizationDimensions 的桌面為五欄與共同橫線，成果由中央支線連接。容器不超過 42rem（包含文字放大後）時，節點與成果各自連到左側母線；垂直排列仍是共同支撐，不是時序。CSS 偽元素為裝飾，不收任意座標或圖形標記。權限節點採橘底 #b15840／白字，對比約 4.84:1；其他節點灰底、成果淡橘框。英文標題至少 1rem，窄欄完整換行，不省略文字。
+
+此模型本輪沒有新增 SVG 匯出；主要閱讀證據為語意 HTML、相同資料的搜尋文字、四尺寸／200% 文字／無 JavaScript、手機與桌面圖的平行分組及線端目視。原 PNG、完整供稿及版面差異在[來源紀錄](sources/aase/m01-03/replacement-2026-11-06/README.md)，[修訂回執](releases/2026-11-06-aase-m01-03-replacement.md)記錄本機及正式站驗證。

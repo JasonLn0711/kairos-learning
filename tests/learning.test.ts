@@ -1,14 +1,16 @@
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { allLessons, lessons, modules, sources, allTerms as terms, routes, searchEntries, getPage } from '../src/lib/server/catalog.ts';
 import { validateContent } from '../src/lib/validate.ts';
 import { isPublic, search, lessonPath } from '../src/lib/model.ts';
 import { emptyProgress, readProgress, recordAnswer, wrongQuestions } from '../src/lib/progress.ts';
-const q=lessons.find(l=>l.id==='ceh-m04-enumeration')!.questions[0];
+const retired=JSON.parse(readFileSync('archive/ceh/m04-legacy-2026-11-04/content/lessons/ceh-m04-enumeration.json','utf8'));
+const q=retired.questions[0];
 test('published curriculum is complete, bilingual and internally consistent',()=>{
   assert.deepEqual(validateContent(allLessons,modules,sources,terms),[]);
-  assert.ok(lessons.length >= 23); assert.ok(lessons.filter(l=>l.module==='m01').length >= 2);
-  for(const m of modules) assert.ok(lessons.some(l=>l.course==='ceh'&&l.module===m.id));
+  assert.ok(lessons.length >= 22); assert.ok(lessons.filter(l=>l.module==='m01').length >= 2);
+  for(const m of modules.filter(m=>m.id!=='m04')) assert.ok(lessons.some(l=>l.course==='ceh'&&l.module===m.id));
   for(const c of ['ai-ml','networking']) assert.ok(lessons.filter(l=>l.course===c).length >= 1);
   assert.ok(lessons.filter(l=>l.module==='m01').flatMap(l=>l.questions).length>=5);
 });
@@ -33,8 +35,8 @@ test('every lesson has paired routes and translated content without broken paths
   assert.equal(getPage('/missing/'),null);
 });
 test('search supports Chinese, case folding and fullwidth input without HTML execution',()=>{
-  assert.ok(search(searchEntries,'列舉','zh').some(e=>e.id==='ceh-m04-enumeration'));
-  assert.ok(search(searchEntries,'ＳＭＢ','en').some(e=>e.id==='ceh-m04-enumeration'));
+  assert.ok(!search(searchEntries,'列舉','zh').some(e=>e.id==='ceh-m04-enumeration'));
+  assert.ok(!search(searchEntries,'ＳＭＢ','en').some(e=>e.id==='ceh-m04-enumeration'));
   assert.equal(search(searchEntries,'<script>missing</script>','en').length,0);
   assert.equal(search(searchEntries,'  ','zh').length,0);
 });
@@ -60,25 +62,19 @@ test('M04 port-open example preserves the approved answer B in both languages',(
 });
 
 test('search reaches worked examples, exercise checks and answer explanations',()=>{
-  const lesson=lessons.find(l=>l.id==='ceh-m04-enumeration')!;
+  const lesson=lessons.find(l=>l.module==='m03')!;
   for(const lang of ['zh','en'] as const) {
     for(const query of [lesson.text[lang].example.conclusion,lesson.text[lang].lab.check,lesson.questions[0].text[lang].rationales[1]])
       assert.ok(search(searchEntries,query,lang).some(e=>e.id===lesson.id));
   }
 });
-test('one-concept routes expose real teaching only, with private progress absent', () => {
-  const page = getPage('/courses/ceh/v13/m04/concepts/m04-01/');
-  assert.ok(page?.conceptTeaching);
-  assert.equal(page.concepts.length, 80);
-  assert.equal(page.concepts.filter(c => c.href).length, 31);
-  assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-13/'), null);
-  assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-03/')?.conceptTeaching);
-  assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-04/')?.conceptTeaching);
-  assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-05/')?.conceptTeaching);
-  assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-06/')?.conceptTeaching);
-  assert.ok(getPage('/courses/ceh/v13/m01/concepts/m01-07/')?.conceptTeaching);
-  assert.equal(page.conceptTeaching.text.zh.sections.length, 0);
-  assert.equal(page.conceptTeaching.text.en.sections.length, 7);
-  assert.equal(page.conceptTeaching.text.zh.sourceBody?.length, 81);
-  assert.ok(!JSON.stringify(page).includes('Sentinel_'));
+test('new M04 route publishes C01–C09 while other units stay pending',()=>{
+ const page=getPage('/courses/ceh/v13/m04/')!;
+ const units=page.concepts.filter(c=>c.module==='m04');
+ assert.equal(units.length,10);assert.equal(units.filter(c=>c.href).length,9);assert.equal(units[0].id,'CEH26-M04-C01');assert.ok(units.filter(c=>!['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04','CEH26-M04-C05','CEH26-M04-C06','CEH26-M04-C07','CEH26-M04-C08','CEH26-M04-C09'].includes(c.id)).every(c=>c.href===null));
+ assert.equal(getPage('/courses/ceh/v13/m04/concepts/m04-01/')?.conceptTeaching?.id,'CEH26-M04-C01');
+ assert.equal(getPage('/courses/ceh/v13/m04/concepts/ceh26-m04-c01/'),null);
+ assert.equal(getPage('/courses/ceh/v13/m04/quiz/'),null);
+ assert.equal(getPage('/courses/ceh/v13/m04/labs/'),null);
+ assert.deepEqual([...new Set(searchEntries.filter(e=>e.label==='CEH M04').map(e=>e.id))],['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04','CEH26-M04-C05','CEH26-M04-C06','CEH26-M04-C07','CEH26-M04-C08','CEH26-M04-C09']);
 });

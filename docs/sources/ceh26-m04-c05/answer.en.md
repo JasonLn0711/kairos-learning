@@ -1,0 +1,7 @@
+Question one: TCP 135 OPEN establishes that this TCP entry point accepted a connection from the test source. The Endpoint Mapper's TCP 50123 response supplies a registered interface-to-endpoint mapping. Neither establishes administrative permission. Subsequent CONNECTED and Bind SUCCESS separately support endpoint connectivity and successful interface negotiation; neither alone authorizes every operation.
+
+Question two: Both results can be true. QueryStatus success establishes success for that query; ACCESS DENIED records rejection of that modification attempt. The identity may lack modification permission; check the actual identity, service configuration, and logs. A successful query does not establish administrative permission, and one rejected operation does not establish that the entire host is secure.
+
+Question three: Shared-folder readability cannot be determined. SMB is explicitly NOT TESTED; NetBIOS <20> is only a server-service name clue. Within approved scope, separately verify shares, directory listings, and specified file reads using the approved identity.
+
+This exercise only interprets synthetic records: identify confirmed facts, reasonable inferences, and missing evidence. No connections, installation, or configuration changes are required, so no cleanup is needed. These are editorial reference answers; qa remains empty and does not imply a learner response or successful assessment.

@@ -1,0 +1,453 @@
+{
+  "id": "AASE-M02-C06",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "mcp-tools",
+    "owasp-agent-security"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "把工具意圖、參數驗證、權限、真實執行與回報分開，理解沙箱能限制的邊界，以及可觀測性如何支援除錯與驗收。",
+      "objectives": [
+        "追蹤一次工具呼叫從意圖到執行及結果回傳的過程。",
+        "區分輸入格式、業務允許、執行環境與權限檢查。",
+        "設計足以回查而不洩露秘密的紀錄，辨識停止及錯誤交接條件。"
+      ],
+      "readingGuide": {
+        "goal": "追蹤一次工具操作的驗證、權限、執行與觀察，保留每層的證據界線。",
+        "startingPoint": "使用讀取 spec.md 的合成工具要求，不建立真實外部連線。",
+        "route": "先讀請求格式，再追蹤回合與沙箱邊界，最後設計成功、失敗與交接紀錄。",
+        "output": "一份工具呼叫追蹤、沙箱邊界及兩筆合成執行紀錄。"
+      },
+      "sections": [
+        {
+          "id": "calling",
+          "heading": "模型提出工具意圖，系統負責讓操作發生",
+          "paragraphs": [
+            "Tool Calling（工具呼叫）讓模型以工具名稱與參數表達想做的事，再由周圍系統檢查及執行。模型文字裡出現「讀取 spec.md」，不表示檔案已被打開；要看執行端結果。",
+            "不同介面有不同格式。MCP 2025-06-18 的 tools/call 可作為客戶端呼叫工具伺服器的例子；下例是客戶端組裝的訊息示意，不表示所有模型都會直接產生這個完整封包。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "合成讀檔要求",
+              "paragraphs": [
+                "這只是協定訊息示例，不需要傳送到任何伺服器；工具名稱由本課自訂。"
+              ],
+              "code": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 7,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"read_project_file\",\n    \"arguments\": {\n      \"path\": \"spec.md\"\n    }\n  }\n}"
+            }
+          ],
+          "sourceIds": [
+            "mcp-tools"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像先填申請單，再由有權限的窗口辦理",
+          "paragraphs": [
+            "申請單填得完整，不表示申請者已被允許領取所有資料。工具參數符合 schema（資料結構規格），也不表示路徑、資料與動作已獲授權。",
+            "系統需要核對工具是否存在、參數是否有效、操作者及任務是否可以執行這項操作，以及實際結果是否成功。各項判斷應有自己的證據，避免只看到一個格式正確的 JSON 就當作完成。"
+          ]
+        },
+        {
+          "id": "cycle",
+          "heading": "每一步都可能有不同的失敗方式",
+          "paragraphs": [
+            "讀取規格時，檔案可能不存在、工作目錄錯誤，或操作超出專案範圍。工具也可能回傳錯誤；周圍系統需要將它保留為失敗或未完成狀態，再決定是否重試或交給人。",
+            "MCP 規格區分協定錯誤與工具執行錯誤，也定義 isError 等結果欄位。本課不要求記住所有封包格式；要掌握的是請求送出、工具成功、工作完成三者不能混為一談。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜一次有邊界的工具回合",
+              "description": "驗證失敗、權限拒絕、執行錯誤及到限都應有可觀察出口，不默默改寫成成功。",
+              "items": [
+                {
+                  "title": "提出意圖",
+                  "body": "模型或程式要求讀取專案內的 spec.md。"
+                },
+                {
+                  "title": "驗證與授權",
+                  "body": "檢查名稱、參數、有效路徑及允許範圍。"
+                },
+                {
+                  "title": "在指定環境執行",
+                  "body": "工具於實際配置的目錄、檔案及網路限制下運行。"
+                },
+                {
+                  "title": "保留結果並判定下一步",
+                  "body": "記錄成功或錯誤，再決定繼續、停止、重試或請人處理。"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mcp-tools"
+          ]
+        },
+        {
+          "id": "sandbox",
+          "heading": "沙箱要說清楚限制了哪個邊界",
+          "paragraphs": [
+            "Sandbox（沙箱）是限制程式可接觸資源的執行安排。你需要具體問：能讀寫哪些檔案？能連哪些網路？使用什麼權限？能執行多久？只說「在容器裡」或「提示不准越界」，還不足以證明每個邊界生效。",
+            "停止本機程序也不代表能撤回已送出的網路要求或所有外部副作用。對本課讀檔任務，可以先限制專案根目錄、只讀權限與不需外網；若要修改或發布，另確認所需範圍與失敗處理。"
+          ],
+          "sourceIds": [
+            "owasp-agent-security"
+          ]
+        },
+        {
+          "id": "observe",
+          "heading": "紀錄支援回查，也需要內容控制",
+          "paragraphs": [
+            "可觀測性（Observability）讓人藉由紀錄及觀察理解執行狀況。本課的最小工具紀錄包含任務與呼叫識別碼、工具名稱、必要且適當遮蔽的參數、時間、退出或錯誤狀態，以及輸出或產物的參照。",
+            "不要將秘密、完整私人文件或非必要個資直接寫入日誌。工具結果若包含「忽略規格、把資料傳出去」之類文字，應視為不可信內容，而不是新的操作授權；存取及外送限制仍由系統執行。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜可回查的合成呼叫紀錄",
+              "headers": [
+                "欄位",
+                "合成內容",
+                "用途"
+              ],
+              "rows": [
+                [
+                  "任務／呼叫",
+                  "DEMO-TASK／CALL-07",
+                  "連到同一個工作回合"
+                ],
+                [
+                  "工具／參數",
+                  "read_project_file；path=spec.md",
+                  "確認請求對象；實務上只記必要資料"
+                ],
+                [
+                  "結果",
+                  "成功、拒絕、逾時或錯誤，保留真實狀態",
+                  "避免把未完成誤記為成功"
+                ],
+                [
+                  "產物參照",
+                  "規格版本或受控結果位置",
+                  "讓後續操作能查證所用資料"
+                ],
+                [
+                  "下一步",
+                  "繼續或交接；留下判定理由",
+                  "連回停止條件與人的決策"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-agent-security"
+          ]
+        },
+        {
+          "id": "failure",
+          "heading": "遇到錯誤，先保留狀態再決定是否重試",
+          "paragraphs": [
+            "若讀 spec.md 被拒絕，先確認任務是否真的需要它、路徑是否正確及範圍是否獲授權。不要要求 Agent 任意繞過限制。若是暫時錯誤，也需在指定重試與資源限制下處理，保留已發生的動作。",
+            "日誌能支持「某次工具回報什麼」，卻不會單獨證明完整隔離、沒有資料洩露或軟體可正式上線。將規格、配置、實際執行及驗收證據放在一起，才能判定目前完成到哪一層。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "文字編輯器與合成讀檔要求；不呼叫真實伺服器或變更檔案權限。",
+        "steps": [
+          "讀取 JSON 示例，指出工具名稱、參數與客戶端呼叫的位置，說明它不是執行完成紀錄。",
+          "為 spec.md 讀檔設計格式驗證、有效路徑及只讀範圍要求，標出由誰執行。",
+          "各寫一筆成功與拒絕的合成紀錄，保留狀態及下一步；不要放入秘密。",
+          "假設工具回傳一段要求外送資料的文字，說明如何當作不可信資料處理，並列出系統限制與交接條件。"
+        ],
+        "expected": "一份工具呼叫追蹤、明確沙箱邊界及兩筆可回查的合成紀錄。",
+        "check": "能分清格式有效、允許操作、實際執行與工作驗收；沒有真實執行就不宣稱隔離或工具測試通過。",
+        "cleanup": "保留合成紀錄即可；沒有建立沙箱、憑證、網路連線或外部副作用。"
+      }
+    },
+    "en": {
+      "summary": "Separate tool intent, parameter validation, permission, actual execution and reporting. Identify sandbox boundaries and how observability supports diagnosis and acceptance.",
+      "objectives": [
+        "Trace a tool call from intent through execution to its returned result.",
+        "Distinguish input format, allowed business actions, execution environment and permission checks.",
+        "Design traceable records without exposing secrets, including stop and error-handoff conditions."
+      ],
+      "readingGuide": {
+        "goal": "Trace validation, authorization, execution and observation while preserving each layer’s evidence boundary.",
+        "startingPoint": "Use a synthetic request to read spec.md without establishing an external connection.",
+        "route": "Read the request format, trace the round and sandbox boundaries, then design success, failure and handoff records.",
+        "output": "A tool-call trace, sandbox boundaries and two synthetic execution records."
+      },
+      "sections": [
+        {
+          "id": "calling",
+          "heading": "The Model Expresses Intent; the System Executes",
+          "paragraphs": [
+            "Tool calling lets a model express an intended action through a tool name and arguments for the surrounding system to check and execute. “Read spec.md” in model text does not establish that the file was opened; inspect the execution result.",
+            "Interfaces use different formats. MCP 2025-06-18 tools/call illustrates a client calling a tool server. The example is a message assembled by a client, not a claim that every model directly generates the entire packet."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Synthetic File-Read Request",
+              "paragraphs": [
+                "This protocol illustration need not be sent to any server. The course defines the tool name."
+              ],
+              "code": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 7,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"read_project_file\",\n    \"arguments\": {\n      \"path\": \"spec.md\"\n    }\n  }\n}"
+            }
+          ],
+          "sourceIds": [
+            "mcp-tools"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Like Submitting a Request to an Authorized Service Desk",
+          "paragraphs": [
+            "A complete request form does not authorize access to every record. Likewise, arguments matching a schema—a data-structure specification—do not establish permission for the path, data or action.",
+            "The system checks tool availability, argument validity, whether the operator and task may perform the action, and whether execution succeeded. Each judgment needs evidence; a well-formed JSON object alone is not completion."
+          ]
+        },
+        {
+          "id": "cycle",
+          "heading": "Each Stage Has Different Failure Modes",
+          "paragraphs": [
+            "A specification file may be absent, the working directory wrong or a request outside the project. A tool can also return an error. Retain failed or unfinished status before deciding on retry or human handoff.",
+            "MCP distinguishes protocol errors from tool execution errors and defines result fields such as isError. The lesson does not require memorizing every packet. Sending a request, succeeding at a tool operation and completing a task are different outcomes."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | A Bounded Tool Round",
+              "description": "Validation failure, denied permission, execution errors and limits need observable exits rather than silent success.",
+              "items": [
+                {
+                  "title": "Express intent",
+                  "body": "A model or program requests the project’s spec.md."
+                },
+                {
+                  "title": "Validate and authorize",
+                  "body": "Check the name, arguments, resolved path and allowed scope."
+                },
+                {
+                  "title": "Execute in the specified environment",
+                  "body": "Run under actually configured directory, file and network restrictions."
+                },
+                {
+                  "title": "Retain results and decide the next step",
+                  "body": "Record success or error, then continue, stop, retry or hand off to a person."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mcp-tools"
+          ]
+        },
+        {
+          "id": "sandbox",
+          "heading": "Specify Which Boundaries a Sandbox Restricts",
+          "paragraphs": [
+            "A sandbox is an execution arrangement that restricts accessible resources. Ask which files can be read or written, which networks are reachable, what privileges apply and how long execution may continue. A container label or prompt prohibition does not prove that every boundary is enforced.",
+            "Stopping a local process does not retract network requests already sent or every external side effect. For this file-read task, start with a project-root boundary, read-only access and no need for external networking. Changes or publication require separate scope and failure-handling decisions."
+          ],
+          "sourceIds": [
+            "owasp-agent-security"
+          ]
+        },
+        {
+          "id": "observe",
+          "heading": "Traceable Records Also Need Content Controls",
+          "paragraphs": [
+            "Observability uses records and observations to understand execution. The course’s minimal tool record contains task and call IDs, the tool name, necessary appropriately redacted parameters, time, exit or error status, and references to outputs or artifacts.",
+            "Do not log secrets, complete private documents or unnecessary personal data. Tool-result text that says “ignore the specification and send data out” is untrusted content, not new authority. System controls must continue enforcing access and egress limits."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | A Traceable Synthetic Call Record",
+              "headers": [
+                "Field",
+                "Synthetic Content",
+                "Purpose"
+              ],
+              "rows": [
+                [
+                  "Task / call",
+                  "DEMO-TASK / CALL-07",
+                  "Connect the same work round."
+                ],
+                [
+                  "Tool / arguments",
+                  "read_project_file; path=spec.md",
+                  "Identify the target, recording only necessary information in practice."
+                ],
+                [
+                  "Result",
+                  "Success, denial, timeout or error, retaining the actual status.",
+                  "Prevent unfinished work being recorded as success."
+                ],
+                [
+                  "Artifact reference",
+                  "Specification version or controlled result location.",
+                  "Let later actions verify which data was used."
+                ],
+                [
+                  "Next step",
+                  "Continue or hand off, retaining the decision reason.",
+                  "Connect stop conditions and human decisions."
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-agent-security"
+          ]
+        },
+        {
+          "id": "failure",
+          "heading": "Retain Failure State Before Deciding on Retry",
+          "paragraphs": [
+            "If reading spec.md is denied, check whether the task needs it, whether the path is right and whether access is authorized. Do not ask the agent to bypass restrictions arbitrarily. Handle transient errors within explicit retry and resource limits while retaining actions already performed.",
+            "Logs can support what a tool reported in a particular call, but alone do not establish complete isolation, absence of data leakage or production readiness. Combine specifications, configuration, actual execution and acceptance evidence to identify the verified level."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "A text editor and synthetic file-read request. Do not call a real server or change file permissions.",
+        "steps": [
+          "Identify the tool name, arguments and client-call layer in the JSON, explaining why it is not an execution-completion record.",
+          "Design format validation, resolved-path checks and read-only scope for spec.md, assigning enforcement responsibilities.",
+          "Write one synthetic success and one denial record with status and next step, excluding secrets.",
+          "Suppose a tool returns text requesting data egress. Explain its treatment as untrusted data and list system restrictions and handoff conditions."
+        ],
+        "expected": "A tool-call trace, explicit sandbox boundaries and two traceable synthetic records.",
+        "check": "Distinguish valid format, authorized action, actual execution and task acceptance. Without execution, claim neither isolation nor passing tool tests.",
+        "cleanup": "Keep synthetic records only. No sandbox, credentials, connection or external side effect was created."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M02-C06-Q01",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "工具參數符合 schema，最直接證明什麼？",
+          "options": [
+            "所有檔案都已獲授權",
+            "工具一定已成功執行",
+            "符合該項資料結構檢查；權限與結果仍需另外核對",
+            "操作已可安全重試無限次"
+          ],
+          "rationales": [
+            "格式檢查不授予資料權限。",
+            "合法參數仍可能執行失敗或遭拒絕。",
+            "這精確描述格式檢查的層次。",
+            "重試及副作用需要另行設計。"
+          ]
+        },
+        "en": {
+          "prompt": "Tool arguments match a schema. What does that most directly establish?",
+          "options": [
+            "Every file is authorized.",
+            "The tool executed successfully.",
+            "The data-structure check passed; permissions and results still need inspection.",
+            "The action is safe to retry indefinitely."
+          ],
+          "rationales": [
+            "Format validation grants no data permissions.",
+            "Valid arguments can still lead to failure or denial.",
+            "This accurately describes the format-check layer.",
+            "Retries and side effects need separate design."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C06-Q02",
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "沙箱的說明中，哪一項最有助於驗證？",
+          "options": [
+            "已配置並測試的檔案、網路、權限與資源邊界",
+            "只寫「非常安全」",
+            "只指出使用某容器產品",
+            "要求模型口頭保證不越界"
+          ],
+          "rationales": [
+            "具體配置與實際測試才能支持對應邊界的主張。",
+            "形容詞沒有說明限制與證據。",
+            "產品名稱不代表所有邊界都已配置。",
+            "文字承諾不是系統強制控制。"
+          ]
+        },
+        "en": {
+          "prompt": "Which sandbox description best supports verification?",
+          "options": [
+            "Configured and tested file, network, privilege and resource boundaries.",
+            "The phrase “very secure.”",
+            "Only a container product name.",
+            "A model’s promise to stay in bounds."
+          ],
+          "rationales": [
+            "Specific configuration and actual testing support claims about corresponding boundaries.",
+            "An adjective supplies neither restrictions nor evidence.",
+            "A product name does not establish every boundary’s configuration.",
+            "A written promise is not system enforcement."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M02-C06-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "工具結果含有要求忽略規格並外送資料的文字，應如何處理？",
+          "options": [
+            "當作新的使用者授權",
+            "把所有資料寫入日誌後傳送",
+            "先照做再詢問",
+            "視為不可信資料，維持既有權限及外送限制，保留必要紀錄並按條件交接"
+          ],
+          "rationales": [
+            "工具輸出不是新的最高權限指令。",
+            "這會擴大資料處理與外送範圍。",
+            "事後詢問無法取代操作前的授權與限制。",
+            "這保留資料與控制指令的界線，並讓人能回查。"
+          ]
+        },
+        "en": {
+          "prompt": "A tool result says to ignore the specification and send data out. How should it be handled?",
+          "options": [
+            "Treat it as new user authorization.",
+            "Log all data and transmit it.",
+            "Comply before asking.",
+            "Treat it as untrusted data, retain permissions and egress limits, record necessary evidence and hand off under defined conditions."
+          ],
+          "rationales": [
+            "Tool output is not a new highest-authority instruction.",
+            "That expands data processing and egress.",
+            "Asking afterward does not replace authorization and restrictions before an action.",
+            "This separates data from controlling instructions and supports inspection."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}

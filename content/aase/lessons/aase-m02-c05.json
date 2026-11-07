@@ -1,0 +1,654 @@
+{
+  "id": "AASE-M02-C05",
+  "status": "published",
+  "revision": 4,
+  "contentVersion": "1.1.0",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-07",
+  "sourceIds": [
+    "mcp-tools",
+    "effective-agents"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "LLM 是負責思考、理解和產生內容的核心，但 Agent Harness 才是讓 AI 能夠取得資料、使用工具、執行工作、遵守限制，以及證明工作成果的整套支援系統。",
+      "objectives": [
+        "用工程師與公司的比喻說明 LLM 與 Agent Harness 的分工。",
+        "針對讀書計畫系統故障，區分六個面向並提出可查核的證據。",
+        "說明 MCP 介面能支援什麼，以及仍需另外確認的權限、環境與驗收。"
+      ],
+      "readingGuide": {
+        "goal": "把「AI 說做好了」轉成可查核的系統問題。",
+        "startingPoint": "已讀過 M02-01～M02-04；知道模型能產生回應及工具請求。",
+        "route": "先看整體架構，再逐項診斷，最後用網站情境回答三題。",
+        "output": "一份六面向診斷筆記與三題開放式回答。"
+      },
+      "sections": [
+        {
+          "id": "harness",
+          "heading": "為什麼 AI 很聰明，卻不一定能把事情做好？",
+          "paragraphs": [
+            "LLM 是負責思考、理解和產生內容的核心，但 Agent Harness 才是讓 AI 能夠取得資料、使用工具、執行工作、遵守限制，以及證明工作成果的整套支援系統。",
+            "你可以把 LLM 想成一位非常聰明的工程師，而 Agent Harness 就是公司提供給這位工程師的工作制度、設備、權限與管理機制。",
+            "工程師再聰明，如果拿到錯誤需求、沒有工具、電腦環境不正確，或者工作沒有人驗收，仍然可能做錯事情。",
+            "本課規劃的六個面向是教學用的系統分析框架，不是所有產品都遵循的標準組件清單。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "一、先用一張圖理解 Agent Harness",
+          "paragraphs": [
+            "Agent Harness 是支援 LLM 工作的整套系統。圖中的外框表示工作支援範圍；其中六個面向平行配合，LLM 與支援系統交換資料、回應和工具請求。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜Agent Harness：六個平行面向與 LLM",
+              "description": "概念架構圖：六個面向互相配合，不代表六套獨立程式，也不是依序執行的六個階段。",
+              "items": [
+                {
+                  "title": "USER REQUEST",
+                  "body": "使用者：「幫我修好讀書計畫系統」"
+                },
+                {
+                  "title": "Context",
+                  "body": "提供正確資料"
+                },
+                {
+                  "title": "Tools",
+                  "body": "提供工作工具"
+                },
+                {
+                  "title": "Orchestration",
+                  "body": "管理任務流程"
+                },
+                {
+                  "title": "Execution",
+                  "body": "提供執行環境"
+                },
+                {
+                  "title": "Security",
+                  "body": "控制權限範圍"
+                },
+                {
+                  "title": "Observability",
+                  "body": "記錄與驗證結果"
+                },
+                {
+                  "title": "LLM（大腦）",
+                  "body": "理解、推理、產生回應或工具請求"
+                },
+                {
+                  "title": "可檢查、可交付的工作成果",
+                  "body": "程式修改 + 測試結果 + 操作紀錄"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "six-aspects",
+          "heading": "二、六個組件，各自究竟在做什麼？",
+          "paragraphs": [
+            "假設我們開發了一個「AI 讀書計畫系統」。",
+            "原本週末允許安排三個科目，卻出現 Bug，只要安排第三個科目就被拒絕。",
+            "你跟 Coding Agent 說：「請幫我修好。」",
+            "接下來看看六個組件如何發揮作用。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 2｜Context、Tools 與 Orchestration",
+              "description": "先確認資料、工具與流程：正確的需求、可執行的能力，以及重試、回復與停止條件必須互相配合。",
+              "items": [
+                {
+                  "title": "1. Context：工程師手上有沒有正確資料？",
+                  "body": "想像工程師接到維修任務，主管卻給他三年前的規格書，裡面寫「週末最多兩科」。\n\n工程師照著規格修改，結果反而把錯誤固定下來。\n\nContext 就是讓模型看得到這次需要的需求文件、程式碼、錯誤訊息與測試結果。\n\n關鍵不是資料越多越好，而是資料正確、相關、版本正確。"
+                },
+                {
+                  "title": "2. Tools：工程師有沒有工作工具？",
+                  "body": "假設工程師已知道程式哪裡出錯，但公司只允許他看程式，不允許修改檔案。\n\n他只能告訴你「應該怎麼修改」，無法真正完成維修。\n\nTools 就像工作上的工具箱，包括讀檔、寫檔、搜尋程式碼、執行測試等。\n\n能提出修改建議，不等於有能力實際修改。"
+                },
+                {
+                  "title": "3. Orchestration：誰安排工作順序與停止條件？",
+                  "body": "假設工程師一接到任務，就直接修改十幾個檔案，修改完沒有測試，就說完成。\n\nOrchestration 就像專案經理，負責安排先查規格、再修改、然後測試；如果失敗，決定重試、回復或停止。\n\n如果 AI 自己決定下一步，Orchestration 也可以負責控制 AI 的工具呼叫與可執行範圍。\n\n有工具是一回事，如何正確使用工具是另一回事。"
+                }
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 3｜Execution Environment、Security 與 Observability",
+              "description": "再確認工作位置、存取邊界與證據：在哪裡執行、能碰哪些資料，以及如何查核成果。",
+              "items": [
+                {
+                  "title": "4. Execution Environment：工程師在哪台電腦工作？",
+                  "body": "假設工程師使用了正確指令，卻在一份三個月前的專案複本中修改程式。\n\n他在那份舊專案成功執行測試，真正的系統卻沒有改變。\n\nExecution Environment 就是實際工作的電腦、容器、作業系統、目錄、軟體套件和網路環境。\n\n指令正確，不代表執行位置正確。"
+                },
+                {
+                  "title": "5. Security：工程師被允許碰哪些東西？",
+                  "body": "假設你請工程師修讀書計畫系統，他卻有權限讀取公司的薪資資料庫、刪除其他專案。\n\n即使他沒有惡意，這樣的工作權限仍然太大。\n\nSecurity 就像辦公室門禁。允許改讀書計畫專案，不代表允許存取其他資料。\n\n最重要的是：口頭要求「不要開那扇門」，不等於門真的上鎖。"
+                },
+                {
+                  "title": "6. Observability：怎麼知道工程師真的做完了？",
+                  "body": "假設工程師回報：「已修好，測試成功。」\n\n你問：「改了哪個檔案？執行哪個測試？在哪個版本測試？」\n\n他卻答不出來。\n\nObservability 就像工作紀錄與監控系統，讓你檢查實際執行的指令、修改差異、錯誤和測試結果。\n\nAI 宣稱做完，是一項主張；執行紀錄與測試證據，才讓這項主張可以被查核。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trace",
+          "heading": "三、把六個組件串起來：一個完整的 Agent 工作流程",
+          "paragraphs": [
+            "任務：修復週末第三個科目無法新增。",
+            "這張圖是其中一種合理的工作流程，不代表所有 Agent 都必須按照一模一樣的順序執行。",
+            "即使測試顯示成功，也還要問：測試案例有沒有真的覆蓋「週末第三科」這個需求？如果測試本身寫錯，綠燈仍可能是假象。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 4｜修復週末第三科：一種合理的工作流程",
+              "description": "Security：全程限制檔案、工具及網路存取權限\n\nObservability：全程保留適當紀錄，不只記錄最後一步",
+              "items": [
+                {
+                  "title": "1. 取得最新版規格",
+                  "body": "Context：確認週末上限確實是三科"
+                },
+                {
+                  "title": "2. 讀取專案程式碼",
+                  "body": "Tools + Execution：確認讀到的是目標專案"
+                },
+                {
+                  "title": "3. 找出錯誤並修改",
+                  "body": "LLM 分析，Tools 執行實際修改"
+                },
+                {
+                  "title": "4. 執行測試",
+                  "body": "Orchestration：確認完成必要的驗證"
+                },
+                {
+                  "title": "5. 整理修改證據",
+                  "body": "Observability：保存變更與測試結果"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "effective-agents"
+          ]
+        },
+        {
+          "id": "diagnose",
+          "heading": "四、為什麼這對 AI Agent 系統工程特別重要？",
+          "paragraphs": [
+            "很多人在 AI 做錯事情時，第一個反應是：「模型是不是太笨？要不要換更大的模型？」這六個面向提供不同的故障檢查入口。",
+            "這張表是一種初步診斷方法，並非每個問題都只有一個原因。",
+            "例如「無法修改檔案」，可能是 Tools 不提供寫入能力，也可能是 Security 正確拒絕了未授權的修改。",
+            "診斷系統的重點是找到真正的故障層次，不能只靠每次調整 Prompt。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "問題與優先檢查面向",
+              "headers": [
+                "發生的問題",
+                "優先檢查"
+              ],
+              "rows": [
+                [
+                  "AI 一直根據舊規格回答",
+                  "Context"
+                ],
+                [
+                  "AI 知道要改什麼，卻不能寫檔",
+                  "Tools"
+                ],
+                [
+                  "AI 不斷重試、無法停止",
+                  "Orchestration"
+                ],
+                [
+                  "修改成功，但網站沒有變化",
+                  "Execution Environment"
+                ],
+                [
+                  "AI 可以讀取不相關的機密檔案",
+                  "Security"
+                ],
+                [
+                  "AI 說測試成功，卻找不到紀錄",
+                  "Observability"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mcp",
+          "heading": "五、MCP 與 Agent Harness 的關係是什麼？",
+          "paragraphs": [
+            "你可以想像 Agent Harness 是整間工程公司，而 MCP（Model Context Protocol）是一種讓公司能以共同方式接上外部工具或資料服務的介面規範。",
+            "例如 Agent 透過 MCP Server 取得某個檔案工具的描述，知道如何提出讀檔請求。",
+            "這個介面本身不保證對應的檔案一定存在、工具有足夠且適當的權限、工具回傳的資料一定正確、操作失敗時一定能自動復原，或所有敏感操作都已經受到安全控管。",
+            "MCP 解決部分系統互通問題；Harness 則要處理 Agent 如何可靠、安全地完成整個工作。"
+          ],
+          "sourceIds": [
+            "mcp-tools"
+          ]
+        },
+        {
+          "id": "connections",
+          "heading": "六、把前面 M02 的課程全部串起來",
+          "paragraphs": [
+            "可以把這五堂課理解成：從「模型怎麼運作」，逐步走向「如何建造能完成真實工作的 AI 系統」。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "M02 五課的核心問題",
+              "headers": [
+                "課程",
+                "解決的核心問題"
+              ],
+              "rows": [
+                [
+                  "M02-01 Token / Transformer / Attention",
+                  "模型如何處理資訊與產生內容？"
+                ],
+                [
+                  "M02-02 Context Window",
+                  "模型一次能參考多少資訊？"
+                ],
+                [
+                  "M02-03 KV Cache / Compaction / RAG / Memory",
+                  "如何處理重算、長歷史、外部檢索與長期紀錄？"
+                ],
+                [
+                  "M02-04 Chatbot / Workflow / Agent",
+                  "誰決定下一步，以及工作如何被控制？"
+                ],
+                [
+                  "M02-05 Agent Harness",
+                  "如何把模型、資料、工具、流程、環境、安全與證據整合起來？"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "handoff",
+          "heading": "七、理解檢核：換你當 Agent 系統工程師",
+          "paragraphs": [
+            "假設有一個 Coding Agent，正在協助你修改網站。",
+            "它回報：「我已成功修改網站，也執行完測試。」",
+            "但你發現網站完全沒有變化，而且它曾嘗試讀取一個不相關的資料夾。",
+            "請以這個合成情境回答文末的三個問題，再展開參考答案核對自己的工程判斷。這裡不會送出答案或產生成績。",
+            "模型提供理解、推理與生成能力；Agent Harness 則在很大程度上決定這份能力能否轉化成可靠、可控、可驗證的實際工作。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "文字編輯器；使用本課合成的讀書計畫情境，不需連接真實資料。",
+        "steps": [
+          "在 architecture.md 列出六個面向，記下各自要取得的資訊或施加的限制。",
+          "對「週末第三科被拒絕」寫出規格版本、目標目錄、可用工具與停止條件。",
+          "寫出第三科的預期行為、要執行的測試，以及如何核對目標網站版本。",
+          "指出薪資資料庫與其他專案不在本次授權範圍，列出實際限制存取的方式。"
+        ],
+        "expected": "一份區分需求、執行位置、權限及完成證據的 architecture.md。",
+        "check": "同學應能從筆記說出要查哪份規格、在哪裡修改、如何驗證第三科，以及哪些存取必須被拒絕。筆記完成只表示設計練習完成。",
+        "cleanup": "保留筆記供後續課程使用；沒有建立服務或變更權限。"
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M02-C05-Q04",
+          "prompt": "網站沒有變化：你會優先檢查哪兩個 Harness 面向？為什麼？",
+          "answer": [
+            "優先檢查 Execution Environment 與 Observability：先確認修改、測試及部署是否指向同一個目標專案、版本與環境，再查操作紀錄、差異與部署證據，找出成果在哪個環節沒有到達網站。",
+            "這不是唯一可接受的配對。若你有具體證據懷疑流程漏了部署，可提出 Orchestration；請說明要查什麼，以及結果如何區分原因。"
+          ]
+        },
+        {
+          "id": "AASE-M02-C05-Q05",
+          "prompt": "讀取不相關的資料夾：你會透過 Prompt 限制，還是透過作業系統或工具權限限制？兩者有什麼差別？",
+          "answer": [
+            "用作業系統或工具權限實際限制存取範圍，並用 Prompt 說明任務界線。Prompt 是模型應遵守的指示；權限是執行時實際允許或拒絕操作的控制。",
+            "確認未授權讀取確實被拒絕，並保留適當紀錄；不要為了讓錯誤消失就擴大權限。"
+          ]
+        },
+        {
+          "id": "AASE-M02-C05-Q06",
+          "prompt": "AI 說已完成：你會要求它提供哪三項證據，才能合理判斷工作確實完成？",
+          "answer": [
+            "一、可追溯到目標版本的修改差異與檔案清單。二、在明確環境與版本執行的測試命令及結果，包含週末第三科需求的覆蓋。三、目標網站的部署版本與實際回讀或操作驗證紀錄。",
+            "三項證據要能互相對上。只看到測試綠燈，不能據此認定網站已部署或需求已被正確驗證。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "The LLM is the core that reasons, understands and generates content. The Agent Harness is the supporting system that lets the AI obtain information, use tools, execute work, respect limits and provide evidence of its results.",
+      "objectives": [
+        "Explain the LLM and Agent Harness through the engineer-and-company analogy.",
+        "Distinguish six aspects of a study-planner failure and request checkable evidence.",
+        "Explain what the MCP interface supports and what still requires permission, environment and acceptance checks."
+      ],
+      "readingGuide": {
+        "goal": "Turn “the AI says it finished” into checkable systems questions.",
+        "startingPoint": "Read M02-01 through M02-04 and know that models can produce responses and tool requests.",
+        "route": "Read the architecture, diagnose each aspect, then answer three questions about the website scenario.",
+        "output": "A six-aspect diagnostic note and three open-ended answers."
+      },
+      "sections": [
+        {
+          "id": "harness",
+          "heading": "Why can a smart AI still fail to finish the job?",
+          "paragraphs": [
+            "The LLM is the core that reasons, understands and generates content. The Agent Harness is the supporting system that lets the AI obtain information, use tools, execute work, respect limits and provide evidence of its results.",
+            "Think of the LLM as a very capable engineer and the Agent Harness as the company’s working procedures, equipment, permissions and management.",
+            "Even a capable engineer can get the job wrong with incorrect requirements, missing tools, the wrong computer environment or no acceptance review.",
+            "These six aspects form this course’s teaching framework for analyzing a system; they are not a standard component list followed by every product."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "1. Understand the Agent Harness in one diagram",
+          "paragraphs": [
+            "The Agent Harness supports the LLM’s work. The outer boundary represents that support system: six parallel aspects cooperate, and the LLM exchanges information, responses and tool requests with it."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Agent Harness: six parallel aspects and the LLM",
+              "description": "Conceptual architecture: the six aspects cooperate. They are neither six independent programs nor six sequential stages.",
+              "items": [
+                {
+                  "title": "USER REQUEST",
+                  "body": "User: “Fix my study-planner system.”"
+                },
+                {
+                  "title": "Context",
+                  "body": "Provide the right information"
+                },
+                {
+                  "title": "Tools",
+                  "body": "Provide tools for the work"
+                },
+                {
+                  "title": "Orchestration",
+                  "body": "Manage the task flow"
+                },
+                {
+                  "title": "Execution",
+                  "body": "Provide the execution environment"
+                },
+                {
+                  "title": "Security",
+                  "body": "Control the scope of permissions"
+                },
+                {
+                  "title": "Observability",
+                  "body": "Record and verify results"
+                },
+                {
+                  "title": "LLM (the brain)",
+                  "body": "Understand, reason, generate responses or tool requests"
+                },
+                {
+                  "title": "Checkable, deliverable work",
+                  "body": "Code changes + test results + operation records"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "six-aspects",
+          "heading": "2. What does each of the six components do?",
+          "paragraphs": [
+            "Suppose we built an AI study-planner system.",
+            "Weekends originally allowed three subjects, but a bug now rejects any attempt to add the third subject.",
+            "You ask a Coding Agent, “Please fix it.”",
+            "Here is how the six components contribute."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Context, Tools and Orchestration",
+              "description": "Check information, tools and orchestration: the correct requirements, executable capabilities, and retry, restore and stop conditions must work together.",
+              "items": [
+                {
+                  "title": "1. Context: does the engineer have the right information?",
+                  "body": "Imagine an engineer assigned a repair but handed a specification from three years ago that says “at most two subjects on weekends.”\n\nFollowing that specification would make the bug permanent.\n\nContext gives the model the requirements, code, error messages and test results needed for this task.\n\nThe goal is correct, relevant information from the right version, rather than the largest possible pile of data."
+                },
+                {
+                  "title": "2. Tools: does the engineer have the tools to work?",
+                  "body": "Suppose the engineer knows exactly where the bug is, but the company only permits reading code and provides no way to change files.\n\nThe engineer can explain how to fix it but cannot carry out the repair.\n\nTools are the toolbox: reading and writing files, searching code and running tests.\n\nBeing able to suggest a change does not establish the ability to make that change."
+                },
+                {
+                  "title": "3. Orchestration: who manages the order of work and stopping conditions?",
+                  "body": "Suppose the engineer immediately changes more than ten files, runs no tests and declares the job complete.\n\nOrchestration is like a project manager: check the specification, make the change and test it; on failure, decide whether to retry, restore or stop.\n\nWhen the AI chooses its next step, orchestration can still control its tool calls and the scope of actions it may execute.\n\nHaving tools and using them correctly are separate concerns."
+                }
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 3 | Execution Environment, Security and Observability",
+              "description": "Check the working location, access boundaries and evidence: where execution happens, which data can be accessed and how results can be verified.",
+              "items": [
+                {
+                  "title": "4. Execution Environment: which computer is the engineer working on?",
+                  "body": "Suppose the engineer uses the correct command but edits a project copy from three months ago.\n\nTests succeed in that old copy, while the actual system remains unchanged.\n\nThe execution environment includes the actual computer, container, operating system, directory, software packages and network.\n\nA correct command does not establish that it ran in the correct location."
+                },
+                {
+                  "title": "5. Security: what is the engineer allowed to access?",
+                  "body": "Suppose you ask the engineer to repair the study planner, but their permissions also allow reading the company payroll database and deleting other projects.\n\nThose permissions are excessive even if the engineer has no malicious intent.\n\nSecurity is like office access control. Permission to change the study-planner project does not grant access to other data.\n\nSaying “do not open that door” does not mean the door is locked."
+                },
+                {
+                  "title": "6. Observability: how do you know the engineer finished?",
+                  "body": "Suppose the engineer reports, “Fixed, and the tests passed.”\n\nYou ask, “Which file changed? Which test ran? On which version?”\n\nThe engineer cannot answer.\n\nObservability provides work records and monitoring so you can inspect executed commands, diffs, errors and test results.\n\nAn AI saying it finished is a claim; execution records and test evidence make that claim checkable."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trace",
+          "heading": "3. Put the six components together in a complete workflow",
+          "paragraphs": [
+            "Task: fix the inability to add a third weekend subject.",
+            "The diagram shows one reasonable workflow; it does not prescribe the same sequence for every agent.",
+            "Even when tests pass, ask whether the cases actually cover the third weekend subject. Incorrect tests can produce a misleading green result."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 4 | Repairing the third weekend subject: one reasonable workflow",
+              "description": "Security: restrict file, tool and network access throughout the task\n\nObservability: retain appropriate records throughout, not only in the final step",
+              "items": [
+                {
+                  "title": "1. Get the latest specification",
+                  "body": "Context: confirm that the weekend limit really is three subjects"
+                },
+                {
+                  "title": "2. Read the project code",
+                  "body": "Tools + Execution: confirm this is the target project"
+                },
+                {
+                  "title": "3. Find and fix the bug",
+                  "body": "The LLM analyzes; tools make the actual changes"
+                },
+                {
+                  "title": "4. Run tests",
+                  "body": "Orchestration: confirm the required validation is complete"
+                },
+                {
+                  "title": "5. Assemble the evidence",
+                  "body": "Observability: retain changes and test results"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "effective-agents"
+          ]
+        },
+        {
+          "id": "diagnose",
+          "heading": "4. Why does this matter for AI agent systems engineering?",
+          "paragraphs": [
+            "When an AI gets something wrong, a common reaction is, “Is the model too weak? Should we use a larger one?” These six aspects offer different starting points for investigating a failure.",
+            "The table is an initial diagnostic guide. A problem can have more than one cause.",
+            "For example, inability to change a file can mean that Tools provide no write capability, or that Security correctly refused an unauthorized change.",
+            "Find the actual failing layer instead of relying on prompt changes for every problem."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Symptoms and initial checks",
+              "headers": [
+                "Problem",
+                "Check first"
+              ],
+              "rows": [
+                [
+                  "The AI keeps answering from an old specification",
+                  "Context"
+                ],
+                [
+                  "The AI knows what to change but cannot write files",
+                  "Tools"
+                ],
+                [
+                  "The AI retries endlessly and cannot stop",
+                  "Orchestration"
+                ],
+                [
+                  "Changes succeed but the website stays the same",
+                  "Execution Environment"
+                ],
+                [
+                  "The AI can read unrelated confidential files",
+                  "Security"
+                ],
+                [
+                  "The AI reports passing tests but no record can be found",
+                  "Observability"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mcp",
+          "heading": "5. How do MCP and the Agent Harness relate?",
+          "paragraphs": [
+            "Think of the Agent Harness as the engineering company and MCP (Model Context Protocol) as a shared interface specification for connecting external tools or data services.",
+            "For example, an agent obtains a file tool’s description from an MCP server and learns how to request a file read.",
+            "The interface alone does not guarantee that the file exists, that permissions are sufficient and appropriate, that returned data is correct, that a failed operation can recover automatically, or that every sensitive operation is under security control.",
+            "MCP addresses part of the interoperability problem. The harness must address how the agent completes the entire job reliably and safely."
+          ],
+          "sourceIds": [
+            "mcp-tools"
+          ]
+        },
+        {
+          "id": "connections",
+          "heading": "6. Connect the preceding M02 lessons",
+          "paragraphs": [
+            "These five lessons progress from how a model works to how we build AI systems that can complete real work."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "The core question in each M02 lesson",
+              "headers": [
+                "Lesson",
+                "Core question"
+              ],
+              "rows": [
+                [
+                  "M02-01 Token / Transformer / Attention",
+                  "How does a model process information and generate content?"
+                ],
+                [
+                  "M02-02 Context Window",
+                  "How much information can a model refer to at once?"
+                ],
+                [
+                  "M02-03 KV Cache / Compaction / RAG / Memory",
+                  "How do we handle recomputation, long histories, external retrieval and long-term records?"
+                ],
+                [
+                  "M02-04 Chatbot / Workflow / Agent",
+                  "Who chooses the next step, and how is the work controlled?"
+                ],
+                [
+                  "M02-05 Agent Harness",
+                  "How do we integrate the model, information, tools, workflow, environment, security and evidence?"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "handoff",
+          "heading": "7. Understanding check: act as an agent systems engineer",
+          "paragraphs": [
+            "Suppose a Coding Agent is helping you change a website.",
+            "It reports, “I successfully changed the website and ran the tests.”",
+            "Yet the website has not changed at all, and the agent tried to read an unrelated folder.",
+            "Use this synthetic scenario to answer the three questions at the end, then open the reference answers to check your engineering judgment. This page does not submit answers or generate scores.",
+            "The model supplies understanding, reasoning and generation. The Agent Harness largely determines whether that capability becomes reliable, controlled and verifiable work."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "A text editor and the synthetic study-planner scenario; no connection to real data is needed.",
+        "steps": [
+          "List the six aspects in architecture.md and identify the information or constraints each requires.",
+          "For the rejected third weekend subject, specify the requirements version, target directory, available tools and stopping conditions.",
+          "Write the expected third-subject behavior, the test to run and how to verify the target website version.",
+          "Mark the payroll database and other projects as outside the task’s authorization, and name controls that enforce this boundary."
+        ],
+        "expected": "An architecture.md that separates requirements, execution location, permissions and completion evidence.",
+        "check": "A peer can identify which specification to inspect, where edits happen, how to verify the third subject and which access must be denied. Completing the note establishes only completion of the design exercise.",
+        "cleanup": "Keep the note for later lessons; no services or permission changes were created."
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M02-C05-Q04",
+          "prompt": "The website has not changed: which two harness aspects would you inspect first, and why?",
+          "answer": [
+            "Start with Execution Environment and Observability: check that edits, tests and deployment target the same intended project, version and environment, then inspect operation records, diffs and deployment evidence to locate where the change stopped reaching the website.",
+            "This is not the only acceptable pair. If you have concrete grounds to suspect a missing deployment step, you can choose Orchestration; explain what you would inspect and how the result would distinguish causes."
+          ]
+        },
+        {
+          "id": "AASE-M02-C05-Q05",
+          "prompt": "The agent reads an unrelated folder: would you restrict it through the prompt or through operating-system or tool permissions? What is the difference?",
+          "answer": [
+            "Use operating-system or tool permissions to enforce access boundaries, and use the prompt to explain the task boundary. A prompt is an instruction the model should follow; a permission control actually allows or denies an operation at execution time.",
+            "Verify that unauthorized reads are refused and keep appropriate records. Do not widen permissions just to make an error disappear."
+          ]
+        },
+        {
+          "id": "AASE-M02-C05-Q06",
+          "prompt": "The AI says it finished: what three pieces of evidence would you require to judge completion reasonably?",
+          "answer": [
+            "First, a diff and list of changed files traceable to the target version. Second, test commands and results from an identified environment and version, covering the third weekend subject. Third, the deployed version of the target website and records of actually reading or operating that site to verify it.",
+            "The three pieces must agree. A green test result alone does not establish that the website was deployed or that the requirement was validated correctly."
+          ]
+        }
+      ]
+    }
+  },
+  "checks": [],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}

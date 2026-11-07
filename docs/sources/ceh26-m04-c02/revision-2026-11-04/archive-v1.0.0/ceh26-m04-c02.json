@@ -1,0 +1,1005 @@
+{
+  "id": "CEH26-M04-C02",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-04",
+  "status": "published",
+  "publishedOn": "2026-11-04",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "DNS Enumeration · 新版第二課",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "上一課把「發現入口、取得資訊、實際存取」分開了。今天沿著同一個原則，學會讀 DNS：它回了什麼資料？這份回覆能支持什麼結論？還有哪些事不能直接推論？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你先前接觸過的 DNS 教材與觀察紀錄會保留。這一課按新版順序重新串成完整的基礎，不會把舊資料直接當成新版已學完或已通過。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、DNS 比較像通訊錄，不是網站的健康檢查"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS，全名 Domain Name System，網域名稱系統。人比較容易記住名稱，軟體要連線時常需要 IP 位址；DNS 可以提供這種對應，也能提供郵件、權威名稱伺服器等其他資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司網站的名稱是 www.example.test，你向 DNS 查到它對應兩個 IPv4 位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表「這次 DNS 回覆提供了兩筆位址資料」，不代表："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "兩個位址現在都能連線。",
+            "網站頁面正常、憑證正確，或登入功能可用。",
+            "兩個位址就是兩台實體主機。",
+            "這些位址都是公司自己的源站，而非代管或 CDN 節點。",
+            "你因此取得對這些設備進行其他測試的許可。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 告訴你的是名稱相關的資料；連線與應用程式是否正常，要用另外的證據確認。 這正是 M04-01「知道資訊，不等於能存取」在 DNS 上的應用。[DNS 概念與運作原理](https://www.rfc-editor.org/rfc/rfc1034.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課所有指令與輸出都是合成教學案例，沒有對真實目標執行。example.test 是預留測試名稱；192.0.2.x 是文件示例位址。這些名稱與位址只用來表示情境，不是可直接照打就有結果的公共服務。若另做實作，請換成已獲授權、實際配置的實驗室 DNS 位址與測試區域。[預留測試名稱](https://www.rfc-editor.org/rfc/rfc2606.html)、[文件示例 IPv4 位址](https://www.rfc-editor.org/rfc/rfc5737.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、你問的 DNS 伺服器，不一定就是保管答案的人"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先分清三個角色："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 用戶端／Stub Resolver：你電腦上提出名稱查詢的部分，通常把問題交給指定的解析器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 遞迴解析器（Recursive Resolver）：替用戶端找答案，也可能從快取直接回覆，或把問題轉給上游解析器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 權威名稱伺服器（Authoritative Name Server）：對某個 DNS 區域負責，提供那個區域的權威資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以把遞迴解析器想成幫你查資料的服務台，權威伺服器則是負責維護特定資料的單位。服務台回答你，不表示它自己就是資料的管理者。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在一般公共 DNS 的冷快取情境，解析器可能依序從根名稱伺服器、頂級網域的伺服器取得指引，再問到負責目標區域的權威伺服器。但已有快取、使用轉送器或查詢內部區域時，不必每次都走完整條路。本課的 .test 只是本地練習區域，不是在公共 DNS 上實際走這條路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還有兩個容易混在一起的詞："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "網域（Domain）：DNS 名稱樹中的某個範圍。",
+            "區域（Zone）：由一組權威伺服器管理的資料範圍。子網域若被委派出去，就可能屬於另一個區域。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，拿到一個區域的資料，不等於拿到整家公司所有網域與子網域的資料。[DNS 角色與區域定義](https://www.rfc-editor.org/rfc/rfc9499.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、DNS 列舉在問什麼？先認識常見紀錄"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS 資料通常以資源紀錄（Resource Record，RR）表示。同一個名稱可以有不同類型的紀錄；查 A 與查 MX，是不同的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先把最常遇到的幾種分成三組："
+        },
+        {
+          "kind": "paragraph",
+          "text": "找位址或另一個名稱："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A：名稱對應的 IPv4 位址。",
+            "AAAA：名稱對應的 IPv6 位址。查不到 AAAA，不會自動推翻已查到的 A。[AAAA 紀錄](https://www.rfc-editor.org/rfc/rfc3596.html)",
+            "CNAME：這個名稱是另一個名稱的別名。它是 DNS 名稱關係，不是瀏覽器收到的 HTTP 轉址。",
+            "PTR：常用於反向查詢，從反向 DNS 名稱取得另一個名稱。正反向結果一致，也不等於完成身分驗證。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "找區域與郵件配置："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "NS：這個區域的權威名稱伺服器名稱，不是「我的電腦目前用哪個遞迴解析器」。",
+            "SOA：區域管理資訊，包含序號與一些計時參數。序號可用於區域版本管理，不能當作主機在線時間。",
+            "MX：負責接收這個網域郵件的主機名稱與優先順序。數字較小者優先，不是流量百分比，也不是使用者信箱清單。",
+            "TXT：文字資料，可用於服務驗證與郵件政策等用途；看見文字不代表已證明那項政策部署正確，更不應把密碼放進公開 TXT。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些紀錄提供的是不同用途的線索，不是「一筆 DNS 紀錄就證明一套服務正常」。[基本資源紀錄格式](https://www.rfc-editor.org/rfc/rfc1035.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "找服務入口線索："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "SRV：可描述特定服務的目標主機、連接埠、優先順序與權重。例如目錄服務可能使用它協助找伺服器。SRV 中出現某個服務，也不等於服務目前能連線或允許你登入。[SRV 紀錄](https://www.rfc-editor.org/rfc/rfc2782.html)"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的「列舉」就是透過查詢，把名稱、位址、服務角色等具體資訊整理出來。直接送出 DNS 查詢會與解析服務互動；不能因為紀錄是公開的，就把所有查詢一律叫被動蒐集。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、先看懂一條 dig 指令"
+        },
+        {
+          "kind": "paragraph",
+          "text": "dig 是 DNS 查詢工具。它不是網站測速工具，也不會因為查到 IP，就替你測完 HTTP、HTTPS 或登入權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下用文件位址代表授權練習環境中的 DNS 伺服器："
+        },
+        {
+          "kind": "code",
+          "text": "dig @192.0.2.53 www.example.test A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "拆開看："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "dig：執行查詢工具。",
+            "@192.0.2.53：把 DNS 問題送給這台伺服器。",
+            "www.example.test：要查詢的名稱。",
+            "A：這次問 IPv4 位址。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "若省略 @server，dig 通常依系統的解析器設定選擇伺服器。因此兩個人輸入同一個名稱，不保證問到同一台解析器或得到同一份快取資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般傳統 DNS 同時使用 UDP 53 與 TCP 53。TCP 也能承載一般查詢，不是只有區域傳送才會用它。大型回覆等情況可能需要 TCP，因此把 TCP 53 全擋掉不一定是正確防護。[dig 官方使用說明](https://bind9.readthedocs.io/en/stable/manpages.html#dig-dns-lookup-utility)、[DNS over TCP](https://www.rfc-editor.org/rfc/rfc7766.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、讀懂一次回覆：把「答案」與「回答者」分開"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下是合成輸出，省略了版本、查詢時間等非本段重點欄位："
+        },
+        {
+          "kind": "code",
+          "text": ";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 40202\n;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 0\n\n;; QUESTION SECTION:\n;www.example.test.        IN A\n\n;; ANSWER SECTION:\nwww.example.test.  300    IN A 192.0.2.10\nwww.example.test.  300    IN A 192.0.2.11\n\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先抓五個閱讀重點："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 我問了什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "QUESTION 表示名稱與類型。這次問的是 www.example.test 的 A，不是所有紀錄，也不是這個網域所有子名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 它回了什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ANSWER 有兩筆 A，資料是 192.0.2.10 與 192.0.2.11。IN 是 Internet 類別；名稱最後的點表示完整名稱已到 DNS 根，不是網址句號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 回覆的狀態是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NOERROR 表示這份回覆的回應碼沒有回報 DNS 錯誤。仍要看 ANSWER 裡是否有你要的資料，不能把它讀成「網站正常」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 誰直接回答了這次查詢？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SERVER 是你這次問到的 DNS 端點 192.0.2.53，不是網站位址。ANSWER 裡的兩個位址與 SERVER 扮演不同角色。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若在使用 systemd-resolved 的 Linux 上看到 SERVER: 127.0.0.53，那通常是本機的 DNS stub，不是網站在你的電腦裡，也不會單靠這一行就顯示最終使用了哪個上游伺服器。[systemd-resolved 官方說明](https://www.freedesktop.org/software/systemd/man/latest/systemd-resolved.service.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 旗標與其他區塊告訴我什麼？"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "qr：這是回覆。",
+            "rd：查詢要求遞迴處理。",
+            "ra：伺服器宣告可提供遞迴服務。它不證明這次實際走過哪些上游。",
+            "aa：若出現，表示回覆宣告具有權威性；這個旗標本身不是密碼學上的真偽驗證。",
+            "AUTHORITY 與 ADDITIONAL：可提供權威資訊、轉介或其他輔助資料。要依整份回覆判讀，不能一律把它們當成網站位址清單。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "以上欄位必須一起讀，不能只看 ANSWER 的筆數。[DNS 訊息與旗標](https://www.rfc-editor.org/rfc/rfc1035.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "300 是 TTL，單位為秒。對快取回覆來說，你可能看到的是剩餘可快取時間，不是主機存活了 300 秒，也不是保證「所有人的 DNS 最晚 300 秒後必然一致」。[DNS 快取與 TTL](https://www.rfc-editor.org/rfc/rfc1034.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、沒有查到答案，至少要分清五種情況"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你接著查同一個名稱的 AAAA。不能看到空白，就寫「這個網域不存在」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NOERROR，但沒有所問類型的答案："
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能是常說的 NODATA 類型回覆，也可能需要辨認轉介等其他情況。NODATA 不是 dig 的另一個 status 回應碼，而是要從回覆內容判斷的狀態。典型否定回答可能在 AUTHORITY 裡附上 SOA。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NXDOMAIN："
+        },
+        {
+          "kind": "paragraph",
+          "text": "表示回覆報告相關名稱不存在。若有 CNAME 鏈，還要辨認否定的是原查詢名稱還是鏈的終點；不要把它擴張成「整家公司沒有這個網域」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SERVFAIL："
+        },
+        {
+          "kind": "paragraph",
+          "text": "解析過程失敗，例如上游問題或 DNSSEC 驗證失敗等。它不是「已證明沒有這個名稱」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "REFUSED："
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器拒絕處理這個要求，可能與存取政策有關。拒絕回答，不等於資料不存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Timeout："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你在等待時間內沒收到可用回覆。可能是網路、過濾、伺服器或其他原因；這不是 DNS 伺服器回覆的「不存在」。[否定回覆與快取](https://www.rfc-editor.org/rfc/rfc2308.html)、[DNS 回應碼](https://www.rfc-editor.org/rfc/rfc1035.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "補一個避免背錯的現代細節：有些 DNSSEC「精簡不存在證明」機制，會把不存在名稱表達成 NOERROR、空 ANSWER 的形式。因此，不要只靠 NOERROR 加空 ANSWER，就絕對斷言名稱存在。 今天不必背這套機制，只要記得保留整份回覆與判斷條件。[RFC 9824：精簡不存在證明](https://www.rfc-editor.org/rfc/rfc9824.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、把零散查詢整理成線索，而不是把猜測寫成事實"
+        },
+        {
+          "kind": "paragraph",
+          "text": "沿用前面的文件位址示意，不同類型的問題可以寫成："
+        },
+        {
+          "kind": "code",
+          "text": "dig @192.0.2.53 example.test NS\ndig @192.0.2.53 example.test MX\ndig @192.0.2.53 www.example.test AAAA"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不是要求你現在執行，也不需要為了這堂課去測真實公司的網域。先能讀懂問題與證據就可以。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果合成 MX 答案是："
+        },
+        {
+          "kind": "code",
+          "text": "example.test.  300 IN MX 10 mail.example.test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以記錄：「回覆把 mail.example.test 列為郵件接收主機，優先值為 10。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能直接記錄：「郵件伺服器目前正常、支援任意寄信、有哪些員工信箱、一定由公司自建。」這些都還缺其他證據。MX 指向主機名稱，郵件投遞還需要後續解析與連線流程。[SMTP 的 MX 使用規則](https://www.rfc-editor.org/rfc/rfc5321.html#section-5)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣地，如果看到 vpn、dev 或 admin 之類的名稱，只能先當作命名線索；名稱可能過時、共用、用於測試，或指向代管服務。不要只憑名稱替設備認定用途。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，dig 的 +short 適合快速查看精簡結果，但會拿掉許多判讀需要的欄位。調查時先保留完整回覆，比只留下兩個 IP 更有價值。[dig 輸出選項](https://bind9.readthedocs.io/en/stable/manpages.html#dig-dns-lookup-utility)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、ANY 不是「全部給我」，AXFR 才是另一種工作"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ANY 查詢不能當成整份區域清單。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不是「列出所有子網域」的指令，也不能保證某名稱的全部紀錄都會回來。伺服器可以採用精簡回覆策略。想回答具體問題，應針對所需的紀錄類型查詢。[ANY 的精簡回覆](https://www.rfc-editor.org/rfc/rfc8482.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AXFR 是區域傳送（Zone Transfer）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它的正常用途是讓獲准的 DNS 伺服器取得區域資料，維持副本。AXFR 使用 TCP，與一般查一筆 A 或 MX 的範圍不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果不受信任的來源能取得原本不該開放的完整區域資料，可能暴露主機名稱與配置，值得依政策檢查。但「AXFR 成功」本身不自動等於漏洞：授權的次要伺服器成功同步，本來就是正常功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "反過來，AXFR 被拒絕也不表示區域裡沒有紀錄。即使拿到一個區域，也不保證涵蓋已委派子區域、其他 DNS 視圖或整個組織的所有名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課先學會辨認用途與風險，不對任何真實伺服器嘗試傳送。實作前要另確認目標、來源與區域傳送是否在授權範圍內。[AXFR 規範](https://www.rfc-editor.org/rfc/rfc5936.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、三個安全觀念：快取、DNSSEC、加密傳輸各管不同事"
+        },
+        {
+          "kind": "paragraph",
+          "text": "快取不是某個人的瀏覽紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "解析器可能供很多人或系統共用，快取也可能受其他查詢與服務機制影響。就算有線索顯示某筆資料曾被快取，也不能直接認定某個人曾造訪某網站，更不能據此推論他的意圖。[DNS 快取與解析器角色](https://www.rfc-editor.org/rfc/rfc9499.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC 主要處理資料來源驗證與完整性，不是把內容藏起來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有效驗證可以提升對 DNS 資料的信任，但不表示網站內容安全，也不表示服務可用。單純在 dig 加上 +dnssec，主要是請求相關 DNSSEC 資料，不等於工具已替你完成整條信任鏈驗證。[DNSSEC 安全目標](https://www.rfc-editor.org/rfc/rfc4033.html)、[dig 與驗證工具的差別](https://bind9.readthedocs.io/en/stable/manpages.html#dig-dns-lookup-utility)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "加密 DNS 傳輸保護的是特定連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 DNS over HTTPS（DoH）可保護用戶端與 DoH 服務之間的傳輸，但你選用的解析服務仍需要處理查詢。它不是「任何人都不知道我查了什麼」，也不替代 DNSSEC 的資料驗證。[DoH 的隱私考量](https://www.rfc-editor.org/rfc/rfc8484.html#section-8)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "十、防守不是讓 DNS 永遠不回答，而是限制不必要的暴露"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對外網站需要別人能查到必要的 DNS 資料。防守重點是讓不同用途有清楚邊界："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 檢查公開紀錄內容。 移除失效或不必要的項目，不把密碼、金鑰與不該公開的內部資訊放進紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 限制區域傳送。 依架構只允許需要同步的對象，並採用適當身分驗證，例如 TSIG。TSIG 提供訊息驗證與完整性，不等於加密區域內容。[TSIG 規範](https://www.rfc-editor.org/rfc/rfc8945.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 限制遞迴與快取查詢的服務對象。 公開權威回答與替任意外部來源做遞迴解析，是不同功能；不能把其中一項開放誤認成另一項也必須開放。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 保留可核對的日誌與設定。 依授權範圍確認查詢來源、拒絕原因、異常頻率與實際政策，避免只憑一筆結果宣布安全或不安全。[BIND 查詢、遞迴與傳送存取控制](https://bind9.readthedocs.io/en/stable/reference.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CDN、分區 DNS（不同來源看到不同視圖）與快取，都可能讓不同地點、時間的答案不一樣。遇到差異時，先記下條件，不要馬上判定其中一方遭到攻擊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "建議的觀察紀錄可以很簡單："
+        },
+        {
+          "kind": "code",
+          "text": "查詢時間與時區：\n查詢來源／授權範圍：\n使用的 DNS 伺服器：\n查詢名稱與紀錄類型：\n回應碼、旗標與相關區塊：\n答案與 TTL：\n這份回覆能支持的結論：\n仍需要另外確認的事："
+        },
+        {
+          "kind": "paragraph",
+          "text": "保存原始回覆，並把「觀察」與「推論」分開。若任務要驗證網站可用性，再依授權另外測連線、TLS 或 HTTP；不要把那些結果補寫成 DNS 已經證明的事。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "十一、今天先記住這一條線"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我向哪個 DNS 端點，詢問哪個名稱的哪種紀錄；它回了什麼，而這些資料還不能證明什麼。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你不需要今天就背完所有紀錄類型。先能把 A、AAAA、MX、NS 的用途分開，讀懂 QUESTION、ANSWER、SERVER，並避免把 NOERROR、空答案或兩個 IP 解讀過頭，就抓住這堂課的重點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下一課會進到 FTP／SMTP 列舉，繼續區分「服務願意回覆資訊」與「你被允許做什麼」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最後只做一個小確認："
+        },
+        {
+          "kind": "paragraph",
+          "text": "在同一個合成情境裡，A 查詢回了兩個 IPv4 位址；AAAA 查詢顯示 NOERROR、ANSWER 為 0，目前沒有保留其他區塊。有人因此說：「這證明網站正常，而且已經確定沒有 IPv6。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你會怎麼用一兩句話修正這個結論？"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-dns-evidence",
+          "summary": "參考答案：A 與 AAAA 回覆能支持的結論",
+          "paragraphs": [
+            "這份 A 回覆只提供了兩個 IPv4 位址，不能證明網站可連線或功能正常；AAAA 的 NOERROR 與空 ANSWER，在缺少其他區塊時，只能先說這次沒有取得 AAAA 答案，還不能確定原因或斷言完全沒有 IPv6。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "DNS Enumeration · Second lesson of the new route",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The previous lesson separated finding an entry point, obtaining information and actually accessing a resource. Today, we apply the same principle to DNS: What data did it return? What conclusions does that response support? What still cannot be inferred directly?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Earlier DNS teaching material and observation records are preserved. This lesson rebuilds the fundamentals in the new sequence; earlier material is not treated as completion or successful assessment of the new lesson."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. DNS resembles a directory, rather than a website health check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS stands for Domain Name System. People find names easier to remember, while software often needs an IP address to connect. DNS can provide that mapping, along with other information such as mail routing and authoritative name servers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the company's website is named www.example.test, and a DNS query returns two IPv4 addresses for it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This means that this particular DNS response supplied two address records. It does not establish that:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Both addresses currently accept connections.",
+            "The website's pages work, its certificate is correct, or its login function is available.",
+            "The two addresses represent two physical hosts.",
+            "All these addresses are company-owned origin servers rather than hosted services or CDN nodes.",
+            "You have therefore obtained permission to perform other tests against those devices."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS provides data associated with names; connectivity and application behavior require separate evidence. This is the DNS application of M04-01's principle that knowing information does not establish access. [DNS concepts and operation](https://www.rfc-editor.org/rfc/rfc1034.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "All commands and outputs in this lesson are synthetic teaching examples; none were run against real targets. example.test is a reserved test name, and 192.0.2.x is a documentation address range. These names and addresses illustrate a scenario, not public services that will produce these results when typed unchanged. For a separate practical exercise, substitute authorized, actually configured laboratory DNS addresses and test zones. [Reserved test names](https://www.rfc-editor.org/rfc/rfc2606.html), [documentation IPv4 addresses](https://www.rfc-editor.org/rfc/rfc5737.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. The DNS server you ask does not necessarily maintain the answer"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Separate three roles first:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Client / stub resolver: the part of your computer that submits name queries, usually passing questions to a configured resolver."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Recursive resolver: finds answers for clients, may answer directly from cache, or may forward the question to an upstream resolver."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Authoritative name server: is responsible for a DNS zone and supplies authoritative data for that zone."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of the recursive resolver as a service desk that looks up information for you, and the authoritative server as the department responsible for maintaining particular data. A service desk answering your question does not mean it manages that data itself."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In a typical public-DNS scenario with a cold cache, a resolver may obtain referrals from root name servers and then top-level-domain servers before reaching the authoritative server for the target zone. Cached data, forwarders and internal zones can make that complete path unnecessary. The .test zone in this lesson is a local practice zone; it is not actually following that path through public DNS."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two other terms are easy to confuse:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Domain: a portion of the DNS name tree.",
+            "Zone: the data scope managed by a set of authoritative servers. A delegated subdomain may belong to a different zone."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Obtaining one zone's data therefore does not mean obtaining every domain and subdomain belonging to the company. [DNS roles and zone definitions](https://www.rfc-editor.org/rfc/rfc9499.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. What does DNS enumeration ask? Start with common records"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS data is usually represented as resource records (RRs). One name can have records of different types; asking for A and asking for MX are different questions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Group the most common types into three categories:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Find an address or another name:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A: an IPv4 address associated with a name.",
+            "AAAA: an IPv6 address associated with a name. Not obtaining an AAAA answer does not automatically invalidate an A answer already obtained. [AAAA records](https://www.rfc-editor.org/rfc/rfc3596.html)",
+            "CNAME: identifies a name as an alias for another name. It is a DNS name relationship, not an HTTP redirect received by a browser.",
+            "PTR: commonly used in reverse lookups to obtain another name from a reverse-DNS name. Matching forward and reverse results does not establish authentication either."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Find zone and mail configuration:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "NS: names the authoritative name servers for a zone, not the recursive resolver currently used by your computer.",
+            "SOA: zone-management information, including a serial number and timing parameters. The serial can support zone-version management; it is not host uptime.",
+            "MX: a hostname and preference value for receiving a domain's mail. Lower numbers are preferred; the value is neither a traffic percentage nor a list of user mailboxes.",
+            "TXT: text data, used for purposes such as service verification and mail policy. Seeing text does not establish that the policy is deployed correctly, and passwords should never be placed in public TXT records."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These records provide clues for different purposes; one DNS record does not establish that an entire service works. [Basic resource-record formats](https://www.rfc-editor.org/rfc/rfc1035.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Find clues about service entry points:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "SRV: can describe a service's target host, port, priority and weight. Directory services, for example, may use it to help locate servers. A service appearing in SRV does not establish current connectivity or permission to log in. [SRV records](https://www.rfc-editor.org/rfc/rfc2782.html)"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here, enumeration means organizing specific information such as names, addresses and service roles through queries. Sending a DNS query directly interacts with a resolution service; public records do not make every such query passive collection."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Understand one dig command first"
+        },
+        {
+          "kind": "paragraph",
+          "text": "dig is a DNS query tool. It is not a website speed test, and obtaining an IP does not mean it has tested HTTP, HTTPS or login permissions for you."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The following documentation address represents a DNS server in an authorized practice environment:"
+        },
+        {
+          "kind": "code",
+          "text": "dig @192.0.2.53 www.example.test A"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read its parts:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "dig: run the query tool.",
+            "@192.0.2.53: send the DNS question to this server.",
+            "www.example.test: the name to query.",
+            "A: ask for IPv4 addresses in this query."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Without @server, dig normally selects a server using the system's resolver configuration. Two people entering the same name are therefore not guaranteed to query the same resolver or obtain the same cached data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Conventional DNS uses both UDP 53 and TCP 53. TCP also carries ordinary queries; it is not reserved exclusively for zone transfers. Large responses and other circumstances may require TCP, so blocking all TCP 53 is not necessarily the right defense. [Official dig usage](https://bind9.readthedocs.io/en/stable/manpages.html#dig-dns-lookup-utility), [DNS over TCP](https://www.rfc-editor.org/rfc/rfc7766.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Read a response: separate the answer from the answering server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This synthetic output omits fields such as version and query time that are not central to this section:"
+        },
+        {
+          "kind": "code",
+          "text": ";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 40202\n;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 0\n\n;; QUESTION SECTION:\n;www.example.test.        IN A\n\n;; ANSWER SECTION:\nwww.example.test.  300    IN A 192.0.2.10\nwww.example.test.  300    IN A 192.0.2.11\n\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Focus on five things first:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. What did I ask?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "QUESTION identifies the name and type. This query asks for A records for www.example.test, not every record or every subordinate name in the domain."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. What did it return?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ANSWER contains two A records, with data 192.0.2.10 and 192.0.2.11. IN is the Internet class. The trailing dot indicates an absolute name reaching the DNS root; it is not punctuation added to a URL."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. What is the response status?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NOERROR means that this response's response code reports no DNS error. You must still check whether ANSWER contains the requested data; it does not mean the website is healthy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Who answered this query directly?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SERVER identifies the DNS endpoint queried, 192.0.2.53, not a website address. The two addresses in ANSWER and the address in SERVER play different roles."
+        },
+        {
+          "kind": "paragraph",
+          "text": "On Linux using systemd-resolved, SERVER: 127.0.0.53 usually identifies a local DNS stub. It does not mean the website is inside your computer, and this line alone does not identify the upstream server ultimately used. [Official systemd-resolved documentation](https://www.freedesktop.org/software/systemd/man/latest/systemd-resolved.service.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. What do the flags and other sections tell me?"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "qr: this is a response.",
+            "rd: the query requested recursion.",
+            "ra: the server declares recursion available. It does not prove which upstream servers this query actually used.",
+            "aa: when present, the response declares itself authoritative; this flag is not cryptographic verification of authenticity.",
+            "AUTHORITY and ADDITIONAL: may supply authority information, referrals or supporting data. Interpret them in the context of the whole response rather than always treating them as lists of website addresses."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Read these fields together, rather than only counting ANSWER records. [DNS messages and flags](https://www.rfc-editor.org/rfc/rfc1035.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "300 is a TTL, measured in seconds. In a cached response, it may be the remaining cache lifetime, not 300 seconds of host uptime or a guarantee that everyone's DNS will become identical within 300 seconds. [DNS caching and TTL](https://www.rfc-editor.org/rfc/rfc1034.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. No answer: distinguish at least five situations"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you next query AAAA for the same name. An empty result is not enough to write that the domain does not exist."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NOERROR, but no answer of the requested type:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This may be what is commonly called a NODATA response, but you may also need to distinguish referrals and other situations. NODATA is not a separate dig status response code; it is a condition inferred from the response contents. A typical negative answer may include SOA in AUTHORITY."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NXDOMAIN:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reports that the relevant name does not exist. If there is a CNAME chain, also identify whether the negative result concerns the original query name or the chain's endpoint. Do not broaden it into a claim about every domain belonging to the company."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SERVFAIL:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Resolution failed, for example because of upstream problems or failed DNSSEC validation. It does not prove that the name does not exist."
+        },
+        {
+          "kind": "paragraph",
+          "text": "REFUSED:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The server refuses to process the request, possibly because of access policy. Refusal to answer does not mean the data does not exist."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Timeout:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No usable response arrived within the waiting period. Networking, filtering, the server or other causes may be involved; this is not a DNS response reporting nonexistence. [Negative answers and caching](https://www.rfc-editor.org/rfc/rfc2308.html), [DNS response codes](https://www.rfc-editor.org/rfc/rfc1035.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "One modern detail helps avoid an incorrect rule: some DNSSEC compact-denial mechanisms represent nonexistent names with NOERROR and an empty ANSWER. Therefore, NOERROR plus an empty ANSWER alone does not conclusively establish that a name exists. You do not need to memorize this mechanism today; retain the complete response and the conditions behind your interpretation. [RFC 9824: compact denial of existence](https://www.rfc-editor.org/rfc/rfc9824.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Organize individual queries as clues, rather than recording guesses as facts"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Using the documentation-address scenario above, queries for different types can be written as:"
+        },
+        {
+          "kind": "code",
+          "text": "dig @192.0.2.53 example.test NS\ndig @192.0.2.53 example.test MX\ndig @192.0.2.53 www.example.test AAAA"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is not a request to run them now or test a real company's domain for this lesson. Understanding the questions and evidence is enough for now."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If a synthetic MX answer is:"
+        },
+        {
+          "kind": "code",
+          "text": "example.test.  300 IN MX 10 mail.example.test."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can record: “The response lists mail.example.test as a mail-receiving host with preference 10.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You cannot directly record that the mail server currently works, permits arbitrary mail sending, reveals employee mailboxes, or must be company-operated. Those claims require other evidence. MX points to a hostname, and mail delivery requires subsequent resolution and connection steps. [SMTP rules for using MX](https://www.rfc-editor.org/rfc/rfc5321.html#section-5)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Similarly, names such as vpn, dev or admin are naming clues. They may be outdated, shared, used for testing, or point to hosted services. Do not assign a device's purpose from its name alone."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The +short option in dig is useful for concise results, but removes many fields needed for interpretation. Retaining a complete response during an investigation is more valuable than retaining only two IPs. [dig output options](https://bind9.readthedocs.io/en/stable/manpages.html#dig-dns-lookup-utility)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. ANY does not mean everything; AXFR has a different purpose"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An ANY query is not a complete zone inventory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It is not a command to list all subdomains, and does not guarantee that every record for a name will be returned. Servers may use minimal-response strategies. Ask for the specific record type needed to answer your question. [Minimal responses to ANY](https://www.rfc-editor.org/rfc/rfc8482.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AXFR is a zone transfer."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Its normal purpose is to let authorized DNS servers obtain zone data and maintain replicas. AXFR uses TCP and has a different scope from an ordinary query for A or MX."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An untrusted source obtaining complete zone data that should be restricted may expose hostnames and configuration, and warrants policy review. Successful AXFR, however, does not automatically establish a vulnerability: an authorized secondary server synchronizing successfully is normal functionality."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Conversely, refused AXFR does not mean the zone has no records. Even obtaining a zone does not guarantee coverage of delegated child zones, other DNS views or every name in an organization."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson introduces the purpose and risk without attempting transfers against real servers. Before practical work, separately confirm that the target, source and zone transfer are within the authorized scope. [AXFR specification](https://www.rfc-editor.org/rfc/rfc5936.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Three security ideas: caching, DNSSEC and encrypted transport address different concerns"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A cache is not an individual's browsing history."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Many people or systems may share a resolver, and other queries and service mechanisms can affect its cache. Even evidence that a record was cached does not directly establish that a particular person visited a website, much less their intent. [DNS caching and resolver roles](https://www.rfc-editor.org/rfc/rfc9499.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC primarily provides data-origin authentication and integrity, rather than hiding content."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Successful validation can increase trust in DNS data, but does not establish website-content safety or service availability. Adding +dnssec to dig mainly requests relevant DNSSEC data; it does not mean the tool has validated the complete chain of trust for you. [DNSSEC security goals](https://www.rfc-editor.org/rfc/rfc4033.html), [dig and validation tools](https://bind9.readthedocs.io/en/stable/manpages.html#dig-dns-lookup-utility)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Encrypted DNS transport protects a particular connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, DNS over HTTPS (DoH) can protect transport between a client and a DoH service, but the chosen resolution service still needs to process queries. It does not mean that nobody knows what you queried, and does not replace DNSSEC data validation. [DoH privacy considerations](https://www.rfc-editor.org/rfc/rfc8484.html#section-8)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10. Defense limits unnecessary exposure rather than making DNS never answer"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Public websites need others to obtain necessary DNS data. Defense focuses on clear boundaries between different purposes:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Review public record contents. Remove obsolete or unnecessary entries, and keep passwords, keys and nonpublic internal information out of records."
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Restrict zone transfers. Permit only the peers that need to synchronize according to the architecture, with appropriate authentication such as TSIG. TSIG supplies message authentication and integrity; it does not encrypt zone contents. [TSIG specification](https://www.rfc-editor.org/rfc/rfc8945.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Limit who may use recursive and cache-query services. Public authoritative answers and recursive resolution for arbitrary external sources are different functions. Opening one does not mean the other must also be open."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Retain verifiable logs and configuration. Within the authorized scope, confirm query sources, reasons for refusal, unusual frequency and actual policy, rather than declaring security or insecurity from one result. [BIND access controls for queries, recursion and transfers](https://bind9.readthedocs.io/en/stable/reference.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CDNs, split DNS with different views for different sources, and caching can produce different answers at different locations and times. Record the conditions first rather than immediately concluding that one side is under attack."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An observation record can be simple:"
+        },
+        {
+          "kind": "code",
+          "text": "Query time and time zone:\nQuery source / authorized scope:\nDNS server used:\nQuery name and record type:\nResponse code, flags and relevant sections:\nAnswers and TTL:\nConclusions supported by this response:\nThings that still require separate verification:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Preserve the original response and separate observations from inferences. If the task requires website-availability verification, separately test connectivity, TLS or HTTP within the authorization; do not attribute those results to DNS evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "11. Remember this line of reasoning today"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Which DNS endpoint did I ask, about which name and record type? What did it return, and what do those data still fail to establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You do not need to memorize every record type today. Start by distinguishing A, AAAA, MX and NS; read QUESTION, ANSWER and SERVER; and avoid overinterpreting NOERROR, empty answers or two IPs. That captures this lesson's central idea."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The next lesson moves to FTP / SMTP enumeration, continuing to distinguish information a service will return from actions you are permitted to perform."
+        },
+        {
+          "kind": "paragraph",
+          "text": "One final small check:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In the same synthetic scenario, an A query returns two IPv4 addresses. An AAAA query shows NOERROR and ANSWER 0, but the other sections were not retained. Someone concludes: “This proves that the website works and definitively has no IPv6.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "How would you correct that conclusion in one or two sentences?"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-dns-evidence",
+          "summary": "Reference answer: conclusions supported by A and AAAA responses",
+          "paragraphs": [
+            "This A response provides only two IPv4 addresses; it does not establish that the website is reachable or functioning normally. With NOERROR and an empty ANSWER for AAAA, and without the other sections, we can say only that this query did not obtain an AAAA answer. We cannot yet establish the cause or conclude that there is no IPv6 at all."
+          ]
+        }
+      ]
+    }
+  }
+}

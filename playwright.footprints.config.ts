@@ -1,0 +1,3 @@
+import {existsSync} from 'node:fs';
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'tests/browser',testMatch:'footprints.spec.ts',workers:2,timeout:90000,outputDir:'.local/footprints/browser',reporter:[['list'],['json',{outputFile:'.local/footprints/results.json'}]],use:{baseURL:'http://127.0.0.1:4193',headless:true,trace:'retain-on-failure',launchOptions:{executablePath:existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined}},webServer:{command:'python3 -m http.server 4193 --bind 127.0.0.1 --directory build',url:'http://127.0.0.1:4193/',reuseExistingServer:false}});

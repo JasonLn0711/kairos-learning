@@ -1,7 +1,7 @@
 <script lang="ts">
- import {readingGuide} from '$lib/article-reading';
- let {id,lang}:{id:string;lang:string}=$props();
- const guide=$derived(readingGuide(id,lang));
+ import {readingGuide,type ReadingGuide} from '$lib/article-reading';
+ let {id,lang,guide:providedGuide}:{id:string;lang:string;guide?:ReadingGuide}=$props();
+ const guide=$derived(providedGuide??readingGuide(id,lang));
 </script>
 {#if guide}<aside class="article-reading-guide" aria-label={lang==='zh'?'閱讀與練習導引':'Reading and practice guide'}>
  <h2>{lang==='zh'?'這篇要學會什麼':'What you will learn'}</h2><p class="goal">{guide.goal}</p>

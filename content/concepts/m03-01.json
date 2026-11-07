@@ -1,0 +1,2421 @@
+{
+  "id": "M03-01",
+  "revision": 3,
+  "contentVersion": "1.1.1",
+  "date": "2026-11-05",
+  "status": "published",
+  "publishedOn": "2026-11-01",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從IP、傳輸協定、連接埠到服務，理解網路請求的分工與判讀。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-01｜IP、TCP、UDP、Port 白話文教學"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這四個概念，其實都在回答同一個問題：當你的電腦想跟另一台電腦溝通時，資料究竟如何找到正確的地方，並交給正確的程式？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你只要先記住四句話："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "IP： 資料要送到哪一個網路位址？",
+            "TCP： 如何可靠地傳送一段連續、有順序的資料？",
+            "UDP： 如何一份一份地傳送資料，而不預先建立 TCP 那樣的連線？",
+            "Port： 資料抵達電腦後，要交給哪一個通訊端點？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是 CEH M03「Network Scanning（網路掃描）」的重要基礎。因為資安人員必須先理解 IP、傳輸協定與連接埠，才能正確判讀主機探索、Port Scanning 與服務辨識的結果。[learn.cs-kairos.com](https://learn.cs-kairos.com/courses/ceh/v13/m03/concepts/m03-01/)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1｜先建立整體概念：把網路想像成城市裡的辦公大樓"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你今天要到一棟大樓辦理業務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你需要知道大樓在哪裡、如何把文件送過去，以及文件抵達後要交給哪個窗口。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路通訊也是一樣。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-01-01-layer-roles-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "資料要送到哪裡？IP 找位址，Port 找端點",
+            "description": "從瀏覽器請求理解定址、傳輸與程式入口；箭頭表示 IP 封包的轉送方向。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "從瀏覽器請求理解定址、傳輸與程式入口；箭頭表示 IP 封包的轉送方向。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你的電腦要連上一個網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們先設定這個情境："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的電腦 IP 是 `192.0.2.10`，網站伺服器 IP 是 `198.51.100.20`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩個 IP 是專門保留給文件與教學使用的示範位址，不代表實際運作中的公開網站。[RFC Editor](https://www.rfc-editor.org/rfc/rfc5737.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "整個過程可以分成四個問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一個問題：資料要送到哪台主機？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 IP 的工作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二個問題：資料應該採用什麼傳輸方式？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 TCP 或 UDP 的工作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三個問題：資料抵達伺服器後，要交給哪個通訊端點？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 Port 的工作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四個問題：哪個程式真正處理這個請求？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 Service（服務）的工作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要注意，這四個問題是我們理解系統的順序，不代表實際封包會先處理 IP、再處理 TCP。傳送時，應用程式資料通常先交給 TCP／UDP，再封裝進 IP 封包；接收時則逐層往上處理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來，我們逐一拆解。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2｜IP：先找到網路上的位置"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-1",
+          "text": "2.1 IP 究竟是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 是 Internet Protocol（網際網路協定）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以將 IP 位址想成一個網路上的邏輯地址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個地址可以用來識別某個網路介面，讓網路設備知道資料應該往哪裡送。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要區分兩件事："
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 位址是地址，不是電腦本身的永久身分證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同一台電腦可能同時有 Wi-Fi、乙太網路與 VPN，每個介面可能有不同 IP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另一方面，很多設備也可能透過 NAT（網路位址轉換）共用同一個公開 IP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，不能只因為兩筆紀錄的公開 IP 相同，就判斷一定來自同一個人或同一台設備。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 當你發送資料時，IP 做了什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你的電腦位於台灣，想連接海外某台伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的電腦並不需要事先知道沿途每一台路由器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 封包中會記錄目的 IP 位址，而路由器（Router）會根據路由表決定下一站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以把它想成："
+        },
+        {
+          "kind": "code",
+          "text": "你的電腦\n192.0.2.10\n    │\n    │ 目的 IP：198.51.100.20\n    ▼\n家中路由器\n    │\n    ▼\n電信業者網路\n    │\n    ▼\n其他網路的路由器\n    │\n    ▼\n目的伺服器\n198.51.100.20"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的重點是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "路由器不需要知道你在網站上按了哪個按鈕，通常只需要根據目的 IP 與路由資訊決定如何轉送封包。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當然，實際網路可能還有防火牆、NAT、負載平衡器及其他處理機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 本身並不保證封包一定送達、一定照順序到達，或遺失後自動重傳。這些工作需要由其他層次處理。[RFC Editor](https://www.rfc-editor.org/rfc/rfc791.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "2.3 IP 跟 DNS 有什麼關係？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能會問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「可是我平常打開網站，都是輸入 `google.com`，並沒有輸入 IP 啊？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候就需要 DNS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS（Domain Name System）可以協助將網域名稱解析成 IP 位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，假設某個網站的名稱是："
+        },
+        {
+          "kind": "code",
+          "text": "shop.example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "瀏覽器可能先透過 DNS 取得對應的 IP："
+        },
+        {
+          "kind": "code",
+          "text": "shop.example\n     │\n     │ DNS 查詢\n     ▼\n198.51.100.20\n     │\n     │ 後續連線\n     ▼\n網站伺服器"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，DNS 不一定每次都會重新查詢，因為電腦和瀏覽器可能已經有快取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也可以呼應先前 CEH M02 的內容："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Domain Name、DNS、IP 與 ASN 並不是同一件事。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Domain Name 是名稱，DNS 負責名稱解析，IP 用於網路定址，而 ASN 則與自治系統的路由政策有關。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-4",
+          "text": "2.4 IPv4 與 IPv6 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你經常看到的："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`192.168.1.10`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "就是 IPv4。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv4 使用 32 位元表示位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另一種："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`2001:db8::10`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "則是 IPv6，使用 128 位元表示位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 的設計目的之一，是提供遠比 IPv4 更大的位址空間。[RFC Editor](https://www.rfc-editor.org/rfc/rfc8200.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一節最重要的不是背誦位元數，而是理解："
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 解決的是網路位址與封包轉送問題，並不直接決定資料要由伺服器上的哪個應用程式處理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是為什麼還需要 Port。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3｜TCP：有連線狀態的有序位元組串流"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "3.1 TCP 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 是 Transmission Control Protocol（傳輸控制協定）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 IP 像是在處理地址與道路，那麼 TCP 就像一套有確認與補送機制的文件傳輸制度。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你今天要寄送一份很重要的文件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這份文件被拆成很多段，經過網路傳送。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你希望接收端最後拿到的內容："
+        },
+        {
+          "kind": "paragraph",
+          "text": "內容正確、順序正確，而且沒有缺少任何一段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 就是用來提供這類傳輸能力的協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但有個重要細節："
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 保證的是連線正常運作時，向應用程式提供可靠、有序的位元組串流，而不是承諾任何網路故障下都能無限重試直到成功。 [RFC Editor](https://www.rfc-editor.org/rfc/rfc9293.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 TCP 為什麼需要建立連線？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你的瀏覽器想連接網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雙方通常會先進行 TCP Three-way Handshake（三向交握）。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-01-02-tcp-and-application-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "TCP：先建立連線，再按順序交付資料",
+            "description": "SYN／SYN-ACK／ACK 建立傳輸狀態，不等於加密或網站登入。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "SYN／SYN-ACK／ACK 建立傳輸狀態，不等於加密或網站登入。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們逐步理解。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一步：SYN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的電腦傳送一個帶有 SYN 旗標的 TCP 封包。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把它理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你好，我想跟你建立 TCP 連線。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "技術上，SYN 主要用來同步雙方的初始序號資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二步：SYN-ACK"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器收到請求後，回覆 SYN-ACK。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表伺服器提出自己的同步資訊，同時確認前面收到的 SYN。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以理解成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「我收到你想建立連線的請求，也把我的資訊告訴你。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三步：ACK"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的電腦再回覆 ACK。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雙方完成這次基本交握，建立必要的 TCP 連線狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "到這裡，兩端通常就可以透過這條連線交換應用程式資料。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 ACK 是什麼？為什麼需要它？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ACK 是 Acknowledgment（確認）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設伺服器需要接收一段資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 會使用序號（Sequence Number）標記位元組的位置，讓接收端知道目前收到了哪些資料、還缺少哪些資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "原本應該收到：\n\n資料 1 → 資料 2 → 資料 3\n\n實際網路傳送：\n\n資料 1 → 資料 3\n            ↑\n          資料 2 遺失\n\nTCP 偵測出缺口\n            │\n            ▼\n        重傳資料 2\n            │\n            ▼\n應用程式依序讀取：\n\n資料 1 → 資料 2 → 資料 3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種能力非常重要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你正在下載一份研究論文 PDF。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果中途遺失了某些資料，應用程式不能直接把缺少內容的資料視為完整文件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 的確認、重傳與排序機制，可以協助確保接收到的位元組內容正確且有序。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，這不代表 TCP 可以判斷你下載的 PDF 是不是你想要的版本、文件是否具有可信來源，或網站交易是否完成。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那些屬於應用程式與其他安全機制的責任。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "3.4 「位元組串流」到底是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 TCP 最容易被初學者忽略的觀念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設有個程式想送出兩則訊息："
+        },
+        {
+          "kind": "code",
+          "text": "第一次寫入：HELLO\n第二次寫入：WORLD"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能以為對方一定會分兩次收到："
+        },
+        {
+          "kind": "code",
+          "text": "第一次讀取：HELLO\n第二次讀取：WORLD"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 TCP 不保證這件事。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對方可能讀到："
+        },
+        {
+          "kind": "code",
+          "text": "第一次讀取：HEL\n第二次讀取：LOWORLD"
+        },
+        {
+          "kind": "paragraph",
+          "text": "或一次讀到："
+        },
+        {
+          "kind": "code",
+          "text": "HELLOWORLD"
+        },
+        {
+          "kind": "paragraph",
+          "text": "原因是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 提供的是連續位元組串流，而不是替應用程式保留每一次寫入的訊息邊界。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果應用程式需要知道一則訊息在哪裡結束，就必須自己制定規則，例如在訊息前加入長度資訊，或使用特定分隔符號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這在開發 WebSocket、網路伺服器及各種自訂網路協定時非常重要。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-5",
+          "text": "3.5 TCP 建立連線，是否代表已經登入網站？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是學習 CEH 時必須建立的關鍵區分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你打電話給銀行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "電話接通，代表通訊管道建立。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是銀行不會因為電話接通，就認定你是某個帳戶的合法持有人。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網路同樣如此。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 建立連線，只代表建立了傳輸層的通訊狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果使用 HTTPS，還需要建立相應的 TLS 安全通道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果網站需要帳號登入，則還必須經過應用程式的身分驗證與授權流程。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 連線成功 ≠ TLS 加密成功 ≠ 使用者登入成功 ≠ 取得操作權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個區分會直接延伸到 CEH 的身分驗證、Session Management（工作階段管理）與 Session Hijacking（工作階段劫持）。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4｜UDP：以資料報為單位傳送"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "4.1 UDP 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UDP 是 User Datagram Protocol（使用者資料報協定）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "與 TCP 相比，UDP 的基本機制相對簡單。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你想傳送三張獨立的紙條。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用 UDP 時，每張紙條可以視為一份獨立資料報（Datagram）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳送端可以把資料報送出去，而不需要事先進行 TCP 那樣的三向交握。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但問題來了："
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果其中一張紙條遺失，怎麼辦？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UDP 本身不提供 TCP 那套自動確認、遺失重傳與有序串流交付機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果應用程式需要這些能力，就必須在上層自行設計，或使用其他建立在 UDP 上的協定。[RFC Editor](https://www.rfc-editor.org/rfc/rfc768.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-01-03-transport-models-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "TCP 是位元組串流；UDP 是獨立資料報",
+            "description": "比較傳輸介面與保障機制，不能直接推論哪個一定比較快。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "比較傳輸介面與保障機制，不能直接推論哪個一定比較快。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 為什麼不乾脆全部使用 TCP？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一個很好的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為不同應用程式，對資料傳輸有不同要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你正在進行即時語音通話。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對方現在說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「你好，請問有聽到嗎？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "語音系統會持續傳送聲音資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果其中一小段聲音資料遺失了，是否一定要等到它重新傳送完成，才能播放後面的聲音？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在即時語音的情境中，某些已經過時的聲音資料，即使重新傳回來，也可能已經失去播放價值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，有些即時通訊系統會使用 UDP 傳送媒體資料，再由應用程式處理封包遺失、抖動緩衝（Jitter Buffer）及音訊補償等問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不表示 UDP 一定比 TCP 快。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正的差別是：UDP 本身提供較簡單的資料報傳輸介面，允許上層依照需求決定哪些資料值得等待、確認或重新傳送。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 TCP 與 UDP 的核心差異"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "比較項目",
+            "TCP",
+            "UDP"
+          ],
+          "rows": [
+            [
+              "基本傳輸形式",
+              "位元組串流",
+              "獨立資料報"
+            ],
+            [
+              "是否需要建立傳輸連線",
+              "是",
+              "否"
+            ],
+            [
+              "是否有 TCP 三向交握",
+              "有",
+              "沒有"
+            ],
+            [
+              "是否內建可靠傳輸機制",
+              "有",
+              "沒有"
+            ],
+            [
+              "是否內建有序交付",
+              "有",
+              "沒有"
+            ],
+            [
+              "是否保留應用訊息邊界",
+              "不保留",
+              "保留資料報邊界"
+            ],
+            [
+              "是否內建加密",
+              "沒有",
+              "沒有"
+            ],
+            [
+              "常見應用",
+              "SSH、HTTP/1.1、HTTP/2",
+              "DNS、即時媒體、QUIC"
+            ],
+            [
+              "主要特點",
+              "提供可靠、有序的位元組串流",
+              "提供簡單、獨立的資料報傳送"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這張表最重要的兩個關鍵詞是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 的 Stream（串流） 與 UDP 的 Datagram（資料報）。表中 DNS 是常見 UDP 應用，並不表示 DNS 只能使用 UDP。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 UDP 沒有可靠性，那 HTTP/3 為什麼使用 UDP？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是理解現代網路技術的一個重要轉折。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在的網站不一定全部使用 TCP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "HTTP/3 使用 QUIC，而 QUIC 建立在 UDP 之上。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把它想成："
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/3\n網頁請求與回應\n     │\n     ▼\nQUIC\n提供加密、連線管理、\n可靠串流等能力\n     │\n     ▼\nUDP\n提供資料報傳輸\n     │\n     ▼\nIP\n提供定址與封包轉送"
+        },
+        {
+          "kind": "paragraph",
+          "text": "QUIC 可以在 UDP 的基礎上實作可靠傳輸、資料流控制與其他機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "UDP 本身不提供可靠交付，不代表使用 UDP 的應用程式就不可能具有可靠傳輸能力。 [RFC Editor](https://www.rfc-editor.org/rfc/rfc9000.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是為什麼不能簡單把 TCP 解釋成「可靠但慢」，UDP 解釋成「不可靠但快」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正的效能需要考慮網路條件、應用協定、封包遺失、傳輸策略與實作方式。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5｜Port：把資料交給對應的程式入口"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "5.1 為什麼有 IP，還需要 Port？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本課最重要的問題之一。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你在同一台 Ubuntu 電腦上，同時執行："
+        },
+        {
+          "kind": "paragraph",
+          "text": "一個網站伺服器、一個 SSH 遠端管理服務，以及一個資料庫。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些程式可能都使用同一個 IP 位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但外部電腦送來的資料，究竟應該交給哪個程式？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果只有 IP，還不足以區分這些通訊端點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此 TCP 和 UDP 使用 Port Number（連接埠號碼）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10:22\n192.168.1.10:80\n192.168.1.10:443"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把它理解成："
+        },
+        {
+          "kind": "code",
+          "text": "IP：192.168.1.10\n       │\n       ▼\n  同一台伺服器\n       │\n       ├── TCP 22  → SSH\n       │\n       ├── TCP 80  → HTTP\n       │\n       └── TCP 443 → HTTPS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些只是常見的設定範例，並非強制規定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port 是作業系統與網路協定使用的邏輯編號，不是電腦機殼上實體的 USB 或網路孔。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-2",
+          "text": "5.2 Port 為什麼是 0～65535？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 TCP 與 UDP 標頭中的連接埠欄位都是 16 位元。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "16 位元可以表示："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`2^16 = 65536`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "個不同數值。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "從 0 開始計算，就是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`0～65535`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IANA 將連接埠分成三個主要範圍。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Port 範圍",
+            "分類",
+            "白話理解"
+          ],
+          "rows": [
+            [
+              "0～1023",
+              "System Ports",
+              "常見系統及標準服務使用的範圍"
+            ],
+            [
+              "1024～49151",
+              "User Ports",
+              "可登錄給各類應用服務使用"
+            ],
+            [
+              "49152～65535",
+              "Dynamic／Private Ports",
+              "動態或私用範圍"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 Port 0 是保留埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外要注意，作業系統實際選擇暫用來源埠的範圍，不一定完全等於 IANA 的動態埠分類。[iana.org](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-3",
+          "text": "5.3 什麼是來源 Port 與目的 Port？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你現在使用瀏覽器連接網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的電腦："
+        },
+        {
+          "kind": "code",
+          "text": "192.0.2.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網站伺服器："
+        },
+        {
+          "kind": "code",
+          "text": "198.51.100.20"
+        },
+        {
+          "kind": "paragraph",
+          "text": "網站使用 TCP/443 提供 HTTPS 服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你的電腦也需要為這次通訊準備來源端點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "作業系統可能選擇一個暫用來源埠，例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`53000`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "於是，這次傳輸可能是："
+        },
+        {
+          "kind": "code",
+          "text": "來源：\n192.0.2.10:53000\n\n       ↓ TCP\n\n目的：\n198.51.100.20:443"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器要回傳資料時，方向就相反："
+        },
+        {
+          "kind": "code",
+          "text": "198.51.100.20:443\n\n       ↓ TCP\n\n192.0.2.10:53000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣，雙方的作業系統才能區分不同的通訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，同一台電腦可以同時開啟多個網站，每一條通訊都具有可用於區分的端點資訊。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-01-04-flow-tuple-zh.svg",
+          "downloadLabel": "下載 SVG 圖檔",
+          "visual": {
+            "kind": "cards",
+            "caption": "五元組：同一筆通訊的來處、去處與協定",
+            "description": "五個欄位一起看，再結合時間、觀察位置與 NAT 對應資訊。",
+            "items": [
+              {
+                "title": "讀圖重點",
+                "body": "五個欄位一起看，再結合時間、觀察位置與 NAT 對應資訊。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-4",
+          "text": "5.4 什麼是 Five-tuple（五元組）？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你在 CEH 後續章節會經常遇到這個名詞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "五元組就是使用五個欄位描述一筆網路通訊："
+        },
+        {
+          "kind": "paragraph",
+          "text": "來源 IP、來源 Port、目的 IP、目的 Port、傳輸協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "192.0.2.10:53000\n        ↓\n198.51.100.20:443\n       TCP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "拆開來看："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "欄位",
+            "範例"
+          ],
+          "rows": [
+            [
+              "Source IP",
+              "192.0.2.10"
+            ],
+            [
+              "Source Port",
+              "53000"
+            ],
+            [
+              "Destination IP",
+              "198.51.100.20"
+            ],
+            [
+              "Destination Port",
+              "443"
+            ],
+            [
+              "Protocol",
+              "TCP"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "五元組經常用來識別與描述網路流量。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "防火牆、網路監控系統及流量分析工具，都可能使用這些欄位進行比對或統計。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，如果流量經過 NAT，封包在不同觀察位置看到的 IP 或 Port 可能有所不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，資安調查還需要記錄時間、觀察位置及可能的 NAT 對應資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-5",
+          "text": "5.5 TCP/443 與 UDP/443 是同一個 Port 嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雖然數字相同，但不是同一個傳輸端點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 與 UDP 有各自的連接埠空間。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "TCP / 443\n    │\n    └── 常見：傳統 HTTPS\n\nUDP / 443\n    │\n    └── 常見：QUIC / HTTP/3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以分析網路流量時，不能只看 `443`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你應該同時看："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Protocol + Port"
+        },
+        {
+          "kind": "paragraph",
+          "text": "也就是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`TCP/443` 或 `UDP/443`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且，就算看到 TCP/443，也不能直接認定它一定在執行 HTTPS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為應用程式可以自行設定使用其他 Port。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是 CEH 在進行服務辨識時，為什麼不能只憑埠號就做出最終判斷。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6｜實際操作：在 Ubuntu 上面觀察 IP、TCP 與 Port"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來把概念對應到你可以親自觀察的東西。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下操作只需在自己的 Ubuntu 電腦上進行，不涉及掃描其他人的設備。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實驗一：查看自己的 IP"
+        },
+        {
+          "kind": "paragraph",
+          "text": "開啟 Terminal，輸入："
+        },
+        {
+          "kind": "code",
+          "text": "ip -br addr"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能看到類似："
+        },
+        {
+          "kind": "code",
+          "text": "lo       UNKNOWN 127.0.0.1/8\nenp3s0   UP      192.168.1.10/24"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`lo` 是 Loopback（回送介面），`127.0.0.1` 通常代表本機。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`enp3s0` 是範例中的實體網路介面名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`192.168.1.10/24` 表示這個介面配置的 IPv4 位址與網路前綴長度。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你也可以輸入："
+        },
+        {
+          "kind": "code",
+          "text": "ip route"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查看電腦的路由表。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它能幫助你理解資料要送往其他網段時，系統會選擇哪個出口或閘道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實驗二：查看正在監聽的 Port"
+        },
+        {
+          "kind": "paragraph",
+          "text": "輸入："
+        },
+        {
+          "kind": "code",
+          "text": "sudo ss -lntup"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個指令用來查看 TCP 與 UDP 的相關本機監聽端點，以及可取得的程式資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如你可能看到："
+        },
+        {
+          "kind": "code",
+          "text": "tcp LISTEN 0 128 127.0.0.1:8000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這表示某個程式正在本機的 TCP/8000 監聽連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你看到："
+        },
+        {
+          "kind": "code",
+          "text": "0.0.0.0:8000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通常表示程式綁定所有本機 IPv4 介面，而不是只限於 `127.0.0.1`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這不代表外部網路一定可以連進來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為防火牆、NAT 與其他網路設備仍可能限制連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實驗三：自己啟動一個網站服務"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 Ubuntu 開啟 Terminal，輸入："
+        },
+        {
+          "kind": "code",
+          "text": "python3 -m http.server 8000 --bind 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這會建立一個只在本機回送位址上提供服務的簡單 HTTP 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著開啟另一個 Terminal："
+        },
+        {
+          "kind": "code",
+          "text": "ss -lntp | grep ':8000'"
+        },
+        {
+          "kind": "paragraph",
+          "text": "再使用："
+        },
+        {
+          "kind": "code",
+          "text": "curl -I http://127.0.0.1:8000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你應該可以看到 HTTP 回應標頭。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個小實驗可以直接觀察："
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 是 `127.0.0.1`，傳輸協定是 TCP，目的 Port 是 `8000`，實際提供服務的則是 Python 啟動的 HTTP 伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實驗完成後，在第一個 Terminal 按 `Ctrl+C` 即可停止服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有一個重要的延伸觀念："
+        },
+        {
+          "kind": "paragraph",
+          "text": "程式正在監聽 Port，不等於網路上的任何人都可以存取它。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個區別非常重要，因為 CEH 的網路掃描不只是尋找開放埠，還要考慮網路可達性、主機設定、防火牆與服務回應。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7｜將四個概念串起來：真正理解一次網頁連線"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在假設你開啟一個 HTTPS 網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們以使用 TCP 的 HTTPS 為例。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "整個過程可以理解為："
+        },
+        {
+          "kind": "code",
+          "text": "使用者輸入網站名稱\n        │\n        ▼\nDNS 解析（必要時）\n取得伺服器 IP\n        │\n        ▼\nIP\n將封包送往目的位址\n        │\n        ▼\nTCP\n建立連線與傳輸狀態\n        │\n        ▼\nPort 443\n定位目的通訊端點\n        │\n        ▼\nTLS\n建立加密與身分驗證機制\n        │\n        ▼\nHTTP\n瀏覽器傳送網站請求\n        │\n        ▼\nService\n伺服器上的程式處理請求\n        │\n        ▼\n瀏覽器收到網頁內容"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是概念流程，不是封包實際封裝順序；其中 DNS 也可能使用快取、TCP、UDP 或其他傳輸方式。如果採用 HTTP/3，傳輸架構則會有所不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你現在可以將這些概念與後續 CEH 章節連接起來："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "CEH 主題",
+            "與本課的關係"
+          ],
+          "rows": [
+            [
+              "M02 Footprinting",
+              "了解 DNS、IP、ASN 與網路範圍"
+            ],
+            [
+              "M03 Network Scanning",
+              "探索主機、Port 與服務"
+            ],
+            [
+              "M04 Enumeration",
+              "進一步了解服務提供哪些資訊或資源"
+            ],
+            [
+              "M08 Sniffing",
+              "觀察 IP、TCP、UDP 與封包內容"
+            ],
+            [
+              "M11 Session Hijacking",
+              "區分網路連線、加密通道與應用工作階段"
+            ],
+            [
+              "M12 Firewalls",
+              "使用 IP、傳輸協定、Port 等條件管理流量"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也能幫助你日後設計 NAS、伺服器與 Cloudflare 防護架構。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "允許某個 IP 連接 TCP/443，是網路存取控制的一部分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，允許連線不代表允許登入；允許登入也不代表擁有所有操作權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "身分驗證與授權還需要其他機制負責。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8｜最後用一個表格記住整個架構"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "概念",
+            "解決的問題",
+            "最重要的關鍵詞"
+          ],
+          "rows": [
+            [
+              "IP",
+              "資料送到哪個網路位址？",
+              "Address、Routing"
+            ],
+            [
+              "TCP",
+              "如何傳送可靠、有序的資料？",
+              "Connection、Stream、ACK"
+            ],
+            [
+              "UDP",
+              "如何傳送獨立的資料報？",
+              "Datagram"
+            ],
+            [
+              "Port",
+              "資料應交給哪個通訊端點？",
+              "Port Number、Socket"
+            ],
+            [
+              "Service",
+              "誰真正處理請求？",
+              "Application、Listener"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把整個概念記成一句話："
+        },
+        {
+          "kind": "paragraph",
+          "text": "> IP 負責找到地址，TCP／UDP 負責傳輸方式，Port 協助找到程式入口，而 Service 才是真正提供功能的應用程式。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9｜理解檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請你嘗試回答以下三個問題，不需要查資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題一："
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設一台伺服器的 IP 是 `192.168.1.100`，上面同時執行 SSH、HTTP 與 HTTPS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼我們不能只靠 IP，就決定要連接哪個服務？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題二："
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你的電腦已經成功完成 TCP 三向交握，是否就表示你可以登入該網站？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題三："
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你正在開發一套即時語音通訊系統。某一小段聲音封包遺失，但後續聲音已經抵達。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你會希望程式一定要等遺失封包重新傳送後才播放嗎？還是可以根據播放時點直接處理後續聲音？請說明你的理由。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三題分別檢查你是否掌握 IP 與 Port 的分工、TCP 與身分驗證的區別，以及 TCP／UDP 在真實應用中的取捨。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-layer-roles",
+          "summary": "參考解答：為什麼只有 IP 不夠？",
+          "paragraphs": [
+            "IP 協助定位網路介面；同一個位址可以提供多個服務。還要看傳輸協定與目的 Port，才能區分要連接的通訊端點。例如 TCP/22、TCP/80 與 TCP/443 常分別用於 SSH、HTTP 與 HTTPS，但實際服務仍需設定或回應佐證。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-handshake-login",
+          "summary": "參考解答：TCP 交握成功是否等於登入？",
+          "paragraphs": [
+            "三向交握建立 TCP 傳輸狀態。HTTPS 還需 TLS；帳號登入與操作權限則由應用程式的身分驗證與授權判定。通訊管道建立本身不授予帳戶或資料存取權。"
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-realtime-loss",
+          "summary": "參考解答：語音遺失後應該等待嗎？",
+          "paragraphs": [
+            "依播放期限與應用需求決定。已超過播放時點的聲音可能不值得等待；系統可以用抖動緩衝、遺失補償或選擇性重傳，讓後續聲音繼續播放。UDP 本身不自動重傳，不代表上層不能提供可靠性；也不能只憑 TCP 或 UDP 名稱判定效能。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Understand how IP, transport protocols, ports and services work together in a network request.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "CEH M03-01 | IP, TCP, UDP and Ports in Plain Language"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These four concepts answer one question: when your computer communicates with another computer, how does the data reach the right place and the right program?"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "IP: Which network address should the data reach?",
+            "TCP: How can we transfer a reliable, ordered stream of bytes?",
+            "UDP: How can we send individual datagrams without first establishing a TCP-style connection?",
+            "Port: Which communication endpoint should receive the data after it reaches the computer?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are foundations for CEH M03 Network Scanning. Understanding addresses, transport protocols and ports helps you interpret host discovery, port scans and service identification. [Kairos lesson](https://learn.cs-kairos.com/courses/ceh/v13/m03/concepts/m03-01/)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1 | The overall picture: an office building in a city"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine delivering documents to an office building. You need its location, a way to transport the documents, and the right desk inside. Network communication has similar responsibilities."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-01-01-layer-roles-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Where does data go? IP addresses and port endpoints",
+            "description": "Follow a browser request through addressing, transport and the program endpoint. Arrows show IP packet forwarding.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Follow a browser request through addressing, transport and the program endpoint. Arrows show IP packet forwarding."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose your computer connects to a website. Your computer has IP address `192.0.2.10`, and the server has `198.51.100.20`. These are documentation addresses, not claims about an operating public website. [RFC 5737](https://www.rfc-editor.org/rfc/rfc5737.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, which host should receive the data? IP addresses that question."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Second, which transport mechanism should carry it? TCP or UDP addresses that question."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Third, which endpoint on the server should receive it? The port helps identify that endpoint."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fourth, which program actually handles the request? That is the service."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a teaching sequence, not packet encapsulation order. On transmission, application data normally goes to TCP or UDP and is then carried in IP packets. Reception processes the layers in the opposite direction."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2 | IP: find a location on the network"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-1",
+          "text": "2.1 What is IP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP stands for Internet Protocol. Think of an IP address as a logical network address, for example:"
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An address can identify a network interface and help network devices decide where to forward data."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An IP address is an address, not a computer's permanent identity. One computer may have Wi-Fi, Ethernet and VPN interfaces with different addresses. Multiple devices may also share a public IP through Network Address Translation (NAT). A matching public IP in two records does not establish that they came from the same person or device."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-2",
+          "text": "2.2 What does IP do when you send data?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Your computer in Taiwan can contact a server overseas without knowing every router along the path in advance. The packet carries a destination IP; each router consults routing information to choose the next hop."
+        },
+        {
+          "kind": "code",
+          "text": "Your computer: 192.0.2.10\n    │ Destination IP: 198.51.100.20\n    ▼\nHome router\n    ▼\nInternet service provider network\n    ▼\nRouters in other networks\n    ▼\nDestination server: 198.51.100.20"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A router usually needs the destination IP and routing information to forward a packet, rather than knowledge of which website button you clicked. Actual networks can also include firewalls, NAT, load balancers and other processing."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP itself does not guarantee arrival, arrival order or automatic retransmission of lost packets. Other layers supply those capabilities when required. [RFC 791](https://www.rfc-editor.org/rfc/rfc791.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-3",
+          "text": "2.3 How are IP and DNS related?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You normally enter a name such as `google.com`, not an IP address. The Domain Name System (DNS) can resolve a name to an IP address. For a teaching example:"
+        },
+        {
+          "kind": "code",
+          "text": "shop.example\n    │ DNS lookup\n    ▼\n198.51.100.20\n    │ Subsequent connection\n    ▼\nWebsite server"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The computer or browser may already have a cached answer, so a new lookup is not always necessary."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This connects to CEH M02: a domain name is a name; DNS resolves names; IP supports addressing; an Autonomous System Number (ASN) relates to autonomous-system routing policy. These are different objects."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-4",
+          "text": "2.4 What are IPv4 and IPv6?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`192.168.1.10` is an IPv4 address. IPv4 addresses contain 32 bits. `2001:db8::10` is an IPv6 example; IPv6 addresses contain 128 bits. A much larger address space is one purpose of IPv6. [RFC 8200](https://www.rfc-editor.org/rfc/rfc8200.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The central point is the responsibility: IP handles network addressing and packet forwarding. It does not directly select the application that handles data on a server. That is why we also need ports."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3 | TCP: an ordered byte stream with connection state"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-1",
+          "text": "3.1 What is TCP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP stands for Transmission Control Protocol. If IP supplies addresses and roads, TCP resembles a document-delivery system with acknowledgments and replacement deliveries."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An important document may travel in many pieces. The receiver needs the bytes in order, without missing pieces. TCP provides this transport capability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP supplies a reliable, ordered byte stream while the connection operates. It does not promise unlimited retries until success under every possible network failure. [RFC 9293](https://www.rfc-editor.org/rfc/rfc9293.html)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-2",
+          "text": "3.2 Why establish a connection?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A browser and server normally start with the TCP three-way handshake."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-01-02-tcp-and-application-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "TCP: establish state, then deliver ordered data",
+            "description": "SYN / SYN-ACK / ACK establish transport state, not encryption or website login.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "SYN / SYN-ACK / ACK establish transport state, not encryption or website login."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step one — SYN: the client sends a TCP segment with the SYN flag. In plain language, it asks to establish a connection. Technically, SYN synchronizes initial sequence-number information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step two — SYN-ACK: the server supplies its own synchronization information and acknowledges the client's SYN."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step three — ACK: the client acknowledges the server's information. The endpoints establish the necessary TCP connection state and can normally exchange application data."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-3",
+          "text": "3.3 What is an ACK, and why is it needed?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ACK means acknowledgment. TCP sequence numbers identify byte positions so the receiver can track what has arrived and where data is missing."
+        },
+        {
+          "kind": "code",
+          "text": "Expected: data 1 → data 2 → data 3\nArrives:  data 1 →          data 3\n                       data 2 is lost\nTCP detects the gap and retransmits data 2.\nApplication reads: data 1 → data 2 → data 3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For a research-paper PDF download, the application cannot treat a file with missing bytes as complete. Acknowledgment, retransmission and ordering help deliver the bytes correctly and in order."
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP does not establish that the PDF is the version you intended, that its publisher is trustworthy, or that a website transaction completed. Applications and other security mechanisms address those questions."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-4",
+          "text": "3.4 What is a byte stream?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a program makes two writes:"
+        },
+        {
+          "kind": "code",
+          "text": "First write:  HELLO\nSecond write: WORLD"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The receiver is not guaranteed two corresponding reads:"
+        },
+        {
+          "kind": "code",
+          "text": "First read:  HELLO\nSecond read: WORLD"
+        },
+        {
+          "kind": "paragraph",
+          "text": "It could instead read:"
+        },
+        {
+          "kind": "code",
+          "text": "First read:  HEL\nSecond read: LOWORLD"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Or it could read all the data at once:"
+        },
+        {
+          "kind": "code",
+          "text": "HELLOWORLD"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP preserves the ordered bytes, not the boundaries of individual application writes. Applications that need message boundaries define framing, such as a length prefix or delimiter. This matters when implementing network servers, WebSocket handling and custom protocols."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-5",
+          "text": "3.5 Does a TCP connection mean you have logged in?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No. Connecting a telephone call to a bank establishes a communication channel; it does not prove that you own a bank account."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Likewise, TCP establishes transport state. HTTPS also needs the appropriate TLS security channel. A website requiring login still needs application authentication and authorization."
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP connection success ≠ TLS success ≠ user login success ≠ permission to perform an operation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep this distinction when studying authentication, session management and session hijacking in CEH."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4 | UDP: send data as datagrams"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-1",
+          "text": "4.1 What is UDP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UDP stands for User Datagram Protocol. Its basic mechanism is simpler than TCP's. Imagine sending three separate notes: each note is an independent datagram. Sending does not first require TCP's three-way handshake."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If a note is lost, UDP itself supplies no TCP-style automatic acknowledgment, retransmission and ordered-stream delivery. Applications that require those features implement them above UDP or use another protocol built on it. [RFC 768](https://www.rfc-editor.org/rfc/rfc768.html)"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-01-03-transport-models-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "TCP is a byte stream; UDP carries independent datagrams",
+            "description": "Compare interfaces and guarantees, not a blanket claim that one is always faster.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Compare interfaces and guarantees, not a blanket claim that one is always faster."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-2",
+          "text": "4.2 Why not use TCP for everything?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Applications have different requirements. In a live voice call, the speaker might say, “Hello, can you hear me?” Audio data keeps arriving. If a small piece is lost, must playback wait for its retransmission before playing anything later? Not necessarily."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A piece of audio that arrives after its playback deadline may no longer be useful. Some real-time systems therefore carry media over UDP and handle loss, jitter buffering and audio concealment in the application."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This does not mean UDP is always faster. Its simpler datagram interface lets higher layers choose what is worth waiting for, acknowledging or retransmitting."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-3",
+          "text": "4.3 The core differences between TCP and UDP"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Property",
+            "TCP",
+            "UDP"
+          ],
+          "rows": [
+            [
+              "Transport unit",
+              "Byte stream",
+              "Independent datagrams"
+            ],
+            [
+              "Transport connection establishment",
+              "Yes",
+              "No"
+            ],
+            [
+              "TCP three-way handshake",
+              "Yes",
+              "No"
+            ],
+            [
+              "Built-in reliable transport",
+              "Yes",
+              "No"
+            ],
+            [
+              "Built-in ordered delivery",
+              "Yes",
+              "No"
+            ],
+            [
+              "Application message boundaries",
+              "Not preserved",
+              "Datagram boundaries preserved"
+            ],
+            [
+              "Built-in encryption",
+              "No",
+              "No"
+            ],
+            [
+              "Common applications",
+              "SSH, HTTP/1.1, HTTP/2",
+              "DNS, real-time media, QUIC"
+            ],
+            [
+              "Main characteristic",
+              "Reliable, ordered byte stream",
+              "Simple, independent datagram delivery"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember TCP's stream and UDP's datagram. DNS is listed as a common UDP application, not as a claim that DNS uses UDP exclusively."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-4-4",
+          "text": "4.4 Why does HTTP/3 use UDP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Modern websites do not all use TCP. HTTP/3 uses QUIC, which runs over UDP."
+        },
+        {
+          "kind": "code",
+          "text": "HTTP/3: web requests and responses\n    ▼\nQUIC: encryption, connection management, reliable streams\n    ▼\nUDP: datagram transport\n    ▼\nIP: addressing and packet forwarding"
+        },
+        {
+          "kind": "paragraph",
+          "text": "QUIC implements reliable streams, flow control and other mechanisms above UDP. UDP's lack of reliable delivery does not prevent a protocol using UDP from providing reliability. [RFC 9000](https://www.rfc-editor.org/rfc/rfc9000.html)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“TCP is reliable but slow; UDP is unreliable but fast” is an inadequate rule. Performance depends on network conditions, application protocols, loss, transport strategies and implementation."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5 | Ports: deliver data to the right program endpoint"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-1",
+          "text": "5.1 Why do we need a port if we have an IP?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An Ubuntu machine can run a website, SSH administration and a database at the same time. They may share IP address `192.168.1.10`. The destination IP alone does not distinguish their communication endpoints."
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP and UDP therefore include port numbers. Examples include:"
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.10:22\n192.168.1.10:80\n192.168.1.10:443"
+        },
+        {
+          "kind": "code",
+          "text": "One server: 192.168.1.10\n    ├── TCP 22  → SSH\n    ├── TCP 80  → HTTP\n    └── TCP 443 → HTTPS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are common configurations, not mandatory assignments. A port number is a logical protocol and operating-system identifier, not a physical USB or Ethernet socket on the computer case."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-2",
+          "text": "5.2 Why are port numbers 0–65535?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP and UDP port fields contain 16 bits. `2^16 = 65536` different values, starting from zero, give the range `0–65535`."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IANA defines three ranges:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Port range",
+            "Category",
+            "Plain-language meaning"
+          ],
+          "rows": [
+            [
+              "0–1023",
+              "System Ports",
+              "Range for common system and standard services"
+            ],
+            [
+              "1024–49151",
+              "User Ports",
+              "Range available for application-service registration"
+            ],
+            [
+              "49152–65535",
+              "Dynamic / Private Ports",
+              "Dynamic or private use"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Port 0 is reserved. An operating system's actual ephemeral-source-port selection range need not exactly match IANA's dynamic-port classification. [IANA registry](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml)"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-3",
+          "text": "5.3 What are source and destination ports?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose your browser at `192.0.2.10` contacts an HTTPS service at `198.51.100.20` over TCP/443. Your operating system may choose ephemeral source port `53000`."
+        },
+        {
+          "kind": "code",
+          "text": "Source:      192.0.2.10:53000\n                 ↓ TCP\nDestination: 198.51.100.20:443"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The reply reverses the endpoints:"
+        },
+        {
+          "kind": "code",
+          "text": "198.51.100.20:443\n         ↓ TCP\n192.0.2.10:53000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Endpoint information helps both operating systems distinguish communications. One computer can have many website connections at the same time."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m03-01-04-flow-tuple-en.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Five-tuple: source, destination and protocol",
+            "description": "Read all five fields, together with time, observation point and relevant NAT mappings.",
+            "items": [
+              {
+                "title": "How to read the diagram",
+                "body": "Read all five fields, together with time, observation point and relevant NAT mappings."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-4",
+          "text": "5.4 What is a five-tuple?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The five fields are source IP, source port, destination IP, destination port and transport protocol."
+        },
+        {
+          "kind": "code",
+          "text": "192.0.2.10:53000\n        ↓ TCP\n198.51.100.20:443"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Field",
+            "Example"
+          ],
+          "rows": [
+            [
+              "Source IP",
+              "192.0.2.10"
+            ],
+            [
+              "Source Port",
+              "53000"
+            ],
+            [
+              "Destination IP",
+              "198.51.100.20"
+            ],
+            [
+              "Destination Port",
+              "443"
+            ],
+            [
+              "Protocol",
+              "TCP"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Firewalls, monitoring systems and traffic-analysis tools can match or aggregate these fields. If traffic crosses NAT, addresses or ports may differ at different observation points. Investigations therefore also need time, observation location and any relevant NAT mappings."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-5",
+          "text": "5.5 Are TCP/443 and UDP/443 the same port?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The numbers match, but the transport endpoints differ. TCP and UDP have separate port spaces."
+        },
+        {
+          "kind": "code",
+          "text": "TCP / 443 → commonly conventional HTTPS\nUDP / 443 → commonly QUIC / HTTP/3"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Inspect protocol plus port, not just `443`. Even TCP/443 does not prove that a service is HTTPS: applications can use different configured ports. Service identification requires more evidence than a port number."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6 | Observe IP, TCP and ports on Ubuntu"
+        },
+        {
+          "kind": "paragraph",
+          "text": "These exercises run on your own Ubuntu computer and do not scan anyone else's device."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Experiment one — inspect your IP addresses:"
+        },
+        {
+          "kind": "code",
+          "text": "ip -br addr"
+        },
+        {
+          "kind": "paragraph",
+          "text": "An illustrative output is:"
+        },
+        {
+          "kind": "code",
+          "text": "lo       UNKNOWN 127.0.0.1/8\nenp3s0   UP      192.168.1.10/24"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`lo` is the loopback interface; `127.0.0.1` normally refers to this host. `enp3s0` is an example interface name. `192.168.1.10/24` is its IPv4 address with a network prefix length."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Inspect routes with:"
+        },
+        {
+          "kind": "code",
+          "text": "ip route"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The routing table helps explain which interface or gateway the system selects for other networks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Experiment two — inspect local listening endpoints:"
+        },
+        {
+          "kind": "code",
+          "text": "sudo ss -lntup"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This shows local TCP/UDP listening or bound endpoints and available process information. An example TCP entry is:"
+        },
+        {
+          "kind": "code",
+          "text": "tcp LISTEN 0 128 127.0.0.1:8000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A process is listening on local TCP/8000. A bind address of `0.0.0.0:8000` normally covers all local IPv4 interfaces instead of only loopback. It does not prove external reachability: firewalls, NAT and other devices can still restrict access."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Experiment three — start your own web service:"
+        },
+        {
+          "kind": "code",
+          "text": "python3 -m http.server 8000 --bind 127.0.0.1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This simple HTTP server listens only on loopback. In another terminal, inspect the listener:"
+        },
+        {
+          "kind": "code",
+          "text": "ss -lntp | grep ':8000'"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Then request response headers:"
+        },
+        {
+          "kind": "code",
+          "text": "curl -I http://127.0.0.1:8000"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You should see HTTP response headers. Here the IP is `127.0.0.1`, the transport is TCP, the destination port is `8000`, and the service is Python's HTTP server. Press `Ctrl+C` in the first terminal to stop it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Listening on a port does not mean everyone on the network can access it. Scanning results depend on reachability, host configuration, firewalls and service responses."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7 | Put the concepts together: one website connection"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider HTTPS using TCP:"
+        },
+        {
+          "kind": "code",
+          "text": "Enter website name\n    ▼\nDNS resolution if needed: obtain server IP\n    ▼\nIP: forward packets to destination\n    ▼\nTCP: establish connection and transport state\n    ▼\nPort 443: identify destination endpoint\n    ▼\nTLS: establish encryption and authentication mechanisms\n    ▼\nHTTP: send a website request\n    ▼\nService: application handles the request\n    ▼\nBrowser receives website content"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a conceptual flow, not packet encapsulation order. DNS may use cached data, TCP, UDP or other transports. HTTP/3 has a different transport architecture."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "CEH topic",
+            "Connection to this lesson"
+          ],
+          "rows": [
+            [
+              "M02 Footprinting",
+              "DNS, IP, ASN and network scope"
+            ],
+            [
+              "M03 Network Scanning",
+              "Discover hosts, ports and services"
+            ],
+            [
+              "M04 Enumeration",
+              "Learn what information or resources a service exposes"
+            ],
+            [
+              "M08 Sniffing",
+              "Observe IP, TCP, UDP and packet contents"
+            ],
+            [
+              "M11 Session Hijacking",
+              "Distinguish transport connections, encrypted channels and application sessions"
+            ],
+            [
+              "M12 Firewalls",
+              "Control traffic using IP, protocol and port conditions"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These distinctions also inform NAS, server and Cloudflare protection design. Allowing an IP to reach TCP/443 is network access control. Permission to connect does not establish permission to log in, and login does not grant every operation. Authentication and authorization need their own mechanisms."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8 | Remember the architecture"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Concept",
+            "Question it answers",
+            "Key terms"
+          ],
+          "rows": [
+            [
+              "IP",
+              "Which network address receives the data?",
+              "Address, Routing"
+            ],
+            [
+              "TCP",
+              "How do we transfer reliable, ordered data?",
+              "Connection, Stream, ACK"
+            ],
+            [
+              "UDP",
+              "How do we send independent datagrams?",
+              "Datagram"
+            ],
+            [
+              "Port",
+              "Which communication endpoint receives the data?",
+              "Port Number, Socket"
+            ],
+            [
+              "Service",
+              "Who actually handles the request?",
+              "Application, Listener"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP locates the address, TCP or UDP supplies the transport, a port helps identify the program endpoint, and the service is the application providing the function."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9 | Check your understanding"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Try these three questions without looking up an answer."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question one: a server at `192.168.1.100` runs SSH, HTTP and HTTPS. Why is the IP address alone insufficient to choose which service to contact?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question two: if your computer completes the TCP three-way handshake, does that mean you can log in to the website? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question three: in a live voice system, a small audio packet is lost while later audio has arrived. Should playback always wait for retransmission, or can it process later audio according to playback deadlines? Explain your reasoning."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These questions check IP/port responsibilities, the difference between TCP and authentication, and application-level TCP/UDP tradeoffs."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-layer-roles",
+          "summary": "Reference answer: Why is an IP address insufficient?",
+          "paragraphs": [
+            "IP helps locate a network interface; one address can support multiple services. The transport protocol and destination port distinguish the intended communication endpoint. TCP/22, TCP/80 and TCP/443 commonly carry SSH, HTTP and HTTPS, but configuration or service responses must establish the actual service."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-handshake-login",
+          "summary": "Reference answer: Does the TCP handshake establish login?",
+          "paragraphs": [
+            "The handshake establishes TCP transport state. HTTPS also needs TLS; application authentication and authorization determine account access and operation permissions. Establishing a communication channel does not itself grant access to an account or its data."
+          ]
+        },
+        {
+          "kind": "answer",
+          "id": "answer-realtime-loss",
+          "summary": "Reference answer: Should voice playback wait after loss?",
+          "paragraphs": [
+            "Decide from playback deadlines and application requirements. Audio that has missed its deadline may not be worth waiting for. Jitter buffering, loss concealment or selective retransmission can support continued playback. UDP has no automatic retransmission of its own, but higher layers can add reliability; protocol names alone do not establish performance."
+          ]
+        }
+      ]
+    }
+  }
+}

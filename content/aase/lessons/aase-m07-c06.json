@@ -1,0 +1,364 @@
+{
+  "id": "AASE-M07-C06",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "git-diff",
+    "effective-agents",
+    "owasp-agent-security"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "從規格、Diff 與實際工具結果交叉核對 Agent 的工作，為每次接受或退回留下可追溯理由。",
+      "objectives": [
+        "分清工作區、暫存區與未追蹤檔案的審查。",
+        "核對工具命令、工作目錄、結果及未執行事項。",
+        "依規格記錄接受、修正或延後的決策。"
+      ],
+      "readingGuide": {
+        "goal": "分清工作區、暫存區與未追蹤檔案的審查。",
+        "startingPoint": "自己的 Git 專案、三次切片規格、Agent 回報與實際工具紀錄。",
+        "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
+        "output": "review-notes.md 能將至少一條要求連到具體 Diff 與實測結果。"
+      },
+      "sections": [
+        {
+          "id": "review",
+          "heading": "審查的是修改與行為",
+          "paragraphs": [
+            "Agent 摘要幫助定位重點，實際 Diff 才顯示檔案如何改變。從本次 spec 的驗收情境出發，逐項查哪些修改實作它、哪些測試驗證它，以及是否加入本次未授權的服務或檔案。",
+            "不要只數新增行數。幾行改動也可能移除匯出重新驗證；大量格式變更則可能遮住一個關鍵條件，讓審查更難。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像核對估價單、施工差異與試運轉",
+          "paragraphs": [
+            "估價單說明約定工作，施工紀錄指出實際改動，試運轉結果顯示能否達成要求。三者任一缺少，都無法單憑承包者的完成說明接受成果。",
+            "軟體審查也要連起要求、變更與證據。決策紀錄要寫出為何接受或退回，讓下一個人能重現判斷，而非只留下「看起來可以」。"
+          ]
+        },
+        {
+          "id": "diff",
+          "heading": "依 Git 的資料位置查看差異",
+          "paragraphs": [
+            "git diff 預設看工作區相對暫存區的差異；git diff --cached 看已暫存、準備提交的差異。兩者都可能需要看，否則只檢查其中一邊會漏掉內容。",
+            "git status --short 另指出未追蹤檔案。新建 tests/ 若還未加入追蹤，不能期待普通 diff 自動列出完整內容；先打開它們檢查，再決定是否逐路徑暫存。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "唯讀審查命令",
+              "paragraphs": [
+                "在自己的 Git 專案執行；尚未建立 Git 時先人工比對副本，不假裝命令已成功。"
+              ],
+              "code": "git status --short\ngit diff --stat\ngit diff -- app.py rules.py tests/\ngit diff --cached -- app.py rules.py tests/"
+            }
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "工具紀錄需要足以定位執行",
+          "paragraphs": [
+            "記錄命令、工作目錄、退出結果及有用輸出。測試全綠仍需確認跑的是哪個階段；在 slices/01-form 跑過測試，不能作為 reference 匯出已驗證的證據。",
+            "工具可能因權限或環境被拒絕，也可能命令成功卻只跑到無關測試。把實際執行與 Agent 推論分欄；對未執行、失敗、通過及仍待驗的狀態保持原意。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜審查的三種依據",
+              "description": "三張卡片是交叉核對的材料，並非自動通過程序。",
+              "items": [
+                {
+                  "title": "規格",
+                  "body": "驗收情境、範圍與不做清單。"
+                },
+                {
+                  "title": "變更",
+                  "body": "追蹤及未追蹤檔案、Diff 與依賴。"
+                },
+                {
+                  "title": "證據",
+                  "body": "實際命令、結果、操作與限制。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "decision",
+          "heading": "遇到超出範圍的修改如何處理",
+          "paragraphs": [
+            "若 Agent 加入外部 API，先查本次是否授權；本課沒有這項需求。要求移除本次新增內容，同時保留其他人的既有修改，不用整個目錄還原來省略審查。",
+            "有些變更是合理的實作細節，有些則改了需求。前者在既定範圍核對後接受，後者由負責人更新規格或延後。不要讓一次 Diff 審查默默改變課程的單人合成資料邊界。"
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "留下簡短但足夠的決策紀錄",
+          "paragraphs": [
+            "每次切片保留驗收情境、修改路徑、命令與結果、差距及決定。不要把完整私人對話、憑證或真實資料複製進公開紀錄；保留能支持判斷的必要資訊即可。",
+            "下一篇會利用這些紀錄縮小錯誤範圍，並在保留其他工作的前提下修復或復原。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "審查紀錄欄位",
+              "paragraphs": [
+                "放入自己的 review-notes.md，依實際結果填寫。"
+              ],
+              "code": "切片與驗收情境：\n修改與新增檔案：\n審查的 Diff 範圍：\n命令／工作目錄／退出結果：\n操作結果：\n發現差距與未執行事項：\n接受／要求修正／延後及理由："
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "自己的 Git 專案、三次切片規格、Agent 回報與實際工具紀錄。",
+        "steps": [
+          "分別查看工作區、暫存區與未追蹤檔案，列出本次修改範圍。",
+          "挑一條匯出驗收情境，對照程式改動與實際測試。",
+          "寫下接受或退回的理由；對超範圍變更另列決策，不覆蓋無關工作。"
+        ],
+        "expected": "review-notes.md 能將至少一條要求連到具體 Diff 與實測結果。",
+        "check": "不把 Agent 摘要當執行證據；能說明兩種 diff 與未追蹤檔案的差別。",
+        "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
+      }
+    },
+    "en": {
+      "summary": "Cross-check Agent work against specifications, diffs and actual tool outcomes, retaining traceable reasons to accept or return each change.",
+      "objectives": [
+        "Review working-tree, staged and untracked files separately.",
+        "Check tool commands, working directories, results and unexecuted work.",
+        "Record acceptance, correction or deferral against the specification."
+      ],
+      "readingGuide": {
+        "goal": "Review working-tree, staged and untracked files separately.",
+        "startingPoint": "Your Git project, specifications for the three slices, Agent reports and actual tool records.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "review-notes.md links at least one requirement to a specific diff and executed result."
+      },
+      "sections": [
+        {
+          "id": "review",
+          "heading": "Review Changes and Behavior",
+          "paragraphs": [
+            "An Agent summary helps locate work; the actual diff shows what changed. Start with this task’s acceptance scenarios and identify implementing changes, verifying tests and any service/file outside the authorized scope.",
+            "Do not judge by added line count. A few lines can remove export revalidation, while large formatting changes can obscure one crucial condition and make review harder."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Compare the Work Order, Changes and Trial Run",
+          "paragraphs": [
+            "A work order describes the agreement, construction records show actual changes, and a trial run shows whether requirements are met. If any is absent, a contractor’s completion report alone cannot support acceptance.",
+            "Software review also connects requirements, changes and evidence. Record why you accept or return the work so the next person can reproduce the judgment rather than relying on “looks fine.”"
+          ]
+        },
+        {
+          "id": "diff",
+          "heading": "Inspect the Different Locations in Git",
+          "paragraphs": [
+            "By default, git diff compares the working tree with the staging area. git diff --cached shows staged changes prepared for commit. Review both where relevant; inspecting only one can miss content.",
+            "git status --short also identifies untracked files. Ordinary diff does not automatically show the full content of newly created untracked tests/. Open those files, inspect them, then decide which paths to stage."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Read-only Review Commands",
+              "paragraphs": [
+                "Run in your own Git project. Before Git is initialized, compare copies manually rather than claiming these commands succeeded."
+              ],
+              "code": "git status --short\ngit diff --stat\ngit diff -- app.py rules.py tests/\ngit diff --cached -- app.py rules.py tests/"
+            }
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "Tool Records Must Identify the Execution",
+          "paragraphs": [
+            "Record command, working directory, exit outcome and useful output. Even green tests need a stage check: tests run in slices/01-form cannot demonstrate verified reference export.",
+            "Tools can be denied by permissions or environment; a successful command can also run irrelevant tests. Keep actual execution separate from Agent inference, preserving the meanings of unexecuted, failed, passed and still pending."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Three Sources for Review",
+              "description": "These cards are cross-checking materials, not an automatic acceptance procedure.",
+              "items": [
+                {
+                  "title": "Specification",
+                  "body": "Acceptance scenarios, scope and exclusions."
+                },
+                {
+                  "title": "Changes",
+                  "body": "Tracked and untracked files, diffs and dependencies."
+                },
+                {
+                  "title": "Evidence",
+                  "body": "Actual commands, results, interactions and limitations."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "decision",
+          "heading": "Handle Changes Beyond the Agreed Scope",
+          "paragraphs": [
+            "If the Agent adds an external API, check authorization first; this course needs none. Remove only the newly introduced scope while preserving other people’s existing edits. Do not restore an entire directory to avoid reviewing it.",
+            "Some changes are reasonable implementation details; others alter requirements. Review and accept the former within existing scope. The responsible person must update the specification or defer the latter. One diff review must not silently change the course’s single-user synthetic-data boundary."
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "Keep a Short, Sufficient Decision Record",
+          "paragraphs": [
+            "For each slice, retain acceptance scenarios, changed paths, commands/results, gaps and decisions. Keep only information supporting the judgment; copy no complete private conversations, credentials or real data into public records.",
+            "The next lesson uses these records to narrow faults and repair or restore changes while preserving other work."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Review Record Fields",
+              "paragraphs": [
+                "Fill your own review-notes.md from actual results. The unchanged Traditional Chinese template records slice/scenario, changed/new files, diff scope, command/directory/exit, observed behavior, gaps/unexecuted work and acceptance/correction/deferral with reasons."
+              ],
+              "code": "切片與驗收情境：\n修改與新增檔案：\n審查的 Diff 範圍：\n命令／工作目錄／退出結果：\n操作結果：\n發現差距與未執行事項：\n接受／要求修正／延後及理由："
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Your Git project, specifications for the three slices, Agent reports and actual tool records.",
+        "steps": [
+          "Inspect working-tree, staged and untracked files separately and list this task’s changes.",
+          "Choose one export acceptance scenario and connect code changes to actual tests.",
+          "Record why you accept or return it; give out-of-scope changes a separate decision and preserve unrelated work."
+        ],
+        "expected": "review-notes.md links at least one requirement to a specific diff and executed result.",
+        "check": "Do not treat an Agent summary as execution evidence. Explain both diff views and untracked files.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M07-C06-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "git diff 沒輸出，能否認定完全沒修改？",
+          "options": [
+            "可以",
+            "不行，還需看暫存區與未追蹤檔案",
+            "可以，只要 Agent 說完成",
+            "不行，所以無法審查"
+          ],
+          "rationales": [
+            "預設比較範圍有限。",
+            "其他位置仍可能有變更。",
+            "摘要不改變 Git 範圍。",
+            "可組合多種檢查。"
+          ]
+        },
+        "en": {
+          "prompt": "No output from git diff: does that establish no changes anywhere?",
+          "options": [
+            "Yes.",
+            "No; inspect staged and untracked files too.",
+            "Yes, if the Agent says it finished.",
+            "No; review is therefore impossible."
+          ],
+          "rationales": [
+            "Its default comparison is limited.",
+            "Other locations may contain changes.",
+            "A summary does not change Git’s comparison scope.",
+            "Combine the relevant checks."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M07-C06-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "表單切片測試通過能否證明匯出正確？",
+          "options": [
+            "能，都是 Python",
+            "能，頁面能開",
+            "不能，需對應匯出情境的測試與操作",
+            "不能，所以測試沒用"
+          ],
+          "rationales": [
+            "語言相同不代表涵蓋範圍相同。",
+            "啟動不能證明下載內容。",
+            "證據必須涵蓋所主張的行為。",
+            "範圍清楚的測試仍有價值。"
+          ]
+        },
+        "en": {
+          "prompt": "Do passing form-slice tests establish correct export?",
+          "options": [
+            "Yes; both use Python.",
+            "Yes; the page opens.",
+            "No; tests and operations must cover export scenarios.",
+            "No; therefore tests are useless."
+          ],
+          "rationales": [
+            "The same language does not mean the same coverage.",
+            "Startup does not establish download contents.",
+            "Evidence must cover the claimed behavior.",
+            "Tests with clear scope remain useful."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M07-C06-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "發現未授權外部 API，合適的處理是？",
+          "options": [
+            "只從回報刪掉描述",
+            "整個專案強制還原",
+            "因為功能多就接受",
+            "界定本次新增範圍並修正，保留無關工作"
+          ],
+          "rationales": [
+            "程式行為仍存在。",
+            "可能損失其他工作。",
+            "超出授權與規格。",
+            "兼顧範圍與資料保全。"
+          ]
+        },
+        "en": {
+          "prompt": "What should you do about an unauthorized external API?",
+          "options": [
+            "Remove its description from the report only.",
+            "Force-restore the whole project.",
+            "Accept it because it adds features.",
+            "Identify and correct this task’s added scope while preserving unrelated work."
+          ],
+          "rationales": [
+            "The behavior would remain.",
+            "That can destroy other work.",
+            "It exceeds authorization and specification.",
+            "This respects scope and preserves work."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}

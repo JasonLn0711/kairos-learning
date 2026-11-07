@@ -1,4 +1,5 @@
 <script lang="ts">
+  import FootprintDiagram from './FootprintDiagram.svelte';
   import ReadableDiagramText from './ReadableDiagramText.svelte';
   import { reviewedSvgMarkup } from '$lib/reviewed-svg';
   import type { SourceBlock } from '$lib/concepts';
@@ -11,16 +12,16 @@
 </script>
 <figure class="spatial-diagram" data-reviewed-svg={block.src}>
   <figcaption><strong>{block.visual.caption}</strong><p>{block.visual.description}</p></figcaption>
-  <p class="reading-hint">{(block.src.startsWith('/images/ceh/m02-01-') || block.src.startsWith('/images/ceh/m02-02-') || block.src.startsWith('/images/ceh/m02-03-') || block.src.startsWith('/images/ceh/m02-04-') || block.src.startsWith('/images/ceh/m02-05-') || block.src.startsWith('/images/ceh/m02-06-')) ? (lang==='en'?'The largest diagram text is capped at body size. Narrower columns shrink the whole diagram; read the reflowing labels below or open the original SVG to zoom.':'圖中文字最大不超過內文；欄寬不足時整張圖等比縮小，可閱讀下方會換行的圖解文字，或開啟原圖放大。') : lang==='en'?'The whole diagram scales proportionally to this column. Small screens also shrink its text; open the original SVG to zoom, or read the explanation below.':'整張圖依欄位寬度等比縮放，不裁切。小螢幕的圖中文字也會變小，可開啟原圖放大，或閱讀下方會自動換行的文字解說。'}</p>
+  <p class="reading-hint">{(block.src.startsWith('/images/ceh/m02-01-') || block.src.startsWith('/images/ceh/m02-02-') || block.src.startsWith('/images/ceh/m02-03-') || block.src.startsWith('/images/ceh/m02-04-') || block.src.startsWith('/images/ceh/m02-05-') || block.src.startsWith('/images/ceh/m02-06-') || block.src.startsWith('/images/ceh/m02-08-') || block.src.startsWith('/images/ceh/m02-07-')) ? (lang==='en'?'The largest diagram text is capped at body size. Narrower columns shrink the whole diagram; read the reflowing labels below or open the original SVG to zoom.':'圖中文字最大不超過內文；欄寬不足時整張圖等比縮小，可閱讀下方會換行的圖解文字，或開啟原圖放大。') : lang==='en'?'The whole diagram scales proportionally to this column. Small screens also shrink its text; open the original SVG to zoom, or read the explanation below.':'整張圖依欄位寬度等比縮放，不裁切。小螢幕的圖中文字也會變小，可開啟原圖放大，或閱讀下方會自動換行的文字解說。'}</p>
   <div class="diagram-viewport">
-    <div class="diagram-canvas" class:compact-text={block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-04-") || block.src.startsWith("/images/ceh/m02-05-") || block.src.startsWith("/images/ceh/m02-06-")} class:body-sized={block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-") || block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-04-") || block.src.startsWith("/images/ceh/m02-05-") || block.src.startsWith("/images/ceh/m02-06-")}>
+    <div class="diagram-canvas" class:compact-text={block.src.startsWith("/images/ceh/m03-02-") || block.src.startsWith("/images/ceh/m03-03-") || block.src.startsWith("/images/ceh/m03-04-") || block.src.startsWith("/images/ceh/m03-01-") || block.src.startsWith("/images/ceh/m02-07-") || block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-04-") || block.src.startsWith("/images/ceh/m02-05-") || block.src.startsWith("/images/ceh/m02-06-") || block.src.startsWith("/images/ceh/m02-08-")} class:body-sized={block.src.startsWith("/images/ceh/m03-02-") || block.src.startsWith("/images/ceh/m03-03-") || block.src.startsWith("/images/ceh/m03-04-") || block.src.startsWith("/images/ceh/m03-01-") || block.src.startsWith("/images/ceh/m02-07-") || block.src.startsWith("/images/ceh/m02-01-") || block.src.startsWith("/images/ceh/m02-02-") || block.src.startsWith("/images/ceh/m02-03-") || block.src.startsWith("/images/ceh/m02-04-") || block.src.startsWith("/images/ceh/m02-05-") || block.src.startsWith("/images/ceh/m02-06-") || block.src.startsWith("/images/ceh/m02-08-")}>
       <!-- Generated only by scripts/m0903_svg.py: strict element/attribute allowlist,
            local unique IDs, no scripts, styles, links or external resources. -->
       {@html svg}
     </div>
   </div>
   <dl class="text-equivalent">{#each block.visual.items as item}<div><dt>{item.title}</dt><dd>{item.body}</dd></div>{/each}</dl>
-  <ReadableDiagramText src={block.src} {lang}/>
+  {#if block.src.startsWith("/images/ceh/m03-02-") || block.src.startsWith("/images/ceh/m03-03-") || block.src.startsWith("/images/ceh/m03-04-") || block.src.startsWith("/images/ceh/m03-01-") || block.src.startsWith("/images/ceh/m02-07-") || block.src.startsWith("/images/ceh/m02-08-")}<FootprintDiagram src={block.src} {lang}/>{:else}<ReadableDiagramText src={block.src} {lang}/>{/if}
   <p class="diagram-links"><a href={block.src}>{lang==='en'?'Open full-size SVG':'開啟原尺寸 SVG'}</a><a href={block.src} download>{block.downloadLabel}</a></p>
 </figure>
 <style>

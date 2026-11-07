@@ -1,0 +1,220 @@
+{
+  "id": "AASE-M08-C04",
+  "status": "published",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "streamlit-apptest-151",
+    "streamlit-session",
+    "pytest-usage"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "以 AppTest 重演缺漏、補正與輸入變更，檢查 Streamlit 元件和狀態；實際下載與鍵盤另外驗證。",
+      "objectives": [
+        "用 AppTest 建立並重跑 Streamlit 情境。",
+        "檢查錯誤、成功、保留輸入及下載元件狀態。",
+        "分清模擬測試與真實瀏覽器驗證範圍。"
+      ],
+      "readingGuide": {
+        "goal": "用 AppTest 建立並重跑 Streamlit 情境。",
+        "startingPoint": "自己的第三切片副本，含 app.py、rules.py、tests/ 及 Streamlit 1.51.0。",
+        "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
+        "output": "一份 AppTest 回歸腳本，加上分開記錄的真實瀏覽器驗證。"
+      },
+      "sections": [
+        {
+          "id": "interface",
+          "heading": "規則正確，還要確認畫面有接對",
+          "paragraphs": [
+            "rules.py 拒絕缺件，不代表 app.py 一定顯示正確提示。按鈕可能沒呼叫規則、成功訊息可能沒清除，或修改輸入後仍留下下載入口。介面測試把使用者操作與畫面結果連起來。",
+            "AppTest 模擬 Streamlit app，可設定 widget 值、執行程式並檢查顯示內容與 Session State。本課採固定 1.51.0；實際支援行為以該版本與本次執行結果為準。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像用操作腳本反覆走一條櫃臺流程",
+          "paragraphs": [
+            "操作腳本會指出先填哪個欄位、何時按檢查、應看到什麼。只檢查櫃臺存在，無法知道填錯時是否有人告知如何修正。",
+            "AppTest 幫你重複執行這條腳本，但它不是站在實際瀏覽器前的使用者；畫面排版、鍵盤焦點與下載位元組需要另外觀察。"
+          ]
+        },
+        {
+          "id": "rerun",
+          "heading": "輸入、重跑與觀察要連在一起",
+          "paragraphs": [
+            "建立 AppTest 後呼叫 run() 產生初始畫面；變更 widget 或按按鈕後，再明確 run()，才檢查該次結果。不要把上一個重跑留下的值當成本次操作已執行。",
+            "範例以穩定 key 找三個欄位；按鈕只有一個主要檢查動作，因此使用 at.button[0]。如果你的專案新增多個按鈕，先調整定位方式，不讓測試誤按另一個動作。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜三個連續的驗收狀態",
+              "description": "每一步都更新輸入並重跑，觀察當次結果。",
+              "items": [
+                {
+                  "title": "缺漏",
+                  "body": "只填兩欄，按檢查後有缺漏提示，無完整下載。"
+                },
+                {
+                  "title": "補正",
+                  "body": "補齊第三欄並檢查，出現成功與下載元件。"
+                },
+                {
+                  "title": "變更",
+                  "body": "清空第三欄並重跑，舊成功、下載與快照失效。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "example",
+          "heading": "完整的介面測試範例",
+          "paragraphs": [
+            "在自己的第三切片副本建立 tests/test_app_contract.py，與 app.py 及 rules.py 保持同一專案結構。Path 依測試檔位置尋找 app.py，避免依啟動 shell 的偶然位置猜測入口。",
+            "每階段都檢查不應出現的狀態；只有正向成功斷言，無法保護缺漏拒絕或過期結果失效。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "tests/test_app_contract.py",
+              "paragraphs": [
+                "使用已安裝 Streamlit 1.51.0 與 pytest 的環境執行。"
+              ],
+              "code": "from pathlib import Path\nfrom streamlit.testing.v1 import AppTest\n\n\ndef test_input_change_invalidates_report():\n    app = str(Path(__file__).resolve().parents[1] / \"app.py\")\n    at = AppTest.from_file(app).run()\n    assert not at.exception\n    at.text_input(key=\"application_id\").input(\"SYN-001\")\n    at.text_input(key=\"applicant_code\").input(\"DEMO-A\")\n    at.button[0].click().run()\n    assert \"缺少文件類型\" in at.error[0].value\n    assert at.text_input(key=\"application_id\").value == \"SYN-001\"\n    assert not at.success\n    assert not at.get(\"download_button\")\n    at.text_input(key=\"document_type\").input(\"合成申請表\").run()\n    at.button[0].click().run()\n    assert not at.exception\n    assert at.success\n    assert len(at.get(\"download_button\")) == 1\n    at.text_input(key=\"document_type\").input(\"\").run()\n    assert not at.exception\n    assert not at.success\n    assert not at.get(\"download_button\")\n    assert \"checked\" not in at.session_state"
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "從元件驗證走到真實瀏覽器",
+          "paragraphs": [
+            "在專案根目錄執行 python -m pytest -q tests/test_app_contract.py，再啟動 app.py，用鍵盤完成相同任務。下載 JSON 後讀取檔名、中文、status、scope 與允許欄位。",
+            "AppTest 中下載元件出現只是狀態證據，未證明檔案真的送到裝置。真實瀏覽器也不會替代人是否理解提示的任務觀察；三者要各自留下結果。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜此工具的驗證範圍",
+              "headers": [
+                "項目",
+                "AppTest",
+                "另需驗證"
+              ],
+              "rows": [
+                [
+                  "錯誤／成功與 Session State",
+                  "可依腳本斷言",
+                  "規格本身是否正確"
+                ],
+                [
+                  "下載元件可見性",
+                  "可核對是否出現",
+                  "真實檔案位元組與檔名"
+                ],
+                [
+                  "鍵盤與手機排版",
+                  "不能由本測試推定",
+                  "真實瀏覽器與尺寸檢查"
+                ],
+                [
+                  "使用者看懂提示",
+                  "不能由元件存在推定",
+                  "任務觀察"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "先看失敗原因，再決定修哪裡",
+          "paragraphs": [
+            "若 AppTest 出現例外，先檢查路徑、依賴與程式輸出；若只是定位不到元件，確認目前階段真的有該元件。不要把第一切片拿來跑第三切片下載情境，再把差距當作錯誤修掉。",
+            "測試腳本的行為與自己的規格不同時，先確認需求差異。不得為了讓測試變綠，把未確認的欄位、登入或外部服務偷偷加入作品。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "自己的第三切片副本，含 app.py、rules.py、tests/ 及 Streamlit 1.51.0。",
+        "steps": [
+          "加入完整測試，在專案根目錄執行並保存結果。",
+          "逐步指出缺漏、補正及變更各由哪些斷言保護。",
+          "啟動真實瀏覽器重演，另外讀取下載 JSON，記錄鍵盤與下載結果。"
+        ],
+        "expected": "一份 AppTest 回歸腳本，加上分開記錄的真實瀏覽器驗證。",
+        "check": "每次操作有明確重跑；過期結果與下載消失受到檢查，不把模擬元件當真實下載證據。",
+        "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M08-C04-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "AppTest 變更 widget 後，應如何檢查新結果？",
+          "options": [
+            "只看舊值",
+            "明確 run() 後檢查當次狀態",
+            "直接推定成功",
+            "改寫 spec"
+          ],
+          "rationales": [
+            "可能尚未執行新情境。",
+            "確保觀察對應重跑。",
+            "缺少證據。",
+            "不是操作測試步驟。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C04-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "哪項需要另做真實瀏覽器驗證？",
+          "options": [
+            "模擬中的 error 文字",
+            "Session State 的 checked",
+            "下載檔案實際位元組與鍵盤焦點",
+            "模擬中的 success 元件"
+          ],
+          "rationales": [
+            "可由 AppTest 核對。",
+            "可在模擬中檢查。",
+            "超出本 AppTest 腳本的證明範圍。",
+            "可由 AppTest 核對。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C04-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "清空第三欄後應檢查什麼？",
+          "options": [
+            "仍能下載舊報告",
+            "只檢查頁面標題",
+            "成功文字存在就好",
+            "舊成功、下載與 checked 都失效"
+          ],
+          "rationales": [
+            "違反目前輸入契約。",
+            "未涵蓋狀態轉換。",
+            "此時不應成功。",
+            "完整覆蓋本課失效要求。"
+          ]
+        }
+      }
+    }
+  ]
+}
