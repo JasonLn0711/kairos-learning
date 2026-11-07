@@ -521,3 +521,11 @@ M02-05 revision 4 起使用四張受限 `cards`／`flow`，節點數固定為 9�
 `ToolEvidenceDiagram.svelte` 僅在本課渲染四組 cards/flow：analogy flow 5、sandbox cards 2、connection cards 6、verification cards 5；`aase.ts` 檢查位置、種類、節點數與雙語形狀。圖 1 的主管任務與五步流程有五個向下箭頭；圖 2 是平行權限範圍；圖 3 是課程索引；圖 4 保留每列獨立執行狀態，均不誤畫成完成流程。
 
 八個 SVG 由 `python3 scripts/aase_m0206_svg.py` 產生，`--check` 核對 bytes；固定受審核元素、跳脫文字與大小上限。HTML 與搜尋同源，手機依容器寬度重排，沒有新評分或學習狀態。保留 MCP 協定示例，新增簡化工具請求／回覆與原稿合成日誌；一題選擇題及一題 openChecks 沿原生參考答案展開。單元檢查 `tests/aase-m0206-replacement.test.ts`，瀏覽器用 `playwright.aase-m0206.config.ts`，正式站設定 `AASE_BASE_URL`。來源對照與驗收見 [M02-06 回執](releases/2026-11-07-aase-m0206-replacement.md)。
+
+## M04-08：LDAP 完整抽換與 Kerberos 入門（v1.1.0）
+
+正本位於 [本次來源目錄](sources/m04-08/replacement-2026-11-07/README.md)，完整中英稿經 `scripts/m04_08_content.py` 轉為既有 sourceBody。十張參考圖共用 `diagram-models.json`，`LdapDiagram.svelte` 只接受固定 `m04-08-(directory|parameters|scope|result|paging|central|entry|search|sso|tickets)-(zh|en)-v1-1-0.svg` 路徑。節點數依序為 4／4／6／7／3／4／4／4／4／3；僅 paging／search／tickets 使用 flow，其餘 cards。
+
+directory／central／sso 是一個根與三個平行子節點；scope 再將 Wang／Li 歸在第三個子節點下，綠框只代表 one-level 候選，圖說明列 base／subtree 與 Filter／權限界線。parameters 是 2×2 並列設定。entry／result 使用語意 dl 資料列；paging／search 是有順序箭頭的流程。tickets 的每項 title 固定拆為 `Client → Peer` 兩端，body 為階段／請求／回覆或授權結果三行；最後一項不畫回覆箭頭。模型驗證拒絕錯誤節點數及票證交換形狀，全部字串由 Svelte 跳脫，SVG 沿既有 sanitizer 匯出。
+
+保持舊公開網址、原發布日與八個既有 section 主題錨點。新增 directory-overview、directory-names、ldap-introduction、kerberos-introduction；補充內部章節採 h3。三組參考答案用原生 details，qa=[]，沒有假測驗控制。`verify-m04-08-source.py --check` 驗證 378 個原始段落與附件雜湊；`playwright.m04-08.config.ts` 核對兩語全文、四尺寸、200% 文字、無 JavaScript、鍵盤及全部下載。正式站以 M04_08_BASE_URL 指定。[發布與驗收回執](releases/2026-11-07-m04-08-replacement.md)分層記錄證據。
