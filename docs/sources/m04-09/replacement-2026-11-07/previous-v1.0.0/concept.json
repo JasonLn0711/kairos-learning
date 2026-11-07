@@ -1,0 +1,2009 @@
+{
+  "id": "CEH26-M04-C09",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-07",
+  "status": "published",
+  "publishedOn": "2026-11-07",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "分開判讀七組協定的服務回應、身分驗證與實際權限，讓列舉結論符合證據。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "這一課看起來有很多網路協定，但其實只要學會一個核心觀念，其他內容就很容易串起來："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「一台設備願意回答你的問題，不代表你能登入它，更不代表你能控制它。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們要學習的不是單純記住連接埠，而是理解：每一種網路服務負責什麼工作、會告訴我們什麼資訊，以及這些資訊能證明到什麼程度。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先把整個網路想像成一棟大型辦公大樓"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NTP：大樓的標準時鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "負責讓所有人的時間一致。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPsec／IKE：大樓的安全通道"
+        },
+        {
+          "kind": "paragraph",
+          "text": "協商身分和加密方式，建立受保護連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VoIP／SIP：電話總機"
+        },
+        {
+          "kind": "paragraph",
+          "text": "負責接通電話、轉接及掛斷。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6：辦公室的地址系統"
+        },
+        {
+          "kind": "paragraph",
+          "text": "讓設備識別鄰居及尋找路由器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP：跨城市的道路資訊"
+        },
+        {
+          "kind": "paragraph",
+          "text": "告訴網路有哪些目的地可以到達。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Telnet／TFTP：舊式管理室與文件櫃"
+        },
+        {
+          "kind": "paragraph",
+          "text": "提供遠端終端機或簡單檔案傳輸。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些都是網路的一部分，但負責的工作不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，你去問大樓的時鐘現在幾點，得到回答後，不能因此認為你已經獲得大樓的門禁卡。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 Enumeration（列舉）最重要的判讀原則。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、學會判斷證據的五個層次"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你到公司的資訊機房，想了解一台伺服器。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-ladder-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "網路服務的證據判讀階梯",
+            "description": "由上到下比較證據強度；箭頭不是通用登入流程，也不表示權限會自動增加。",
+            "items": [
+              {
+                "title": "1. 發現服務",
+                "body": "這裡好像有一個入口"
+              },
+              {
+                "title": "2. 取得回應",
+                "body": "敲門後有人回答"
+              },
+              {
+                "title": "3. 取得資訊",
+                "body": "對方告訴你部分服務資料"
+              },
+              {
+                "title": "4. 驗證身分",
+                "body": "對方確認你是誰"
+              },
+              {
+                "title": "5. 取得並驗證權限",
+                "body": "確認你能執行哪些操作"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是理解證據強度的概念模型，不代表所有協定都必須依這個順序進行，或每個服務都有登入機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請特別記住："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "有回應 ≠ 身分驗證成功。",
+            "身分驗證成功 ≠ 可以使用所有功能。",
+            "能讀到資料 ≠ 可以修改資料。",
+            "沒有看到某項資料 ≠ 那項資料不存在。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "接下來，用這個框架逐一理解七組協定。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、NTP：為什麼網路上的電腦需要對時？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NTP（Network Time Protocol）是網路時間協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把 NTP 伺服器想像成學校的標準鐘。所有教室都要照同一個時間上課，否則鐘聲響了，有些教室卻認為還沒到時間。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "電腦為什麼也需要對時？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司的三台電腦記錄同一個事件："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "設備",
+            "紀錄時間"
+          ],
+          "rows": [
+            [
+              "防火牆",
+              "10:00:02"
+            ],
+            [
+              "網頁伺服器",
+              "09:57:12"
+            ],
+            [
+              "資料庫",
+              "10:03:30"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果時間不一致，資安人員調查入侵事件時，就可能誤判事件先後順序。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以 NTP 不只是為了讓電腦右上角的時鐘正確，還關係到日誌分析、驗證機制與系統協作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見連接埠：UDP 123。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-sub-1",
+          "text": "那麼 Stratum 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stratum 是時間同步的階層，可以理解成「這台時鐘的時間是從哪一層傳下來的」。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-stratum-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "NTP：時間同步從哪一層傳下來？",
+            "description": "向下箭頭表示本例的時間來源關係；Stratum 0 是參考時鐘，不是一般 NTP 伺服器。",
+            "items": [
+              {
+                "title": "Stratum 0",
+                "body": "原子鐘、GNSS 等參考時鐘"
+              },
+              {
+                "title": "Stratum 1",
+                "body": "直接連接參考時鐘的 NTP 伺服器"
+              },
+              {
+                "title": "Stratum 2",
+                "body": "向上一層伺服器同步"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "參考時鐘可以服務多台第一層伺服器，往下也可以配置多個上游候選與同層對等關係。圖中的 Stratum 3、4 延伸這個概念；每台設備依實際選定的同步來源決定自身階層，不是每條設定連線都會同時成為有效上游。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-ntp-network-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "NTP 多層同步：同層設備彼此平行",
+            "description": "框線分組表示 Stratum 1–4；向下箭頭表示候選時間來源傳遞，同層 ↔ 表示可配置的對等關係。上游可多選，實際同步來源由選擇程序決定；圖中不保證準確性、完整備援或管理權限。",
+            "items": [
+              {
+                "title": "Stratum 0",
+                "body": "原子鐘／GNSS 參考時鐘"
+              },
+              {
+                "title": "S1-A",
+                "body": "直接接參考時鐘；同層對等 S1-B"
+              },
+              {
+                "title": "S1-B",
+                "body": "直接接參考時鐘；同層對等 S1-A"
+              },
+              {
+                "title": "S2-A",
+                "body": "上游 S1-A；同層對等 S2-B"
+              },
+              {
+                "title": "S2-B",
+                "body": "上游 S1-B；同層對等 S2-A"
+              },
+              {
+                "title": "S3-A",
+                "body": "上游候選 S2-A／S2-B；同層對等 S3-B"
+              },
+              {
+                "title": "S3-B",
+                "body": "上游候選 S2-A／S2-B；同層對等 S3-A"
+              },
+              {
+                "title": "S3-C",
+                "body": "上游候選 S2-A／S2-B；同層對等 S3-D"
+              },
+              {
+                "title": "S3-D",
+                "body": "上游候選 S2-A／S2-B；同層對等 S3-C"
+              },
+              {
+                "title": "S4-A",
+                "body": "共用鏈路來源 S3-A / S3-B"
+              },
+              {
+                "title": "S4-B",
+                "body": "共用鏈路來源 S3-A / S3-B"
+              },
+              {
+                "title": "S4-C",
+                "body": "共用鏈路來源 S3-A / S3-B"
+              },
+              {
+                "title": "S4-D",
+                "body": "共用鏈路來源 S3-C / S3-D"
+              },
+              {
+                "title": "S4-E",
+                "body": "共用鏈路來源 S3-C / S3-D"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你發現某台 NTP 伺服器回答「Stratum 2」，代表它宣告自己位於第二層同步階層。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這不表示它一定準確、安全，或者你已經知道它所有的上游伺服器。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對 CEH 而言，還有一個重要區別：正常取得時間與取得管理資訊是不同的服務能力。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器可能願意告訴你現在幾點，卻不願意告訴你它的版本、設定或其他連線資訊。這是合理的安全設計。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 5905](https://www.rfc-editor.org/rfc/rfc5905.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、IPsec／IKE：VPN 是怎麼建立安全通道的？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你在家工作，想連進公司的內部網路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "公司不會因為有人發出連線要求，就直接允許對方進入內網。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VPN 可以使用 IPsec 來保護資料，而 IKE 負責建立保護所需的協商與驗證。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-ike-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "家裡電腦 → VPN 閘道 → 公司內網",
+            "description": "這條路徑是角色示意。下列三項依序說明初始協商、身分驗證及可用性檢查；它們不是 IKEv1 的階段，也不是三個固定 IKEv2 交換。",
+            "items": [
+              {
+                "title": "IKE_SA_INIT：談好保護方式",
+                "body": "例如雙方協商加密演算法、交換建立金鑰所需的材料。"
+              },
+              {
+                "title": "IKE_AUTH：驗證雙方身分",
+                "body": "使用憑證或其他配置的驗證方式，確認連線對象；通常也協商第一組 CHILD_SA。"
+              },
+              {
+                "title": "確認可用的資料通道",
+                "body": "還要有適當的 IPsec 資料安全關聯與路由、存取政策，才可能真正使用內部資源。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "圖中採 IKEv2。IKE_SA_INIT 與 IKE_AUTH 是訊息交換名稱，不是 IKEv1 的 Phase 1／Phase 2。第一組 CHILD_SA 通常在 IKE_AUTH 中協商；「確認資料通道可用」是後續驗證工作，不是固定另有第三種交換。安全關聯（SA）是雙方約定的保護參數與狀態；還要核對路由及存取政策。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡最容易犯的錯誤是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "我收到 IKE_SA_INIT 回應了，所以我成功登入公司 VPN！"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不對。這只能證明對方回應了該次初始協商，並不能證明身分驗證成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且，就算成功建立 VPN，也可能只被允許存取公司的一小部分系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見的相關編號："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "編號",
+            "用途"
+          ],
+          "rows": [
+            [
+              "UDP 500",
+              "IKE 協商"
+            ],
+            [
+              "UDP 4500",
+              "常見的 NAT 穿越、封裝傳輸"
+            ],
+            [
+              "IP Protocol 50",
+              "ESP，保護 IPsec 資料"
+            ],
+            [
+              "IP Protocol 51",
+              "AH，提供封包完整性等保護"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意：IP Protocol 50、51 不是 TCP 或 UDP 的 Port 50、51。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是網路基礎知識中特別值得分清楚的地方。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 7296](https://www.rfc-editor.org/rfc/rfc7296.html) · [RFC 4301](https://www.rfc-editor.org/rfc/rfc4301.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、VoIP／SIP：為什麼電話加密了，聲音還可能沒加密？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VoIP 就是利用 IP 網路通話。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，企業內部的網路電話、客服中心、電話總機，都可能使用 VoIP 技術。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡要學會分辨兩件事："
+        },
+        {
+          "kind": "paragraph",
+          "text": "SIP 負責建立通話，RTP 通常負責傳送聲音。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你要打電話給同事。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一步，系統得先找到對方、讓對方電話響起、確認接通。這是 SIP 主要負責的工作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二步，接通之後，你說話的聲音才需要被持續傳送。這通常是 RTP 的工作。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-sip-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "SIP 與 RTP：兩條不同的工作線",
+            "description": "每列的 ↔ 表示通話端之間該類資料的雙向交換，不表示 SIP 訊令與 RTP 語音必走相同路徑；兩列彼此平行。",
+            "items": [
+              {
+                "title": "SIP：通話控制 ↔",
+                "body": "訊令：撥號、響鈴、接通、掛斷。TLS 可保護該段 SIP 訊令。"
+              },
+              {
+                "title": "RTP：傳輸媒體 ↔",
+                "body": "聲音：語音封包持續傳送。媒體須另外確認 SRTP 等保護及金鑰協商。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 SIP 使用 TLS 加密，就像你把「電話接線指令」放進保密信封。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你真正說話的聲音，是另外一條資料流程。如果媒體只用一般 RTP，而沒有適當保護，聲音不一定是加密的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用 SRTP，才是常見的媒體保護方式之一；還要確認金鑰協商及實際連線都正確。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見連接埠是 SIP 的 UDP／TCP 5060，以及經常用於 SIP over TLS 的 TCP 5061，但不能光看 Port 5061 就斷言連線受到正確保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 CEH 列舉時： 如果 SIP 服務願意回答支援哪些功能，這只是取得電話服務的能力資訊，並不表示取得分機帳號權限，也不代表可以打電話。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3261](https://www.rfc-editor.org/rfc/rfc3261.html) · [RFC 3550](https://www.rfc-editor.org/rfc/rfc3550.html) · [RFC 3711](https://www.rfc-editor.org/rfc/rfc3711.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、IPv6：為什麼查到兩台鄰居，不等於網路只有兩台設備？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 是新的 IP 位址架構，位址長度為 128 bits。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能在電腦中看到類似："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`fe80::1234:abcd:5678:9abc`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 IPv6 位址的一種形式。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-sub-1",
+          "text": "Neighbor Discovery 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你搬進新社區，想知道附近有誰、路口怎麼走。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 中的 Neighbor Discovery（ND，鄰居探索）負責處理類似問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "NS：詢問某個 IPv6 位址對應哪個鄰居。",
+            "NA：回應或公告鄰居資訊。",
+            "RS：詢問有哪些路由器。",
+            "RA：路由器公告網路設定相關資訊。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些功能使用 ICMPv6 訊息，而不是 IPv6 專用的 TCP/UDP 連接埠。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-sub-2",
+          "text": "為什麼鄰居清單不完整？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你的電腦目前有這樣的鄰居快取："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "本機鄰居快取",
+            "目前紀錄"
+          ],
+          "rows": [
+            [
+              "紀錄 1",
+              "路由器的 IPv6 位址"
+            ],
+            [
+              "紀錄 2",
+              "某個鄰近設備的 IPv6 位址"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以說：「目前快取有兩筆紀錄。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能說：「這個網路只有兩台設備。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為其他設備可能尚未與你通訊，紀錄可能已過期，部分設備不在同一條鏈路，而且同一台設備可以有多個 IPv6 位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "還有一個重要的資安觀念：IPv6 防火牆不能把全部 ICMPv6 都封鎖。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為某些 ICMPv6 訊息是正常連線不可缺少的，包括鄰居探索和路徑 MTU 探索。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 4291](https://www.rfc-editor.org/rfc/rfc4291.html) · [RFC 4861](https://www.rfc-editor.org/rfc/rfc4861.html) · [RFC 4890](https://www.rfc-editor.org/rfc/rfc4890.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、BGP：為什麼網際網路知道資料該往哪個方向走？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你在台灣，想把包裹送到美國。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "台灣的物流公司不必知道美國每一條巷子的詳細地址，但要知道包裹應該交給哪個國際物流網路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP 就像不同大型網路之間交換的「路線資訊」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在網際網路中，許多網路由不同單位管理。這些在共同路由政策下管理的網路，可以用 AS（Autonomous System，自治系統）的概念來理解。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "每個 AS 有自己的 ASN（自治系統編號）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP 用來交換「哪些 IP 位址前綴可以經由哪些網路到達」的路由資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見連接埠：TCP 179。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-bgp-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "跨 AS 的兩條候選路徑",
+            "description": "BGP 關係：AS64500 ↔ AS64497、AS64500 ↔ AS64498、AS64497 ↔ AS64496、AS64497 ↔ AS64499、AS64498 ↔ AS64499。本例選定 AS64500 → AS64497 → AS64496。實線只表示對等關係；選定路徑另以文字與綠框標示。",
+            "items": [
+              {
+                "title": "AS64500",
+                "body": "來源主機所在；雙上游 AS"
+              },
+              {
+                "title": "AS64497",
+                "body": "轉送 AS；本例選定路徑"
+              },
+              {
+                "title": "AS64496",
+                "body": "末端 AS；目的地主機所在"
+              },
+              {
+                "title": "AS64498",
+                "body": "另一個轉送 AS"
+              },
+              {
+                "title": "AS64499",
+                "body": "轉送 AS；連接 AS64498 與 AS64497"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "圖中保留雙上游、轉送網路與末端網路的關係，以文件示例 ASN 取代參考圖的 AS 100／200／400／500／600。標出的路徑是本例選定路徑；實際 BGP 選路受政策與屬性影響，不能光數線段就宣稱一定是最佳路徑。線條表示 BGP 對等關係，並非纜線位置或完整實體拓樸。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-sub-1",
+          "text": "那 AS_PATH 是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以先把它理解成一份路由資訊中記載的 AS 路徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如某個觀測點看到："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`AS 64500 → AS 64497 → AS 64496`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是使用文件示例範圍編號的假想路由。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它不能直接告訴你資料包實際經過哪幾台實體路由器，也無法完整重建公司的內部網路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能透過公開的 Looking Glass 查到這些路由資訊，但這只代表你透過一個特定觀測點讀到資料，不代表你有權限去更改路由器設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP 的安全還會涉及前綴過濾、鄰居控制及 RPKI。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPKI 可以幫助檢查某個來源 AS 是否被授權宣告特定 IP 前綴，但不能單靠它證明整條 AS_PATH 都正確。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 4271](https://www.rfc-editor.org/rfc/rfc4271.html) · [RFC 5398](https://www.rfc-editor.org/rfc/rfc5398.html) · [RFC 6811](https://www.rfc-editor.org/rfc/rfc6811.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、Telnet 與 TFTP：為什麼舊協定需要特別留意？"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-legacy-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "兩種舊協定，各有不同的權限界線",
+            "description": "兩張卡片比較不同服務；上下排列不代表先後步驟。",
+            "items": [
+              {
+                "title": "Telnet：舊式遠端操作電腦",
+                "body": "想像你在自己的電腦上，遠端打開另外一台電腦的文字終端機。\n\nTelnet 常見 TCP 23，傳統 Telnet 不提供加密保護，因此帳號密碼和指令可能在傳輸過程中被觀察到。\n\n現代遠端管理通常應優先使用 SSH。\n\n但你看到 Telnet 登入畫面，只代表看到了登入入口，還不代表登入成功。"
+              },
+              {
+                "title": "TFTP：簡易檔案傳輸",
+                "body": "想像機房有個簡單文件櫃，設備可以依事先知道的檔名，請求下載或上傳檔案。\n\nTFTP 常見 UDP 69 作為初始請求入口，之後的資料交換使用另外選定的 UDP 傳輸識別埠。\n\n基本 TFTP 沒有一般使用者登入驗證，也沒有標準目錄瀏覽功能。但仍可能受到檔案權限、來源限制與伺服器設定保護。\n\n這裡要記住：TFTP 不需要輸入帳號密碼，不表示可以拿到所有檔案，更不表示能任意改寫伺服器上的內容。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 854](https://www.rfc-editor.org/rfc/rfc854.html) · [RFC 1350](https://www.rfc-editor.org/rfc/rfc1350.html) · [RFC 4251](https://www.rfc-editor.org/rfc/rfc4251.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、一張表統整七種網路列舉"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "協定",
+            "常見埠或協定編號",
+            "你可能取得什麼資訊",
+            "不能直接推論什麼"
+          ],
+          "rows": [
+            [
+              "NTP",
+              "UDP 123",
+              "時間、同步層級",
+              "取得所有管理資訊"
+            ],
+            [
+              "IPsec／IKE",
+              "UDP 500／4500",
+              "協商相關資訊",
+              "VPN 登入成功"
+            ],
+            [
+              "SIP／VoIP",
+              "UDP／TCP 5060；TCP 5061",
+              "電話服務能力",
+              "可撥電話、聲音已加密"
+            ],
+            [
+              "IPv6／ND",
+              "ICMPv6",
+              "鄰居、路由器線索",
+              "完整設備數量"
+            ],
+            [
+              "BGP",
+              "TCP 179",
+              "前綴、路由路徑",
+              "可修改路由器"
+            ],
+            [
+              "Telnet",
+              "TCP 23",
+              "登入提示、服務線索",
+              "已取得終端機權限"
+            ],
+            [
+              "TFTP",
+              "UDP 69 起始",
+              "特定檔案傳輸結果",
+              "可讀寫所有檔案"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些都是常見值，不是用連接埠就能百分之百確認協定。埠號可以更改，實際服務必須靠協定內容及設定來確認。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "十、從 CEH 角度，怎麼把這一課應用在資安查核？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在 CEH（Certified Ethical Hacker）的學習路線裡，Enumeration 是理解目標服務所提供資訊的重要階段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但真正專業的資安分析，不能把「工具有輸出」就當成「找到漏洞」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如在取得授權的測試環境中，你看到："
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-case-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "合成查核紀錄：VPN 端點回覆 IKE_SA_INIT",
+            "description": "本例是教學用合成觀察，沒有連線到真實 VPN，也不表示已找到漏洞。",
+            "items": [
+              {
+                "title": "可以確認",
+                "body": "該端點對這次初始協商有回應。"
+              },
+              {
+                "title": "不能確認",
+                "body": "測試者已成功登入 VPN。"
+              },
+              {
+                "title": "需要補證",
+                "body": "身分驗證、資料通道、存取政策及授權資源測試。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是一份專業報告應該採取的基本邏輯："
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-report-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "從觀察寫到補充驗證",
+            "description": "箭頭表示報告的推理順序；補充驗證仍須在原授權範圍內。",
+            "items": [
+              {
+                "title": "實際觀察",
+                "body": "看到什麼"
+              },
+              {
+                "title": "證據界線",
+                "body": "能證明什麼"
+              },
+              {
+                "title": "補充驗證",
+                "body": "還缺什麼"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如發現 NTP 的 UDP 123 正常提供時間，這可能完全符合預期用途，而不是漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正值得調查的是：它有沒有不必要的管理資訊暴露？有沒有不符合政策的設定？必要的服務是否仍正常運作？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣才能分清楚正常功能、資訊揭露、設定弱點和真正可利用的安全問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "十一、理解檢核：你能分清楚證據的界線嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4 題情境選擇題。先選出答案，再展開各題的參考解析；這裡不儲存作答或計算學習進度。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-sub-1",
+          "text": "1. 某台 VPN 伺服器回應 IKE_SA_INIT，代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 已成功登入公司 VPN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 伺服器回應了初始協商，但還沒證明登入成功"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 已取得公司內網最高管理權限"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0409-1",
+          "summary": "參考答案與解析",
+          "paragraphs": [
+            "答案 B。IKE_SA_INIT 回應只證明初始協商收到回覆。A 尚缺身分驗證與資料通道證據；C 還把有限回應擴大成最高權限，沒有依據。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-sub-2",
+          "text": "2. 某間公司的 SIP 服務使用 TLS，你可以確定什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 所有通話聲音一定加密"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 任何人都能撥打電話"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 該段 SIP 訊令可受到 TLS 保護，媒體仍需另外檢查"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0409-2",
+          "summary": "參考答案與解析",
+          "paragraphs": [
+            "答案 C。TLS 可保護該段 SIP 訊令；聲音走另外的媒體流程，還須確認 SRTP 等保護及金鑰協商。A 把訊令保護誤當媒體保護；B 把傳輸加密誤當撥號授權。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-sub-3",
+          "text": "3. 你的 IPv6 鄰居快取只有兩筆資料，正確的判讀是？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 整個網路只有兩台設備"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 目前本機保有兩筆鄰居紀錄，不能代表完整資產"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 其他設備一定故意隱藏自己"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0409-3",
+          "summary": "參考答案與解析",
+          "paragraphs": [
+            "答案 B。兩筆快取是目前本機的紀錄，可能過期、尚未發現其他鄰居，同一設備也可能有多個位址。A 不能代表完整資產；C 不能由缺少紀錄推斷其他設備的意圖。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-sub-4",
+          "text": "4. 你透過公開 Looking Glass 看到 BGP 路由資訊，代表？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 可以更改路由器設定"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 已經取得網路管理權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 能觀察特定觀測點的路由資料，不代表有管理權限"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0409-4",
+          "summary": "參考答案與解析",
+          "paragraphs": [
+            "答案 C。Looking Glass 提供特定觀測點的路由資料。A 與 B 都把讀取公開資訊誤當管理授權；修改路由仍須另有權限。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這一課真正要帶走的是：列舉的目的不是把看到的所有資訊都稱為漏洞，而是用有限的回應，作出有證據支持、範圍清楚的判斷。 這也正是下一課 M04-10「列舉防護」的基礎。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Distinguish service responses, authentication and actual permissions across seven protocol groups, so enumeration conclusions fit the evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "This lesson brings several network protocols together through one central idea:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "“A device being willing to answer your question does not mean you can sign in to it, and certainly does not mean you control it.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The aim is to understand each service's job, the information it may disclose, and how far that information supports a conclusion, rather than simply memorize port numbers."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Picture the network as a large office building"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NTP: the building's reference clock."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It keeps everyone's time aligned."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPsec / IKE: a protected passage into the building."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They negotiate identity and protection mechanisms to establish protected connections."
+        },
+        {
+          "kind": "paragraph",
+          "text": "VoIP / SIP: the telephone switchboard."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They help connect, transfer and end calls."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6: the office address system."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It lets devices identify neighbors and find routers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP: route information between cities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It tells networks which destinations are reachable."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Telnet / TFTP: the old management room and filing cabinet."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They provide remote terminals or simple file transfer."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These services all belong to a network, but perform different jobs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, asking the building's clock for the time and receiving an answer does not give you a building access card."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is the central distinction when interpreting enumeration evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Judge evidence at five different levels"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine visiting a company's server room to learn about a server."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-ladder-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Five levels of service evidence",
+            "description": "Read downward as a comparison of evidence strength; arrows are neither a universal login process nor automatic privilege gains.",
+            "items": [
+              {
+                "title": "1. Discover a service",
+                "body": "There appears to be an entry point."
+              },
+              {
+                "title": "2. Receive a response",
+                "body": "Someone answers the knock."
+              },
+              {
+                "title": "3. Obtain information",
+                "body": "The service reveals some information."
+              },
+              {
+                "title": "4. Authenticate",
+                "body": "The service confirms your identity."
+              },
+              {
+                "title": "5. Obtain and verify permissions",
+                "body": "Establish which operations you may perform."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a conceptual model of evidence strength. It does not mean every protocol follows this sequence or that every service has a sign-in mechanism."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep these distinctions in mind:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A response does not establish successful authentication.",
+            "Successful authentication does not grant every capability.",
+            "Reading data does not establish permission to change it.",
+            "Not seeing some data does not establish that it does not exist."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use this framework to understand the following seven protocol groups."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. NTP: why do networked computers need synchronized clocks?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NTP stands for Network Time Protocol."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of an NTP server as a school's reference clock. Every classroom needs the same time for lessons; otherwise the bell rings while some classrooms believe class has not started."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Why do computers need synchronized time too?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose three company systems record the same event:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Device",
+            "Recorded time"
+          ],
+          "rows": [
+            [
+              "Firewall",
+              "10:00:02"
+            ],
+            [
+              "Web server",
+              "09:57:12"
+            ],
+            [
+              "Database",
+              "10:03:30"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "If the clocks disagree, investigators may infer the wrong order of events during an intrusion investigation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "NTP therefore affects log analysis, authentication mechanisms and coordination between systems, as well as the clock displayed on a desktop."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Common port: UDP 123."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-3-sub-1",
+          "text": "What does Stratum mean?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stratum describes the synchronization hierarchy: the level from which this clock obtains its time."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-stratum-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "NTP: where does the time come from?",
+            "description": "Downward arrows show the source of time in this example; Stratum 0 is a reference clock, not an ordinary NTP server.",
+            "items": [
+              {
+                "title": "Stratum 0",
+                "body": "Reference clocks such as atomic clocks or GNSS"
+              },
+              {
+                "title": "Stratum 1",
+                "body": "NTP servers directly connected to a reference clock"
+              },
+              {
+                "title": "Stratum 2",
+                "body": "Synchronizes to a server one level above"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "A reference clock can serve multiple first-level servers. Lower levels can also have multiple candidate upstream sources and same-level peer relationships. Stratum 3 and 4 extend that idea in the diagram. A device's level depends on its actually selected synchronization source; not every configured relationship is simultaneously an active upstream source."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-ntp-network-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "NTP hierarchy: peers share a level",
+            "description": "Boundaries group Stratum 1–4. Downward arrows show candidate time-source relationships; same-level ↔ indicates configurable peering. Multiple upstream candidates are possible; selection determines the actual source. The diagram guarantees neither accuracy, complete redundancy nor management access.",
+            "items": [
+              {
+                "title": "Stratum 0",
+                "body": "Atomic / GNSS reference clock"
+              },
+              {
+                "title": "S1-A",
+                "body": "Reference clock; peer S1-B"
+              },
+              {
+                "title": "S1-B",
+                "body": "Reference clock; peer S1-A"
+              },
+              {
+                "title": "S2-A",
+                "body": "Upstream S1-A; peer S2-B"
+              },
+              {
+                "title": "S2-B",
+                "body": "Upstream S1-B; peer S2-A"
+              },
+              {
+                "title": "S3-A",
+                "body": "Candidates S2-A / S2-B; peer S3-B"
+              },
+              {
+                "title": "S3-B",
+                "body": "Candidates S2-A / S2-B; peer S3-A"
+              },
+              {
+                "title": "S3-C",
+                "body": "Candidates S2-A / S2-B; peer S3-D"
+              },
+              {
+                "title": "S3-D",
+                "body": "Candidates S2-A / S2-B; peer S3-C"
+              },
+              {
+                "title": "S4-A",
+                "body": "Shared-link sources S3-A / S3-B"
+              },
+              {
+                "title": "S4-B",
+                "body": "Shared-link sources S3-A / S3-B"
+              },
+              {
+                "title": "S4-C",
+                "body": "Shared-link sources S3-A / S3-B"
+              },
+              {
+                "title": "S4-D",
+                "body": "Shared-link sources S3-C / S3-D"
+              },
+              {
+                "title": "S4-E",
+                "body": "Shared-link sources S3-C / S3-D"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "If an NTP server reports Stratum 2, it is declaring its position at the second level of the synchronization hierarchy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That does not establish its accuracy or security, or reveal all of its upstream servers."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For CEH, distinguish normal time service from access to management information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A server may provide the current time while withholding its version, configuration or connection information. That can be an appropriate security design."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 5905](https://www.rfc-editor.org/rfc/rfc5905.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. IPsec / IKE: how does a VPN establish a protected channel?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you work from home and want to connect to your company's internal network."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The company does not grant internal access merely because someone requests a connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A VPN can use IPsec to protect data. IKE handles the negotiation and authentication needed to establish that protection."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-ike-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Home computer → VPN gateway → internal network",
+            "description": "The path identifies roles. The three items explain initial negotiation, authentication and usability checks; they are neither IKEv1 phases nor three mandatory IKEv2 exchanges.",
+            "items": [
+              {
+                "title": "IKE_SA_INIT: negotiate protection",
+                "body": "Negotiate algorithms and exchange material needed to establish keys."
+              },
+              {
+                "title": "IKE_AUTH: authenticate both parties",
+                "body": "Confirm identity using certificates or another configured method; normally negotiate the first CHILD_SA too."
+              },
+              {
+                "title": "Verify a usable data channel",
+                "body": "Suitable IPsec data SAs, routing and access policies are also needed to use internal resources."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "The diagram uses IKEv2. IKE_SA_INIT and IKE_AUTH name exchanges, not the Phase 1 and Phase 2 of IKEv1. The first CHILD_SA is normally negotiated during IKE_AUTH. Checking whether the data channel works is a verification task, not a mandatory third exchange type. A Security Association (SA) holds the agreed protection parameters and state; routing and access policies also need checking."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A common mistaken conclusion is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "I received an IKE_SA_INIT response, so I successfully signed in to the company VPN!"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The response establishes only that the endpoint answered this initial negotiation. It does not establish successful authentication."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even a successfully established VPN may permit access to only a small subset of company systems."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Common related numbers:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Number",
+            "Purpose"
+          ],
+          "rows": [
+            [
+              "UDP 500",
+              "IKE negotiation"
+            ],
+            [
+              "UDP 4500",
+              "Commonly used for NAT traversal and encapsulated traffic"
+            ],
+            [
+              "IP Protocol 50",
+              "ESP, protecting IPsec data"
+            ],
+            [
+              "IP Protocol 51",
+              "AH, providing packet integrity and related protection"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP Protocol 50 and 51 are not TCP or UDP ports 50 and 51."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keeping protocol numbers separate from port numbers is a useful networking foundation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 7296](https://www.rfc-editor.org/rfc/rfc7296.html) · [RFC 4301](https://www.rfc-editor.org/rfc/rfc4301.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. VoIP / SIP: why might call signaling be encrypted while the voice is not?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VoIP carries calls over IP networks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enterprise desk phones, customer-service centers and telephone switchboards can use VoIP technology."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Distinguish two responsibilities:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SIP sets up the call; RTP commonly carries the audio."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine calling a colleague."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First the system has to find the other party, make their phone ring and establish the call. These are primarily SIP responsibilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Once connected, your speech must be transmitted continuously. That is commonly RTP's job."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-sip-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "SIP and RTP: two distinct flows",
+            "description": "Each ↔ denotes bidirectional exchange of that data type between call parties. Signaling and media need not follow the same route; the two rows are parallel.",
+            "items": [
+              {
+                "title": "SIP: call control ↔",
+                "body": "Signaling: dialing, ringing, connection and hang-up. TLS can protect that SIP segment."
+              },
+              {
+                "title": "RTP: media transport ↔",
+                "body": "Audio: a continuous flow of voice packets. Check media protection such as SRTP and its key negotiation separately."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Using TLS for SIP is like putting telephone connection instructions inside a confidential envelope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The actual voice travels in a separate data flow. If media uses ordinary RTP without suitable protection, the voice is not necessarily encrypted."
+        },
+        {
+          "kind": "paragraph",
+          "text": "SRTP is one common way to protect media; also verify the key negotiation and the actual connection."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Common ports are UDP/TCP 5060 for SIP and TCP 5061 for SIP over TLS. Port 5061 alone cannot establish that protection is correctly in place."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In CEH enumeration, a SIP service answering questions about supported features provides capability information. It does not establish access to an extension account or permission to place calls."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 3261](https://www.rfc-editor.org/rfc/rfc3261.html) · [RFC 3550](https://www.rfc-editor.org/rfc/rfc3550.html) · [RFC 3711](https://www.rfc-editor.org/rfc/rfc3711.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. IPv6: why do two neighbor entries not mean only two devices exist?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 is an IP addressing architecture with 128-bit addresses."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You may see an address such as:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`fe80::1234:abcd:5678:9abc`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is one form of IPv6 address."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-sub-1",
+          "text": "What is Neighbor Discovery?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine moving to a neighborhood and wanting to know who is nearby and where the road leads."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IPv6 Neighbor Discovery (ND) handles comparable questions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "NS: asks about a neighbor associated with an IPv6 address.",
+            "NA: responds with or announces neighbor information.",
+            "RS: asks routers to identify themselves.",
+            "RA: a router announces network configuration information."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These functions use ICMPv6 messages, not a special IPv6 TCP/UDP port."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-6-sub-2",
+          "text": "Why is the neighbor list incomplete?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose your computer currently has this neighbor cache:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Local neighbor cache",
+            "Current entry"
+          ],
+          "rows": [
+            [
+              "Entry 1",
+              "A router's IPv6 address"
+            ],
+            [
+              "Entry 2",
+              "A nearby device's IPv6 address"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "You can say, “The cache currently contains two entries.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You cannot conclude, “This network contains only two devices.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Other devices may not have communicated with you, records may have expired, some devices may be on other links, and one device can have multiple IPv6 addresses."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Another security consideration: an IPv6 firewall should not indiscriminately block all ICMPv6."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Some ICMPv6 messages are essential for normal communication, including Neighbor Discovery and Path MTU Discovery."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 4291](https://www.rfc-editor.org/rfc/rfc4291.html) · [RFC 4861](https://www.rfc-editor.org/rfc/rfc4861.html) · [RFC 4890](https://www.rfc-editor.org/rfc/rfc4890.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. BGP: how does the Internet know which way to send data?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine sending a parcel from Taiwan to the United States."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The Taiwanese logistics company need not know every American alley. It needs to know which international logistics network should receive the parcel next."
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP is comparable to route information exchanged between large networks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Different organizations manage many of the Internet's networks. An Autonomous System (AS) represents networks operated under a common routing policy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Each AS has an Autonomous System Number (ASN)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP exchanges reachability information: which IP prefixes can be reached through which networks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Common port: TCP 179."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-bgp-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Two candidate routes between autonomous systems",
+            "description": "BGP peers: AS64500 ↔ AS64497, AS64500 ↔ AS64498, AS64497 ↔ AS64496, AS64497 ↔ AS64499, AS64498 ↔ AS64499. This example selects AS64500 → AS64497 → AS64496. Solid lines show peer relationships; text and green borders also identify the selected route.",
+            "items": [
+              {
+                "title": "AS64500",
+                "body": "Source host; dual-upstream AS"
+              },
+              {
+                "title": "AS64497",
+                "body": "Transit AS; selected in this example"
+              },
+              {
+                "title": "AS64496",
+                "body": "Stub AS; destination host"
+              },
+              {
+                "title": "AS64498",
+                "body": "Alternative transit AS"
+              },
+              {
+                "title": "AS64499",
+                "body": "Transit AS linking AS64498 and AS64497"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "The diagram retains the dual-upstream, transit and stub relationships, replacing the reference image's AS 100/200/400/500/600 with documentation ASNs. The highlighted route is selected for this example. Actual BGP selection depends on policy and attributes; simply counting links cannot establish the best path. Lines represent BGP peer relationships, not cable locations or a complete physical topology."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-7-sub-1",
+          "text": "What is AS_PATH?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of AS_PATH as the AS path recorded in a route announcement."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, an observation point might see:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`AS 64500 → AS 64497 → AS 64496`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is a hypothetical route using ASNs reserved for documentation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It does not directly identify every physical router traversed by packets or reconstruct a company's complete internal network."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A public Looking Glass may let you inspect this routing information. That means you read data from a particular observation point, not that you have permission to change router settings."
+        },
+        {
+          "kind": "paragraph",
+          "text": "BGP security also involves prefix filtering, neighbor controls and RPKI."
+        },
+        {
+          "kind": "paragraph",
+          "text": "RPKI can help check whether an origin AS is authorized to announce a particular IP prefix. It cannot, on its own, establish that the entire AS_PATH is correct."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 4271](https://www.rfc-editor.org/rfc/rfc4271.html) · [RFC 5398](https://www.rfc-editor.org/rfc/rfc5398.html) · [RFC 6811](https://www.rfc-editor.org/rfc/rfc6811.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Telnet and TFTP: why do older protocols deserve attention?"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-legacy-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Two older protocols, different access boundaries",
+            "description": "The cards compare separate services; vertical order does not imply a sequence.",
+            "items": [
+              {
+                "title": "Telnet: older remote terminal access",
+                "body": "Imagine opening another computer’s text terminal from your own computer.\n\nTelnet commonly uses TCP 23. Traditional Telnet does not encrypt the connection, so credentials and commands may be observed in transit.\n\nModern remote administration should normally prefer SSH.\n\nA Telnet login screen identifies a sign-in entry point; it does not establish successful sign-in."
+              },
+              {
+                "title": "TFTP: simple file transfer",
+                "body": "Imagine a simple filing cabinet in a server room: a device requests upload or download using a filename it already knows.\n\nTFTP commonly uses UDP 69 for the initial request; subsequent data exchange uses separately selected UDP transfer identifiers (ports).\n\nBasic TFTP has neither ordinary user sign-in authentication nor standard directory listing. File permissions, source restrictions and server settings may still protect it.\n\nNot being asked for a username and password does not grant access to every file or permission to overwrite arbitrary server content."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "[RFC 854](https://www.rfc-editor.org/rfc/rfc854.html) · [RFC 1350](https://www.rfc-editor.org/rfc/rfc1350.html) · [RFC 4251](https://www.rfc-editor.org/rfc/rfc4251.html)"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Compare the seven protocol groups"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Protocol",
+            "Common port or protocol number",
+            "Information you may obtain",
+            "What it does not directly establish"
+          ],
+          "rows": [
+            [
+              "NTP",
+              "UDP 123",
+              "Time, synchronization level",
+              "Access to all management information"
+            ],
+            [
+              "IPsec / IKE",
+              "UDP 500/4500",
+              "Negotiation information",
+              "Successful VPN sign-in"
+            ],
+            [
+              "SIP / VoIP",
+              "UDP/TCP 5060; TCP 5061",
+              "Telephone service capabilities",
+              "Permission to call or encrypted voice"
+            ],
+            [
+              "IPv6 / ND",
+              "ICMPv6",
+              "Neighbor and router clues",
+              "Complete device count"
+            ],
+            [
+              "BGP",
+              "TCP 179",
+              "Prefixes and routing paths",
+              "Permission to modify routers"
+            ],
+            [
+              "Telnet",
+              "TCP 23",
+              "Login prompt, service clues",
+              "Terminal access"
+            ],
+            [
+              "TFTP",
+              "UDP 69 initially",
+              "Result of a particular file transfer",
+              "Read/write access to every file"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These are common values. A port number does not conclusively identify a protocol. Ports can change; verify the actual protocol content and configuration."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10. Apply the lesson to a CEH security review"
+        },
+        {
+          "kind": "paragraph",
+          "text": "In the Certified Ethical Hacker (CEH) learning route, enumeration helps you understand the information a target service provides."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Professional security analysis cannot equate “the tool produced output” with “a vulnerability was found.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, in an authorized test environment you observe:"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-case-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Synthetic review: VPN endpoint answers IKE_SA_INIT",
+            "description": "This teaching observation is synthetic. It records neither a connection to a real VPN nor a confirmed vulnerability.",
+            "items": [
+              {
+                "title": "Established",
+                "body": "The endpoint responded to this initial negotiation."
+              },
+              {
+                "title": "Not established",
+                "body": "The tester successfully signed in to the VPN."
+              },
+              {
+                "title": "Further evidence",
+                "body": "Authentication, data channel, access policies and authorized resource tests."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "A report should connect the following:"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m04-09-report-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "From observation to further verification",
+            "description": "Arrows show the report’s reasoning order; further verification must remain within authorization.",
+            "items": [
+              {
+                "title": "Observation",
+                "body": "What did you see?"
+              },
+              {
+                "title": "Evidence boundary",
+                "body": "What does it establish?"
+              },
+              {
+                "title": "Further verification",
+                "body": "What is still missing?"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "An NTP server providing time on UDP 123 may be operating exactly as intended, without a vulnerability."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Investigate unnecessary management-information exposure, configuration that conflicts with policy, and whether required services still work."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This separates normal function, information disclosure, configuration weaknesses and demonstrably exploitable security problems."
+        },
+        {
+          "kind": "heading",
+          "id": "section-11",
+          "text": "11. Check your understanding of evidence boundaries"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Four scenario questions. Choose an answer before opening each reference explanation. This page does not store answers or track learning progress."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-sub-1",
+          "text": "1. What does an IKE_SA_INIT response from a VPN server establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Successful sign-in to the company VPN."
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. The server answered initial negotiation; successful sign-in remains unproven."
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. The highest administrator privileges on the internal network."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0409-1",
+          "summary": "Reference answer and explanation",
+          "paragraphs": [
+            "Answer B. An IKE_SA_INIT response establishes a reply to initial negotiation. A lacks authentication and data-channel evidence; C expands that limited reply into unsupported administrator privileges."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-sub-2",
+          "text": "2. A company's SIP service uses TLS. What can you conclude?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Every call's audio is necessarily encrypted."
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Anyone can place calls."
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. That SIP signaling segment can be protected by TLS; media requires separate checks."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0409-2",
+          "summary": "Reference answer and explanation",
+          "paragraphs": [
+            "Answer C. TLS can protect that SIP signaling segment. Audio follows a separate media flow whose protection, such as SRTP, and key negotiation need checking. A confuses signaling protection with media protection; B confuses transport encryption with call authorization."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-sub-3",
+          "text": "3. Your IPv6 neighbor cache has only two entries. What is the correct interpretation?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. The entire network has only two devices."
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. The local cache currently has two neighbor records; this is not a complete asset inventory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Other devices must be deliberately hiding."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0409-3",
+          "summary": "Reference answer and explanation",
+          "paragraphs": [
+            "Answer B. Two entries describe the local cache now. Records can expire, other neighbors may not have been discovered, and one device may have several addresses. A does not establish a complete inventory; C infers intent from missing records without evidence."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-11-sub-4",
+          "text": "4. You see BGP routes through a public Looking Glass. What does that establish?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Permission to change router settings."
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Network administrator privileges."
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Visibility into routes at a particular observation point, without management authority."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0409-4",
+          "summary": "Reference answer and explanation",
+          "paragraphs": [
+            "Answer C. A Looking Glass exposes routes from a particular observation point. A and B confuse public visibility with administrative authority; changing routes requires separate permissions."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Enumeration uses limited responses to reach evidence-supported conclusions with a clear scope. Calling every visible fact a vulnerability defeats that purpose. This distinction also prepares you for M04-10, enumeration defenses."
+        }
+      ]
+    }
+  }
+}
