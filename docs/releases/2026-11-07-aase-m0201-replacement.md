@@ -14,7 +14,7 @@
 
 ## 本機驗收
 
-2026-11-07，Linux／Node 與 Chromium Playwright；可重跑檔案為 `tests/aase-m0201-replacement.test.ts`、`tests/attention-demo.test.ts`、`tests/browser/aase-m0201.spec.ts`。本機截圖與完整 JSON 報告放在忽略目錄 `.local/aase/m0201/`。
+2026-11-07，Linux／Node 與 Chromium Playwright；可重跑檔案為 `tests/aase-m0201-replacement.test.ts`、`tests/attention-demo.test.ts`、`tests/browser/aase-m0201.spec.ts`。本機截圖、日誌與 JSON 報告保留於忽略目錄 `.local/aase/m0201-local/`；正式站回讀證據位於 `.local/aase/m0201/`。
 
 | 規則／檢查 | 實測結果 |
 | --- | --- |
@@ -31,4 +31,12 @@
 
 ## 發布狀態
 
-本機驗收完成；PR、正式部署與正式站全文／圖檔回讀待後續回填。上一次已成功的 production 為前一筆 CEH 發布；本次不沿用其完成證據。
+[PR #85](https://github.com/JasonLn0711/kairos-learning/pull/85) 已合併，保留三筆分工提交：來源 `a2a5c90`、內容／互動／測試 `777f1b1`、採用與本機驗收 `ff5addd`。合併及正式部署提交為 `2e4a3fbd6d73e90e7bf22b89a82858a12c3db7d0`。
+
+- [遠端品質檢查 42334707101](https://github.com/JasonLn0711/kairos-learning/actions/runs/42334707101)：success。
+- [正式 Pages 42334885415](https://github.com/JasonLn0711/kairos-learning/actions/runs/42334885415)：success，head 為上述合併提交。
+- 正式站 [中文版](https://learn.cs-kairos.com/courses/aase/v1/m02/concepts/m02-01/) 與 [英文版](https://learn.cs-kairos.com/en/courses/aase/v1/m02/concepts/m02-01/)：各自通過完整正文／四題選項與解析、v1.1.0、六圖、Softmax 操作、四種寬度／200% 文字、無 JS、鍵盤捲動與答案展開。兩項整合測試均通過，總計 25.7 秒。
+- 正式站 12 個 SVG 均 HTTP 200、可鍵盤開啟、無文字越界／重疊，且與工作樹檔案逐位元組相同。下載圖與互動狀態的界線仍明示。
+- 本次部署前已確認上一筆成功部署為 [42333648094](https://github.com/JasonLn0711/kairos-learning/actions/runs/42333648094)／`96b1b19`，其證據只用於前一版本定位。
+
+合併後 fetch／ff-only 同步 `origin/main`，divergence 為 `0 0`。此份最後回執採文件提交，不改變已驗收的正式網站資產。主工作區既有未提交工作保持原狀；本次在獨立 worktree 完成。
