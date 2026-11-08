@@ -593,3 +593,10 @@ uv pip install --python .local/aase-venv/bin/python --require-hashes --link-mode
 ## M05-04 CVE、CWE、CPE 與資料庫（draft）
 
 CEH26-M05-C04 顯示 M05-04，正文沿既有 sourceBody；`scripts/m05_04_content.py` 從完整中英稿及 diagrams.json 生成正文與兩份受審核 SVG。三張平行角色卡由 IdentificationDiagram 承接，限定本課角色圖路徑、cards 與三節點；沒有順序箭頭。小檢核沿原生 answer 收合，qa=[]。C05 待編入口為嚴重度／優先順序；已發布前三課保留。`tests/m05-04.test.ts` 驗證身份與 draft/future 閘門；`scripts/check-m05-04-static.py` 僅做暫時公開狀態的隔離靜態全文檢查，finally 恢復 draft，之後須重跑 boundary 建立乾淨輸出。它不能代替瀏覽器或正式頁驗收。[逐節來源](sources/m05-04/source-map.md)及[回執](releases/2026-11-08-m05-04.md)分別記錄內容與發布狀態。
+
+
+### M05-04 九節新供稿抽換（2026-11-08）
+
+本次新稿取代上段八節草稿；前版與原始來源保留。[新來源與對照](sources/m05-04/replacement-2026-11-08/source-map.md)持有九節、十小節、六表與兩題開放問題，五組圖為 roles／identifier／lookup／finding／evidence，節點數 5／3／4／5／4；僅 lookup 為 flow。IdentificationDiagram 以 HTML／SVG 圖示、具語意 dl 與編號層次重排，不接受任意標記。十個下載圖由 `scripts/m05_04_replacement.py` 產生並通過 sanitizer，`--check` 比對 bytes；舊 m05_04_content.py 轉接目前產生器，避免重建舊稿覆蓋新稿。
+
+`preview-m05-04.py` 建立獨立副本；`check-m05-04-browser.mjs` 驗全文／四尺寸／200%／無 JS／下載／鍵盤，正式站用 M05_04_BASE_URL。`check-m05-04-svg.mjs` 檢查十 SVG 字框／重疊。舊 static 腳本改轉接隔離建置與瀏覽器檢查，不再暫改正式內容。前版環境拒絕紀錄保持為歷史；本次 Chrome 已成功執行，不以舊阻塞代替本輪驗收。

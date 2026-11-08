@@ -1,3 +1,5 @@
+> 歷史八節稿來源；現行九節供稿見[新來源對照](replacement-2026-11-08/source-map.md)，原稿與先前檢查保持可追溯。
+
 # M05-04 source custody and subsection adoption
 
 Editorial check: 2026-11-08 (Asia/Taipei). Intended reader: a beginner deciding whether a public advisory applies to a system. Stable ID CEH26-M05-C04; display M05-04; proposed v1.0.0 / revision 1. This is a public draft, not a publication or learner-completion record.

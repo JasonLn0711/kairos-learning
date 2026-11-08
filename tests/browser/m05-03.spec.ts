@@ -22,7 +22,7 @@ for(const lang of ['zh','en']){
   const download=page.locator('[data-classification-diagram] a').first();await download.focus();await page.keyboard.press('Shift+Tab');await page.keyboard.press('Tab');await expect(download).toBeFocused();const [file]=await Promise.all([page.waitForEvent('download'),page.keyboard.press('Enter')]);expect(readFileSync((await file.path())!)).toEqual(readFileSync('site'+await download.getAttribute('href')));
   await page.locator('main').evaluate(main=>{const sizes=[main,...main.querySelectorAll('*')].map(e=>({e,size:parseFloat(getComputedStyle(e).fontSize),line:parseFloat(getComputedStyle(e).lineHeight)}));for(const {e,size,line} of sizes){(e as HTMLElement).style.fontSize=size*2+'px';if(Number.isFinite(line))(e as HTMLElement).style.lineHeight=line*2+'px';}});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  await expect(page.locator('.next-links a').first()).toHaveAttribute('href',prefix+previous);await expect(page.locator('.next-links a').last()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/#m05-04');
+  await expect(page.locator('.next-links a').first()).toHaveAttribute('href',prefix+previous);await expect(page.locator('.next-links a').last()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/concepts/m05-04/');
 
   const index=await(await request.get('/search-index.json')).json();const entry=index.find((e:any)=>e.id==='M05-03'&&e.lang===lang);for(const token of ['Host-based','Internal','Active','Authenticated','Automated','Passive'])expect(entry.text).toContain(token);
  });
