@@ -49,3 +49,17 @@ M02-01 至 M02-08、M03-01 至 M03-08、M09-04 至 M09-06 的 19 支入口，
 M03-01 的視覺文字選擇、M03-02 的新增圖例外及兩種 HTML 文字政策。
 [工具庫責任紀錄](https://github.com/JasonLn0711/kairos-rust-tools/blob/main/docs/rule-ownership.md#learning-static-article-contracts--2026-11-08)
 將其列為候選，不把局部重用記為全面 Rust 遷移。尚無此抽取的時間、能源或 Token 量測。
+
+## SVG 瀏覽器幾何檢查共用化 — 2026-11-08
+
+`check-cs-systems-svg.mjs` 與 `check-m05-04-svg.mjs` 共用
+[`svg-layout-check.mjs`](../scripts/svg-layout-check.mjs)，各自保留目錄、選取
+規則與輸出位置。字型載入後的實際文字邊界、重疊、截圖與退出碼由同一
+實作負責；此能力需要瀏覽器，靜態 Rust XML 檢查不能取代。
+
+16 張 CS Systems 與 10 張 M05-04 SVG 新舊完整 JSON 報告位元一致，均無
+幾何 findings。合成越界／重疊 SVG 確認會產生兩種 finding 並退出 1。
+測試只產生 `.local/` 截圖與回報，未修改 SVG 或教材，未部署。
+未量測耗時、記憶體或 LLM Token 節省。完整頁面的四寬度、200% 字級、
+下載、鍵盤與 no-JS 驗收仍由各自 browser script 承接，本輪僅讀碼。
+責任判定連到[共用工具紀錄](https://github.com/JasonLn0711/kairos-rust-tools/blob/main/docs/rule-ownership.md)。
