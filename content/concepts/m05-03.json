@@ -1,0 +1,1135 @@
+{
+  "id": "M05-03",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-08",
+  "status": "published",
+  "publishedOn": "2026-11-08",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "分清弱點成因、評估對象與方法，組合五個評估維度，判斷掃描證據與修正優先順序。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "這一課最重要的觀念是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「系統哪裡有問題」、「要從哪裡檢查」與「有沒有證據證明問題存在」，是三件不同的事。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把弱點評估想成醫生替病人健康檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "醫生不能只看病人有沒有發燒，就宣布他完全健康。同樣地，資安工程師也不能只跑一次弱點掃描，就宣布系統沒有安全問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先理解：什麼是弱點（Vulnerability）？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你經營一間銀行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "銀行裡有金庫、監視器、保全、門禁系統及員工。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某天發現銀行有安全問題，可能是以下五種原因："
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-causes-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜五種弱點成因",
+            "description": "依成因安排修正；五種分類可能重疊，編號只供對照。",
+            "items": [
+              {
+                "title": "1. 設計缺陷（Design Flaw）",
+                "body": "銀行最初設計時，就沒有規定誰能進入金庫。\n\n問題出在「制度或系統規則一開始就沒設計好」。"
+              },
+              {
+                "title": "2. 實作缺陷（Implementation Flaw）",
+                "body": "銀行規定只有經理能進入金庫，但工程師寫門禁程式時，忘記檢查身分。\n\n問題出在「規則正確，程式卻寫錯」。"
+              },
+              {
+                "title": "3. 設定錯誤（Misconfiguration）",
+                "body": "門禁系統本來有身分驗證功能，但管理員把它設成所有人都能進入。\n\n問題出在「功能正常，設定卻不安全」。"
+              },
+              {
+                "title": "4. 尚未修補的已知缺陷（Unpatched Vulnerability）",
+                "body": "門禁廠商發現某個版本有安全漏洞，已經發布更新，但銀行還沒安裝。\n\n問題出在「已經有修補方法，卻還沒完成修補」。"
+              },
+              {
+                "title": "5. 管理與流程缺口（Process Weakness）",
+                "body": "某位經理已經離職，但銀行沒有註銷他的門禁權限。\n\n問題出在「人員管理或維護流程不完善」。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這五種問題都可能讓未經授權的人進入金庫，但是修正的方法完全不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是為什麼要做「弱點分類」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "弱點分類的目的，不是背五個英文名詞，而是找到真正原因，決定應該由誰修正。 而且分類可能重疊，例如軟體沒更新，也可能同時代表維護流程失效。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、弱點評估類型：我們究竟要檢查什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著把銀行換成一套公司的資訊系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個系統可能同時具有伺服器、網路、網站、資料庫、Wi-Fi 與雲端儲存。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不同位置要採取不同的檢查方式。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-targets-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜同一套系統的多個評估層級",
+            "description": "上層是網路觀察視角；下方四類互補。連線只表示同一系統中的關聯，不代表資料流或檢查先後。",
+            "items": [
+              {
+                "title": "使用者與網路",
+                "body": "Network assessment：觀察網路出入口與可接觸的服務。"
+              },
+              {
+                "title": "網站 / API",
+                "body": "Application：檢查登入、身分驗證、授權與程式邏輯。"
+              },
+              {
+                "title": "伺服器",
+                "body": "Host-based：檢查作業系統、更新、權限與設定。"
+              },
+              {
+                "title": "資料庫",
+                "body": "Database：檢查帳號、資料存取權限與安全設定。"
+              },
+              {
+                "title": "雲端 / Wi-Fi",
+                "body": "Cloud / Wireless：檢查雲端資源權限、Wi-Fi 保護與網路隔離。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "概念示意：同一套系統可以從多個層級進行安全評估，這些檢查彼此互補。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "評估類型",
+            "白話文",
+            "主要檢查什麼"
+          ],
+          "rows": [
+            [
+              "Host-based",
+              "檢查電腦本身",
+              "作業系統、更新、權限、設定"
+            ],
+            [
+              "Network-based",
+              "檢查網路出入口",
+              "開放的連接埠、服務、暴露範圍"
+            ],
+            [
+              "Application",
+              "檢查網站及程式",
+              "登入、身分驗證、授權、程式邏輯"
+            ],
+            [
+              "Database",
+              "檢查資料庫",
+              "帳號、資料存取權限、安全設定"
+            ],
+            [
+              "Cloud / Wireless",
+              "檢查雲端與無線環境",
+              "雲端資源權限、Wi-Fi 保護、網路隔離"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "你掃描一台 Web Server，發現作業系統已經更新到最新版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這能代表網站一定安全嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為作業系統的漏洞與網站程式的漏洞，是不同的事情。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使伺服器完全更新，網站工程師仍可能把授權邏輯寫錯，讓 A 使用者看見 B 使用者的資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，Host-based Assessment 沒發現問題，不代表 Application Assessment 也不會發現問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、External 與 Internal：站在哪裡檢查？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你要檢查一棟公司的辦公大樓。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "External Assessment"
+        },
+        {
+          "kind": "paragraph",
+          "text": "外部評估"
+        },
+        {
+          "kind": "paragraph",
+          "text": "站在大樓外面，檢查大門、外牆、外部能接觸的設備。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Internal Assessment"
+        },
+        {
+          "kind": "paragraph",
+          "text": "內部評估"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在取得授權後進入大樓，檢查內部門禁、區域隔離與權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "換成資安情境："
+        },
+        {
+          "kind": "paragraph",
+          "text": "外部評估可能是在授權條件下，從 Internet 觀察公司的網站、VPN 或其他對外服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "內部評估則可能從公司內部的指定網段，檢查內部伺服器與服務的存取限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "重要的推理是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "外部看不到某台資料庫，只能代表「這次外部檢查沒觀察到它」，不能代表資料庫不存在，更不能證明它安全。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，Internal / External 說的是測試位置，並不是檢查者是不是公司員工。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、Active 與 Passive：怎麼檢查？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡最容易混淆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你想知道一間房子有沒有人在裡面。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-methods-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 3｜主動與被動：取得證據的方式",
+            "description": "兩種觀察方式並列互補，都需要授權。",
+            "items": [
+              {
+                "title": "Active 主動式",
+                "body": "你主動敲門、按門鈴，看看是否有人回應。"
+              },
+              {
+                "title": "Passive 被動式",
+                "body": "你觀察現有的監視畫面或進出紀錄，不主動敲門。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "在資訊系統中："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Active Scanning：工具主動向目標發送測試請求，根據回應判斷服務、版本或可能的弱點。",
+            "Passive Assessment：分析既有網路封包、日誌或其他觀察資料，不透過主動探測取得回應。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者各有侷限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主動式可能獲得更多直接證據，但也可能增加系統負載，甚至影響老舊服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "被動式通常不會因為探測請求增加目標負載，但如果相關事件沒有發生、沒有被記錄，或不在觀察範圍內，就可能完全看不到。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且被動觀察也可能涉及敏感資料，並不是不需要授權。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、還有兩組很重要的分類"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-sub-1",
+          "text": "Authenticated / Unauthenticated（是否使用帳號驗證）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你檢查一間飯店。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Unauthenticated 就像沒有房卡的訪客，只能看到公開大廳。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authenticated 則像持有獲准房卡的人，可以檢查授權範圍內的房間與設施。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在資安評估中，具身分驗證的掃描通常能取得更多系統內部資訊，例如已安裝套件與設定。但具備帳號，不代表擁有所有存取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-sub-2",
+          "text": "Automated / Manual（由工具還是人來檢查）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Automated 像自動體檢機器，適合大量、重複且可規則化的檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Manual 像醫生親自問診，適合需要理解情境、業務邏輯及判斷例外的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實務上通常兩者搭配。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、所有分類其實是不同的維度"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是一個很重要的整合觀念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設主管要求你檢查公司內部的 Linux 伺服器，並提供獲准的掃描帳號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能同時選擇："
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-dimensions-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜同一場弱點評估的五個維度",
+            "description": "五項同時成立；編號供閱讀，不代表執行步驟或實測通過。",
+            "items": [
+              {
+                "title": "1. 檢查對象：Host-based",
+                "body": "Linux 伺服器"
+              },
+              {
+                "title": "2. 檢查位置：Internal",
+                "body": "從內部網路檢查"
+              },
+              {
+                "title": "3. 取得證據：Active",
+                "body": "主動發送探測與檢查請求"
+              },
+              {
+                "title": "4. 驗證身分：Authenticated",
+                "body": "使用核准的掃描帳號"
+              },
+              {
+                "title": "5. 執行方式：Automated",
+                "body": "先以工具執行重複檢查"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這五種標籤完全不衝突，因為每一種都在回答不同問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "也就是說，評估類型不是單選題，而是可以組合的檢查策略。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、實際案例：掃描器說有問題，代表一定能入侵嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設某套公司訂單系統出現以下結果。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "發現",
+            "目前知道什麼",
+            "還需要確認什麼"
+          ],
+          "rows": [
+            [
+              "A：套件版本偏舊",
+              "可能有已知漏洞",
+              "實際版本、修補狀態、是否符合漏洞成立條件"
+            ],
+            [
+              "B：資料夾允許匿名讀取",
+              "某項設定可能不符合政策",
+              "哪些資料可讀、預期權限、實際影響"
+            ],
+            [
+              "C：A 帳號讀到 B 的訂單",
+              "有跨帳號存取的具體現象",
+              "是否違反原定授權規則、影響範圍"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們可以把弱點評估理解為逐步累積證據的過程："
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-evidence-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "圖 5｜逐步累積弱點證據",
+            "description": "箭頭表示工作順序；受控驗證須必要且在授權範圍內。",
+            "items": [
+              {
+                "title": "發現線索",
+                "body": "工具回報套件可能有漏洞"
+              },
+              {
+                "title": "核對成立條件",
+                "body": "確認版本、設定、影響條件及政策"
+              },
+              {
+                "title": "授權範圍內驗證",
+                "body": "必要時進行受控測試並記錄結果"
+              },
+              {
+                "title": "評估影響、修正與複驗",
+                "body": "確認缺陷是否修正，正常功能是否保留"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "要特別分清楚："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "發現可能的弱點，不等於證明弱點可被利用。",
+            "證明存在可利用的弱點，不等於證明系統已經遭人入侵。",
+            "修正一個弱點，也不等於整套系統已經安全。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，Severity（嚴重程度）不等於 Priority（處理優先順序）。前者關注可能造成多大傷害；後者還要衡量暴露情況、資產重要性、現有防護和修正急迫性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，一個能直接讓外部訪客讀取敏感資料的設定錯誤，可能比只在特定內部條件下才會觸發的高分漏洞，更需要優先處理。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、最後用一句話串起 M05-01、M05-02、M05-03"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "課程",
+            "核心問題"
+          ],
+          "rows": [
+            [
+              "M05-01 弱點評估與滲透測試",
+              "我們要找出問題，還是進一步證明實際影響？"
+            ],
+            [
+              "M05-02 資產盤點與評估範圍",
+              "有哪些資產？這次獲准檢查哪些？"
+            ],
+            [
+              "M05-03 弱點分類與評估類型",
+              "問題可能出在哪裡？應該用什麼角度檢查？"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，一次專業的弱點評估，不是「開啟掃描器、按下開始、拿到報告」就結束。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而是先確定資產與授權範圍，再選擇適合的評估方式，辨認問題成因、核對證據，最後提出修正與驗證方法。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "九、理解檢核：用一個案例測試是否真正學會"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 某公司網站的作業系統完全更新，但使用者 A 可以讀取使用者 B 的私人訂單。這比較可能是哪一種弱點？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 設定錯誤"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 設計或實作上的授權缺陷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 未修補的作業系統漏洞"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 你使用經過授權的帳號，從內部網路透過工具主動檢查 Linux 主機。這同時符合哪些分類？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. External、Passive、Unauthenticated"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Internal、Active、Authenticated、Automated"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Internal、Passive、Unauthenticated"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 掃描器沒有找到已知版本漏洞，是否可以宣布系統安全？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. 可以，代表沒有弱點"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. 不行，因為設定、權限與應用程式邏輯仍可能有問題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. 可以，只要掃描器是最新版本"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0503",
+          "summary": "參考答案與解析",
+          "paragraphs": [
+            "問題一答案 B。作業系統已更新不會自動修正網站授權邏輯。A 的設定錯誤在其他情境也可能造成越權，但題目線索最支持設計或實作上的授權缺陷；C 沒有未修補作業系統漏洞的證據。仍須核對原定權限及實際程式，才能判定根因。",
+            "問題二答案 B。內部網路對應 Internal，主動發送檢查請求對應 Active，核准帳號對應 Authenticated，工具執行重複檢查對應 Automated。A 的三個標籤都與情境不符；C 雖然位置正確，卻把主動且使用帳號的檢查誤寫成被動、未驗證。檢查對象也屬 Host-based。",
+            "問題三答案 B。這次掃描沒有回報已知版本漏洞，只能支持該工具、範圍及時間下的觀察；設定、權限及業務邏輯仍可能有問題。A 把沒有找到當成不存在，C 把工具更新當成完整安全保證。下一步依資產與授權範圍補足其他檢查。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三題涵蓋本課最核心的能力：辨識弱點原因、組合評估方式，以及判斷安全證據的限制。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "十、來源與適用範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[NIST SP 800-115](https://csrc.nist.gov/pubs/sp/800/115/final) 說明評估規劃、主動探測、被動觀察及各種技術的限制；本課五類成因是幫助找出修正責任的教學整理，並非互斥或完整的標準分類。銀行、飯店與訂單系統都是合成情境，沒有對真實系統執行掃描。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[FIRST CVSS v4.0 使用指南](https://www.first.org/cvss/user-guide) 說明嚴重程度評分需要搭配威脅、環境與組織情境判斷。本課不把嚴重程度直接當成處理優先順序。三題可先自行作答，再展開參考解析；頁面不送出、保存或批改個人答案。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Separate vulnerability causes, assessment targets and methods; combine five dimensions and judge scanning evidence and remediation priority.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The central idea of this lesson is that “where a system has a problem,” “where and how to examine it,” and “whether evidence confirms the problem” are three different questions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of vulnerability assessment as a medical checkup. A doctor cannot look only for fever and declare a patient completely healthy. Similarly, a security engineer cannot run one vulnerability scan and declare a system free of security problems."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. What is a vulnerability?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine that you operate a bank with a vault, cameras, guards, access-control equipment and employees. A security problem might arise from five different causes."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-causes-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 1 | Five causes of vulnerabilities",
+            "description": "Use causes to assign remediation. Categories can overlap; numbers identify entries, not a sequence.",
+            "items": [
+              {
+                "title": "1. Design Flaw",
+                "body": "The bank never specified who may enter the vault.\n\nThe institution or system rules were incomplete from the start."
+              },
+              {
+                "title": "2. Implementation Flaw",
+                "body": "The rule permits only the manager, but the engineer forgot to check identity in the access-control code.\n\nThe rule is correct; the program implements it incorrectly."
+              },
+              {
+                "title": "3. Misconfiguration",
+                "body": "The access-control system supports authentication, but an administrator allows everyone to enter.\n\nThe feature works; its configuration is unsafe."
+              },
+              {
+                "title": "4. Unpatched Vulnerability",
+                "body": "The vendor has released an update for a known flaw in the access-control version, but the bank has not installed it.\n\nA fix exists, but patching is incomplete."
+              },
+              {
+                "title": "5. Process Weakness",
+                "body": "A manager has left the bank, but the bank has not revoked the manager’s access.\n\nPersonnel management or maintenance procedures are incomplete."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "All five problems could allow an unauthorized person into the vault, but they need different fixes. This is why we classify vulnerabilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The purpose is to identify the actual cause and decide who should correct it, rather than memorize five English terms. Categories can overlap: missing software updates may also indicate a failed maintenance process."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Assessment types: what are we examining?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Now replace the bank with a company information system. It may contain servers, networks, websites, databases, Wi-Fi and cloud storage at the same time. Different parts need different examination methods."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-targets-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 2 | Multiple assessment layers of one system",
+            "description": "The top is the network observation perspective; the four categories below complement it. Lines mean association within one system, not traffic or assessment order.",
+            "items": [
+              {
+                "title": "Users and network",
+                "body": "Network assessment: examine network entry points and reachable services."
+              },
+              {
+                "title": "Website / API",
+                "body": "Application: examine login, authentication, authorization and program logic."
+              },
+              {
+                "title": "Server",
+                "body": "Host-based: examine the operating system, updates, permissions and configuration."
+              },
+              {
+                "title": "Database",
+                "body": "Database: examine accounts, data-access permissions and security configuration."
+              },
+              {
+                "title": "Cloud / Wi-Fi",
+                "body": "Cloud / Wireless: examine cloud-resource permissions, Wi-Fi protection and network isolation."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Conceptual illustration: one system can be assessed at multiple levels; these examinations complement one another."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Assessment type",
+            "Plain meaning",
+            "Main checks"
+          ],
+          "rows": [
+            [
+              "Host-based",
+              "Examine the computer itself",
+              "Operating system, updates, permissions, configuration"
+            ],
+            [
+              "Network-based",
+              "Examine network entry points",
+              "Open ports, services, exposure"
+            ],
+            [
+              "Application",
+              "Examine websites and programs",
+              "Login, authentication, authorization, program logic"
+            ],
+            [
+              "Database",
+              "Examine the database",
+              "Accounts, data-access permissions, security configuration"
+            ],
+            [
+              "Cloud / Wireless",
+              "Examine cloud and wireless environments",
+              "Cloud-resource permissions, Wi-Fi protection, network isolation"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, you scan a Web Server and find that its operating system has all current updates. Does that prove the website is secure? No: operating-system flaws and website-programming flaws are different things."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even on a fully updated server, a developer could implement authorization incorrectly and allow user A to see user B’s data. No findings in a Host-based Assessment do not imply that an Application Assessment would also find nothing."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. External and Internal: where do you examine from?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine inspecting a company office building."
+        },
+        {
+          "kind": "paragraph",
+          "text": "External Assessment means examining the main entrance, exterior walls and externally reachable equipment while standing outside the building."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Internal Assessment means entering with authorization to examine internal access controls, separation between areas and permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In security work, an external assessment may observe the company website, VPN or other Internet-facing services under authorized conditions. An internal assessment may start in a specified company network segment to examine access restrictions on internal servers and services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The key inference is that failing to observe a database from outside means only that this external examination did not observe it. It does not show that the database does not exist or that it is secure."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Internal / External describes the testing position, rather than whether the examiner is a company employee."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Active and Passive: how do you examine?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This distinction is easy to confuse. Imagine trying to find out whether someone is inside a house."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-methods-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 3 | Active and passive ways to gather evidence",
+            "description": "The two complementary approaches are parallel; both require authorization.",
+            "items": [
+              {
+                "title": "Active",
+                "body": "You knock or ring the bell to see whether someone responds."
+              },
+              {
+                "title": "Passive",
+                "body": "You examine existing surveillance footage or entry records without knocking."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "In information systems:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Active Scanning: a tool sends test requests to a target and uses responses to infer services, versions or possible vulnerabilities.",
+            "Passive Assessment: examine existing network packets, logs or other observation data without obtaining responses through active probing."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Both have limits. Active methods may obtain more direct evidence, but may also add load or disrupt older services."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passive methods usually add no probing-request load to the target. However, if relevant events never occur, are not recorded or fall outside the observation scope, the problem may remain completely invisible."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Passive observation can also involve sensitive data and still requires authorization."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Two other important classification pairs"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-sub-1",
+          "text": "Authenticated / Unauthenticated: do you use an account?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine inspecting a hotel. Unauthenticated is like a visitor without a room card, limited to the public lobby. Authenticated is like someone holding an approved card who can examine rooms and facilities within the permitted scope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authenticated scanning often provides more internal system information, such as installed packages and configuration. Having an account does not grant every permission."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-5-sub-2",
+          "text": "Automated / Manual: does a tool or a person examine it?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Automated methods resemble an automatic checkup machine: they suit large numbers of repetitive checks that can be expressed as rules."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Manual methods resemble a doctor’s consultation: they suit questions that require context, business logic and judgment about exceptions. In practice the two are usually combined."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. These classifications describe different dimensions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is an important integrating idea. Suppose a manager asks you to examine an internal Linux server and provides an approved scanning account. You might choose all of these labels together:"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-dimensions-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 4 | Five dimensions of one assessment",
+            "description": "All five labels can apply together. Numbers guide reading; they are neither execution steps nor passed checks.",
+            "items": [
+              {
+                "title": "1. Target: Host-based",
+                "body": "A Linux server"
+              },
+              {
+                "title": "2. Position: Internal",
+                "body": "Examine it from the internal network"
+              },
+              {
+                "title": "3. Evidence collection: Active",
+                "body": "Send probes and inspection requests"
+              },
+              {
+                "title": "4. Identity: Authenticated",
+                "body": "Use an approved scanning account"
+              },
+              {
+                "title": "5. Execution: Automated",
+                "body": "Begin with tools for repetitive checks"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "The five labels do not conflict because each answers a different question. Assessment types form a combinable examination strategy rather than a single-choice classification."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Does a scanner finding prove you can break in?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose a company order system produces these findings."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Finding",
+            "What is known now",
+            "What still needs confirmation"
+          ],
+          "rows": [
+            [
+              "A: An older package version",
+              "A known vulnerability may apply",
+              "Actual version, patch status, required vulnerability conditions"
+            ],
+            [
+              "B: A folder permits anonymous reads",
+              "A setting may violate policy",
+              "Readable data, expected permissions, actual impact"
+            ],
+            [
+              "C: Account A reads B’s order",
+              "A concrete cross-account access event",
+              "Whether it violates the intended authorization rules, affected scope"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Vulnerability assessment can be understood as accumulating evidence step by step:"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-03-evidence-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Figure 5 | Accumulate vulnerability evidence step by step",
+            "description": "Arrows indicate work order. Controlled validation must be necessary and authorized.",
+            "items": [
+              {
+                "title": "Find a clue",
+                "body": "A tool reports a potentially vulnerable package"
+              },
+              {
+                "title": "Check the required conditions",
+                "body": "Confirm version, configuration, impact conditions and policy"
+              },
+              {
+                "title": "Validate within authorization",
+                "body": "Perform a controlled test if necessary and record results"
+              },
+              {
+                "title": "Assess impact, fix and retest",
+                "body": "Confirm that the defect is fixed and normal functionality remains"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Keep these conclusions separate:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Finding a possible vulnerability does not prove that it can be exploited.",
+            "Proving an exploitable vulnerability exists does not prove that someone has already broken into the system.",
+            "Fixing one vulnerability does not establish that the entire system is secure."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Severity is different from Priority. Severity concerns the potential harm; handling priority also considers exposure, asset importance, existing controls and remediation urgency."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a misconfiguration that directly lets external visitors read sensitive data may need attention sooner than a highly scored vulnerability that triggers only under particular internal conditions."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Connect M05-01, M05-02 and M05-03"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Lesson",
+            "Core question"
+          ],
+          "rows": [
+            [
+              "M05-01 Vulnerability assessment and penetration testing",
+              "Are we finding problems or going further to demonstrate actual impact?"
+            ],
+            [
+              "M05-02 Asset inventory and assessment scope",
+              "Which assets exist, and which are authorized for this examination?"
+            ],
+            [
+              "M05-03 Vulnerability classification and assessment types",
+              "Where might the problem originate, and which examination perspectives should we use?"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "A professional vulnerability assessment takes more than opening a scanner, pressing Start and obtaining a report."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First establish assets and authorized scope. Then choose suitable assessment methods, identify causes, check evidence and propose remediation and verification methods."
+        },
+        {
+          "kind": "heading",
+          "id": "section-9",
+          "text": "9. Check your understanding with a scenario"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. A company website’s operating system is fully updated, but user A can read user B’s private orders. Which cause is most likely?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Misconfiguration"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. A design or implementation authorization flaw"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. An unpatched operating-system vulnerability"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. You use an authorized account and a tool to actively examine a Linux host from the internal network. Which classifications apply together?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. External, Passive, Unauthenticated"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Internal, Active, Authenticated, Automated"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Internal, Passive, Unauthenticated"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. A scanner finds no known version vulnerabilities. Can you declare the system secure?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Yes; it means there are no vulnerabilities"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. No; configuration, permissions and application logic may still have problems"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Yes, provided the scanner is up to date"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0503",
+          "summary": "Reference answers and explanations",
+          "paragraphs": [
+            "Question 1: B. Operating-system updates do not automatically fix application authorization. Misconfiguration (A) can cause unauthorized access in other circumstances, but the stated clues best support a design or implementation authorization flaw. C has no evidence of an unpatched operating-system flaw. Check intended permissions and the actual program to determine the root cause.",
+            "Question 2: B. The internal network means Internal; sending inspection requests means Active; an approved account means Authenticated; tool-based repetitive checks mean Automated. All three labels in A contradict the scenario. C gets the position right but incorrectly calls the active, authenticated examination passive and unauthenticated. The target is also Host-based.",
+            "Question 3: B. No reported known version flaws supports only an observation for this tool, scope and time. Configuration, permissions and business logic may still be flawed. A confuses no finding with no flaw; C mistakes updated tools for a complete security guarantee. Next, fill examination gaps within the asset and authorization scope."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These three questions cover the core skills: identifying vulnerability causes, combining assessment methods and judging the limits of security evidence."
+        },
+        {
+          "kind": "heading",
+          "id": "section-10",
+          "text": "10. Sources and scope"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[NIST SP 800-115](https://csrc.nist.gov/pubs/sp/800/115/final) explains assessment planning, active probing, passive observation and the limits of different techniques. This lesson’s five causes are a teaching framework for assigning remediation, not an exhaustive or mutually exclusive standard taxonomy. The bank, hotel and order system are synthetic examples; no real systems were scanned."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The [FIRST CVSS v4.0 User Guide](https://www.first.org/cvss/user-guide) explains that severity scoring needs threat, environmental and organizational context. This lesson does not equate severity with handling priority. Answer the three questions yourself before opening the reference explanations; the page does not submit, store or grade personal answers."
+        }
+      ]
+    }
+  }
+}

@@ -557,3 +557,8 @@ directory／central／sso 是一個根與三個平行子節點；scope 再將 Wa
 M05-01 首次公開 v1.0.0。`scripts/m05_01_content.py` 由完整中英稿與 diagrams.json 生成 sourceBody 及八份受審核 SVG；`--check` 核對 bytes。四圖使用既有 cards／flow，節點數固定為 6／3／4／5；`concepts.ts` 約束本課 ID、路徑、種類及數量。`AssessmentDiagram.svelte` 將第一圖的威脅／利用並列，其餘層次按原圖順序，風險是獨立評估；只有工作流程有順序箭頭，第四步明示必要與授權條件。手機按容器重排，正文與圖標籤可搜尋，無任意 HTML 或 SVG 注入。
 
 兩題沿原生 answer 參考解析，不建立送出或批改狀態。來源與逐小節／圖意差異見 [source-map](sources/m05-01/source-map.md)，單元檢查 `tests/m05-01.test.ts`，瀏覽器入口 `playwright.m05-01.config.ts`；正式站使用 `M05_01_BASE_URL`。發布後核對 M04-10 下一篇連至本課、M05-02 保持準備中。[驗收回執](releases/2026-11-08-m05-01.md)分別記錄內容、呈現與正式站證據。
+
+
+## M05-03 分類與評估圖解
+
+M05-03 使用既有 sourceBody visual 契約，限定 `m05-03-(causes|targets|methods|dimensions|evidence)-(zh|en)-v1-0-0.svg`；節點數依序 5／5／2／5／4，僅 evidence 為 flow，其餘 cards。`ClassificationDiagram.svelte` 以 HTML 與容器查詢呈現並列、分層與流程，窄版不把分類關係畫成依序流程。`scripts/m05_03_content.py` 從中英稿及 diagrams.json 生成正式正文與十份 sanitizer 審核 SVG；`--check` 驗證重建一致。來源對照及部署證據見 [M05-03 回執](releases/2026-11-08-m05-03.md)。
