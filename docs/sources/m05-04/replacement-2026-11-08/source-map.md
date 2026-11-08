@@ -1,6 +1,6 @@
 # M05-04 新供稿完整抽換追溯
 
-本次來源：original.zh-TW.md 與五張 PNG 的雜湊見 source-checksums.json。原始 PNG 在忽略目錄 `.local/sources/m05-04-new/`。前版 `6c770c5` 為八節／單圖、尚未公開的草稿，previous-draft.json 保存其完整資料；Git 歷史已以 fast-forward 接續保留，未重寫或刪除既有來源。正式目標維持 CEH26-M05-C04 與 m05-04 URL；目前新稿仍在工作目錄，尚未採入正式正文。
+本次來源：original.zh-TW.md 與五張 PNG 的雜湊見 source-checksums.json。原始 PNG 在忽略目錄 `.local/sources/m05-04-new/`。前版 `6c770c5` 為八節／單圖、尚未公開的草稿，previous-draft.json 保存其完整資料；Git 歷史已以 fast-forward 接續保留，未重寫或刪除既有來源。正式目標維持 CEH26-M05-C04 與 m05-04 URL；本次新稿現已採入正式正文並完成上線回讀；最終狀態見[完整抽換回執](../../../releases/2026-11-08-m05-04-replacement.md)。以下各階段工作狀態保留當時觀察。
 
 | 新供稿 | 必須保留的教學內容／圖解 | 工作狀態 |
 | --- | --- | --- |
@@ -37,3 +37,5 @@ Chrome 隔離新稿通過雙語全文區塊、五圖、320／390／768／1280 �
 ## 來源到成稿的逐單位保留檢查
 
 原稿只經明列格式／編輯修正產生 normalized-source.zh-TW.md；131 個完整單位逐一依序出現在 teaching.zh-TW.md，adoption-map.json 保存對應 offset。引用補入而未刪除單位。圖解 placeholder 各指向五組雙語模型，模型保留原圖資訊；136 個正式 sourceBody 區塊再由瀏覽器逐項核對。此鏈分別證明原稿採用與頁面呈現，並配合逐節語意核對。prepare-m05-04-replacement.py 現在只產生 normalized-source，不再覆寫已補引用的 reviewed teaching 稿。
+
+最終發布：ca95c9f／Pages 42451060963 success，正式雙語全文、五圖、十 SVG、四寬度、200% 字級、無 JS 全文、鍵盤、版本、搜尋及 M05-03 相鄰導覽驗收通過。詳細結果與未測範圍見完整抽換回執。
