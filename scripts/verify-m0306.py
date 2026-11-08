@@ -1,15 +1,9 @@
 """M03-06 static checks, deliberately distinct from browser and production checks."""
 from pathlib import Path
 import json,re,html,zipfile
-from html.parser import HTMLParser
+from validation_html import Text, norm
 ROOT=Path(__file__).resolve().parents[1]
 lesson=json.loads((ROOT/'content/concepts/m03-06.json').read_text())
-class Text(HTMLParser):
- def __init__(self,s):super().__init__();self.parts=[];self.details=[];self.feed(s)
- def handle_data(self,s):self.parts.append(s)
- def handle_starttag(self,t,a):
-  if t=='details':self.details.append(dict(a))
-def norm(s):return re.sub(r'\s+',' ',html.unescape(re.sub(r'\[([^\]]+)\]\(https://[^)]+\)',r'\1',s))).strip()
 for lang,prefix in [('zh',''),('en','en/')]:
  raw=(ROOT/f'build/{prefix}courses/ceh/v13/m03/concepts/m03-06/index.html').read_text();page=Text(raw);text=norm(''.join(page.parts));cursor=0
  for b in lesson['text'][lang]['sourceBody']:

@@ -2,6 +2,7 @@
 from pathlib import Path
 import json,re,html,zipfile
 from html.parser import HTMLParser
+from validation_html import norm
 ROOT=Path(__file__).resolve().parents[1]
 lesson=json.loads((ROOT/'content/concepts/m03-05.json').read_text())
 class Text(HTMLParser):
@@ -13,7 +14,6 @@ class Text(HTMLParser):
  def handle_starttag(self,t,a):
   if t in ['script','style']:self.hidden=True
   if t=='details':self.details.append(dict(a))
-def norm(s):return re.sub(r'\s+',' ',html.unescape(re.sub(r'\[([^\]]+)\]\(https://[^)]+\)',r'\1',s))).strip()
 for lang,prefix in [('zh',''),('en','en/')]:
  raw=(ROOT/f'build/{prefix}courses/ceh/v13/m03/concepts/m03-05/index.html').read_text();page=Text(raw);text=norm(''.join(page.parts));cursor=0
  for b in lesson['text'][lang]['sourceBody']:

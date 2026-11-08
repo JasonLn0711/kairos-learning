@@ -13,3 +13,19 @@
 [README](../README.md) → 本文件 → [固定來源](../kairos-tools-source.json)＋[檢查設定](../workspace-verify.json) → [共用使用端契約](https://github.com/JasonLn0711/kairos-rust-tools/blob/main/docs/consumer-contract.md)。本機來源 checkout 可放任意位置，私人來源需要讀取權限。
 
 要重現固定版本，將指定 SHA 安裝到獨立 prefix，直接呼叫其 bin/workspace-verify；全域命令可能來自另一個 revision，--version 也不能證明 commit 相同。保留工具 checkout 的 git rev-parse HEAD 與安裝紀錄。回復時一起選回相容的來源 SHA 與 profile，重新安裝並執行上述原有專案閘門；升級後同步更新本文件與共用庫總表。
+
+## 2026-11-08：文章驗證的共用文字層
+
+16 支文章驗證腳本原有完全相同的 HTMLParser 文字／details 擷取與正規化，已集中至
+[scripts/validation_html.py](../scripts/validation_html.py)。另三支 M03-03／04／05
+會排除 script/style 文字，保留各自的 parser，只共用相同的 `norm`。共用來源與測試
+透過 [workspace-review-sources.json](../workspace-review-sources.json)明確納入盤點。
+
+19 支完整驗證器對目前 build 的 stdout、stderr、退出碼均與抽取前相同且通過；四個
+回歸測試涵蓋 entity、script 文字、details 順序／open、HTTPS label 與 Unicode 空白、
+跨實例隔離。執行 `python3 -m unittest discover -s scripts -p test_validation_html.py`
+可重驗共用契約。每篇的正文順序、答案 ID、圖檔、ZIP、搜尋與連結規則仍由原入口持有。
+
+這次減少重複實作，未新增 Rust subprocess，也未修改文章或圖檔。Python HTMLParser
+與 Rust HTML parser 的相容性須另有證據，不能用泛用 HTML 檢查直接取代本契約。未量得
+整體效能、能源或 LLM token 節省，亦不將靜態檢查當成瀏覽器／正式站驗收。
