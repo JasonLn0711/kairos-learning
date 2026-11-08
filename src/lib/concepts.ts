@@ -38,8 +38,9 @@ export function compareContentVersions(a: string, b: string): number {
 }
 export const conceptVersionLabel = (t: Pick<ConceptTeaching,'revision'|'contentVersion'>) => `v${t.contentVersion ?? t.revision}`;
 export const conceptModule = (id: string) => id.startsWith('CEH26-') ? id.slice(6,9).toLowerCase() : id.slice(0,3).toLowerCase();
+const currentRouteId = /^CEH26-(?:M04-C(?:0[1-9]|10)|M05-C0[1-8])$/;
 // Public locators follow the module numbering; internal curriculum IDs remain immutable.
-export const conceptSlug = (id: string) => /^CEH26-M04-C(?:0[1-9]|10)$/.test(id) ? `m04-${id.slice(-2)}` : id.toLowerCase();
+export const conceptSlug = (id: string) => currentRouteId.test(id) ? `${conceptModule(id)}-${id.slice(-2)}` : id.toLowerCase();
 export const conceptPath = (id: string, lang: Locale) => localized(`/courses/ceh/v13/${conceptModule(id)}/concepts/${conceptSlug(id)}/`,lang);
 // One catalog controls routes, search, navigation and serialized public teaching.
 export function createConceptCatalog(entries: ConceptEntry[], teachings: ConceptTeaching[], today: string) {
@@ -48,9 +49,9 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   const ids = new Set<string>();
   const paths = new Set<string>();
   for (const c of entries) {
-    if (!(/^(?:M\d{2}-\d{2}|CEH26-M04-C(?:0[1-9]|10))$/.test(c.id)) || c.module !== conceptModule(c.id) || ids.has(c.id)) fail(`invalid or duplicate ID ${c.id}`);
+    if (!(/^M\d{2}-\d{2}$/.test(c.id) || currentRouteId.test(c.id)) || c.module !== conceptModule(c.id) || ids.has(c.id)) fail(`invalid or duplicate ID ${c.id}`);
     for (const lang of ['zh','en'] as const) if (!nonempty(c.title?.[lang])) fail(`${c.id}: missing ${lang} title`);
-    if(c.displayId !== undefined && (!/^CEH26-M04-C(?:0[1-9]|10)$/.test(c.id) || ![`CEH M04-${c.id.slice(-2)}`,`M04-${c.id.slice(-2)}`].includes(c.displayId))) fail(`${c.id}: invalid display identity`);
+    if(c.displayId !== undefined && (!currentRouteId.test(c.id) || ![`CEH ${c.module.toUpperCase()}-${c.id.slice(-2)}`,`${c.module.toUpperCase()}-${c.id.slice(-2)}`].includes(c.displayId))) fail(`${c.id}: invalid display identity`);
     const path=conceptPath(c.id,'zh');
     if(paths.has(path)) fail(`duplicate public path ${path}`);
     paths.add(path);
