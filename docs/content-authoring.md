@@ -551,3 +551,9 @@ M03-02 v1.1.0 以既有 cards／flow 承接三張參考圖：roadmap flow 5、ev
 directory／central／sso 是一個根與三個平行子節點；scope 再將 Wang／Li 歸在第三個子節點下，綠框只代表 one-level 候選，圖說明列 base／subtree 與 Filter／權限界線。parameters 是 2×2 並列設定。entry／result 使用語意 dl 資料列；paging／search 是有順序箭頭的流程。tickets 的每項 title 固定拆為 `Client → Peer` 兩端，body 為階段／請求／回覆或授權結果三行；最後一項不畫回覆箭頭。模型驗證拒絕錯誤節點數及票證交換形狀，全部字串由 Svelte 跳脫，SVG 沿既有 sanitizer 匯出。
 
 保持舊公開網址、原發布日與八個既有 section 主題錨點。新增 directory-overview、directory-names、ldap-introduction、kerberos-introduction；補充內部章節採 h3。三組參考答案用原生 details，qa=[]，沒有假測驗控制。`verify-m04-08-source.py --check` 驗證 378 個原始段落與附件雜湊；`playwright.m04-08.config.ts` 核對兩語全文、四尺寸、200% 文字、無 JavaScript、鍵盤及全部下載。正式站以 M04_08_BASE_URL 指定。[發布與驗收回執](releases/2026-11-07-m04-08-replacement.md)分層記錄證據。
+
+## M05-01 弱點評估與滲透測試（2026-11-08）
+
+M05-01 首次公開 v1.0.0。`scripts/m05_01_content.py` 由完整中英稿與 diagrams.json 生成 sourceBody 及八份受審核 SVG；`--check` 核對 bytes。四圖使用既有 cards／flow，節點數固定為 6／3／4／5；`concepts.ts` 約束本課 ID、路徑、種類及數量。`AssessmentDiagram.svelte` 將第一圖的威脅／利用並列，其餘層次按原圖順序，風險是獨立評估；只有工作流程有順序箭頭，第四步明示必要與授權條件。手機按容器重排，正文與圖標籤可搜尋，無任意 HTML 或 SVG 注入。
+
+兩題沿原生 answer 參考解析，不建立送出或批改狀態。來源與逐小節／圖意差異見 [source-map](sources/m05-01/source-map.md)，單元檢查 `tests/m05-01.test.ts`，瀏覽器入口 `playwright.m05-01.config.ts`；正式站使用 `M05_01_BASE_URL`。發布後核對 M04-10 下一篇連至本課、M05-02 保持準備中。[驗收回執](releases/2026-11-08-m05-01.md)分別記錄內容、呈現與正式站證據。
