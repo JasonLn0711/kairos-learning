@@ -39,3 +39,15 @@ Pages run **42442489203** 已 completed／success，部署內容提交為 `4af35
 本次範圍已達成：供稿完整採入雙語觀點、八張參考圖重製為 16 份雙語 SVG、來源／修正／規則／檢查／發布詳實記錄並可追溯。原始材料、514 個正文區塊的模型與頁面比對、發布閘門、部署提交、公開頁面與公開資產各有對應證據。未新增學員成績、假送出或理解完成狀態。
 
 Linux 實機、實體手機、完整螢幕閱讀器認證屬尚未執行的額外驗收，不把瀏覽器模擬稱為上述認證；本次沒有以這些未測項支持已完成主張。以上正式驗收取代先前「部署啟動」段落的當時等待狀態，保留歷程供追溯。
+
+
+<a id="planning-connection-2026-11-08"></a>
+## FIRST PRINCIPLE 與 Planning 關聯
+
+稀缺資源是讀者的注意力、維護頻寬與可信證據。目標讀者為希望把工具操作連回系統機制的初學者；Jason 提供完整供稿與八張參考圖、決定公開範圍及記錄方式，Agent 承接整理、翻譯、程式與驗證。本文可供週回顧／lab sync 引用為公開教材與圖解交付，後續履歷或提案僅使用這個已驗證範圍。
+
+[Kairos 來源](../sources/cs-systems-foundations/README.md) → [正式 JSON](../../content/perspectives/cs-systems-foundations.json) → [內容維護](../content-authoring.md#cs-systems-perspective) → 本回執／正式頁面構成執行證據鏈。[Planning 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/days/2026-11-08.md#cs-systems-perspective-2026-11-08) ↔ [W45](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W45/weekly-plan.md#cs-systems-perspective-2026-11-08) ↔ [網站專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#cs-systems-perspective-2026-11-08) ↔ [整合索引](https://github.com/JasonLn0711/planning-everything-track/blob/main/docs/14-local-integrations.md#cs-systems-perspective-2026-11-08)只承接狀態、容量與下一關。
+
+下一個讀者決策是 Jason 在正常閱讀時提供 A–F 答案或具體卡點，依回饋決定是否修訂；本次不記為已理解或考試進度。個人工時未回報，Planning W45 容量 Unknown，保護固定承諾、恢復及個人學習 must-win；Agent 執行時間不換算 Jason 工時。Linux、實體手機與完整輔助科技範圍依上列實測界線。這次 Planning 文件同步沿用既有發布／回讀證據，未重新部署教材。
+
+Planning 同步驗證：29 個新增檔案／錨點連結、day／week agenda、repository（44 既有警告、0 新增）、兩 repo whitespace 通過；文章／SVG 產生器 `--check` 通過。Planning 先 fetch 並 fast-forward 保留遠端三個提交，未追蹤主機檔案維持原狀。

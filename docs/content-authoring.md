@@ -581,3 +581,11 @@ uv pip install --python .local/aase-venv/bin/python --require-hashes --link-mode
 已有完整快取時可加 `--offline`。此鎖檔只重現本機 Python 3.12.3 的已驗證組合；其他 Python／平台或套件升級需另外驗證。新 checkout 沒有本機鎖檔時，先依教材需求建立獨立環境，再產生並檢查完整鎖檔；不要將不同專案合併進同一可寫環境。
 
 [Workstation governance and validation receipt](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-04-ubuntu-storage-governance.md#dependency-sharing-2026-11-08) retains the aggregate result and host evidence locator.
+
+
+<a id="cs-systems-perspective"></a>
+## 資工底層原理觀點的維護與追溯
+
+本篇完整雙語來源與編輯修正見[來源紀錄](sources/cs-systems-foundations/README.md)，發布、規則及 Planning 雙向關聯見[回執](releases/2026-11-08-cs-systems-foundations.md#planning-connection-2026-11-08)。`PerspectiveBlock` 以受限 paragraph／heading／code／list／table 保留交錯次序，`systemsFigure` 只接受八個固定圖名；HTML 與搜尋共用正式資料，下載由 `scripts/cs_systems_diagrams.py` 產生。完整稿轉換／同步使用 `python3 scripts/generate-cs-systems.py --check`；修改稿件或圖解後先重建，再執行觀點、型別與必要發布閘門。來源與產生器同時核對，避免重建覆蓋未納入的編輯。
+
+瀏覽器檢查為 `node scripts/check-cs-systems-browser.mjs`，隔離預覽由 `python3 scripts/preview-cs-systems.py` 建立；正式站設定 `CS_SYSTEMS_BASE_URL=https://learn.cs-kairos.com`，SVG 字框檢查使用 `node scripts/check-cs-systems-svg.mjs`。證據留執行 owner，Planning 僅承接 locator、狀態、容量與下一關。修改正文依 WRITE-06 更新版本／日期；文件關聯維護不自動改教材版號或代填學習完成。
