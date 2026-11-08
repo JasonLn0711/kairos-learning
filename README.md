@@ -19,18 +19,18 @@
 使用 Node.js 24；安裝以 lockfile 為準。
 
 ```sh
-npm ci
-npm run dev -- --host 127.0.0.1
-npm run validate:content
-npm test
-npm run check
+pnpm install --frozen-lockfile
+pnpm run dev --host 127.0.0.1
+pnpm run validate:content
+pnpm test
+pnpm run check
 node scripts/check-publication-boundary.mjs
 python3 scripts/validate_site.py
 python3 scripts/validate_release.py
-npm audit --audit-level=high
+pnpm audit --audit-level=high
 ```
 
-`check-publication-boundary.mjs` 會建置並檢查草稿／未來日期測試資料沒有進入任何公開文字資產，最後移除測試來源。一般建置使用 `npm run build`。檢查完成的靜態頁：
+`check-publication-boundary.mjs` 會建置並檢查草稿／未來日期測試資料沒有進入任何公開文字資產，最後移除測試來源。一般建置使用 `pnpm run build`。檢查完成的靜態頁：
 
 ```sh
 python3 -m http.server 4179 --bind 127.0.0.1 --directory build
@@ -52,7 +52,7 @@ MATLAB 下載來源變更時，執行 `python3 scripts/package_release.py` 重�
 
 ## 觀點 Perspectives
 
-Learn 的觀點專欄承接有教學價值的事件解讀與實作反思；個人研究與專案論述仍由主站承接。每篇完整雙語。參見 [編輯指南](docs/perspectives/authoring.md) 、[撰稿模板](docs/perspectives/writing-template.md) 與 [首兩篇企劃](docs/perspectives/editorial-briefs.md)。使用 `npm run preview:perspectives` 檢查隔離的合成文章；目前沒有正式發布文章。
+Learn 的觀點專欄承接有教學價值的事件解讀與實作反思；個人研究與專案論述仍由主站承接。每篇完整雙語。參見 [編輯指南](docs/perspectives/authoring.md) 、[撰稿模板](docs/perspectives/writing-template.md) 與 [首兩篇企劃](docs/perspectives/editorial-briefs.md)。使用 `pnpm run preview:perspectives` 檢查隔離的合成文章；目前沒有正式發布文章。
 
 ## 全站共同規範
 
@@ -66,4 +66,13 @@ M01–M02 的 16 篇教材採用雙語閱讀導引與可換行圖解；[資料�
 
 [編輯入口](docs/aase/README.md)連結九模組／49 概念的完整課程設計、四篇先導教材與 10 小時工作坊。課程目錄使用獨立 ID 與發布閘門；繁體中文先行，未完成全文維持準備中。工作坊本機執行，不由 GitHub Pages 提供 Python 後端。
 
-修改 `resources/aase/` 後執行 `npm run package:aase`；依工作坊 README 安裝 `.local/aase-venv`，執行 `npm run test:browser:aase`。一般發布仍須完成既有內容、型別、單元、發布邊界及 release 檢查。[內容契約](docs/content-authoring.md)提供維護細節。
+修改 `resources/aase/` 後執行 `pnpm run package:aase`；依工作坊 README 安裝 `.local/aase-venv`，執行 `pnpm run test:browser:aase`。一般發布仍須完成既有內容、型別、單元、發布邊界及 release 檢查。[內容契約](docs/content-authoring.md)提供維護細節。
+
+## Package manager
+
+Use the version of pnpm pinned in `package.json`. Install with
+`pnpm install --frozen-lockfile`; use `pnpm run <script>` for project commands
+and `pnpm add` / `pnpm add -D` for dependencies. Commit `pnpm-lock.yaml` with
+dependency changes. pnpm shares package content through its local store.
+
+[11/8 M05 發布與 pnpm 整合回執](docs/releases/2026-11-08-first-principle-closeout.md)串接兩篇教材、來源對照、驗證及 Planning 狀態。
