@@ -1,5 +1,7 @@
 import {test,expect} from '@playwright/test';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,existsSync} from 'node:fs';
+const prior=existsSync('content/concepts/m05-02.json')?JSON.parse(readFileSync('content/concepts/m05-02.json','utf8')):null;
+const previous=prior?.status==='published'&&prior.publishedOn<='2026-11-08'?'/courses/ceh/v13/m05/concepts/m05-02/':'/courses/ceh/v13/m05/#m05-02';
 const source=JSON.parse(readFileSync('content/concepts/m05-03.json','utf8'));
 const norm=(s:string)=>s.replace(/\[([^\]]+)\]\(https:\/\/[^)]+\)/g,'$1').replace(/`([^`]+)`/g,'$1').replace(/\s+/g,' ').trim();
 const dir=process.env.M05_03_BASE_URL?'.local/m05-03/live':'.local/m05-03/local';mkdirSync(dir,{recursive:true});
@@ -20,7 +22,7 @@ for(const lang of ['zh','en']){
   const download=page.locator('[data-classification-diagram] a').first();await download.focus();await page.keyboard.press('Shift+Tab');await page.keyboard.press('Tab');await expect(download).toBeFocused();const [file]=await Promise.all([page.waitForEvent('download'),page.keyboard.press('Enter')]);expect(readFileSync((await file.path())!)).toEqual(readFileSync('site'+await download.getAttribute('href')));
   await page.locator('main').evaluate(main=>{const sizes=[main,...main.querySelectorAll('*')].map(e=>({e,size:parseFloat(getComputedStyle(e).fontSize),line:parseFloat(getComputedStyle(e).lineHeight)}));for(const {e,size,line} of sizes){(e as HTMLElement).style.fontSize=size*2+'px';if(Number.isFinite(line))(e as HTMLElement).style.lineHeight=line*2+'px';}});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  await expect(page.locator('.next-links a').first()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/#m05-02');await expect(page.locator('.next-links a').last()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/#m05-04');
+  await expect(page.locator('.next-links a').first()).toHaveAttribute('href',prefix+previous);await expect(page.locator('.next-links a').last()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/#m05-04');
 
   const index=await(await request.get('/search-index.json')).json();const entry=index.find((e:any)=>e.id==='M05-03'&&e.lang===lang);for(const token of ['Host-based','Internal','Active','Authenticated','Automated','Passive'])expect(entry.text).toContain(token);
  });
