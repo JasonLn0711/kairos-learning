@@ -565,3 +565,19 @@ M05-01 首次公開 v1.0.0。`scripts/m05_01_content.py` 由完整中英稿與 d
 ## M05-03 分類與評估圖解
 
 M05-03 使用既有 sourceBody visual 契約，限定 `m05-03-(causes|targets|methods|dimensions|evidence)-(zh|en)-v1-0-0.svg`；節點數依序 5／5／2／5／4，僅 evidence 為 flow，其餘 cards。`ClassificationDiagram.svelte` 以 HTML 與容器查詢呈現並列、分層與流程，窄版不把分類關係畫成依序流程。`scripts/m05_03_content.py` 從中英稿及 diagrams.json 生成正式正文與十份 sanitizer 審核 SVG；`--check` 驗證重建一致。來源對照及部署證據見 [M05-03 回執](releases/2026-11-08-m05-03.md)。
+
+<a id="aase-uv-cache"></a>
+
+### 工作站 Python 依賴共用｜2026-11-08
+
+本機 AASE 的四個 Python 環境保留原有路徑與 41 個套件版本；透過 uv 的共用快取安裝，保留各自的環境與 pip 相容入口。教材包的 `resources/aase/requirements.txt` 與學員操作方式維持原規範。此次工作站重現鎖檔存於忽略的 `.local/aase-requirements.lock`，含完整版本與 SHA-256；私有維護證據留在主機的 dependency-sharing 紀錄。
+
+既有環境直接安裝，不重建 `.venv`：
+
+```sh
+uv pip install --python .local/aase-venv/bin/python --require-hashes --link-mode hardlink -r .local/aase-requirements.lock
+```
+
+已有完整快取時可加 `--offline`。此鎖檔只重現本機 Python 3.12.3 的已驗證組合；其他 Python／平台或套件升級需另外驗證。新 checkout 沒有本機鎖檔時，先依教材需求建立獨立環境，再產生並檢查完整鎖檔；不要將不同專案合併進同一可寫環境。
+
+[Workstation governance and validation receipt](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-04-ubuntu-storage-governance.md#dependency-sharing-2026-11-08) retains the aggregate result and host evidence locator.
