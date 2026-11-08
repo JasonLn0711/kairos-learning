@@ -1,6 +1,6 @@
 """Check source fidelity, original assets and static HTML; not browser/keyboard QA."""
 from pathlib import Path
-from html.parser import HTMLParser
+from source_body_html import Body
 import hashlib,html,json,re,xml.etree.ElementTree as ET,zipfile
 R=Path(__file__).resolve().parents[1]
 lesson=json.loads((R/'content/concepts/m09-02.json').read_text())
@@ -9,26 +9,6 @@ sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
 source=R/'docs/sources/m09-02/user-primary-2026-10-29.md'
 assert sha(source)=='d3125240593f7d15483a5049b47099f40109c855e1c98c469cfaf1449099d2aa'
 norm=lambda s:re.sub(r'\s+',' ',html.unescape(re.sub(r'\[([^\]]+)\]\(https://[^)]+\)',r'\1',s))).strip()
-
-class Body(HTMLParser):
- def __init__(self,text):
-  super().__init__(convert_charrefs=True);self.depth=0;self.root=None;self.text=[];self.ids=[];self.images=[];self.details=[];self.in_details=0;self.feed(text)
- def handle_starttag(self,tag,attrs):
-  a=dict(attrs)
-  if tag=='div':
-   self.depth+=1
-   if 'source-body' in a.get('class','').split():self.root=self.depth
-  if self.root is None:return
-  if a.get('id'):self.ids.append(a['id'])
-  if tag=='details':self.details.append(a);self.in_details+=1
-  if tag=='img':self.images.append((a,self.in_details))
- def handle_endtag(self,tag):
-  if tag=='details' and self.root is not None:self.in_details-=1
-  if tag=='div':
-   if self.depth==self.root:self.root=None
-   self.depth-=1
- def handle_data(self,data):
-  if self.root is not None:self.text.append(data)
 
 counts={}
 for lang,prefix in [('zh',''),('en','en/')]:

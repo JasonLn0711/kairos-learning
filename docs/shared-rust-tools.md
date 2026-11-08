@@ -63,3 +63,13 @@ M03-01 的視覺文字選擇、M03-02 的新增圖例外及兩種 HTML 文字政
 未量測耗時、記憶體或 LLM Token 節省。完整頁面的四寬度、200% 字級、
 下載、鍵盤與 no-JS 驗收仍由各自 browser script 承接，本輪僅讀碼。
 責任判定連到[共用工具紀錄](https://github.com/JasonLn0711/kairos-rust-tools/blob/main/docs/rule-ownership.md)。
+
+## M09 source-body 解析共用化 — 2026-11-08
+
+M09-02 與 M09-03 共用 [`source_body_html.py`](../scripts/source_body_html.py)，
+集中 div 範圍、文字、ID、圖片／連結與 details 深度的擷取。文章各自的
+順序、答案、SVG、ZIP 與搜尋索引規則保留。兩支完整靜態 validator 新舊
+JSON 輸出位元一致且退出 0；三項合成測試驗證範圍、實體解碼、巢狀
+折疊深度、缺少 body 與跨頁狀態隔離。既有逐字稿來源比對器另有不同
+略過／標記語意，本次不套用此 parser。沒有新增瀏覽器或正式部署驗收，
+也沒有耗時或 Token 節省主張。

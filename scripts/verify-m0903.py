@@ -4,7 +4,7 @@ This is a static artifact check, not a browser/keyboard/mobile test or proof of
 production deployment. The existing browser restriction is not retried here.
 """
 from pathlib import Path
-from html.parser import HTMLParser
+from source_body_html import Body
 import hashlib
 import html
 import json
@@ -19,50 +19,6 @@ lesson = json.loads((ROOT / 'content/concepts/m09-03.json').read_text())
 
 def normalize(value):
     return re.sub(r'\s+', ' ', html.unescape(re.sub(r'\[([^\]]+)\]\(https://[^)]+\)', r'\1', value))).strip()
-
-
-class Body(HTMLParser):
-    def __init__(self, raw):
-        super().__init__(convert_charrefs=True)
-        self.depth = 0
-        self.root = None
-        self.text = []
-        self.details = []
-        self.links = []
-        self.tables = []
-        self.figures = []
-        self.in_details = 0
-        self.feed(raw)
-
-    def handle_starttag(self, tag, attrs):
-        attributes = dict(attrs)
-        if tag == 'div':
-            self.depth += 1
-            if 'source-body' in attributes.get('class', '').split():
-                self.root = self.depth
-        if self.root is None:
-            return
-        if tag == 'details':
-            self.details.append(attributes)
-            self.in_details += 1
-        if tag == 'a':
-            self.links.append((attributes, self.in_details))
-        if tag == 'table':
-            self.tables.append(self.in_details)
-        if tag == 'figure':
-            self.figures.append(self.in_details)
-
-    def handle_endtag(self, tag):
-        if tag == 'details' and self.root is not None:
-            self.in_details -= 1
-        if tag == 'div':
-            if self.depth == self.root:
-                self.root = None
-            self.depth -= 1
-
-    def handle_data(self, value):
-        if self.root is not None:
-            self.text.append(value)
 
 
 def text_units(block):
