@@ -46,7 +46,7 @@ def main():
     args = parser.parse_args(); start = time.monotonic(); errors = []
     print('Checking static links, language pairs, public files and MATLAB byte parity.', file=sys.stderr)
     pages = {p.relative_to(BUILD).as_posix(): Page(p.read_text()) for p in BUILD.rglob('*.html')}
-    if not pages: errors.append('No HTML output; run npm run build first.')
+    if not pages: errors.append('No HTML output; run pnpm run build first.')
     for rel, page in pages.items():
         legacy = rel.startswith('courses/matlab-practice/')
         if page.duplicates: errors.append(f'{rel}: duplicate IDs {sorted(page.duplicates)}')

@@ -16,7 +16,7 @@ try {
   registry.splice(registry.findIndex(c=>c.id==='M03-08')+1,0,{id:'M04-98',module:'m04',title:{zh:'測試概念',en:'Fixture concept'}});
   writeFileSync(registryPath,JSON.stringify(registry));
   writeFileSync(path,JSON.stringify(fixture));
-  const result=spawnSync('npm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
+  const result=spawnSync('pnpm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
   if(result.status!==0) throw new Error((result.stdout+result.stderr).slice(-5000));
   for(const lang of ['zh','en']) {
     const prefix=lang==='zh'?'':'en/';

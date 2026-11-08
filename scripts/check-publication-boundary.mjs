@@ -68,7 +68,7 @@ try {
     writeFileSync(path,JSON.stringify(t));files.push(path);
   }
   writeFileSync(registryPath,JSON.stringify(registry));
-  const result=spawnSync('npm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
+  const result=spawnSync('pnpm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
   if(result.status!==0) throw new Error((result.stdout+result.stderr).slice(-5000));
   const outputs=walk('build').filter(f=>/\.(html|json|js|xml)$/.test(f));
   for(const path of outputs) {
@@ -87,7 +87,7 @@ try {
     const profile=JSON.parse(englishOriginal);profile.title='AASE_EN_COURSE_CLOSED_4fc21';
     if(state==='draft')profile.status='draft';else profile.publishedOn='2099-01-01';
     writeFileSync(englishPath,JSON.stringify(profile));
-    const build=spawnSync('npm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
+    const build=spawnSync('pnpm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
     if(build.status!==0)throw Error((build.stdout+build.stderr).slice(-5000));
     if(existsSync('build/en/courses/aase/v1/index.html'))throw Error('Closed English course route exists');
     for(const path of walk('build').filter(f=>/\.(html|json|js|xml)$/.test(f)))if(markers.some(m=>readFileSync(path,'utf8').includes(m)))throw Error('Closed English data leaked: '+path);
@@ -102,7 +102,7 @@ finally {
   for(const [path,original] of aaseOriginals)writeFileSync(path,original);
   writeFileSync(registryPath,originalRegistry);
   console.error('Fixtures removed; rebuilding clean production output.');
-  const clean=spawnSync('npm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
+  const clean=spawnSync('pnpm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
   if(clean.status!==0) {console.error((clean.stdout+clean.stderr).slice(-5000));process.exitCode=1;}
   else for(const path of walk('build').filter(f=>/\.(html|json|js|xml)$/.test(f))) if(/M04-98|M04-99|m04-98|m04-99|CONCEPT_SECOND_FIXTURE|FIXTURE_ANSWER/.test(readFileSync(path,'utf8'))) {console.error(`Fixture artifact leaked: ${path}`);process.exitCode=1;}
 }

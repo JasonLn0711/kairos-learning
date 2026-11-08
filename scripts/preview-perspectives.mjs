@@ -14,7 +14,7 @@ rmSync(target,{recursive:true,force:true});mkdirSync(target,{recursive:true});
 for(const name of ['src','site','content','package.json','svelte.config.js','vite.config.ts','tsconfig.json'])cpSync(join(root,name),join(target,name),{recursive:true});
 symlinkSync(join(root,'node_modules'),join(target,'node_modules'),'dir');
 writeFileSync(join(target,'content/perspectives/preview-perspective.json'),readFileSync('tests/fixtures/perspectives/example.json'));
-const result=spawnSync('npm',['run','build'],{cwd:target,stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);
+const result=spawnSync('pnpm',['run','build'],{cwd:target,stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);
 if(process.argv.includes('--build-only'))process.exit(0);
 console.log(`Synthetic preview only: http://127.0.0.1:${port}/perspectives/preview-perspective/`);
 const server=spawn('python3',['-m','http.server',port,'--bind','127.0.0.1','--directory',join(target,'build')],{stdio:'inherit'});
