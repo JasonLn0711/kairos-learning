@@ -1,20 +1,10 @@
 """Static output verification only; not browser/mobile or live publication evidence."""
 from pathlib import Path
 import json,re,html,zipfile
-from html.parser import HTMLParser
-from validation_html import norm
+from validation_html import VisibleText as Text, norm
 from m0304_svg import generate
 ROOT=Path(__file__).resolve().parents[1]
 lesson=json.loads((ROOT/'content/concepts/m03-04.json').read_text());bundle,labels=generate()
-class Text(HTMLParser):
- def __init__(self,s):super().__init__();self.parts=[];self.details=[];self.hidden=False;self.feed(s)
- def handle_data(self,s):
-  if not self.hidden:self.parts.append(s)
- def handle_endtag(self,t):
-  if t in ['script','style']:self.hidden=False
- def handle_starttag(self,t,a):
-  if t in ['script','style']:self.hidden=True
-  if t=='details':self.details.append(dict(a))
 for lang,prefix in [('zh',''),('en','en/')]:
  raw=(ROOT/f'build/{prefix}courses/ceh/v13/m03/concepts/m03-04/index.html').read_text();page=Text(raw);text=norm(''.join(page.parts));cursor=0
  for b in lesson['text'][lang]['sourceBody']:

@@ -1,6 +1,6 @@
 """Contract tests for the shared static verifier text view."""
 import unittest
-from validation_html import Text, norm
+from validation_html import Text, VisibleText, norm
 
 class StaticHtmlViewTests(unittest.TestCase):
     def test_text_including_script_and_entity_data_is_preserved(self):
@@ -22,6 +22,19 @@ class StaticHtmlViewTests(unittest.TestCase):
         page = Text('<p>new</p>')
         self.assertEqual(page.parts, ['new'])
         self.assertEqual(page.details, [])
+
+    def test_visible_policy_excludes_script_style_but_preserves_details(self):
+        source = '<p>A &amp; B</p><script>hidden < value</script><style>.hidden{color:red}</style><details id="answer" open="false">中文</details>'
+        page = VisibleText(source)
+        self.assertEqual(''.join(page.parts), 'A & B中文')
+        self.assertEqual(page.details, [{'id': 'answer', 'open': 'false'}])
+        self.assertIn('hidden < value', ''.join(Text(source).parts))
+
+    def test_visible_policy_handles_self_closing_and_unclosed_tags_per_legacy(self):
+        self.assertEqual(''.join(VisibleText('<style/>after').parts), 'after')
+        self.assertEqual(''.join(VisibleText('<p>before</p><script>unfinished').parts), 'before')
+        VisibleText('<style>unfinished')
+        self.assertEqual(''.join(VisibleText('<p>fresh</p>').parts), 'fresh')
 
 if __name__ == '__main__':
     unittest.main()

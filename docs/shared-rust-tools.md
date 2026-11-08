@@ -33,3 +33,19 @@
 共用層的四項 Python 回歸測試已接入品質與 Pages 發布 workflow，避免只在本機驗證。
 Rust inventory 實測已發現 `validation_html.py` 與 `test_validation_html.py`，零 discovery error；
 這只證明宣告的兩個來源已納入，不代表其他文章規則已全數審核。
+
+## 2026-11-08：可見文字解析與剩餘抽取邊界
+
+M03-03／04／05 的三份相同 parser 已集中成 `validation_html.VisibleText`。
+它保留既有 script/style 隱藏狀態處理；原本包含 script 文字的 `Text` 行為不變。
+6 項回歸測試涵蓋兩種政策、entity、details、空白、未閉合／自閉合標籤及跨實例隔離；
+三支完整驗證器對現有 build 的 stdout、stderr、退出碼均與修改前一致且通過。
+這只證明此解析器抽取的相容性，不新增文章、圖檔、瀏覽器或正式站驗收。
+
+M02-01 至 M02-08、M03-01 至 M03-08、M09-04 至 M09-06 的 19 支入口，
+以及 M01-07 來源驗證器，仍混合正文順序、答案 ID、導覽、搜尋標籤、SVG 內容、
+位元組保存與 ZIP 成員比較。共用 Rust 的一般檔案／HTML 子集不足以代替這些完整
+契約；後續抽取須保留 M02-03 的原始 ZIP 例外、M02-06 的雙 ZIP 與網路圖、
+M03-01 的視覺文字選擇、M03-02 的新增圖例外及兩種 HTML 文字政策。
+[工具庫責任紀錄](https://github.com/JasonLn0711/kairos-rust-tools/blob/main/docs/rule-ownership.md#learning-static-article-contracts--2026-11-08)
+將其列為候選，不把局部重用記為全面 Rust 遷移。尚無此抽取的時間、能源或 Token 量測。
