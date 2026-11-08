@@ -589,3 +589,7 @@ uv pip install --python .local/aase-venv/bin/python --require-hashes --link-mode
 本篇完整雙語來源與編輯修正見[來源紀錄](sources/cs-systems-foundations/README.md)，發布、規則及 Planning 雙向關聯見[回執](releases/2026-11-08-cs-systems-foundations.md#planning-connection-2026-11-08)。`PerspectiveBlock` 以受限 paragraph／heading／code／list／table 保留交錯次序，`systemsFigure` 只接受八個固定圖名；HTML 與搜尋共用正式資料，下載由 `scripts/cs_systems_diagrams.py` 產生。完整稿轉換／同步使用 `python3 scripts/generate-cs-systems.py --check`；修改稿件或圖解後先重建，再執行觀點、型別與必要發布閘門。來源與產生器同時核對，避免重建覆蓋未納入的編輯。
 
 瀏覽器檢查為 `node scripts/check-cs-systems-browser.mjs`，隔離預覽由 `python3 scripts/preview-cs-systems.py` 建立；正式站設定 `CS_SYSTEMS_BASE_URL=https://learn.cs-kairos.com`，SVG 字框檢查使用 `node scripts/check-cs-systems-svg.mjs`。證據留執行 owner，Planning 僅承接 locator、狀態、容量與下一關。修改正文依 WRITE-06 更新版本／日期；文件關聯維護不自動改教材版號或代填學習完成。
+
+## M05-04 CVE、CWE、CPE 與資料庫（draft）
+
+CEH26-M05-C04 顯示 M05-04，正文沿既有 sourceBody；`scripts/m05_04_content.py` 從完整中英稿及 diagrams.json 生成正文與兩份受審核 SVG。三張平行角色卡由 IdentificationDiagram 承接，限定本課角色圖路徑、cards 與三節點；沒有順序箭頭。小檢核沿原生 answer 收合，qa=[]。C05 待編入口為嚴重度／優先順序；已發布前三課保留。`tests/m05-04.test.ts` 驗證身份與 draft/future 閘門；`scripts/check-m05-04-static.py` 僅做暫時公開狀態的隔離靜態全文檢查，finally 恢復 draft，之後須重跑 boundary 建立乾淨輸出。它不能代替瀏覽器或正式頁驗收。[逐節來源](sources/m05-04/source-map.md)及[回執](releases/2026-11-08-m05-04.md)分別記錄內容與發布狀態。
