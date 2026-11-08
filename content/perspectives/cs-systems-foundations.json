@@ -1,0 +1,5031 @@
+{
+  "id": "cs-systems-foundations",
+  "slug": "cs-systems-foundations",
+  "status": "published",
+  "publishedOn": "2026-11-08",
+  "updatedOn": "2026-11-08",
+  "contentVersion": "1.0.0",
+  "revision": 1,
+  "category": "analysis",
+  "topics": [
+    "cs",
+    "ai",
+    "security"
+  ],
+  "sources": [
+    {
+      "id": "inode",
+      "title": "Linux inode(7)",
+      "url": "https://man7.org/linux/man-pages/man7/inode.7.html",
+      "checkedOn": "2026-11-08"
+    },
+    {
+      "id": "rename",
+      "title": "Linux rename(2)",
+      "url": "https://man7.org/linux/man-pages/man2/rename.2.html",
+      "checkedOn": "2026-11-08"
+    },
+    {
+      "id": "venv",
+      "title": "Python venv",
+      "url": "https://docs.python.org/3/library/venv.html",
+      "checkedOn": "2026-11-08"
+    },
+    {
+      "id": "pnpm",
+      "title": "pnpm dependency structure",
+      "url": "https://pnpm.io/symlinked-node-modules-structure",
+      "checkedOn": "2026-11-08"
+    },
+    {
+      "id": "uv",
+      "title": "uv cache safety",
+      "url": "https://docs.astral.sh/uv/concepts/cache/",
+      "checkedOn": "2026-11-08"
+    },
+    {
+      "id": "docker",
+      "title": "Docker storage",
+      "url": "https://docs.docker.com/engine/storage/",
+      "checkedOn": "2026-11-08"
+    },
+    {
+      "id": "git",
+      "title": "Git: What is Git?",
+      "url": "https://git-scm.com/book/en/v2/Getting-Started-What-is-Git%3F",
+      "checkedOn": "2026-11-08"
+    },
+    {
+      "id": "github-cache",
+      "title": "GitHub dependency caching",
+      "url": "https://docs.github.com/en/actions/concepts/workflows-and-actions/dependency-caching",
+      "checkedOn": "2026-11-08"
+    }
+  ],
+  "related": [],
+  "updates": [],
+  "text": {
+    "zh": {
+      "title": "資工底層原理通識課：從一個位元組到完整軟體系統",
+      "summary": "從資源、身分、狀態與操作理解系統各層，選擇可核對的排錯方法與驗收證據。",
+      "author": "CS Kairos Learn",
+      "sections": [
+        {
+          "id": "introduction",
+          "heading": "導言",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Computer Science & Systems Engineering｜通用概念、第一原理、運作機制與實務判斷"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這份教學將電腦系統與軟體工程涉及的技術，整理成可以適用於 Linux、macOS、Windows、網站、AI 系統與雲端服務的通用知識體系。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "整套課程最重要的概念是：電腦系統由許多不同層次組成，每一層都在管理特定的資源、身分、狀態與操作。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "理解各層的責任與它們如何連接，就能從「會使用工具」進一步成為「知道系統為什麼這樣運作，也能自行判斷問題原因」的人。"
+            }
+          ]
+        },
+        {
+          "id": "section-1",
+          "heading": "一、先建立完整的資工知識地圖",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "我們先把系統主題歸納成六個領域。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "領域",
+                "核心問題",
+                "必須理解的底層知識"
+              ],
+              "rows": [
+                [
+                  "電腦與作業系統",
+                  "程式怎麼執行？",
+                  "CPU、RAM、SSD、Kernel、Process、System Call"
+                ],
+                [
+                  "檔案與儲存",
+                  "資料怎麼保存與共用？",
+                  "File System、inode、Link、CoW、Hash"
+                ],
+                [
+                  "軟體與依賴",
+                  "程式怎麼取得正確零件？",
+                  "Runtime、Package、Dependency Graph、ABI、Lockfile"
+                ],
+                [
+                  "版本與協作",
+                  "修改怎麼安全保存與整合？",
+                  "Git、DAG、Commit、Branch、Transaction"
+                ],
+                [
+                  "建置與交付",
+                  "程式如何變成使用者能使用的系統？",
+                  "Build、Container、Artifact、CI/CD、HTTP"
+                ],
+                [
+                  "測試與治理",
+                  "如何證明系統正確且可恢復？",
+                  "Test、Observability、Security、Provenance、Data Governance"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "這六個領域並不是六套互不相關的技術，而是一個系統的不同觀察角度。"
+            }
+          ]
+        },
+        {
+          "id": "section-2",
+          "heading": "軟體從開發到交付的完整生命週期",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "systemsFigure",
+              "name": "lifecycle"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Source（來源）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "程式碼、資料、設定、需求"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Dependency（依賴）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "套件、版本、函式庫、工具鏈"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Build / Execute（建置與執行）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "作業系統、程序、編譯器、執行環境"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Artifact（成品）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "網站檔案、執行檔、容器映像、模型封裝"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Deploy / Serve（部署與服務）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "伺服器、容器、網路、瀏覽器"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Verification（驗證）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "檢查每個階段，並確認使用者得到正確結果"
+            },
+            {
+              "kind": "paragraph",
+              "text": "檔案系統與硬體支撐所有階段；Git 管理來源歷史；測試、安全與證據追溯則應貫穿整條流程。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "我們接下來沿著這條線，由底層往上學。"
+            }
+          ]
+        },
+        {
+          "id": "section-3",
+          "heading": "二、電腦的第一原理：程式到底是怎麼跑起來的？",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-3-sub-1",
+              "text": "1. CPU、RAM、SSD 各自負責什麼？"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "hardware"
+            },
+            {
+              "kind": "paragraph",
+              "text": "想像一間餐廳："
+            },
+            {
+              "kind": "list",
+              "items": [
+                "CPU 是廚師，負責按照指令做事。",
+                "RAM 是料理工作檯，存放目前正在使用的材料。",
+                "SSD 是倉庫，保存需要長期留下的資料。",
+                "作業系統是餐廳管理系統，負責分派工作、管理設備及存取權限。"
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "這個比喻可以讓我們先建立基本模型，但還有幾個重要細節。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CPU"
+            },
+            {
+              "kind": "paragraph",
+              "text": "執行指令、運算與控制"
+            },
+            {
+              "kind": "paragraph",
+              "text": "RAM"
+            },
+            {
+              "kind": "paragraph",
+              "text": "暫存程序正在使用的資料"
+            },
+            {
+              "kind": "paragraph",
+              "text": "SSD"
+            },
+            {
+              "kind": "paragraph",
+              "text": "持久保存檔案與程式"
+            },
+            {
+              "kind": "paragraph",
+              "text": "GPU"
+            },
+            {
+              "kind": "paragraph",
+              "text": "大量平行計算，常用於圖形與 AI"
+            },
+            {
+              "kind": "paragraph",
+              "text": "最重要的區別是："
+            },
+            {
+              "kind": "paragraph",
+              "text": "資料存在 SSD，不代表 CPU 已把它載入記憶體；資料存在 RAM，也不代表 GPU 已經取得它。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設你要執行一個 AI 語音辨識程式。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "模型權重可能保存於 SSD。當程式啟動時，系統需要讀取模型檔案，建立程序所需的記憶體狀態；若使用獨立 GPU，還可能需要將相關權重或資料傳到 GPU 可存取的記憶體。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "所以，兩個專案即使透過 hard link 共用同一份磁碟模型檔案，也不代表它們的 GPU 程序就會自動共用同一份顯示記憶體。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這是儲存層共享與執行期記憶體共享的差別。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-3-sub-2",
+              "text": "2. Kernel（核心）是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Kernel 是作業系統的核心部分，負責管理硬體資源及提供受控的系統服務。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "你的 Python 程式不能隨意直接控制所有磁碟硬體。它通常會透過作業系統提供的介面來讀寫檔案。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如："
+            },
+            {
+              "kind": "code",
+              "text": "with open(\"data.txt\", \"r\") as f:\n    content = f.read()"
+            },
+            {
+              "kind": "paragraph",
+              "text": "從程式設計師的角度，只是開啟檔案、讀取內容。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但在底層，概念上會經過這條路徑："
+            },
+            {
+              "kind": "code",
+              "text": "Python 程式\n    ↓\nPython Runtime / 函式庫\n    ↓\nSystem Call（系統呼叫）\n    ↓\nKernel（核心）\n    ↓\n檔案系統與儲存裝置\n    ↓\n回傳資料給程式"
+            },
+            {
+              "kind": "paragraph",
+              "text": "System Call 可以理解成應用程式向作業系統提出服務請求的正式入口。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這也是作業系統保護資源的重要機制之一。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-3-sub-3",
+              "text": "3. Process（程序）與 Program（程式）不一樣"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Program 通常指保存起來的程式內容。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Process 是程式正在執行時，由作業系統管理的執行實體。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "你可以把 Program 想成一份食譜，Process 則是正在按照食譜做菜的廚師與工作狀態。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "同一個程式可以同時啟動多個程序，而每個程序可能具有自己的記憶體空間、開啟檔案、執行環境與權限。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如："
+            },
+            {
+              "kind": "code",
+              "text": "python server.py"
+            },
+            {
+              "kind": "paragraph",
+              "text": "它不是單純「打開一個 Python 檔案」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Shell 需要找到 Python 直譯器，作業系統建立程序，直譯器讀取程式並載入必要模組，再依程式內容執行操作。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "要真正理解程式執行，必須區分磁碟上的程式檔、執行中的程序，以及程序使用的記憶體與外部資源。"
+            }
+          ]
+        },
+        {
+          "id": "section-4",
+          "heading": "三、檔案系統的第一原理：路徑不是資料本體",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-4-sub-1",
+              "text": "1. 檔名、inode、資料區塊是不同東西"
+            },
+            {
+              "kind": "paragraph",
+              "text": "我們平常會認為："
+            },
+            {
+              "kind": "code",
+              "text": "/home/user/report.txt"
+            },
+            {
+              "kind": "paragraph",
+              "text": "就是一個檔案。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但典型 Linux 檔案系統可以分成三個概念。"
+            },
+            {
+              "kind": "code",
+              "text": "Path（路徑）\n    ↓\nDirectory Entry（目錄項目）\n    ↓\ninode（檔案物件的中繼資料）\n    ↓\nData Blocks / Extents（實際內容）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "inode 是檔案系統管理檔案的資料結構，包含權限、擁有者、連結數量、大小、時間戳及資料配置資訊等。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "一個很重要的觀念是：inode 編號只保證在所屬檔案系統內具有識別意義，所以比較檔案身分時，通常需要將 device 與 inode 一起考慮。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-4-sub-2",
+              "text": "2. Hard Link、Symbolic Link、Reflink、Copy 的本質"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "links"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Hard Link（硬連結）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "兩個路徑指向同一 inode。刪掉其中一個名稱，不會自動刪除另一個名稱所指的內容；但透過其中一個名稱原地修改檔案，另一個名稱也會看到變更。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "另外三種技術可用下表區分："
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "技術",
+                "共用的實體",
+                "修改時的行為"
+              ],
+              "rows": [
+                [
+                  "Symlink",
+                  "目標路徑",
+                  "預設沿路徑找到目標；目標消失可能斷鏈"
+                ],
+                [
+                  "Hard link",
+                  "同一 inode",
+                  "原地寫入影響所有別名"
+                ],
+                [
+                  "Reflink / CoW",
+                  "底層資料區塊",
+                  "寫入時將需要改變的區塊分離"
+                ],
+                [
+                  "Copy",
+                  "通常是獨立資料",
+                  "修改一份不影響另一份"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "CoW 是 Copy-on-Write，意即「寫入時複製」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "它的核心思想是：如果兩份資料目前一樣，先共用內容；等其中一份真的要改時，才為修改的部分分配獨立儲存。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這個想法會反覆出現在檔案系統、虛擬記憶體、容器及快照等技術中。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-4-sub-3",
+              "text": "3. 為什麼硬連結可能有風險？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設兩個應用程式都需要 `config.json`。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "今天兩份內容完全相同，所以你把它們做成 hard link。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "明天應用程式 A 修改設定檔，應用程式 B 可能也同時看到新的內容。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "不只是內容，hard link 所共享的 inode 中繼資料也包含權限與時間戳等資訊。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，要共享可寫檔案，就必須理解程式的更新方式。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如，程式直接開啟檔案原地覆寫，與先建立新檔、再使用 `rename` 取代舊路徑，是不同的行為。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "後者可能使該路徑改指向新的 inode，不再與其他硬連結共享原本的檔案物件。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-4-sub-4",
+              "text": "4. 為什麼刪掉大檔案，磁碟空間卻沒有立即增加？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "可能的原因包括：還有其他硬連結指向同一 inode，或者程序仍然持有已刪除檔案的開啟參照。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "也可能涉及快照、CoW 共享、其他程序同時寫入，以及檔案系統的配置方式。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，必須區分三個量："
+            },
+            {
+              "kind": "paragraph",
+              "text": "Logical Size（邏輯大小）是檔案對外呈現的位元組長度；Allocated Size（配置大小）是儲存系統實際配置的容量；Free Space（可用空間）則是整個檔案系統目前可用的空間。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這解釋了為什麼 `du`、`df` 與某些應用程式的快取統計結果可能不同。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "另外，GB 與 GiB 也不同：GB 通常使用 10⁹ bytes，GiB 使用 2³⁰ bytes。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-4-sub-5",
+              "text": "5. 如何觀察？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "以下以 Linux／GNU 工具為例，指令只讀取資訊，不會修改檔案。請把 `example.txt` 換成存在的檔案；macOS 的 `stat` 欄位格式與 `readlink` 選項依版本不同，先以 `man stat`、`man readlink` 核對。"
+            },
+            {
+              "kind": "code",
+              "text": "# 檔案系統的容量\ndf -h\n\n# 目錄的使用量估計\ndu -sh .\n\n# 查看某檔案的 inode、連結數與權限\nstat example.txt\n\n# 看符號連結的解析結果\nreadlink -f example.txt"
+            },
+            {
+              "kind": "paragraph",
+              "text": "看到兩個檔案大小相同，還不能斷定是同一份檔案。你需要進一步確認內容與身分。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這就帶我們進入下一個重要主題：Hash。"
+            }
+          ],
+          "sourceIds": [
+            "inode",
+            "rename"
+          ]
+        },
+        {
+          "id": "section-5",
+          "heading": "四、Hash、內容定址與資料去重複：如何知道兩份資料是否相同？",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-5-sub-1",
+              "text": "1. Hash 是替內容計算一個指紋"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設你有兩份檔案，名稱分別叫："
+            },
+            {
+              "kind": "code",
+              "text": "report-final.pdf\nreport-final-copy.pdf"
+            },
+            {
+              "kind": "paragraph",
+              "text": "光看名字不知道內容是否相同。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Hash Function（雜湊函數）會將輸入資料轉換成固定長度的摘要。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如 SHA-256 不論處理多大的檔案，產生的摘要長度都是 256 bits。"
+            },
+            {
+              "kind": "code",
+              "text": "檔案內容 A ── SHA-256 ──> 雜湊 X\n檔案內容 B ── SHA-256 ──> 雜湊 X"
+            },
+            {
+              "kind": "paragraph",
+              "text": "如果兩個檔案的完整 SHA-256 相同，工程上通常可以極高信心認為內容相同。這是基於密碼學上的抗碰撞性，並非數學上絕對不可能碰撞。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-5-sub-2",
+              "text": "2. Content-Addressable Storage 是什麼？"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "cas"
+            },
+            {
+              "kind": "paragraph",
+              "text": "一般儲存方式用檔名找資料："
+            },
+            {
+              "kind": "paragraph",
+              "text": "`文件名稱 → 檔案內容`"
+            },
+            {
+              "kind": "paragraph",
+              "text": "內容定址儲存（Content-Addressable Storage，CAS）則使用內容雜湊作為識別資訊："
+            },
+            {
+              "kind": "paragraph",
+              "text": "`檔案內容 → Hash → 儲存位置`"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Content：檔案位元組"
+            },
+            {
+              "kind": "paragraph",
+              "text": "SHA-256：計算摘要"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Blob Store：依摘要保存內容"
+            },
+            {
+              "kind": "paragraph",
+              "text": "版本 A"
+            },
+            {
+              "kind": "paragraph",
+              "text": "參照 Hash X"
+            },
+            {
+              "kind": "paragraph",
+              "text": "版本 B"
+            },
+            {
+              "kind": "paragraph",
+              "text": "參照 Hash X"
+            },
+            {
+              "kind": "paragraph",
+              "text": "不同版本可以參照相同的內容物件，避免為一模一樣的位元組保存重複副本。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Blob 可以理解為「一塊由系統當作整體管理的資料」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Snapshot 則是某個時間點的狀態描述。它可以記錄「當時有哪些路徑、各自對應哪些內容」，不必替每次快照重新保存全部相同的位元組。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這套概念可以應用在 Git 物件、套件 store、模型快取、備份與歷史版本管理。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-5-sub-3",
+              "text": "3. 相同的 Hash，不代表資料可信"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這是資訊安全上的關鍵區分。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Integrity（完整性）關心資料有沒有被改變；Authenticity（真實性／來源可信性）則關心資料是否來自你信任的來源。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "攻擊者也能產生一份惡意檔案，再替它計算 SHA-256。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "所以，檢查下載檔案時，不能只確認「某個雜湊值與同一個不可信網站提供的值相符」，就推論軟體安全。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "還需要考慮可信發布來源、數位簽章、封裝來源與供應鏈安全。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這裡的核心原理是："
+            },
+            {
+              "kind": "paragraph",
+              "text": "Hash 可以建立內容身分，但不能單獨建立來源信任。"
+            }
+          ]
+        },
+        {
+          "id": "section-6",
+          "heading": "五、程序、命令與權限：為什麼同一條指令在不同地方可能有不同結果？",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-6-sub-1",
+              "text": "1. Terminal、Shell、Runtime 是三個不同角色"
+            },
+            {
+              "kind": "paragraph",
+              "text": "你在終端機輸入："
+            },
+            {
+              "kind": "code",
+              "text": "python app.py"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這裡有不同的元件參與。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Terminal 是文字互動介面。Shell 是解析命令、管理環境與啟動其他程式的工具。Python Runtime 則負責執行 Python 程式。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Shell 遇到 `python` 時，通常會依照 PATH 環境變數尋找對應的可執行檔。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "PATH 就像一份「可以去哪裡找工具」的目錄清單。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設你安裝了兩個 Python："
+            },
+            {
+              "kind": "code",
+              "text": "/usr/bin/python3\n/home/user/project/.venv/bin/python"
+            },
+            {
+              "kind": "paragraph",
+              "text": "在不同 Shell、不同 PATH 或不同虛擬環境下，輸入 `python` 可能選到不同的直譯器。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，命令名稱相同，不保證執行的是相同程式。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-6-sub-2",
+              "text": "2. Shebang、PATH 與子程序"
+            },
+            {
+              "kind": "paragraph",
+              "text": "在 Unix 類系統中，腳本開頭可能有："
+            },
+            {
+              "kind": "code",
+              "text": "#!/usr/bin/env python3"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這叫 Shebang，用來指定腳本直接執行時的直譯器選擇方式。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "此處透過 `env` 尋找 `python3`，結果會受到執行環境影響。若工具使用固定的直譯器路徑，則會受到該路徑是否仍有效的影響。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這也是為什麼搬動 Python CLI 工具環境後，入口腳本可能失效。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "另外，一個程序可以啟動另一個程序。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如 Node.js："
+            },
+            {
+              "kind": "code",
+              "text": "import { spawnSync } from \"node:child_process\";\n\nconst result = spawnSync(\"python3\", [\"worker.py\"], {\n  encoding: \"utf8\"\n});"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這裡的 Node.js 是父程序，Python 是子程序。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "子程序有自己的程序身分，但通常會繼承父程序傳入的部分環境，例如環境變數與工作目錄。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，外層工具執行成功，不代表內層一定取得正確的 PATH 或 Python 環境。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-6-sub-3",
+              "text": "3. Exit Code（結束碼）代表什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Unix 類程序通常使用結束狀態向呼叫者報告結果。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "慣例上："
+            },
+            {
+              "kind": "paragraph",
+              "text": "`0` 表示程序自行宣告成功；非零表示某種失敗或異常狀態。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如："
+            },
+            {
+              "kind": "code",
+              "text": "python validate.py && python build.py"
+            },
+            {
+              "kind": "paragraph",
+              "text": "`&&` 的意思是：前一個命令成功，才執行下一個命令。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但如果 `validate.py` 明明發現錯誤，卻仍回傳 0，後面的 `build.py` 就可能繼續執行。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "所以，系統顯示成功，只代表它收到成功訊號；還要確認這個訊號是否真正反映驗收結果。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-6-sub-4",
+              "text": "4. 權限與最小權限原則"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Linux 程序通常以某個使用者身分執行，能否讀取檔案、修改設定或管理服務，取決於相應的權限機制。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這與以下概念密切相關："
+            },
+            {
+              "kind": "paragraph",
+              "text": "Least Privilege（最小權限）：一個程序只應取得完成工作所需的能力，不應因為操作方便，就一律取得最高權限。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如，單純讀取 Docker 容器清單，不應直接推論需要授予某個工具不受限制的主機管理能力。Docker socket 的權限尤其需要謹慎。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這也解釋了為什麼 venv 的套件隔離，不等於程式受到安全沙箱保護。"
+            }
+          ]
+        },
+        {
+          "id": "section-7",
+          "heading": "六、套件管理的第一原理：Dependency 是圖論問題，安裝是資源配置問題",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-7-sub-1",
+              "text": "1. Dependency Graph 是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設你的程式依賴 A、B，而 A 又依賴 C。"
+            },
+            {
+              "kind": "code",
+              "text": "應用程式\n  ├── A\n  │   └── C\n  └── B\n      └── D"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這是一張圖（Graph）：套件是節點，依賴關係是邊。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Direct Dependency（直接依賴）是應用程式明確宣告需要的套件；Transitive Dependency（間接依賴）則是由其他套件帶進來的需求。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "還有一個經常造成問題的概念：Peer Dependency（對等依賴）。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如，一個 UI 元件套件可能要求由主專案提供相容的 React 版本。這種關係不能簡單理解成「每個套件自己下載一份 React 就好」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，套件管理器要解決的不只是下載，而是相依約束與版本選擇問題。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-2",
+              "text": "2. Manifest、Lockfile、已安裝環境有什麼差別？"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "environment"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Manifest"
+            },
+            {
+              "kind": "paragraph",
+              "text": "允許哪些依賴"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Lockfile"
+            },
+            {
+              "kind": "paragraph",
+              "text": "選定哪些版本"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Installed Environment（已安裝環境）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "磁碟上真正存在的程式、模組、入口與連結"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Manifest 是需求規格，lockfile 是某次依賴解析的結果，已安裝環境則是實際建立出來的檔案與連結。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這三者可能不一致。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設專案容許某函式庫的 2.x 版本，lockfile 選定 2.5.1，但開發者本機還有 2.4.0 的舊環境。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "那麼，本機能執行並不保證正在使用與 CI 相同的依賴。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，lockfile 要搭配受控的安裝方式與驗證。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-3",
+              "text": "3. npm、pnpm 的底層差異"
+            },
+            {
+              "kind": "paragraph",
+              "text": "npm 和 pnpm 都能解析並安裝 JavaScript 套件，但它們建立依賴目錄與重用檔案的方式可能不同。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "pnpm 的典型安裝結構會透過共用 store、`node_modules/.pnpm` 與符號連結表達依賴關係，並依平台及設定採用不同的套件內容匯入方式。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這反映兩個要分開的問題："
+            },
+            {
+              "kind": "paragraph",
+              "text": "依賴解析：程式要求套件 A 時，應該找到哪個版本？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "儲存配置：同一份套件內容，是否有必要在每個專案保存獨立副本？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "pnpm 將兩個問題分開處理，因此能在維持各專案依賴關係的同時重用套件內容。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-4",
+              "text": "4. Python 的 venv、pip、uv、pipx 各自負責什麼？"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "技術",
+                "主要角色"
+              ],
+              "rows": [
+                [
+                  "Python Runtime",
+                  "執行 Python 程式"
+                ],
+                [
+                  "venv",
+                  "建立隔離的套件安裝與搜尋環境"
+                ],
+                [
+                  "pip",
+                  "安裝 Python 套件"
+                ],
+                [
+                  "uv",
+                  "管理 Python 專案、相依解析、環境、工具與快取等工作"
+                ],
+                [
+                  "pipx",
+                  "以隔離環境安裝並執行 Python CLI 工具"
+                ],
+                [
+                  "Wheel",
+                  "Python 可安裝的發行封裝格式"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "venv 讓不同專案能使用不同的套件安裝位置，而不必全部共用同一個全域 Python 環境。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "uv 則提供不同的套件匯入策略，包括 copy、hardlink、symlink 與 clone（CoW）。它們對共享程度、修改副作用及清理快取的安全性有不同影響。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這裡必須理解："
+            },
+            {
+              "kind": "paragraph",
+              "text": "套件版本一致，不等於二進位環境相容。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-5",
+              "text": "5. ABI、CPU Architecture、Toolchain 是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "想像你買了一個電器插頭。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "產品名稱與型號都正確，但如果插頭規格與插座不相容，仍不能直接使用。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "原生軟體也有相似情況。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CPU Architecture，例如 x86-64 與 ARM64，描述處理器所支援的指令集架構等條件。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "ABI（Application Binary Interface）則描述已編譯程式之間如何在二進位層面互動，例如函式呼叫約定、資料結構安排及特定二進位相容要求。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Toolchain（工具鏈）是編譯、連結及其他建置工具的組合。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此："
+            },
+            {
+              "kind": "paragraph",
+              "text": "可執行性 ≠ 只有套件版本正確"
+            },
+            {
+              "kind": "paragraph",
+              "text": "還需要考慮作業系統、CPU 指令集、ABI、原生函式庫、直譯器與必要的驅動等條件。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這也解釋了為什麼某些 Python Wheel 或 GPU 專用編譯產物，不能因為名稱或大小一樣，就在不同架構間互換。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Rust 又有 Host 與 Target 的區分：Host 是編譯器執行的平台，Target 是編譯結果要執行的平台。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-6",
+              "text": "6. APT、Snap、Rustup 與專案套件管理器"
+            },
+            {
+              "kind": "paragraph",
+              "text": "還需要分清楚「誰負責管理這項軟體」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "APT 常用於 Debian／Ubuntu 的系統套件管理。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Snap 管理自身封裝與 revision；某些舊 revision 可能是回復點。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Rustup 管理 Rust 的工具鏈與相關代理入口。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "pnpm 和 uv 則偏向程式語言或專案層級的依賴與工具管理。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這些工具可能在同一台電腦共存，而且各自保管不同層次的資產。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如更新 rustup，並不等於所有 Rust compiler toolchain 都已更新；刪除一個 Python CLI 環境，也不代表整個 pipx 或 uv 都不再需要。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "所以，整理電腦之前，應先回答：「這個檔案由誰建立、誰使用、由誰更新，以及如何恢復？」"
+            }
+          ],
+          "sourceIds": [
+            "venv",
+            "pnpm",
+            "uv"
+          ]
+        },
+        {
+          "id": "section-8",
+          "heading": "七、Cache、Garbage Collection 與 Docker：資源生命週期的共通原理",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-8-sub-1",
+              "text": "1. Cache 為什麼能加速？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Cache 的核心概念是："
+            },
+            {
+              "kind": "paragraph",
+              "text": "把一部分空間成本，換成未來較低的存取或計算成本。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如第一次下載一個套件需要網路傳輸，第二次若能從快取取得，就可能減少下載。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但 Cache 不只一種。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CPU Cache 保存處理器近期可能使用的資料；作業系統的 Page Cache 可以緩存檔案資料；套件管理器 Cache 保存下載或建置結果；瀏覽器 Cache 則能保存部分網頁資源。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "它們都使用「重用」的思想，但內容、管理者、失效條件與安全契約不相同。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-8-sub-2",
+              "text": "2. Garbage Collection（垃圾回收）如何判斷可以刪除什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "一種常見方法是從 Root Set（根集合）出發，找出仍可被引用到的物件。"
+            },
+            {
+              "kind": "code",
+              "text": "Root（仍在使用的入口）\n   ├── 物件 A\n   │    └── 物件 C\n   └── 物件 B\n\n物件 D：沒有可達的有效引用"
+            },
+            {
+              "kind": "paragraph",
+              "text": "在這個簡化模型中，D 可能是回收候選。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但是，如果系統沒有正確登錄所有引用者，就可能誤判。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如某個程式還需要特定版本的瀏覽器執行檔，但快取管理器不知道這個需求，清理程序便可能將它移除。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "所以，垃圾回收是否安全，取決於其引用模型與生命週期資訊是否足夠完整。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "對於 uv 這類工具，應優先透過它提供的快取管理功能操作，而不是直接刪除內部管理的檔案。官方文件也明確提醒不要直接修改其快取內容。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-8-sub-3",
+              "text": "3. Docker Image 與 Container 是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Docker Image 可以想成已經準備好的軟體執行模板，包含應用程式及所需的檔案層。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Container 是根據映像建立、具有隔離設定與可寫狀態的執行實例。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "在一般 Linux 容器架構中，容器與主機共享核心，透過 namespaces、cgroups 等機制實現不同程度的隔離與資源控制；它不是完整模擬一台獨立電腦的虛擬機。"
+            }
+          ],
+          "sourceIds": [
+            "uv",
+            "docker"
+          ]
+        },
+        {
+          "id": "section-9",
+          "heading": "Docker 的典型分層儲存概念",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "systemsFigure",
+              "name": "docker"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Container Writable Layer"
+            },
+            {
+              "kind": "paragraph",
+              "text": "容器執行時新增或修改的狀態"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Application Layer"
+            },
+            {
+              "kind": "paragraph",
+              "text": "應用程式及相關檔案"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Dependency Layers"
+            },
+            {
+              "kind": "paragraph",
+              "text": "執行環境與套件"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Base Image Layers"
+            },
+            {
+              "kind": "paragraph",
+              "text": "基底檔案系統內容"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Volume / Bind Mount"
+            },
+            {
+              "kind": "paragraph",
+              "text": "獨立於容器可寫層管理的持久資料"
+            },
+            {
+              "kind": "paragraph",
+              "text": "示意結構。多個映像可共用相同層，因此映像列表顯示的大小不能直接加總為實際唯一磁碟占用。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Volume 尤其重要。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設資料庫執行在容器裡，資料卻保存在獨立 volume。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "重新建立容器，不一定會刪掉 volume；相反地，如果你誤刪 volume，可能損失真正需要保留的資料。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Docker 官方也將容器與資料持久化分開教學，強調需要長期保留的資料應有獨立的管理方式。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-9-sub-1",
+              "text": "4. 為什麼清理快取不能只追求 SSD 空間最小？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "我們可以把資源最佳化寫成一個概念性問題："
+            },
+            {
+              "kind": "paragraph",
+              "text": "最小化（儲存成本＋重建成本＋操作風險）"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但三種成本必須根據情境衡量，不能未經定義便直接當作同一單位加總。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "一份 5 GB 的快取若十分容易重新下載，可能適合清理。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但一份 500 MB 的本機編譯結果，如果重建需要特殊環境、已下架的上游資源或大量人工工作，保留反而可能更有價值。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "所以真正成熟的資源管理，不是「刪除最多」，而是在可恢復、可驗證的前提下，降低整體維護成本。"
+            }
+          ],
+          "sourceIds": [
+            "docker"
+          ]
+        },
+        {
+          "id": "section-10",
+          "heading": "八、Git 的第一原理：版本控制其實是在管理有向無環圖",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-10-sub-1",
+              "text": "1. Git 到底保存什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "很多人把 Git 當成「程式碼備份工具」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這個理解不算錯，但不夠完整。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Git 是一套分散式版本控制系統，核心能力是保存內容、版本快照，以及版本之間的關係。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "理解 Git，先認識三種物件："
+            },
+            {
+              "kind": "paragraph",
+              "text": "Blob 保存檔案內容；Tree 描述某個目錄層級的檔案與子目錄；Commit 記錄某個版本對應的 Tree、父提交及其他中繼資料。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這些結構讓 Git 能保存一連串版本歷史。"
+            }
+          ],
+          "sourceIds": [
+            "git"
+          ]
+        },
+        {
+          "id": "section-11",
+          "heading": "Git 的三個主要工作區域",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "systemsFigure",
+              "name": "git-areas"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Working Tree"
+            },
+            {
+              "kind": "paragraph",
+              "text": "正在修改的檔案"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Index"
+            },
+            {
+              "kind": "paragraph",
+              "text": "準備提交的內容"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Repository"
+            },
+            {
+              "kind": "paragraph",
+              "text": "已提交的版本物件"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Working Tree"
+            },
+            {
+              "kind": "paragraph",
+              "text": "git add"
+            },
+            {
+              "kind": "paragraph",
+              "text": "git commit"
+            },
+            {
+              "kind": "paragraph",
+              "text": "工作樹、暫存區與已提交的版本資料是不同狀態。`git add` 和 `git commit` 並不是同一件事。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "官方 Git 文件也把這三個區域作為基本工作模型。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-11-sub-1",
+              "text": "2. 為什麼 Git 使用 DAG？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "DAG 是 Directed Acyclic Graph，中文為「有向無環圖」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "簡單理解，就是一張有方向、且不會沿著方向繞回原點的關係圖。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Git commit 指向父提交，因此可以表示版本歷史。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "概念示意：從 B 分出兩條開發歷史，最終由 G 作為合併提交記錄雙方的父關係。Git 內部的提交指標方向實際上是由新提交指向父提交。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這種結構非常重要，因為多位開發者不可能永遠按照同一條線修改程式。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Branch（分支）本質上是指向某個 commit 的參照。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這讓每位開發者可以在自己的歷史上工作，再選擇如何整合。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-11-sub-2",
+              "text": "3. Fast-forward、Merge、Rebase 有什麼不同？"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "git-dag"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Fast-forward 是單純把分支指標往較新的後代提交移動，不必額外製造合併提交。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Merge 是整合分岔的歷史，必要時建立具有多個父提交的新 commit。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Rebase 則是將某條開發線的變更重新套用到另一個基礎上，會產生新的提交身分。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "對已經與他人共享的歷史，不應在沒有協作約定的情況下任意重寫。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這也是為什麼 force push 需要特別謹慎：它可能改變遠端分支的可達歷史。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-11-sub-3",
+              "text": "4. Stash 和 Worktree 解決什麼問題？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Stash 用來暫時保存工作樹與索引中的修改。常見的 `git stash push -u` 也會納入未追蹤檔案，但預設不包括 ignored 檔案。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Worktree 則允許同一個 Git repository 擁有額外的工作目錄與索引。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如，你正在修改某個功能，卻需要從最新 main 建立一份乾淨環境來測試正式發布。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "使用獨立 worktree，可以降低兩項工作在相同目錄互相覆蓋的風險。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這裡反映的是一個通用工程原理："
+            },
+            {
+              "kind": "paragraph",
+              "text": "不同工作應該適當隔離，但可以共享其真正需要的底層資源與版本歷史。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-11-sub-4",
+              "text": "5. 為什麼 Commit、Push、Deploy 不是同一件事？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Commit 是將版本保存到本地 Git 物件資料庫。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Push 是嘗試更新遠端 Git repository 的參照。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Deploy 是將某個可執行或可提供服務的成品交付到目標環境。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "三者可能使用不同的時間點、提交與產物。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此："
+            },
+            {
+              "kind": "paragraph",
+              "text": "Commit 成功 ⇏ Deploy 成功"
+            },
+            {
+              "kind": "paragraph",
+              "text": "甚至 Deploy 成功，也不代表應用程式符合需求。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這就需要下一層：建置、交付與驗收。"
+            }
+          ],
+          "sourceIds": [
+            "git"
+          ]
+        },
+        {
+          "id": "section-12",
+          "heading": "九、CI/CD 的第一原理：如何把人工流程變成可重複的工程程序？",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-12-sub-1",
+              "text": "1. CI 和 CD 是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CI（Continuous Integration，持續整合）是頻繁整合程式變更，並透過自動化檢查降低問題累積的做法。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CD 可以是 Continuous Delivery（持續交付）或 Continuous Deployment（持續部署）。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "持續交付強調系統維持可交付狀態；持續部署則進一步自動將符合條件的變更部署到目標環境。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "以一般網站為例："
+            },
+            {
+              "kind": "code",
+              "text": "工程師提交原始碼\n        ↓\nCI 建立執行環境\n        ↓\n安裝指定依賴\n        ↓\n執行內容、型別、單元與安全檢查\n        ↓\nBuild（建置）\n        ↓\n產生 Artifact\n        ↓\n部署\n        ↓\n對正式服務執行驗收"
+            },
+            {
+              "kind": "paragraph",
+              "text": "其中 Build 指把來源經過編譯、轉換或封裝，產生可使用的成果。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如 TypeScript 需要轉換成瀏覽器可執行的 JavaScript，網站也可能經過打包、壓縮、預先渲染等步驟。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-2",
+              "text": "2. Source、Cache、Artifact 為什麼必須分開？"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "類別",
+                "本質",
+                "常見例子"
+              ],
+              "rows": [
+                [
+                  "Source",
+                  "定義應該建立什麼",
+                  "程式碼、需求、設定、內容模型"
+                ],
+                [
+                  "Cache",
+                  "加速重複工作",
+                  "已下載套件、編譯中間資料"
+                ],
+                [
+                  "Artifact",
+                  "一次執行產生的成品",
+                  "建置好的網站、執行檔、測試報告"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "Cache 應在缺少時仍能重建必要內容；Artifact 則可能是需要正式保存、傳遞或部署的結果。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "GitHub 官方文件也明確區分 workflow artifact 與 dependency cache 的使用目的。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這個區分在 AI 系統也適用。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如，模型原始訓練資料、訓練過程產生的暫時快取、最終交付的模型權重與評估報告，不應全部採用相同的保管策略。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-3",
+              "text": "3. 為什麼 CI 要固定環境？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設開發者本機使用 Python A 版本，CI 則使用 Python B 版本。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "即使原始碼相同，可能仍有語法、套件、ABI 或行為差異。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此可把建置結果理解成："
+            },
+            {
+              "kind": "paragraph",
+              "text": "B = f(S, D, T, P, E)"
+            },
+            {
+              "kind": "paragraph",
+              "text": "其中 B 是建置結果，S 是來源，D 是依賴，T 是工具鏈，P 是平台，E 是環境條件。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這個式子不是特定軟體的執行公式，而是用來表達：建置結果可能受多個條件共同影響。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "要追求 Reproducible Build（可重現建置），就必須控制足夠的輸入。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Lockfile 只能處理其中一部分。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-4",
+              "text": "4. 為什麼 CI 也需要安全治理？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CI 通常能下載程式、執行命令、讀取部分機密設定，甚至部署正式系統。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此 CI 本身就是值得保護的攻擊面。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如 GitHub Actions 可能使用不同權限的 Token 或 OIDC 憑證。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這牽涉最小權限原則、供應鏈安全、工作流程觸發條件與不可信輸入處理。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "此外，CI 快取不應被視為永遠可信。低信任來源若能影響快取內容，可能造成 Cache Poisoning（快取污染）風險。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-5",
+              "text": "5. Eventual Consistency（最終一致性）是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設一個服務已上傳 Artifact，但另一個服務稍後才能在清單中查到它。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這不一定代表上傳失敗，可能只是不同元件對狀態的可見時間不同。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這種現象可以用分散式系統的一致性模型理解。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "常見處理方法是有限重試（Bounded Retry），但必須注意兩件事。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "首先，重試應有明確停止條件。其次，執行可能產生副作用的操作時，要考慮 Idempotency（冪等性）。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "冪等性指重複執行某項操作，不會讓預期的最終狀態因重複而繼續改變。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如，單純查詢 Artifact 清單通常可以安全重試；付款、刪除資料或部署新版本則需要更謹慎的重試設計。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-6",
+              "text": "6. Concurrency（併發）為什麼會造成問題？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Concurrency 是多個工作在時間上重疊進行。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設兩個建置程序同時讀寫同一份輸出目錄。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "其中一個程序可能讀到另一個程序尚未完成的中間檔案，導致結果依執行順序不同而改變。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這叫 Race Condition（競爭條件）。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，應辨認哪些工作可平行執行，哪些工作必須串行，哪些需要使用獨立工作區或鎖定機制。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CI 的 concurrency group 也不是自然等於一條完整的 FIFO（先進先出）佇列。實際保留多少等待工作、是否取消執行中工作、如何排序，要看平台與具體設定。"
+            }
+          ],
+          "sourceIds": [
+            "github-cache"
+          ]
+        },
+        {
+          "id": "section-13",
+          "heading": "十、網站系統的底層：從資料模型到瀏覽器畫面",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-13-sub-1",
+              "text": "1. HTML、CSS、JavaScript 分別做什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "想像你要建造一棟房子。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "HTML 決定房子的結構；CSS 決定外觀與配置；JavaScript 則可以提供互動行為。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "更精確地說："
+            },
+            {
+              "kind": "paragraph",
+              "text": "HTML 描述文件的內容與語意結構。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CSS 控制畫面呈現與排版。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "JavaScript 在瀏覽器中執行程式邏輯，操作頁面、處理互動或與服務交換資料。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "三者彼此合作，但責任不同。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如，一個按鈕即使外觀很漂亮，如果語意結構錯誤，可能使鍵盤操作或輔助科技難以辨認。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，前端設計不能只看視覺效果。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-2",
+              "text": "2. 瀏覽器如何取得網站？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "理解網站部署，需要先認識瀏覽器取得資源的網路流程。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "一般 HTTPS 網站請求大致涉及："
+            },
+            {
+              "kind": "code",
+              "text": "輸入網址\n    ↓\nDNS：查詢主機名稱對應的位置資訊\n    ↓\n建立網路連線與 TLS 安全通道\n    ↓\nHTTP：請求網頁資源\n    ↓\n伺服器或 CDN 回應 HTML / CSS / JS\n    ↓\n瀏覽器解析並呈現畫面"
+            },
+            {
+              "kind": "paragraph",
+              "text": "DNS、TLS 和 HTTP 是不同層次的機制。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "DNS 協助找出要連往哪裡；TLS 負責通訊安全相關功能；HTTP 定義請求與回應的語意。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "當 GitHub Pages 已完成部署，但你看到的網站仍不正確時，問題可能位於部署產物、網頁資產、瀏覽器行為或快取，而不一定是 Git 原始碼。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-3",
+              "text": "3. 靜態網站與動態網站的差別"
+            },
+            {
+              "kind": "paragraph",
+              "text": "靜態網站通常在建置階段就產生可以直接提供的 HTML、CSS、JavaScript 等檔案。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "動態網站則可能在每次請求時，讓伺服器程式查詢資料庫、計算內容，再產生回應。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如："
+            },
+            {
+              "kind": "code",
+              "text": "靜態：\n來源 → 建置 HTML → 伺服器提供 HTML\n\n動態：\n請求 → 應用程式 → 資料庫／業務邏輯 → 回應"
+            },
+            {
+              "kind": "paragraph",
+              "text": "兩種方式沒有絕對的優劣，應依網站功能、更新頻率、互動需求及部署成本選擇。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "很多現代網站也會結合兩種模式。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-4",
+              "text": "4. Schema 與 TypeScript 在保護什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設你的教材資料長這樣："
+            },
+            {
+              "kind": "code",
+              "text": "{\n  \"lessonId\": \"lesson-01\",\n  \"title\": \"Introduction\",\n  \"published\": true\n}"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Schema（資料結構契約）可以規定這份資料應有哪些欄位、型別與有效條件。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "TypeScript 可以在開發與建置階段檢查程式碼中的型別關係。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但是，TypeScript 檢查通過，不能直接證明外部 JSON 一定符合預期。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因為程式執行時，仍可能從檔案、API 或資料庫讀入不合法資料。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此需要 Runtime Validation（執行期驗證）。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "同樣地，資料格式合法，也不保證內容在事實上正確。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這是三種不同的判斷："
+            },
+            {
+              "kind": "paragraph",
+              "text": "結構是否合法、程式能否處理、資料內容是否正確。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-5",
+              "text": "5. 為什麼 Responsive Design 不只是把圖片縮小？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "響應式設計（Responsive Design）要讓內容能根據可用空間、裝置條件及使用情境保持可理解、可操作。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "如果一張 1200px 的流程圖直接縮小成 300px，圖形雖然完整顯示，但文字可能只剩原來的四分之一大小。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "更好的方法可能是讓 HTML 文字重新換行，利用 CSS Grid、Flexbox 或 Container Query 重新排列內容。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但還要注意：排版改變，不應改變資訊原本的邏輯關係。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如分類樹的兩個平行分支，不應因為手機版改成直向排列，就看起來像前後相依的步驟。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這是語意與視覺呈現必須共同考慮的原因。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "另外，Accessibility（無障礙）不只是文字能否看清楚，還涉及鍵盤操作、閱讀順序、語意標記、輔助科技及互動狀態等。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-6",
+              "text": "6. 為什麼隱藏草稿不等於保護草稿？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設系統不顯示某篇文章的導覽連結，但內容仍然被打包到搜尋索引或 JavaScript 檔案。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "使用者仍可能取得它。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "所以，不顯示某項資料，與不將該資料交付給使用者，是兩件不同的事。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這也是資訊安全常見的誤解。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "前端畫面上的隱藏條件，不應取代真正的資料發布或存取控制規則。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "在靜態網站中，應檢查整個正式輸出，而不只確認某個頁面不存在。"
+            }
+          ]
+        },
+        {
+          "id": "section-14",
+          "heading": "十一、測試工程的第一原理：證據必須與主張相符",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "這是整套教程最重要的跨領域能力之一。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-14-sub-1",
+              "text": "1. 為什麼「測試通過」不是完整的結論？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設你執行 100 個測試，全部成功。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "你究竟證明了什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "答案取決於測試內容、測試環境及測試斷言。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "如果只測加法函式，就不能拿結果證明整個網站安全。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "如果只測本機瀏覽器，就不能宣稱正式服務一定正常。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，每個測試都需要明確的證據範圍。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "測試種類",
+                "核心用途",
+                "主要限制"
+              ],
+              "rows": [
+                [
+                  "Unit Test",
+                  "驗證小範圍程式邏輯",
+                  "不代表整體系統正確"
+                ],
+                [
+                  "Integration Test",
+                  "驗證元件之間的互動",
+                  "不一定涵蓋真實部署"
+                ],
+                [
+                  "End-to-End Test",
+                  "驗證指定完整使用流程",
+                  "只涵蓋設計過的情境"
+                ],
+                [
+                  "Regression Test",
+                  "防止既有功能退化",
+                  "未測到的問題仍可能存在"
+                ],
+                [
+                  "Negative Test",
+                  "驗證不應允許的情況會被拒絕",
+                  "需要有效的負向案例"
+                ],
+                [
+                  "Security Test",
+                  "檢查指定威脅或安全條件",
+                  "不能概括為完全安全"
+                ]
+              ]
+            },
+            {
+              "kind": "heading",
+              "id": "section-14-sub-2",
+              "text": "2. 為什麼要分別測試正向與負向行為？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設你正在開發一個檔案上傳系統。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "正向測試會確認合法使用者能正常上傳符合條件的檔案。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "負向測試則會確認未授權使用者、不合法檔案或超出限制的操作受到正確處理。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "兩者缺一不可。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "尤其在資安領域，「正常流程可以成功」和「不被允許的流程確實被阻擋」是兩個不同的安全需求。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-14-sub-3",
+              "text": "3. 為什麼測試資料本身也需要有效？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設你要驗證「未發布文章不能上線」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "你建立了一篇草稿，但它的基本 JSON 結構本身就是錯的。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "結果建置程序在內容解析階段就失敗。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這時，你不能直接宣稱發布控制有效，因為系統根本沒有走到發布控制的判斷。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "正確的測試設計應盡可能讓其他條件合法，只改變你真正想測的條件。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這反映了實驗設計裡的控制變因思想。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-14-sub-4",
+              "text": "4. SHA-256、Playwright、人工審查各自能證明什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設一份 SVG 圖檔經過 SHA-256 比對，確認與可信的來源檔案一致。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這只能證明位元組相符。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "它無法告訴你圖中的箭頭是否畫錯、文字是否容易閱讀、讀者是否正確理解。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Playwright 可以在指定瀏覽器環境中檢查畫面與互動，但也不會自動理解所有教學內容的事實正確性。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "人工審查則可以評估語意、脈絡與專業內容，但也有遺漏與主觀判斷的可能。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此，成熟驗收需要將不同證據結合，而不是找一個測試工具取代所有判斷。"
+            }
+          ]
+        },
+        {
+          "id": "section-15",
+          "heading": "十二、可靠系統的進階底層：原子性、競爭條件、恢復與治理",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "前面學過的檔案、Git、Docker、CI/CD 與資料治理，其實還共享一些更深層的系統原理。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-1",
+              "text": "1. Atomicity（原子性）是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "原子性的核心想法是：某項操作對外應呈現為不可分割的狀態轉換。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如，程式要更新一份重要檔案。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "如果直接原地覆寫，其他程序可能讀到只完成一半的內容。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "一種常見做法是先寫入暫存檔，再以適當的原子更名操作取代目標。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這能降低其他程序觀察到中間狀態的可能性。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "但請注意："
+            },
+            {
+              "kind": "paragraph",
+              "text": "操作對外可見的原子性，不等於斷電後一定完成持久保存。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "檔案同步、目錄中繼資料、檔案系統日誌與儲存裝置保證，都可能影響持久性（Durability）。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-2",
+              "text": "2. TOCTOU 是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "TOCTOU 是 Time-of-Check to Time-of-Use。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "意思是：系統檢查某項條件時，它是正確的；但真正執行操作時，狀態可能已經改變。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如："
+            },
+            {
+              "kind": "code",
+              "text": "檢查檔案未被修改\n       ↓\n另一個程序更新該檔案\n       ↓\n原程序仍依舊檢查結果進行操作"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這可能造成錯誤或安全問題。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "所以，「操作前檢查一次」不一定足以保證操作時的條件仍然成立。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "需要依情況採用鎖、版本檢查、原子操作、隔離或其他併發控制機制。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-3",
+              "text": "3. 為什麼跨多個 Repository 的提交不是一個交易？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設一項發布工作需要同時更新網站 Repository 與 Planning Repository。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "網站已成功推送，但 Planning 推送失敗。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Git 並沒有自動替這兩個獨立 repository 提供全有或全無的交易保證。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此可能出現短暫的狀態不一致。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這時需要有明確的恢復與對帳流程，例如保留已完成的提交識別資訊，再補上另一個 repository 的更新。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "大型分散式系統同樣常常面對這個問題。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "它們不能只依賴單一資料庫的交易觀念，還可能需要補償操作、冪等設計與狀態對帳。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-4",
+              "text": "4. Single Source of Truth 與 Data Provenance"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Single Source of Truth（單一可信正本）是一種資料責任設計原則。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "不是說全系統只能有一個資料庫，而是每一項資訊應有清楚的權威來源。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如產品規格由規格文件負責，建置結果由 CI 紀錄負責，部署版本由部署系統負責，使用者學習結果則由實際學習證據負責。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Data Provenance（資料來源追溯）則關心資料從哪裡來、經過哪些處理、由誰或什麼系統修改，以及能否追查。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "兩者相互配合："
+            },
+            {
+              "kind": "paragraph",
+              "text": "單一正本減少衝突，來源追溯讓變更可以被理解與驗證。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-5",
+              "text": "5. Control Plane 與 Data Plane 是什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這兩個概念常見於網路、雲端及分散式系統。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Data Plane（資料平面）是處理實際資料或執行主要工作的部分。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Control Plane（控制平面）則負責設定、協調與管理系統應如何運作。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "例如在一個網站系統中，提供正式網頁的伺服器屬於實際服務路徑；記錄部署目標、發布狀態與工作流程的管理系統，則可借用控制平面的概念理解。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "不過，這是架構類比。不是所有專案管理文件都真的實作了一套正式的分散式控制平面。"
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-6",
+              "text": "6. 為什麼應該保留 Unknown？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "工程系統經常需要記錄狀態。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "假設網站已部署，但是否完成無障礙人工驗收仍未確認。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "如果只有一個 `done = true`，就可能把不同工作混在一起。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "較精確的資料模型可能是："
+            },
+            {
+              "kind": "code",
+              "text": "build        = passed\ndeployment   = succeeded\nbrowser_test = passed\na11y_review  = pending\nuser_impact  = unknown"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這種做法能避免把「尚未測得」誤寫成「已通過」。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "尤其是工時、績效、可靠性與安全指標，不應根據推測補造數字。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Unknown 是一種有意義的資訊狀態，不一定是資料管理的失敗。"
+            }
+          ],
+          "sourceIds": [
+            "rename"
+          ]
+        },
+        {
+          "id": "section-16",
+          "heading": "十三、把所有知識變成實際排錯能力",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "假設你接到這些不同的系統問題，應該如何選擇第一個檢查方向？"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "觀察到的現象",
+                "優先檢查的底層機制"
+              ],
+              "rows": [
+                [
+                  "兩個資料夾看起來各占 10 GB",
+                  "inode、hard link、CoW、配置大小"
+                ],
+                [
+                  "刪掉大型檔案，`df` 沒變",
+                  "其他連結、開啟參照、快照、同期寫入"
+                ],
+                [
+                  "本機程式能跑，另一台電腦不能",
+                  "Runtime、套件版本、ABI、CPU 架構"
+                ],
+                [
+                  "同一個命令在不同終端結果不同",
+                  "PATH、Shebang、環境變數、工作目錄"
+                ],
+                [
+                  "清快取後工具壞掉",
+                  "引用關係、連結模式、版本耦合"
+                ],
+                [
+                  "Git push 成功，網站沒有更新",
+                  "CI、Build、Artifact、Deploy"
+                ],
+                [
+                  "CI 顯示成功，但網站內容錯誤",
+                  "測試斷言、發布邊界、正式環境"
+                ],
+                [
+                  "網頁桌面正常，手機無法閱讀",
+                  "CSS 重排、語意結構、Responsive Design"
+                ],
+                [
+                  "多個工作互相覆蓋檔案",
+                  "Race Condition、隔離、鎖與交易"
+                ],
+                [
+                  "版本已發布，但完成紀錄矛盾",
+                  "Source of Truth、Provenance、狀態模型"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "請注意這個診斷方式："
+            },
+            {
+              "kind": "paragraph",
+              "text": "我們不是直接猜「哪個工具壞了」，而是先辨認問題發生在哪一個抽象層，再找對應的觀察方法。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這就是理解底層知識之後，最直接的實務價值。"
+            }
+          ]
+        },
+        {
+          "id": "section-17",
+          "heading": "十四、實際練習：用安全的小實驗觀察 inode 和硬連結",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "可以在 Linux 或 macOS 終端機使用一個全新的暫存資料夾練習，不必碰正式專案。"
+            },
+            {
+              "kind": "code",
+              "text": "# 建立一個獨立的暫存目錄\nlab=$(mktemp -d)\n\n# 建立檔案\nprintf 'Hello Computer Science\\n' > \"$lab/a.txt\"\n\n# 建立硬連結\nln \"$lab/a.txt\" \"$lab/hard.txt\"\n\n# 建立符號連結\nln -s a.txt \"$lab/soft.txt\"\n\n# 觀察檔案身分與連結數\nstat \"$lab/a.txt\"\nstat \"$lab/hard.txt\"\n\n# 比較內容：Linux 使用 sha256sum，macOS 使用 shasum\nif command -v sha256sum >/dev/null 2>&1; then\n  sha256sum \"$lab/a.txt\" \"$lab/hard.txt\"\nelse\n  shasum -a 256 \"$lab/a.txt\" \"$lab/hard.txt\"\nfi"
+            },
+            {
+              "kind": "paragraph",
+              "text": "重點是觀察：原始檔案與硬連結的 inode 是否相同？Hard link count 是否改變？兩個內容雜湊是否相同？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這個練習可以把前面抽象的檔案系統概念，轉變成實際看得見的證據。預期 `a.txt` 與 `hard.txt` 在同一裝置上有相同 inode，連結數為 2，SHA-256 摘要相同；`soft.txt` 自己是另一個符號連結物件。實際 inode 數字由檔案系統決定。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "觀察完成後，在同一個 Shell 僅刪除本練習建立的三個名稱，再移除空目錄；`rmdir` 若發現額外內容會停止。"
+            },
+            {
+              "kind": "code",
+              "text": "rm -- \"$lab/soft.txt\" \"$lab/hard.txt\" \"$lab/a.txt\"\nrmdir -- \"$lab\"\nunset lab"
+            }
+          ]
+        },
+        {
+          "id": "section-18",
+          "heading": "十五、綜合理解檢核",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "下面是一個完整案例，涵蓋本次教材的主要領域。先不提供答案。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "情境：某研究團隊同時維護一個 Python AI 推論服務、一個 JavaScript 教學網站和一個 Docker 資料庫服務。團隊發現 SSD 空間不足、不同工程師的環境不一致、CI 偶爾失敗，而且某次網站更新後正式頁面顯示了不該公開的草稿內容。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "可使用自己的語言回答，重點是說明判斷步驟與需要的證據。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A｜硬體與檔案系統\n兩個 AI 專案各有一份大小相同的模型權重。你如何判斷它們是否真的重複占用磁碟？若共用硬連結，還需要確認什麼？磁碟共用是否代表 GPU 記憶體也共享？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "B｜依賴與執行環境\nPython 和 JavaScript 專案在不同工程師電腦上執行結果不同。你會如何區分 PATH、依賴解析、lockfile、ABI 和平台架構造成的問題？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "C｜快取與容器\n主管要求一次清除所有大型快取、Docker 映像與 volume。你會如何分類哪些可以重建、哪些可能是唯一重要資料、哪些刪除後可能破壞其他環境？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "D｜Git、CI/CD 與分散式系統\nGit push 已成功，CI 建置也通過，但正式網站沒有更新。你會沿著哪些階段追查？如果兩個建置工作同時修改同一個輸出目錄，可能發生什麼問題？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "E｜網站與安全\n為什麼草稿沒有公開頁面，仍可能從搜尋索引被取得？你會設計哪些正向、負向與正式網站測試？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "F｜測試、恢復與治理\n系統恢復後，如何區分「檔案完整」「服務可用」「版本正確」「安全限制有效」與「使用者需求已滿足」？你會保存哪些證據，如何避免將未知狀態宣稱為成功？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "完成 A–F 後，可將回答交給授課者或帶入後續討論逐題檢視；本頁不提供線上送出或自動批改功能。"
+            }
+          ]
+        },
+        {
+          "id": "section-19",
+          "heading": "最後，把這門課濃縮成五個能長期使用的觀念",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "一、名稱不等於物件。 檔名不等於 inode，套件名稱不等於具體安裝版本，命令名稱不等於實際執行檔。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "二、內容相同不等於可以安全共用。 共用之前，還要確認寫入行為、責任與恢復需求。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "三、環境一致不只靠版本號。 工具鏈、作業系統、CPU 架構、ABI 與執行條件都可能影響結果。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "四、完成一個階段不等於完成整個系統。 Commit、Build、Deploy、Test 與使用者驗收，各有不同的完成條件。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "五、工程結論必須有對應的證據。 能證明檔案位元組相同的證據，不能直接證明程式安全；能證明服務啟動的證據，也不能直接證明使用者已成功完成工作。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "接下來最有效的學習方式，是將這套知識分別應用於一個真實的 Python 專案、一個 JavaScript 網站及一個 Docker 服務，逐步觀察它們的資源、依賴、版本、執行與驗收證據。這會比單純背誦工具指令更能建立可遷移的資工能力。"
+            }
+          ]
+        }
+      ]
+    },
+    "en": {
+      "title": "Computer Science Foundations: From a Byte to a Complete Software System",
+      "summary": "Understand system layers through resources, identity, state and operations, then choose verifiable troubleshooting and acceptance evidence.",
+      "author": "CS Kairos Learn",
+      "sections": [
+        {
+          "id": "introduction",
+          "heading": "Introduction",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Computer Science & Systems Engineering | General concepts, first principles, mechanisms and practical judgment"
+            },
+            {
+              "kind": "paragraph",
+              "text": "This course organizes computer systems and software engineering into a body of knowledge applicable to Linux, macOS, Windows, websites, AI systems and cloud services."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Its central idea is that a computer system consists of layers, each managing particular resources, identities, states and operations."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Understanding their responsibilities and connections helps you explain why tools behave as they do and investigate problems independently."
+            }
+          ]
+        },
+        {
+          "id": "section-1",
+          "heading": "1. Build a map of computer science",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "We can organize these system topics into six areas."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Area",
+                "Core question",
+                "Foundations"
+              ],
+              "rows": [
+                [
+                  "Computers and operating systems",
+                  "How does a program run?",
+                  "CPU, RAM, SSD, kernel, process, system call"
+                ],
+                [
+                  "Files and storage",
+                  "How is data stored and shared?",
+                  "Filesystem, inode, links, CoW, hashes"
+                ],
+                [
+                  "Software and dependencies",
+                  "How does software obtain the right components?",
+                  "Runtime, package, dependency graph, ABI, lockfile"
+                ],
+                [
+                  "Versions and collaboration",
+                  "How are changes saved and integrated safely?",
+                  "Git, DAG, commit, branch, transaction"
+                ],
+                [
+                  "Building and delivery",
+                  "How does software become a usable system?",
+                  "Build, container, artifact, CI/CD, HTTP"
+                ],
+                [
+                  "Testing and governance",
+                  "How do we establish correctness and recoverability?",
+                  "Testing, observability, security, provenance, data governance"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "These are perspectives on one system rather than six unrelated collections of tools."
+            }
+          ]
+        },
+        {
+          "id": "section-2",
+          "heading": "The complete software lifecycle",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "systemsFigure",
+              "name": "lifecycle"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Source"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Code, data, configuration, requirements"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Dependency"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Packages, versions, libraries, toolchain"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Build / Execute"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Operating systems, processes, compilers, runtimes"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Artifact"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Website files, executables, container images, model packages"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Deploy / Serve"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Servers, containers, networks, browsers"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Verification"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Check every stage and confirm that users receive the correct result."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Filesystems and hardware support all stages. Git manages source history. Testing, security and evidence provenance should span the whole flow."
+            },
+            {
+              "kind": "paragraph",
+              "text": "We will follow this route from the underlying mechanisms upward."
+            }
+          ]
+        },
+        {
+          "id": "section-3",
+          "heading": "2. Computer fundamentals: how does a program run?",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-3-sub-1",
+              "text": "1. What do the CPU, RAM and SSD do?"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "hardware"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Imagine a restaurant:"
+            },
+            {
+              "kind": "list",
+              "items": [
+                "The CPU is the chef, carrying out instructions.",
+                "RAM is the workbench holding ingredients currently in use.",
+                "The SSD is the storeroom preserving materials for later.",
+                "The operating system manages assignments, equipment and access rights."
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "The analogy gives us an initial model, with several important details to add."
+            },
+            {
+              "kind": "paragraph",
+              "text": "CPU"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Executes instructions, computation and control"
+            },
+            {
+              "kind": "paragraph",
+              "text": "RAM"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Temporarily holds data currently used by processes"
+            },
+            {
+              "kind": "paragraph",
+              "text": "SSD"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Persistently stores files and programs"
+            },
+            {
+              "kind": "paragraph",
+              "text": "GPU"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Performs large amounts of parallel computation, often for graphics and AI"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The key distinction is this:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Data on an SSD has not necessarily been loaded into memory for the CPU. Data in RAM has not necessarily become available to a GPU."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose you run an AI speech-recognition program."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Model weights may be stored on the SSD. At startup, the system reads model files and establishes the process's memory state. With a discrete GPU, relevant weights or data may also need to be transferred to memory the GPU can access."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Two projects sharing one on-disk model file through a hard link therefore do not automatically share one allocation of GPU memory across their processes."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Storage sharing and runtime memory sharing are different mechanisms."
+            },
+            {
+              "kind": "heading",
+              "id": "section-3-sub-2",
+              "text": "2. What is a kernel?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The kernel is the core part of an operating system. It manages hardware resources and provides controlled system services."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A Python program cannot arbitrarily control all disk hardware directly. It normally reads and writes files through operating-system interfaces."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For example:"
+            },
+            {
+              "kind": "code",
+              "text": "with open(\"data.txt\", \"r\") as f:\n    content = f.read()"
+            },
+            {
+              "kind": "paragraph",
+              "text": "To the programmer, this opens a file and reads its contents."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Conceptually, the underlying path is:"
+            },
+            {
+              "kind": "code",
+              "text": "Python program\n    ↓\nPython runtime / libraries\n    ↓\nSystem call\n    ↓\nKernel\n    ↓\nFilesystem and storage device\n    ↓\nReturn data to the program"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A system call is a formal entry point through which an application requests an operating-system service."
+            },
+            {
+              "kind": "paragraph",
+              "text": "It is also one of the mechanisms that protects system resources."
+            },
+            {
+              "kind": "heading",
+              "id": "section-3-sub-3",
+              "text": "3. A process differs from a program"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A program usually means stored program content."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A process is a running execution entity managed by the operating system."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Think of a program as a recipe, and a process as the chef and working state involved in following that recipe."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The same program can have several running processes, each potentially with its own address space, open files, execution environment and permissions."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For example:"
+            },
+            {
+              "kind": "code",
+              "text": "python server.py"
+            },
+            {
+              "kind": "paragraph",
+              "text": "This involves more than opening a Python file."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The shell finds the Python interpreter, the operating system creates a process, and the interpreter reads the program, loads required modules and executes its operations."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Understanding execution requires distinguishing program files on disk, running processes, and the memory and external resources those processes use."
+            }
+          ]
+        },
+        {
+          "id": "section-4",
+          "heading": "3. Filesystem fundamentals: a path is not the data itself",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-4-sub-1",
+              "text": "1. Filenames, inodes and data blocks are different things"
+            },
+            {
+              "kind": "paragraph",
+              "text": "We commonly think of:"
+            },
+            {
+              "kind": "code",
+              "text": "/home/user/report.txt"
+            },
+            {
+              "kind": "paragraph",
+              "text": "as a file."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A typical Linux filesystem distinguishes the path/name, file metadata and stored content:"
+            },
+            {
+              "kind": "code",
+              "text": "Path\n    ↓\nDirectory entry\n    ↓\ninode: file-object metadata\n    ↓\nData blocks / extents: actual content"
+            },
+            {
+              "kind": "paragraph",
+              "text": "An inode is a filesystem data structure containing or associated with permissions, ownership, link count, size, timestamps and data-allocation information."
+            },
+            {
+              "kind": "paragraph",
+              "text": "An inode number identifies an object only within its filesystem. To compare file identity, normally consider the device and inode together."
+            },
+            {
+              "kind": "heading",
+              "id": "section-4-sub-2",
+              "text": "2. Hard links, symbolic links, reflinks and copies"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "links"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Hard link"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Two paths refer to the same inode. Removing one name does not automatically remove content still referenced by the other. An in-place modification through either name is visible through the other."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The following table compares the four mechanisms:"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Mechanism",
+                "What is shared?",
+                "Behavior on modification"
+              ],
+              "rows": [
+                [
+                  "Symlink",
+                  "Target path",
+                  "Normally resolves the path to a target; may dangle when the target disappears"
+                ],
+                [
+                  "Hard link",
+                  "Same inode",
+                  "In-place writes affect all names for that object"
+                ],
+                [
+                  "Reflink / CoW",
+                  "Underlying data blocks",
+                  "Blocks that need modification are separated on write"
+                ],
+                [
+                  "Copy",
+                  "Usually independent data",
+                  "Changing one copy does not change the other"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "CoW means copy-on-write."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Its central idea is to share identical content initially and allocate separate storage for changed portions when one instance is actually modified."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The same idea appears in filesystems, virtual memory, containers and snapshots."
+            },
+            {
+              "kind": "heading",
+              "id": "section-4-sub-3",
+              "text": "3. Why can hard links be risky?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose two applications need `config.json`."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Their contents are identical today, so you replace the separate files with hard links."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Tomorrow application A modifies its configuration, and application B may see the new content too."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Sharing an inode also shares metadata such as permissions and timestamps."
+            },
+            {
+              "kind": "paragraph",
+              "text": "To share writable files safely, understand how the applications update them."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Opening and overwriting a file in place differs from creating a new file and using `rename` to replace the old path."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The latter can make that path refer to a new inode, ending its sharing of the original object with other hard links."
+            },
+            {
+              "kind": "heading",
+              "id": "section-4-sub-4",
+              "text": "4. Why might deleting a large file not immediately free disk space?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Other hard links may still reference the inode, or a process may hold an open reference to the deleted file."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Snapshots, CoW sharing, concurrent writes and filesystem allocation behavior can also matter."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Distinguish three quantities:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Logical size is the file's externally visible byte length. Allocated size is the storage actually allocated. Free space is the capacity currently available across the filesystem."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This helps explain why `du`, `df` and application cache statistics can disagree."
+            },
+            {
+              "kind": "paragraph",
+              "text": "GB and GiB also differ: GB normally means 10⁹ bytes; GiB means 2³⁰ bytes."
+            },
+            {
+              "kind": "heading",
+              "id": "section-4-sub-5",
+              "text": "5. How can you observe this?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "These Linux/GNU examples only read information. Replace `example.txt` with an existing file. On macOS, `stat` output formatting and `readlink` options depend on the version; check `man stat` and `man readlink` first."
+            },
+            {
+              "kind": "code",
+              "text": "# Filesystem capacity\ndf -h\n\n# Estimated directory usage\ndu -sh .\n\n# File inode, link count and permissions\nstat example.txt\n\n# Resolved symbolic-link path\nreadlink -f example.txt"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Equal file sizes do not establish identical file objects. Check content and identity separately."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This leads to the next concept: hashing."
+            }
+          ],
+          "sourceIds": [
+            "inode",
+            "rename"
+          ]
+        },
+        {
+          "id": "section-5",
+          "heading": "4. Hashes, content addressing and deduplication",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-5-sub-1",
+              "text": "1. A hash is a fingerprint of content"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose two files are named:"
+            },
+            {
+              "kind": "code",
+              "text": "report-final.pdf\nreport-final-copy.pdf"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Their names do not establish whether their contents match."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A hash function maps input data to a fixed-length digest."
+            },
+            {
+              "kind": "paragraph",
+              "text": "SHA-256, for example, produces 256 bits regardless of file size."
+            },
+            {
+              "kind": "code",
+              "text": "File content A ── SHA-256 ──> Hash X\nFile content B ── SHA-256 ──> Hash X"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Matching full SHA-256 digests normally give extremely high engineering confidence that file contents match. This relies on cryptographic collision resistance; collisions are not mathematically impossible."
+            },
+            {
+              "kind": "heading",
+              "id": "section-5-sub-2",
+              "text": "2. What is content-addressable storage?"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "cas"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Ordinary storage uses a filename to locate content:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "`Filename → File content`"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Content-addressable storage (CAS) uses a content hash as identifying information:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "`File content → Hash → Storage location`"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Content: file bytes"
+            },
+            {
+              "kind": "paragraph",
+              "text": "SHA-256: compute the digest"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Blob Store: store content by digest"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Version A"
+            },
+            {
+              "kind": "paragraph",
+              "text": "References Hash X"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Version B"
+            },
+            {
+              "kind": "paragraph",
+              "text": "References Hash X"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Different versions can reference one content object, avoiding duplicate storage of identical bytes."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A blob is a chunk of data that a system manages as a whole."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A snapshot describes state at a particular time. It can record the paths present and their corresponding contents without storing every identical byte again for each snapshot."
+            },
+            {
+              "kind": "paragraph",
+              "text": "These ideas apply to Git objects, package stores, model caches, backups and version history."
+            },
+            {
+              "kind": "heading",
+              "id": "section-5-sub-3",
+              "text": "3. A matching hash does not establish trust"
+            },
+            {
+              "kind": "paragraph",
+              "text": "This distinction matters for security."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Integrity asks whether data changed. Authenticity asks whether it came from a source you trust."
+            },
+            {
+              "kind": "paragraph",
+              "text": "An attacker can create a malicious file and compute its SHA-256 digest."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A download matching a digest supplied by the same untrusted website therefore does not establish that the software is safe."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Consider trusted release channels, digital signatures, package provenance and supply-chain security as well."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The underlying principle is:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A hash can establish content identity, but cannot establish source trust by itself."
+            }
+          ]
+        },
+        {
+          "id": "section-6",
+          "heading": "5. Processes, commands and permissions",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-6-sub-1",
+              "text": "1. Terminal, shell and runtime have different roles"
+            },
+            {
+              "kind": "paragraph",
+              "text": "You enter:"
+            },
+            {
+              "kind": "code",
+              "text": "python app.py"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Several components participate."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The terminal provides a text interaction interface. The shell parses commands, manages the environment and starts programs. The Python runtime executes Python code."
+            },
+            {
+              "kind": "paragraph",
+              "text": "When resolving `python`, the shell normally searches for an executable using the PATH environment variable."
+            },
+            {
+              "kind": "paragraph",
+              "text": "PATH is a list of directories in which to look for tools."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose two Python installations exist:"
+            },
+            {
+              "kind": "code",
+              "text": "/usr/bin/python3\n/home/user/project/.venv/bin/python"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Different shells, PATH values or virtual environments can select different interpreters for the same `python` command."
+            },
+            {
+              "kind": "paragraph",
+              "text": "An identical command name therefore does not establish that the same program runs."
+            },
+            {
+              "kind": "heading",
+              "id": "section-6-sub-2",
+              "text": "2. Shebangs, PATH and child processes"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A Unix-like script can start with:"
+            },
+            {
+              "kind": "code",
+              "text": "#!/usr/bin/env python3"
+            },
+            {
+              "kind": "paragraph",
+              "text": "This is a shebang, specifying how to select an interpreter when executing the script directly."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Here, `env` finds `python3` in the execution environment. A fixed interpreter path instead depends on that particular path remaining valid."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This explains why moving a Python CLI environment can break its entry-point scripts."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A process can also start another process."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For example, in Node.js:"
+            },
+            {
+              "kind": "code",
+              "text": "import { spawnSync } from \"node:child_process\";\n\nconst result = spawnSync(\"python3\", [\"worker.py\"], {\n  encoding: \"utf8\"\n});"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Node.js is the parent process; Python is the child."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The child has its own process identity, but normally receives an environment from its parent, including environment variables and a working directory."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Success of the outer tool therefore does not establish that the inner process received the intended PATH or Python environment."
+            },
+            {
+              "kind": "heading",
+              "id": "section-6-sub-3",
+              "text": "3. What does an exit code mean?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Unix-like processes normally report results to callers through an exit status."
+            },
+            {
+              "kind": "paragraph",
+              "text": "By convention:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "`0` means the process reports success; a nonzero value indicates a failure or exceptional condition."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For example:"
+            },
+            {
+              "kind": "code",
+              "text": "python validate.py && python build.py"
+            },
+            {
+              "kind": "paragraph",
+              "text": "`&&` runs the second command only if the first succeeds."
+            },
+            {
+              "kind": "paragraph",
+              "text": "If `validate.py` discovers errors but still returns 0, `build.py` may continue."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A success indicator shows that a success signal was received. Check whether that signal reflects the intended acceptance criteria."
+            },
+            {
+              "kind": "heading",
+              "id": "section-6-sub-4",
+              "text": "4. Permissions and least privilege"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A Linux process normally runs under a user identity. Its ability to read files, change settings or manage services depends on applicable permission mechanisms."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This connects to the following principle:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Least privilege means giving a process only the capabilities required for its task, rather than maximum authority for convenience."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Reading a Docker container list, for example, does not by itself justify unrestricted host-management access. Docker socket permissions deserve particular care."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Likewise, package isolation through a venv does not create a security sandbox for the executing program."
+            }
+          ]
+        },
+        {
+          "id": "section-7",
+          "heading": "6. Package management: dependency graphs and resource allocation",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-7-sub-1",
+              "text": "1. What is a dependency graph?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose your application depends on A and B, and A depends on C."
+            },
+            {
+              "kind": "code",
+              "text": "Application\n  ├── A\n  │   └── C\n  └── B\n      └── D"
+            },
+            {
+              "kind": "paragraph",
+              "text": "This is a graph: packages are nodes and dependency relationships are edges."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A direct dependency is explicitly required by the application. A transitive dependency is required through another package."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Peer dependencies are another frequent source of confusion."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A UI component package, for example, may require the main project to provide a compatible React version. Giving every package its own downloaded React copy does not fully describe this relationship."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Package managers therefore solve compatibility constraints and version selection as well as downloading files."
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-2",
+              "text": "2. Manifest, lockfile and installed environment"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "environment"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Manifest"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Which dependencies are allowed"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Lockfile"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Which versions were selected"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Installed Environment"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Programs, modules, entry points and links actually present on disk"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A manifest specifies requirements; a lockfile records a dependency-resolution result; an installed environment consists of the files and links actually created."
+            },
+            {
+              "kind": "paragraph",
+              "text": "These three states can disagree."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose a project permits version 2.x of a library, its lockfile selects 2.5.1, and a developer still has an older 2.4.0 environment."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A working local run does not establish that it uses the same dependencies as CI."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Use the lockfile together with a controlled installation procedure and verification."
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-3",
+              "text": "3. Underlying differences between npm and pnpm"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Both npm and pnpm resolve and install JavaScript packages. Their dependency-directory structures and file-reuse mechanisms can differ."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A typical pnpm installation expresses dependencies through a shared store, `node_modules/.pnpm` and symbolic links. Package-content import methods depend on the platform and configuration."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Distinguish two questions:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Dependency resolution: when a program requests package A, which version should it find?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Storage allocation: must every project keep a separate copy of identical package content?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "pnpm handles these concerns separately, allowing content reuse while preserving project dependency relationships."
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-4",
+              "text": "4. Python, venv, pip, uv and pipx"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Technology",
+                "Main role"
+              ],
+              "rows": [
+                [
+                  "Python Runtime",
+                  "Executes Python programs"
+                ],
+                [
+                  "venv",
+                  "Creates isolated package installation and search environments"
+                ],
+                [
+                  "pip",
+                  "Installs Python packages"
+                ],
+                [
+                  "uv",
+                  "Manages Python projects, dependency resolution, environments, tools and caches"
+                ],
+                [
+                  "pipx",
+                  "Installs and runs Python CLI tools in isolated environments"
+                ],
+                [
+                  "Wheel",
+                  "An installable Python distribution format"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "venv lets projects use different package installation locations instead of sharing a single global Python environment."
+            },
+            {
+              "kind": "paragraph",
+              "text": "uv supports package import strategies including copy, hardlink, symlink and clone (CoW). These differ in sharing, modification side effects and safe cache-cleaning behavior."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Remember:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Matching package versions do not establish binary-environment compatibility."
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-5",
+              "text": "5. ABI, CPU architecture and toolchain"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Imagine buying an electrical plug."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Its product name and model may be correct, but it still cannot connect directly to an incompatible socket."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Native software faces a similar issue."
+            },
+            {
+              "kind": "paragraph",
+              "text": "CPU architecture, such as x86-64 or ARM64, describes conditions including the processor's supported instruction-set architecture."
+            },
+            {
+              "kind": "paragraph",
+              "text": "An ABI (Application Binary Interface) describes binary-level interaction between compiled programs: calling conventions, data layout and specific compatibility requirements."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A toolchain combines compilers, linkers and other build tools."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Therefore:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Executability ≠ correct package versions alone"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Also consider the operating system, instruction set, ABI, native libraries, interpreter and required drivers."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This explains why some Python wheels and GPU-specific compiled artifacts cannot be exchanged across architectures simply because their names or sizes match."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Rust also distinguishes the host, where the compiler runs, from the target, where the compiled result will run."
+            },
+            {
+              "kind": "heading",
+              "id": "section-7-sub-6",
+              "text": "6. APT, Snap, Rustup and project package managers"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Identify who manages each piece of software."
+            },
+            {
+              "kind": "paragraph",
+              "text": "APT commonly manages system packages on Debian and Ubuntu."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Snap manages its packages and revisions; some older revisions may provide rollback points."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Rustup manages Rust toolchains and associated proxy entry points."
+            },
+            {
+              "kind": "paragraph",
+              "text": "pnpm and uv focus more on language- or project-level dependencies and tools."
+            },
+            {
+              "kind": "paragraph",
+              "text": "These tools can coexist on one computer while owning assets at different layers."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Updating rustup, for example, does not mean every Rust compiler toolchain has been updated. Removing one Python CLI environment does not establish that pipx or uv is no longer needed."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Before reorganizing a computer, ask: who created this file, who uses it, who updates it, and how can it be restored?"
+            }
+          ],
+          "sourceIds": [
+            "venv",
+            "pnpm",
+            "uv"
+          ]
+        },
+        {
+          "id": "section-8",
+          "heading": "7. Caches, garbage collection and Docker",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-8-sub-1",
+              "text": "1. Why do caches accelerate work?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The central tradeoff is:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Spend some storage now to reduce future access or computation costs."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A package's first download needs network transfer; a later retrieval from cache may avoid downloading it again."
+            },
+            {
+              "kind": "paragraph",
+              "text": "There are several kinds of cache."
+            },
+            {
+              "kind": "paragraph",
+              "text": "CPU caches hold data the processor may soon use. An operating-system page cache can hold file data. Package-manager caches store downloads or build results. Browser caches can retain web resources."
+            },
+            {
+              "kind": "paragraph",
+              "text": "All reuse work or data, but their contents, owners, invalidation conditions and safety contracts differ."
+            },
+            {
+              "kind": "heading",
+              "id": "section-8-sub-2",
+              "text": "2. How does garbage collection decide what can be removed?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "One common approach starts from a root set and finds objects that remain reachable."
+            },
+            {
+              "kind": "code",
+              "text": "Root: an active entry point\n   ├── Object A\n   │    └── Object C\n   └── Object B\n\nObject D: no reachable valid reference"
+            },
+            {
+              "kind": "paragraph",
+              "text": "In this simplified model, D may be a collection candidate."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A system can make the wrong decision if it has not registered every consumer correctly."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A program may still need a particular browser executable, for example. If the cache manager does not know that requirement, cleanup may remove it."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Safe garbage collection therefore depends on a sufficiently complete reference model and lifecycle information."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For tools such as uv, prefer their cache-management interfaces over manually deleting internally managed files. Its official documentation also warns against directly modifying cache contents."
+            },
+            {
+              "kind": "heading",
+              "id": "section-8-sub-3",
+              "text": "3. Docker images and containers"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A Docker image is a prepared execution template containing an application and required filesystem layers."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A container is an instance created from an image, with isolation settings and writable state."
+            },
+            {
+              "kind": "paragraph",
+              "text": "In a typical Linux container architecture, containers share the host kernel. Namespaces, cgroups and related mechanisms provide isolation and resource control. This differs from a virtual machine emulating a separate computer."
+            }
+          ],
+          "sourceIds": [
+            "uv",
+            "docker"
+          ]
+        },
+        {
+          "id": "section-9",
+          "heading": "Typical layered Docker storage",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "systemsFigure",
+              "name": "docker"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Container Writable Layer"
+            },
+            {
+              "kind": "paragraph",
+              "text": "State added or changed while the container runs"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Application Layer"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Application and related files"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Dependency Layers"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Runtimes and packages"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Base Image Layers"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Base filesystem contents"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Volume / Bind Mount"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Persistent data managed separately from the container writable layer"
+            },
+            {
+              "kind": "paragraph",
+              "text": "This is a conceptual structure. Multiple images can share layers, so adding listed image sizes does not establish unique physical disk usage."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Volumes deserve particular attention."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose a database runs in a container while its data lives in a separate volume."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Recreating the container does not necessarily delete the volume. Deleting the volume by mistake, however, may destroy the data you actually needed to preserve."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Docker's official teaching separates containers from persistence and emphasizes independent management for long-lived data."
+            },
+            {
+              "kind": "heading",
+              "id": "section-9-sub-1",
+              "text": "4. Why is minimum SSD usage an incomplete cleanup goal?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "We can express resource optimization conceptually as:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Minimize (storage cost + reconstruction cost + operational risk)"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Evaluate these costs in context. They cannot be added as one unit without first defining a common measure."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A 5 GB cache that is easy to download again may be suitable for cleanup."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A 500 MB local compilation result may be more valuable to retain if reconstruction requires a special environment, unavailable upstream resources or extensive manual work."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Mature resource management reduces overall maintenance cost while preserving recoverability and verifiability."
+            }
+          ],
+          "sourceIds": [
+            "docker"
+          ]
+        },
+        {
+          "id": "section-10",
+          "heading": "8. Git fundamentals: managing a directed acyclic graph",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-10-sub-1",
+              "text": "1. What does Git store?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Many people think of Git as a code-backup tool."
+            },
+            {
+              "kind": "paragraph",
+              "text": "That captures part of its value but leaves out important mechanisms."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Git is a distributed version-control system that stores content, version snapshots and relationships between versions."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Start with three object types:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A blob stores file contents. A tree describes files and subdirectories at a directory level. A commit records a version's tree, parent commits and other metadata."
+            },
+            {
+              "kind": "paragraph",
+              "text": "These structures preserve a history of versions."
+            }
+          ],
+          "sourceIds": [
+            "git"
+          ]
+        },
+        {
+          "id": "section-11",
+          "heading": "Three main Git working areas",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "systemsFigure",
+              "name": "git-areas"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Working Tree"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Files being edited"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Index"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Content prepared for a commit"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Repository"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Committed version objects"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Working Tree"
+            },
+            {
+              "kind": "paragraph",
+              "text": "git add"
+            },
+            {
+              "kind": "paragraph",
+              "text": "git commit"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The working tree, staging area and committed data represent distinct states. `git add` and `git commit` perform different operations."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Official Git documentation also uses these three areas as its basic working model."
+            },
+            {
+              "kind": "heading",
+              "id": "section-11-sub-1",
+              "text": "2. Why does Git use a DAG?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "DAG means Directed Acyclic Graph."
+            },
+            {
+              "kind": "paragraph",
+              "text": "It is a graph with directed connections in which following those directions never leads back to the starting point."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Git commits point to parent commits, representing version history."
+            },
+            {
+              "kind": "paragraph",
+              "text": "In the conceptual illustration, B branches into two development histories and G records both parents as a merge commit. Git's internal parent pointers actually run from newer commits to their parents."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This structure matters because developers cannot always make changes along one uninterrupted line."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A branch is fundamentally a reference to a commit."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Developers can work along separate histories and choose how to integrate them."
+            },
+            {
+              "kind": "heading",
+              "id": "section-11-sub-2",
+              "text": "3. Fast-forward, merge and rebase"
+            },
+            {
+              "kind": "systemsFigure",
+              "name": "git-dag"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A fast-forward moves a branch reference to a newer descendant commit without creating an additional merge commit."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A merge integrates diverged histories, creating a commit with multiple parents when needed."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A rebase reapplies changes from one development line onto another base, producing new commit identities."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Avoid rewriting shared history without an agreement among collaborators."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Force pushes require particular care because they can change the history reachable from a remote branch."
+            },
+            {
+              "kind": "heading",
+              "id": "section-11-sub-3",
+              "text": "4. Stash and worktree"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Stash temporarily saves working-tree and index changes. `git stash push -u` also includes untracked files, but normally excludes ignored files."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Worktree allows one repository to have additional working directories and indexes."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For example, you may be editing a feature while needing a clean environment based on the latest main to test a release."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A separate worktree reduces the risk that the two tasks overwrite each other's files."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This illustrates a general engineering principle:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Isolate separate work appropriately while sharing the underlying resources and history it actually needs."
+            },
+            {
+              "kind": "heading",
+              "id": "section-11-sub-4",
+              "text": "5. Commit, push and deploy"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Commit saves a version in the local Git object database."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Push attempts to update references in a remote Git repository."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Deploy delivers an executable or serviceable artifact to a target environment."
+            },
+            {
+              "kind": "paragraph",
+              "text": "These operations can involve different times, commits and artifacts."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Therefore:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Commit success ⇏ Deployment success"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Even successful deployment does not establish that the application satisfies requirements."
+            },
+            {
+              "kind": "paragraph",
+              "text": "That requires the next layer: building, delivery and acceptance."
+            }
+          ],
+          "sourceIds": [
+            "git"
+          ]
+        },
+        {
+          "id": "section-12",
+          "heading": "9. CI/CD: making engineering procedures repeatable",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-12-sub-1",
+              "text": "1. What are CI and CD?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CI (Continuous Integration) frequently integrates changes and uses automated checks to reduce accumulated problems."
+            },
+            {
+              "kind": "paragraph",
+              "text": "CD can mean Continuous Delivery or Continuous Deployment."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Continuous Delivery keeps software in a deliverable state. Continuous Deployment additionally deploys qualifying changes automatically to the target environment."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For a typical website:"
+            },
+            {
+              "kind": "code",
+              "text": "Engineer commits source\n        ↓\nCI establishes an execution environment\n        ↓\nInstall specified dependencies\n        ↓\nRun content, type, unit and security checks\n        ↓\nBuild\n        ↓\nProduce an artifact\n        ↓\nDeploy\n        ↓\nVerify the production service"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A build compiles, transforms or packages source into a usable result."
+            },
+            {
+              "kind": "paragraph",
+              "text": "TypeScript, for example, is transformed into JavaScript browsers can execute. A website may also require bundling, compression and prerendering."
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-2",
+              "text": "2. Separate source, cache and artifact"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Category",
+                "Purpose",
+                "Examples"
+              ],
+              "rows": [
+                [
+                  "Source",
+                  "Defines what should be created",
+                  "Code, requirements, configuration, content models"
+                ],
+                [
+                  "Cache",
+                  "Accelerates repeated work",
+                  "Downloaded packages, intermediate compilation data"
+                ],
+                [
+                  "Artifact",
+                  "Output of a particular execution",
+                  "Built website, executable, test report"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "Required content should remain rebuildable when a cache is absent. An artifact may instead be an output that must be retained, transferred or deployed."
+            },
+            {
+              "kind": "paragraph",
+              "text": "GitHub's official documentation also distinguishes workflow artifacts from dependency caches."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The distinction applies to AI systems too."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Original training data, temporary training caches, delivered model weights and evaluation reports should not all follow one retention policy."
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-3",
+              "text": "3. Why control the CI environment?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose developers use Python version A locally while CI uses version B."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Identical source can still encounter syntax, package, ABI or behavioral differences."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Represent the build result conceptually as:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "B = f(S, D, T, P, E)"
+            },
+            {
+              "kind": "paragraph",
+              "text": "B is the build result, S the source, D dependencies, T the toolchain, P the platform and E environmental conditions."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This is a conceptual model of interacting inputs, rather than an execution formula for a particular tool."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Reproducible builds require controlling enough of those inputs."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A lockfile covers only part of the problem."
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-4",
+              "text": "4. Why does CI need security governance?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "CI often downloads software, executes commands, reads some secrets and may deploy production systems."
+            },
+            {
+              "kind": "paragraph",
+              "text": "CI itself is therefore an attack surface worth protecting."
+            },
+            {
+              "kind": "paragraph",
+              "text": "GitHub Actions, for example, may use tokens with different permissions or OIDC credentials."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Consider least privilege, supply-chain security, workflow triggers and untrusted-input handling."
+            },
+            {
+              "kind": "paragraph",
+              "text": "CI caches also require trust boundaries. A lower-trust source that can influence cache contents may introduce cache-poisoning risks."
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-5",
+              "text": "5. Eventual consistency"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose one service has uploaded an artifact but another service lists it only a little later."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This may reflect different visibility times across components rather than an upload failure."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Distributed-system consistency models help explain such behavior."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Bounded retries are a common response, with two important conditions."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Define when retries stop. For operations with side effects, also consider idempotency."
+            },
+            {
+              "kind": "paragraph",
+              "text": "An idempotent operation does not keep changing the intended final state merely because it is repeated."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Querying an artifact list can usually be retried safely. Payments, deletions and deployments need more careful retry design."
+            },
+            {
+              "kind": "heading",
+              "id": "section-12-sub-6",
+              "text": "6. Why can concurrency cause problems?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Concurrency means work overlaps in time."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose two builds read and write the same output directory simultaneously."
+            },
+            {
+              "kind": "paragraph",
+              "text": "One may read incomplete intermediate files from the other, making results depend on execution timing."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This is a race condition."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Identify which tasks can run in parallel, which must run sequentially, and which require isolated workspaces or locks."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A CI concurrency group also does not inherently provide a complete FIFO queue. Pending-job retention, cancellation and ordering depend on the platform and configuration."
+            }
+          ],
+          "sourceIds": [
+            "github-cache"
+          ]
+        },
+        {
+          "id": "section-13",
+          "heading": "10. Websites: from data models to browser output",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "section-13-sub-1",
+              "text": "1. HTML, CSS and JavaScript"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Imagine building a house."
+            },
+            {
+              "kind": "paragraph",
+              "text": "HTML defines its structure, CSS its appearance and layout, and JavaScript its interactive behavior."
+            },
+            {
+              "kind": "paragraph",
+              "text": "More precisely:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "HTML describes document content and semantics."
+            },
+            {
+              "kind": "paragraph",
+              "text": "CSS controls presentation and layout."
+            },
+            {
+              "kind": "paragraph",
+              "text": "JavaScript executes browser-side logic, manipulates pages, handles interaction and exchanges data with services."
+            },
+            {
+              "kind": "paragraph",
+              "text": "They cooperate with distinct responsibilities."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A visually attractive button with incorrect semantics may still be hard to recognize through keyboard operation or assistive technology."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Frontend design therefore needs more than visual inspection."
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-2",
+              "text": "2. How does a browser retrieve a website?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Understanding deployment requires understanding the resource-retrieval path."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A typical HTTPS request involves:"
+            },
+            {
+              "kind": "code",
+              "text": "Enter a URL\n    ↓\nDNS: look up location information for the hostname\n    ↓\nEstablish a connection and TLS-secured channel\n    ↓\nHTTP: request web resources\n    ↓\nServer or CDN returns HTML / CSS / JS\n    ↓\nBrowser parses and renders the page"
+            },
+            {
+              "kind": "paragraph",
+              "text": "DNS, TLS and HTTP operate at different layers."
+            },
+            {
+              "kind": "paragraph",
+              "text": "DNS helps locate the destination; TLS provides communication-security functions; HTTP defines request and response semantics."
+            },
+            {
+              "kind": "paragraph",
+              "text": "If GitHub Pages reports a completed deployment but the displayed website is wrong, investigate artifacts, assets, browser behavior and caches as well as source code."
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-3",
+              "text": "3. Static and dynamic websites"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A static website normally produces ready-to-serve HTML, CSS and JavaScript during its build."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A dynamic website may query a database, compute content and generate a response for each request."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For example:"
+            },
+            {
+              "kind": "code",
+              "text": "Static:\nSource → Build HTML → Server serves HTML\n\nDynamic:\nRequest → Application → Database / business logic → Response"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Choose according to functionality, update frequency, interaction needs and deployment cost; neither approach is universally superior."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Many modern websites combine both."
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-4",
+              "text": "4. What do schemas and TypeScript protect?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose lesson data looks like this:"
+            },
+            {
+              "kind": "code",
+              "text": "{\n  \"lessonId\": \"lesson-01\",\n  \"title\": \"Introduction\",\n  \"published\": true\n}"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A schema specifies required fields, types and validity conditions."
+            },
+            {
+              "kind": "paragraph",
+              "text": "TypeScript checks type relationships in program code during development and building."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Passing TypeScript checks does not establish that external JSON is valid."
+            },
+            {
+              "kind": "paragraph",
+              "text": "At runtime, files, APIs and databases can still supply invalid data."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Runtime validation addresses that boundary."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A valid structure also does not establish factual correctness."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Distinguish three judgments:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Is the structure valid? Can the program handle it? Is its content correct?"
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-5",
+              "text": "5. Responsive design means more than shrinking pictures"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Responsive design keeps content understandable and operable across available space, devices and usage conditions."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Shrinking a 1200px diagram to 300px may preserve the entire picture while reducing labels to one quarter of their size."
+            },
+            {
+              "kind": "paragraph",
+              "text": "HTML text wrapping and rearrangement through CSS Grid, Flexbox or container queries can provide a better reading experience."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Rearrangement must preserve logical relationships."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Two parallel branches in a classification tree should retain that meaning when stacked on a phone, rather than appearing to be sequential dependencies."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Semantics and visual presentation must work together."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Accessibility also involves keyboards, reading order, semantic markup, assistive technology and interaction states, in addition to legibility."
+            },
+            {
+              "kind": "heading",
+              "id": "section-13-sub-6",
+              "text": "6. Hiding a draft does not protect its contents"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose navigation hides a draft, but its content still ships in a search index or JavaScript bundle."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Users may still retrieve it."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Hiding data in an interface differs from withholding it from delivery."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This is a common security misunderstanding."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Frontend visibility conditions cannot replace publication or access-control rules."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For a static website, inspect the entire production output as well as checking that a draft route is absent."
+            }
+          ]
+        },
+        {
+          "id": "section-14",
+          "heading": "11. Testing: evidence must match the claim",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "This is one of the course's most transferable skills."
+            },
+            {
+              "kind": "heading",
+              "id": "section-14-sub-1",
+              "text": "1. What does “tests passed” establish?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose all 100 tests pass."
+            },
+            {
+              "kind": "paragraph",
+              "text": "What have you established?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "That depends on their assertions, scope and environment."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Tests of an addition function do not establish website security."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A local browser test does not establish production-service behavior."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Every test needs a defined evidence boundary."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Test type",
+                "Main purpose",
+                "Main limitation"
+              ],
+              "rows": [
+                [
+                  "Unit test",
+                  "Checks small units of logic",
+                  "Does not establish whole-system correctness"
+                ],
+                [
+                  "Integration test",
+                  "Checks component interaction",
+                  "May not cover a real deployment"
+                ],
+                [
+                  "End-to-end test",
+                  "Checks a specified complete user flow",
+                  "Covers only designed scenarios"
+                ],
+                [
+                  "Regression test",
+                  "Guards existing behavior",
+                  "Uncovered problems can remain"
+                ],
+                [
+                  "Negative test",
+                  "Checks that forbidden cases are rejected",
+                  "Needs valid negative fixtures"
+                ],
+                [
+                  "Security test",
+                  "Checks specified threats or security conditions",
+                  "Does not establish complete security"
+                ]
+              ]
+            },
+            {
+              "kind": "heading",
+              "id": "section-14-sub-2",
+              "text": "2. Positive and negative behavior"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose you build a file-upload system."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Positive tests check that legitimate users can upload files meeting the requirements."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Negative tests check handling of unauthorized users, invalid files and operations exceeding limits."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Both are necessary."
+            },
+            {
+              "kind": "paragraph",
+              "text": "In security, allowing legitimate operations and blocking forbidden operations are distinct requirements."
+            },
+            {
+              "kind": "heading",
+              "id": "section-14-sub-3",
+              "text": "3. Why must test data itself be valid?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose you test that unpublished articles cannot appear publicly."
+            },
+            {
+              "kind": "paragraph",
+              "text": "You create a draft whose basic JSON structure is invalid."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The build fails while parsing content."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This does not establish that publication control works: execution never reached the publication decision."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Keep other conditions valid and vary the condition under test whenever possible."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This follows the experimental principle of controlling variables."
+            },
+            {
+              "kind": "heading",
+              "id": "section-14-sub-4",
+              "text": "4. SHA-256, Playwright and human review"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose a hash comparison confirms that an SVG matches a trusted source file."
+            },
+            {
+              "kind": "paragraph",
+              "text": "It establishes byte equality."
+            },
+            {
+              "kind": "paragraph",
+              "text": "It does not establish correct arrows, readable text or reader understanding."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Playwright checks presentation and interaction in a specified browser environment; it does not automatically judge all teaching claims."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Human review evaluates meaning, context and professional content, with potential omissions and subjective judgment."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Combine complementary evidence in acceptance rather than expecting one tool to answer every question."
+            }
+          ]
+        },
+        {
+          "id": "section-15",
+          "heading": "12. Reliable systems: atomicity, races, recovery and governance",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Files, Git, Docker, CI/CD and data governance share deeper system principles."
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-1",
+              "text": "1. Atomicity"
+            },
+            {
+              "kind": "paragraph",
+              "text": "An atomic operation appears externally as an indivisible state transition."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Consider updating an important file."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Overwriting it in place can expose partially written content to another process."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A common approach writes a temporary file and then replaces the target through an appropriate atomic rename."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This reduces the chance that other processes observe intermediate state."
+            },
+            {
+              "kind": "paragraph",
+              "text": "However:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Atomic visibility does not establish durable storage after a power failure."
+            },
+            {
+              "kind": "paragraph",
+              "text": "File synchronization, directory metadata, filesystem journaling and device guarantees can affect durability."
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-2",
+              "text": "2. TOCTOU"
+            },
+            {
+              "kind": "paragraph",
+              "text": "TOCTOU means Time-of-Check to Time-of-Use."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A condition can hold when checked but change before an operation uses that result."
+            },
+            {
+              "kind": "paragraph",
+              "text": "For example:"
+            },
+            {
+              "kind": "code",
+              "text": "Check that a file is unchanged\n       ↓\nAnother process updates it\n       ↓\nOriginal process acts on its earlier check"
+            },
+            {
+              "kind": "paragraph",
+              "text": "This can create correctness or security problems."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A single pre-operation check may be insufficient to maintain the condition at execution time."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Depending on the situation, use locking, version checks, atomic operations, isolation or other concurrency controls."
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-3",
+              "text": "3. Commits across repositories are not one transaction"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose a release updates a website repository and a planning repository."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The website push succeeds but the planning push fails."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Git does not automatically provide all-or-nothing transaction guarantees across these independent repositories."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Their states can temporarily disagree."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Use explicit recovery and reconciliation: retain completed commit identifiers, then complete the other update."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Large distributed systems face similar problems."
+            },
+            {
+              "kind": "paragraph",
+              "text": "They may need compensating operations, idempotency and reconciliation beyond a single database's transactions."
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-4",
+              "text": "4. Single source of truth and data provenance"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A single source of truth is a principle for assigning data authority."
+            },
+            {
+              "kind": "paragraph",
+              "text": "It does not require one database for the entire system. Each piece of information needs a clear authoritative source."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Specifications own product requirements; CI records own build results; deployment systems own deployed-version records; actual learning evidence owns learner outcomes."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Data provenance tracks where information came from, how it was transformed, who or what changed it, and whether that history can be traced."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The principles complement each other:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Clear authority reduces conflicts; provenance makes changes understandable and verifiable."
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-5",
+              "text": "5. Control plane and data plane"
+            },
+            {
+              "kind": "paragraph",
+              "text": "These concepts appear in networking, cloud infrastructure and distributed systems."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The data plane processes actual data or carries out the main workload."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The control plane configures, coordinates and manages how the system should operate."
+            },
+            {
+              "kind": "paragraph",
+              "text": "In a website analogy, servers delivering production pages form the service path. Systems recording deployment targets, release states and workflows resemble a control plane."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This is an architectural analogy. A project-management document does not automatically implement a formal distributed control plane."
+            },
+            {
+              "kind": "heading",
+              "id": "section-15-sub-6",
+              "text": "6. Why retain Unknown?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Engineering systems record many states."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Suppose deployment has completed but manual accessibility acceptance remains unconfirmed."
+            },
+            {
+              "kind": "paragraph",
+              "text": "One `done = true` can conflate distinct activities."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A more precise model might be:"
+            },
+            {
+              "kind": "code",
+              "text": "build        = passed\ndeployment   = succeeded\nbrowser_test = passed\na11y_review  = pending\nuser_impact  = unknown"
+            },
+            {
+              "kind": "paragraph",
+              "text": "This prevents unmeasured conditions from being reported as passed."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Do not invent estimates as measured numbers for hours, performance, reliability or security metrics."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Unknown is a meaningful information state, not necessarily a data-management failure."
+            }
+          ],
+          "sourceIds": [
+            "rename"
+          ]
+        },
+        {
+          "id": "section-16",
+          "heading": "13. Turn foundations into troubleshooting skills",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "How would you choose an initial investigation for these observations?"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Observation",
+                "Mechanisms to inspect first"
+              ],
+              "rows": [
+                [
+                  "Two directories each appear to occupy 10 GB",
+                  "inode, hard links, CoW, allocated size"
+                ],
+                [
+                  "Deleting a large file does not change `df`",
+                  "Other links, open references, snapshots, concurrent writes"
+                ],
+                [
+                  "A program works locally but not elsewhere",
+                  "Runtime, package versions, ABI, CPU architecture"
+                ],
+                [
+                  "The same command behaves differently in different terminals",
+                  "PATH, shebang, environment variables, working directory"
+                ],
+                [
+                  "A tool breaks after cache cleanup",
+                  "References, link modes, version coupling"
+                ],
+                [
+                  "Git push succeeds but the website stays unchanged",
+                  "CI, build, artifact, deployment"
+                ],
+                [
+                  "CI succeeds but website content is wrong",
+                  "Assertions, publication boundaries, production environment"
+                ],
+                [
+                  "A desktop page is unreadable on mobile",
+                  "CSS reflow, semantics, responsive design"
+                ],
+                [
+                  "Jobs overwrite one another's files",
+                  "Race conditions, isolation, locks, transactions"
+                ],
+                [
+                  "Release completion records contradict one another",
+                  "Source of truth, provenance, state models"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "Notice the diagnostic method:"
+            },
+            {
+              "kind": "paragraph",
+              "text": "First identify the abstraction layer, then choose its observation method, rather than immediately guessing which tool broke."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This is a direct practical benefit of understanding underlying mechanisms."
+            }
+          ]
+        },
+        {
+          "id": "section-17",
+          "heading": "14. Safe experiment: observe inodes and hard links",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Use a new temporary directory in a Linux or macOS terminal, away from production projects."
+            },
+            {
+              "kind": "code",
+              "text": "# Create an isolated temporary directory\nlab=$(mktemp -d)\n\n# Create a file\nprintf 'Hello Computer Science\\n' > \"$lab/a.txt\"\n\n# Create a hard link\nln \"$lab/a.txt\" \"$lab/hard.txt\"\n\n# Create a symbolic link\nln -s a.txt \"$lab/soft.txt\"\n\n# Observe identity and link count\nstat \"$lab/a.txt\"\nstat \"$lab/hard.txt\"\n\n# Compare content: sha256sum on Linux, shasum on macOS\nif command -v sha256sum >/dev/null 2>&1; then\n  sha256sum \"$lab/a.txt\" \"$lab/hard.txt\"\nelse\n  shasum -a 256 \"$lab/a.txt\" \"$lab/hard.txt\"\nfi"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Check whether the original and hard link share an inode, whether the hard-link count changed, and whether their content digests match."
+            },
+            {
+              "kind": "paragraph",
+              "text": "This turns abstract filesystem concepts into observable evidence. Expect `a.txt` and `hard.txt` to share a device and inode, have a link count of 2 and matching SHA-256 digests. `soft.txt` is a separate symbolic-link object. Actual inode numbers depend on the filesystem."
+            },
+            {
+              "kind": "paragraph",
+              "text": "After observation, use the same shell to remove only the three names created by this experiment, then the empty directory. `rmdir` stops if additional content remains."
+            },
+            {
+              "kind": "code",
+              "text": "rm -- \"$lab/soft.txt\" \"$lab/hard.txt\" \"$lab/a.txt\"\nrmdir -- \"$lab\"\nunset lab"
+            }
+          ]
+        },
+        {
+          "id": "section-18",
+          "heading": "15. Comprehensive understanding check",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "The following case spans the course's main areas. Answers are intentionally withheld."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Scenario: a research team maintains a Python AI inference service, a JavaScript teaching website and a Docker database service. SSD space is running low, engineers have inconsistent environments, CI sometimes fails, and a website update exposed draft content in production."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Answer in your own words, explaining the investigation and evidence needed."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A | Hardware and filesystems\nTwo AI projects have equally sized model weights. How would you determine whether they duplicate physical disk usage? What else must you check before sharing hard links? Does disk sharing imply GPU-memory sharing?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "B | Dependencies and execution environments\nPython and JavaScript projects behave differently across engineers' computers. How would you distinguish PATH, dependency resolution, lockfiles, ABI and architecture issues?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "C | Caches and containers\nA manager requests deletion of all large caches, Docker images and volumes. How would you identify rebuildable data, potentially unique important data, and removals that could break other environments?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "D | Git, CI/CD and distributed systems\nGit push and CI build succeeded, but production did not update. Which stages would you trace? What could happen if two builds modify the same output directory?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "E | Websites and security\nHow can a draft be retrievable from search even without a public page? Which positive, negative and production tests would you design?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "F | Testing, recovery and governance\nAfter recovery, how would you distinguish file integrity, service availability, version correctness, effective security restrictions and satisfied user needs? Which evidence would you preserve, and how would you avoid calling unknown states successful?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Bring A–F responses to an instructor or a subsequent discussion for individual review. This page provides no online submission or automatic grading."
+            }
+          ]
+        },
+        {
+          "id": "section-19",
+          "heading": "Five ideas to retain",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "1. Names differ from objects. A filename is not an inode; a package name is not a specific installed version; a command name is not its actual executable."
+            },
+            {
+              "kind": "paragraph",
+              "text": "2. Identical content requires a separate sharing-safety judgment. Check write behavior, ownership and recovery needs before sharing."
+            },
+            {
+              "kind": "paragraph",
+              "text": "3. Environment consistency requires more than version numbers. Toolchains, operating systems, CPU architectures, ABIs and execution conditions can affect results."
+            },
+            {
+              "kind": "paragraph",
+              "text": "4. Each stage has its own completion criteria. Commit, build, deployment, testing and user acceptance require different evidence."
+            },
+            {
+              "kind": "paragraph",
+              "text": "5. Engineering conclusions require matching evidence. Byte equality does not establish software safety; a started service does not establish that a user completed their task."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Apply these ideas to a real Python project, JavaScript website and Docker service. Observe their resources, dependencies, versions, execution and acceptance evidence step by step. This develops transferable understanding more effectively than memorizing commands alone."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

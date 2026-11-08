@@ -22,3 +22,13 @@ test('perspectives require a three-part semantic content version',()=>{
  const p=fixture();p.contentVersion='1.0.1';p.revision=3;
  assert.equal(validatePerspectives([p],known)[0].contentVersion,'1.0.1');
 });
+
+test('ordered perspective bodies are validated and paired across languages',()=>{
+ const p=fixture();
+ for(const lang of ['zh','en'] as const){const s=p.text[lang].sections[0];delete s.code;delete s.table;delete s.list;s.body=[{kind:'heading',id:'sub-example',text:'Example'},{kind:'code',text:'a\nb'}];}
+ assert.equal(validatePerspectives([p],known).length,1);
+ const missing=structuredClone(p);missing.text.en.sections[0].body!.pop();
+ assert.throws(()=>validatePerspectives([missing],known),/body mismatch/);
+ const mixed=structuredClone(p);mixed.text.zh.sections[0].code='legacy';
+ assert.throws(()=>validatePerspectives([mixed],known),/mixed/);
+});

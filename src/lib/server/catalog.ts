@@ -1,3 +1,4 @@
+import {perspectiveBodyText} from '../perspective-body.ts';
 import {aaseDisplayId} from '../aase-labels.ts';
 import {createAaseCatalog,aaseModulePath,type AaseCourseTranslation,type AaseLesson,type AaseSource} from '../aase.ts';
 import aase from '../../../content/aase/course.json' with { type: 'json' };
@@ -26,7 +27,7 @@ searchEntries.push(...conceptCatalog.searchEntries);
 const allPerspectives = readdirSync(join(root,'perspectives')).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(readFileSync(join(root,'perspectives',f),'utf8'))) as Perspective[];
 validatePerspectives(allPerspectives,{lesson:new Set(allLessons.map(l=>l.id)),concept:new Set(concepts.map(c=>c.id))});
 export const perspectives = allPerspectives.filter(p=>isPublic(p,new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))).sort((a,b)=>b.publishedOn.localeCompare(a.publishedOn)||a.id.localeCompare(b.id));
-searchEntries.push(...perspectives.flatMap(p=>(['zh','en'] as Locale[]).map(lang=>({id:p.id,lang,title:p.text[lang].title,summary:p.text[lang].summary,text:p.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...(s.list??[]),s.code??'',...(s.diagram?diagramText(s.diagram):[]),...(s.table?[...s.table.headers,...s.table.rows.flat()]:[])]).join(' '),href:localized(`/perspectives/${p.slug}/`,lang),label:lang==='zh'?'觀點':'Perspectives'}))));
+searchEntries.push(...perspectives.flatMap(p=>(['zh','en'] as Locale[]).map(lang=>({id:p.id,lang,title:p.text[lang].title,summary:p.text[lang].summary,text:p.text[lang].sections.flatMap(s=>[s.heading,...s.paragraphs,...perspectiveBodyText(s.body??[]),...(s.list??[]),s.code??'',...(s.diagram?diagramText(s.diagram):[]),...(s.table?[...s.table.headers,...s.table.rows.flat()]:[])]).join(' '),href:localized(`/perspectives/${p.slug}/`,lang),label:lang==='zh'?'觀點':'Perspectives'}))));
 const aaseSources=JSON.parse(readFileSync(join(root,'aase/sources.json'),'utf8')) as AaseSource[];
 const allAaseLessons=readdirSync(join(root,'aase/lessons')).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(readFileSync(join(root,'aase/lessons',f),'utf8')) as AaseLesson);
 export const aaseCatalog=createAaseCatalog(aase,allAaseLessons,aaseSources,new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),aaseEnglish as AaseCourseTranslation);
