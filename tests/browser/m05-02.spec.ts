@@ -22,7 +22,7 @@ for(const lang of ['zh','en']){
   await page.locator('main').evaluate(main=>{const sizes=[main,...main.querySelectorAll('*')].map(e=>({e,size:parseFloat(getComputedStyle(e).fontSize),line:parseFloat(getComputedStyle(e).lineHeight)}));for(const {e,size,line} of sizes){(e as HTMLElement).style.fontSize=size*2+'px';if(Number.isFinite(line))(e as HTMLElement).style.lineHeight=line*2+'px';}});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   for(const figure of await page.locator('[data-scope-diagram]').all())await figure.screenshot({path:`${dir}/${lang}-zoom-${await figure.getAttribute('data-scope-diagram')}.png`});
-  await expect(page.locator('.next-links a').first()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/concepts/m05-01/');await expect(page.locator('.next-links a').last()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/#m05-03');
+  await expect(page.locator('.next-links a').first()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/concepts/m05-01/');await expect(page.locator('.next-links a').last()).toHaveAttribute('href',prefix+'/courses/ceh/v13/m05/concepts/m05-03/');
 
   const index=await(await request.get('/search-index.json')).json();const entry=index.find((e:any)=>e.id==='M05-02'&&e.lang===lang);for(const token of ['DHCP','ROE','80%','100'])expect(entry.text).toContain(token);
  });

@@ -561,3 +561,7 @@ M05-01 首次公開 v1.0.0。`scripts/m05_01_content.py` 由完整中英稿與 d
 ## M05-02 資產盤點與範圍（2026-11-08）
 
 首次正文 v1.0.0 依[逐小節對照](sources/m05-02/source-map.md)完整採入七節供稿與來源節。`scripts/m05_02_content.py` 從雙語稿與 diagrams.json 產生 sourceBody 及八份受審核 SVG，`--check` 核對同步。`ScopeDiagram.svelte` 僅接受本課固定路徑；concepts.ts限制inventory／scope／workflow／coverage節點數2／3／5／1及種類。100格30/70與80%條為固定合成案例；A→B/C為依賴分支，窄版各子項明列A→，不變成B→C。五步工作流才是時序。正文、搜尋、SVG同源，三題沿原生參考答案，無批改服務或學習紀錄。瀏覽器入口 `playwright.m05-02.config.ts`，正式站用 `M05_02_BASE_URL`；驗證與發布見[回執](releases/2026-11-08-m05-02.md)。
+
+## M05-03 分類與評估圖解
+
+M05-03 使用既有 sourceBody visual 契約，限定 `m05-03-(causes|targets|methods|dimensions|evidence)-(zh|en)-v1-0-0.svg`；節點數依序 5／5／2／5／4，僅 evidence 為 flow，其餘 cards。`ClassificationDiagram.svelte` 以 HTML 與容器查詢呈現並列、分層與流程，窄版不把分類關係畫成依序流程。`scripts/m05_03_content.py` 從中英稿及 diagrams.json 生成正式正文與十份 sanitizer 審核 SVG；`--check` 驗證重建一致。來源對照及部署證據見 [M05-03 回執](releases/2026-11-08-m05-03.md)。
