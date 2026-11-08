@@ -1,6 +1,6 @@
 # 資工底層原理觀點：內容與驗收回執
 
-文章：`/perspectives/cs-systems-foundations/`，英文 `/en/perspectives/cs-systems-foundations/`。版本 v1.0.0，原發布／版本修訂日期 2026-11-08。正式站部署與回讀仍待完成，不能以本機 published 資料狀態當作已上線。
+文章：`/perspectives/cs-systems-foundations/`，英文 `/en/perspectives/cs-systems-foundations/`。版本 v1.0.0，原發布／版本修訂日期 2026-11-08。正式部署及回讀已完成，結果見文末。
 
 ## 內容與來源
 
@@ -18,4 +18,24 @@
 
 檢查工具：`scripts/check-cs-systems-browser.mjs`、`scripts/check-cs-systems-svg.mjs`、`scripts/generate-cs-systems.py --check`；證據存 `.local/cs-systems-browser/`、`.local/cs-systems-svg/`、`.local/cs-systems-shell-lab.log`。
 
-268 項單元測試通過；型別檢查 0 errors／0 warnings。publication-boundary 通過（draft／future、英文課程閘門與乾淨正式重建）；validate:release 通過，396 HTML、語言配對、連結與 567 static assets 通過。正式站全文、搜尋、圖檔回讀待部署後確認。
+268 項單元測試通過；型別檢查 0 errors／0 warnings。publication-boundary 通過（draft／future、英文課程閘門與乾淨正式重建）；validate:release 通過，396 HTML、語言配對、連結與 567 static assets 通過。正式站全文、搜尋、圖檔回讀已通過，見正式驗收。
+
+## Git 與部署啟動
+
+內容／元件／八圖與追溯資料已提交為 `4af35804d86107c191963dbac00a35d939d1f685`，非強制推送至 origin/main，遠端 ref 已核對一致。Pages run [42442489203](https://github.com/JasonLn0711/kairos-learning/actions/runs/42442489203) 已啟動；本次觀察仍為 in_progress，尚未取得正式部署成功或頁面回讀證據。後續以 `CS_SYSTEMS_BASE_URL=https://learn.cs-kairos.com node scripts/check-cs-systems-browser.mjs` 執行正式站全文、四寬度、圖檔 bytes 與鍵盤驗收，輸出到 `.local/cs-systems-live/`。
+
+
+## 正式驗收與完成審核
+
+Pages run **42442489203** 已 completed／success，部署內容提交為 `4af35804d86107c191963dbac00a35d939d1f685`。正式網址：
+
+- [中文文章](https://learn.cs-kairos.com/perspectives/cs-systems-foundations/)
+- [完整英文](https://learn.cs-kairos.com/en/perspectives/cs-systems-foundations/)
+
+`CS_SYSTEMS_BASE_URL=https://learn.cs-kairos.com node scripts/check-cs-systems-browser.mjs` exit 0：兩語全部正文區塊可見文字與正式 JSON 對應；每語八圖；320／390／768／1280 無整頁溢出；200% 根字級無整頁溢出；16 份公開 SVG bytes 與已驗證 build 相同；兩語無 JS 基本閱讀與圖解檢查；Tab／Shift+Tab、可見焦點、Enter 下載、code 焦點檢查通過。證據為 `.local/cs-systems-live/results.json` 與逐圖截圖。
+
+另以 Chrome 確認中英觀點列表各有一筆正確文章連結，正式 `/search-index.json` 與本機正式 build 逐結構相同（`.local/cs-systems-live/discovery.json`）。SVG 重建 `--check` 通過，16 圖字框無 viewBox 超界或文字重疊；本輪目視補核對硬體、連結、Git DAG 與 Git 區域的最終下載圖。原圖的關係、節點及文字已保留；網頁重排、字型與裝飾圖示差異如前述記錄。
+
+本次範圍已達成：供稿完整採入雙語觀點、八張參考圖重製為 16 份雙語 SVG、來源／修正／規則／檢查／發布詳實記錄並可追溯。原始材料、514 個正文區塊的模型與頁面比對、發布閘門、部署提交、公開頁面與公開資產各有對應證據。未新增學員成績、假送出或理解完成狀態。
+
+Linux 實機、實體手機、完整螢幕閱讀器認證屬尚未執行的額外驗收，不把瀏覽器模擬稱為上述認證；本次沒有以這些未測項支持已完成主張。以上正式驗收取代先前「部署啟動」段落的當時等待狀態，保留歷程供追溯。

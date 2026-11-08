@@ -1,6 +1,6 @@
 # 資工底層原理通識課：供稿與編輯追溯
 
-目標文章：`cs-systems-foundations`，預定網址 `/perspectives/cs-systems-foundations/` 與 `/en/perspectives/cs-systems-foundations/`。目前為編輯工作稿，尚未加入正式內容、發布或驗收。
+目標文章：`cs-systems-foundations`，預定網址 `/perspectives/cs-systems-foundations/` 與 `/en/perspectives/cs-systems-foundations/`。目前已完成正式發布及回讀，見[發布回執](../../releases/2026-11-08-cs-systems-foundations.md)。下列分階段紀錄保留當時狀態，最終狀態以回執為準。
 
 讀者目標：幫助有一般電腦操作經驗的讀者，從資源、身分、狀態與操作理解軟體系統，依問題所在層次選擇觀察方法與驗收證據。
 
@@ -96,3 +96,5 @@
 Git 桌面 HTML 改為七個可選取節點與背景 SVG 連線，維持 A—B、B—C—D—G／B—E—F—G 的菱形歷史；手機保留明示分支卡片。下載圖補上 CPU／RAM／SSD／GPU 圖示、硬體外框與置中文字；英文改以詞為單位換行，避免 dangling link 等詞拆成孤字。SVG 圖 3 使用較小字級容納全部連結資訊；下載檔是固定幾何，網頁正文使用至少 16px HTML 重排。
 
 `node scripts/check-cs-systems-svg.mjs` 逐一載入 16 SVG，以 Chrome 字框檢查 viewBox 內邊界及文字互相重疊，保存 PNG 與 results.json 於 `.local/cs-systems-svg/`。已目視 links-en、hardware-zh、git-dag-zh、environment-en，確認主要節點與實／虛線關係；發現硬體居中時參數位置錯誤造成三處超界，已修正產生器並重建重驗。桌面／手機與 SVG 的完整逐圖相似度、鍵盤及發布驗收仍須繼續。
+
+最終 2026-11-08：全文及八圖正式發布成功；正式站雙語全文、四尺寸、200% 文字、下載 bytes、無 JS 基本閱讀、鍵盤、列表及搜尋均已回讀，詳細證據與範圍見發布回執。先前待辦描述為歷史狀態。
