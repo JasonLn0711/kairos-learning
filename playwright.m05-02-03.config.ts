@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'tests/browser',testMatch:'m05-02-03.spec.ts',workers:1,timeout:60000,outputDir:'.local/m050203/browser',reporter:[['list']],use:{baseURL:'http://127.0.0.1:4253',headless:true,launchOptions:{executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium'}},webServer:{command:'python3 -m http.server 4253 --bind 127.0.0.1 --directory build',url:'http://127.0.0.1:4253/',reuseExistingServer:false}});
