@@ -29,3 +29,7 @@
 這次減少重複實作，未新增 Rust subprocess，也未修改文章或圖檔。Python HTMLParser
 與 Rust HTML parser 的相容性須另有證據，不能用泛用 HTML 檢查直接取代本契約。未量得
 整體效能、能源或 LLM token 節省，亦不將靜態檢查當成瀏覽器／正式站驗收。
+
+共用層的四項 Python 回歸測試已接入品質與 Pages 發布 workflow，避免只在本機驗證。
+Rust inventory 實測已發現 `validation_html.py` 與 `test_validation_html.py`，零 discovery error；
+這只證明宣告的兩個來源已納入，不代表其他文章規則已全數審核。
