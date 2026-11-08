@@ -61,3 +61,6 @@ Planning 成果提交 `517672c7`；推送前遇遠端 `b4cfa100` 新增簡報部
 `pending confirmation`：Jason 下次正常閱讀時提供答案或卡點，由相應學習 owner 記錄實際理解；實體裝置、完整輔助科技與真實服務操作另依明確啟動範圍驗收。本輪從最新 origin/main 建立隔離工作樹，保留原工作區所有未提交修改及兩邊既有歷史，避免用舊版覆蓋已發布教材。
 
 本輪文件驗證：跨 repo 新增區段的 56 個檔案／明確錨點連結通過；兩 repo `git diff --check` 通過。Planning `validate_knowledge.py` 為 186／186、`validate_repository.py` 通過（44 grandfathered、0 new warnings），`agenda.py day 2026-11-07` 通過並保留 Unknown。本輪只改文件，未重跑網站建置、教材單元或瀏覽器測試。
+
+
+11/8 的本機版本同步與 Planning 接續見[新回執](2026-11-08-planning-sync.md)；既有發布／瀏覽器結果保留原驗證日期。
