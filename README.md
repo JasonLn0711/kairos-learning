@@ -78,3 +78,7 @@ dependency changes. pnpm shares package content through its local store.
 [11/8 M05 發布與 pnpm 整合回執](docs/releases/2026-11-08-first-principle-closeout.md)串接兩篇教材、來源對照、驗證及 Planning 狀態。
 
 AASE 工作站 Python 快取共用與本機鎖檔操作見 [content authoring](docs/content-authoring.md#aase-uv-cache)；此維護保留教材下載包與學員操作契約。
+
+## 共用 Rust 工具
+
+[共用工具、固定版本與驗收分工](docs/shared-rust-tools.md)連接 `kairos-rust-tools`、本庫設定及發布流程；現有正式發布閘門持續保留。
