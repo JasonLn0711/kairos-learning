@@ -558,6 +558,9 @@ M05-01 首次公開 v1.0.0。`scripts/m05_01_content.py` 由完整中英稿與 d
 
 兩題沿原生 answer 參考解析，不建立送出或批改狀態。來源與逐小節／圖意差異見 [source-map](sources/m05-01/source-map.md)，單元檢查 `tests/m05-01.test.ts`，瀏覽器入口 `playwright.m05-01.config.ts`；正式站使用 `M05_01_BASE_URL`。發布後核對 M04-10 下一篇連至本課、M05-02 保持準備中。[驗收回執](releases/2026-11-08-m05-01.md)分別記錄內容、呈現與正式站證據。
 
+## M05-02 資產盤點與範圍（2026-11-08）
+
+首次正文 v1.0.0 依[逐小節對照](sources/m05-02/source-map.md)完整採入七節供稿與來源節。`scripts/m05_02_content.py` 從雙語稿與 diagrams.json 產生 sourceBody 及八份受審核 SVG，`--check` 核對同步。`ScopeDiagram.svelte` 僅接受本課固定路徑；concepts.ts限制inventory／scope／workflow／coverage節點數2／3／5／1及種類。100格30/70與80%條為固定合成案例；A→B/C為依賴分支，窄版各子項明列A→，不變成B→C。五步工作流才是時序。正文、搜尋、SVG同源，三題沿原生參考答案，無批改服務或學習紀錄。瀏覽器入口 `playwright.m05-02.config.ts`，正式站用 `M05_02_BASE_URL`；驗證與發布見[回執](releases/2026-11-08-m05-02.md)。
 
 ## M05-03 分類與評估圖解
 
