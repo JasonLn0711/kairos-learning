@@ -1,0 +1,1023 @@
+{
+  "id": "M05-02",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-08",
+  "status": "published",
+  "publishedOn": "2026-11-08",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "分清資產盤點、評估範圍與執行規則，依證據交代實際完成覆蓋率及結論界線。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "這一課是資安工程與滲透測試非常重要的基本功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先記住三句話："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Asset Inventory（資產盤點）： 公司到底有哪些東西需要保護？",
+            "Assessment Scope（評估範圍）： 這一次我們獲准檢查哪些東西？",
+            "Rules of Engagement（ROE，執行規則）： 即使可以檢查，哪些操作可以做、哪些不能做？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "最重要的觀念是：知道一個系統存在，不代表你有權限測試它；完成一次測試，也不代表整個系統都安全。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先用醫院健康檢查理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像一家醫院要替 100 位員工安排健康檢查。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "醫院首先要知道有哪些員工，這叫「盤點」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接著，這次可能只有 30 位員工報名，這叫「範圍」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且這 30 位員工可能只同意量血壓、抽血，不同意做侵入性檢查，這叫「執行規則」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最後，醫院只能說「30 位員工接受了指定項目檢查」，不能宣稱「100 位員工全部健康」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資安評估也是完全相同的道理。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-02-inventory-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜公司有 100 項資產（假設案例）",
+            "description": "即使 30 項全部通過指定檢查，也不能推論其他 70 項沒有弱點。這裡的數量只是示意。",
+            "items": [
+              {
+                "title": "本次授權：30 項",
+                "body": "100 項資產中的 30 項納入本次授權。"
+              },
+              {
+                "title": "未納入：70 項",
+                "body": "其餘 70 項未納入本次範圍。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個比喻說明了資安工作的第一個關鍵：資產總數、授權數量、實際完成數量，是三個不同的數字。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、Asset Inventory：資產盤點到底在盤什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "很多初學者會以為資產盤點，就是拿 Nmap 找出公司有哪些 IP 位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這只是可能使用的其中一種技術，並不是完整盤點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你經營一家網路商店。客人下單以後，網站必須接收訂單、查詢庫存、完成付款，才能正常營運。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們可以把它分成四類資產："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "資產類型",
+            "白話文理解",
+            "例子"
+          ],
+          "rows": [
+            [
+              "硬體與運算資源",
+              "提供運算或連線的設備",
+              "伺服器、筆電、虛擬機器"
+            ],
+            [
+              "軟體與服務",
+              "執行工作的程式",
+              "網站、API、資料庫服務"
+            ],
+            [
+              "資料",
+              "真正需要保護的內容",
+              "顧客資料、訂單、密碼雜湊"
+            ],
+            [
+              "身分與權限",
+              "決定誰能使用什麼",
+              "管理員、服務帳號、API Token"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼要分這麼細？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你可能已經盤點到一台伺服器，卻不知道裡面存了十萬筆客戶資料。萬一被入侵，實際損失就可能遠超過這台電腦的價格。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是為什麼資產盤點不能只看硬體，還需要了解軟體、資料、帳號與相互依賴關係。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CIS Controls v8.1 中，Control 1 主要處理企業設備資產；Control 2 處理軟體資產，相關資料與帳號管理還涉及其他控制項。"
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-sub-1",
+          "text": "IP 位址為什麼不是永久身分？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像公司有一個停車位，編號 15。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "星期一是小明停，星期二換成小華。你不能只因為車子停在 15 號位置，就認定兩天是同一台車。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP 位址也是類似概念。DHCP 可以動態分配位址；同一部電腦可能有不同 IP，同一 IP 也可能在不同時間對應不同裝置。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，清冊最好還有穩定的資產編號、主機名稱、擁有者、環境、查核時間等資訊。CIS Safeguard 1.1 也明確要求維護詳盡且更新的資產清冊。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、Assessment Scope：為什麼公司自己的資料庫也不能隨便測？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在用一個完整案例理解。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你被聘請來評估某公司的網路訂購系統，裡面有三個服務。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-02-scope-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 2｜依賴關係與授權範圍",
+            "description": "A 依賴 B、C，箭頭代表依賴；授權範圍只有 A 的特定檢查項目，不隨連線擴大。",
+            "items": [
+              {
+                "title": "A：測試訂購網站",
+                "body": "本次授權評估；允許檢查指定安全設定及軟體版本。"
+              },
+              {
+                "title": "B：正式資料庫",
+                "body": "公司內部；未授權。"
+              },
+              {
+                "title": "C：外部金流服務",
+                "body": "第三方業者；未授權。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "你在網站 A 裡面發現一個設定，顯示資料庫 B 的位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候應該怎麼做？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以根據 A 的已授權檢查內容，記錄「網站 A 存在對資料庫 B 的依賴關係」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但你不能因為發現了 B 的位址，就自行開始掃描 B。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有三個不同的概念："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "概念",
+            "意思"
+          ],
+          "rows": [
+            [
+              "Discovery（發現）",
+              "我知道 B 的存在"
+            ],
+            [
+              "Ownership（歸屬）",
+              "我知道 B 是誰管理的"
+            ],
+            [
+              "Authorization（授權）",
+              "我獲准對 B 進行指定測試"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三件事不能混為一談。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使 B 是公司的資產，也不代表授權 A 的管理者有權批准你測試 B，更不代表原本授權自動擴及 B。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同理，外部金流 C 由第三方管理，通常還要確認第三方同意與服務條款限制。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、ROE：授權測試，不等於什麼操作都可以做"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ROE 可以理解為「測試活動的遊戲規則」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像老師讓學生進入實驗室做實驗，這不表示學生可以操作所有儀器、使用所有化學藥品。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在資安工作中也是一樣：允許安全設定檢查，不表示允許密碼爆破、弱點利用或修改資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "下面是一份簡化的合成 ROE。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "項目",
+            "本次規則"
+          ],
+          "rows": [
+            [
+              "測試目標",
+              "測試網站 A"
+            ],
+            [
+              "測試環境",
+              "測試環境，不含正式環境"
+            ],
+            [
+              "允許行為",
+              "指定設定檢查、版本核對"
+            ],
+            [
+              "禁止行為",
+              "未授權弱點利用、刪改資料、服務阻斷測試"
+            ],
+            [
+              "測試時段",
+              "工作日 10:00–12:00"
+            ],
+            [
+              "測試帳號",
+              "經核准的唯讀帳號"
+            ],
+            [
+              "停止條件",
+              "發現非授權目標、意外接觸敏感資料、服務異常"
+            ],
+            [
+              "事件處理",
+              "停止相關操作，依聯絡程序通知負責人"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中「停止條件」非常重要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設執行指定檢查時，網站突然大量回傳錯誤，甚至服務無法使用。你不能一邊繼續測試，一邊說自己只是想找出問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "此時應依 ROE 暫停相關操作、保存必要的非敏感證據，並通知約定的負責人。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NIST SP 800-115 的附錄 B 提供 ROE 範本，涵蓋測試目標、範圍、風險、參與人員、時間與設備等內容。這是 2008 年發布的文件，仍可作為流程參考，但實際專案也要符合現行合約、法規及環境要求。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、資安工程師真正的工作流程"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-02-workflow-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "圖 3｜資安工程師的五步工作流程",
+            "description": "箭頭表示作業順序；先確認資產與權責，再依範圍及 ROE 評估，最後交代證據與限制。",
+            "items": [
+              {
+                "title": "盤點資產",
+                "body": "確認哪些系統、資料與帳號存在"
+              },
+              {
+                "title": "確認歸屬",
+                "body": "確認管理者與授權權責"
+              },
+              {
+                "title": "界定範圍與 ROE",
+                "body": "確認能測什麼、如何測、何時停止"
+              },
+              {
+                "title": "執行指定評估",
+                "body": "只在授權範圍內檢查並保存證據"
+              },
+              {
+                "title": "撰寫報告",
+                "body": "交代發現、未測項目及結論限制"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個流程還隱含一個很重要的管理問題：如果沒有先確認資產數量與範圍，就很難知道這次究竟測得多完整。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如這次授權 10 台主機，最後只完成 8 台。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-02-coverage-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 4｜本次授權資產的實際完成覆蓋率",
+            "description": "這裡假設 10 台均有明確且一致的預定檢查項目。8 台完成、2 台未完成。",
+            "items": [
+              {
+                "title": "80%",
+                "body": "8 / 10 台；完成數 ÷ 授權數 × 100%。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個 80% 代表的是資產評估覆蓋率，不是「系統有 80% 的安全性」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使完成 100%，也只代表全部指定項目已完成，不代表沒有任何未知弱點。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、CEH 考試常見觀念陷阱"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "題目敘述",
+            "應該如何判斷"
+          ],
+          "rows": [
+            [
+              "掃描器發現一台主機",
+              "不等於該主機已獲授權測試"
+            ],
+            [
+              "IP 在公司網段內",
+              "不等於這次測試必然涵蓋"
+            ],
+            [
+              "某台主機沒有回應",
+              "不能直接推論它不存在"
+            ],
+            [
+              "資產名稱寫 TEST",
+              "不代表沒有真實敏感資料"
+            ],
+            [
+              "找不到弱點",
+              "不代表系統完全安全"
+            ],
+            [
+              "網站連向第三方 API",
+              "不代表可以測試第三方"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些題目共同在考一種專業判斷能力：證據可以支持什麼結論，以及授權允許你做到哪一步。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、理解檢核：換你當資安工程師"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你受託檢查一間醫院的 AI 影像分析測試平台。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "醫院授權你檢查測試主機 A 的作業系統版本及安全設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在檢查過程中，你發現 A 連接到正式影像資料庫 B，而登入介面也使用外部身分驗證服務 C。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請回答三個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題一：這次可以直接對資料庫 B 進行弱點掃描嗎？為什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題二：你會如何把 B、C 記錄在資產清冊與本次評估報告中？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題三：若你意外看到真實病人的醫療影像，下一步應該怎麼做？"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0502",
+          "summary": "參考答案與解析",
+          "paragraphs": [
+            "問題一：不可以。授權僅限 A 的作業系統版本與安全設定；發現 B 或知道其歸屬不會擴張授權。先記錄依賴並透過有權責者確認新增範圍及 ROE，取得授權後才執行指定測試。",
+            "問題二：在清冊將 B 記為正式影像資料庫、C 記為外部身分服務，標示與 A 的依賴、已知管理者、環境、查核時間及待確認欄位。報告明列 B、C 未納入本次測試，不宣稱它們安全或存在弱點；第三方條款與同意另行確認。",
+            "問題三：依 ROE 立即停止相關操作，避免繼續瀏覽、複製或散布影像；只保留必要的非敏感時間與操作紀錄，循約定程序通知負責人，依事件及資料處理規則決定後續。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "掌握這一課的核心之後，未來不論使用 Nmap、Nessus、OpenVAS 或其他資安工具，都應該先確認資產、授權與執行邊界，再談如何進行技術檢查。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、來源與查核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[CIS Control 1](https://www.cisecurity.org/controls/inventory-and-control-of-enterprise-assets) 與 [Safeguard 1.1](https://cas.docs.cisecurity.org/en/latest/source/Controls1/) 支持設備清冊與更新要求；[Control 2](https://www.cisecurity.org/controls/inventory-and-control-of-software-assets) 支持軟體資產盤點。資料保護與帳號管理另涉及 Control 3、5。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[NIST SP 800-115（2008-09），附錄 B](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf) 是 ROE 流程參考。本課情境與數量均為合成示意；來源查核日期為 2026-11-08。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Distinguish asset inventory, assessment scope and rules of engagement; report actual coverage and the limits of the evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "This lesson covers a foundation of security engineering and penetration testing."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember three ideas:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Asset Inventory: what does the company need to protect?",
+            "Assessment Scope: what have we been authorized to examine this time?",
+            "Rules of Engagement (ROE): even within scope, which actions are permitted and which are prohibited?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Knowing a system exists does not authorize testing it. Completing one assessment does not establish that the entire system is secure."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Understand it through a hospital health check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a hospital arranging health checks for 100 employees."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, the hospital needs to know who the employees are. That is inventory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Perhaps only 30 employees sign up for this round. That is scope."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Those 30 may consent to blood pressure measurements and blood tests, but not invasive examinations. Those are the engagement rules."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The hospital can report that 30 employees received the specified examinations. It cannot claim all 100 employees are healthy."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Security assessments follow the same reasoning."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-02-inventory-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 1 | A company has 100 assets (hypothetical)",
+            "description": "Even if all 30 pass the specified checks, this says nothing about vulnerabilities in the other 70. The quantities are illustrative.",
+            "items": [
+              {
+                "title": "Authorized: 30 assets",
+                "body": "30 of the 100 assets are included in this authorization."
+              },
+              {
+                "title": "Excluded: 70 assets",
+                "body": "The other 70 assets are outside this assessment scope."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "The analogy highlights three distinct quantities: total assets, authorized assets and assets actually assessed."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Asset Inventory: what are we taking inventory of?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Beginners sometimes think inventory means using Nmap to find the company's IP addresses."
+        },
+        {
+          "kind": "paragraph",
+          "text": "That is one possible technique, not a complete inventory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine running an online shop. After a customer orders, the website must receive the order, check stock and process payment to support the business."
+        },
+        {
+          "kind": "paragraph",
+          "text": "We can distinguish four asset categories:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Asset category",
+            "Plain-language meaning",
+            "Examples"
+          ],
+          "rows": [
+            [
+              "Hardware and computing resources",
+              "Equipment that computes or connects",
+              "Servers, laptops, virtual machines"
+            ],
+            [
+              "Software and services",
+              "Programs that perform work",
+              "Websites, APIs, database services"
+            ],
+            [
+              "Data",
+              "The content that needs protection",
+              "Customer records, orders, password hashes"
+            ],
+            [
+              "Identities and permissions",
+              "Who can use what",
+              "Administrators, service accounts, API tokens"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Why distinguish them so carefully?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You may have inventoried a server without knowing it holds 100,000 customer records. A compromise could cost far more than the machine itself."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An inventory therefore needs to cover software, data, accounts and dependencies as well as hardware."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In CIS Controls v8.1, Control 1 primarily addresses enterprise equipment assets, while Control 2 addresses software assets. Data and account management involve other controls as well."
+        },
+        {
+          "kind": "paragraph",
+          "id": "section-2-sub-1",
+          "text": "Why isn't an IP address a permanent identity?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a company parking space numbered 15."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Ming parks there on Monday and Hua on Tuesday. Occupying space 15 does not make them the same car."
+        },
+        {
+          "kind": "paragraph",
+          "text": "IP addresses work similarly. DHCP can assign addresses dynamically: one computer may have different IP addresses, and one IP address may refer to different devices at different times."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An inventory should therefore also include a stable asset identifier, hostname, owner, environment and verification time. CIS Safeguard 1.1 calls for a detailed and updated enterprise asset inventory."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. Assessment Scope: why can't you freely test the company's own database?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Consider a complete example."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You are hired to assess a company's online ordering system, which involves three services."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-02-scope-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 2 | Dependencies and authorization scope",
+            "description": "A depends on B and C; arrows denote dependencies. Only specified checks on A are authorized. Connections do not extend permission.",
+            "items": [
+              {
+                "title": "A: test ordering website",
+                "body": "Authorized for this assessment: specified security settings and software versions."
+              },
+              {
+                "title": "B: production database",
+                "body": "Internal company system; not authorized."
+              },
+              {
+                "title": "C: external payment service",
+                "body": "Third-party provider; not authorized."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "In website A, you find a setting containing database B's address."
+        },
+        {
+          "kind": "paragraph",
+          "text": "What should you do?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Within the authorized examination of A, you can record that website A depends on database B."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finding B's address does not permit you to start scanning B."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Three separate concepts matter:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Concept",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "Discovery",
+              "I know B exists"
+            ],
+            [
+              "Ownership",
+              "I know who manages B"
+            ],
+            [
+              "Authorization",
+              "I am permitted to perform specified tests on B"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not conflate these three facts."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even if B belongs to the company, A's manager may lack authority to approve testing B. The original authorization does not automatically extend to B."
+        },
+        {
+          "kind": "paragraph",
+          "text": "External payment service C is managed by a third party. Its consent and service terms usually need to be checked too."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. ROE: permission to test does not permit every operation"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of ROE as the rules governing the testing activity."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A teacher allowing students into a laboratory does not authorize them to operate every instrument or use every chemical."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Likewise, permission to review security settings does not permit password brute forcing, vulnerability exploitation or data modification."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here is a simplified synthetic ROE:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Item",
+            "Rule for this assessment"
+          ],
+          "rows": [
+            [
+              "Target",
+              "Test website A"
+            ],
+            [
+              "Environment",
+              "Test environment; production excluded"
+            ],
+            [
+              "Permitted actions",
+              "Specified configuration checks and version verification"
+            ],
+            [
+              "Prohibited actions",
+              "Unauthorized exploitation, deleting or changing data, denial-of-service testing"
+            ],
+            [
+              "Time window",
+              "Working days, 10:00–12:00"
+            ],
+            [
+              "Account",
+              "Approved read-only account"
+            ],
+            [
+              "Stop conditions",
+              "Out-of-scope target, accidental sensitive-data exposure, service anomaly"
+            ],
+            [
+              "Incident handling",
+              "Stop the relevant activity and notify the responsible contact using the agreed procedure"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stop conditions are especially important."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose the website suddenly returns many errors or becomes unavailable during a specified check. Continuing to test while saying you are only trying to diagnose the problem is not an appropriate response."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Follow the ROE: pause the relevant activity, retain necessary nonsensitive evidence and notify the designated contact."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Appendix B of NIST SP 800-115 provides an ROE template covering objectives, scope, risks, participants, schedule and equipment. Published in 2008, it remains a process reference; actual projects also need to meet current contractual, legal and environmental requirements."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. The security engineer's actual workflow"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-02-workflow-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Figure 3 | Five-step security engineering workflow",
+            "description": "Arrows show work order: establish assets and authority, assess within scope and ROE, then report evidence and limitations.",
+            "items": [
+              {
+                "title": "Inventory assets",
+                "body": "Identify existing systems, data and accounts."
+              },
+              {
+                "title": "Confirm ownership",
+                "body": "Establish managers and authorization authority."
+              },
+              {
+                "title": "Define scope and ROE",
+                "body": "Agree on what and how to test, and when to stop."
+              },
+              {
+                "title": "Perform specified assessment",
+                "body": "Examine only authorized scope and preserve evidence."
+              },
+              {
+                "title": "Write the report",
+                "body": "Explain findings, untested items and conclusion limits."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "This workflow also raises a management question: without an asset count and an agreed scope, how can you determine how complete the assessment was?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose 10 hosts are authorized and only 8 are completed."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-02-coverage-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 4 | Completion coverage of authorized assets",
+            "description": "Assume all 10 hosts have clear, consistent planned checks. Eight are complete and two remain incomplete.",
+            "items": [
+              {
+                "title": "80%",
+                "body": "8 / 10 hosts; completed ÷ authorized × 100%."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "This 80% is asset-assessment coverage, not a claim that the system is 80% secure."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Even 100% completion means only that all specified checks were completed. It does not exclude unknown vulnerabilities."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Common CEH concept traps"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Statement",
+            "Appropriate judgment"
+          ],
+          "rows": [
+            [
+              "A scanner found a host",
+              "That does not establish authorization to test it"
+            ],
+            [
+              "An IP address is in the company's subnet",
+              "This assessment does not necessarily cover it"
+            ],
+            [
+              "A host did not respond",
+              "That does not establish that it does not exist"
+            ],
+            [
+              "An asset name contains TEST",
+              "It may still contain real sensitive data"
+            ],
+            [
+              "No vulnerabilities were found",
+              "That does not establish complete security"
+            ],
+            [
+              "A website connects to a third-party API",
+              "That does not permit testing the third party"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "These questions test professional judgment: what conclusions does the evidence support, and how far does the authorization let you go?"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Understanding check: you are the security engineer"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you are engaged to examine a hospital's AI imaging analysis test platform."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The hospital authorizes operating-system version and security-configuration checks on test host A."
+        },
+        {
+          "kind": "paragraph",
+          "text": "During the examination, you discover that A connects to production imaging database B and that its login interface uses external identity service C."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Answer three questions:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 1: May you immediately run a vulnerability scan on database B? Why?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 2: How would you record B and C in the asset inventory and this assessment report?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 3: If you accidentally see real patient medical images, what should you do next?"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0502",
+          "summary": "Reference answers and explanations",
+          "paragraphs": [
+            "Question 1: No. Authorization covers only OS version and security settings on A. Discovery or ownership of B does not extend permission. Record the dependency and ask the proper authority to approve added scope and ROE before any specified testing.",
+            "Question 2: Record B as a production imaging database and C as an external identity service. Include dependencies on A, known owners, environment, verification time and fields awaiting confirmation. State explicitly that B and C were not tested; claim neither security nor a vulnerability. Confirm third-party terms and consent separately.",
+            "Question 3: Stop the relevant activity under the ROE. Avoid further viewing, copying or distributing images. Retain only necessary nonsensitive timing and activity records, notify the agreed contact and follow incident and data-handling procedures."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "With this foundation, whether you use Nmap, Nessus, OpenVAS or another security tool, establish assets, authorization and engagement boundaries before planning technical checks."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Sources and verification"
+        },
+        {
+          "kind": "paragraph",
+          "text": "[CIS Control 1](https://www.cisecurity.org/controls/inventory-and-control-of-enterprise-assets) and [Safeguard 1.1](https://cas.docs.cisecurity.org/en/latest/source/Controls1/) support equipment inventory and maintenance; [Control 2](https://www.cisecurity.org/controls/inventory-and-control-of-software-assets) supports software inventory. Data protection and account management also involve Controls 3 and 5."
+        },
+        {
+          "kind": "paragraph",
+          "text": "[NIST SP 800-115 (2008-09), Appendix B](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf) is an ROE process reference. All lesson scenarios and quantities are synthetic illustrations. Sources checked on 2026-11-08."
+        }
+      ]
+    }
+  }
+}
