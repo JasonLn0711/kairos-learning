@@ -26,3 +26,13 @@
 35 個新增跨 repo 檔案／明示錨點連結、兩 repo whitespace、Planning 11/8 day／W45 week agenda、repository 與 metrics validator 通過。repository 為 44 既有警告、0 新增；agenda 容量 Unknown，metrics 最新 2026-08-20，本輪沒有補造數據。JSON 語意比對確認私人進度只有 C02／03 的 publication 欄位變動，其他學習證據完整保留，舊 publication 保存於 prior_reports。anti-ai-rhetoric-lint 未提供可用 skill，本輪依既有 voice contract 人工核對。
 
 本段為推送前結果；新 CI／Pages 與正式回讀於發布後補收據。
+
+## 推送、部署及正式回讀收據
+
+Kairos 三筆獨立提交：`344f98a`（有效 preview fixture）、`3728131`（pnpm／CI）、`ebc50b8`（規範入口及 Planning 關聯）。Planning 分別以 `4b6047df` 更新 publication 與 owner 路由、`4dcddd7f` 更新日／週狀態。兩 repo 均使用 `git push origin HEAD:main`，推送後 `ls-remote` 與本機 SHA 相符，fetch 後 `0 0`；原始歷史完整保留。Planning 既有未追蹤工具目錄／測試檔保持原狀。
+
+[Pages 42436965260](https://github.com/JasonLn0711/kairos-learning/actions/runs/42436965260) completed／success，head SHA `ebc50b835115129b7c6a7fd4d54e588c71583381`。遠端 Node 24 已完成 pnpm 安裝／audit、263 項單元、內容、型別、完整發布邊界、release、MATLAB checksum、產物上傳與 Pages 部署。
+
+2026-11-08 10:07 Asia/Taipei 部署後正式回讀，`M05_02_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.m05-02.config.ts` 六項通過（12.7s）；M05-03 同型指令六項通過（11.7s）。兩語完整正文順序、四尺寸、200% 文字、鍵盤、無 JS、相鄰導覽／搜尋與十八份 SVG 實際下載 bytes／文字邊界／重疊檢查通過。log 在 `.local/git-sync/live-m05-02.log`、`live-m05-03.log`；各課 JSON 與截圖由既有測試目錄保存。本輪沒有修改教材正文及圖檔，先前人工圖意審查仍由兩課原回執承接。
+
+本收據僅補文件，以 `[skip ci]` 保存；正式站對應的可部署內容保持上述已驗證版本。下一關仍是獨立學員答案／卡點；實體裝置與完整輔助科技驗收依原範圍保留。
