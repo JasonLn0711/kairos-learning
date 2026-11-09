@@ -101,6 +101,12 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(['workflow','connection'].includes(s.id)||s.id==='documents'&&i===1?'flow':'cards')))fail('invalid problem statement figure');
       }
+      if(l.id==='AASE-M03-C04'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected:Record<string,number>={analogy:4,workflow:5};
+        if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='workflow'?'flow':'cards'))fail('invalid MVP scope figure');}
+        else if(figures.length)fail('invalid MVP scope figure');
+      }
       if(l.id==='AASE-M03-C05'&&l.revision>=4){
         const expected:Record<string,number>={'evidence-chain':6,metrics:2,measure:4,analogy:2,trace:5};
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
