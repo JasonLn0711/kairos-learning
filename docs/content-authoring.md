@@ -629,3 +629,17 @@ AASE-M04-C01 v1.1.0 的[來源對照](sources/aase/m04-01/replacement-2026-11-09
 HciPerspectivesDiagram只處理本課固定4步flow／3列cards／2欄cards，手機原生重排，示意動作區維持文字。模型拒絕多餘節點、錯誤關係與markup欄位；六獨立SVG由aase_m0401_svg.py使用同源資料及固定allowlist輸出。aase_m0401_content.py由雙語稿與figures.json產生正式JSON；兩者--check核對同步。原稿正規化與逐節編輯在來源紀錄，不以標題數代替完整性。
 
 維護檢查：tests/aase-m0401-replacement.test.ts、playwright.aase-m0401.config.ts；正式站指定AASE_BASE_URL。全文／順序、四尺寸／200%、無JS／鍵盤／搜尋及SVG下載檢查後，依[回執](releases/2026-11-09-aase-m04-01-replacement.md)更新實際發布證據。課名同步course雙語目錄與工作坊ZIP，操作教材本身未改。
+
+## AASE M03-04 MVP 完整供稿（2026-11-09）
+
+v1.1.0／revision 4 保留原發布日與六個舊錨點，導言及十節完整雙語由 `scripts/aase_m0304_content.py` 產生；`--check` 核對成稿同步。原文、兩張 PNG、前版與逐節採用見[來源對照](sources/aase/m03-04/replacement-2026-11-09/source-map.md)。四表、完整 problem.md 與四選項理解檢核均進入正文，新題 Q04 使用既有參考答案展開。
+
+`MvpScopeDiagram.svelte` 僅用於本課：analogy cards 四節點呈現兩個前置節點與兩個互斥條件結果，workflow flow 五節點、四箭頭並保留五個圖示。`aase.ts` 拒絕錯誤位置、種類或數量；文字由 Svelte 跳脫。手機重排保留條件標籤，不建立分支間箭頭。四份 SVG 從正式 JSON 經 `scripts/aase_m0304_svg.py` 匯出，固定元素白名單、小於100000 bytes，`--check` 比較位元組。正文、搜尋與圖檔同源。
+
+單元為 `tests/aase-m0304-replacement.test.ts`；瀏覽器為 `playwright.aase-m0304.config.ts`，正式站設定 `AASE_BASE_URL`。逐段全文、四尺寸及200%文字、無JS、鍵盤、搜尋、四SVG邊界／重疊及下載一致性由同一檢查承接。實測與發布見[回執](releases/2026-11-09-aase-m03-04-replacement.md)。
+
+## M05-06｜認證掃描與證據界線
+
+CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整雙語。來源見[逐節對照](sources/m05-06/source-map.md)，發布證據見[回執](releases/2026-11-09-m05-06.md)。`scripts/m05_06_content.py --check`核對正式JSON與六份sanitizer SVG；`ScanEvidenceDiagram.svelte`承接paths共同主機＋兩平行面、gates五節點四連線、result四列合成結果。`scan-evidence-diagrams.ts`限制身份、固定路徑、種類、節點數與欄位。正文／搜尋／下載同源，不提供掃描或批改服務。
+
+單元為`tests/m05-06.test.ts`，瀏覽器為`node scripts/check-m05-06-browser.mjs`，正式站設定`M05_06_BASE_URL=https://learn.cs-kairos.com`；`node scripts/check-m05-06-svg.mjs`核對六圖字框與重疊。同期修改於隔離工作樹驗收，保留原工作目錄。
