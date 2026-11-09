@@ -33,7 +33,7 @@
   import InlineText from './InlineText.svelte';
   let { blocks, conceptId='', lang='zh' }: {blocks: SourceBlock[];conceptId?:string;lang?:string} = $props();
 </script>
-<div class="source-body" class:assessment={conceptId==='CEH26-M05-C05'||conceptId==='CEH26-M05-C04'||conceptId==='M05-01'||conceptId==='M05-02'||conceptId==='M05-03'} class:ldap={conceptId==='CEH26-M04-C08'} class:otherEnumeration={conceptId==='CEH26-M04-C09'||conceptId==='CEH26-M04-C10'} class:snmp={conceptId==='CEH26-M04-C07'} class:nfs={conceptId==='CEH26-M04-C06'} class:ftpsmtp={conceptId==='CEH26-M04-C06'||conceptId==='CEH26-M04-C05'||conceptId==='CEH26-M04-C03'||conceptId==='CEH26-M04-C04'} class:netbiosRpc={conceptId==='CEH26-M04-C05'} class:dns={conceptId==='CEH26-M04-C02'} class:enumeration={conceptId==='CEH26-M04-C01'}>
+<div class="source-body" class:assessment={conceptId==='CEH26-M05-C06'||conceptId==='CEH26-M05-C05'||conceptId==='CEH26-M05-C04'||conceptId==='M05-01'||conceptId==='M05-02'||conceptId==='M05-03'} class:ldap={conceptId==='CEH26-M04-C08'} class:otherEnumeration={conceptId==='CEH26-M04-C09'||conceptId==='CEH26-M04-C10'} class:snmp={conceptId==='CEH26-M04-C07'} class:nfs={conceptId==='CEH26-M04-C06'} class:ftpsmtp={conceptId==='CEH26-M04-C06'||conceptId==='CEH26-M04-C05'||conceptId==='CEH26-M04-C03'||conceptId==='CEH26-M04-C04'} class:netbiosRpc={conceptId==='CEH26-M04-C05'} class:dns={conceptId==='CEH26-M04-C02'} class:enumeration={conceptId==='CEH26-M04-C01'}>
   {#each blocks as block,i}
     {#if block.kind === 'sourceImage'}
       <figure class="original-image">
