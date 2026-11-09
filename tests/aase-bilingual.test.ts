@@ -113,7 +113,7 @@ test('M04 English preserves Chinese evidence boundaries, original diagrams, chec
   assert.equal(l.contentVersion,n===5?'1.0.3':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
   const en=getPage('/en/courses/aase/v1/m04/concepts/m04-0'+n+'/')!.aaseConcept!.lesson!;
-  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual((n===1?l.text.en:en.text.en).sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
+  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual((n===1?l.text.en as typeof en.text.en:en.text.en).sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
  }
 });
 
