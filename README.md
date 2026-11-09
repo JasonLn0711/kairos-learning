@@ -84,3 +84,5 @@ AASE 工作站 Python 快取共用與本機鎖檔操作見 [content authoring](d
 [共用工具、固定版本與驗收分工](docs/shared-rust-tools.md)連接 `kairos-rust-tools`、本庫設定及發布流程；現有正式發布閘門持續保留。
 
 [11/9 工作目錄整合與 Planning 回執](docs/releases/2026-11-09-repository-reconciliation.md)記錄歷史保留、重疊修改處理及本輪驗證。
+
+[M05-05 優先順序完整教材](docs/releases/2026-11-09-m05-05.md)串接九節雙語供稿、四圖／八份SVG、逐段對照及本輪驗證與發布。

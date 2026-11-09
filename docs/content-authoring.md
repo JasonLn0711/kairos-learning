@@ -604,3 +604,12 @@ CEH26-M05-C04 顯示 M05-04，正文沿既有 sourceBody；`scripts/m05_04_conte
 ### 2026-11-09 維護命令與工作目錄整合
 
 現行維護命令依 package.json 的 pnpm pin 執行；歷史回執保留當時命令。[整合回執](releases/2026-11-09-repository-reconciliation.md)連接來源、衝突處理、實測與 Planning；本輪沒有修訂教學正文。
+
+<a id="m05-05-prioritization"></a>
+## M05-05｜CVSS、KEV、EPSS 優先順序
+
+`CEH26-M05-C05` 沿既有課次及短網址，首次公開 v1.0.0。完整供稿、四張 PNG、課綱前版、逐段採用對照與官方查核在[來源紀錄](sources/m05-05/README.md)；兩語各九節、五小節、五表、四圖與兩個原開放問題，qa=[]。來源卡雜訊、0.20標題及靜態教材語氣的處理逐項明列。
+
+四圖共用 diagrams.json：signals cards 3、groups cards 4、probability cards 1、workflow flow 4。`PrioritizationDiagram.svelte` 保留平行列、CVSS四組指標、固定20%長條與四關三箭頭；只有workflow表示順序。`prioritization-diagrams.ts` 約束本課、四個圖名、雙語固定路徑、種類、數量、欄位及固定0.20＝20%值，不接受任意標記、輸入分數或官方風險計算器主張。
+
+`python3 scripts/m05_05_content.py --check`核對完整中英正文與八份 sanitizer SVG；`tests/m05-05.test.ts`核對原件／逐段採用、範例數值、發布閘門及無效圖解拒絕。先完成內容、單元、型別、publication-boundary及release，再執行 `node scripts/check-m05-05-browser.mjs`、`node scripts/check-m05-05-svg.mjs`。正式站指定 `M05_05_BASE_URL=https://learn.cs-kairos.com`。來源與發布證據由[本次回執](releases/2026-11-09-m05-05.md)承接；M05-04下一篇隨共用catalog連至新正文，M05-08維持待發布。
