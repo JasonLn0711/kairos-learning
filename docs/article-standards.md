@@ -93,7 +93,7 @@
 
 參考：[重排](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html)、[文字放大](https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html)、[鍵盤](https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html)。
 
-共用[撰稿工作表](article-writing-template.md)；執行 `npm run audit:articles` 產生[逐頁盤點](article-audit.md)。此指令建立本機網站，寫入忽略的瀏覽器證據與公開摘要；不部署。
+共用[撰稿工作表](article-writing-template.md)；執行 `pnpm run audit:articles` 產生[逐頁盤點](article-audit.md)。此指令建立本機網站，寫入忽略的瀏覽器證據與公開摘要；不部署。
 
 [本次成果、驗證與跨 repo 關聯](releases/2026-11-01-perspectives-standards.md)記錄實際結果及後續驗收。
 

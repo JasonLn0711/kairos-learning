@@ -22,7 +22,7 @@
 
 ## 證據與重跑
 
-`npm run test:browser:perspectives` 建立兩個靜態版本並啟動只綁定回環位址的測試伺服器，測試結束自動關閉。需要 Google Chrome 已安裝。
+`pnpm run test:browser:perspectives` 建立兩個靜態版本並啟動只綁定回環位址的測試伺服器，測試結束自動關閉。需要 Google Chrome 已安裝。
 
 - 機器結果：`.local/perspectives-browser/results.json`
 - 八張雙語完整頁面截圖：`.local/perspectives-browser/screenshots/{zh,en}-{320,390,768,1280}.png`

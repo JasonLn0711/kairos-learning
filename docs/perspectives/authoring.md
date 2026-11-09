@@ -202,15 +202,15 @@ AI 可以協助擬大綱、解釋概念、改寫、翻譯與檢查一致性。�
 
 ## 本機操作
 
-`npm run preview:perspectives` 建立隔離副本並在 localhost:4179 提供合成文章。正式 content 不加入測試文章。`npm run preview:perspectives -- --build-only` 僅建置隔離預覽。
+`pnpm run preview:perspectives` 建立隔離副本並在 localhost:4179 提供合成文章。正式 content 不加入測試文章。`pnpm run preview:perspectives --build-only` 僅建置隔離預覽。
 
 正式內容參照本目錄 template.json，填入完整雙語、署名、來源、日期與相關教材 ID，完成內容校對後才改為 published。沒有文章時列表呈現空狀態。日期到達後仍需要另一次授權建置。
 
-連接埠已被使用時，預覽會在重建前停止，避免覆蓋正在閱讀的預覽；可用 `PERSPECTIVES_PORT=4180 npm run preview:perspectives` 選擇其他埠。`--build-only` 仍會更新隔離建置，請等建置完成再重新整理頁面。
+連接埠已被使用時，預覽會在重建前停止，避免覆蓋正在閱讀的預覽；可用 `PERSPECTIVES_PORT=4180 pnpm run preview:perspectives` 選擇其他埠。`--build-only` 仍會更新隔離建置，請等建置完成再重新整理頁面。
 
 ## 瀏覽器驗收
 
-執行 `npm run test:browser:perspectives`：先建立正常網站及隔離合成預覽，再以 Playwright 啟動獨立無介面 Chrome。需本機已安裝 Google Chrome；測試不使用既有瀏覽器設定檔，不控制個人分頁。測試伺服器只綁定 127.0.0.1 的 4186／4187 埠，結束自動關閉。
+執行 `pnpm run test:browser:perspectives`：先建立正常網站及隔離合成預覽，再以 Playwright 啟動獨立無介面 Chrome。需本機已安裝 Google Chrome；測試不使用既有瀏覽器設定檔，不控制個人分頁。測試伺服器只綁定 127.0.0.1 的 4186／4187 埠，結束自動關閉。
 
 結果與失敗 trace 位於 `.local/perspectives-browser/`；完整頁面截圖位於其 `screenshots/` 子目錄。涵蓋中英雙語四種寬度、鍵盤焦點與捲動、無 JavaScript、搜尋索引失敗與恢復、觸控模擬及正式空狀態。瀏覽器模擬不等於實體手機或完整螢幕閱讀器認證。
 
@@ -224,9 +224,9 @@ AI 可以協助擬大綱、解釋概念、改寫、翻譯與檢查一致性。�
 
 每張圖包含穩定 `id`、`caption`、`description`、`note` 與 `groups`。群組的 `mode` 使用 `flow` 表示有向順序、`cards` 表示平行角色；每個節點包含 `title`、`body`、受限的 `icon` 和 `tone`。以節點文字寫明關係和前提，窄版重排後不依賴位置猜測連線。模型不接受任意 HTML、SVG 路徑或外部圖示。
 
-修改雙語圖解後執行 `npm run generate:perspective-diagrams`，檢閱 `site/images/perspectives/` 的 SVG，再執行內容、型別及單元測試。匯出與搜尋共用正式內容；單元測試核對 NAS 圖解下載檔與產生器逐位元組一致。靜態目錄會公開，只有確認可公開的已發布文章才匯出；未來日期素材也要按公開資產審核。
+修改雙語圖解後執行 `pnpm run generate:perspective-diagrams`，檢閱 `site/images/perspectives/` 的 SVG，再執行內容、型別及單元測試。匯出與搜尋共用正式內容；單元測試核對 NAS 圖解下載檔與產生器逐位元組一致。靜態目錄會公開，只有確認可公開的已發布文章才匯出；未來日期素材也要按公開資產審核。
 
-`npm run test:browser:nas` 使用現有 `build/`，涵蓋兩種語言、四種尺寸、鍵盤下載、200% 文字、無 JavaScript 與導覽。先完成建置再執行；`NAS_BASE_URL` 可指定公開站驗收。瀏覽器模擬及文字倍增檢查與實體手機、完整輔助工具驗收分別記錄。
+`pnpm run test:browser:nas` 使用現有 `build/`，涵蓋兩種語言、四種尺寸、鍵盤下載、200% 文字、無 JavaScript 與導覽。先完成建置再執行；`NAS_BASE_URL` 可指定公開站驗收。瀏覽器模擬及文字倍增檢查與實體手機、完整輔助工具驗收分別記錄。
 
 文章日期與版本資訊列依共同規範 [WRITE-06](../article-standards.md#原發布版本與修訂日期write-06)；原發布日保留，`updatedOn` 對應目前修訂，觀察截止日期獨立呈現。
 
@@ -236,8 +236,10 @@ AI 可以協助擬大綱、解釋概念、改寫、翻譯與檢查一致性。�
 依 [WRITE-06](../article-standards.md#原發布版本與修訂日期write-06)，每篇觀點必填 `contentVersion`（例如 `1.0.1`），公開顯示 `v1.0.1`。初版 `1.0.0`；閱讀改善升 patch，新增範圍升 minor，重大變更升 major。同步維護 `updatedOn`、雙語 `updates` 及內部 `revision`，原發布日保持；驗證器拒絕缺漏或整數版本，頁面不可回退顯示 revision。NAS 本次遷移與誤標更正見 [發布回執](../releases/2026-11-01-nas-perspective.md#nas-semver-correction)。
 
 
-NAS 漏洞公告與記憶體生命週期的圖解範例見[內容設計](nas-cve-content-design.md)與[驗收回執](../releases/2026-11-01-nas-cve-patching.md)。執行 `npm run generate:perspective-diagrams` 同步下載檔；建置後 `npm run test:browser:nas-cve` 驗證兩語、尺寸、放大、鍵盤、無 JavaScript、搜尋及雙向閱讀連結。正式站使用 `NAS_CVE_BASE_URL=https://learn.cs-kairos.com npm run test:browser:nas-cve`，證據另存 `.local/nas-cve/live/`。
+NAS 漏洞公告與記憶體生命週期的圖解範例見[內容設計](nas-cve-content-design.md)與[驗收回執](../releases/2026-11-01-nas-cve-patching.md)。執行 `pnpm run generate:perspective-diagrams` 同步下載檔；建置後 `pnpm run test:browser:nas-cve` 驗證兩語、尺寸、放大、鍵盤、無 JavaScript、搜尋及雙向閱讀連結。正式站使用 `NAS_CVE_BASE_URL=https://learn.cs-kairos.com pnpm run test:browser:nas-cve`，證據另存 `.local/nas-cve/live/`。
 
 ## 結構化記憶體與分層圖解
 
 新增 `cells`、`stages`、`layers`、`reference`、`lifetime`、`access-path` 版型及受限 cells／released 欄位，契約、響應式規則與驗收統一依[圖解設計規範](../diagram-design-system.md)。新增教學範圍與版型的實作見[記憶體基礎回執](../releases/2026-11-01-nas-memory-foundations.md)。
+
+合成預覽的 fixture 使用現存課程 ID，保留課程往返連結；退休 ID 的修正由 fixture 承接。[11/9 整合與驗證](../releases/2026-11-09-repository-reconciliation.md)。
