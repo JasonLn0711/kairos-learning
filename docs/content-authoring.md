@@ -622,6 +622,14 @@ AASE專屬`prose`區塊只接受非空paragraphs字串陣列，以Svelte跳脫�
 
 單元檢查為`tests/aase-m0305-replacement.test.ts`；瀏覽器為`playwright.aase-m0305.config.ts`，正式站使用AASE_BASE_URL。包含全文、四尺寸／200%、鍵盤、無JS、同源搜尋、SVG字框／重疊及下載位元組。原始資料與前版由SHA256SUMS核對，具體執行與待驗項目見[回執](releases/2026-11-09-aase-m03-05-replacement.md)。
 
+## AASE M03-04 MVP 完整供稿（2026-11-09）
+
+v1.1.0／revision 4 保留原發布日與六個舊錨點，導言及十節完整雙語由 `scripts/aase_m0304_content.py` 產生；`--check` 核對成稿同步。原文、兩張 PNG、前版與逐節採用見[來源對照](sources/aase/m03-04/replacement-2026-11-09/source-map.md)。四表、完整 problem.md 與四選項理解檢核均進入正文，新題 Q04 使用既有參考答案展開。
+
+`MvpScopeDiagram.svelte` 僅用於本課：analogy cards 四節點呈現兩個前置節點與兩個互斥條件結果，workflow flow 五節點、四箭頭並保留五個圖示。`aase.ts` 拒絕錯誤位置、種類或數量；文字由 Svelte 跳脫。手機重排保留條件標籤，不建立分支間箭頭。四份 SVG 從正式 JSON 經 `scripts/aase_m0304_svg.py` 匯出，固定元素白名單、小於100000 bytes，`--check` 比較位元組。正文、搜尋與圖檔同源。
+
+單元為 `tests/aase-m0304-replacement.test.ts`；瀏覽器為 `playwright.aase-m0304.config.ts`，正式站設定 `AASE_BASE_URL`。逐段全文、四尺寸及200%文字、無JS、鍵盤、搜尋、四SVG邊界／重疊及下載一致性由同一檢查承接。實測與發布見[回執](releases/2026-11-09-aase-m03-04-replacement.md)。
+
 ## M05-06｜認證掃描與證據界線
 
 CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整雙語。來源見[逐節對照](sources/m05-06/source-map.md)，發布證據見[回執](releases/2026-11-09-m05-06.md)。`scripts/m05_06_content.py --check`核對正式JSON與六份sanitizer SVG；`ScanEvidenceDiagram.svelte`承接paths共同主機＋兩平行面、gates五節點四連線、result四列合成結果。`scan-evidence-diagrams.ts`限制身份、固定路徑、種類、節點數與欄位。正文／搜尋／下載同源，不提供掃描或批改服務。
