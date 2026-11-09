@@ -613,3 +613,9 @@ CEH26-M05-C04 顯示 M05-04，正文沿既有 sourceBody；`scripts/m05_04_conte
 四圖共用 diagrams.json：signals cards 3、groups cards 4、probability cards 1、workflow flow 4。`PrioritizationDiagram.svelte` 保留平行列、CVSS四組指標、固定20%長條與四關三箭頭；只有workflow表示順序。`prioritization-diagrams.ts` 約束本課、四個圖名、雙語固定路徑、種類、數量、欄位及固定0.20＝20%值，不接受任意標記、輸入分數或官方風險計算器主張。
 
 `python3 scripts/m05_05_content.py --check`核對完整中英正文與八份 sanitizer SVG；`tests/m05-05.test.ts`核對原件／逐段採用、範例數值、發布閘門及無效圖解拒絕。先完成內容、單元、型別、publication-boundary及release，再執行 `node scripts/check-m05-05-browser.mjs`、`node scripts/check-m05-05-svg.mjs`。正式站指定 `M05_05_BASE_URL=https://learn.cs-kairos.com`。來源與發布證據由[本次回執](releases/2026-11-09-m05-05.md)承接；M05-04下一篇隨共用catalog連至新正文，M05-08維持待發布。
+
+## M05-06 驗證式與非驗證式掃描（draft）
+
+CEH26-M05-C06 顯示 M05-06，沿既有 sourceBody 完整呈現八節；原題後兩段中英參考答案使用原生 answer 預設收合，qa=[]。`scripts/m05_06_content.py` 從完整稿與 diagrams.json 產生正式資料及四份 sanitizer SVG，`--check` 核對 bytes。ScanCoverageDiagram 接受 views 兩張平行視角卡及 gates 三項證據卡，僅卡內文字箭頭表示資訊路徑，沒有跨卡攻擊或自動通過關係；概念驗證器限制 C06、固定路徑、cards、2／3 節點與已知文字欄位。
+
+C06 對應舊待編 M05-10，C07 對應舊 M05-11，前項保存於來源目錄；C04/C05 原稿、正文與資產不變。C05 導覽回歸預期改到 C06，C07 維持待編。`tests/m05-06.test.ts` 核對來源、完整雙語、身份及 draft/future／圖解邊界；`scripts/check-m05-06-static.py` 只在隔離副本建置並核對可見全文，不啟動瀏覽器或服務。[完整工作表與逐節來源](sources/m05-06/source-map.md)、[逐頁驗收回執](releases/2026-11-09-m05-06.md)保留本次結果與未驗項，不能沿用其他課的成功瀏覽器紀錄。
