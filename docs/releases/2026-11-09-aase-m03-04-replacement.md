@@ -29,6 +29,18 @@ SVG：`/images/aase/m03-04-{1,2}-{zh,en}.svg`；最終大小及正式站回讀�
 
 ## 發布驗證
 
-待記入本次實際PR、部署commit／run與正式站全文／圖檔回讀。部署完成前本欄不代表正式站完成。
+- [PR #100](https://github.com/JasonLn0711/kairos-learning/pull/100)已合併；內容提交`18dfb61`，保留同期主線的合併提交`aad1581`、`5f7854b`。中間型別修正`cea0a3c`與主線後續採用的完整ConceptTeaching型別均保留歷史；最終型別來源為主線`47ca70a`。
+- 最新[PR CI 42569579939](https://github.com/JasonLn0711/kairos-learning/actions/runs/42569579939)成功。合併後本機279／279測試、0 errors／0 warnings、雙語瀏覽器2／2再驗證通過。初次278項紀錄為合併前觀察，保留其時間界線。
+- 正式部署commit：`8b383d6ce72e6dac1da7873828f8db16d01c63a7`；[Pages run 42569762014](https://github.com/JasonLn0711/kairos-learning/actions/runs/42569762014)成功。
+- `AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0304.config.ts`：正式站2／2通過（13.1秒）。兩語新版號v1.1.0、逐段正文、四表、完整code、Q04選項／解析、同源搜尋、四尺寸／200%、鍵盤與無JS全部驗證；四份SVG公開HTTP200、文字不越界或互相重疊、下載與本機位元組相同。
+
+| 正式圖檔 | 實測bytes |
+| --- | ---: |
+| [圖1中文](https://learn.cs-kairos.com/images/aase/m03-04-1-zh.svg) | 1788 |
+| [圖1英文](https://learn.cs-kairos.com/images/aase/m03-04-1-en.svg) | 1985 |
+| [圖2中文](https://learn.cs-kairos.com/images/aase/m03-04-2-zh.svg) | 3044 |
+| [圖2英文](https://learn.cs-kairos.com/images/aase/m03-04-2-en.svg) | 3265 |
+
+原始工作樹的本次初稿先備份至忽略的`.local/aase/m0304/initial-worktree-backup/`，再由正式主線fast-forward取得最終版；無關M05-06編輯及Git歷史保留。正式站截圖、JSON結果與日誌複製至執行owner的`.local/aase/m0304/production/`。原圖、原文、前版SHA256均核對通過。另以Playwright HTTP request回讀首頁及MATLAB入口為200、指定不存在路徑為404；六份既有MATLAB／合成參考ZIP的正式站SHA256全部與原清單一致。
 
 獨立讀者理解與課堂prototype測試未執行；本文只交付教材與呈現證據，不宣稱使用者通過理解檢核或產品需求獲市場驗證。
