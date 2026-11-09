@@ -621,3 +621,9 @@ AASE-M03-C05 v1.1.0 的[來源與逐節對照](sources/aase/m03-05/replacement-2
 AASE專屬`prose`區塊只接受非空paragraphs字串陣列，以Svelte跳脫文字保留「表格／圖解後接說明」的原始次序，搜尋沿同一資料；固定條列前綴轉原生ul／ol，CEH型別保持原契約。SuccessEvidenceDiagram只接本課固定五圖：evidence-chain／metrics／measure／analogy／trace，節點數6／2／4／2／5，只有第一圖為flow。滑桿支援0–4整數，預設3／4＝75%，公式與4／4門檻直接可見；無JavaScript保留預設結果並停用控制。十份獨立SVG由`aase_m0305_svg.py`產生，下載固定為預設案例。
 
 單元檢查為`tests/aase-m0305-replacement.test.ts`；瀏覽器為`playwright.aase-m0305.config.ts`，正式站使用AASE_BASE_URL。包含全文、四尺寸／200%、鍵盤、無JS、同源搜尋、SVG字框／重疊及下載位元組。原始資料與前版由SHA256SUMS核對，具體執行與待驗項目見[回執](releases/2026-11-09-aase-m03-05-replacement.md)。
+
+## M05-06｜認證掃描與證據界線
+
+CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整雙語。來源見[逐節對照](sources/m05-06/source-map.md)，發布證據見[回執](releases/2026-11-09-m05-06.md)。`scripts/m05_06_content.py --check`核對正式JSON與六份sanitizer SVG；`ScanEvidenceDiagram.svelte`承接paths共同主機＋兩平行面、gates五節點四連線、result四列合成結果。`scan-evidence-diagrams.ts`限制身份、固定路徑、種類、節點數與欄位。正文／搜尋／下載同源，不提供掃描或批改服務。
+
+單元為`tests/m05-06.test.ts`，瀏覽器為`node scripts/check-m05-06-browser.mjs`，正式站設定`M05_06_BASE_URL=https://learn.cs-kairos.com`；`node scripts/check-m05-06-svg.mjs`核對六圖字框與重疊。同期修改於隔離工作樹驗收，保留原工作目錄。
