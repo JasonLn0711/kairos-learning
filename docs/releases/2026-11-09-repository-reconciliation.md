@@ -46,3 +46,20 @@ Git publication 與文件範圍的 Pages 狀態於推送後接續記錄。這些
 - Planning `8f4f7db7`（11/9 日誌及網站定位）已分開推送其 `origin HEAD:main`；fetch 後 divergence `0 0`。兩庫均無待提交修改；具名 Kairos recovery stash 保留。
 - [Pages run 42564114404](https://github.com/JasonLn0711/kairos-learning/actions/runs/42564114404)對應 `1f6bca7c6c49cd2c9264222cbeb5a0345de0f018`，本回執補件時流程仍在執行，未標記網站部署完成。
 - 額外以 Python urllib 嘗試讀回正式 M04-03 中文頁，請求收到 `HTTP Error 403: Forbidden`，停止該次回讀；未取得本輪正式頁／圖檔接受證據。此限制與本機16項瀏覽器通過分開記錄，既有各篇歷史回執保持原範圍。
+
+
+<a id="lesson-publication-reconciliation-2026-11-09"></a>
+## 11/9 教材發布後的主工作目錄對帳
+
+Jason 本輪要求依 FIRST PRINCIPLE 記入日誌、更新相關文件及強連結，分項提交並推送遠端 main，保留兩端歷史；接續明確要求：「Please push all the changes to the remote github repo.」稀缺資源是版本判讀注意力與可信發布證據。Kairos 持來源、正文、程式及驗證；Planning 持定位、狀態、容量與下一關。
+
+confirmed：主工作目錄起始為 `d95a770`，fetch 後遠端 `124049a`，分歧 `0 9`。具名 stash `2026-11-09 requested full publication reconciliation` 保存所有已追蹤與未追蹤修改，再 fast-forward 接上九筆遠端提交。回套時唯一已追蹤衝突位於內容指南：保留 M05-05 與 AASE M03-05 兩節。原未追蹤檔案已由遠端發布；逐位元組比較找到五份差異，均為遠端後續修正：M05-05 來源索引補全對照、鍵盤檢查縮至320px、產生器與兩語機率SVG文字寬度修正。採用已發布修正，原本機版本仍保存在 stash，沒有覆寫歷史或重複提交教材。
+
+- [M05-05 回執](2026-11-09-m05-05.md)承接完整雙語正文、四圖／八SVG、Git、Pages與正式站證據；[來源與逐段對照](../sources/m05-05/README.md)保留原件。
+- [AASE M03-05 回執](2026-11-09-aase-m03-05-replacement.md)承接完整雙語正文、五圖／十SVG、互動及下載；[來源索引](../sources/aase/m03-05/README.md)連回原稿與前版。
+- [11/9 AASE 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W46/days/2026-11-09.md#kairos-aase-m03-05-2026-11-09) ↔ [網站定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-aase-m03-05-2026-11-09)：補齊既有發布的控制面入口，容量維持 Unknown，沒有新增本人學習完成或固定時段。
+
+本輪沒有修改教材或圖檔；既有正式站證據沿兩篇回執的部署 SHA 與實測範圍。下一關是 Jason 正常閱讀時回報卡點；實體手機、完整螢幕閱讀器及獨立讀者接受度仍待驗，由原 owner 接續。
+
+
+validated（本輪）：三項產生器 `--check`、`pnpm run validate:content`、276項單元與`pnpm run check`（0 errors／0 warnings）通過。只補文件連結，未重跑真人或全站閱讀驗收；正式站全文與資產實測沿上列兩篇原回執。Planning policy通過（44既有警告／0新）、knowledge 186／186通過。
