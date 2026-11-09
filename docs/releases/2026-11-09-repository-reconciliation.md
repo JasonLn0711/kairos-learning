@@ -39,3 +39,10 @@ Jason 本輪要求如下，原文保留：
 - Planning policy validator 通過（44 existing warnings／0 new），knowledge 186／186 通過，11/9 agenda 正常顯示 Unknown 及舊 metrics。新日誌與專案明確錨點核對通過。
 
 Git publication 與文件範圍的 Pages 狀態於推送後接續記錄。這些結果證明整合、維護命令與既有測試；既有正式站與真人接受仍依各篇原證據界線。
+
+## published｜Git 回執
+
+- Kairos `c3c06b3`（維護命令及封存連結）、`1f6bca7`（本回執及入口）已分別提交並推送 `origin HEAD:main`；fetch 後 divergence `0 0`。
+- Planning `8f4f7db7`（11/9 日誌及網站定位）已分開推送其 `origin HEAD:main`；fetch 後 divergence `0 0`。兩庫均無待提交修改；具名 Kairos recovery stash 保留。
+- [Pages run 42564114404](https://github.com/JasonLn0711/kairos-learning/actions/runs/42564114404)對應 `1f6bca7c6c49cd2c9264222cbeb5a0345de0f018`，本回執補件時流程仍在執行，未標記網站部署完成。
+- 額外以 Python urllib 嘗試讀回正式 M04-03 中文頁，請求收到 `HTTP Error 403: Forbidden`，停止該次回讀；未取得本輪正式頁／圖檔接受證據。此限制與本機16項瀏覽器通過分開記錄，既有各篇歷史回執保持原範圍。
