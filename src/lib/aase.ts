@@ -5,7 +5,7 @@ import type {ConceptBlock,ConceptCheck,ConceptDiscussion} from './concepts.ts';
 import type {ReadingGuide} from './article-reading.ts';
 import { isPublic, localized, type Locale, type SearchEntry } from './model.ts';
 export type AaseSource = {id:string;title:string;url:string;checkedOn:string};
-export type AaseBlock = ConceptBlock | ArchitectureDiagramModel;
+export type AaseBlock = ConceptBlock | ArchitectureDiagramModel | {kind:'prose';paragraphs:string[]};
 export type AaseSection = {id:string;heading:string;paragraphs:string[];sourceIds?:string[];blocks?:AaseBlock[]};
 export type AaseExercise = {environment:string;steps:string[];expected:string;check:string;cleanup:string};
 export type AaseText = {summary:string;objectives:string[];sections:AaseSection[];exercise:AaseExercise;readingGuide:ReadingGuide;openChecks?:{id:string;prompt:string;answer:string[]}[]};
@@ -101,6 +101,13 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(['workflow','connection'].includes(s.id)||s.id==='documents'&&i===1?'flow':'cards')))fail('invalid problem statement figure');
       }
+      if(l.id==='AASE-M03-C05'&&l.revision>=4){
+        const expected:Record<string,number>={'evidence-chain':6,metrics:2,measure:4,analogy:2,trace:5};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='evidence-chain'?'flow':'cards'))fail('invalid success evidence figure');}
+        else if(figures.length)fail('invalid success evidence figure');
+        if(s.id==='measure'){const f=figures[0];if(!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items[0].body!=='3 / 4'||f.items[1].body!=='75%')fail('invalid blocking default');}
+      }
       if(l.id==='AASE-M03-C02'&&l.revision>=4){
         const expected:Record<string,number>={roadmap:5,evidence:4,conflict:2};
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
@@ -114,7 +121,8 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         else if(figures.length)fail('invalid tool evidence figure');
       }
       for(const b of s.blocks??[]){
-        if(b.kind==='architecture'){assertArchitectureDiagram(b);}
+        if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}
+        else if(b.kind==='architecture'){assertArchitectureDiagram(b);}
         else if(b.kind==='flow'||b.kind==='cards'){if(!text(b.caption)||!text(b.description)||b.items.length<2||b.items.some(i=>!text(i.title)||!text(i.body)))fail('invalid figure');}
         else if(b.kind==='step'||b.kind==='details'){if(!text(b.heading)||!b.paragraphs.length||!b.paragraphs.every(text)||(b.code!==undefined&&!text(b.code)))fail('invalid step');}
         else if(b.kind==='table'){if(!text(b.caption)||!b.headers.length||!b.headers.every(text)||!b.rows.length||b.rows.some(r=>r.length!==b.headers.length||!r.every(text)))fail('invalid table');}
@@ -136,7 +144,7 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
     if(new Set(l.qa.map(q=>q.id)).size!==l.qa.length)fail('duplicate Q&A');
 
   }
-  const blockText=(b:AaseBlock,lang:Locale):string[]=>b.kind==='architecture'?architectureDiagramText(b,lang):b.kind==='flow'||b.kind==='cards'?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'heading' in b?[b.heading,...b.paragraphs,b.code??'']:[];
+  const blockText=(b:AaseBlock,lang:Locale):string[]=>b.kind==='prose'?b.paragraphs:b.kind==='architecture'?architectureDiagramText(b,lang):b.kind==='flow'||b.kind==='cards'?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:'heading' in b?[b.heading,...b.paragraphs,b.code??'']:[];
   function forLanguage<L extends Locale>(lang:L){
     if(lang==='en'&&(!english||!isPublic(english,today)))return null;
     const title=lang==='en'?english!.title:course.title,subtitle=lang==='en'?english!.subtitle:course.subtitle;
