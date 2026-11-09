@@ -34,6 +34,23 @@ AASE新增受限prose區塊，以文字陣列維持表格與圖解前後的正�
 
 ## 發布與待驗
 
-隔離發布基準為origin/main的990d683cb042a069e3768ec2b9ac63d141b85a48，[Pages 42565400459](https://github.com/JasonLn0711/kairos-learning/actions/runs/42565400459)成功。來源提交8fe364a；正文、圖解、驗證與下載提交fbd240f。origin/main推送、Pages run與正式站全文／十SVG／ZIP回讀尚待完成，完成後在此填入實際結果。
+隔離發布基準為origin/main的990d683cb042a069e3768ec2b9ac63d141b85a48，[Pages 42565400459](https://github.com/JasonLn0711/kairos-learning/actions/runs/42565400459)成功。來源提交8fe364a；正文、圖解、驗證與下載提交fbd240f。已推送origin/main；遠端回執bdf6e62以合併b5999b9保留，推送後分歧0／0。
 
 實體手機、完整螢幕閱讀器與獨立讀者接受度尚未驗收。這些項目不代填為瀏覽器模擬通過，也不構成本課靜態文章發布之外的新研究承諾。
+
+
+## 正式站回讀｜2026-11-09
+
+[Pages 42565826371](https://github.com/JasonLn0711/kairos-learning/actions/runs/42565826371) 已成功，部署提交 `b5999b981be0ef4788e7e7c09094f2d873fc9f2f`。原始來源8fe364a、教材與圖解fbd240f、紀錄cbfc366與遠端歷史均保留；沒有force push。
+
+`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0305.config.ts`：中英2項通過（20.9秒）。本次正式站證據包括：
+
+- 11個正文section、四表、原始problem.md、四個開放問題及參考解析；逐段檢查內容和先後順序，確認表格／圖解與說明交錯順序。
+- 中英五圖、同源搜尋、320／390／768／1280、100%／200%字級、無全頁溢出、正文最小16px與1.7行高、原生局部捲動。
+- Tab／Shift+Tab／Enter／Space、可見焦點、五個滑桿值0–4、Home／End、0%／25%／50%／75%／100%，4／4才達本版要求；無JS保留預設正文與五圖。
+- 十份正式SVG回應200、每檔小於100000 bytes、下載內容等同候選、文字字框在viewBox內且未重疊。SVG固定為預設案例，沒有將互動結果誤當成實測。
+- 正式ZIP 30175 bytes，SHA256 `23b13246fb049cb149c13dd92ec39c87cb8ef71e7b51545608488dee566ab8af`，與封裝檔完全一致；正式SHA256SUMS也與候選相同。
+
+精確發布候選的本機／正式報告在 `.local/aase/m0305/release-worktree/.local/aase/m0305/local-results.json`、`live-results.json`與`live-downloads.json`。原工作目錄保留先前截圖與測試紀錄。直接Python urllib下載曾回403；curl實際取得200與完整位元組，瀏覽器全文／資產回讀也通過，此差異保留為取用方式的觀察。
+
+完整性稽核：原文與五原圖已保存；九節教學及導言完整進入中英正文；五組圖、互動、十SVG、原表與模板可讀／可下載；歷史、六既有錨點、原發布日及發布閘門保留；Git、Pages與正式站已各自取得證據。工作坊操作內容未變，課名衍生目錄已同步。實體手機、完整螢幕閱讀器與獨立讀者接受度維持尚待驗收，不影響上述範圍的已驗結果。

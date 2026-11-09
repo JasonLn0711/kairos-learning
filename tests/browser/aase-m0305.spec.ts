@@ -6,6 +6,19 @@ async function completeBody(page:Page,lang:'zh'|'en'){
  for(const s of lesson.text[lang].sections){
   const section=page.locator('h2#'+s.id).locator('..');await expect(section.locator('h2').first()).toHaveText(s.heading);
   for(const p of s.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));
+  const actual=(await section.textContent())!.replace(/\s/g,'');let cursor=0;
+  const tokens=[s.heading,...s.paragraphs];
+  for(const b of s.blocks??[]){
+   if(b.kind==='prose')tokens.push(...b.paragraphs);
+   else if(b.kind==='step')tokens.push(b.heading,...b.paragraphs,...(b.code?[b.code]:[]));
+   else if(b.kind==='table')tokens.push(b.caption,...b.headers,...b.rows.flat());
+   else if(b.kind==='cards'||b.kind==='flow'){
+    tokens.push(b.caption);
+    if(s.id!=='measure')tokens.push(...b.items.flatMap((i:any)=>[i.title,...i.body.split('\n\n')]));
+    tokens.push(b.description);
+   }
+  }
+  for(const value of tokens){const token=(/^(- |\d+\. )/.test(value)?value.replace(/^(- |\d+\. )/gm,''):value).replace(/\s/g,'');const found=actual.indexOf(token,cursor);expect(found,`${lang}/${s.id}: ordered ${value.slice(0,45)}`).toBeGreaterThanOrEqual(cursor);cursor=found+token.length;}
   for(const b of s.blocks??[]){
    if(b.kind==='prose'){for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));}
    if(b.kind==='step'){await expect(section.locator('h3#'+b.id)).toHaveText(b.heading);for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));if(b.code)await expect(section.locator('h3#'+b.id).locator('..').locator('code')).toHaveText(b.code);}
