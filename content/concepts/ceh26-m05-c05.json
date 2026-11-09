@@ -1,0 +1,501 @@
+{
+  "id": "CEH26-M05-C05",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-09",
+  "status": "draft",
+  "publishedOn": "2026-11-09",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "結合技術嚴重度、已知利用、預測與我方證據，提出可複核的漏洞處理順序。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "上一課辨認 CVE、CWE、CPE，這一課回答另一個問題：兩個漏洞都可能影響我們，哪個應該先處理？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先記住三句：CVSS 看技術嚴重度；KEV 看已有實際利用的證據；EPSS 看未來 30 天在真實世界被利用的預測機率。最後還要對照自己的資產，才能決定處理順序。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先用房屋維修理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你收到兩項修繕通知：地下室有一道很嚴重、但目前封閉不用的門鎖缺陷；每天開放的店門則有另一個缺陷，附近已發生利用這類缺陷的竊案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能只問「哪把鎖的設計比較差」，還要問：「我們有沒有這把鎖？門是否有人能接近？後面放什麼？有沒有其他防護？能怎麼安全地換鎖？」這就是技術嚴重度與實際風險的差別。比喻只幫助理解，並不是把資安機率直接換算成竊案機率。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、CVSS：描述漏洞有多嚴重，不是預言會不會被駭"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CVSS 是 Common Vulnerability Scoring System，通用漏洞評分系統。它用共同的評估方式，把漏洞特性轉成 0 到 10 的嚴重度分數。採常用的文字分級時，0 是無、0.1–3.9 低、4.0–6.9 中、7.0–8.9 高、9.0–10.0 嚴重。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課以 CVSS v4.0 為主。它分成 Base（基本）、Threat（威脅）、Environmental（環境）及 Supplemental（補充）四組。基本組描述漏洞本身；威脅組加入會變動的利用情況；環境組加入使用情境；補充組提供額外判斷資訊，但不改變最後分數。評分向量是記錄各項選擇的字串，不是另一個漏洞編號。[FIRST CVSS v4.0 規範](https://www.first.org/cvss/v4.0/specification-document)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "看公告時，不要只抄「9.8」。至少保留版本、分數類型、完整向量、評分來源與查核日期。v3.1 與 v4.0 的指標和計算不同，不能把舊分數直接換標為新版本。CVSS 基本分數不是完整的風險評估，也不表示你的公司有 98% 機率被入侵。[FIRST 使用指南](https://www.first.org/cvss/v4.0/user-guide)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "白話例子：一個問題是否可從網路觸發、需要哪些權限、需不需要使用者配合，以及可能造成資料外洩、資料遭竄改或服務中斷，都是理解嚴重度時要問的問題。但公告說「可透過網路利用」，不能直接證明你這台設備目前開放給網際網路。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果兩個來源分數不同，先比較版本、向量及成立條件，不要任選高分或低分，也不要平均。差異可能來自對漏洞條件的判讀不同；尚未釐清就保留差異與待確認項。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、KEV：不是只有理論，已有實際利用證據"
+        },
+        {
+          "kind": "paragraph",
+          "text": "KEV 是 Known Exploited Vulnerabilities，已知遭利用漏洞。CISA 是美國網路安全暨基礎設施安全局，其 KEV 目錄整理已有實際利用證據的漏洞，協助防禦團隊注意已出現在攻擊活動中的問題。[CISA 官方通知](https://content.govdelivery.com/accounts/USDHSCISA/bulletins/4198f58)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩個判讀界線很重要："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "列入 KEV，不等於你的設備已遭入侵。 仍要核對產品、版本、設定與本機跡證。",
+            "沒列入 KEV，不等於沒有被利用，也不等於可以不修。 清單不能涵蓋所有尚未觀察或尚未確認的活動。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此「某漏洞已列入 KEV」是外部威脅證據；「我們某台主機出現入侵跡證」則是另一項需要現場證據的判斷。報告中要分開寫。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實務上也要記錄查核日期與公告處置要求。不要把某個機關公告的期限，未核對適用對象就當成本公司的法定期限；應回到實際契約、主管機關要求及組織政策。本次官方目錄頁讀取受限，所以不列今日新增數量或個別漏洞期限。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、EPSS：預測利用可能性，不是嚴重度"
+        },
+        {
+          "kind": "paragraph",
+          "text": "EPSS 是 Exploit Prediction Scoring System，漏洞利用預測評分系統。FIRST 的模型估計一個已公開 CVE 在未來 30 天於真實世界被利用的機率，提供 0 到 1 的數值並每日更新。[FIRST EPSS 說明](https://www.first.org/epss/)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果某筆教學數據是 0.20，換成百分比就是 20%。這不是「你這台設備有 20% 機率被駭」，也不是「20% 的公司已被駭」。模型描述漏洞利用活動，不知道你公司的全部防護與業務狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另一欄 percentile 是百分位，表示在其他漏洞中的相對位置。譬如教學數據寫第 95 百分位，不能讀成利用機率 95%。機率與排名是不同問題。類似班上成績排前面，不能直接推算答對題目的比例。[FIRST EPSS 常見問題](https://www.first.org/epss/faq)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "低 EPSS 不等於安全，高 EPSS 也不是入侵證據；缺分數更不能當成零。分數可能隨日期與模型資料改變，所以紀錄分數時要一起保存日期與來源。[FIRST EPSS 使用方式](https://www.first.org/epss/using-epss)。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、三個訊號要並排，不是加成一個神奇分數"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以把它們放成三張卡："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "訊號",
+            "主要回答",
+            "不能單獨證明"
+          ],
+          "rows": [
+            [
+              "CVSS",
+              "技術條件與後果有多嚴重？",
+              "我方一定會被攻擊"
+            ],
+            [
+              "KEV",
+              "是否已有已知實際利用證據？",
+              "我方已遭入侵"
+            ],
+            [
+              "EPSS",
+              "未來 30 天利用活動的預測機率？",
+              "我方個別資產的完整風險"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "不要自行把 CVSS 分數、EPSS 百分比與 KEV 標記相加，然後宣稱得到官方風險分數。三者的尺度與意義不同。若組織有自訂排序政策，應保留公式、門檻、例外與責任人，讓別人可以複核，而不是讓一個數字掩蓋判斷依據。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-05-signals-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "圖 1｜三個訊號加上我方證據，支撐排序判斷",
+            "description": "前三項是平行訊號，第四項是共同判讀情境；沒有數值相加、因果箭頭或固定處理順序。",
+            "items": [
+              {
+                "title": "CVSS｜技術嚴重度",
+                "body": "保留版本、類型、向量與來源；分數不能直接代表我方被駭機率。"
+              },
+              {
+                "title": "KEV｜已知利用證據",
+                "body": "保存列入狀態與查核日期；外部利用不等於我方已入侵，未列也不能忽略。"
+              },
+              {
+                "title": "EPSS｜未來 30 天預測",
+                "body": "機率與百分位分開保存；低分或缺分數不能證明安全。"
+              },
+              {
+                "title": "我方資產與風險情境",
+                "body": "先核對完整版本、設定與修補，再看入口曝露、重要性、後果與現有防護；記下排序理由。"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、完整合成案例：較低的分數也可能要先處理"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下甲、乙均為虛構漏洞，分數是假設的既有評分，不是本課算出的 CVSS 向量，也沒有對應真實 CVE。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "甲：公告基本分數 9.8，尚未見 KEV 列入，EPSS 0.01。資產是隔離測試機，沒有正式資料，隔離狀態有查核證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "乙：公告基本分數 8.1，已有 KEV 列入資料，EPSS 0.60。資產是對外提供服務的重要系統，產品與漏洞條件已確認符合，尚未修補。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在這些條件下，我會建議優先處理乙：不只是因為某個數字大，而是已知利用、對外曝露、業務重要性與受影響條件同時成立。甲仍須安排修補，不能從清單消失。若甲其實沒有隔離，或乙已完成且驗證有效的緩解，排序就可能改變。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "處理乙也不等於立刻在正式環境強制重開機。可以先依核准流程限制受影響入口、停用可停的功能或採原廠緩解，再安排測試、回復方案與維護時段。這些措施需要確認有效性；「已提出建議」不能寫成「風險已排除」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一份有界線的結論可以是：「乙符合受影響條件，存在外部已知利用證據且對外提供關鍵服務，建議提升處理優先級；目前尚未確認本機入侵，先執行核准緩解並安排修補驗證。」"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、操作與防護證據：你可以照這個順序查"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "先核對資產及漏洞是否真的適用。產品匹配還有疑義，就標示待確認，不靠高分補足證據。",
+            "保存 CVSS 版本、類型、向量與來源；查 KEV 狀態及日期；保存 EPSS 機率、百分位與日期。",
+            "補上自己的情境：對外入口、必要權限、受影響功能、資料敏感度、業務中斷後果及現有防護證據。",
+            "寫明排序理由、負責人、處理目標時間、緩解與回復方案；期限依實際政策，不在本課虛構。",
+            "修補後核對安裝與執行版本、功能是否恢復、漏洞條件是否解除。必要驗證只在授權範圍進行，保留前後證據。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課教的是「怎麼讀三個訊號」，完整弱點管理與報告流程會在後續單元延伸。不要為了證明風險，直接下載利用程式去測正式系統。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、紙上練習與小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "環境只需要紙張或本機文字檔，不連任何測試目標。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一步，把甲乙各寫一列，分開填「公告資訊」「我方已確認事實」「待確認」。第二步，選擇先處理哪個，寫出兩項證據與一項可能改變決定的新資訊。第三步，擬一項短期處置和一項修補後驗證，說明需要誰依既有流程核准。預期產出是可複核的排序理由，而不是入侵結果；練習後保留或刪除本機草稿即可，沒有測試設備要復原。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "小檢核：同事說：「這個漏洞 CVSS 很高，但 EPSS 只有 1%，又沒列 KEV，所以不用處理。」這個結論缺少哪兩類證據？請用一句話說明為什麼不能直接忽略。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0505",
+          "summary": "參考答案與解釋",
+          "paragraphs": [
+            "缺少兩類證據：一是漏洞是否適用我方資產，包括完整產品版本、設定與修補狀態；二是我方風險情境，包括入口曝露、資產與業務重要性、可能後果及現有防護。因此低 EPSS 和未列 KEV 都不能證明不需處理，應先補齊這兩類資料，再依組織政策決定順序。",
+            "EPSS 的 1% 是特定日期對漏洞利用活動的模型預測，並非這台資產被入侵的機率；未列 KEV 只表示查核時未在該清單確認，不能推論沒有利用。CVSS 高分也不能補足本機適用性證據。先核對產品分支、完整安裝與執行版本、功能設定及修補／backport，再確認可接近的入口、敏感資料與中斷影響，以及防護是否真的有效。保留未知項及處理理由；必要驗證遵守授權範圍。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "核心結論：先確認影響自己，再把嚴重度、已知利用與預測訊號放回真實環境判斷；三者互補，沒有任何一項可以代替全部證據。"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Combine technical severity, known exploitation, forecasts and local evidence into a reviewable remediation priority.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The previous lesson distinguished CVE, CWE and CPE. This lesson asks a different question: If two vulnerabilities may affect us, which should we address first?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember three statements: CVSS describes technical severity; KEV provides evidence of known exploitation; EPSS predicts the probability of exploitation in the wild over the next 30 days. You must still check your own assets before deciding the order of action."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Start with a building-repair analogy"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You receive two repair notices. A basement door has a very serious lock defect, but the basement is currently closed and unused. The shop entrance, open every day, has another defect, and nearby burglaries have already exploited that type of defect."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Asking which lock has the worse design is insufficient. Ask whether you have that lock, whether someone can reach the door, what is behind it, what other protections exist and how to replace the lock safely. This distinguishes technical severity from actual risk. The analogy aids understanding; it does not convert cybersecurity probabilities into burglary probabilities."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. CVSS: describing severity, not predicting compromise"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CVSS stands for Common Vulnerability Scoring System. It uses a shared assessment method to express vulnerability characteristics as a severity score from 0 to 10. With the common qualitative scale, 0 means None, 0.1–3.9 Low, 4.0–6.9 Medium, 7.0–8.9 High and 9.0–10.0 Critical."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson focuses on CVSS v4.0, with four metric groups: Base, Threat, Environmental and Supplemental. Base describes intrinsic vulnerability characteristics; Threat adds changing exploitation conditions; Environmental adds the usage context; Supplemental provides additional decision information without changing the final score. A vector is a string recording metric selections, not another vulnerability identifier. See the [FIRST CVSS v4.0 specification](https://www.first.org/cvss/v4.0/specification-document)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "When reading an advisory, retain more than “9.8”: record the version, score type, complete vector, scoring source and check date. v3.1 and v4.0 use different metrics and calculations; an old score cannot simply be relabeled as the new version. A CVSS Base score is not a complete risk assessment and does not mean your company has a 98% probability of compromise. See the [FIRST user guide](https://www.first.org/cvss/v4.0/user-guide)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, ask whether the issue can be triggered over a network, what privileges it needs, whether user interaction is required, and whether it can disclose data, alter data or interrupt service. These questions help explain severity. However, “network exploitable” in an advisory does not establish that your particular device is currently exposed to the Internet."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If two sources disagree on a score, first compare their versions, vectors and prerequisite conditions. Do not arbitrarily select the higher or lower score or average them. The difference may reflect different interpretations of the vulnerability conditions; retain the disagreement and unanswered questions until resolved."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. KEV: evidence of actual exploitation beyond a theoretical possibility"
+        },
+        {
+          "kind": "paragraph",
+          "text": "KEV stands for Known Exploited Vulnerabilities. CISA, the US Cybersecurity and Infrastructure Security Agency, maintains a KEV catalog of vulnerabilities with evidence of exploitation, helping defenders notice issues already appearing in attacks. See the [official CISA notification](https://content.govdelivery.com/accounts/USDHSCISA/bulletins/4198f58)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two interpretation boundaries matter:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "A KEV listing does not establish that your device has been compromised. Check the product, version, configuration and local evidence.",
+            "Absence from KEV establishes neither absence of exploitation nor permission to skip a fix. A list cannot cover every activity that has yet to be observed or confirmed."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Thus, “this vulnerability is listed in KEV” is external threat evidence. “This host shows signs of intrusion” is a separate judgment requiring local evidence. Keep them separate in a report."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Also record the check date and the advisory's action requirements. Before treating a government notice's deadline as a legal deadline for your company, check who it applies to; use the applicable contracts, regulatory requirements and organizational policy. Access to the official catalog page was restricted in this review, so this lesson gives neither today's addition count nor individual vulnerability deadlines."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. EPSS: forecasting exploitation probability, not severity"
+        },
+        {
+          "kind": "paragraph",
+          "text": "EPSS stands for Exploit Prediction Scoring System. FIRST's model estimates the probability that a published CVE will be exploited in the wild over the next 30 days. It supplies a value from 0 to 1 and updates daily. See the [FIRST EPSS introduction](https://www.first.org/epss/)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If a teaching value is 0.20, it equals 20%. That does not mean this device has a 20% chance of compromise or that 20% of companies have been compromised. The model describes vulnerability exploitation activity; it does not know all your company's defenses or business conditions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The percentile field expresses a relative position among other vulnerabilities. A teaching example at the 95th percentile does not mean a 95% exploitation probability. Probability and rank answer different questions: being near the top of a class does not directly tell you the proportion of questions answered correctly. See the [FIRST EPSS FAQ](https://www.first.org/epss/faq)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Low EPSS is not a declaration of safety, high EPSS is not evidence of intrusion, and a missing score is not zero. Scores can change with the date and model data, so preserve the date and source with each score. See [FIRST guidance on using EPSS](https://www.first.org/epss/using-epss)."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Put the three signals side by side, without inventing a magic total"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Think of three separate cards:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Signal",
+            "Main question",
+            "What it cannot establish alone"
+          ],
+          "rows": [
+            [
+              "CVSS",
+              "How severe are the technical conditions and consequences?",
+              "Our organization will definitely be attacked"
+            ],
+            [
+              "KEV",
+              "Is there evidence of known exploitation?",
+              "Our organization has been compromised"
+            ],
+            [
+              "EPSS",
+              "What is the predicted probability of exploitation activity in the next 30 days?",
+              "The complete risk of our individual assets"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not add a CVSS score, an EPSS percentage and a KEV flag and call the result an official risk score. Their scales and meanings differ. If an organization uses a custom prioritization policy, retain the formula, thresholds, exceptions and accountable owner so others can review it, instead of letting one number hide the reasoning."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-05-signals-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Figure 1 | Three signals plus local evidence inform priority",
+            "description": "The first three are parallel signals; the fourth is their shared decision context. No numerical sum, causal arrow or fixed action order is implied.",
+            "items": [
+              {
+                "title": "CVSS | Technical severity",
+                "body": "Keep the version, type, vector and source. The score is not our probability of compromise."
+              },
+              {
+                "title": "KEV | Known exploitation evidence",
+                "body": "Keep the listing status and check date. External exploitation is not local intrusion; absence does not justify ignoring a flaw."
+              },
+              {
+                "title": "EPSS | Next 30 days forecast",
+                "body": "Keep probability separate from percentile. A low or missing score does not establish safety."
+              },
+              {
+                "title": "Our assets and risk context",
+                "body": "Check complete versions, configuration and patches, then exposure, importance, consequences and existing defenses. Record the prioritization rationale."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Complete synthetic case: a lower score can merit earlier action"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Vulnerabilities A and B below are fictional. Their scores are hypothetical existing assessments, not CVSS vectors calculated in this lesson, and they do not correspond to real CVEs."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A: advisory Base score 9.8; no KEV listing observed; EPSS 0.01. The asset is an isolated test machine without production data, and its isolation has supporting evidence."
+        },
+        {
+          "kind": "paragraph",
+          "text": "B: advisory Base score 8.1; a KEV listing is documented; EPSS 0.60. The asset is an important Internet-facing service. Its product and vulnerability conditions have been confirmed to match, and it remains unpatched."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Under those conditions, I would recommend B first. The reason is the combination of known exploitation, external exposure, business importance and confirmed applicability, rather than one larger number. A still needs a scheduled fix and stays on the list. Priorities may change if A is not actually isolated or B has an effective mitigation that has been verified."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Addressing B does not mean forcing an immediate production reboot. Through the approved process, restrict the affected entry point, disable a feature where feasible or apply the vendor's mitigation, then arrange testing, a recovery plan and a maintenance window. Verify that these measures work; a proposed recommendation is not evidence that risk has been removed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A bounded conclusion might be: “B meets the affected conditions, has external evidence of known exploitation and provides a critical Internet-facing service, so we recommend increasing its remediation priority. Local compromise is not yet confirmed; apply approved mitigation and arrange patch verification.”"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Operational and defensive evidence: a sequence you can follow"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "First establish whether the vulnerability applies to the asset. If the product match remains uncertain, mark it unconfirmed; a high score cannot supply the missing evidence.",
+            "Save the CVSS version, type, vector and source; check KEV status and date; save the EPSS probability, percentile and date.",
+            "Add your own context: external entry points, required privileges, affected features, data sensitivity, business interruption consequences and evidence of existing defenses.",
+            "Record the prioritization rationale, owner, target time, mitigation and recovery plan. Use actual policy for deadlines; this lesson invents none.",
+            "After patching, verify installed and running versions, restored functionality and removal of the vulnerability conditions. Perform any necessary validation only within authorized scope and retain before-and-after evidence."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This lesson teaches how to read the three signals. Later units extend the full vulnerability management and reporting process. Do not download exploit code and test production systems merely to demonstrate risk."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Tabletop exercise and small check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Use paper or a local text file; connect to no test target."
+        },
+        {
+          "kind": "paragraph",
+          "text": "First, give A and B one row each and separately fill “Advisory information,” “Our confirmed facts” and “Unconfirmed.” Second, choose which comes first and state two supporting pieces of evidence plus one new fact that could change your decision. Third, propose one short-term action and one post-patch verification, naming who must approve them under the existing process. The expected result is a reviewable prioritization rationale, not an intrusion result. Keep or delete the local draft afterward; no test device needs restoration."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Small check: A colleague says, “This vulnerability has a high CVSS score, but EPSS is only 1% and it is absent from KEV, so we do not need to handle it.” Which two categories of evidence are missing? In one sentence, explain why it cannot simply be ignored."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-m0505",
+          "summary": "Reference answer and explanation",
+          "paragraphs": [
+            "Two categories of evidence are missing: whether the vulnerability applies to our assets, including complete product versions, configuration and patch state; and our risk context, including entry-point exposure, asset and business importance, possible consequences and existing defenses. Low EPSS and absence from KEV therefore cannot establish that no action is needed; obtain both categories before prioritizing under organizational policy.",
+            "The 1% EPSS value is a dated model forecast of vulnerability exploitation activity, not the probability that this asset is compromised. Absence from KEV means only that the check did not confirm a listing; it cannot establish absence of exploitation. A high CVSS score cannot supply local applicability evidence either. Check the product branch, full installed and running versions, enabled features and patches/backports, then reachable entry points, sensitive data, interruption consequences and whether defenses actually work. Preserve unknowns and the action rationale; any necessary validation stays within authorized scope."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Core conclusion: first establish applicability, then interpret severity, known exploitation and forecasts in the real environment. The three complement each other; none replaces the complete evidence."
+        }
+      ]
+    }
+  }
+}

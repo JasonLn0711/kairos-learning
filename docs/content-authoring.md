@@ -600,3 +600,9 @@ CEH26-M05-C04 顯示 M05-04，正文沿既有 sourceBody；`scripts/m05_04_conte
 本次新稿取代上段八節草稿；前版與原始來源保留。[新來源與對照](sources/m05-04/replacement-2026-11-08/source-map.md)持有九節、十小節、六表與兩題開放問題，五組圖為 roles／identifier／lookup／finding／evidence，節點數 5／3／4／5／4；僅 lookup 為 flow。IdentificationDiagram 以 HTML／SVG 圖示、具語意 dl 與編號層次重排，不接受任意標記。十個下載圖由 `scripts/m05_04_replacement.py` 產生並通過 sanitizer，`--check` 比對 bytes；舊 m05_04_content.py 轉接目前產生器，避免重建舊稿覆蓋新稿。
 
 `preview-m05-04.py` 建立獨立副本；`check-m05-04-browser.mjs` 驗全文／四尺寸／200%／無 JS／下載／鍵盤，正式站用 M05_04_BASE_URL。`check-m05-04-svg.mjs` 檢查十 SVG 字框／重疊。舊 static 腳本改轉接隔離建置與瀏覽器檢查，不再暫改正式內容。前版環境拒絕紀錄保持為歷史；本次 Chrome 已成功執行，不以舊阻塞代替本輪驗收。
+
+## M05-05 CVSS、KEV、EPSS（draft）
+
+CEH26-M05-C05 顯示 M05-05，採完整八節 sourceBody，一題原始小檢核與兩段原生收合參考答案，qa=[]。`scripts/m05_05_content.py` 從雙語稿與 diagrams.json 生成正文及兩 SVG；`--check` 核對 bytes。PrioritySignalsDiagram 以三個平行訊號和一張共同情境卡呈現，沒有相加或時序箭頭；模型限定本課、signals 路徑、cards 與四節點。沿既有 sanitizer 與受限文字契約，未改 C04 來源或發佈狀態。
+
+`tests/m05-05.test.ts` 檢查來源、雙語、案例數值、身份及 draft/future 邊界；`scripts/check-m05-05-static.py` 僅在隔離副本開啟草稿並建置，核對正文與答案，不修改正式內容、不啟動瀏覽器或網路服務。[來源逐節對照](sources/m05-05/source-map.md)及[驗收回執](releases/2026-11-09-m05-05.md)明列限制；靜態結果不能代替四尺寸、放大、鍵盤、無 JS、目視或正式回讀。
