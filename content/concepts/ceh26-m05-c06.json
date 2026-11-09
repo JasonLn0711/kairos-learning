@@ -1,0 +1,969 @@
+{
+  "id": "CEH26-M05-C06",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-09",
+  "status": "published",
+  "publishedOn": "2026-11-09",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "分清掃描完成、身分認證與檢查覆蓋，以實際取得的證據支持安全判讀。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "這一課最重要的觀念是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "掃描工具說「工作完成」，不代表「所有項目都檢查成功」，更不代表「系統沒有漏洞」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們要學會分辨三件事情：掃描器看得到什麼、它有沒有權限檢查，以及最後取得的證據能不能支持安全結論。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先想像你請人檢查一棟房子"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你買了一棟房子，擔心裡面的電線老舊、門鎖故障，以及水管漏水。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你找來兩位檢查員。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "檢查員 A：只能站在外面"
+        },
+        {
+          "kind": "paragraph",
+          "text": "能看門窗、外牆、露出的電線，卻不知道牆壁裡面的狀況。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "檢查員 B：屋主給他鑰匙"
+        },
+        {
+          "kind": "paragraph",
+          "text": "能進屋查看電箱、管線，但如果地下室上鎖，他仍然看不到。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是兩種漏洞掃描的基本差別。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "非驗證式掃描（Unauthenticated Scan）：不使用目標系統的登入身分，從網路上能觀察到的資訊進行檢查。",
+            "驗證式掃描（Authenticated Scan）：使用事先核准的帳號或其他登入憑證，進一步查看內部資訊。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "注意：驗證式的「驗證」是指身分認證（Authentication），不是說掃描結果已經被證明正確。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、兩種掃描究竟在看什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像有一台 Linux 伺服器，正在提供公司的網站服務。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-06-paths-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "兩種掃描的觀察範圍",
+            "description": "概念示意：兩條路徑是互補的觀察方式，不是破解系統的先後步驟。",
+            "items": [
+              {
+                "title": "公司 Linux 伺服器",
+                "body": "網站服務、作業系統、套件、設定檔"
+              },
+              {
+                "title": "未登入掃描",
+                "body": "觀察網路回應、開放的服務、公開版本資訊\n\n「外面看得到什麼？」"
+              },
+              {
+                "title": "已登入掃描",
+                "body": "依帳號權限查看套件版本、修補紀錄、系統設定\n\n「裡面實際裝了什麼？」"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，非驗證式掃描發現網站回應顯示某個舊版軟體。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "掃描器可能提出警告：「這個版本可能受到某項 CVE 影響。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但它未必知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "這家公司是否已經把安全修補移植回舊版本？相關功能有沒有啟用？目前執行的程式是否真的有該項弱點？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，版本字串通常是線索，不一定是漏洞成立的完整證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗證式掃描若成功取得內部套件修訂號、修補與設定資料，就可能進一步回答這些問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不過，這裡還有一個重要觀念：非驗證式不等於外網掃描，也不等於被動掃描。 在公司內網使用掃描器、不登入目標系統，一樣可以是非驗證式掃描。主動送出探測封包，也仍然需要授權。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、整課最重要：掃描必須通過三道關卡"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你使用一套漏洞掃描工具，設定了公司給你的檢查帳號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "工具顯示掃描完成，甚至沒有找到任何漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在先不要高興，因為還有三道關卡。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-06-gates-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "flow",
+            "caption": "掃描的三道關卡",
+            "description": "從任務狀態逐項核對設定、認證與覆蓋，再依實際證據判讀。",
+            "items": [
+              {
+                "title": "掃描任務已經結束",
+                "body": "這只是工作狀態，不是安全結論"
+              },
+              {
+                "title": "第一關：設定（Configuration）",
+                "body": "這次掃描真的有使用你設定的帳號嗎？\n\n帳號放進掃描工具，不代表已指派給目標。"
+              },
+              {
+                "title": "第二關：認證（Authentication）",
+                "body": "目標系統有沒有接受這個帳號？\n\n帳號過期、SSH 連不上、帳號被鎖，都可能失敗。"
+              },
+              {
+                "title": "第三關：覆蓋（Coverage）",
+                "body": "登入後，必要的檢查項目真的有成功執行嗎？\n\n能登入，不代表有權讀取套件清單、設定或紀錄。"
+              },
+              {
+                "title": "依據實際取得的證據判讀",
+                "body": "說明已確認事項、未完成檢查及未知風險"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三關的差別，是這一課最值得真正理解的地方。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、實際案例：成功登入，卻掃出零個漏洞"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你有一台 Ubuntu 伺服器，使用工具進行驗證式掃描。"
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-06-result-zh-v1-0-0.svg",
+          "downloadLabel": "下載 SVG 圖解",
+          "visual": {
+            "kind": "cards",
+            "caption": "掃描結果",
+            "description": "虛構練習",
+            "items": [
+              {
+                "title": "掃描任務",
+                "body": "已完成"
+              },
+              {
+                "title": "SSH 登入",
+                "body": "成功"
+              },
+              {
+                "title": "讀取套件清單",
+                "body": "Permission denied"
+              },
+              {
+                "title": "發現套件漏洞",
+                "body": "0"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "你能不能跟老闆說：「報告！這台主機零漏洞，非常安全」？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為掃描器雖然成功登入，但根本沒有取得套件清單。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就像房屋檢查員成功進入大門，卻因為電箱被鎖住，沒有檢查電線，最後在報告上寫「未發現電線問題」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這句話可能在字面上沒有說謊，但如果沒有揭露「電箱未檢查」，就會讓人誤以為已經確認安全。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資安上我們必須區分："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "狀態",
+            "真正代表的意思"
+          ],
+          "rows": [
+            [
+              "掃描完成",
+              "任務已結束"
+            ],
+            [
+              "登入成功",
+              "帳號通過身分認證"
+            ],
+            [
+              "檢查成功",
+              "指定項目已取得可用證據"
+            ],
+            [
+              "沒發現漏洞",
+              "在已完成的檢查範圍內沒有發現"
+            ],
+            [
+              "系統安全",
+              "需要更廣泛的證據，不能只靠單次掃描宣稱"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也與 CEH 中的 False Negative（偽陰性、漏報） 有關。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正有漏洞的系統，可能因為掃描不到必要資訊，而沒有在結果中顯示漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要特別注意：檢查失敗本身不等於已證實有漏報。只有當漏洞實際存在卻沒有被報出時，才構成漏報。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、那麼是不是帳號權限越高，掃得越完整？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定，而且可能增加其他風險。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，某些 Linux 主機的深度設定檢查需要 root 或特定管理權限。一般帳號可能只能查看部分資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，如果你把最高權限帳號交給掃描工具，一旦工具、憑證庫或執行環境遭到入侵，攻擊者也可能取得高權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以正確做法不是一律使用 root，也不是堅持所有掃描都只用普通帳號。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "應該根據原廠要求與檢查需求，核定必要權限，使用專用帳號、限制目標、保管好憑證，並記錄哪些檢查受到權限限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "安全掃描本身，也必須被安全管理。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "尤其不要為了讓掃描成功，就擅自關閉 MFA、防火牆或其他安全控制措施。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、Agent 與驗證式掃描，又有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可能在企業端點管理或資安系統中，看過安裝在電腦裡面的 Agent。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Agent 就像安排一位檢查員常駐在房子裡面。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可以在授權的本機權限下收集安裝軟體、版本或設定資訊，再回報管理平台。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與遠端登入掃描不同，但兩者可以互補。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "方法",
+            "比較擅長回答的問題"
+          ],
+          "rows": [
+            [
+              "非驗證式網路掃描",
+              "從指定網路位置能看到哪些服務與暴露面？"
+            ],
+            [
+              "驗證式掃描",
+              "系統內部有哪些套件、修補與設定狀況？"
+            ],
+            [
+              "本機 Agent",
+              "這台設備在資料蒐集當時，回報了哪些內部狀態？"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Agent 可能具有本機高權限，所以不能把它直接當成非驗證式掃描。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣地，Agent 看得到主機內部，不代表它能完整判斷從外部網路究竟可以連到哪些服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，實務上常常需要不同觀察方式交叉驗證。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、真正的資安專業，是懂得解釋證據的界線"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你正在替企業執行經授權的滲透測試或漏洞評估。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "發現某個服務顯示舊版資訊，接著進行驗證式掃描，確認主機套件已安裝發行商的安全修補版本。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時候，合理的結論可以是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "根據本次取得的套件修訂資訊與發行商公告，已確認該套件安裝包含指定安全修正的版本。然而，執行中程序是否已載入更新，以及其他部署副本是否受影響，仍有待確認。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這比「已修補，沒有風險」更精確。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為你必須知道一件事情："
+        },
+        {
+          "kind": "paragraph",
+          "text": "安裝了更新，不代表正在執行的程式一定已經載入更新。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如某個服務可能尚未重新啟動，仍使用更新前載入的程式或函式庫。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "同時，修補了一個套件漏洞，也不表示系統設定、帳號權限與網路曝露問題都一起解決了。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以在實務報告中，我們應該把「已證實的事實」、「合理推論」和「仍然未知的事項」分開。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、理解檢核：換你當資安檢測人員"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某公司提供一台 Linux 主機供你進行合法的漏洞評估。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "掃描工具顯示：任務已完成、SSH 認證成功、套件清單讀取遭拒、套件漏洞數量為 0。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題一：你能宣稱這台主機的套件全部安全嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以，因為漏洞數量是 0。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不可以，還需要確認檢查覆蓋與證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以，但必須先確認登入成功。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題二：接下來最應優先補查哪兩項？（選兩項）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認套件清單是否成功讀取，檢查項目有沒有完整執行"
+        },
+        {
+          "kind": "paragraph",
+          "text": "取得實際版本與修補資訊，對照可信的原廠安全公告"
+        },
+        {
+          "kind": "paragraph",
+          "text": "確認掃描工具顯示 Finished，就視為系統沒有漏洞"
+        },
+        {
+          "kind": "paragraph",
+          "text": "只要能成功 SSH 登入，就代表主機所有項目都已檢查"
+        },
+        {
+          "kind": "paragraph",
+          "text": "參考解析：問題一選第二項；問題二選前兩項。套件清單未取得，因此套件漏洞數 0 不能支持全部安全；先補足檢查覆蓋，再對照實際版本與原廠修補資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本課請記住這個核心公式："
+        },
+        {
+          "kind": "paragraph",
+          "text": "掃描可信度 = 明確的掃描範圍 ＋ 成功完成的檢查 ＋ 足以支持結論的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不是數學上的計分公式，而是提醒你：資安專業人員不只會使用掃描器，更要能說明它究竟檢查到了什麼，以及哪些事情仍然不知道。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "查核來源： [Tenable credentialed checks](https://docs.tenable.com/nessus/Content/NessusCredentialedChecks.htm) · [Tenable credentials](https://docs.tenable.com/nessus/Content/Credentials.htm) · [Red Hat backporting](https://access.redhat.com/solutions/57665)"
+        }
+      ]
+    },
+    "en": {
+      "summary": "Distinguish job completion, authentication and check coverage; support security judgments with evidence actually obtained.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The most important idea in this lesson is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A scanner saying “job finished” does not mean every check succeeded, and certainly does not mean the system has no vulnerabilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "We must distinguish three things: what the scanner can observe, whether it has permission to inspect it, and whether the evidence obtained supports the security conclusion."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Imagine having a house inspected"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you buy a house and worry about aging wiring, faulty locks and leaking pipes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "You hire two inspectors."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Inspector A can only stand outside."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They can see windows, exterior walls and exposed wiring, but cannot see inside the walls."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Inspector B receives a key from the owner."
+        },
+        {
+          "kind": "paragraph",
+          "text": "They can enter and inspect the electrical panel and plumbing, but still cannot see a locked basement."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is the basic difference between two types of vulnerability scans."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Unauthenticated scan: inspects information observable over the network without using a login identity on the target system.",
+            "Authenticated scan: uses an approved account or other login credentials to inspect additional internal information."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here, authentication refers to verifying identity. It does not mean the scan results have been proven correct."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. What do these scans actually inspect?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine a Linux server hosting the company's website."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-06-paths-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Two observation scopes",
+            "description": "Conceptual illustration: these paths are complementary observations, not successive steps for breaking into a system.",
+            "items": [
+              {
+                "title": "Company Linux server",
+                "body": "Website service, operating system, packages and configuration files"
+              },
+              {
+                "title": "Scan without login",
+                "body": "Observe network responses, exposed services and public version information.\n\n“What can be seen from outside?”"
+              },
+              {
+                "title": "Scan with login",
+                "body": "Inspect package versions, patch records and system settings within the account privileges.\n\n“What is actually installed inside?”"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, an unauthenticated scan finds a web response indicating an older software version."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The scanner may warn: “This version may be affected by a particular CVE.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "But it may not know:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Has the company backported a security fix to the older version? Is the relevant feature enabled? Does the currently running program actually have that weakness?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A version string is therefore usually a clue, rather than complete evidence that a vulnerability applies."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An authenticated scan that successfully obtains internal package revision, patch and configuration information may help answer these questions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Another important point: unauthenticated does not mean external-network scanning or passive scanning. A scanner on the company network that does not log into the target can also be unauthenticated. Actively sending probe packets still requires authorization."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. The key lesson: three gates to check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you configure a vulnerability scanner with an inspection account supplied by the company."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The tool says the scan finished, and may even report no vulnerabilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Do not celebrate yet: there are three gates to check."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-06-gates-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "flow",
+            "caption": "Three gates for interpreting a scan",
+            "description": "Starting with the job status, check configuration, authentication and coverage, then interpret the evidence.",
+            "items": [
+              {
+                "title": "Scan job ended",
+                "body": "This is a job status, not a security conclusion."
+              },
+              {
+                "title": "Gate 1: Configuration",
+                "body": "Did this scan actually use the account you configured?\n\nSaving an account in the scanner does not mean it was assigned to the target."
+              },
+              {
+                "title": "Gate 2: Authentication",
+                "body": "Did the target system accept this account?\n\nAn expired or locked account or unreachable SSH service can cause failure."
+              },
+              {
+                "title": "Gate 3: Coverage",
+                "body": "After login, did the necessary checks actually succeed?\n\nLogging in does not establish permission to read the package inventory, settings or logs."
+              },
+              {
+                "title": "Interpret the evidence actually obtained",
+                "body": "Explain confirmed facts, unfinished checks and unknown risks."
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Understanding the differences between these gates is the most valuable part of this lesson."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. A practical example: successful login, zero vulnerabilities"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you perform an authenticated scan of an Ubuntu server."
+        },
+        {
+          "kind": "visual",
+          "src": "/images/ceh/m05-06-result-en-v1-0-0.svg",
+          "downloadLabel": "Download SVG diagram",
+          "visual": {
+            "kind": "cards",
+            "caption": "Scan results",
+            "description": "Fictional exercise",
+            "items": [
+              {
+                "title": "Scan job",
+                "body": "Finished"
+              },
+              {
+                "title": "SSH login",
+                "body": "Succeeded"
+              },
+              {
+                "title": "Read package inventory",
+                "body": "Permission denied"
+              },
+              {
+                "title": "Package vulnerabilities found",
+                "body": "0"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "paragraph",
+          "text": "Can you tell your manager: “This host has zero vulnerabilities and is very safe”?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "No."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The scanner logged in successfully, but never obtained the package inventory."
+        },
+        {
+          "kind": "paragraph",
+          "text": "It is like a house inspector entering the front door but being unable to inspect the wiring because the electrical panel is locked, then writing “No electrical problems found.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The sentence may be literally true, but without disclosing that the panel was not inspected, it can mislead people into thinking safety has been established."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In security, distinguish these states:"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "State",
+            "What it actually means"
+          ],
+          "rows": [
+            [
+              "Scan finished",
+              "The job has ended"
+            ],
+            [
+              "Login succeeded",
+              "The account passed authentication"
+            ],
+            [
+              "Check succeeded",
+              "Usable evidence was obtained for a specified item"
+            ],
+            [
+              "No vulnerabilities found",
+              "None were found within the checks completed"
+            ],
+            [
+              "System is secure",
+              "Broader evidence is needed; a single scan cannot establish this"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "This also relates to the CEH concept of a false negative: a vulnerability that exists but is not reported."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A vulnerable system may have no finding displayed because the scanner could not obtain necessary information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "However, a failed check does not itself prove a false negative. A false negative exists only when a vulnerability actually exists and is not reported."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Do higher account privileges always mean better coverage?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Not necessarily, and they may introduce other risks."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, detailed configuration checks on some Linux hosts require root or specific administrative privileges. A regular account may only see some information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "However, giving a scanner the most privileged account means an attacker may obtain those privileges if the tool, credential vault or execution environment is compromised."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The right approach is neither to always use root nor to insist that every scan use only a regular account."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Approve the necessary privileges according to vendor requirements and inspection needs; use a dedicated account, restrict targets, protect credentials and record checks limited by permissions."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Security scanning itself must be managed securely."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In particular, do not disable MFA, firewalls or other security controls without authorization just to make a scan succeed."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. How does an agent differ from an authenticated scan?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You may have seen an agent installed on computers in enterprise endpoint management or security systems."
+        },
+        {
+          "kind": "paragraph",
+          "text": "An agent is like an inspector stationed inside the house."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Within its authorized local privileges, it can collect installed software, version or configuration information and report it to a management platform."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This differs from remote login scanning, but the two can complement each other."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Method",
+            "Question it is better suited to answering"
+          ],
+          "rows": [
+            [
+              "Unauthenticated network scan",
+              "Which services and exposure can be seen from a specified network position?"
+            ],
+            [
+              "Authenticated scan",
+              "What packages, patches and configurations exist inside the system?"
+            ],
+            [
+              "Local agent",
+              "What internal state did this device report at the time of collection?"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "An agent may have high local privileges, so it should not simply be treated as an unauthenticated scan."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Likewise, seeing inside a host does not mean an agent can fully determine which services are reachable from an external network."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In practice, different observation methods often need to be cross-checked."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. Security expertise includes explaining evidence boundaries"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Suppose you conduct an authorized penetration test or vulnerability assessment for a company."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A service displays an old version. You then perform an authenticated scan and confirm that the host has the distributor's security-patched package version installed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "A reasonable conclusion is:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Based on the package revision information obtained in this assessment and the distributor's advisory, the installed package version includes the specified security fix. Whether running processes have loaded the update, and whether other deployed copies are affected, still require confirmation."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is more precise than “Patched, no risk.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You need to understand one thing:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Installing an update does not mean the running program has loaded it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, a service that has not restarted may still use a program or library loaded before the update."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Fixing one package vulnerability also does not resolve system configuration, account privilege and network exposure issues at the same time."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In practical reports, separate established facts, reasonable inferences and matters that remain unknown."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Understanding check: act as the assessor"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A company provides a Linux host for a lawful vulnerability assessment."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The scanner reports: job finished, SSH authentication succeeded, package inventory access denied, and package vulnerability count 0."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 1: can you claim all packages on this host are secure?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Yes, because the vulnerability count is 0."
+        },
+        {
+          "kind": "paragraph",
+          "text": "No; check coverage and supporting evidence are still needed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Yes, but first confirm that login succeeded."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Question 2: which two follow-up checks deserve priority? Select two."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Confirm that the package inventory was read successfully and that the required checks completed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Obtain actual version and patch information and compare it with trustworthy vendor security advisories."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Treat the scanner's Finished status as proof that the system has no vulnerabilities."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Treat a successful SSH login as proof that every host item was inspected."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Reference explanation: select the second option for question 1 and the first two options for question 2. The package inventory was not obtained, so a package vulnerability count of 0 cannot support a claim that everything is secure. First establish check coverage, then compare actual versions with vendor patch information."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember this core formula:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Scan credibility = clearly defined scope + successfully completed checks + evidence sufficient to support the conclusion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This is not a mathematical scoring formula. It reminds us that a security professional must explain what the scanner actually inspected and what remains unknown, as well as knowing how to use it."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sources checked： [Tenable credentialed checks](https://docs.tenable.com/nessus/Content/NessusCredentialedChecks.htm) · [Tenable credentials](https://docs.tenable.com/nessus/Content/Credentials.htm) · [Red Hat backporting](https://access.redhat.com/solutions/57665)"
+        }
+      ]
+    }
+  }
+}

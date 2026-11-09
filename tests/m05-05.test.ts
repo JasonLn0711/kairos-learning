@@ -32,7 +32,7 @@ test('M05-05 uses its stable URL and closes draft and future publication',()=>{
  assert.ok(createConceptCatalog(entries,[t],'2026-11-09').get(t.id,'en'));
  for(const change of [{status:'draft'},{publishedOn:'2099-01-01'}])assert.equal(createConceptCatalog(entries,[{...t,...change}],'2026-11-09').get(t.id,'zh'),null);
  const route=createConceptCatalog(entries,[t],'2026-11-09').get(t.id,'zh')!;
- assert.equal(route.navigation.previous!.id,'CEH26-M05-C04');assert.equal(route.navigation.next!.id,'M05-08');
+ assert.equal(route.navigation.previous!.id,'CEH26-M05-C04');assert.equal(route.navigation.next!.id,'CEH26-M05-C06');
 });
 test('prioritization diagrams reject invented probabilities, sequential metric rows and unknown layouts',()=>{
  for(const mutation of [
