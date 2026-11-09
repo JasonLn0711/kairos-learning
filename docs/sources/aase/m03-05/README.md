@@ -1,0 +1,8 @@
+# AASE M03-05 來源與修訂索引
+
+本課正本為 `content/aase/lessons/aase-m03-c05.json`，公開網址是 `/courses/aase/v1/m03/concepts/m03-05/` 及英文對應頁。
+
+- [2026-11-09 完整供稿、五圖與逐節對照](replacement-2026-11-09/source-map.md)：原文、PNG、前版、雙語稿、同源圖解資料、雜湊與編輯差異。
+- [修訂與發布回執](../../../releases/2026-11-09-aase-m03-05-replacement.md)：分開記錄本機、Git、部署、正式頁與待驗項目。
+
+來源與正文完整性由正規化比對與產生器核對；正式頁呈現需另跑瀏覽器與資產回讀。
