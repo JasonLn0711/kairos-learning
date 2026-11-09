@@ -613,3 +613,11 @@ CEH26-M05-C04 顯示 M05-04，正文沿既有 sourceBody；`scripts/m05_04_conte
 四圖共用 diagrams.json：signals cards 3、groups cards 4、probability cards 1、workflow flow 4。`PrioritizationDiagram.svelte` 保留平行列、CVSS四組指標、固定20%長條與四關三箭頭；只有workflow表示順序。`prioritization-diagrams.ts` 約束本課、四個圖名、雙語固定路徑、種類、數量、欄位及固定0.20＝20%值，不接受任意標記、輸入分數或官方風險計算器主張。
 
 `python3 scripts/m05_05_content.py --check`核對完整中英正文與八份 sanitizer SVG；`tests/m05-05.test.ts`核對原件／逐段採用、範例數值、發布閘門及無效圖解拒絕。先完成內容、單元、型別、publication-boundary及release，再執行 `node scripts/check-m05-05-browser.mjs`、`node scripts/check-m05-05-svg.mjs`。正式站指定 `M05_05_BASE_URL=https://learn.cs-kairos.com`。來源與發布證據由[本次回執](releases/2026-11-09-m05-05.md)承接；M05-04下一篇隨共用catalog連至新正文，M05-08維持待發布。
+
+## AASE M03-05 成功指標完整供稿（2026-11-09）
+
+AASE-M03-C05 v1.1.0 的[來源與逐節對照](sources/aase/m03-05/replacement-2026-11-09/source-map.md)保存完整原文、五張PNG、前版、雙語稿及雜湊。`scripts/aase_m0305_content.py`由雙語稿與figures.json產生正式JSON，`--check`核對同步。原九節、導言及分母說明分為11個section，六個既有錨點與原發布日保留。四道新開放題使用Q04–Q07，參考解析沿原生收合，qa仍為空。
+
+AASE專屬`prose`區塊只接受非空paragraphs字串陣列，以Svelte跳脫文字保留「表格／圖解後接說明」的原始次序，搜尋沿同一資料；固定條列前綴轉原生ul／ol，CEH型別保持原契約。SuccessEvidenceDiagram只接本課固定五圖：evidence-chain／metrics／measure／analogy／trace，節點數6／2／4／2／5，只有第一圖為flow。滑桿支援0–4整數，預設3／4＝75%，公式與4／4門檻直接可見；無JavaScript保留預設結果並停用控制。十份獨立SVG由`aase_m0305_svg.py`產生，下載固定為預設案例。
+
+單元檢查為`tests/aase-m0305-replacement.test.ts`；瀏覽器為`playwright.aase-m0305.config.ts`，正式站使用AASE_BASE_URL。包含全文、四尺寸／200%、鍵盤、無JS、同源搜尋、SVG字框／重疊及下載位元組。原始資料與前版由SHA256SUMS核對，具體執行與待驗項目見[回執](releases/2026-11-09-aase-m03-05-replacement.md)。
