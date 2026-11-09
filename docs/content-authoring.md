@@ -622,11 +622,11 @@ AASE專屬`prose`區塊只接受非空paragraphs字串陣列，以Svelte跳脫�
 
 單元檢查為`tests/aase-m0305-replacement.test.ts`；瀏覽器為`playwright.aase-m0305.config.ts`，正式站使用AASE_BASE_URL。包含全文、四尺寸／200%、鍵盤、無JS、同源搜尋、SVG字框／重疊及下載位元組。原始資料與前版由SHA256SUMS核對，具體執行與待驗項目見[回執](releases/2026-11-09-aase-m03-05-replacement.md)。
 
-## AASE M04-01 完整供稿與三圖（2026-11-09）
+## AASE M04-01 完整供稿與五圖（2026-11-09）
 
-AASE-M04-C01 v1.1.0 的[來源對照](sources/aase/m04-01/replacement-2026-11-09/source-map.md)保留原稿、三PNG、前版、雙語稿與雜湊。兩語九section承接導言、七節及理解檢核；原六錨點、發布日保留。三個餐廳小節、兩表、三開放題Q04–Q06完整進入正文，qa=[]，參考解析原生收合。
+AASE-M04-C01 v1.1.1 的[來源對照](sources/aase/m04-01/replacement-2026-11-09/source-map.md)保留原稿、五PNG、前版、雙語稿與雜湊。兩語九section承接導言、七節及理解檢核；原六錨點、發布日保留。三個餐廳小節、兩表、三開放題Q04–Q06完整進入正文，qa=[]，參考解析原生收合。
 
-HciPerspectivesDiagram只處理本課固定4步flow／3列cards／2欄cards，手機原生重排，示意動作區維持文字。模型拒絕多餘節點、錯誤關係與markup欄位；六獨立SVG由aase_m0401_svg.py使用同源資料及固定allowlist輸出。aase_m0401_content.py由雙語稿與figures.json產生正式JSON；兩者--check核對同步。原稿正規化與逐節編輯在來源紀錄，不以標題數代替完整性。
+HciPerspectivesDiagram只處理本課固定4步flow／3列cards／2欄cards／5欄需求cards／6步flow，手機原生重排，示意動作區維持文字。模型拒絕多餘節點、錯誤關係與markup欄位；十獨立SVG由aase_m0401_svg.py使用同源資料及固定allowlist輸出。aase_m0401_content.py由雙語稿與figures.json產生正式JSON；兩者--check核對同步。原稿正規化與逐節編輯在來源紀錄，不以標題數代替完整性。
 
 維護檢查：tests/aase-m0401-replacement.test.ts、playwright.aase-m0401.config.ts；正式站指定AASE_BASE_URL。全文／順序、四尺寸／200%、無JS／鍵盤／搜尋及SVG下載檢查後，依[回執](releases/2026-11-09-aase-m04-01-replacement.md)更新實際發布證據。課名同步course雙語目錄與工作坊ZIP，操作教材本身未改。
 
