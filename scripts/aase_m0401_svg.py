@@ -1,4 +1,4 @@
-"""Export the three reviewed HCI figures from the same bilingual lesson model."""
+"""Export the five reviewed HCI figures from the same bilingual lesson model."""
 import json,sys
 from pathlib import Path
 from html import escape
@@ -31,6 +31,18 @@ def render(f,n,lang):
    y=text(item['title'],80,y,41,22,True)
    y=text(item['body'],80,y+6,41)+20
    if i<2:out.append(f'<path d="M36 {y}H1004" stroke="#d5dce0"/>');y+=42
+ elif n==4:
+  y=text(f['description'],36,y,45)+12
+  out.append(f'<path d="M36 {y}H1004" stroke="#d5dce0"/>');y+=42
+  for item in f['items']:
+   y=text(item['title']+('：' if lang=='zh' else ': ')+item['body'],36,y,45)+8
+ elif n==5:
+  for i,item in enumerate(f['items']):
+   # Six centered steps connected vertically, matching the supplied task sequence.
+   for line in wrap(item['title'],40):
+    out.append(f'<text x="520" y="{y}" text-anchor="middle" font-size="20">{escape(line)}</text>');y+=34
+   if i<5:out.append(f'<path d="M520 {y}v24m-7-7 7 7 7-7" fill="none" stroke="#65757c" stroke-width="2"/>');y+=58
+  y+=24
  else:
   top=y-28;starts=[];ends=[]
   for i,item in enumerate(f['items']):
@@ -47,11 +59,12 @@ def render(f,n,lang):
   y=max(ends)+12
   for i,start in enumerate(starts):out[start]=rect(36+i*510,top,460,y-top)
   y+=44
- y=text(f['description'],36,y,45)+20
+ if n!=4:y=text(f['description'],36,y,45)+20
+ else:y+=20
  svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 {y}" role="img" aria-labelledby="title desc" lang="{lang}"><title id="title">{escape(f["caption"])}</title><desc id="desc">{escape(f["description"])}</desc><rect width="1040" height="{y}" fill="#fbfcfd"/><g fill="#18252c" font-family="Arial, Noto Sans CJK TC, sans-serif">'+''.join(out)+'</g></svg>\n'
  tree=ET.fromstring(svg)
  allowed={'svg','title','desc','rect','g','text','path'}
- attrs={'xmlns','viewBox','role','aria-labelledby','lang','id','width','height','fill','font-family','x','y','font-size','font-weight','rx','stroke','stroke-width','d','transform'}
+ attrs={'xmlns','viewBox','role','aria-labelledby','lang','id','width','height','fill','font-family','x','y','font-size','font-weight','rx','stroke','stroke-width','d','transform','text-anchor'}
  assert all(e.tag.split('}')[-1] in allowed and all(k in attrs for k in e.attrib) for e in tree.iter())
  assert len(svg.encode())<100000
  return svg.encode()
@@ -59,7 +72,7 @@ def main():
  print('Checking M04-01 SVG exports.' if '--check' in sys.argv else 'Generating M04-01 SVG exports.',file=sys.stderr)
  l=json.loads((ROOT/'content/aase/lessons/aase-m04-c01.json').read_text())
  for lang in ['zh','en']:
-  figures=[b for s in l['text'][lang]['sections'] for b in s.get('blocks',[]) if b['kind'] in ['cards','flow']];assert [len(f['items'])for f in figures]==[4,3,2]
+  figures=[b for s in l['text'][lang]['sections'] for b in s.get('blocks',[]) if b['kind'] in ['cards','flow']];assert [len(f['items'])for f in figures]==[4,3,2,5,6]
   for n,f in enumerate(figures,1):
    data=render(f,n,lang);out=ROOT/f'site/images/aase/m04-01-{n}-{lang}.svg'
    if '--check' in sys.argv:assert out.read_bytes()==data,f'Outdated: {out}'

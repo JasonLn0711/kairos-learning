@@ -128,8 +128,8 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
       }
       if(l.id==='AASE-M04-C01'){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
-        const expected=s.id==='case'?[4,3]:s.id==='quality'?[2]:[];
-        if(figures.length!==expected.length||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[i]||f.kind!==(s.id==='case'&&i===0?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid HCI perspectives figure');
+        const expected=s.id==='case'?[4,3]:s.id==='quality'?[2]:s.id==='record'?[5]:s.id==='task-analysis'?[6]:[];
+        if(figures.length!==expected.length||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[i]||f.kind!==((s.id==='case'&&i===0)||s.id==='task-analysis'?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid HCI perspectives figure');
       }
       for(const b of s.blocks??[]){
         if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}

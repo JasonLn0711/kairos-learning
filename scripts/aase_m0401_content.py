@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 p=ROOT/'docs/sources/aase/m04-01/replacement-2026-11-09'
 print('Checking M04-01 manuscripts.' if '--check' in sys.argv else 'Generating M04-01 lesson.',file=sys.stderr)
-l=json.loads((p/'prior-lesson.json').read_text());l.update(revision=4,contentVersion='1.1.0',date='2026-11-09');l['checks']=[]
+l=json.loads((p/'prior-lesson.json').read_text());l.update(revision=5,contentVersion='1.1.1',date='2026-11-09');l['checks']=[]
 figures=json.loads((p/'figures.json').read_text())
 ids=['introduction','analogy','three-lenses','case','quality','evidence','record','task-analysis','understanding']
 answers={
@@ -45,4 +45,4 @@ for lang in ['zh','en']:
 out=ROOT/'content/aase/lessons/aase-m04-c01.json';data=json.dumps(l,ensure_ascii=False,indent=2)+'\n'
 if '--check' in sys.argv:assert out.read_text()==data,'lesson differs from manuscripts'
 else:out.write_text(data)
-print('PASS: two complete manuscripts, nine sections each, three figures and three open checks.')
+print('PASS: two complete manuscripts, nine sections each, five figures and three open checks.')
