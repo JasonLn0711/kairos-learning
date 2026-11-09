@@ -27,4 +27,4 @@
 - [Tenable Credentials](https://docs.tenable.com/nessus/Content/Credentials.htm)：認證掃描依本機使用者可執行操作與憑證設定運作，支持權限與認證分開判讀。
 - [Red Hat backporting](https://access.redhat.com/solutions/57665)：回補修正可能保留舊上游版本號，須對照發行商公告及套件修訂。支持原稿將版本字串視為線索的界線。
 
-以上為來源查核，沒有執行真實掃描或驗證任何主機安全。完整雙語成稿、三組同源圖解與六份SVG已納入正式資料；具體驗證及發布證據見../../releases/2026-11-09-m05-06.md。
+以上為來源查核，沒有執行真實掃描或驗證任何主機安全。完整雙語成稿、三組同源圖解與六份SVG已納入正式資料；具體驗證及發布證據見[發布回執](../../releases/2026-11-09-m05-06.md)。
