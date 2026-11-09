@@ -86,3 +86,5 @@ AASE 工作站 Python 快取共用與本機鎖檔操作見 [content authoring](d
 [11/9 工作目錄整合與 Planning 回執](docs/releases/2026-11-09-repository-reconciliation.md)記錄歷史保留、重疊修改處理及本輪驗證。
 
 [M05-05 優先順序完整教材](docs/releases/2026-11-09-m05-05.md)串接九節雙語供稿、四圖／八份SVG、逐段對照及本輪驗證與發布。
+
+[AASE M03-05 完整教材與五圖](docs/releases/2026-11-09-aase-m03-05-replacement.md)串接原稿、逐節對照、雙語正文、十份SVG、互動及正式站驗證；[本機與發布分支對帳](docs/releases/2026-11-09-repository-reconciliation.md#lesson-publication-reconciliation-2026-11-09)說明歷史保留與 Planning 入口。

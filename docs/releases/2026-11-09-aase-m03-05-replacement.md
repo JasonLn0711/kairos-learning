@@ -54,3 +54,8 @@ AASE新增受限prose區塊，以文字陣列維持表格與圖解前後的正�
 精確發布候選的本機／正式報告在 `.local/aase/m0305/release-worktree/.local/aase/m0305/local-results.json`、`live-results.json`與`live-downloads.json`。原工作目錄保留先前截圖與測試紀錄。直接Python urllib下載曾回403；curl實際取得200與完整位元組，瀏覽器全文／資產回讀也通過，此差異保留為取用方式的觀察。
 
 完整性稽核：原文與五原圖已保存；九節教學及導言完整進入中英正文；五組圖、互動、十SVG、原表與模板可讀／可下載；歷史、六既有錨點、原發布日及發布閘門保留；Git、Pages與正式站已各自取得證據。工作坊操作內容未變，課名衍生目錄已同步。實體手機、完整螢幕閱讀器與獨立讀者接受度維持尚待驗收，不影響上述範圍的已驗結果。
+
+
+## Planning 與維護入口
+
+[11/9 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W46/days/2026-11-09.md#kairos-aase-m03-05-2026-11-09) ↔ [網站定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-aase-m03-05-2026-11-09)保存貢獻、發布狀態、容量與下一關；來源與技術證據維持本 repo。[主工作目錄對帳](2026-11-09-repository-reconciliation.md#lesson-publication-reconciliation-2026-11-09)連回同日 M05-05 與發布分支，說明已發布修改的整合。這些文件連結不變更教材版本或既有真人驗收界線。
