@@ -44,3 +44,8 @@ SVG：`/images/aase/m03-04-{1,2}-{zh,en}.svg`；最終大小及正式站回讀�
 原始工作樹的本次初稿先備份至忽略的`.local/aase/m0304/initial-worktree-backup/`，再由正式主線fast-forward取得最終版；無關M05-06編輯及Git歷史保留。正式站截圖、JSON結果與日誌複製至執行owner的`.local/aase/m0304/production/`。原圖、原文、前版SHA256均核對通過。另以Playwright HTTP request回讀首頁及MATLAB入口為200、指定不存在路徑為404；六份既有MATLAB／合成參考ZIP的正式站SHA256全部與原清單一致。
 
 獨立讀者理解與課堂prototype測試未執行；本文只交付教材與呈現證據，不宣稱使用者通過理解檢核或產品需求獲市場驗證。
+
+
+## Planning 關聯｜發布證據補登
+
+[11/9日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W46/days/2026-11-09.md#kairos-lessons-2026-11-09) ↔ [網站定位](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-lessons-2026-11-09) ↔ [W46容量與下一關](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W46/weekly-plan.md#kairos-lessons-2026-11-09)。Planning 承接本篇既有發布證據、貢獻與真人驗收關卡，原稿與技術證據維持本 repo；本次文件連結不變更教材、版本或原驗收範圍。
