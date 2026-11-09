@@ -111,19 +111,7 @@ That request leaves AI to decide what improvement means. It may only change colo
 
 A better request describes five things:
 
-A verifiable design requirement
-
-Who uses it → what they do → what difficulty they face → what to change → how to test it
-
-User: a case worker using the system for the first time
-
-Task: identify and correct the missing document type
-
-Problem: the user does not know which field is incomplete
-
-Candidate change: show a specific error and correction guidance beside the field
-
-Verification: give a missing-information scenario and observe whether the user can correct it independently
+@figure4
 
 This changes a request for visual polish into a request to solve an observable usage problem.
 
@@ -135,17 +123,7 @@ M04-01 uses HCI, UI and UX to identify problems from three perspectives.
 
 M04-02, Task Analysis, goes further by breaking down the actual work:
 
-The user receives a case
-
-Finds the required information
-
-Fills in the form
-
-Finds and corrects omissions
-
-Checks and exports the report
-
-Hands it to the next case worker
+@figure5
 
 Task analysis starts by asking who performs each step, what information is needed, how success is judged and what happens when something goes wrong, before drawing screens.
 

@@ -20,6 +20,14 @@ f={'zh':[
  dict(kind='flow',caption='圖 1｜原本的收件流程',description='四個步驟依序進行；「顯示成功」尚未說明成功的範圍。',items=[dict(title=x,body='原流程步驟 '+str(i+1)) for i,x in enumerate(flow)]),
  dict(kind='cards',caption='圖 2｜從 HCI、UI、UX 檢查收件系統',description='三種觀點互相影響，並列呈現，不表示先後階段。',items=cards),
  dict(kind='cards',caption='圖 3｜狀態提示的修改前與候選修改',description='示意畫面，不是真實系統或測試結果；候選修改仍需要驗證。',items=[dict(title='修改前',body=before),dict(title='候選修改',body=after)])]}
+a=s.index('一個可驗證的設計需求');b=s.index('這就是從',a)
+parts=s[a:b].strip().split('\n\n')
+f['zh'].append(dict(kind='cards',caption='圖 4｜'+parts[0],description=parts[1],items=[dict(title=x.split('：',1)[0],body=x.split('：',1)[1].strip())for x in parts[2:]]))
+s=s[:a]+'@figure4\n\n'+s[b:]
+a=s.index('使用者收到案件');b=s.index('任務分析不是',a)
+parts=s[a:b].strip().split('\n\n')
+f['zh'].append(dict(kind='flow',caption='圖 5｜把真正的工作拆成任務',description='依序檢查每一步的角色、資訊、成功條件與例外。',items=[dict(title=x,body='任務步驟 '+str(i+1))for i,x in enumerate(parts)]))
+s=s[:a]+'@figure5\n\n'+s[b:]
 if '--check' in sys.argv:
  assert (p/'teaching.zh.md').read_text()==s
  assert json.loads((p/'figures.json').read_text())['zh']==f['zh']
@@ -29,4 +37,4 @@ else:
   prior=json.loads((p/'figures.json').read_text())
   if 'en' in prior:f['en']=prior['en']
  (p/'figures.json').write_text(json.dumps(f,ensure_ascii=False,indent=2)+'\n')
-print('PASS: source normalization and three figure text groups')
+print('PASS: source normalization and five figure text groups')
