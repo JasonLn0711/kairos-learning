@@ -63,3 +63,8 @@ confirmed：主工作目錄起始為 `d95a770`，fetch 後遠端 `124049a`，分
 
 
 validated（本輪）：三項產生器 `--check`、`pnpm run validate:content`、276項單元與`pnpm run check`（0 errors／0 warnings）通過。只補文件連結，未重跑真人或全站閱讀驗收；正式站全文與資產實測沿上列兩篇原回執。Planning policy通過（44既有警告／0新）、knowledge 186／186通過。
+
+
+## 後續對帳
+
+[11/10 工作目錄對帳](2026-11-10-repository-reconciliation.md)接續本次歷史保留與 Planning 路由，記錄較舊三課工作目錄的完整本機保存及103筆遠端提交整合；各篇原始驗收日期與界線保留。
