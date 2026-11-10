@@ -25,3 +25,9 @@
 ## 驗證與發布範圍
 
 本輪只修改對帳與連結文件，適用 WRITE-01／03／04／11 的來源、日期、主張與證據界線。新文件的本機連結、明示錨點與 Git ancestry 逐一檢查；Planning 執行 repository、knowledge 與11/10 agenda檢查。實測 `pnpm run validate:content` 通過（22 bilingual lessons、51 original questions、29 terms）；stash含140個原變動路徑，Git ancestry通過。Planning repository通過（44 grandfathered、0 new warnings），knowledge 186／186通過；11/10 agenda顯示容量Unknown及metrics過期82天，未據此推估今日產能。沒有重跑教材瀏覽器、建置或部署；本輪文件提交使用 `[skip ci]`。
+
+## published｜Git 回執
+
+Kairos文件提交 `9e61771` 已推送 `origin HEAD:main`，fetch後divergence `0 0`。Planning成果提交 `4359df81`；推送時遠端新增 `d3e519ff`／`d9916502`，以 `047f5023` merge保留兩邊。日誌及週計畫的追加衝突保留Kairos Learning與簡報兩組成果，共用既有對帳錨點；repository及knowledge再驗通過，推送後fetch為 `0 0`。本輪新增20個本機／跨repo連結及明示錨點核對通過，兩庫diff check通過。
+
+本機恢復stash維持保存；Planning原工作目錄既有變動留原處。這份發布回執另作文件提交，沿用 `[skip ci]`，不把Git同步記為正式教材重新部署。
