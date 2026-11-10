@@ -643,3 +643,13 @@ v1.1.0／revision 4 保留原發布日與六個舊錨點，導言及十節完整
 CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整雙語。來源見[逐節對照](sources/m05-06/source-map.md)，發布證據見[回執](releases/2026-11-09-m05-06.md)。`scripts/m05_06_content.py --check`核對正式JSON與六份sanitizer SVG；`ScanEvidenceDiagram.svelte`承接paths共同主機＋兩平行面、gates五節點四連線、result四列合成結果。`scan-evidence-diagrams.ts`限制身份、固定路徑、種類、節點數與欄位。正文／搜尋／下載同源，不提供掃描或批改服務。
 
 單元為`tests/m05-06.test.ts`，瀏覽器為`node scripts/check-m05-06-browser.mjs`，正式站設定`M05_06_BASE_URL=https://learn.cs-kairos.com`；`node scripts/check-m05-06-svg.mjs`核對六圖字框與重疊。同期修改於隔離工作樹驗收，保留原工作目錄。
+
+## CEH 考古題知識筆記 — 2026-11-10
+
+`content/ceh-notes/YYYY-MM-DD.json` 維護同一天的單一筆記；`parts` 按供稿順序延續，不替同日每份供稿新增日期頁。原稿、原圖與採用對照留在 `docs/sources/ceh-notes/YYYY-MM-DD/part-NN/`；正文保留完整小節，來源與編輯補充分開記錄。`expectedParts` 只記錄使用者預期數量，頁面顯示實際已發布部分數量；不得把尚未提供部分寫成已完成。追加內容保留原發布日、日期網址及既有錨點，增加revision與revisedOn。
+
+`src/lib/ceh-notes.ts` 驗證唯一日期、有效日期、雙語結構、部分編號、`pN-`錨點、HTTPS來源與受限區塊，拒絕額外markup欄位。整篇及各部分共用 `isPublic` 的status／publishedOn閘門；只將過閘資料送至日期頁、清單、搜尋與sitemap。發布邊界腳本檢查整篇及同日部分的draft／future標記不進入實際HTML／JSON／JS。未提供原題全文時，保留供稿題號及參考答案，不宣稱已核對題庫正解。
+
+正文沿用SourceBody的段落、清單及可鍵盤捲動表格。`NoteFigure`承接四節點向下workflow與三欄平行CIA；`NoteRecall`承接三張卡，無JavaScript可閱讀三卡與原生答案；`NoteChecks`保留供稿三選項並提供本頁逐項回饋，不儲存、不外送或宣稱學習完成。圖示的節點、文字、搜尋與SVG共用正式JSON；`python3 scripts/ceh_notes_svg.py --check` 已納入validate:release，輸出固定allowlist且每圖小於100000bytes。新領域圖需先擴充契約，禁止以任意HTML／SVG繞過。
+
+維護檢查：`tests/ceh-notes.test.ts` 與 `node scripts/check-ceh-notes-browser.mjs`；後者檢查雙語全文、四尺寸／200%、無JS、鍵盤、回憶卡與情境檢核、六SVG文字邊界與下載。設定 `CEH_NOTES_BASE_URL=https://learn.cs-kairos.com` 可回讀正式站。首次供稿採用與視覺差異見[來源對照](sources/ceh-notes/2026-11-10/part-01/source-map.md)，實測與發布見[回執](releases/2026-11-10-ceh-notes-part-01.md)。

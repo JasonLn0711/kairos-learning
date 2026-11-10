@@ -10,6 +10,7 @@ const aaseOriginals=new Map();
 const registryPath='content/concepts.json';
 const originalRegistry=readFileSync(registryPath,'utf8');
 const markers=['KAIROS_UNPUBLISHED_DRAFT_4fc21','KAIROS_UNPUBLISHED_FUTURE_4fc21','CONCEPT_SECOND_FIXTURE','ZH_FIXTURE_QUESTION','EN_FIXTURE_ANSWER'];
+markers.push('NOTES_DRAFT_MARKER','NOTES_FUTURE_MARKER','NOTES_PART_DRAFT_MARKER','NOTES_PART_FUTURE_MARKER');
 markers.push('AASE_UNPUBLISHED_DRAFT_4fc21','AASE_UNPUBLISHED_FUTURE_4fc21','AASE_EN_DRAFT_4fc21','AASE_EN_FUTURE_4fc21','AASE_EN_COURSE_CLOSED_4fc21');
 const started=Date.now();
 function walk(dir) {return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(join(dir,e.name)):[join(dir,e.name)]);}
@@ -55,6 +56,21 @@ try {
     p.text.zh.title=p.text.en.title=markers[i];
     writeFileSync(path,JSON.stringify(p));files.push(path);
   }
+  const notePath='content/ceh-notes/2026-11-10.json',noteOriginal=readFileSync(notePath,'utf8');
+  aaseOriginals.set(notePath,noteOriginal);
+  const publishedNote=JSON.parse(noteOriginal);publishedNote.expectedParts+=2;
+  for(let i=0;i<2;i++) {
+    const n=JSON.parse(noteOriginal);n.date=`209${8+i}-01-01`;
+    n.status=i===0?'draft':'published';n.publishedOn=n.revisedOn=n.parts[0].publishedOn=i===0?'2026-11-10':'2099-01-01';
+    const marker=i===0?'NOTES_DRAFT_MARKER':'NOTES_FUTURE_MARKER';
+    n.text.zh.title=n.text.en.title=n.parts[0].text.zh.title=n.parts[0].text.en.title=marker;
+    const path=`content/ceh-notes/${n.date}.json`;if(existsSync(path))throw Error('Reserved note fixture exists');
+    writeFileSync(path,JSON.stringify(n));files.push(path);
+    const part=JSON.parse(noteOriginal).parts[0];part.number=publishedNote.expectedParts-1+i;part.status=i===0?'draft':'published';part.publishedOn=i===0?'2026-11-10':'2099-01-01';
+    for(const lang of ['zh','en']){part.text[lang]=JSON.parse(JSON.stringify(part.text[lang]).replaceAll('p1-',`p${part.number}-`));part.text[lang].title=i===0?'NOTES_PART_DRAFT_MARKER':'NOTES_PART_FUTURE_MARKER';}
+    publishedNote.parts.push(part);
+  }
+  writeFileSync(notePath,JSON.stringify(publishedNote));
   const registry=JSON.parse(originalRegistry);
   for(let i=0;i<2;i++) {
     const id=`M04-${98+i}`;
