@@ -59,3 +59,8 @@
 前次成功部署為fd256fc，Pages run 42776106302。此次依專案既有文章發布授權，完成驗證後提交、推送main，使用Pages部署；部署commit／run與正式回讀的結果保存在忽略目錄`.local/ceh-notes/part-01-publication.json`並於交付回報。推送後核對`HEAD...origin/main`為`0 0`，部署後同一瀏覽器腳本設定`CEH_NOTES_BASE_URL=https://learn.cs-kairos.com`重跑。
 
 尚未執行實體手機、完整螢幕閱讀器或個人學習理解驗收；未附原題全文，字母答案仍是供稿參考。第2／3部分收到後延續本日頁面，不把未收到內容視為已完成。
+
+
+## Planning 接續
+
+[11/10 FIRST PRINCIPLE 跨repo收束](2026-11-10-ceh-notes-planning-sync.md)連接日誌、週計畫、專案與整合入口，並保存本輪HTTP回讀403的證據界線；原測試與發布階段紀錄保持各自範圍。
