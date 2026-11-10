@@ -32,10 +32,11 @@ const aaseSources=JSON.parse(readFileSync(join(root,'aase/sources.json'),'utf8')
 const allAaseLessons=readdirSync(join(root,'aase/lessons')).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(readFileSync(join(root,'aase/lessons',f),'utf8')) as AaseLesson);
 export const aaseCatalog=createAaseCatalog(aase,allAaseLessons,aaseSources,new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),aaseEnglish as AaseCourseTranslation);
 searchEntries.push(...aaseCatalog.searchEntries,...(aaseCatalog.forLanguage('en')?.searchEntries??[]));
-export type Kind = 'aase' | 'aase-concept' | 'aase-workshop' | 'perspectives' | 'perspective' | 'concept' | 'home' | 'ceh' | 'module' | 'lesson' | 'quiz' | 'lab' | 'course' | 'glossary' | 'search' | 'review' | 'standards';
+export type Kind = 'ceh-notes' | 'aase' | 'aase-concept' | 'aase-workshop' | 'perspectives' | 'perspective' | 'concept' | 'home' | 'ceh' | 'module' | 'lesson' | 'quiz' | 'lab' | 'course' | 'glossary' | 'search' | 'review' | 'standards';
 export type Route = { path: string; kind: Kind; lang: Locale; lessonId?: string; moduleId?: string; courseId?: string; perspectiveId?: string; conceptId?: string };
 export const routes: Route[] = (['zh','en'] as Locale[]).flatMap(lang => [
   {path:localized('/',lang),kind:'home',lang},
+  {path:localized('/ceh-notes/',lang),kind:'ceh-notes',lang},
   {path:localized('/perspectives/',lang),kind:'perspectives',lang},
   ...perspectives.map(p=>({path:localized(`/perspectives/${p.slug}/`,lang),kind:'perspective' as Kind,lang,perspectiveId:p.id})),
   ...['/courses/ceh/','/courses/ceh/v13/'].map(path => ({path:localized(path,lang),kind:'ceh' as Kind,lang})),
@@ -54,6 +55,10 @@ for(const lang of ['zh','en'] as const){
   routes.push({path:localized('/courses/aase/v1/',lang),kind:'aase',lang,courseId:'aase'},...catalog.modules.map(m=>({path:aaseModulePath(m.id,lang),kind:'aase' as Kind,lang,courseId:'aase',moduleId:m.id})));
   routes.push({path:localized('/courses/aase/v1/workshop/',lang),kind:'aase-workshop',lang,courseId:'aase'},...catalog.concepts.filter(c=>c.lesson).map(c=>({path:c.href,kind:'aase-concept' as Kind,lang,courseId:'aase',moduleId:c.module,conceptId:c.id})));
   searchEntries.push({id:'AASE',lang,title:catalog.title,summary:catalog.subtitle,text:catalog.modules.map(m=>m.title).join(' '),href:localized('/courses/aase/v1/',lang),label:lang==='zh'?'AASE · 課程規劃':'AASE · Course map'});
+}
+for (const lang of ['zh','en'] as const) {
+  const zh = lang === 'zh';
+  searchEntries.push({id:'CEH-NOTES',lang,title:zh?'CEH 考古題知識筆記':'CEH Exam Study Notes',summary:zh?'按日期累積考古題對應的知識、選項解析與複習筆記。':'Dated notes connecting exam practice to concepts, option explanations and review.',text:zh?'CEH 考古題 每日筆記 知識觀念 選項解析 參考來源':'CEH exam practice daily study notes concepts explanations sources',href:localized('/ceh-notes/',lang),label:zh?'CEH · 知識筆記':'CEH · Study notes'});
 }
 export function getPage(path: string) {
   const route = routes.find(r => r.path === path);

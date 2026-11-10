@@ -78,3 +78,12 @@ test('new M04 route publishes C01–C10 while other units stay pending',()=>{
  assert.equal(getPage('/courses/ceh/v13/m04/labs/'),null);
  assert.deepEqual([...new Set(searchEntries.filter(e=>e.label==='CEH M04').map(e=>e.id))],['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C03','CEH26-M04-C04','CEH26-M04-C05','CEH26-M04-C06','CEH26-M04-C07','CEH26-M04-C08','CEH26-M04-C09','CEH26-M04-C10']);
 });
+
+test('CEH study notes have independent bilingual routes and searchable entries',()=>{
+  for(const lang of ['zh','en'] as const) {
+    const path=(lang==='en'?'/en':'')+'/ceh-notes/';
+    assert.equal(getPage(path)?.route.kind,'ceh-notes');
+    assert.ok(search(searchEntries,lang==='zh'?'考古題':'Exam Study Notes',lang).some(e=>e.id==='CEH-NOTES'&&e.href===path));
+    assert.equal(getPage((lang==='en'?'/en':'')+'/courses/ceh/v13/')?.route.kind,'ceh');
+  }
+});
