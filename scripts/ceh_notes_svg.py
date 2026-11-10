@@ -4,10 +4,15 @@ from pathlib import Path
 from html import escape
 import xml.etree.ElementTree as ET
 from aase_m0104_svg import wrap
+from ceh_note_reference_svg import render_reference
 ROOT=Path(__file__).resolve().parents[1]
 COLORS=['#e9f2f7','#eaf5f1','#f7f3ea']
-ICONS=['M3 3l18 18M10.5 10.5a2 2 0 0 0 3 3M9 5.5A12 12 0 0 1 12 5c7 0 10 7 10 7a17 17 0 0 1-3.5 4.5M6 6.5A19 19 0 0 0 2 12s3 7 10 7a12 12 0 0 0 5-1','M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Zm-3 9 2 2 4-5','M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18m0 4v5l-3 3']
+ICONS=json.loads((ROOT/'src/lib/note-cia-icons.json').read_text())
 def render(b,lang):
+ if b['kind']=='diagram':
+  svg=render_reference(b,lang)
+  validate_svg(svg)
+  return svg.encode()
  out=[]
  def text(value,x,y,width=43,size=18,bold=False,center=False):
   for paragraph in value.split('\n'):
@@ -45,12 +50,14 @@ def render(b,lang):
    y+=12;out.insert(start,rect(28,top,844,y-top));y+=26
  y=text(b['description'],28,y+36,43,17)+16
  svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 {y}" role="img" aria-labelledby="title desc" lang="{lang}"><title id="title">{escape(b["caption"])}</title><desc id="desc">{escape(b["description"])}</desc><rect width="900" height="{y}" fill="#fbfcfd"/><g fill="#18252c" font-family="Arial, Noto Sans CJK TC, sans-serif">'+''.join(out)+'</g></svg>\n'
+ validate_svg(svg)
+ return svg.encode()
+def validate_svg(svg):
  tree=ET.fromstring(svg)
  tags={'svg','title','desc','rect','g','text','path'}
- attrs={'viewBox','role','aria-labelledby','lang','id','width','height','fill','font-family','x','y','font-size','font-weight','rx','stroke','stroke-width','d','transform','text-anchor'}
+ attrs={'viewBox','role','aria-labelledby','lang','id','width','height','fill','font-family','x','y','font-size','font-weight','rx','stroke','stroke-width','stroke-dasharray','d','transform','text-anchor'}
  assert all(e.tag.split('}')[-1] in tags and all(k in attrs for k in e.attrib) for e in tree.iter())
  assert len(svg.encode())<100000
- return svg.encode()
 def main():
  today=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).date().isoformat()
  for path in sorted((ROOT/'content/ceh-notes').glob('*.json')):
@@ -59,7 +66,7 @@ def main():
   for p in n['parts']:
    if p['status']!='published' or p['publishedOn']>today:continue
    for lang in ['zh','en']:
-    figures=[b for s in p['text'][lang]['sections'] for b in s['body'] if b['kind'] in ['figure','recall']]
+    figures=[b for s in p['text'][lang]['sections'] for b in s['body'] if b['kind'] in ['figure','recall','diagram']]
     for b in figures:
      name=b.get('name','recall');data=render(b,lang);out=ROOT/f'site/images/ceh-notes/{n["date"]}-part-{p["number"]}-{name}-{lang}.svg'
      if '--check' in sys.argv:assert out.read_bytes()==data,f'Outdated: {out}'

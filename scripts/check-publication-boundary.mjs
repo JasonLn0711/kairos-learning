@@ -61,7 +61,8 @@ try {
   const publishedNote=JSON.parse(noteOriginal);publishedNote.expectedParts+=2;
   for(let i=0;i<2;i++) {
     const n=JSON.parse(noteOriginal);n.date=`209${8+i}-01-01`;
-    n.status=i===0?'draft':'published';n.publishedOn=n.revisedOn=n.parts[0].publishedOn=i===0?'2026-11-10':'2099-01-01';
+    n.status=i===0?'draft':'published';n.publishedOn=n.revisedOn=i===0?'2026-11-10':'2099-01-01';
+    for(const part of n.parts)part.publishedOn=n.publishedOn;
     const marker=i===0?'NOTES_DRAFT_MARKER':'NOTES_FUTURE_MARKER';
     n.text.zh.title=n.text.en.title=n.parts[0].text.zh.title=n.parts[0].text.en.title=marker;
     const path=`content/ceh-notes/${n.date}.json`;if(existsSync(path))throw Error('Reserved note fixture exists');

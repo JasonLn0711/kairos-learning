@@ -5,8 +5,9 @@ import {mkdirSync,readFileSync} from 'node:fs';
 const base = process.env.CEH_NOTES_BASE_URL || 'http://127.0.0.1:4227';
 const output = '.local/ceh-notes';
 const note = JSON.parse(readFileSync('content/ceh-notes/2026-11-10.json','utf8'));
+const blocksFor = lang => note.parts.flatMap(p=>p.text[lang].sections.flatMap(s=>s.body));
 const clean = text => text.replace(/\[([^\]]+)\]\(https:\/\/[^)]+\)/g,'$1').replace(/[\s·]/g,'');
-const texts = block => block.kind==='figure' ? [block.caption,block.description,...block.items.flatMap(i=>[i.title,i.body])] : block.kind==='recall' ? [block.caption,block.description,...block.cards.flatMap(c=>[c.question,c.references,...c.answer])] : block.kind==='checks' ? block.items.flatMap(q=>[q.prompt,...q.options,...q.rationales]) : block.kind==='list' ? block.items : block.kind==='table' ? [...block.headers,...block.rows.flat()] : block.kind==='answer' ? [block.summary,...block.paragraphs] : [block.text];
+const texts = block => (block.kind==='figure'||block.kind==='diagram') ? [block.caption,block.description,...block.items.flatMap(i=>[i.title,i.body])] : block.kind==='recall' ? [block.caption,block.description,...block.cards.flatMap(c=>[c.question,c.references,...c.answer])] : block.kind==='checks' ? block.items.flatMap(q=>[q.prompt,...q.options,...q.rationales]) : block.kind==='list' ? block.items : block.kind==='table' ? [...block.headers,...block.rows.flat()] : block.kind==='answer' ? [block.summary,...block.paragraphs] : [block.text];
 const overflow = page => page.evaluate(()=>document.documentElement.scrollWidth > innerWidth);
 mkdirSync(output, {recursive:true});
 const browser = await chromium.launch({headless:true});
@@ -24,17 +25,30 @@ try {
       assert.equal(await page.locator('h1').textContent(),title);
       await page.locator(`.reading-list a[href="${prefix}/ceh-notes/${note.date}/"]`).click();
       assert.equal(await page.locator('h1').textContent(),note.text[lang].title);
+      if(width===320){
+        const bootstrap=(await page.locator('script').allTextContents()).find(s=>s.includes('kit.start'));
+        assert.ok(bootstrap,'Missing application bootstrap');
+        const identifier=bootstrap.match(/__sveltekit_[a-z0-9]+/)?.[0];
+        const entry=bootstrap.match(/import\("([^"]*\/entry\/start\.[^"]+\.js)"\)/)?.[1];
+        assert.ok(identifier&&entry,'Unknown bootstrap contract');
+        const response=await page.request.get(new URL(entry,page.url()).href);assert.equal(response.status(),200);
+        assert.ok((await response.text()).includes(identifier),'HTML/client initialization identifiers differ; finish all sync/SSR fixture work before the final production build');
+      }
       const body=clean(await page.locator('main').textContent());
       for(const part of note.parts)for(const section of part.text[lang].sections){
         assert.ok(body.includes(clean(section.heading)),section.id);
         for(const block of section.body)for(const text of texts(block))assert.ok(body.includes(clean(text)),`${lang}: missing ${text}`);
       }
-      assert.equal(await page.locator('.note-figure[data-figure="workflow"] li').count(),4);
-      assert.equal(await page.locator('.cia li').count(),3);
-      assert.equal(await page.locator('.recall-card').count(),3);
-      assert.equal(await page.locator('.daily-note input[type="radio"]').count(),9);
+      assert.equal(await page.locator('.note-diagram[data-diagram="testing"] .numbered>li').count(),5);
+      assert.equal(await page.locator('#part-1 .cia li').count(),3);
+      assert.equal(await page.locator('.recall-card').count(),blocksFor(lang).filter(b=>b.kind==='recall').reduce((n,b)=>n+b.cards.length,0));
+      assert.equal(await page.locator('.daily-note input[type="radio"]').count(),blocksFor(lang).filter(b=>b.kind==='checks').flatMap(b=>b.items).reduce((n,q)=>n+q.options.length,0));
       assert.ok(!await overflow(page),`${lang} ${width} overflow`);
-      await page.screenshot({path:`${output}/daily-${lang}-${width}.png`,fullPage:true});
+      await page.screenshot({path:`${output}/daily-${lang}-${width}.png`});
+      if(width===320||width===1280)for(const part of note.parts){
+        await page.evaluate(number=>document.getElementById('part-'+number).scrollIntoView({block:'start'}),part.number);
+        await page.screenshot({path:`${output}/part-${part.number}-${lang}-${width}.png`});
+      }
       await page.locator('.recall-card details').first().locator('summary').focus();
       await page.keyboard.press('Enter');
       assert.equal(await page.locator('.recall-card details').first().getAttribute('open'),'');
@@ -46,11 +60,16 @@ try {
       assert.ok(textStyle.size>=16&&textStyle.line/textStyle.size>=1.7);
       await page.evaluate(()=>document.documentElement.style.fontSize='200%');
       assert.ok(!await overflow(page),`${lang} ${width} 200% overflow`);
-      await page.screenshot({path:`${output}/daily-${lang}-${width}-200.png`,fullPage:true});
+      await page.screenshot({path:`${output}/daily-${lang}-${width}-200.png`});
+      if(width===320||width===1280)for(const part of note.parts){
+        await page.evaluate(number=>document.getElementById('part-'+number).scrollIntoView({block:'start'}),part.number);
+        await page.screenshot({path:`${output}/part-${part.number}-${lang}-${width}-200.png`});
+      }
       await page.evaluate(()=>document.documentElement.style.fontSize='');
     }
-    for(const name of ['workflow','cia','recall']){
-      const path=`/images/ceh-notes/${note.date}-part-1-${name}-${lang}.svg`;
+    const figures=note.parts.flatMap(part=>part.text[lang].sections.flatMap(s=>s.body).filter(b=>['figure','diagram','recall'].includes(b.kind)).map(b=>({part:part.number,name:b.kind==='recall'?'recall':b.name})));
+    for(const {part,name} of figures){
+      const path=`/images/ceh-notes/${note.date}-part-${part}-${name}-${lang}.svg`;
       const link=page.locator(`a[href="${path}"]`);
       const [download]=await Promise.all([page.waitForEvent('download'),link.click()]);
       assert.deepEqual(readFileSync(await download.path()),readFileSync('site'+path));
@@ -72,21 +91,29 @@ try {
     const interactive=await browser.newContext();const active=await interactive.newPage();
     await active.goto(base+prefix+`/ceh-notes/${note.date}/`);
     await active.waitForFunction(()=>document.querySelector('.recall .controls button:last-child')?.disabled===false);
-    assert.equal(await active.locator('.recall-card').count(),1);
-    const next=active.locator('.recall .controls button').last(),previous=active.locator('.recall .controls button').first();
-    assert.equal(await previous.isDisabled(),true);
-    await next.focus();await active.keyboard.press('Enter');assert.match(await active.locator('.recall .count').innerText(),/2 \/ 3/);
-    await active.keyboard.press('Space');assert.match(await active.locator('.recall .count').innerText(),/3 \/ 3/);assert.equal(await next.isDisabled(),true);
-    await previous.focus();await active.keyboard.press('Enter');assert.match(await active.locator('.recall .count').innerText(),/2 \/ 3/);
-    const form=active.locator('.daily-note form'),submit=form.locator('button[type="submit"]');
-    assert.equal(await submit.isDisabled(),true);
-    for(const [i,answer] of [1,1,0].entries())await form.locator('fieldset').nth(i).locator('input').nth(answer).check();
-    await submit.click();assert.equal(await form.locator('.feedback section').count(),3);
-    assert.equal(await form.locator('.feedback').textContent().then(t=>t.includes(lang==='zh'?'再檢查理由':'Review your reasoning')),false);
-    await form.locator('fieldset').first().locator('input').first().check();assert.equal(await form.locator('.feedback').count(),0);
-    await submit.click();assert.ok(await form.locator('.feedback').textContent().then(t=>t.includes(lang==='zh'?'再檢查理由':'Review your reasoning')));
+    const recallGroups=blocksFor(lang).filter(b=>b.kind==='recall');
+    assert.equal(await active.locator('.recall-card').count(),recallGroups.length);
+    for(const [index,group] of recallGroups.entries()){
+      const figure=active.locator('.recall').nth(index),next=figure.locator('.controls button').last(),previous=figure.locator('.controls button').first();
+      assert.equal(await previous.isDisabled(),true);
+      for(let i=1;i<group.cards.length;i++){
+        await next.focus();await active.keyboard.press(i%2?'Enter':'Space');
+        assert.equal((await figure.locator('.count').innerText()).trim(),`${i+1} / ${group.cards.length}`);
+      }
+      assert.equal(await next.isDisabled(),true);
+      if(group.cards.length>1){await previous.focus();await active.keyboard.press('Enter');assert.equal((await figure.locator('.count').innerText()).trim(),`${group.cards.length-1} / ${group.cards.length}`);}
+    }
+    for(const [index,group] of blocksFor(lang).filter(b=>b.kind==='checks').entries()){
+      const form=active.locator('.daily-note form').nth(index),submit=form.locator('button[type="submit"]');
+      assert.equal(await submit.isDisabled(),true);
+      for(const [i,q] of group.items.entries())await form.locator('fieldset').nth(i).locator('input').nth(q.answer).check();
+      await submit.click();assert.equal(await form.locator('.feedback section').count(),group.items.length);
+      assert.equal(await form.locator('.feedback').textContent().then(t=>t.includes(lang==='zh'?'再檢查理由':'Review your reasoning')),false);
+      await form.locator('fieldset').first().locator('input').nth((group.items[0].answer+1)%group.items[0].options.length).check();assert.equal(await form.locator('.feedback').count(),0);
+      await submit.click();assert.ok(await form.locator('.feedback').textContent().then(t=>t.includes(lang==='zh'?'再檢查理由':'Review your reasoning')));
+    }
     assert.equal(await active.evaluate(()=>localStorage.length),0);
     await interactive.close();
   }
-  console.log('PASS: complete bilingual body; 4 widths and 200%; no-JS answers; keyboard; recall and checks; six SVG geometry/downloads; search');
+  console.log('PASS: complete bilingual body; 4 widths and 200%; no-JS answers; keyboard; recall and checks; all published SVG geometry/downloads; search');
 } finally { await browser.close(); }
