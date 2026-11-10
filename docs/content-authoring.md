@@ -643,3 +643,7 @@ v1.1.0／revision 4 保留原發布日與六個舊錨點，導言及十節完整
 CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整雙語。來源見[逐節對照](sources/m05-06/source-map.md)，發布證據見[回執](releases/2026-11-09-m05-06.md)。`scripts/m05_06_content.py --check`核對正式JSON與六份sanitizer SVG；`ScanEvidenceDiagram.svelte`承接paths共同主機＋兩平行面、gates五節點四連線、result四列合成結果。`scan-evidence-diagrams.ts`限制身份、固定路徑、種類、節點數與欄位。正文／搜尋／下載同源，不提供掃描或批改服務。
 
 單元為`tests/m05-06.test.ts`，瀏覽器為`node scripts/check-m05-06-browser.mjs`，正式站設定`M05_06_BASE_URL=https://learn.cs-kairos.com`；`node scripts/check-m05-06-svg.mjs`核對六圖字框與重疊。同期修改於隔離工作樹驗收，保留原工作目錄。
+
+## M05-07 draft validation lesson
+
+CEH26-M05-C07 displays M05-07 and replaces only the equivalent unpublished M05-11 topic. [Complete bilingual sources and subsection map](sources/m05-07/README.md) feed `scripts/m05_07_content.py`; `--check` verifies the generated draft. Existing sourceBody renders all eight sections and one default-closed reference answer; qa remains empty. `scripts/check-m05-07-static.py` builds only an ignored isolated copy for full static-text comparison, not browser testing or deployment. [Acceptance record](releases/2026-11-10-m05-07-draft.md) preserves pending browser and publication checks.

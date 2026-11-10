@@ -1,0 +1,475 @@
+{
+  "id": "CEH26-M05-C07",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "date": "2026-11-10",
+  "publishedOn": "2026-11-10",
+  "status": "draft",
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "分清誤報、漏報與未完成檢查，依主張、條件及證據驗證掃描結果。",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "上一課區分「設定了帳密」「登入成功」與「必要檢查完成」。這一課再往前一步：工具列出的問題，是否真的存在？工具沒列出的問題，又能不能當作不存在？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先記住：誤報是把沒有的問題報成有；漏報是有問題卻沒報出來。證據還不夠時，先寫「待確認」，再補查，不必硬選安全或不安全。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "一、先用煙霧警報器理解"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像廚房的警報器響了。你要先確認原因，才能分辨是火災，還是煮飯的蒸氣觸發了警報。反過來，警報器安安靜靜，也可能是沒有火災，或是電池沒電、裝錯位置、沒有偵測到。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "弱點掃描也是一樣：工具輸出是需要判讀的觀察，不是替現實蓋章的判決。 不過這個比喻有界線。弱點是可能被利用的缺陷，不是已經發生的入侵；確認弱點存在，也不能直接寫成「攻擊者已經進來」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Finding 是「檢查發現」，例如某個套件可能缺少修補、某項設定不符合要求。Validation 是「驗證」：把工具的主張、成立條件與目前能取得的證據對起來，決定這筆發現能支持什麼結論。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "二、四種結果：先分清工具說什麼、實際情況是什麼"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 Positive／Negative 指工具有沒有報出「指定的問題」，不是好消息或壞消息。True／False 則是這個判斷與查明的事實是否一致。"
+        },
+        {
+          "kind": "list",
+          "ordered": false,
+          "items": [
+            "True Positive，TP，真陽性：工具報有問題，驗證後確實有。例如工具報某個指定套件未修補，完整套件版本與適用公告都支持這項判斷。",
+            "False Positive，FP，偽陽性，常稱誤報：工具報有問題，但證據支持這項具體判斷不成立。NIST 在弱點評估情境下，將它定義為錯誤指示弱點存在的警告。[NIST 誤報定義](https://csrc.nist.gov/glossary/term/false_positive)。",
+            "False Negative，FN，偽陰性，常稱漏報：指定問題實際存在，工具卻沒有偵測出來。重點是要有其他證據支持「問題存在」，不是看到空白報告就直接宣布漏報。[NIST 漏報定義](https://csrc.nist.gov/glossary/term/false_negative)。",
+            "True Negative，TN，真陰性：在已定義的對象、時間與問題範圍內，工具沒有報警，且查核支持該問題不存在。這不是「整台系統永久安全」。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "用一句話記：工具有報、事實沒有，是誤報；工具沒報、事實有，是漏報。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實務上往往暫時不知道「事實」是哪一格，所以還需要「待確認」「檢查未完成」「不在本次範圍」等狀態。這些是處理狀態，不是把不確定性偽裝成真陰性。沒有成功取得套件清單時，先記錄覆蓋缺口；待找到實際弱點證據，才能進一步判定漏報。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "三、誤報怎麼來：線索相同，實際條件可能不同"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見來源是產品辨識或適用條件不完整。例如工具根據公開回應中的名稱和版本判斷，卻沒有核對實際產品分支、完整套件修訂號、相關功能及修補情況。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡要認識 backport，安全修正移植。維護商可能把新版本中的安全修正，移植到仍在維護的舊版本。主要版本看起來沒變，完整套件修訂卻已包含修正。Red Hat 明確說明，僅以版本號判斷、沒有考慮 backport 的掃描工具可能產生誤報。[Red Hat 安全修正移植說明](https://access.redhat.com/security/updates/backporting)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以查核順序不是「看到舊版本就說危險」，也不是「聽說有 backport 就說安全」，而是核對："
+        },
+        {
+          "kind": "list",
+          "ordered": true,
+          "items": [
+            "這是誰維護的產品與哪個分支？",
+            "公告要求的完整修補版本是什麼？",
+            "這台目標實際安裝且正在執行哪個版本？",
+            "相關功能、設定或其他必要條件是否符合？"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "還要分清誤報、已修補、已緩解、接受風險。如果第一次掃描時問題確實存在，後來才修好，那是「真實發現已修補」，不能回頭把原始報告改成誤報。用防火牆限制入口，可能是緩解；管理者同意暫時承擔風險，是處置決定。兩者都沒有自動證明原來的技術發現是錯的。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "四、漏報怎麼來：工具沒有看見，不等於目標沒有"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能原因包括：目標沒有被納入、掃描時不在線、必要連線受阻、身分驗證失敗、權限不足、檢查規則沒啟用或沒有更新。也有些問題需要理解應用程式的權限或業務規則，單純版本檢查回答不了。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如一個合成訂單網站，套件都已更新，但一般測試帳號仍能讀到另一個測試帳號的假訂單。版本掃描沒有報告這件事，不足以推翻授權檢查的證據。若這類問題本來就不在該工具的檢查範圍，應清楚記為能力或範圍缺口，而不是含糊宣稱「工具已完整檢查且沒有漏洞」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "降低漏查機會的方法，是把資產清單、工具能力、認證成功、檢查完成情況與實際輸出一起檢查，再依問題搭配設定審查、套件證據或經授權的功能測試。NIST 的評估指南也提醒，掃描規則需要更新，結果需要人工判讀，其他檢查方法可補充工具的盲區。[NIST SP 800-115，第 4.3 節](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf)。這份 2008 年指南在此用於基本方法，不當作最新產品介面說明。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩個工具得到相同結果，可以增加可比較的資料，但不是自動「證實」。如果兩者都依同一個版本字串或同一份資料庫推測，也可能一起判錯。要看證據來源與方法是否真正補上缺口，而不是投票決定真相。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "五、驗證的五個步驟：從主張走到有依據的結論"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一步，說清楚正在驗證哪一項主張。 是「某套件未修補」「某個公開入口可到達」，還是「某身分能讀取某資料」？三者需要的證據不同。先保存原始報告與檢查識別碼，不只留紅色嚴重度標籤。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二步，核對對象、時間與檢查條件。 記錄目標資產、元件、掃描時間、來源位置、規則版本、認證與必要檢查是否成功。同一個 IP 在不同時間可能對應不同資產；修補前後的結果也不能當成同一狀態。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三步，用適合的資料交叉核對。 版本型警告看實際套件與原廠公告；設定型問題看有效設定及政策；授權型問題看指定身分的允許與拒絕結果。先採用能回答問題、影響較小的方式。驗證不一定需要執行利用程式，更不需要為了證明問題而取走真實資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第四步，把已知與限制分開寫。 可以寫「已確認指定套件符合受影響條件，尚未做利用驗證」，或「已取得修補套件證據，執行中程序是否載入仍待確認」。嚴重度描述可能後果；證據可信程度描述你多有把握。高分不能補足缺失的證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第五步，決定下一步並保留追溯。 已確認就交給後續處置；證據足以支持誤報就保留理由和適用範圍；尚有缺口就指定要補的資料。若使用工具的例外或隱藏規則，要限定資產、發現與覆核條件，避免把整類警告永久蓋掉。Tenable 的驗證流程同樣要求用支持證據調查潛在誤報，並持續檢查認證掃描的成功情況。[Tenable 驗證與調整指南](https://docs.tenable.com/quick-reference/vulnerability-management-adoption-roadmap/Content/validation-tuning.htm)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "需要更進一步測試時，先確認授權環境、範圍、可能影響與停止條件。驗證的深度由要回答的問題及授權決定，不由工具是否提供某個按鈕決定。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "六、完整合成案例：三份報告，要分開下結論"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下主機、套件與修訂號全為虛構，沒有對應真實 CVE，也沒有執行掃描。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "案例 A：有警告，但特定版本判斷不成立。 工具看到「小樹伺服器 2.4」，判為缺少某項修補。維護商的合成公告說明，2.4 的維護分支從套件修訂 r8 起已含該安全修正。管理端證據顯示，掃描當時實際執行的是 r9，而且已核對相同元件及相關條件。這支持把「該元件缺少這項修補」判為誤報；原始警告與公告仍保留，不延伸成整台主機沒有其他問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 r9 是掃描之後才裝上去，結論就要改成「修補後已驗證」，不能沿用前面的誤報判斷。時間會改變結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "案例 B：零項發現，卻沒有完成必要檢查。 第二台主機的報告顯示零項套件漏洞，但登入失敗，沒有取得套件資料。此時合理狀態是「套件檢查未完成、結果不足」。如果後續管理端證據確認掃描當時正在執行受影響且未修補的套件，才有依據指出本次評估漏掉了真實問題，並記錄原因是認證與覆蓋不足。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "案例 C：真實弱點仍在，但入口已受到限制。 第三台主機確實執行受影響套件。經核准的網路限制降低了某個外部來源的可到達性，套件本身仍未修補。合理記錄是「弱點已確認，已有指定範圍的緩解，修補與複驗待辦」，不是「誤報」。其他來源位置與使用方式是否仍可觸發，要另外查核。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三個案例分別回答：原判斷是否錯誤、檢查是否漏掉問題，以及已確認問題目前怎麼處置。三種問題放在同一個「已關閉」欄位，容易失去重要資訊。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "七、防護端應留下什麼紀錄？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一筆能讓別人接手的驗證紀錄，至少包含："
+        },
+        {
+          "kind": "list",
+          "ordered": false,
+          "items": [
+            "對象與原主張：哪個資產、元件、檢查項目、掃描時間，以及工具到底說了什麼。",
+            "取得證據的條件：掃描來源、工具／規則版本、認證與檢查完成狀態。",
+            "支持與反對證據：公告連結、完整套件版本、有效設定、觀察時間與必要條件。",
+            "目前結論與限制：已確認、誤報、待確認或檢查未完成；只涵蓋哪些對象與時間。",
+            "後續動作：誰要補資料、修正或覆核，何時重新檢查，以及什麼變更會讓原結論需要重看。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "報告只放足以複核的證據，帳號用代號，不放密碼、金鑰、工作階段 token 或不必要的個資。關閉警告與修正問題是兩回事；報表變乾淨，要能說清楚原因。"
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "八、紙上練習與一個小檢核"
+        },
+        {
+          "kind": "paragraph",
+          "text": "環境只需紙張或本機文字檔，不連任何目標，也不建立掃描帳號。"
+        },
+        {
+          "kind": "list",
+          "ordered": true,
+          "items": [
+            "把案例 A、B、C 各寫一列，分成「工具主張」「獨立證據」「目前狀態」。",
+            "對每一列補上一項會改變結論的新資訊，例如修補時間、認證狀態或另一個可到達來源。",
+            "寫出下一步要取得的證據，避免用「再掃一次看看」取代具體問題。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "預期產出是一張可追溯的判讀紀錄，不是實際漏洞驗證報告。練習後保留或刪除本機草稿即可，沒有測試設備需要復原。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "小檢核：某主機掃描顯示「零項漏洞」，但認證失敗，必要的套件檢查沒有執行。現在最合理的是「真陰性」「已證實漏報」，還是「檢查未完成、待確認」？請選一個，並說明還需要哪一項證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這課的核心是：先釐清工具的主張，再用對應證據確認；保留不確定性，比把空白報告當安全證明更有用。"
+        },
+        {
+          "kind": "answer",
+          "id": "answer-validation",
+          "summary": "參考答案：零項漏洞與未完成檢查",
+          "paragraphs": [
+            "參考答案：檢查未完成、待確認。",
+            "認證失敗且必要的套件檢查沒有執行，所以「零項漏洞」只表示這份輸出沒有列出發現，無法證明指定弱點不存在。也不能現在就說已證實漏報，因為還沒有獨立證據確認掃描當時確實存在該弱點。",
+            "下一步可取得經授權管理端提供的完整套件版本、執行狀態與觀察時間，再和適用的維護商公告比對；或先處理認證問題，依原授權範圍完成指定檢查。這些是後續要做的事，不是已完成的驗證。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Distinguish false positives, false negatives and incomplete checks; validate scan results against claims, conditions and evidence.",
+      "sections": [],
+      "sourceBody": [
+        {
+          "kind": "paragraph",
+          "text": "The previous lesson distinguished “credentials configured,” “login succeeded” and “required checks completed.” This lesson goes one step further: Does a problem listed by a tool actually exist? Can we treat a problem the tool did not list as nonexistent?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Remember: A false positive reports a problem that is not there; a false negative misses a problem that is there. When evidence is insufficient, write “pending verification” and investigate further. You do not have to force a choice between secure and insecure."
+        },
+        {
+          "kind": "heading",
+          "id": "section-1",
+          "text": "1. Start with a smoke alarm"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Imagine the alarm in your kitchen goes off. You need to identify the cause before deciding whether there is a fire or steam from cooking triggered the alarm. Conversely, a quiet alarm might mean there is no fire, or its battery is dead, it is in the wrong place, or it failed to detect the fire."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Vulnerability scanning works similarly: Tool output is an observation that needs interpretation, not a verdict certifying reality. However, this analogy has limits. A vulnerability is a flaw that could be exploited, not an intrusion that has already happened. Confirming a vulnerability does not justify writing “an attacker has already entered.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A finding is something a check identifies, such as a package that may lack a patch or a setting that fails a requirement. Validation means matching the tool’s claim, the conditions required for that claim, and the evidence currently available to decide what conclusion the finding supports."
+        },
+        {
+          "kind": "heading",
+          "id": "section-2",
+          "text": "2. Four outcomes: separate what the tool says from what is actually true"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Here, Positive and Negative describe whether the tool reports the specified problem, not good or bad news. True and False describe whether that judgment agrees with established facts."
+        },
+        {
+          "kind": "list",
+          "ordered": false,
+          "items": [
+            "True positive, TP: the tool reports a problem and validation confirms it. For example, a tool reports that a particular package is unpatched, and the complete package version and applicable advisory support that judgment.",
+            "False positive, FP: the tool reports a problem, but evidence supports rejecting that specific judgment. In vulnerability assessment, NIST defines this as an alert that incorrectly indicates a vulnerability is present. [NIST false-positive definition](https://csrc.nist.gov/glossary/term/false_positive).",
+            "False negative, FN: the specified problem actually exists, but the tool does not detect it. The key is having other evidence that the problem exists, rather than declaring a false negative merely because a report is blank. [NIST false-negative definition](https://csrc.nist.gov/glossary/term/false_negative).",
+            "True negative, TN: within a defined target, time and problem scope, the tool does not alert and investigation supports the absence of that problem. This does not mean “the entire system is permanently secure.”"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "In one sentence: Reported by the tool but absent in reality means a false positive; not reported by the tool but present in reality means a false negative."
+        },
+        {
+          "kind": "paragraph",
+          "text": "In practice, we often do not yet know which box reality belongs in. That is why we also need statuses such as “pending verification,” “checks incomplete” and “outside this assessment’s scope.” These are handling statuses, not ways to disguise uncertainty as a true negative. If the package inventory could not be obtained, first record a coverage gap. Only after obtaining evidence of an actual vulnerability can you determine that a false negative occurred."
+        },
+        {
+          "kind": "heading",
+          "id": "section-3",
+          "text": "3. Where false positives come from: matching clues can hide different conditions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A common cause is incomplete product identification or incomplete applicability checks. For example, a tool may judge a product from the name and version in a public response without checking the actual product branch, full package revision, relevant features and patch status."
+        },
+        {
+          "kind": "paragraph",
+          "text": "This introduces backporting, the transfer of a security fix. A maintainer may take a security fix from a newer version and apply it to an older version that is still maintained. The main version can appear unchanged even though the full package revision includes the fix. Red Hat explicitly explains that scanners which rely only on version numbers without accounting for backports can produce false positives. [Red Hat on security backporting](https://access.redhat.com/security/updates/backporting)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The checking sequence is therefore neither “an old version means danger” nor “someone mentioned a backport, so it is safe.” Instead, check:"
+        },
+        {
+          "kind": "list",
+          "ordered": true,
+          "items": [
+            "Who maintains this product, and which branch is it on?",
+            "What complete patched version does the advisory require?",
+            "Which version is actually installed and running on this target?",
+            "Do the relevant features, settings and other necessary conditions apply?"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Also distinguish false positive, patched, mitigated and risk accepted. If the problem really existed during the first scan and was fixed afterward, it is a “confirmed finding, now patched.” You cannot retrospectively relabel the original report as a false positive. Restricting an entry point with a firewall may be mitigation; a manager agreeing to bear the risk temporarily is a treatment decision. Neither automatically proves that the original technical finding was wrong."
+        },
+        {
+          "kind": "heading",
+          "id": "section-4",
+          "text": "4. Where false negatives come from: unseen by a tool does not mean absent from the target"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Possible causes include a target being excluded, offline during the scan, blocked necessary connections, failed authentication, insufficient permissions, or check rules that were disabled or outdated. Some problems also require understanding application authorization or business rules; version checks alone cannot answer them."
+        },
+        {
+          "kind": "paragraph",
+          "text": "For example, in a synthetic order website, every package is current, but an ordinary test account can still read another test account’s fictitious orders. The absence of this issue from a version scan does not refute the authorization-check evidence. If this class of issue is outside the tool’s intended coverage, clearly record a capability or scope gap instead of vaguely claiming “the tool checked everything and found no vulnerabilities.”"
+        },
+        {
+          "kind": "paragraph",
+          "text": "To reduce missed checks, examine the asset inventory, tool capabilities, authentication success, check-completion status and actual output together. Then supplement them with configuration review, package evidence or authorized functional testing appropriate to the question. NIST’s assessment guide also notes that scan rules need updates, results require human interpretation, and other assessment methods can fill tool blind spots. [NIST SP 800-115, section 4.3](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf). This 2008 guide is used here for basic methodology, not as documentation of current product interfaces."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Two tools producing the same result can add comparable information, but that does not automatically “confirm” it. If both infer from the same version string or database, both may be wrong in the same way. Ask whether the evidence sources and methods really fill the gap, rather than deciding truth by a vote."
+        },
+        {
+          "kind": "heading",
+          "id": "section-5",
+          "text": "5. Five validation steps: from a claim to an evidence-backed conclusion"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 1: State exactly which claim is being validated. Is it “a package is unpatched,” “a public entry point is reachable,” or “a particular identity can read particular data”? These need different evidence. Preserve the original report and check identifier, not just a red severity label."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 2: Check the target, time and assessment conditions. Record the target asset, component, scan time, source location, rule version, and whether authentication and required checks succeeded. The same IP can refer to different assets at different times; results before and after a patch cannot be treated as the same state either."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 3: Cross-check with suitable information. For version warnings, examine actual packages and vendor advisories; for configuration issues, examine effective settings and policy; for authorization issues, examine allowed and denied results for the specified identity. Start with a lower-impact method that answers the question. Validation does not necessarily require running an exploit, and certainly does not require taking real data to prove a point."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 4: Write known facts and limitations separately. You might write “the specified package is confirmed to meet the affected conditions; exploitation has not been tested,” or “evidence of the patched package is available, but whether the running process loaded it remains unconfirmed.” Severity describes potential consequences; confidence describes how certain you are. A high score cannot supply missing evidence."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Step 5: Decide the next action and preserve traceability. Route confirmed findings for treatment. When evidence supports a false positive, retain the reasoning and applicable scope. When gaps remain, specify the missing information. Tool exceptions or suppression rules should be limited to the asset, finding and review conditions, rather than permanently hiding an entire class of alerts. Tenable’s validation process likewise calls for investigating potential false positives with supporting evidence and continually checking credentialed-scan success. [Tenable validation and tuning guide](https://docs.tenable.com/quick-reference/vulnerability-management-adoption-roadmap/Content/validation-tuning.htm)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If further testing is needed, first confirm the authorized environment, scope, potential impact and stop conditions. The question being answered and the authorization determine validation depth, not whether the tool offers a particular button."
+        },
+        {
+          "kind": "heading",
+          "id": "section-6",
+          "text": "6. Complete synthetic example: three reports need separate conclusions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "The hosts, packages and revision numbers below are entirely fictional. They do not correspond to real CVEs, and no scans were performed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Case A: An alert is present, but its specific version judgment does not hold. A tool sees “Little Tree Server 2.4” and judges that it lacks a particular patch. The maintainer’s synthetic advisory says the maintained 2.4 branch includes that security fix from package revision r8 onward. Administrative evidence shows that r9 was actually running at scan time, with the same component and relevant conditions checked. This supports classifying “this component lacks this patch” as a false positive. Preserve the original alert and advisory, and do not extend the conclusion to say the entire host has no other problems."
+        },
+        {
+          "kind": "paragraph",
+          "text": "If r9 was installed only after the scan, the conclusion changes to “verified after patching.” The previous false-positive judgment no longer applies. Timing changes the conclusion."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Case B: Zero findings, but required checks were not completed. The second host’s report lists zero package vulnerabilities, but login failed and package data was not obtained. The appropriate status is “package checks incomplete; insufficient results.” Only if later administrative evidence confirms that an affected, unpatched package was running at scan time is there a basis to say this assessment missed a real problem, recording insufficient authentication and coverage as the cause."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Case C: A real vulnerability remains, but an entry point is restricted. The third host really is running an affected package. Approved network restrictions reduce reachability from a particular external source, but the package itself is still unpatched. Record “vulnerability confirmed; mitigation in a specified scope is in place; patching and revalidation pending,” not “false positive.” Whether other source locations or usage paths can still trigger it requires separate checking."
+        },
+        {
+          "kind": "paragraph",
+          "text": "These three cases answer different questions: whether the original judgment was wrong, whether checks missed a problem, and how a confirmed problem is currently being treated. Putting all three into one “closed” field can erase important information."
+        },
+        {
+          "kind": "heading",
+          "id": "section-7",
+          "text": "7. What should defenders record?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A validation record that another person can take over should include at least:"
+        },
+        {
+          "kind": "list",
+          "ordered": false,
+          "items": [
+            "Target and original claim: the asset, component, check, scan time and what the tool actually said.",
+            "Evidence-gathering conditions: scan source, tool/rule version, authentication and check-completion status.",
+            "Supporting and opposing evidence: advisory links, full package versions, effective settings, observation time and necessary conditions.",
+            "Current conclusion and limits: confirmed, false positive, pending verification or checks incomplete; the specific targets and times covered.",
+            "Follow-up actions: who will supply missing data, fix or review the issue, when to recheck, and which changes require revisiting the original conclusion."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Include only evidence needed for review. Use account aliases and omit passwords, keys, session tokens and unnecessary personal information. Closing an alert and fixing a problem are different things; be able to explain why a report looks cleaner."
+        },
+        {
+          "kind": "heading",
+          "id": "section-8",
+          "text": "8. Paper exercise and a quick check"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You need only paper or a local text file. Do not connect to any target or create a scan account."
+        },
+        {
+          "kind": "list",
+          "ordered": true,
+          "items": [
+            "Write one row each for cases A, B and C, with columns for “tool claim,” “independent evidence” and “current status.”",
+            "Add one new fact to each row that would change the conclusion, such as patch timing, authentication status or another reachable source.",
+            "State what evidence to obtain next. Do not substitute “try another scan” for a specific question."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "The expected output is a traceable interpretation record, not a real vulnerability-validation report. Keep or delete your local draft afterward; there is no test equipment to restore."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Quick check: A host scan reports “zero vulnerabilities,” but authentication failed and the required package checks did not run. Is the most reasonable status now “true negative,” “confirmed false negative,” or “checks incomplete, pending verification”? Choose one and explain which additional evidence is needed."
+        },
+        {
+          "kind": "paragraph",
+          "text": "The core lesson: Clarify the tool’s claim first, then verify it with matching evidence. Preserving uncertainty is more useful than treating a blank report as a security certificate."
+        },
+        {
+          "kind": "answer",
+          "id": "answer-validation",
+          "summary": "Reference answer: zero vulnerabilities and incomplete checks",
+          "paragraphs": [
+            "Reference answer: checks incomplete, pending verification.",
+            "Authentication failed and the required package checks did not run. “Zero vulnerabilities” therefore means only that this output lists no findings; it does not prove the specified vulnerability is absent. Nor can we call this a confirmed false negative yet, because there is no independent evidence that the vulnerability actually existed at scan time.",
+            "A next step is to obtain the full package version, running state and observation time from an authorized administrator and compare them with the applicable maintainer advisory. Alternatively, first resolve the authentication problem and complete the specified checks within the original authorized scope. These are future actions, not validation already performed."
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -23,7 +23,7 @@ export type ConceptEntry = { id: string; module: string; title: Bilingual; displ
 export type ConceptVisual = {kind:'flow'|'cards';caption:string;description:string;items:{title:string;body:string}[]};
 export type ConceptBlock = ConceptVisual | {kind:'table';caption:string;headers:string[];rows:string[][]} | {kind:'details'|'step';heading:string;paragraphs:string[];code?:string;id?:string};
 export type ConceptCheck = {id:string;answer:number;text:Partial<Bilingual<{prompt:string;options:string[];rationales:string[]}>>};
-export type SourceBlock = {kind:'sourceImage';src:string;alt:string;caption:string;openLabel:string;downloadLabel:string;width:number;height:number} | {kind:'answer';id:string;summary:string;paragraphs:string[]} | {kind:'dnsDiagram';id:'lookup'|'resolution'|'cname'|'axfr'} | {kind:'visual';visual:ConceptVisual;src:string;downloadLabel:string} | {kind:'accessDiagram';src:string;texts:string[]} | {kind:'paragraph'|'heading'|'code';text:string;id?:string} | {kind:'list';items:string[]} | {kind:'table';headers:string[];rows:string[][]};
+export type SourceBlock = {kind:'sourceImage';src:string;alt:string;caption:string;openLabel:string;downloadLabel:string;width:number;height:number} | {kind:'answer';id:string;summary:string;paragraphs:string[]} | {kind:'dnsDiagram';id:'lookup'|'resolution'|'cname'|'axfr'} | {kind:'visual';visual:ConceptVisual;src:string;downloadLabel:string} | {kind:'accessDiagram';src:string;texts:string[]} | {kind:'paragraph'|'heading'|'code';text:string;id?:string} | {kind:'list';items:string[];ordered?:boolean} | {kind:'table';headers:string[];rows:string[][]};
 export type ConceptDiscussion = {id:string;format?:'markdown';text:Partial<Bilingual<{question:string;originalQuestion?:string;answer:string[];explanation?:string[];editorial?:string[]}>>};
 export type ConceptTeaching = {
   id: string; revision: number; contentVersion?: string; date: string; status: 'draft' | 'published'; publishedOn: string;
@@ -41,7 +41,7 @@ export function compareContentVersions(a: string, b: string): number {
 export const conceptVersionLabel = (t: Pick<ConceptTeaching,'revision'|'contentVersion'>) => `v${t.contentVersion ?? t.revision}`;
 export const conceptModule = (id: string) => id.startsWith('CEH26-') ? id.slice(6,9).toLowerCase() : id.slice(0,3).toLowerCase();
 // Public locators follow the module numbering; internal curriculum IDs remain immutable.
-export const conceptSlug = (id: string) => /^CEH26-(?:M04-C(?:0[1-9]|10)|M05-C0[456])$/.test(id) ? `${conceptModule(id)}-${id.slice(-2)}` : id.toLowerCase();
+export const conceptSlug = (id: string) => /^CEH26-(?:M04-C(?:0[1-9]|10)|M05-C0[4567])$/.test(id) ? `${conceptModule(id)}-${id.slice(-2)}` : id.toLowerCase();
 export const conceptPath = (id: string, lang: Locale) => localized(`/courses/ceh/v13/${conceptModule(id)}/concepts/${conceptSlug(id)}/`,lang);
 // One catalog controls routes, search, navigation and serialized public teaching.
 export function createConceptCatalog(entries: ConceptEntry[], teachings: ConceptTeaching[], today: string) {
@@ -50,9 +50,9 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
   const ids = new Set<string>();
   const paths = new Set<string>();
   for (const c of entries) {
-    if (!(/^(?:M\d{2}-\d{2}|CEH26-(?:M04-C(?:0[1-9]|10)|M05-C0[456]))$/.test(c.id)) || c.module !== conceptModule(c.id) || ids.has(c.id)) fail(`invalid or duplicate ID ${c.id}`);
+    if (!(/^(?:M\d{2}-\d{2}|CEH26-(?:M04-C(?:0[1-9]|10)|M05-C0[4567]))$/.test(c.id)) || c.module !== conceptModule(c.id) || ids.has(c.id)) fail(`invalid or duplicate ID ${c.id}`);
     for (const lang of ['zh','en'] as const) if (!nonempty(c.title?.[lang])) fail(`${c.id}: missing ${lang} title`);
-    if(c.displayId !== undefined && (!/^CEH26-(?:M04-C(?:0[1-9]|10)|M05-C0[456])$/.test(c.id) || ![`CEH ${conceptModule(c.id).toUpperCase()}-${c.id.slice(-2)}`,`${conceptModule(c.id).toUpperCase()}-${c.id.slice(-2)}`].includes(c.displayId))) fail(`${c.id}: invalid display identity`);
+    if(c.displayId !== undefined && (!/^CEH26-(?:M04-C(?:0[1-9]|10)|M05-C0[4567])$/.test(c.id) || ![`CEH ${conceptModule(c.id).toUpperCase()}-${c.id.slice(-2)}`,`${conceptModule(c.id).toUpperCase()}-${c.id.slice(-2)}`].includes(c.displayId))) fail(`${c.id}: invalid display identity`);
     const path=conceptPath(c.id,'zh');
     if(paths.has(path)) fail(`duplicate public path ${path}`);
     paths.add(path);
@@ -77,7 +77,7 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
           else if(block.kind==='accessDiagram') { if(block.src!=='/images/ceh/m04-01-access-results.svg' || block.texts?.length!==8 || !block.texts.every(nonempty)) fail(`${t.id}: invalid access diagram`); }
           else if(block.kind==='table') { if(!block.headers?.length || !block.headers.every(nonempty) || !block.rows?.length || !block.rows.every(row=>row.length===block.headers.length&&row.every(nonempty))) fail(`${t.id}: invalid source table`); }
           else if(block.kind==='answer') { if(!/^answer-[a-z0-9-]+$/.test(block.id)||headings.has(block.id)||!nonempty(block.summary)||!block.paragraphs?.length||!block.paragraphs.every(nonempty)) fail(`${t.id}: invalid reference answer`);headings.add(block.id); }
-          else if(block.kind==='list') { if(!block.items?.length||!block.items.every(nonempty)) fail(`${t.id}: invalid source list`); }
+          else if(block.kind==='list') { if(!block.items?.length||!block.items.every(nonempty)||(block.ordered!==undefined&&typeof block.ordered!=='boolean')) fail(`${t.id}: invalid source list`); }
           else if(['paragraph','heading','code'].includes(block.kind)) {
             if(!nonempty(block.text)) fail(`${t.id}: invalid source text`);
             if(block.kind==='heading') {if(!block.id||!/^[a-z][a-z0-9-]*$/.test(block.id)||headings.has(block.id)||block.id.startsWith('qa-')) fail(`${t.id}: invalid source heading`);headings.add(block.id!);}
@@ -100,6 +100,8 @@ export function createConceptCatalog(entries: ConceptEntry[], teachings: Concept
       }
     }
     if (!t.text.zh.sourceBody && !t.text.en.sourceBody && JSON.stringify(t.text.zh.sections.map(s=>s.id)) !== JSON.stringify(t.text.en.sections.map(s=>s.id))) fail(`${t.id}: bilingual section IDs differ`);
+    const orderedShape = (body?: SourceBlock[]) => (body??[]).flatMap((b,i)=>b.kind==='list'&&b.ordered===true?[[i,b.items.length]]:[]);
+    if (JSON.stringify(orderedShape(t.text.zh.sourceBody))!==JSON.stringify(orderedShape(t.text.en.sourceBody))) fail(`${t.id}: bilingual ordered lists differ`);
     const checkIds=new Set<string>();
     for(const q of t.checks ?? []) {
       if(!/^[a-zA-Z0-9-]+$/.test(q.id) || checkIds.has(q.id) || !Number.isInteger(q.answer) || q.answer<0 || q.answer>3) fail(`${t.id}: invalid test identity/key`);
