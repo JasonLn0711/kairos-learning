@@ -653,3 +653,17 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 正文沿用SourceBody的段落、清單及可鍵盤捲動表格。`NoteFigure`承接四節點向下workflow與三欄平行CIA；`NoteRecall`承接三張卡，無JavaScript可閱讀三卡與原生答案；`NoteChecks`保留供稿三選項並提供本頁逐項回饋，不儲存、不外送或宣稱學習完成。圖示的節點、文字、搜尋與SVG共用正式JSON；`python3 scripts/ceh_notes_svg.py --check` 已納入validate:release，輸出固定allowlist且每圖小於100000bytes。新領域圖需先擴充契約，禁止以任意HTML／SVG繞過。
 
 維護檢查：`tests/ceh-notes.test.ts` 與 `node scripts/check-ceh-notes-browser.mjs`；後者檢查雙語全文、四尺寸／200%、無JS、鍵盤、回憶卡與情境檢核、六SVG文字邊界與下載。設定 `CEH_NOTES_BASE_URL=https://learn.cs-kairos.com` 可回讀正式站。首次供稿採用與視覺差異見[來源對照](sources/ceh-notes/2026-11-10/part-01/source-map.md)，實測與發布見[回執](releases/2026-11-10-ceh-notes-part-01.md)。
+
+### 三份新供稿重製契約
+
+新供稿、原版與逐小節追溯見[重製來源](sources/ceh-notes/2026-11-10/reconstruction/source-map.md)，本輪實測與發布證據見[重製回執](releases/2026-11-10-ceh-notes-reconstruction.md)。`contentVersion` 是三段語意版本，`revision` 保留內部計數；遷移基準與歷史顯示分開記錄，保留原發布日。
+
+`diagram` 區塊只接受 `kind/name/caption/description/items`，每個 item 僅含 title/body。`src/lib/note-diagram-specs.json` 共用固定圖名、節點數與版型：overview 3、encryption 3、defense 5、hats 3、roe 5、testing 5、decision 4、hash 2、compare 2、tls 10。NoteDiagram 以 HTML、容器查詢與固定 SVG 圖示／箭頭呈現；CIA 仍沿 NoteFigure 三欄平行卡。TLS 固定兩端與訊息方向，虛線表示伺服器回覆，並非加密狀態；本機計算／驗證不加成網路傳送箭頭。模型拒絕任意圖形標記及額外欄位，HTML／搜尋／SVG 共用文字。
+
+回憶卡支援 1–12 張，各卡須有問題、題號參考與至少一段參考答案；新供稿分別需要 8／6 張。檢核維持 3 或 4 選項，解析數與選項數相同，答案索引不能越界。未提供題文或答案的部分須保留來源界線；開放題不新增無服務支援的提交／批改承諾。
+
+`scripts/ceh_note_reference_svg.py` 由現有 `ceh_notes_svg.py` 呼叫，沿固定元素／屬性 allowlist 與 100000 bytes 上限；不要手改生成 SVG。`node scripts/check-note-reference-diagrams.mjs` 建立獨立 SSR fixture，驗 11 張參考圖的雙語文字、四尺寸／200%、無 JS、下載與 SVG 字框／重疊。它不修改 canonical 內容或解鎖草稿，不能代替完整文章或正式站驗收。完整頁面的 `check-ceh-notes-browser.mjs` 依目前已接入圖名檢查下載與搜尋；現行驗收涵蓋三部分全文、17 張回憶卡及所有檢核組與 30 份 SVG。
+
+三份正文由 `scripts/reconstruct-ceh-notes.py` 與 `ceh_note_part1.py`／`ceh_note_part2.py`／`ceh_note_part3.py` 重建；`--check` 與 `scripts/audit-ceh-note-adoption.py --check` 已納入 validate:release，驗證同步、原附件雜湊及明確逐標題採用映射。原始資料不可由生成結果覆寫。
+
+驗收順序：單元／型別 → SSR 圖解 fixture → 發布邊界與最終 production build → validate:release → 新 preview／完整頁面瀏覽器。SSR fixture 或 SvelteKit sync 會刷新生成檔，不可與 production build 並行，也不可在最終建置後執行而沿用舊 preview；完整頁面檢查同時核對 HTML／client bootstrap 識別碼。

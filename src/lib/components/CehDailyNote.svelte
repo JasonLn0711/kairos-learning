@@ -6,16 +6,18 @@
   import NoteFigure from './NoteFigure.svelte';
   import NoteRecall from './NoteRecall.svelte';
   import NoteChecks from './NoteChecks.svelte';
+  import NoteDiagram from './NoteDiagram.svelte';
   let {note,lang}:{note:DailyNote;lang:Locale}=$props();
   const zh=$derived(lang==='zh');
 </script>
 <div class="daily-note">
   <p class="lead">{note.text[lang].summary}</p>
-  <ArticleMetadata {lang} publishedOn={note.publishedOn} revisedOn={note.revisedOn} version={'v'+note.revision} author="CS Kairos"/>
+  <ArticleMetadata {lang} publishedOn={note.publishedOn} revisedOn={note.revisedOn} version={'v'+(note.contentVersion??'1.0.0')} author="CS Kairos"/>
   <p class="notice">{zh?`同一天的筆記集中於本頁；目前已整理 ${note.parts.length} / ${note.expectedParts} 部分。`:`Notes for this date share this page; ${note.parts.length} / ${note.expectedParts} parts are currently available.`}</p>
   <nav class="toc" aria-label={zh?'本文導覽':'On this page'}><ol>{#each note.parts as part}<li><a href={'#part-'+part.number}>{part.text[lang].title}</a><ul>{#each part.text[lang].sections as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{/each}</ul></li>{/each}<li><a href="#note-sources">{zh?'參考來源':'References'}</a></li></ol></nav>
   <article class="prose">{#each note.parts as part}<section id={'part-'+part.number}><h2>{part.text[lang].title}</h2>{#each part.text[lang].sections as section}<section><h3 id={section.id}>{section.heading}</h3>{#each section.body as block}
     {#if block.kind==='figure'}<NoteFigure figure={block} date={note.date} part={part.number} {lang}/>
+    {:else if block.kind==='diagram'}<NoteDiagram diagram={block} date={note.date} part={part.number} {lang}/>
     {:else if block.kind==='recall'}<NoteRecall {block} date={note.date} part={part.number} {lang}/>
     {:else if block.kind==='checks'}<NoteChecks {block} {lang}/>
     {:else if block.kind==='paragraph'&&block.id}<h4 id={block.id}>{block.text}</h4>

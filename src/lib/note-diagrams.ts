@@ -1,0 +1,19 @@
+import specs from './note-diagram-specs.json' with {type:'json'};
+/** Reviewed reference relationships. Data contains text only, never arbitrary SVG/HTML. */
+export const noteDiagramSpecs = specs;
+export type NoteDiagramName = keyof typeof noteDiagramSpecs;
+export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;description:string;items:{title:string;body:string}[]};
+/** Fixed endpoints preserve TLS direction in HTML and SVG, including mobile reflow. */
+export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
+const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
+export function noteReferenceImage(date:string,name:string):string|null {
+  if(date!=='2026-11-10'||!Object.hasOwn(referenceNumbers,name))return null;
+  return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-notes/2026-11-10/reconstruction/image-${referenceNumbers[name]}.png`;
+}
+export function validateNoteDiagram(block:NoteDiagram):void {
+  const fail=():never=>{throw Error('CEH notes: invalid reference diagram');};
+  if(!Object.hasOwn(noteDiagramSpecs,block.name)||Object.keys(block).sort().join(',')!=='caption,description,items,kind,name')fail();
+  if(![block.caption,block.description].every(s=>typeof s==='string'&&s.trim()))fail();
+  if(!Array.isArray(block.items)||block.items.length!==noteDiagramSpecs[block.name].count)fail();
+  for(const item of block.items)if(Object.keys(item).sort().join(',')!=='body,title'||![item.title,item.body].every(s=>typeof s==='string'&&s.trim()))fail();
+}
