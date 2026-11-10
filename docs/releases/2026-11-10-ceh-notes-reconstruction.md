@@ -28,4 +28,12 @@
 
 第一份原稿宣稱十題新情境，附件實際只含第一題；頁面明列其餘九題未提供，沒有補造。供稿未包含所有原考題全文，題號及參考答案不等於已獨立核對官方題庫。答案補充有編輯標示；本機互動不外送、不儲存，沒有首次答對紀錄或學習完成宣稱。
 
-本機完整驗收已完成；PR、CI、正式部署與正式頁／圖檔回讀待下方追加實際證據。完整標準 errata 審閱及真人學習理解驗收不在本輪已完成證據中。
+本機與正式站完整驗收已完成，實際發布證據如下。完整標準 errata 審閱及真人學習理解驗收不在本輪已完成證據中。
+
+### 正式發布證據
+
+- 原稿保存提交 `278bbb3`，正文／圖解提交 `a2d04a6`；[PR #102](https://github.com/JasonLn0711/kairos-learning/pull/102) 經 [CI 42833539086](https://github.com/JasonLn0711/kairos-learning/actions/runs/42833539086) 通過，合併為 `08385677340f94c8be9821ec113ef2f99692435b`。
+- [Pages 42833924032](https://github.com/JasonLn0711/kairos-learning/actions/runs/42833924032) 成功部署上述合併提交；正式站為[中文日期頁](https://learn.cs-kairos.com/ceh-notes/2026-11-10/)與[英文日期頁](https://learn.cs-kairos.com/en/ceh-notes/2026-11-10/)。
+- 2026-11-10T14:30Z，`CEH_NOTES_BASE_URL=https://learn.cs-kairos.com node scripts/check-ceh-notes-browser.mjs` 完整通過：雙語每段正文、四尺寸及 200%、無 JS 答案、鍵盤、所有回憶卡與檢核、30 SVG 文字幾何／下載 bytes 與搜尋。另回看正式站中文手機第二部分、英文桌面第三部分截圖。切換期間曾讀到前版／未完整 bootstrap，未採為完成證據；部署完成後重跑通過。
+- 11 個 GitHub 原 PNG 公開 URL 均 HTTP 200，下載 SHA-256 與 manifest 相符。本機忽略證據為 `.local/ceh-notes/reconstruction-production-browser.log`、`production-original-images.json` 及頁面／SVG 截圖；公開可重跑檢查腳本與同源資料保存在 repo。
+- 本回執為發布後文件提交；`[skip ci]` 不另產生網站部署，網站對應的已驗版本為上述 `0838567`。本輪未完成項僅為原稿未附九題、未全面審閱標準 errata，以及未進行真人學習理解驗收，均未作完成宣稱。
