@@ -1,0 +1,84 @@
+import {chromium} from '@playwright/test';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const base=process.env.CEH_NOTES_BASE_URL||'http://127.0.0.1:4227';
+const refs=JSON.parse(readFileSync('docs/sources/ceh-notes/2026-11-10/continuation-17-reference/reference-diagrams.json','utf8'));
+const specs=JSON.parse(readFileSync('src/lib/note-diagram-specs.json','utf8'));
+const out='.local/ceh-notes/hydrated-continuation';mkdirSync(out,{recursive:true});
+const browser=await chromium.launch({headless:true});const results=[];
+try{
+ for(const lang of ['zh','en']){
+  const page=await browser.newPage();
+  for(const width of [320,390,768,1280])for(const scale of [1,2]){
+   await page.setViewportSize({width,height:900});
+   await page.goto(base+(lang==='en'?'/en':'')+'/ceh-notes/2026-11-10/');
+   await page.locator('[data-diagram="soc"] .connections path').first().waitFor();
+   await page.addStyleTag({content:'html{scroll-behavior:auto!important}'});
+   if(scale===2)await page.evaluate(()=>document.documentElement.style.fontSize='32px');
+   await page.waitForFunction(()=>{
+    const graph=document.querySelector('[data-diagram="soc"] .graph');
+    return Math.abs(graph.clientWidth-graph.querySelector('svg').viewBox.baseVal.width)<2;
+   });
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   for(const r of refs){
+    const name=r.text[lang].name,figure=page.locator(`[data-diagram="${name}"]`),spec=specs[name];
+    if(spec.edges){
+     await page.waitForFunction(({name,count})=>document.querySelectorAll(`[data-diagram="${name}"] .connections path`).length===count,{name,count:spec.edges.length});
+     const geometry=await figure.evaluate((el,edges)=>{
+      const graph=el.querySelector('.graph'),outer=graph.getBoundingClientRect();
+      const nodes=[...graph.querySelectorAll('[data-node]')];
+      const paths=[...graph.querySelectorAll('.connections path')];
+      return edges.map(([a,b],i)=>{
+       const start=paths[i].getPointAtLength(0),x=nodes.find(n=>+n.dataset.node===a).getBoundingClientRect();
+       const dest=nodes.find(n=>+n.dataset.node===b).getBoundingClientRect();
+       const numbers=paths[i].getAttribute('d').match(/-?\d+(?:\.\d+)?/g).map(Number);
+       const sx=start.x+outer.left,sy=start.y+outer.top;
+       const startsOnNode=(Math.abs(sy-x.bottom)<2&&sx>=x.left&&sx<=x.right)||(Math.abs(sx-x.right)<2&&sy>=x.top&&sy<=x.bottom);
+       // The first arrow-tip is the endpoint of the first continuous line, before its arrowhead.
+       const line=paths[i].getAttribute('d').split('m')[0],commands=[...line.matchAll(/([MHV])([^MHV]+)/g)];
+       let tx=0,ty=0;
+       for(const [,cmd,args] of commands){const n=args.trim().split(/[ ,]+/).map(Number);if(cmd==='M'){[tx,ty]=n;}else if(cmd==='H')tx=n[0];else ty=n[0];}
+       tx+=outer.left;ty+=outer.top;
+       const endsOnNode=(Math.abs(ty-dest.top)<2&&tx>=dest.left&&tx<=dest.right)||(Math.abs(tx-dest.left)<2&&ty>=dest.top&&ty<=dest.bottom);
+       const crossedNodes=[];
+       for(let distance=1;distance<paths[i].getTotalLength();distance+=12){
+        const point=paths[i].getPointAtLength(distance),px=point.x+outer.left,py=point.y+outer.top;
+        for(const node of nodes){
+         const id=+node.dataset.node;if(id===a||id===b)continue;
+         const rect=node.getBoundingClientRect();
+         if(px>rect.left+2&&px<rect.right-2&&py>rect.top+2&&py<rect.bottom-2)crossedNodes.push(id);
+        }
+       }
+       return {a,b,startsOnNode,endsOnNode,crossedNodes,finite:numbers.every(Number.isFinite)};
+      });
+     },spec.edges);
+     assert.ok(geometry.every(g=>g.startsOnNode&&g.endsOnNode&&g.finite&&!g.crossedNodes.length),JSON.stringify({lang,width,scale,name,geometry}));
+     assert.equal(await figure.locator('.relations li').count(),spec.edges.length);
+     assert.equal(await figure.locator('.connections text').count(),spec.edges.filter(edge=>edge[2]).length,'Every conditional/shared-secret edge keeps its visible label');
+    }
+    if(name==='bytes')assert.deepEqual(await figure.locator('.bytes').evaluateAll(grids=>grids.map(g=>g.children.length)),[16,32]);
+    if(name==='hidden')assert.equal(await figure.locator('.outer>.node').count(),1);
+    if((width===320||width===1280)&&scale===1){
+     await figure.evaluate(el=>el.scrollIntoView({behavior:'instant',block:'start'}));
+     // Capture explicit viewport positions so tall figures do not require element auto-scrolling.
+     await page.screenshot({path:`${out}/${name}-${lang}-${width}.png`});
+     const height=await figure.evaluate(el=>el.getBoundingClientRect().height);
+     if(height>900){
+      await figure.evaluate(el=>el.scrollIntoView({behavior:'instant',block:'end'}));
+      await page.screenshot({path:`${out}/${name}-${lang}-${width}-end.png`});
+     }
+    }
+   }
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   for(const part of [2,3]){
+    const id=part===2?'p2-cont-u269':'p3-cont-u336';
+    const exercise=page.locator('#'+id).locator('..');
+    assert.equal(await exercise.locator('form,input,button,details').count(),0,'Original exercise must not expose an answer key or submission UI');
+   }
+   results.push({lang,width,scale,figures:17,graphEndpoints:true});
+   console.log(`PASS hydrated continuation: ${lang}, ${width}px, ${scale*100}%`);
+  }
+  await page.close();
+ }
+ writeFileSync(`${out}/result.json`,JSON.stringify({base,results},null,2)+'\n');
+}finally{await browser.close();}
