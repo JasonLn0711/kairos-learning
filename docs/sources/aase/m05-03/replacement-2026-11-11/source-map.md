@@ -27,7 +27,7 @@
 
 ## 當前狀態
 
-source preserved、implementation、local validation 已完成；正式站發布與回讀待完成。學習者尚未作答。
+source preserved、implementation、local validation、published、production verified均已完成。正式站中英全文與六圖回讀2／2通過；學習者尚未作答。詳見[發布回執](../../../../releases/2026-11-11-aase-m05-03-replacement.md)。
 
 ## 逐節採用核對與實質差異
 
