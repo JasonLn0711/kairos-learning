@@ -80,7 +80,7 @@ def parse(lang):
  return sections
 
 def main():
- lesson=json.loads((P/'previous/lesson.json').read_text());lesson.update(revision=4,contentVersion='1.1.0',date='2026-11-11');lesson['checks']=[];lesson['sourceIds'].append('openspec-quickstart-20261111')
+ lesson=json.loads((P/'previous/lesson.json').read_text());lesson.update(revision=5,contentVersion='1.1.1',date='2026-11-11');lesson['checks']=[];lesson['sourceIds'].append('openspec-quickstart-20261111')
  for lang in ['zh','en']:
   sections=parse(lang)
   # Questions are displayed once, with native reference-answer disclosures.
