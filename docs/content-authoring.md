@@ -748,3 +748,9 @@ AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.jso
 v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有段落錨點。`scripts/aase_m0501_content.py` 由完整成稿生成 JSON，`--check` 核對同步；三張表、R-01～R-04／T-01～T-04、Agent 任務、BDD 情境與三題原始理解檢核在正文呈現。既有三題為補充檢核，供稿三題沿原生答案展開，不建立提交或評分服務。兩語保留相同中文 spec.md 程式碼，英文有完整條款解讀。
 
 `PromptSpecDiagram.svelte` 使用既有 flow 資料模型，五節點維持參考圖的直向閱讀順序，Verification 獨立框線，回修說明明示回到適當階段；手機換行而不縮小整張圖。驗證器限制此課五節點與受限文字欄位。`scripts/aase_m0501_svg.py` 沿受審核流程 exporter 產生兩份 SVG，大小均低於 100000 bytes；HTML、搜尋與匯出同源。檢查用 `tests/aase-m0501-replacement.test.ts`、`playwright.aase-m0501.config.ts`；正式站以 `AASE_BASE_URL` 指定。詳見[逐節對照](sources/aase/m05-01/replacement-2026-11-11/source-map.md)與[驗收回執](releases/2026-11-11-aase-m05-01-replacement.md)。
+
+## AASE M06-04｜Browser、HTTP、API 與資料流
+
+v1.1.0 保留原發布日與六個舊錨點，十節與導言完整雙語由 `scripts/aase_m0604_content.py` 產生，`--check` 核對成稿同步。[來源與逐節對照](sources/aase/m06-04/replacement-2026-11-11/README.md)保存原稿、四 PNG、前版及原題全部選項。四圖為六步 flow／三層 cards／兩條四節點架構鏈／固定 Network 模擬表；`WebDataFlowDiagram.svelte` 以語意 HTML 重排，只有第一圖與架構內部有箭頭，101 明示為協定升級。八 SVG 由 `aase_m0604_svg.py` 同源匯出。正文保留四個完整程式／訊息範例、五教學表、六產業與三題 Q04–Q06，qa=[]。
+
+驗證入口為 `tests/aase-m0604-replacement.test.ts`、`playwright.aase-m0604.config.ts`；正式站指定 `AASE_BASE_URL`。檢查全文順序、四尺寸與200%、鍵盤、無JS、搜尋、圖檔位元組與字框重疊。來源、實測與發布狀態由[回執](releases/2026-11-11-aase-m06-04-replacement.md)承接。
