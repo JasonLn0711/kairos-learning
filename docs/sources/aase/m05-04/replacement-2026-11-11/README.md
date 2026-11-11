@@ -1,6 +1,6 @@
 # M05-04 供稿保存與採用紀錄
 
-正本由 kairos-learning 保存。`original.zh.txt` 與 `image-1.png` 為使用者提供的原始檔，逐位元保留；`previous/lesson.json` 保存抽換前教材。2026-11-11 建立本紀錄，正文抽換、雙語校對與圖解驗收進行中，尚未宣稱發布。
+正本由 kairos-learning 保存。`original.zh.txt` 與 `image-1.png` 為使用者提供的原始檔，逐位元保留；`previous/lesson.json` 保存抽換前教材。2026-11-11 建立本紀錄；目前已完成正文抽換、雙語校對、圖解驗收、Git發布與正式站回讀，詳見[發布回執](../../../../releases/2026-11-11-aase-m05-04-replacement.md)。
 
 採用範圍：導言、七節全部小節、六列影響表、兩段 Given / When / Then、五列人機分工、三個跨業案例、三項錯誤、Markdown 變更範本及三題開放檢核。附圖的五個依序節點、四個向下箭頭、最後決策節點強調與反覆迭代註記，採原生 HTML 重排及同義雙語 SVG。
 
