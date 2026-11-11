@@ -753,3 +753,11 @@ AcceptanceDiagram只承接本課固定三圖：mechanism flow三節點、example
 v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有段落錨點。`scripts/aase_m0501_content.py` 由完整成稿生成 JSON，`--check` 核對同步；三張表、R-01～R-04／T-01～T-04、Agent 任務、BDD 情境與三題原始理解檢核在正文呈現。既有三題為補充檢核，供稿三題沿原生答案展開，不建立提交或評分服務。兩語保留相同中文 spec.md 程式碼，英文有完整條款解讀。
 
 `PromptSpecDiagram.svelte` 使用既有 flow 資料模型，五節點維持參考圖的直向閱讀順序，Verification 獨立框線，回修說明明示回到適當階段；手機換行而不縮小整張圖。驗證器限制此課五節點與受限文字欄位。`scripts/aase_m0501_svg.py` 沿受審核流程 exporter 產生兩份 SVG，大小均低於 100000 bytes；HTML、搜尋與匯出同源。檢查用 `tests/aase-m0501-replacement.test.ts`、`playwright.aase-m0501.config.ts`；正式站以 `AASE_BASE_URL` 指定。詳見[逐節對照](sources/aase/m05-01/replacement-2026-11-11/source-map.md)與[驗收回執](releases/2026-11-11-aase-m05-01-replacement.md)。
+
+## AASE M06-03｜C4 四視角與七圖（2026-11-11）
+
+`AASE-M06-C03` v1.1.0 的[完整來源與逐節對照](sources/aase/m06-03/replacement-2026-11-11/README.md)承接導言、原八章、四層小節與 Session State 小節、四表及原三題三選項。原六錨點、發布日與課次 URL 保留；architecture.md 模板同行附中英，code 兩語一致。
+
+`C4ViewsDiagram.svelte` 僅用於本課固定七圖：放大層級、邏輯角色與三實例、C1 邊界、C2 應用與儲存、程序內四元件、Streamlit 程序與外部下載、四階段盤點。依序節點數4／4／3／5／4／6／4；aase.ts限制圖位置、cards種類、數量與文字欄位。並列副本／元件不加時序箭頭，支付及下載關係明列真正端點，窄欄保留內外與程序包含關係。
+
+正式 JSON 同源產生 HTML／搜尋／十四份 SVG；`python3 scripts/aase_m0603_svg.py --check`核對衍生檔。`tests/aase-m0603-replacement.test.ts`檢查原件／版本／錨點／三選項、範例執行及非法資料拒絕；`playwright.aase-m0603.config.ts`核對全文、四尺寸／200%／無JS、鍵盤、SVG字框及下載。正式站設定 `AASE_BASE_URL=https://learn.cs-kairos.com`。實際檢查與發布狀態見[回執](releases/2026-11-11-aase-m06-03-replacement.md)。
