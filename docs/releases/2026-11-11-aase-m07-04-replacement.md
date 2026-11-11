@@ -2,6 +2,8 @@
 
 2026-11-11；執行與詳細證據 owner：kairos-learning。發布狀態：已提交、推送並完成正式部署；兩語正式頁與八 SVG 回讀通過。
 
+[結構化驗證紀錄](2026-11-11-aase-m07-04-checks.json)保存來源／圖檔雜湊、實測統計、正式 CI 與回讀結果。
+
 ## 交付與來源
 
 AASE-M07-C04 v1.1.0／revision 4：原發布日 2026-11-05、原課次／網址及六個既有章節錨點保留。依[原稿與逐節採用對照](../sources/aase/m07-04/replacement-2026-11-11/README.md)抽換十節完整雙語，包含第四節函式小節、第五節醫院 API 小節、全部比喻與產業案例、四張表、六份 code、完整 Agent 八步指令與五項驗收、三個原開放問題及參考解析。原三題與正文留於 prior-lesson.json，原稿與四 PNG 保留且 SHA256SUMS 通過。
@@ -52,3 +54,5 @@ AASE-M07-C04 v1.1.0／revision 4：原發布日 2026-11-05、原課次／網址�
 - 原始工作樹的其他章節修改保留。本次成果另同步回 canonical 工作目錄；詳細執行與截圖在隔離工作樹 `.local/aase/m0704/`，對外紀錄以本回執及 checks.json 為準。Planning 未另建重複詳稿。
 
 多次推送遇到其他章節同步發布的 non-fast-forward，均先整合再一般推送。曾在衝突修復時讀取了由其他工作樹更新的 origin/main，導致暫時引用尚未合入的元件；改以固定 MERGE_HEAD 取雙方來源後通過檢查。最後以任務專用 fetch ref 縮短整合與推送間隔；沒有強制推送、刪除歷史或覆蓋其他章節成果。後續整合的全套測試／型別／發布閘門由此正式 CI 對最終提交再次證明。
+
+補充正式鍵盤驗收：兩語以 Space 觸發檢查與重設、Enter 開啟 SVG popup 均通過；320 px／200% 表格容器實測 scrollWidth 448／clientWidth 243，ArrowRight 後 scrollLeft 分別 36／39，焦點外框 3 px。對應斷言已納入瀏覽器測試，詳細值見 checks.json 的 production.keyboard_supplement。

@@ -27,6 +27,8 @@ for(const lang of ['zh','en']){
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
   await page.screenshot({path:`.local/aase/m0704/${lang}-200-percent.png`,fullPage:true});
   const code=page.locator('#implementation').locator('..').locator('.code-region').first();await code.focus();await page.keyboard.press('ArrowRight');await expect(code).toBeFocused();await expect.poll(()=>code.evaluate(e=>e.scrollWidth<=e.clientWidth||e.scrollLeft>0)).toBeTruthy();
+  const table=page.locator('#analogy').locator('..').locator('.table-scroll');await table.focus();await page.keyboard.press('ArrowRight');await expect.poll(()=>table.evaluate(e=>e.scrollWidth<=e.clientWidth||e.scrollLeft>0)).toBeTruthy();
+  const link=page.locator('[data-validation-figure="1"] a');await link.focus();const [popup]=await Promise.all([page.waitForEvent('popup'),page.keyboard.press('Enter')]);await popup.waitForLoadState();expect(popup.url()).toContain(`/images/aase/m07-04-1-${lang}.svg`);await expect(popup.locator('svg')).toBeVisible();await popup.close();
   for(let n=1;n<=4;n++){
    const asset=`/images/aase/m07-04-${n}-${lang}.svg`,r=await request.get(asset);expect(r.ok()).toBeTruthy();expect(await r.body()).toEqual(readFileSync(`site${asset}`));
   }
@@ -39,6 +41,7 @@ for(const lang of ['zh','en']){
   await inputs.first().fill('   ');await expect(status).toContainText(lang==='zh'?'尚未檢查':'has not been checked');await check.click();await expect(status).toContainText(lang==='zh'?'不可為空白':'must not be blank');await expect(inputs.nth(1)).toHaveValue('DEMO-A');
   for(const [value,valid] of [['X'.repeat(80),true],['X'.repeat(81),false],['😀'.repeat(80),true],['😀'.repeat(81),false],['  SYN-001  ',true]] as const){await inputs.first().fill(value);await check.click();await expect(status).toContainText(lang==='zh'?(valid?'本次三欄完整性檢核通過':'不可超過 80 字元'):(valid?'current three fields passed':'must not exceed 80 characters'));}
   await demo.getByRole('button').last().focus();await page.keyboard.press('Enter');await expect(inputs.first()).toHaveValue('SYN-001');await expect(status).toContainText(lang==='zh'?'尚未檢查':'has not been checked');
+  await check.focus();await page.keyboard.press('Space');await expect(status).toContainText(lang==='zh'?'本次三欄完整性檢核通過':'current three fields passed');await demo.getByRole('button').last().focus();await page.keyboard.press('Space');await expect(status).toContainText(lang==='zh'?'尚未檢查':'has not been checked');
  });
  test(`${lang} no-JavaScript body and native reference disclosure`,async({browser})=>{
   const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:320,height:900}});const page=await context.newPage();await page.goto(path);
