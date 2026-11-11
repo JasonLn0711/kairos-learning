@@ -159,7 +159,7 @@ Many implementations can support the same User Flow. Select an architecture usin
 
 ## 6. Next: what is the C4 model?
 
-The C4 model explains software architecture at different zoom levels, much like zooming through a software map.
+The C4 model explains software architecture at different zoom levels, much like using Google Maps for software.
 
 @figure 5
 

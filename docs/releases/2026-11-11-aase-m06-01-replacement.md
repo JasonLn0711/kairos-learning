@@ -17,14 +17,14 @@
 
 | 規則 | 驗收範圍 | 結果 |
 | --- | --- | --- |
-| WRITE-01–04、09–10 | 原文／前版保存、14小節及圖意逐項對照、技術修正 | 已完成來源與成稿人工對照，見source-map；SHA256SUMS核對原件；verify-aase-m0601-source.py核對106個段落單位及所有明列例外。 |
+| WRITE-01–04、09–10 | 原文／前版保存、14小節及圖意逐項對照、技術修正 | 已完成來源與成稿編輯逐節對照，見source-map；SHA256SUMS核對原件；verify-aase-m0601-source.py核對106個段落單位及所有明列例外。 |
 | WRITE-05–08 | 雙語深度、版本日期、課次及發布閘門 | 兩語同結構、同程式碼、同答案；原日期與網址保留。 |
 | WRITE-11、HTML-01–04 | 全文與實際頁面順序、四尺寸、200%、無JS | 通過兩語全文順序、320／390／768／1280px各1×與2×字級、無JS及無頁面溢出。 |
 | FIG-01–06 | 五圖分組、平行、分支、程序邊界及十SVG | 通過同源模型／大小／白名單、全部十SVG字框與文字重疊檢查及下載位元組；已目視手機／桌面圖意。 |
 | A11Y-01–03 | 語意、下載、焦點、原生收合、局部捲動 | 通過Tab／Shift+Tab下載焦點、Enter開圖、Enter／Space原生解析、表格／程式碼局部捲動及無JS原生解析。 |
 | INT-01 | 參數互動 | 不適用；本課無模擬器或分數計算。 |
 
-已通過：原基線283項、整合遠端各章後324項單元測試；內容驗證；svelte-check零錯誤／零警告；publication-boundary的第二概念、draft／future與英文課程關閉實際建置；validate:release。另通過三項AASE雙語回歸（本課、英文目錄／搜尋與下載、CEH共用框架計算樣式）、共用HTML單元與高嚴重度依賴稽核。合併修正後重跑內容／型別／全單元、完整publication-boundary、release與本課瀏覽器。
+已通過：原基線283項、整合遠端各章後330項單元測試；內容驗證；svelte-check零錯誤／零警告；publication-boundary的第二概念、draft／future與英文課程關閉實際建置；validate:release。另通過三項AASE雙語回歸（本課、英文目錄／搜尋與下載、CEH共用框架計算樣式）、共用HTML單元與高嚴重度依賴稽核。另通過22項CEH雙語、無JS、原生答案、舊路由及圖檔回歸。合併修正後重跑內容／型別／全單元、完整publication-boundary、release與本課瀏覽器。
 
 瀏覽器入口：`pnpm exec playwright test --config playwright.aase-m0601.config.ts`。正式站設定`AASE_BASE_URL=https://learn.cs-kairos.com`；證據存於執行工作樹`.local/aase/m0601/`。整合後本機瀏覽器兩項測試通過，結果見`.local/aase/m0601/results.json`及三十張圖檔。SVG共十份均小於100000 bytes；尺寸與SHA256見[檢查清單](2026-11-11-aase-m06-01-checks.json)。已修正320px／200%時主機巢狀內距造成的文字擠壓，並重新通過全部尺寸。手機的規則／狀態連線各明列Python程序，保留平行關係。正式站結果與Git/Pages回執待本輪發布補入，不以本機測試推定已上線。
 
