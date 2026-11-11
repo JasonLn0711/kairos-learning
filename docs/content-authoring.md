@@ -768,3 +768,11 @@ v1.1.0／revision 4保留原發布日與六個既有章節錨點。完整導言�
 SystemContextLessonDiagram復用ArchitectureDiagram與受限cards；四張圖的HTML、搜尋與八份SVG來自正式模型。模型保留每個外部節點與主系統直接相連的條件，允許已連結節點間的補充關係，以保留銀行範例SES→Customer。圖像版面差異、作者及CC BY 4.0授權見來源對照。
 
 維護使用`python3 scripts/aase_m0602_content.py --check`、`python3 scripts/aase_m0602_svg.py --check`、`tests/aase-m0602-replacement.test.ts`與`playwright.aase-m0602.config.ts`，正式站以AASE_BASE_URL指定。[驗證與發布回執](releases/2026-11-11-aase-m06-02-replacement.md)分開記錄本機、正式站與未驗事項。
+
+## AASE M08-05 任務導向易用性測試供稿抽換（2026-11-11）
+
+完整原稿、三 PNG、前版與逐節對照在[來源紀錄](sources/aase/m08-05/replacement-2026-11-11/source-map.md)。`scripts/aase_m0805_content.py` 由兩語完整稿產生十一節正式教材，保留六個既有章節錨點及原發布日；`--check` 驗證同步。理解題沿原生參考答案收合，qa=[]，沒有提交或成績紀錄。
+
+`UsabilityDiagram.svelte` 只接本課 workflow 六步 flow、notes 九列 table、improve 兩狀態 cards；HTML 文字原生換行，觀察表手機由兩欄改為單欄，設計提案採靜態動作標籤。只有第一圖有五個順序箭頭，虛構及示意標示直接可見。`aase.ts` 約束圖解位置、種類、數量與欄位。`scripts/aase_m0805_svg.py` 由相同資料輸出六份元素白名單 SVG，`--check` 比較位元組。
+
+維護檢查：`tests/aase-m0805-replacement.test.ts` 核對原件雜湊、兩語逐行採用及無效圖解拒絕；`playwright.aase-m0805.config.ts` 驗全文、四尺寸／200%、無 JS、鍵盤、搜尋與六份 SVG。正式站設定 `AASE_BASE_URL=https://learn.cs-kairos.com`。實際驗收及發布由[回執](releases/2026-11-11-aase-m08-05-replacement.md)持有，真人易用性測試結果另行蒐集。
