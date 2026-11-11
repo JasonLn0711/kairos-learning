@@ -644,6 +644,14 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 
 單元為`tests/m05-06.test.ts`，瀏覽器為`node scripts/check-m05-06-browser.mjs`，正式站設定`M05_06_BASE_URL=https://learn.cs-kairos.com`；`node scripts/check-m05-06-svg.mjs`核對六圖字框與重疊。同期修改於隔離工作樹驗收，保留原工作目錄。
 
+## AASE M04-01 醫院情境與四圖抽換（2026-11-11）
+
+v1.2.0／revision 6 以新供稿取代餐廳版本；[逐小節來源對照](sources/aase/m04-01/replacement-2026-11-11/source-map.md)保留原文、四PNG、前版、雙語成稿、正規化與雜湊。十二個section承接導言、十節及銜接；舊section錨點與Q04–Q06保留，新實作題Q07沿原生參考解析。三表、六行業、心智模型／回饋／錯誤預防、易用性三面向及完整AI指令進入正式正文。
+
+四圖位置為analogy／three-lenses／quality／case，全部使用受限cards資料，節點數3／4／5／2。HciPerspectivesDiagram 將醫院三列、概念交會、目標與同層UI／HCI的分層流程、修改前後雙欄重排；僅圖3有三個閱讀箭頭，UI與HCI之間沒有箭頭。HTML、搜尋與八份SVG由同一正式JSON提供。normalize-source.py --check、aase_m0401_content.py --check與aase_m0401_svg.py --check分別檢查來源正規化、正文、下載同步。
+
+單元與瀏覽器仍用 tests/aase-m0401-replacement.test.ts、playwright.aase-m0401.config.ts；本機獨立連接埠4297，正式站指定AASE_BASE_URL。[回執](releases/2026-11-11-aase-m04-01-replacement.md)記錄實際驗證、發布與待驗界線，歷史五圖回執保留原結果。
+
 ## CEH 考古題知識筆記 — 2026-11-10
 
 `content/ceh-notes/YYYY-MM-DD.json` 維護同一天的單一筆記；`parts` 按供稿順序延續，不替同日每份供稿新增日期頁。原稿、原圖與採用對照留在 `docs/sources/ceh-notes/YYYY-MM-DD/part-NN/`；正文保留完整小節，來源與編輯補充分開記錄。`expectedParts` 只記錄使用者預期數量，頁面顯示實際已發布部分數量；不得把尚未提供部分寫成已完成。追加內容保留原發布日、日期網址及既有錨點，增加revision與revisedOn。
