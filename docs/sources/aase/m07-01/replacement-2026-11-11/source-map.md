@@ -1,6 +1,6 @@
 # M07-01 供稿抽換對照
 
-狀態：原始材料與前版已保存；雙語九節正文及四圖已採用，正式發布與回讀另見回執。
+狀態：原始材料與前版已保存；雙語九節正文、四圖及正式站回讀均完成，證據見發布回執。
 
 正本為本目錄 `pasted-text-1.txt` 及 `image-1.png`–`image-4.png`；`previous-lesson.json` 保存編輯前 v1.0.2／revision 3，原發布日 2026-11-05。`SHA256SUMS` 僅記原始附件與前版，成稿採用狀態另行驗證。完整教材與驗證證據由 kairos-learning 持有。
 
@@ -41,7 +41,7 @@
 
 [pytest 執行方式](https://docs.pytest.org/en/stable/how-to/usage.html) 確認版本查詢與測試執行的不同用途。工作坊版本為既定教學組合，沒有宣稱最新版本。
 
-## 下一驗證
+## 維護時的驗證順序
 
 完成兩語逐小節正文及四圖語意對照 → 原生 HTML 與 SVG 同源 → 內容／型別／單元／發布閘門 → 四尺寸、200%、無 JavaScript、鍵盤與下載 → 限定本次變更提交推送部署 → 正式頁及圖檔回讀。現有其他章節 dirty 修改保留。
 
@@ -55,3 +55,6 @@
 原始程式碼與六組 environment-notes 範本保留相同 bytes，英文正文另外逐項解釋全部模板欄位。新增 PowerShell 命令與原碼分開記錄；實測平台與未驗平台見[發布回執](../../../../releases/2026-11-11-aase-m07-01-replacement.md)。
 
 規則依 WRITE-05、09–11 逐節核對；正文與四圖檢查依 HTML-01–04、FIG-01–06、A11Y-01–03。可重建檢查為兩個產生器 `--check`、`tests/aase-m0701-replacement.test.ts` 與 `playwright.aase-m0701.config.ts`。
+
+
+[正式發布及實測回執](../../../../releases/2026-11-11-aase-m07-01-replacement.md)記錄 PR #109、成功部署、兩語全文／八圖正式回讀、Python 3.11／3.12 執行與待驗範圍。
