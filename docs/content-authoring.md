@@ -824,6 +824,10 @@ AASE-M06-C05 v1.1.0 保留原日期、URL 與六個舊錨點，導言及八節�
 
 維護`python3 scripts/aase_m0601_content.py --check`、`python3 scripts/aase_m0601_svg.py --check`、`tests/aase-m0601-replacement.test.ts`及`playwright.aase-m0601.config.ts`；正式站設定AASE_BASE_URL。完整供稿、舊版、圖意差異及逐小節採用在[來源對照](sources/aase/m06-01/replacement-2026-11-11/source-map.md)，本輪各層證據在[回執](releases/2026-11-11-aase-m06-01-replacement.md)。
 
+## AASE M08-06｜資安負向情境與回歸證據（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六錨點；導言及原九節、五表、七個 code 區塊、三題 4／4／3 選項完整雙語抽換。原稿、參考圖、前版、逐小節採用與截斷程式的修正見[來源紀錄](sources/aase/m08-06/replacement-2026-11-11/README.md)。`aase_m0806_content.py --check`核對成稿及正式 JSON；`aase_m0806_svg.py --check`核對兩語 SVG。五步垂直 flow 由 RegressionEvidenceDiagram 呈現，最後淡綠，aase.ts 限制一圖五節點及文字欄位。單元 tests/aase-m0806-replacement.test.ts；瀏覽器 playwright.aase-m0806.config.ts。獨立 pytest 三例只驗非空字串與允許欄位，多人授權保持未實作、未驗證。實測及正式站回讀見[回執](releases/2026-11-11-aase-m08-06-replacement.md)。
+
 ## AASE M07-06 審查 Diff、工具紀錄與決策（2026-11-11）
 
 本課 v1.1.0 的[逐節對照](sources/aase/m07-06/replacement-2026-11-11/source-map.md)保留原稿、五張 PNG、前版、完整中英稿與雜湊。`aase_m0706_content.py` 將十節、六表（包含圖3）、十一段程式／輸出與三道開放題編譯為正式 JSON，`--check` 核對同步。六個既有錨點、原發布日與路由保留；三道新題使用 Q04–Q06，答案沿原生收合，qa=[]。
