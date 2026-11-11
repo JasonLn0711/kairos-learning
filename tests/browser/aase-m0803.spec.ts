@@ -1,0 +1,27 @@
+import {test,expect} from '@playwright/test';
+import {readFileSync} from 'node:fs';
+const lesson=JSON.parse(readFileSync('content/aase/lessons/aase-m08-c03.json','utf8'));
+const norm=(s:string)=>s.replace(/`/g,'').replace(/^\s*(?:[-*]|\d+\.)\s+/gm,'').replace(/\s+/g,' ').trim();
+for(const lang of ['zh','en']){
+ const path=`${lang==='en'?'/en':''}/courses/aase/v1/m08/concepts/m08-03/`;
+ test(`${lang} full body, responsive diagrams, controls and downloads`,async({page,request})=>{
+  await page.goto(path);await expect(page.locator('[data-rule-testing-figure]')).toHaveCount(3);
+  for(const section of lesson.text[lang].sections){
+   const node=page.locator(`h2#${section.id}`).locator('..');
+   const text=norm(await node.innerText());
+   for(const p of section.paragraphs)expect(text).toContain(norm(p.replace(/^### /gm,'')));
+   for(const b of section.blocks??[]){
+    if(b.kind==='prose')for(const p of b.paragraphs)expect(text).toContain(norm(p.replace(/^### /gm,'')));
+    if(b.kind==='table')for(const row of b.rows)for(const cell of row)expect(text).toContain(norm(cell));
+    if(b.code)await expect(node.locator('code').filter({hasText:b.code}).first()).toBeVisible();
+   }
+  }
+  for(const width of [320,390,768,1280]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();await page.screenshot({path:`.local/aase/m0803/${lang}-${width}.png`,fullPage:true});}
+  const amount=page.locator('#delivery-amount');await amount.focus();await page.keyboard.press('ArrowRight');await expect(amount).toHaveValue('1000');await expect(page.locator('[data-rule-testing-figure="2"] .result')).toContainText('NT$ 0');await page.keyboard.press('Home');await expect(amount).toHaveValue('0');await page.keyboard.press('End');await expect(amount).toHaveValue('2000');
+  const length=page.locator('#rule-length');await length.focus();await page.keyboard.press('ArrowRight');await expect(length).toHaveValue('81');await expect(page.locator('[data-rule-testing-figure="3"] .result')).toContainText(lang==='zh'?'超過':'Exceeds');await page.keyboard.press('ArrowLeft');await expect(length).toHaveValue('80');await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');await expect(length).toBeFocused();
+  await page.setViewportSize({width:390,height:900});await page.addStyleTag({content:'html{font-size:200% !important}'});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  for(let n=1;n<=3;n++){const asset=`/images/aase/m08-03-${n}-${lang}.svg`;const r=await request.get(asset);expect(r.ok()).toBeTruthy();expect(await r.body()).toEqual(readFileSync(`site${asset}`));}
+  const summary=page.locator('summary').first();await summary.focus();await page.keyboard.press('Enter');await expect(summary.locator('..')).toHaveAttribute('open','');
+ });
+ test(`${lang} static reading`,async({browser})=>{const c=await browser.newContext({javaScriptEnabled:false});const p=await c.newPage();await p.goto(path);await expect(p.locator('#delivery-amount')).toBeDisabled();await expect(p.locator('#rule-length')).toBeDisabled();await expect(p.locator('[data-rule-testing-figure]')).toHaveCount(3);for(const s of lesson.text[lang].sections)await expect(p.locator('h2#'+s.id)).toBeVisible();await c.close();});
+}

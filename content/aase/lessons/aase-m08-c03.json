@@ -1,10 +1,10 @@
 {
   "id": "AASE-M08-C03",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "pytest-parametrize",
     "pytest-assert",
@@ -27,58 +27,371 @@
       },
       "sections": [
         {
-          "id": "rule",
-          "heading": "先找出不依賴畫面的規則",
+          "id": "intro",
+          "heading": "一、先用一句話理解這堂課",
           "paragraphs": [
-            "reference/rules.py 的 validate 接收字典、回傳錯誤列表；export_report 在產生 JSON 前重新驗證，不合法時拋出 ValueError。直接呼叫這兩個函式，就能檢查畫面輸入限制以外的資料。",
-            "三個必要鍵是 application_id、applicant_code、document_type。去除首尾空白後須為非空字串且最多 80 字元；這是教學合成規則，不是正式文件受理條件。"
-          ]
+            "pytest 就是一個可以幫程式自動考試的工具，而業務規則測試，就是檢查程式有沒有確實遵守我們訂下的規定。\n\n想像你開了一家銀行，有一項規定：\n\n「申請貸款的人，年齡必須滿 18 歲。」\n\n你請工程師寫好系統，他告訴你：「系統已經完成，按鈕也可以使用。」\n\n但這並不代表系統真的符合規定。\n\n你至少要檢查：\n\n- 17 歲的人，系統是否正確拒絕？\n- 18 歲的人，系統是否正確接受？\n- 19 歲的人，系統是否正確接受？\n- 沒有填年齡，系統會怎麼處理？\n- 有人填「十八歲」而不是數字，系統會怎麼處理？\n\n如果每次都要找人打開網站、填表單、按按鈕，效率會非常低。\n\npytest 讓我們把這些情境寫成測試程式，每次修改系統時，都能重新執行，確認原本正確的規則沒有被破壞。\n\n這堂教材的核心，就是學會將規格（Specification）轉換成能自動檢查的測試（Automated Tests）。"
+          ],
+          "blocks": []
         },
         {
-          "id": "analogy",
-          "heading": "像用同一張檢查表逐一量測不同樣本",
+          "id": "map",
+          "heading": "二、先建立完整知識地圖",
           "paragraphs": [
-            "每個樣本換一個條件，其餘維持已知有效，才能看清楚哪個條件造成失敗。若一次把所有欄位都清空，只知道整體有錯，難以確認每一欄的規則都受到保護。",
-            "參數化讓同一組斷言套用到多筆資料。案例數增加要來自有意義的條件組合，不能用大量重複資料營造已驗證所有情況的印象。"
-          ]
-        },
-        {
-          "id": "cases",
-          "heading": "正常、無效、邊界與輸出契約",
-          "paragraphs": [
-            "必要欄位要測空字串、純空白、缺鍵與錯誤型別；長度要測剛好 80 與 81。正常匯出再核對去除首尾空白、固定結構與允許欄位，避免只測拒絕而漏掉可用路徑。",
-            "測試期望應從 spec 推得，不直接把函式目前回傳值複製成答案。規則若有歧義，先回到規格與負責人，不任意放寬測試。"
+            "整堂課可以分成六個重要觀念："
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "圖 1｜一份測試需要哪些資訊",
-              "description": "依輸入、執行與斷言閱讀，每一案例都能回答哪個要求受到保護。",
+              "caption": "圖 1｜從規格到測試結果",
+              "description": "向下箭頭表示設計與執行順序；PASS／FAIL 是同次比對的互斥結果。",
               "items": [
                 {
-                  "title": "Arrange｜準備",
-                  "body": "建立有效基準，只替換本次要測的欄位。"
+                  "title": "1. 業務規格（Spec）",
+                  "body": "先決定什麼結果才算正確"
                 },
                 {
-                  "title": "Act｜執行",
-                  "body": "直接呼叫 validate 或 export_report。"
+                  "title": "2. 測試情境（Test Cases）",
+                  "body": "正常、無效、邊界、例外"
                 },
                 {
-                  "title": "Assert｜斷言",
-                  "body": "確認錯誤、例外或匯出結果符合規格。"
+                  "title": "3. pytest 執行測試",
+                  "body": "準備輸入 → 呼叫程式 → 比對預期結果"
+                },
+                {
+                  "title": "✓ PASS",
+                  "body": "符合本次檢查條件"
+                },
+                {
+                  "title": "✗ FAIL",
+                  "body": "結果不符合預期，需調查原因"
                 }
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 1",
+              "headers": [
+                "觀念",
+                "白話文意義"
+              ],
+              "rows": [
+                [
+                  "Business Rules",
+                  "公司、機構或流程規定什麼可以、什麼不可以"
+                ],
+                [
+                  "Unit Test",
+                  "對程式中的小功能個別考試"
+                ],
+                [
+                  "Assertion",
+                  "告訴測試工具正確答案應該是什麼"
+                ],
+                [
+                  "Parameterization",
+                  "用同一張考卷，換不同資料反覆考試"
+                ],
+                [
+                  "Boundary Testing",
+                  "專門測試規定的臨界點"
+                ],
+                [
+                  "Contract Testing",
+                  "確認輸入、輸出及失敗方式符合約定"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "接下來把這些觀念串成一個可實際操作的流程。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "rule",
+          "heading": "三、什麼是業務規則（Business Rules）？",
+          "paragraphs": [
+            "業務規則就是「這個系統必須遵守的規定」。\n\n它不是程式語法，而是來自真實世界的業務需求。\n\n例如："
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 2",
+              "headers": [
+                "行業",
+                "業務規則",
+                "系統必須做到"
+              ],
+              "rows": [
+                [
+                  "電商",
+                  "消費滿 1,000 元免運費",
+                  "999 元收運費，1,000 元免運"
+                ],
+                [
+                  "醫療",
+                  "缺少必要檢體資訊不能送出檢驗申請",
+                  "阻止送出並指出缺漏"
+                ],
+                [
+                  "銀行",
+                  "申請資料必須填寫必要欄位",
+                  "缺欄位不能完成申請"
+                ],
+                [
+                  "教育",
+                  "成績必須介於 0～100 分",
+                  "拒絕負分或超過 100 分"
+                ],
+                [
+                  "物流",
+                  "寄件重量不得超過特定上限",
+                  "超重時拒絕或轉其他服務"
+                ],
+                [
+                  "人資",
+                  "特休天數依適用制度及年資計算",
+                  "依正確規則計算假別額度"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些只是示範規則，並不代表各行業實際法規。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 為什麼不只測試畫面？"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "假設一個電商網站，把購物金額的輸入框限制成不得輸入負數。\n\n看起來沒問題，對吧？\n\n但有些資料不一定經過畫面進入系統。例如其他系統透過 API 直接送資料，或程式內部呼叫同一個函式。\n\n如果後端沒有檢查，仍然可能收到 `-500` 這種不合理的訂單金額。\n\n因此我們應該區分：\n\n- 介面驗證（UI Validation）：在畫面上提前提醒使用者。\n- 業務規則驗證（Business Rule Validation）：無論資料從哪裡來，系統都遵守規定。\n\n這也是本課為什麼要直接測試 `rules.py`，而不是只用滑鼠操作介面。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "delivery",
+          "heading": "四、pytest 如何幫程式自動考試？",
+          "paragraphs": [
+            "我們用電商免運費的例子，實際寫一次。\n\n假設規格已經確認：\n\n- 訂單滿 1,000 元免運費。\n- 不滿 1,000 元收 60 元。\n- 金額不得為負數，也必須是整數。\n\n第一步：撰寫業務程式 `rules.py`"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "程式與指令 1",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "def delivery_fee(total: int) -> int:\n    if type(total) is not int or total < 0:\n        raise ValueError(\"訂單金額必須是非負整數\")\n    if total >= 1000:\n        return 0\n    return 60"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "把它翻譯成白話：\n\n「如果金額不是整數，或者金額小於零，就拒絕。如果金額大於或等於 1,000 元，運費就是零，否則運費是 60 元。」\n\n這裡有幾個專有名詞：\n\n`def` 是定義函式，`return` 是回傳結果，`raise ValueError` 是主動告知呼叫者「你給我的值不符合要求」。\n\n第二步：撰寫測試程式 `test_rules.py`"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 2",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "import pytest\nfrom rules import delivery_fee\n\n@pytest.mark.parametrize(\"amount, expected\", [(0, 60), (999, 60), (1000, 0), (1001, 0)])\ndef test_delivery_fee(amount, expected):\n    assert delivery_fee(amount) == expected\n\n@pytest.mark.parametrize(\"bad\", [-1, 1.5, \"1000\", True])\ndef test_invalid_amount(bad):\n    with pytest.raises(ValueError):\n        delivery_fee(bad)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這段程式的意思非常簡單：\n\n「請 pytest 用四筆不同資料呼叫同一個函式，看看運費是不是我們預先規定的答案。」"
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 2｜免運門檻示範",
+              "description": "訂單金額為 0～2,000 整數；滿 1,000 免運，否則 60。這是規則示範，沒有執行 Python 或 pytest。",
+              "items": [
+                {
+                  "title": "訂單金額",
+                  "body": "999"
+                },
+                {
+                  "title": "預期運費",
+                  "body": "60"
+                },
+                {
+                  "title": "免運門檻",
+                  "body": "1000"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### `assert` 是什麼？"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`assert` 稱為「斷言」。\n\n白話就是：「我認定這個條件應該成立；如果不成立，就代表測試失敗。」\n\n例如："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 3",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "assert delivery_fee(999) == 60"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "意思是「999 元的訂單，運費應該是 60 元」。\n\n如果程式錯誤地回傳零元，pytest 就會回報失敗，幫你找出規格與實作不一致的地方。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "五、參數化測試：不用寫十幾份相同的考卷",
+          "paragraphs": [
+            "本課最重要的技巧之一，是 `@pytest.mark.parametrize`。\n\n它的英文名稱是 Parameterization，中文叫「參數化」。\n\n你可以把它想成一位老師：\n\n老師不用為每位學生重新寫一份考卷，而是拿同一套評分標準，檢查不同學生的答案。\n\n程式測試也一樣。\n\n假設銀行申請表有三個必填欄位：\n\n- `application_id`：申請編號。\n- `applicant_code`：申請人代號。\n- `document_type`：文件類型。\n\n教材規定每個欄位去除首尾空白後，必須是非空字串，而且長度不能超過 80 字元。這是教學用的合成規格。\n\n如果每個欄位都要測六種不合法輸入："
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 3",
+              "headers": [
+                "無效資料",
+                "為什麼要測？"
+              ],
+              "rows": [
+                [
+                  "`\"\"`",
+                  "完全沒有輸入"
+                ],
+                [
+                  "`\"   \"`",
+                  "看似有輸入，其實只有空白"
+                ],
+                [
+                  "`\"\\t\\n\"`",
+                  "只有 Tab、換行等空白字元"
+                ],
+                [
+                  "`None`",
+                  "沒有提供有效值"
+                ],
+                [
+                  "`42`",
+                  "輸入型別錯誤，應是文字"
+                ],
+                [
+                  "`\"x\" * 81`",
+                  "超過允許長度"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "三個欄位乘以六種情境，就是 18 個測試案例。\n\n我們不需要寫 18 個函式。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 4",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "import pytest\nfrom rules import validate, export_report\n\nGOOD = {\"application_id\": \"SYN-001\", \"applicant_code\": \"DEMO-A\", \"document_type\": \"合成申請表\"}\n\n@pytest.mark.parametrize(\"field\", [\"application_id\", \"applicant_code\", \"document_type\"])\n@pytest.mark.parametrize(\"bad\", [\"\", \"   \", \"\\t\\n\", None, 42, \"x\" * 81])\ndef test_invalid_field(field, bad):\n    record = {**GOOD, field: bad}\n    assert validate(record)\n    with pytest.raises(ValueError):\n        export_report(record)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這段範例已建立有效的 `GOOD` 字典並匯入工作坊 `rules.py` 的兩個函式。電商與三欄申請案例使用不同的 `rules.py`，請分別在自己的目錄執行。\n\n`{**GOOD, field: bad}` 的意思是：複製一份原本正確的資料，僅將這次要測的欄位換成不合法的值。\n\n`with pytest.raises(ValueError)` 的意思是：「這個操作按規定應該拒絕輸入，並產生指定類型的錯誤。」\n\n如果不合法資料居然順利匯出，測試反而要判定失敗。\n\n這項機制是 pytest 官方支援的測試能力。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "六、為什麼要特別測試邊界（Boundary Testing）？",
+          "paragraphs": [
+            "假設規格要求「最多 80 字元」。\n\n你會測哪些長度？\n\n如果只測 10 字元和 100 字元，雖然分別測到正常與異常資料，卻不一定能發現最容易發生的錯誤。\n\n例如工程師不小心把條件寫成："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "程式與指令 5",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "if len(value) >= 80:\n    raise ValueError()"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這樣剛好 80 字元也會被拒絕。\n\n正確規則應該是在超過 80 字元時才拒絕。"
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 3｜80 字元邊界",
+              "description": "滑桿只比較 0～100 的長度；仍須檢查型別、去除空白後非空，才能判定完整資料有效。",
+              "items": [
+                {
+                  "title": "79 字元",
+                  "body": "應接受"
+                },
+                {
+                  "title": "80 字元",
+                  "body": "應接受"
+                },
+                {
+                  "title": "81 字元",
+                  "body": "應拒絕"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這個觀念適用於任何有門檻的系統，例如銀行交易限額、學校成績、重量上限、購物折扣，以及 API 請求數量限制。\n\n重點是：先從規格找出臨界點，再設計臨界點前後的測試。"
               ]
             }
           ]
         },
         {
           "id": "example",
-          "heading": "可加入自己專案的完整測試範例",
+          "heading": "七、輸出契約測試：不只檢查能不能做，還要檢查做出什麼",
           "paragraphs": [
-            "在自己的第三切片副本建立 tests/test_rules_contract.py。以下兩個參數化裝飾器組合三個欄位與六種無效值；每例都應有錯誤且拒絕匯出。",
-            "正常案例核對 JSON 資料完全等於允許的三欄，並檢查原輸入未被改寫。這仍不是全部正式系統契約，其他業務需求需另外定義。"
+            "這堂課還強調一件很重要的事：Output Contract（輸出契約）。\n\n假設系統產生一份 JSON 報告，規定只能輸出三個核准欄位。\n\n但是原始資料裡，還有一個額外的內部備註欄位："
           ],
           "blocks": [
+            {
+              "kind": "step",
+              "heading": "程式與指令 6",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "{\n    \"application_id\": \"A001\",\n    \"applicant_code\": \"U001\",\n    \"document_type\": \"申請表\",\n    \"debug_note\": \"internal\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "我們必須確認三件事：\n\n1. 有效資料能產生報告。\n2. 報告只包含允許匯出的欄位。\n3. 執行匯出不會意外修改原始輸入。\n\n這類檢查不只涉及功能品質，在某些情境也能降低意外輸出額外資料的風險；但不能取代存取控制與完整的資安測試。\n\n教材使用 `json.loads()` 解析匯出結果，再以 `assert` 檢查 JSON 結構與內容。"
+              ]
+            },
             {
               "kind": "step",
               "heading": "tests/test_rules_contract.py",
@@ -90,30 +403,116 @@
           ]
         },
         {
-          "id": "run",
-          "heading": "執行與閱讀失敗",
+          "id": "misread",
+          "heading": "八、測試結果通過，為什麼還不能說系統完全正確？",
           "paragraphs": [
-            "在自己的第三切片根目錄執行 python -m pytest -q tests/test_rules_contract.py。若測試失敗，先讀案例參數、斷言及實際值，再查規則；若是 import 或環境錯誤，先修正執行位置。",
-            "範例可通過時，再執行該專案整組測試。記錄實際數量與退出結果，不預填固定成功數；日後新增測試後，數量會隨內容改變。"
+            "這裡要理解不同測試的責任範圍。"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "規則測試命令",
-              "paragraphs": [
-                "先確認已啟用工作坊環境，並在自己的第三切片目錄。"
+              "kind": "table",
+              "caption": "表 4",
+              "headers": [
+                "測試類型",
+                "主要回答的問題"
               ],
-              "code": "python -m pytest -q tests/test_rules_contract.py\npython -m pytest -q"
+              "rows": [
+                [
+                  "Unit Test（單元測試）",
+                  "個別規則算得對不對？"
+                ],
+                [
+                  "Integration Test（整合測試）",
+                  "不同元件接在一起是否正常？"
+                ],
+                [
+                  "UI Test（介面測試）",
+                  "畫面和操作是否正確？"
+                ],
+                [
+                  "Usability Test（易用性測試）",
+                  "真實使用者能否順利完成任務？"
+                ],
+                [
+                  "Security Test（資安測試）",
+                  "系統是否適當防範已識別的風險？"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "舉例來說，某銀行的利息計算公式通過了 100 個單元測試，但這不表示使用者能在網頁上成功提交資料，也不表示其他人無法存取這筆資料。\n\n尤其要注意兩種測試缺陷：\n\n第一，測試的預期答案本身可能錯誤。 如果你把程式目前算出來的答案直接當成正確答案，程式與測試可能一起犯錯。正確答案應優先來自已確認的規格。\n\n第二，測試只驗證你有寫到的情境。 100% 通過率，並不代表所有可能輸入、操作及攻擊情境都受過驗證。\n\n因此要把「已驗證哪些條件」與「尚未驗證哪些條件」記錄清楚。"
+              ]
             }
           ]
         },
         {
-          "id": "misread",
-          "heading": "通過不代表測過所有資料",
+          "id": "run",
+          "heading": "九、實際上要怎麼執行 pytest？",
           "paragraphs": [
-            "UI 不讓輸入 81 字元，仍需測函式拒絕超長直接呼叫；例外測試只寫「有任何錯誤」也可能把程式缺陷當成正確拒絕。使用預期 ValueError，必要時再核對錯誤訊息或類型。",
-            "規則測試無法判斷錯誤提示是否好找、鍵盤是否能完成任務或 JSON 真實下載是否正確。下一篇接著測介面，之後再安排人的任務觀察。"
+            "假設有以下專案："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "程式與指令 7",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "my-project/\n├── rules.py\n└── tests/\n    └── test_rules.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "在已安裝 pytest 的 Python 環境裡，進入專案根目錄後執行："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 8",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "python -m pytest -q"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`python -m pytest` 表示使用目前 Python 環境執行 pytest；`-q` 表示使用較精簡的輸出。pytest 會依預設規則尋找符合命名方式的測試檔案。\n\n上述電商範例含四筆正常及四筆無效金額測試。以下是八例全部通過時的輸出示意；請保存自己實際執行的結果："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 9",
+              "paragraphs": [
+                "依本節說明執行或判讀此範例。"
+              ],
+              "code": "........\n8 passed"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "其中每個 `.` 表示一個通過的測試。\n\n如果未通過，應依序確認是測試環境或匯入錯誤、測試預期不正確，還是程式實際違反規格。不要為了讓測試顯示綠燈，就任意修改正確的驗收標準。"
+              ]
+            }
           ]
+        },
+        {
+          "id": "principles",
+          "heading": "十、這堂課最重要的五個原則",
+          "paragraphs": [
+            "1. 先有規格，再有測試。 沒有正確答案，就無法可靠地判斷程式是否正確。\n2. 每次盡量只改變一個測試條件。 這樣失敗時比較容易知道是哪個規則出了問題。\n3. 同時測正常、異常與邊界。 不能只有「應該成功」的案例。\n4. 檢查失敗的方式是否正確。 有些規格要求拒絕操作或拋出特定例外，不是任何錯誤都算通過。\n5. 把測試當成可重複的證據，不是絕對保證。 系統修改後要重新執行，並保留尚未涵蓋的風險。"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "understanding",
+          "heading": "十一、理解檢核：用真實情境來判斷",
+          "paragraphs": [
+            "假設你正在替一家醫院設計檢驗申請系統，已確認以下規格：\n\n- 檢驗申請必須有病歷代碼。\n- 檢驗項目代碼必須是核准清單中的值。\n- 申請數量必須是 1～10 的整數。\n- 資料不合法時禁止送出。\n- 匯出的報告不得含內部除錯欄位。\n\n請你試著回答：\n\n問題 1： 針對「申請數量必須是 1～10」，你會設計哪些正常、無效與邊界案例？至少列出六筆。\n\n問題 2： 如果使用者在畫面上無法輸入 11，但是後端 API 直接收到 11，系統仍接受。這反映了什麼測試或實作問題？\n\n問題 3： 如果程式正確拒絕了非法資料，卻拋出 `TypeError` 而不是規格要求的 `ValueError`，測試應該如何判定？\n\n問題 4： 假設所有業務規則測試都通過，是否可以宣布整個醫院系統完成驗收？為什麼？\n\n請先自行作答，再展開本頁參考答案逐題核對。\n\n只要你能獨立把一份業務規格轉成「有效資料、無效資料、邊界條件、預期例外、輸出契約」五類測試，就已掌握這堂課最重要的實務能力。"
+          ],
+          "blocks": []
         }
       ],
       "exercise": {
@@ -126,7 +525,37 @@
         "expected": "tests/test_rules_contract.py 與實際結果覆蓋三欄規則及受控匯出。",
         "check": "有效路徑、例外類型、80／81 邊界與允許欄位都有斷言，未把測試數量當成完整性保證。",
         "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M08-C03-Q04",
+          "prompt": "問題 1： 針對「申請數量必須是 1～10」，你會設計哪些正常、無效與邊界案例？至少列出六筆。",
+          "answer": [
+            "可測 1、5、10（接受），0、11、1.5、True、字串與缺值（拒絕）。至少包含上下界及其外側，預期依規格而定。"
+          ]
+        },
+        {
+          "id": "AASE-M08-C03-Q05",
+          "prompt": "問題 2： 如果使用者在畫面上無法輸入 11，但是後端 API 直接收到 11，系統仍接受。這反映了什麼測試或實作問題？",
+          "answer": [
+            "後端未在接收邊界落實規則；補上直接 API／函式拒絕 11 的測試，並修正共用驗證。"
+          ]
+        },
+        {
+          "id": "AASE-M08-C03-Q06",
+          "prompt": "問題 3： 如果程式正確拒絕了非法資料，卻拋出 `TypeError` 而不是規格要求的 `ValueError`，測試應該如何判定？",
+          "answer": [
+            "應失敗。pytest.raises(ValueError) 不接受 TypeError；需調查是否為未預期程式缺陷。"
+          ]
+        },
+        {
+          "id": "AASE-M08-C03-Q07",
+          "prompt": "問題 4： 假設所有業務規則測試都通過，是否可以宣布整個醫院系統完成驗收？為什麼？",
+          "answer": [
+            "不能。另需整合、UI、易用性、資安及實際驗收；記錄各層已驗證與待驗範圍。"
+          ]
+        }
+      ]
     },
     "en": {
       "summary": "Use parametrized tests for valid, invalid and length-boundary values in three fields, directly checking rules and the export contract.",
@@ -143,58 +572,371 @@
       },
       "sections": [
         {
-          "id": "rule",
-          "heading": "Locate Rules Independent of the Interface",
+          "id": "intro",
+          "heading": "1. Understand the Lesson in One Sentence",
           "paragraphs": [
-            "reference/rules.py validate accepts a dictionary and returns errors. export_report revalidates before JSON generation and raises ValueError on invalid data. Direct calls check inputs beyond interface restrictions.",
-            "The required keys are application_id, applicant_code and document_type. Each must be a nonempty string after trimming, at most 80 characters. These are synthetic teaching rules, not official document-acceptance conditions."
-          ]
+            "pytest is a tool that automatically examines a program. Business-rule tests check whether the program follows the rules we have agreed on.\n\nImagine a bank with this teaching rule: “An applicant must be at least 18 years old.” An engineer says the system is finished and its buttons work. That alone does not show that it follows the rule.\n\nAt minimum, check these cases:\n\n- Does it reject a 17-year-old?\n- Does it accept an 18-year-old?\n- Does it accept a 19-year-old?\n- What happens when age is missing?\n- What happens when someone enters “eighteen” instead of a number?\n\nOpening the website, filling in forms and clicking buttons by hand after every change is costly. pytest lets us write these situations as tests and rerun them after changes to check that previously correct rules remain protected.\n\nThe core skill is turning a Specification into Automated Tests."
+          ],
+          "blocks": []
         },
         {
-          "id": "analogy",
-          "heading": "Measure Different Samples with the Same Checklist",
+          "id": "map",
+          "heading": "2. Build the Knowledge Map",
           "paragraphs": [
-            "Change one sample condition while keeping the others valid to see which condition causes failure. Clearing every field at once shows an overall error but makes it harder to verify protection for each field.",
-            "Parametrization applies the same assertions to several inputs. Add cases for meaningful combinations, without using repeated data to imply that all conditions were tested."
-          ]
-        },
-        {
-          "id": "cases",
-          "heading": "Normal, Invalid, Boundary and Output-contract Cases",
-          "paragraphs": [
-            "Test empty strings, whitespace-only values, missing keys and wrong types, plus lengths exactly 80 and 81. Also check successful export, trimming, fixed structure and allowed fields so rejection tests do not omit the usable path.",
-            "Derive expectations from spec rather than copying current function outputs as answers. Resolve ambiguous rules with the specification and owner; do not arbitrarily weaken tests."
+            "The lesson connects six concepts:"
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "Figure 1 | Information Needed in a Test",
-              "description": "Read preparation, execution and assertions; identify the requirement each case protects.",
+              "caption": "Figure 1 | From Specification to Test Results",
+              "description": "Downward arrows show design and execution order; PASS and FAIL are alternative comparison outcomes.",
               "items": [
                 {
-                  "title": "Arrange",
-                  "body": "Create a valid baseline and replace only the field being tested."
+                  "title": "1. Specification",
+                  "body": "Decide which result is correct"
                 },
                 {
-                  "title": "Act",
-                  "body": "Call validate or export_report directly."
+                  "title": "2. Test Cases",
+                  "body": "Normal, invalid, boundary and exception cases"
                 },
                 {
-                  "title": "Assert",
-                  "body": "Check errors, exceptions or export results against the specification."
+                  "title": "3. Run pytest",
+                  "body": "Prepare input → call program → compare expected result"
+                },
+                {
+                  "title": "✓ PASS",
+                  "body": "Meets the checked conditions"
+                },
+                {
+                  "title": "✗ FAIL",
+                  "body": "Unexpected result; investigate the cause"
                 }
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 1",
+              "headers": [
+                "Concept",
+                "Plain meaning"
+              ],
+              "rows": [
+                [
+                  "Business Rules",
+                  "What a company, institution or process permits and prohibits"
+                ],
+                [
+                  "Unit Test",
+                  "An examination of a small individual function"
+                ],
+                [
+                  "Assertion",
+                  "A statement of the expected answer"
+                ],
+                [
+                  "Parameterization",
+                  "The same examination with different input data"
+                ],
+                [
+                  "Boundary Testing",
+                  "Checks immediately around a limit"
+                ],
+                [
+                  "Contract Testing",
+                  "Checks of agreed inputs, outputs and failure behavior"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The following sections connect these concepts into a practical workflow."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "rule",
+          "heading": "3. What Are Business Rules?",
+          "paragraphs": [
+            "Business rules are the requirements a system must obey. They come from real activities and needs rather than programming syntax.\n\nFor example:"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 2",
+              "headers": [
+                "Industry",
+                "Teaching rule",
+                "Expected behavior"
+              ],
+              "rows": [
+                [
+                  "E-commerce",
+                  "Free delivery at 1,000 or more",
+                  "Charge at 999; waive at 1,000"
+                ],
+                [
+                  "Healthcare",
+                  "Required specimen information is needed for an examination request",
+                  "Block submission and identify missing information"
+                ],
+                [
+                  "Banking",
+                  "Application fields are required",
+                  "Prevent completion when fields are missing"
+                ],
+                [
+                  "Education",
+                  "Scores range from 0 to 100",
+                  "Reject negative scores and scores above 100"
+                ],
+                [
+                  "Logistics",
+                  "Parcel weight has a service limit",
+                  "Reject overweight parcels or select another service"
+                ],
+                [
+                  "HR",
+                  "Leave depends on the applicable policy and service duration",
+                  "Calculate the allowance using that policy"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These are illustrative rules, not statements of the actual law for those industries."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Why Test More Than the Screen?"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose an e-commerce input prevents negative order totals. The screen looks correct, but some data arrives by an API or an internal function call without going through that screen. Without a backend check, the system may still receive an unreasonable total such as -500.\n\nDistinguish two responsibilities:\n\n- UI Validation: warn the user early on the screen.\n- Business Rule Validation: enforce the rule regardless of where data comes from.\n\nThat is why this lesson calls rules.py directly instead of relying only on mouse interaction."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "delivery",
+          "heading": "4. How Does pytest Examine a Program?",
+          "paragraphs": [
+            "Use a delivery-fee example with a confirmed specification:\n\n- Orders of 1,000 or more have free delivery.\n- Smaller orders have a delivery fee of 60.\n- The total must be a nonnegative integer.\n\nFirst, write the business function in rules.py."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Code 1",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "def delivery_fee(total: int) -> int:\n    if type(total) is not int or total < 0:\n        raise ValueError(\"訂單金額必須是非負整數\")\n    if total >= 1000:\n        return 0\n    return 60"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "In plain language: reject a total that is not an integer or is below zero. Return zero when it is at least 1,000; otherwise return 60.\n\nHere, def defines a function, return supplies its result, and raise ValueError tells the caller that the supplied value does not meet the requirement.\n\nSecond, write tests/test_rules.py."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code 2",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "import pytest\nfrom rules import delivery_fee\n\n@pytest.mark.parametrize(\"amount, expected\", [(0, 60), (999, 60), (1000, 0), (1001, 0)])\ndef test_delivery_fee(amount, expected):\n    assert delivery_fee(amount) == expected\n\n@pytest.mark.parametrize(\"bad\", [-1, 1.5, \"1000\", True])\ndef test_invalid_amount(bad):\n    with pytest.raises(ValueError):\n        delivery_fee(bad)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "pytest calls the same function with four normal inputs and compares each returned fee with the expected answer. Four additional inputs check rejection of a negative number, a fractional number, a string and a Boolean. The strict type check intentionally rejects True even though Python treats bool as a subclass of int."
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Delivery Threshold",
+              "description": "Integer totals from 0 to 2,000: delivery is free at 1,000 or above, otherwise 60. This demonstrates a rule without running Python or pytest.",
+              "items": [
+                {
+                  "title": "Order total",
+                  "body": "999"
+                },
+                {
+                  "title": "Expected fee",
+                  "body": "60"
+                },
+                {
+                  "title": "Free-delivery threshold",
+                  "body": "1000"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### What Is assert?"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "An assertion says, “This condition should hold; otherwise the test fails.”"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code 3",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "assert delivery_fee(999) == 60"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This says that delivery for an order of 999 should cost 60. If the program incorrectly returns zero, pytest reports a failure and reveals a disagreement between the implementation and specification."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "5. Parameterization: Reuse the Same Examination",
+          "paragraphs": [
+            "A key technique is @pytest.mark.parametrize, called parameterization.\n\nThink of a teacher applying the same grading standard to different students rather than writing a new examination for each student. Tests can reuse assertions in the same way.\n\nSuppose an application has three required fields:\n\n- application_id: the application identifier.\n- applicant_code: the applicant code.\n- document_type: the document type.\n\nThe synthetic teaching specification requires each field to be a string, nonempty after trimming surrounding whitespace, and no longer than 80 characters after trimming.\n\nEach field has six invalid values to examine:"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 3",
+              "headers": [
+                "Invalid value",
+                "Reason to test it"
+              ],
+              "rows": [
+                [
+                  "\"\"",
+                  "No text"
+                ],
+                [
+                  "\"   \"",
+                  "Only spaces"
+                ],
+                [
+                  "\"\\\\t\\\\n\"",
+                  "Only tab and newline whitespace"
+                ],
+                [
+                  "None",
+                  "No valid value"
+                ],
+                [
+                  "42",
+                  "A number instead of text"
+                ],
+                [
+                  "\"x\" * 81",
+                  "More than the allowed length"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Three fields multiplied by six invalid values produce 18 cases. We do not need 18 separate test functions."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code 4",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "import pytest\nfrom rules import validate, export_report\n\nGOOD = {\"application_id\": \"SYN-001\", \"applicant_code\": \"DEMO-A\", \"document_type\": \"合成申請表\"}\n\n@pytest.mark.parametrize(\"field\", [\"application_id\", \"applicant_code\", \"document_type\"])\n@pytest.mark.parametrize(\"bad\", [\"\", \"   \", \"\\t\\n\", None, 42, \"x\" * 81])\ndef test_invalid_field(field, bad):\n    record = {**GOOD, field: bad}\n    assert validate(record)\n    with pytest.raises(ValueError):\n        export_report(record)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This example defines a valid GOOD dictionary and imports the workshop rules.py functions. The delivery and three-field examples use different rules.py files; run them in separate project directories.\n\n{**GOOD, field: bad} copies the valid baseline and replaces only the field under examination. with pytest.raises(ValueError) states that this operation must reject the input by raising the specified exception.\n\nIf invalid data exports successfully, the test must fail. This expected-exception mechanism is supported by pytest itself."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "6. Why Focus on Boundaries?",
+          "paragraphs": [
+            "For a maximum of 80 characters, which lengths would you test? Testing only 10 and 100 covers a normal and an invalid case but may miss the most likely mistake.\n\nAn engineer might accidentally write:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Code 5",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "if len(value) >= 80:\n    raise ValueError()"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "That condition also rejects exactly 80 characters. The intended rule rejects values only when they exceed 80."
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 3 | The 80-character Boundary",
+              "description": "The slider compares lengths from 0 to 100 only. Type and nonempty-after-trimming checks are still required for full validity.",
+              "items": [
+                {
+                  "title": "79 characters",
+                  "body": "Accept"
+                },
+                {
+                  "title": "80 characters",
+                  "body": "Accept"
+                },
+                {
+                  "title": "81 characters",
+                  "body": "Reject"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The same reasoning applies to transaction limits, scores, parcel weights, discounts and API request limits. Start from the specified threshold, then test immediately before, at and after it."
               ]
             }
           ]
         },
         {
           "id": "example",
-          "heading": "A Complete Test Example for Your Project",
+          "heading": "7. Output Contracts: Check What Gets Produced",
           "paragraphs": [
-            "Create tests/test_rules_contract.py in your slice-three copy. The two stacked parametrization decorators combine three fields with six invalid values. Every case must report errors and reject export.",
-            "The normal case checks that JSON data equals exactly the three allowed fields and that input is unchanged. This is not a complete production-system contract; define other business needs separately."
+            "An Output Contract defines the required structure and contents of the result. Suppose a JSON report may export only three approved data fields while the input also contains an internal note:"
           ],
           "blocks": [
+            {
+              "kind": "step",
+              "heading": "Code 6",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "{\n    \"application_id\": \"A001\",\n    \"applicant_code\": \"U001\",\n    \"document_type\": \"申請表\",\n    \"debug_note\": \"internal\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Check three things:\n\n1. Valid input produces a report.\n2. The report includes only approved data fields.\n3. Export does not unexpectedly change the original input.\n\nThese checks support functional quality and may reduce accidental export of additional data. They do not replace access control or a complete security test program.\n\nUse json.loads() to parse the report and assert its structure and values. The workshop report has a status field and a data object; the three-field restriction applies to data, not to the entire outer JSON object."
+              ]
+            },
             {
               "kind": "step",
               "heading": "tests/test_rules_contract.py",
@@ -206,30 +948,116 @@
           ]
         },
         {
-          "id": "run",
-          "heading": "Execute and Read Failures",
+          "id": "misread",
+          "heading": "8. Why Passing Tests Do Not Establish Complete Correctness",
           "paragraphs": [
-            "From your slice-three root, run python -m pytest -q tests/test_rules_contract.py. On failure, read parameters, assertion and actual values before investigating rules. For import/environment errors, check the execution location first.",
-            "Once the example passes, run all tests in that project. Record actual counts and exit outcomes rather than prefilled success totals; counts change as tests are added."
+            "Different tests answer different questions:"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "Rule-test Commands",
-              "paragraphs": [
-                "Confirm the workshop environment is activated and you are in your own slice-three directory."
+              "kind": "table",
+              "caption": "Table 4",
+              "headers": [
+                "Test type",
+                "Main question"
               ],
-              "code": "python -m pytest -q tests/test_rules_contract.py\npython -m pytest -q"
+              "rows": [
+                [
+                  "Unit Test",
+                  "Does an individual rule calculate correctly?"
+                ],
+                [
+                  "Integration Test",
+                  "Do connected components work together?"
+                ],
+                [
+                  "UI Test",
+                  "Do the screen and interactions work as expected?"
+                ],
+                [
+                  "Usability Test",
+                  "Can real users complete the task?"
+                ],
+                [
+                  "Security Test",
+                  "Does the system address identified security risks appropriately?"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A bank’s interest formula passing 100 unit tests does not establish that users can submit the web form or that other people cannot access their records.\n\nTwo testing problems deserve attention. First, the expected answer itself may be wrong. Copying the current function result into the test can make the implementation and test share the same mistake. Derive expected results from confirmed requirements.\n\nSecond, tests cover only the situations you wrote. A 100% pass rate does not show that every possible input, operation or attack has been checked. Record both checked conditions and conditions still unverified."
+              ]
             }
           ]
         },
         {
-          "id": "misread",
-          "heading": "Passing Does Not Mean Every Input Was Tested",
+          "id": "run",
+          "heading": "9. How to Run pytest",
           "paragraphs": [
-            "The UI preventing 81 characters does not replace a function test rejecting an overlong direct call. Asserting “any error” may also mistake a program defect for correct rejection. Expect ValueError, checking messages or more specific conditions where needed.",
-            "Rule tests cannot establish discoverable feedback, a keyboard-completable task or correct real downloads. The next lesson tests the interface, followed by observation of people doing tasks."
+            "For the delivery example, use this project structure:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Code 7",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "my-project/\n├── rules.py\n└── tests/\n    └── test_rules.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "With pytest installed in the active Python environment, enter the project root and run:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code 8",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "python -m pytest -q"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "python -m pytest uses the current Python environment. -q requests concise output. pytest discovers files according to its naming rules.\n\nThe delivery example includes four normal and four invalid-value cases. The following illustrates output when all eight pass; preserve the output of your own actual run:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code 9",
+              "paragraphs": [
+                "Follow this section to run or interpret this example."
+              ],
+              "code": "........\n8 passed"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Each dot represents a passing case. On failure, distinguish environment or import errors, incorrect expectations and implementation defects. Keep correct acceptance criteria intact instead of weakening them just to obtain green output."
+              ]
+            }
           ]
+        },
+        {
+          "id": "principles",
+          "heading": "10. Five Principles to Keep",
+          "paragraphs": [
+            "1. Establish the specification before tests. Reliable correctness judgments require an agreed expected answer.\n2. Change one test condition at a time where practical, so a failure is easier to diagnose.\n3. Cover normal, invalid and boundary cases rather than only successful inputs.\n4. Check the required failure behavior. A specified ValueError is not satisfied by an arbitrary exception.\n5. Treat tests as repeatable evidence. Rerun them after changes and record uncovered risks; passing is not an absolute guarantee."
+          ],
+          "blocks": []
+        },
+        {
+          "id": "understanding",
+          "heading": "11. Check Your Understanding with a Scenario",
+          "paragraphs": [
+            "Suppose a hospital examination-request system has these confirmed teaching requirements:\n\n- A medical-record code is required.\n- The examination-item code must belong to an approved list.\n- The requested quantity must be an integer from 1 to 10.\n- Invalid data must not be submitted.\n- Exported reports must exclude internal debugging fields.\n\nTry answering:\n\nQuestion 1: For a quantity from 1 to 10, give at least six normal, invalid and boundary cases.\n\nQuestion 2: The screen prevents 11, but a direct backend API request containing 11 succeeds. What testing or implementation problem does this reveal?\n\nQuestion 3: Invalid data is rejected with TypeError instead of the specified ValueError. How should the test judge this?\n\nQuestion 4: If all business-rule tests pass, may the whole hospital system be declared accepted? Why?\n\nAnswer independently, then expand the reference answers on this page and compare your reasoning.\n\nThe practical target is to independently turn requirements into five categories of tests: valid data, invalid data, boundaries, expected exceptions and output contracts."
+          ],
+          "blocks": []
         }
       ],
       "exercise": {
@@ -242,119 +1070,40 @@
         "expected": "tests/test_rules_contract.py and actual results covering three-field rules and controlled export.",
         "check": "Assert valid paths, exception types, 80/81 boundaries and allowed fields. A test count is not a completeness guarantee.",
         "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M08-C03-Q04",
+          "prompt": "Question 1: For a quantity from 1 to 10, give at least six normal, invalid and boundary cases.",
+          "answer": [
+            "Test 1, 5 and 10 as accepted; reject 0, 11, 1.5, True, a string and missing values. Include both boundaries and their adjacent invalid values; derive expectations from the specification."
+          ]
+        },
+        {
+          "id": "AASE-M08-C03-Q05",
+          "prompt": "Question 2: The screen prevents 11, but a direct backend API request containing 11 succeeds. What testing or implementation problem does this reveal?",
+          "answer": [
+            "The backend fails to enforce rules at its receiving boundary. Add a direct API/function test rejecting 11 and fix the shared validation."
+          ]
+        },
+        {
+          "id": "AASE-M08-C03-Q06",
+          "prompt": "Question 3: Invalid data is rejected with TypeError instead of the specified ValueError. How should the test judge this?",
+          "answer": [
+            "Fail the test. pytest.raises(ValueError) does not accept TypeError; investigate an unexpected implementation defect."
+          ]
+        },
+        {
+          "id": "AASE-M08-C03-Q07",
+          "prompt": "Question 4: If all business-rule tests pass, may the whole hospital system be declared accepted? Why?",
+          "answer": [
+            "No. Integration, UI, usability, security and practical acceptance need their own evidence. Record verified and unverified scope at each layer."
+          ]
+        }
+      ]
     }
   },
-  "checks": [
-    {
-      "id": "AASE-M08-C03-Q01",
-      "answer": 2,
-      "text": {
-        "zh": {
-          "prompt": "為何每例只替換一個有效基準欄位？",
-          "options": [
-            "避免測太多",
-            "讓測試只看畫面",
-            "較容易定位哪個條件未受保護",
-            "不用再測有效資料"
-          ],
-          "rationales": [
-            "目的是可定位。",
-            "這是直接函式測試。",
-            "控制其他條件有助判斷。",
-            "正常路徑仍需驗證。"
-          ]
-        },
-        "en": {
-          "prompt": "Why replace only one field of a valid baseline per case?",
-          "options": [
-            "To avoid many tests.",
-            "To make tests inspect only the screen.",
-            "To locate the unprotected condition more easily.",
-            "To eliminate valid-data tests."
-          ],
-          "rationales": [
-            "The purpose is diagnosability.",
-            "These tests call functions directly.",
-            "Controlling other conditions helps identify the cause.",
-            "Normal paths still need verification."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M08-C03-Q02",
-      "answer": 1,
-      "text": {
-        "zh": {
-          "prompt": "80／81 字元案例最直接檢查什麼？",
-          "options": [
-            "正式文件真偽",
-            "規格長度邊界",
-            "使用者滿意度",
-            "登入狀態"
-          ],
-          "rationales": [
-            "不在規則內。",
-            "核對臨界有效與無效。",
-            "需要人的研究。",
-            "沒有身分測試。"
-          ]
-        },
-        "en": {
-          "prompt": "What do the 80/81-character cases directly check?",
-          "options": [
-            "Official document authenticity.",
-            "The specified length boundary.",
-            "User satisfaction.",
-            "Login state."
-          ],
-          "rationales": [
-            "That is outside the rules.",
-            "Check the adjacent valid and invalid limits.",
-            "That needs research with people.",
-            "No identity testing is involved."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M08-C03-Q03",
-      "answer": 3,
-      "text": {
-        "zh": {
-          "prompt": "負向匯出應如何斷言？",
-          "options": [
-            "程式沒有啟動就算通過",
-            "接受任何未預期錯誤",
-            "只檢查畫面標題",
-            "確認預期 ValueError，並核對相關條件"
-          ],
-          "rationales": [
-            "尚未跑到行為。",
-            "可能掩蓋 bug。",
-            "不能保護匯出。",
-            "拒絕方式需符合契約。"
-          ]
-        },
-        "en": {
-          "prompt": "How should negative export be asserted?",
-          "options": [
-            "Count failure to start as passing.",
-            "Accept any unexpected error.",
-            "Check only the page title.",
-            "Expect ValueError and check the relevant conditions."
-          ],
-          "rationales": [
-            "The behavior was not reached.",
-            "That may hide a bug.",
-            "That cannot protect export.",
-            "Rejection must follow the contract."
-          ]
-        }
-      }
-    }
-  ],
+  "checks": [],
   "translations": {
     "en": {
       "status": "published",
