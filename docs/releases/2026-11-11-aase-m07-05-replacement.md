@@ -57,7 +57,7 @@ pnpm run validate:release
 pnpm exec playwright test --config playwright.aase-m0705.config.ts
 ```
 
-初輪單元319／319通過；新增模型拒絕案例並合併遠端後325／325通過；續合併M07-02後328／328通過。型別0錯誤0警告，內容與產生器同步通過。共享HTML驗證6／6通過；audit為四個low，沒有high／critical。瀏覽器本機2／2通過。合併後發布邊界、release與瀏覽器2／2均通過。期間另一次validate:content碰到boundary暫時fixture，待fixture清除後重跑已通過。
+初輪單元319／319通過；新增模型拒絕案例並合併遠端後325／325通過；續合併M07-02後328／328通過；最終保留M06-04等遠端歷史後331／331通過。型別0錯誤0警告，內容與產生器同步通過。共享HTML驗證6／6通過；audit為四個low，沒有high／critical。瀏覽器本機2／2通過。合併後發布邊界、release與瀏覽器2／2均通過。期間另一次validate:content碰到boundary暫時fixture，待fixture清除後重跑已通過。
 
 ## Git、部署與回讀
 
@@ -65,7 +65,20 @@ pnpm exec playwright test --config playwright.aase-m0705.config.ts
 
 部署前最近查得成功Pages執行：[42989406500](https://github.com/JasonLn0711/kairos-learning/actions/runs/42989406500)，來源3c1f378573016a166d6ae420ffcce8482e7180cd。後續616a293部署執行42989840968也已確認成功，作為本次發布前的較新恢復定位。
 
-發布與正式站回讀：待完成。本節將記錄實際commit、Pages run、遠端差異與正式瀏覽器結果。
+正式部署來源為 **48498a49519c362b4a17674cab079b03afa2b484**；[Pages執行42990651032](https://github.com/JasonLn0711/kairos-learning/actions/runs/42990651032)狀態completed／success。CI的安裝、audit、內容、331項測試、共享HTML、型別、發布邊界、release、MATLAB下載checksum、artifact與deploy全部成功。推送後fetch取得與origin/main差異`0 0`。
+
+首次push因同期遠端前進而被拒絕；保留雙方歷史合併後，正常push成功，沒有force-push。內容提交由來源87152a1及實作e14c565承接；整合提交6dd5de8／02aded2／48498a4保留所有同期章節。最後一輪整合後重新建置並跑本機瀏覽器2／2通過；精確部署commit的全部發布閘門由上述CI證明。
+
+部署後執行：
+
+```sh
+AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0705.config.ts
+```
+
+**正式站2／2通過**，兩語v1.1.0全文／順序、三表、程式碼、原四題、四尺寸與200%、鍵盤焦點／操作、無JS、搜尋文字均重新檢查。實際下載原版及戶籍謄本新版JSON，核對中文、三允許鍵、scope、status與synthetic-report.json檔名；四SVG在正式站HTTP 200、bytes與已驗證本機檔相同、每檔<100000，字框與互相重疊檢查通過。圖1／圖2的手機與桌面截圖及四份SVG已目視，條件分支與標籤可讀。
+
+忽略證據：`.local/aase/m0705/production-workflow.json`保存該run所有步驟；`production-results.json`與`production-browser.log`保存正式回讀；同目錄中語言／圖號／寬度截圖為最後一次正式站回讀產物。上述檢查限本次教材與必要共用路由，不代表全站完整無障礙認證。
+
 
 ## 範圍與待驗
 
