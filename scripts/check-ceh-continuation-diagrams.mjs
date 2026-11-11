@@ -57,7 +57,7 @@ try{
    assert.equal(await page.locator('figure').count(),17);
    for(const r of all){
     const figure=page.locator(`[data-diagram="${r.text[lang].name}"]`);
-    
+
     const text=await figure.innerText();
     const normalize=s=>s.replace(/\s+/g,' ').trim();
     for(const item of r.text[lang].items){assert.ok(normalize(text).includes(normalize(item.title.replace(/^([CIA]) · /,''))),`${r.reference}: ${item.title}`);assert.ok(normalize(text).includes(normalize(item.body)),`${r.reference}: ${item.body}`);}
