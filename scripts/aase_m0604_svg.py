@@ -43,6 +43,7 @@ def render(f,n,lang):
      if j<3:out.append(f'<path d="M{x+204} {y-8}h24m-6-6 6 6-6 6" fill="none" stroke="#65757c" stroke-width="2"/>')
     y=max(ends)+36
     if i==0:out.append(f'<path d="M36 {y}H1004" stroke="#d5dce0"/>');y+=48
+  if n==1:y+=44
   desc=f['description']
  y=text(desc,36,y+20)+24
  svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 {y}" role="img" aria-labelledby="title desc" lang="{lang}"><title id="title">{escape(f["caption"])}</title><desc id="desc">{escape(desc)}</desc><rect width="1040" height="{y}" fill="#fbfcfd"/><g fill="#18252c" font-family="Arial, Noto Sans CJK TC, sans-serif">'+''.join(out)+'</g></svg>\n'
