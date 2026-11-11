@@ -2,7 +2,7 @@
  import {onMount} from 'svelte';
  import type {Locale} from '$lib/model';
  let {lang='zh',mode}:{lang?:Locale;mode:'stale'|'walkthrough'}=$props();
- let ready=$state(false),amount=$state('100'),snapshot=$state('100'),valid=$state(true),exported=$state(''),active=$state(0),revealed=$state(false);
+ let ready=$state(false),amount=$state('100'),snapshot=$state('100'),valid=$state(true),exported=$state(''),copyStatus=$state(''),active=$state(0),revealed=$state(false);
  onMount(()=>{ready=true;});
  const en=$derived(lang==='en');
  const cases=$derived(en?[
@@ -16,9 +16,16 @@
   {title:'取消操作',event:'使用者在輸入階段取消，或在匯出確認時選擇取消。',answer:'結束本次任務，不產生新報告。取消後保留或清空草稿，仍須另外定義。'},
   {title:'確認匯出',event:'必要欄位完整，目前輸入對應已檢查資料，使用者確認匯出。',answer:'產出對應該次已檢查輸入的報告，明示結果。完整性不代表正確性、真實性或正式受理。'}
  ]);
- function edit(){valid=false;exported='';}
- function recheck(){snapshot=amount;valid=true;exported='';}
- function output(){if(!ready||!valid||snapshot!==amount)return;exported=en?`Simulated result: checked coverage ${snapshot} ten-thousand TWD. No premium calculation.`:`模擬結果：已檢查保障額度 ${snapshot} 萬元。未計算保費。`;}
+ function edit(){valid=false;exported='';copyStatus='';}
+ function recheck(){snapshot=amount;valid=true;exported='';copyStatus='';}
+ async function output(){
+  if(!ready||!valid||snapshot!==amount)return;
+  const result=en?`Simulated result: checked coverage ${snapshot} ten-thousand TWD. No premium calculation.`:`模擬結果：已檢查保障額度 ${snapshot} 萬元。未計算保費。`;
+  exported=result;copyStatus='';
+  try{await navigator.clipboard.writeText(result);if(exported===result)copyStatus=en?'Copied to clipboard.':'已複製到剪貼簿。';}
+  catch{if(exported===result)copyStatus=en?'Copy was unavailable. Select the displayed result to copy manually.':'未能複製；可選取畫面結果手動複製。';}
+ }
+
  function move(delta:number){active=Math.max(0,Math.min(cases.length-1,active+delta));revealed=false;}
 </script>
 {#if mode==='stale'}
@@ -34,8 +41,8 @@
    <p>{en?'Last checked input':'上次檢查資料'}：{snapshot} {en?'ten-thousand TWD':'萬元'}</p>
    <p>{valid?(en?'The result corresponds to the checked input.':'目前輸入與上次檢查一致，可依此結果操作。'):(en?'An edit invalidated the previous result. Even changing back requires a new check in this simulation.':'資料修改已使舊結果失效；本模擬即使改回原值，也必須重新檢查。')}</p>
   </div>
-  <div class="actions"><button disabled={!ready} onclick={recheck}>{en?'Check again':'重新檢查'}</button><button disabled={!ready||!valid} onclick={output}>{en?'Show simulated result':'顯示模擬結果'}</button></div>
-  {#if exported}<p role="status">{exported}</p>{/if}
+  <div class="actions"><button disabled={!ready} onclick={recheck}>{en?'Check again':'重新檢查'}</button><button disabled={!ready||!valid} onclick={output}>{en?'Copy simulated result':'複製模擬結果'}</button></div>
+  {#if exported}<p role="status">{exported} {copyStatus}</p>{/if}
   <p>{en?'Static example: coverage 100 ten-thousand TWD with a hypothetical annual premium of TWD 12,000 belongs to the first input only. Changing coverage to 300 invalidates it; this exercise does not calculate a new premium.':'靜態範例：保障額度 100 萬元與假設每年 12,000 元的保費，只對應第一次輸入。改成 300 萬元後舊結果失效；此練習不計算新保費。'}</p>
   <noscript><p>{en?'JavaScript is disabled. Controls are unavailable; read the static example and the rule: edit → invalidate → check again → output.':'JavaScript 已關閉，控制項停用；請閱讀靜態範例與「修改 → 失效 → 重查 → 輸出」規則。'}</p></noscript>
  </figure>
