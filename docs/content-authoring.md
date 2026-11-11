@@ -725,3 +725,9 @@ InformationHierarchyDiagram 由受限 cards／flow 承接包含、樹狀、比�
 AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.json轉入正式正文；`--check`比對同步。五組既有flow／cards依序為5／4／11／2／2項，只有需求至交付為flow。WireframeDiagram保留四畫面的2×2／窄版重排、十一條起點／事件／終點關係、上傳分支比較與兩張任務卡；不把條件出口畫成必經步驟。驗證器限制課次、位置、種類、節點數、欄位與轉換端點形狀。十個固定白名單SVG由`aase_m0404_svg.py`同源生成，各小於100000 bytes；下載排版差異記在來源對照。三個供稿開放題沿原生參考答案；qa=[]，不提供提交或AI批改。
 
 檢查入口為`tests/aase-m0404-replacement.test.ts`與`playwright.aase-m0404.config.ts`；正式站設定`AASE_BASE_URL`。來源、原版、逐節採用、圖意差異與實測／發布結果見[本次回執](releases/2026-11-11-aase-m04-04-replacement.md)。
+
+### AASE M05-01 Prompt 與 Spec（2026-11-11）
+
+v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有段落錨點。`scripts/aase_m0501_content.py` 由完整成稿生成 JSON，`--check` 核對同步；三張表、R-01～R-04／T-01～T-04、Agent 任務、BDD 情境與三題原始理解檢核在正文呈現。既有三題為補充檢核，供稿三題沿原生答案展開，不建立提交或評分服務。兩語保留相同中文 spec.md 程式碼，英文有完整條款解讀。
+
+`PromptSpecDiagram.svelte` 使用既有 flow 資料模型，五節點維持參考圖的直向閱讀順序，Verification 獨立框線，回修說明明示回到適當階段；手機換行而不縮小整張圖。驗證器限制此課五節點與受限文字欄位。`scripts/aase_m0501_svg.py` 沿受審核流程 exporter 產生兩份 SVG，大小均低於 100000 bytes；HTML、搜尋與匯出同源。檢查用 `tests/aase-m0501-replacement.test.ts`、`playwright.aase-m0501.config.ts`；正式站以 `AASE_BASE_URL` 指定。詳見[逐節對照](sources/aase/m05-01/replacement-2026-11-11/source-map.md)與[驗收回執](releases/2026-11-11-aase-m05-01-replacement.md)。
