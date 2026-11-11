@@ -8,7 +8,7 @@
 
 技術依據：2026-11-11 查閱 pytest 官方 parametrize 與 assert 指南，確認堆疊參數化與 pytest.raises 用法。來源連結沿用本課既有 sourceIds。
 
-目前狀態：source preserved；雙語正文、圖解、Python 實測及本機瀏覽器檢查已完成。正式發布狀態與完整驗證見 [發布回執](../../../../releases/2026-11-11-aase-m08-03-replacement.md)。
+目前狀態：source preserved、validated、published；雙語正文、圖解、Python 實測、CI 與正式站五項瀏覽器回讀已完成。正式發布證據與完整驗證見 [發布回執](../../../../releases/2026-11-11-aase-m08-03-replacement.md)。
 
 ## 逐節採用對照
 

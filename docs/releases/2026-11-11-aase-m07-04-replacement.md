@@ -1,6 +1,6 @@
 # M07-04｜資料檢核完整供稿與四圖抽換
 
-2026-11-11；執行與詳細證據 owner：kairos-learning。發布狀態：本機驗證完成，正式站驗證待執行。
+2026-11-11；執行與詳細證據 owner：kairos-learning。發布狀態：已提交、推送並完成正式部署；兩語正式頁與八 SVG 回讀通過。
 
 ## 交付與來源
 
@@ -34,10 +34,21 @@ AASE-M07-C04 v1.1.0／revision 4：原發布日 2026-11-05、原課次／網址�
 
 來源提交 `0502b42`；實作提交 `30d312e`。整合遠端 `d7f396b`，保留同期 M06-02／M06-04／M07-02／M07-05 等修改；共用來源、呈現器與歷史測試的六份衝突逐項合併，整合後 335 項單元測試、型別、發布閘門及 release 通過。
 
-遠端 M07-05 source-map.md 既有文末空白在 staged diff 檢查中出現，保留該既有來源；本次相對遠端的變更另以 git diff --check 核對。待填：整合提交、部署 run、正式兩語全文及八 SVG 回讀結果。
+遠端 M07-05 source-map.md 既有文末空白在 staged diff 檢查中出現，保留該既有來源；本次相對遠端的變更另以 git diff --check 核對。最終發布提交 `9a39a96598dc6ed3a6cd60f54309965331abd790`；一般推送至 origin main，fetch 後差異 `0 0`。所有並行新增歷史均保留。
 
 ## 驗證界線
 
 已驗證的是本課內容、網頁操作、靜態發布及指定瀏覽器尺寸。學習者作答、真實裝置、完整輔助科技認證與 Streamlit 工作坊的當次 runtime 尚未驗收。本次沒有建立批改、學習進度、正式核准或資料保存服務；沒有新增依賴、變更其他課次或啟用其他專案工作。
 
 整合後瀏覽器全文比對另外抓到共用呈現器條件改寫使 M07-04 初始條列未走 AaseProse；已將本課加入遠端新條件，保留其他課程分支，再重新驗證全文與無 JavaScript 條列。
+
+## 正式發布與回讀結果
+
+[Pages run 42992145430](https://github.com/JasonLn0711/kairos-learning/actions/runs/42992145430) 對 `9a39a96` 完整執行依賴稽核、內容、368 項測試、6 項 HTML 契約、型別、草稿／未來日期／英文發布閘門、release、下載雜湊及部署，結果 success，工作流程 updatedAt 為 `2026-11-11T09:07:40Z`。正式 CI 核對 406 HTML、語言配對、連結／錨點與 911 資產；型別零錯誤、零警告。最終提交的本機 368 項測試同樣通過。
+
+- [中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m07/concepts/m07-04/) 與[英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m07/concepts/m07-04/) 均 HTTP 200；回讀明確顯示 v1.1.0、原發布日 2026-11-05 與修訂日 2026-11-11。
+- 正式站重跑 `AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0704.config.ts`：8／8 通過。涵蓋兩語全文／小節／表格／六 code／三題參考解析、四尺寸、200% 文字、鍵盤捲動／重設、無 JS、共用搜尋索引與八 SVG 回讀位元組、bounds 及文字重疊。
+- 兩語正文實測 16 CSS px、行高 28.8 px（1.8）；版本／日期／計算樣式與回讀時間記錄於 checks.json 的 production.public_audit。圖檔為 1517–2222 bytes，SHA-256 與正式回應相符。
+- 原始工作樹的其他章節修改保留。本次成果另同步回 canonical 工作目錄；詳細執行與截圖在隔離工作樹 `.local/aase/m0704/`，對外紀錄以本回執及 checks.json 為準。Planning 未另建重複詳稿。
+
+多次推送遇到其他章節同步發布的 non-fast-forward，均先整合再一般推送。曾在衝突修復時讀取了由其他工作樹更新的 origin/main，導致暫時引用尚未合入的元件；改以固定 MERGE_HEAD 取雙方來源後通過檢查。最後以任務專用 fetch ref 縮短整合與推送間隔；沒有強制推送、刪除歷史或覆蓋其他章節成果。後續整合的全套測試／型別／發布閘門由此正式 CI 對最終提交再次證明。
