@@ -17,12 +17,12 @@ async function completeBody(page:Page,lang:'zh'|'en'){
  for(const q of lesson.text[lang].openChecks){await expect(page.locator('#'+q.id).locator('..').locator('details p')).toHaveText(q.answer);}
 }
 for(const lang of ['zh','en']as const)test(`${lang}: complete text, figures, exports and reading access`,async({page,browser,baseURL,request})=>{
- const path=`${lang==='en'?'/en':''}/courses/aase/v1/m09/concepts/m09-03/`;await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.0');await completeBody(page,lang);await expect(page.locator('#demo').locator('..').locator('ul li')).toHaveCount(5);
+ const path=`${lang==='en'?'/en':''}/courses/aase/v1/m09/concepts/m09-03/`;await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.1');await completeBody(page,lang);await expect(page.locator('#demo').locator('..').locator('ul li')).toHaveCount(5);
  await expect(page.locator('.acceptance-evidence')).toHaveCount(2);await expect(page.locator('.acceptance-evidence .arrow')).toHaveCount(4);
  for(const width of [320,390,768,1280])for(const scale of [1,2]){
   await page.setViewportSize({width,height:1000});await page.evaluate(s=>document.documentElement.style.fontSize=`${s*100}%`,scale);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-  const sizes=await page.locator('.acceptance-evidence p').evaluateAll(es=>es.map(e=>{const s=getComputedStyle(e);return[parseFloat(s.fontSize),parseFloat(s.lineHeight)/parseFloat(s.fontSize)]}));for(const [font,line]of sizes){expect(font).toBeGreaterThanOrEqual(16*scale);expect(line).toBeGreaterThanOrEqual(1.7);}
+  const sizes=await page.locator('.acceptance-evidence p, article table, article pre').evaluateAll(es=>es.map(e=>{const s=getComputedStyle(e);return[parseFloat(s.fontSize),parseFloat(s.lineHeight)/parseFloat(s.fontSize)]}));for(const [font,line]of sizes){expect(font).toBeGreaterThanOrEqual(16*scale);expect(line).toBeGreaterThanOrEqual(1.7);}
   if(scale===1&&[390,1280].includes(width))for(const n of [1,2])await page.locator(`.acceptance-evidence[data-figure="${n}"]`).screenshot({path:`.local/aase/m0903/${lang}-${n}-${width}.png`});
  }
  await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));
