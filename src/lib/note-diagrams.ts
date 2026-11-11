@@ -1,5 +1,6 @@
 import specs from './note-diagram-specs.json' with {type:'json'};
 /** Reviewed reference relationships. Data contains text only, never arbitrary SVG/HTML. */
+export type NoteDiagramSpec = {count:number;layout:string;rows?:number[][];edges?:[number,number,string,string?][]};
 export const noteDiagramSpecs = specs;
 export type NoteDiagramName = keyof typeof noteDiagramSpecs;
 export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;description:string;items:{title:string;body:string}[]};
@@ -7,7 +8,11 @@ export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;de
 export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
-  if(date!=='2026-11-10'||!Object.hasOwn(referenceNumbers,name))return null;
+  if(date!=='2026-11-10')return null;
+  const continuationNames=['authorization','soc','blocksize','hybrid','digest','certificate','tasks','bytes','aeshistory','storage','hidden','response','keymethods','mitm','tlsroles','signverify','reasoning'];
+  const index=continuationNames.indexOf(name);
+  if(index>=0)return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-notes/2026-11-10/continuation-17-reference/image-${index+1}.png`;
+  if(!Object.hasOwn(referenceNumbers,name))return null;
   return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-notes/2026-11-10/reconstruction/image-${referenceNumbers[name]}.png`;
 }
 export function validateNoteDiagram(block:NoteDiagram):void {
