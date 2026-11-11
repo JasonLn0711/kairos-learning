@@ -67,6 +67,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
     if(new Set(t.sections.map(s=>s.id)).size!==t.sections.length)fail('duplicate section');
     for(const s of t.sections){
       if(!/^[a-z][a-z0-9-]*$/.test(s.id)||!text(s.heading)||['discussion','objectives','practice','checks','sources'].includes(s.id)||s.id.startsWith('qa-')||!s.paragraphs.length||s.paragraphs.some(p=>!text(p))||(s.sourceIds??[]).some(id=>!l.sourceIds.includes(id)))fail('invalid section');
+      if(l.id==='AASE-M09-C02'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
+        const count=s.id==='analogy'?4:s.id==='checklist'?8:0;
+        if(figures.length!==(count?1:0)||figures.some(f=>(f.kind!=='flow'&&f.kind!=='cards')||f.kind!==(s.id==='analogy'?'flow':'cards')||f.items.length!==count||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid handoff figure');
+      }
       if(l.id==='AASE-M05-C04'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
         if(figures.length!==(s.id==='loop'?1:0)||figures.some(f=>f.kind!=='flow'||f.items.length!==5||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid SDD change figure');
