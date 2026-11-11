@@ -22,7 +22,7 @@ test('M06-01 replacement preserves originals, anchors, paired depth, examples, q
   const entry=build(lesson).forLanguage(lang)!.searchEntries[0];
   for(const b of blocks)if(b.kind==='prose')for(const p of b.paragraphs)assert.ok(entry.text.includes(p));
  }
- for(const script of ['scripts/aase_m0601_content.py','scripts/aase_m0601_svg.py']){const r=spawnSync('python3',[script,'--check'],{encoding:'utf8'});assert.equal(r.status,0,r.stdout+r.stderr);}
+ for(const script of ['scripts/verify-aase-m0601-source.py','scripts/aase_m0601_content.py','scripts/aase_m0601_svg.py']){const r=spawnSync('python3',[script,'--check'],{encoding:'utf8'});assert.equal(r.status,0,r.stdout+r.stderr);}
  assert.equal(spawnSync('sha256sum',['-c','SHA256SUMS'],{cwd:root}).status,0);
  const blocks=lesson.text.zh.sections.flatMap((s:any)=>s.blocks??[]),codes=blocks.filter((b:any)=>b.code).map((b:any)=>b.code);
  const dir=mkdtempSync(join(tmpdir(),'m0601-example-'));try{writeFileSync(join(dir,'rules.py'),codes[0]);writeFileSync(join(dir,'app.py'),codes[1]);const run=spawnSync('python3',['app.py'],{cwd:dir,encoding:'utf8'});assert.equal(run.status,0,run.stderr);assert.equal(run.stdout.trim(),'True');}finally{rmSync(dir,{recursive:true});}

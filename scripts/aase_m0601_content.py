@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[1]
 P=ROOT/'docs/sources/aase/m06-01/replacement-2026-11-11'
 IDS=['questions','analogy','compare','runtime','trace','industries','c4','record','understanding']
 def generate():
- lesson=json.loads((P/'prior-lesson.json').read_text());lesson.update(revision=4,contentVersion='1.1.0',date='2026-11-11');lesson['checks']=[];lesson['sourceIds'].append('c4-diagrams')
+ lesson=json.loads((P/'prior-lesson.json').read_text());lesson.update(revision=4,contentVersion='1.1.0',date='2026-11-11');lesson['checks']=[];lesson['sourceIds'].append('c4-levels')
  figures=json.loads((P/'figures.json').read_text())
  for lang in ['zh','en']:
   chunks=re.split(r'^## ',(P/f'teaching.{lang}.md').read_text(),flags=re.M);sections=[]
@@ -39,7 +39,7 @@ def generate():
   assert len(sections)==9
   for s in sections:
    if s['id']=='runtime':s['sourceIds']=['streamlit-architecture']
-   if s['id']=='c4':s['sourceIds']=['c4-context','c4-container','c4-diagrams']
+   if s['id']=='c4':s['sourceIds']=['c4-context','c4-container','c4-levels']
   lesson['text'][lang]['sections']=sections
  questions={
  'zh':[
