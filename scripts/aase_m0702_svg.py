@@ -8,6 +8,7 @@ for lang in ['zh','en']:
  for n,section,kind,count in [(1,'contract','flow',5),(2,'review','cards',2)]:
   f=next(b for s in lesson['text'][lang]['sections']if s['id']==section for b in s['blocks']if b['kind']==kind)
   assert len(f['items'])==count
+  f={**f,'items':[{**item,'body':item['body'].replace('\n',' ')}for item in f['items']]}
   data=render(f,'process'if n==1 else'evidence',lang)
   path=ROOT/f'site/images/aase/m07-02-{n}-{lang}.svg'
   if '--check'in sys.argv:assert path.read_bytes()==data,f'outdated {path}'
