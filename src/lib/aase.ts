@@ -191,6 +191,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const count=s.id==='artifacts'?3:s.id==='change-workflow'?5:0;
         if(figures.length!==(count?1:0)||figures.some(f=>f.kind!=='flow'||!keys(f,['kind','caption','description','items'])||f.items.length!==count||f.items.some(item=>!keys(item,['title','body']))))fail('invalid OpenSpec figure');
       }
+      if(l.id==='AASE-M05-C02'&&l.revision>=4){
+        const expected:Record<string,number>={analogy:5,quality:2,examples:2,specification:5,workflow:5};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='workflow'?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid specification figure');
+      }
       for(const b of s.blocks??[]){
         if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}
         else if(b.kind==='architecture'){assertArchitectureDiagram(b);}
