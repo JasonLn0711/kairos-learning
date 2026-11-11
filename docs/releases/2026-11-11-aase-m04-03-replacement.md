@@ -28,11 +28,13 @@
 - 原件：`sha256sum -c SHA256SUMS`（來源目錄）八件通過。
 - 生成器：`python3 scripts/aase_m0403_content.py --check`；`python3 scripts/aase_m0403_svg.py --check`。
 - 新測試：`tests/aase-m0403-replacement.test.ts`；瀏覽器：`pnpm exec playwright test --config playwright.aase-m0403.config.ts`。本機證據：隔離工作樹 `.local/aase/m0403/`；正式站以 `AASE_BASE_URL=https://learn.cs-kairos.com` 指定。
-- 整合遠端後全套單元 297／297 通過；型別檢查 0 errors／0 warnings。publication-boundary 最終通過草稿、未來日期與英文入口關閉，並重建乾淨正式輸出。
+- 整合遠端後全套單元 299／299 通過；型別檢查 0 errors／0 warnings。publication-boundary 最終通過草稿、未來日期與英文入口關閉，並重建乾淨正式輸出。
 - 最終 `pnpm run validate:content`、`pnpm run validate:release`、`git diff --check` 通過；最終瀏覽器兩語 2／2 通過。`pnpm audit --audit-level=high` 通過，現有 4 low；共用 HTML 六個 Python 測試及六份 MATLAB ZIP 雜湊均通過。
-- 原始來源提交 `9779ade`、教材實作 `73bf11f`、保留雙方歷史的整合 `e642b97`。保留同期 M03-05／M04-01／M04-02 與 CEH 更新；衝突解決後重新執行上述驗證。
+- 原始來源提交 `9779ade`、教材實作 `73bf11f`、保留雙方歷史的整合 `e642b97`。保留同期 M03-05／M04-01／M04-02／M04-06 與 CEH 更新；衝突解決後重新執行上述驗證。
 - Git 推送、遠端一致性、Pages 工作流程及正式站全文／12 圖回讀：待完成。
 
 尚未進行實際學員、輔助科技或實體手機驗收；教材中的設計候選與靜態草圖不等於真實使用者測試成果。發布也不代表理解或課程完成。
 
 最終本機日誌留在 `/tmp/kairos-m0403-tests.log`、`/tmp/kairos-m0403-check.log`、`/tmp/kairos-m0403-final-boundary.log`、`/tmp/kairos-m0403-final-release.log`、`/tmp/kairos-m0403-final-browser.log`。瀏覽器結構化結果在隔離工作樹 `.local/aase/m0403/results.json`，截圖與 trace 同目錄；正式站驗收會更新該結果。
+
+第二次推送前因遠端新增 M04-06 而遇到 non-fast-forward，已保留雙方內容再整合；型別 0 errors／0 warnings，299 個單元測試通過。共用來源、渲染器與歷史快照測試保留各課次已授權的更新。

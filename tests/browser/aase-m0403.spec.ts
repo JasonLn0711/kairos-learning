@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 const lesson=JSON.parse(readFileSync('content/aase/lessons/aase-m04-c03.json','utf8'));
 const layouts=[1,2,3,4,5,6];
 async function completeBody(page:Page,lang:'zh'|'en'){
+ for(const id of ['structure','analogy','groups','compare','order','record'])await expect(page.locator('[id="'+id+'"]')).toHaveCount(1);
  for(const s of lesson.text[lang].sections){
   const section=page.locator('h2#'+s.id).locator('..');await expect(section.locator('h2').first()).toHaveText(s.heading);
   for(const p of s.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));
@@ -37,6 +38,7 @@ for(const lang of ['zh','en'] as const)test(`${lang}: full source, six diagram r
   await page.setViewportSize({width,height:900});await page.evaluate(s=>document.documentElement.style.setProperty('font-size',s*100+'%','important'),scale);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth),`${width}/${scale}`).toBeLessThanOrEqual(width);
   const bad=await page.locator('article p,article li:not(:has(> svg.arrow)),article figcaption').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1)}).map(e=>e.textContent?.slice(0,100)));expect(bad,`${width}/${scale}`).toEqual([]);
+  const small=await page.locator('article th,article td,article pre,article dt,article dd').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7}).map(e=>e.textContent?.slice(0,70)));expect(small).toEqual([]);
   const columns=await page.locator('.ia-diagram[data-figure="3"] > ul').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);if(width<=390||scale===2)expect(columns).toBe(1);if(width===1280&&scale===1)expect(columns).toBe(2);
   expect(await page.locator('.layouts .desktop').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length)).toBe(2);
   await expect(page.locator('.ia-diagram .arrow')).toHaveCount(4);
