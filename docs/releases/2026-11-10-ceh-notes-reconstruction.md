@@ -37,3 +37,7 @@
 - 2026-11-10T14:30Z，`CEH_NOTES_BASE_URL=https://learn.cs-kairos.com node scripts/check-ceh-notes-browser.mjs` 完整通過：雙語每段正文、四尺寸及 200%、無 JS 答案、鍵盤、所有回憶卡與檢核、30 SVG 文字幾何／下載 bytes 與搜尋。另回看正式站中文手機第二部分、英文桌面第三部分截圖。切換期間曾讀到前版／未完整 bootstrap，未採為完成證據；部署完成後重跑通過。
 - 11 個 GitHub 原 PNG 公開 URL 均 HTTP 200，下載 SHA-256 與 manifest 相符。本機忽略證據為 `.local/ceh-notes/reconstruction-production-browser.log`、`production-original-images.json` 及頁面／SVG 截圖；公開可重跑檢查腳本與同源資料保存在 repo。
 - 本回執為發布後文件提交；`[skip ci]` 不另產生網站部署，網站對應的已驗版本為上述 `0838567`。本輪未完成項僅為原稿未附九題、未全面審閱標準 errata，以及未進行真人學習理解驗收，均未作完成宣稱。
+
+## 2026-11-11｜控制面接續
+
+[Planning 接續回執](2026-11-10-ceh-notes-planning-sync.md#ceh-notes-reconstruction-2026-11-11)更新較早的單一部分狀態，並將本次完整重製連回當日日誌、專案、週容量與整合入口。[今日紀錄](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W46/days/2026-11-11.md#ceh-notes-reconstruction-2026-11-11) ↔ [CEH 專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-07-ceh-cehp-certification-training.md#ceh-notes-reconstruction-2026-11-11) ↔ [W46 容量](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W46/weekly-plan.md#ceh-notes-reconstruction-2026-11-11) ↔ [整合入口](https://github.com/JasonLn0711/planning-everything-track/blob/main/docs/14-local-integrations.md#ceh-notes-reconstruction-2026-11-11) ↔ [教材發布回執](https://github.com/JasonLn0711/kairos-learning/blob/main/docs/releases/2026-11-10-ceh-notes-reconstruction.md)。本人理解與作答仍待獨立證據。
