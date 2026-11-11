@@ -676,6 +676,14 @@ v1.2.0／revision 6 以新供稿取代餐廳版本；[逐小節來源對照](sou
 
 驗收順序：單元／型別 → SSR 圖解 fixture → 發布邊界與最終 production build → validate:release → 新 preview／完整頁面瀏覽器。SSR fixture 或 SvelteKit sync 會刷新生成檔，不可與 production build 並行，也不可在最終建置後執行而沿用舊 preview；完整頁面檢查同時核對 HTML／client bootstrap 識別碼。
 
+### 11/10 續篇來源版本與 17 張圖 — 2026-11-11
+
+兩份續篇與 17 張圖沿用同一日期頁，v1.2.0 保留既有較新完整稿及錨點，再接續本批完整供稿版。來源／逐段雙語／採用對照見 [continuation-17-reference](sources/ceh-notes/2026-11-10/continuation-17-reference/source-map.md)。661 筆來源單位的實際正文由 `ceh_note_continuation.py` 採用；`check-ceh-continuation-source.py --check` 已加入 release gate，核對原始 bytes、正規化、來源範圍及真正正文，不以單純字數或圖名代替完整性。
+
+17 個固定圖名與版型登記在 `note-diagram-specs.json`。`NoteContinuationDiagram` 使用 HTML 節點、容器重排及經量測的 SVG 連線，連線端點／條件固定於受審核 spec，內容仍只允許 title／body 文字。平行保護範圍、巢狀卷與 16／32 位元組格各有專用結構；CA／網站／瀏覽器序列區分事先簽發與連線內往返。沒有 JS 時節點及具名關係文字直接可讀。`ceh_note_continuation_svg.py` 序列化同源文字，沿既有 allowlist 及每圖小於 100000 bytes 的邊界。
+
+本批原始回憶問題各七個、情境題各五題；附件未附翻面答案，保留來源界線；情境題依供稿先不提供答案鍵。`check-ceh-continuation-diagrams.mjs` 檢查 SSR／無 JS、四尺寸／200% 及 34 份匯出；`check-ceh-continuation-graphs.mjs` 檢查真正頁面的量測端點。最終頁面與發布證據見 [本輪回執](releases/2026-11-11-ceh-continuation-17.md)。
+
 ## AASE M04-02｜任務分析與條件回復
 
 [2026-11-11來源及逐節對照](sources/aase/m04-02/replacement-2026-11-11/README.md)保存八章供稿、五張原圖、舊版及編輯差異。修改完整中英稿或`figures.json`後執行`scripts/aase_m0402_content.py`與`scripts/aase_m0402_svg.py`（皆支援`--check`）。正式資料保留六個既有錨點，新增各小節；三個物流問題使用原生開放檢核與編輯參考答案，不提供送答服務。
@@ -695,3 +703,9 @@ SuccessEvidenceDiagram沿受限cards／flow，revision 5限定evidence-chain／m
 完整雙語稿、五參考圖與前版見[來源目錄](sources/aase/m04-06/replacement-2026-11-11/README.md)。以 `python3 scripts/aase_m0406_content.py` 生成正文，`python3 scripts/aase_m0406_svg.py` 生成十份SVG，兩者支援 `--check`。RecoveryDiagram僅在本課revision≥4承接五個cards圖，節點數2／2／3／7／5；驗證器限制種類、欄位與數量。圖4為可聚焦摘要連結的靜態定義清單，圖5為替代條件分支，不是線性流程。
 
 檢查入口為 `tests/aase-m0406-replacement.test.ts` 與 `playwright.aase-m0406.config.ts`，正式站指定 `AASE_BASE_URL=https://learn.cs-kairos.com`。來源、逐小節採用、適用規則、實測與發布界線見[回執](releases/2026-11-11-aase-m04-06-replacement.md)。
+
+## AASE M04-04 Wireframe 完整供稿（2026-11-11）
+
+AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.json轉入正式正文；`--check`比對同步。五組既有flow／cards依序為5／4／11／2／2項，只有需求至交付為flow。WireframeDiagram保留四畫面的2×2／窄版重排、十一條起點／事件／終點關係、上傳分支比較與兩張任務卡；不把條件出口畫成必經步驟。驗證器限制課次、位置、種類、節點數、欄位與轉換端點形狀。十個固定白名單SVG由`aase_m0404_svg.py`同源生成，各小於100000 bytes；下載排版差異記在來源對照。三個供稿開放題沿原生參考答案；qa=[]，不提供提交或AI批改。
+
+檢查入口為`tests/aase-m0404-replacement.test.ts`與`playwright.aase-m0404.config.ts`；正式站設定`AASE_BASE_URL`。來源、原版、逐節採用、圖意差異與實測／發布結果見[本次回執](releases/2026-11-11-aase-m04-04-replacement.md)。
