@@ -131,6 +131,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='methods'?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid task analysis figure');
       }
+      if(l.id==='AASE-M04-C06'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='recovery'?[2,2,3]:s.id==='access'?[7]:s.id==='state-transitions'?[5]:[];
+        if(figures.length!==expected.length||figures.some((f,i)=>f.kind!=='cards'||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[i]||f.items.some(item=>!keys(item,['title','body']))))fail('invalid recovery figure');
+      }
       if(l.id==='AASE-M04-C04'&&l.revision>=4){
         const expected:Record<string,number>={analogy:5,states:4,transitions:11,annotation:2,walkthrough:2};
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
