@@ -40,7 +40,13 @@
 
 本次從隔離工作樹`/tmp/kairos-m0602`完成，原工作目錄的其他教材未提交修改保留。來源提交8692385；正文提交bd0e8a1；整合提交a354076保留首批遠端139筆歷史，再整合3c1f378及其M05-02／M05-05並行更新，沒有覆寫或force-push。
 
-推送、Pages結果、正式站全文與八圖回讀仍待完成。本回執以具體結果補記，不將本機建置當作已部署。
+2026-11-11已推送`origin HEAD:main`，推送後fetch確認0 0。部署提交為`616a2935c4561d9cbf8ac391dbdff1d014f081d4`；[Pages run 42989840968](https://github.com/JasonLn0711/kairos-learning/actions/runs/42989840968)為success，Node 24 CI的內容、322項單元、6項HTML、型別、發布邊界、release及下載雜湊均通過。部署前正式頁為v1.0.2，部署後為v1.1.0。
+
+正式頁：[繁體中文](https://learn.cs-kairos.com/courses/aase/v1/m06/concepts/m06-02/)、[English](https://learn.cs-kairos.com/en/courses/aase/v1/m06/concepts/m06-02/)。於`2026-11-11T16:50:26+08:00`完成正式站Playwright全套回讀：2項通過，0失敗／略過，23.5秒。兩語逐段全文與順序、五表、四圖端點及關係、三題解析、搜尋、四尺寸、200%文字、無JS、鍵盤與全部八份SVG均通過；SVG實際下載與本機來源逐位元組相同，無字框越界或文字重疊。
+
+正式回讀命令：`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0602.config.ts`。本機與正式結果分開保存於checks.json。正式證據產生後，僅整合遠端兩份M05-02文件回執提交，應用與本課資產沒有變動；本回執以`[skip ci]`文件提交補記，保留已驗證部署。
+
+本次完整本機命令：`pnpm run validate:content`、`pnpm test`、`pnpm run check`、`python3 -m unittest discover -s scripts -p test_validation_html.py`、`node scripts/check-publication-boundary.mjs`、`pnpm run validate:release`、`pnpm audit --audit-level=high`、`pnpm exec playwright test --config playwright.aase-m0602.config.ts`，另有兩個M06-02產生器的`--check`。
 
 ## 待驗與責任邊界
 
