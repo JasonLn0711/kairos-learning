@@ -737,6 +737,12 @@ AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.jso
 
 檢查入口為`tests/aase-m0404-replacement.test.ts`與`playwright.aase-m0404.config.ts`；正式站設定`AASE_BASE_URL`。來源、原版、逐節採用、圖意差異與實測／發布結果見[本次回執](releases/2026-11-11-aase-m04-04-replacement.md)。
 
+## AASE M05-04 SDD 五步變更（2026-11-11）
+
+供稿、前版、單圖與[逐小節對照](sources/aase/m05-04/replacement-2026-11-11/source-map.md)由本repo保存。v1.1.0保留原發布日及六個既有錨點，完整雙語承接七節、六列影響表、五列人機分工、兩段候選情境、Markdown範本與三題開放檢核。第四欄仍為候選，三欄工作坊參考程式未改。
+
+`SddChangeDiagram.svelte`只呈現本課loop的五步flow；模型拒絕錯誤位置、種類、節點數與額外標記欄位。`scripts/aase_m0504_svg.py --check`核對同源雙語SVG。正文及搜尋保留所有節點文字，手機以HTML換行，最後節點強調決策，四個箭頭依序向下。維護檢查為 `tests/aase-m0504-replacement.test.ts` 與 `playwright.aase-m0504.config.ts`；正式站指定 `AASE_BASE_URL`。發布與實測另記回執。
+
 ## AASE M05-05｜OpenSpec 與輕量 Markdown（2026-11-11）
 
 v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
