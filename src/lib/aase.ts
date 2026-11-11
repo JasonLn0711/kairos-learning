@@ -108,6 +108,18 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const expected:Record<string,number[]>={analogy:[8],layers:[3],commands:[5,2]};
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='commands'&&i===0?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid environment setup figure');
       }
+      if(l.id==='AASE-M08-C03'&&l.revision>=4){
+        const expected:Record<string,number>={map:5,delivery:3,cases:3};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='map'?'flow':'cards')||f.items.some(i=>!keys(i,['title','body']))))fail('invalid rule testing figure');
+        if(s.id==='delivery'){const f=figures[0];if(!f||f.kind!=='cards'||f.items.map(i=>i.body).join('|')!=='999|60|1000')fail('invalid delivery defaults');}
+      }
+      if(l.id==='AASE-M07-C04'&&l.revision>=4){
+        const expected:Record<string,number>={problem:4,cases:3,implementation:3,flow:4};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='flow'?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid data validation figure');
+        if(s.id==='cases'){const f=figures[0];if(!f||f.kind!=='cards'||f.items.map(i=>i.body).join('|')!=='SYN-001|DEMO-A|合成申請表')fail('invalid validation demo defaults');}
+      }
       if(l.id==='AASE-M01-C03'&&['differences','identity'].includes(s.id)){const cards=(s.blocks??[]).filter(b=>b.kind==='cards');if(cards.length!==1||cards[0].kind!=='cards'||cards[0].items.length!==(s.id==='differences'?6:3))fail('invalid organization teaching layout');}
       if(l.id==='AASE-M08-C06'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
@@ -267,6 +279,17 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
         const count=s.id==='analogy'?4:s.id==='checklist'?8:0;
         if(figures.length!==(count?1:0)||figures.some(f=>(f.kind!=='flow'&&f.kind!=='cards')||f.kind!==(s.id==='analogy'?'flow':'cards')||f.items.length!==count||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid handoff figure');
+      }
+      if(l.id==='AASE-M09-C04'&&l.revision>=4){
+        const expected:Record<string,number>={contracts:2,plan:6,continue:5};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='plan'?'flow':'cards')||f.items.some(i=>!keys(i,['title','body']))))fail('invalid technology change figure');
+      }
+      if(l.id==='AASE-M08-C05' && l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='workflow'?['flow',6]:s.id==='improve'?['cards',2]:[];
+        if(figures.length!==(expected.length?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==expected[0]||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[1]||f.items.some(item=>!keys(item,['title','body']))))fail('invalid usability figure');
+        if(s.id==='notes'){const tables=(s.blocks??[]).filter(b=>b.kind==='table');if(tables.length!==1||tables[0].headers.length!==2||tables[0].rows.length!==9)fail('invalid usability record');}
       }
       for(const b of s.blocks??[]){
         if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}
