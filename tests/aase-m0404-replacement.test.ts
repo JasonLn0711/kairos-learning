@@ -21,3 +21,20 @@ test('M04-04 retains source and historical publication; all branches and origina
   for(let n=1;n<=5;n++){const svg=read(`site/images/aase/m04-04-${n}-${lang}.svg`);assert.ok(Buffer.byteLength(svg)<100000);assert.ok(svg.includes('<title'));assert.ok(!svg.includes('<script'));}
  }
 });
+
+test('wireframe figure contract rejects changed counts, kinds, extra markup and ambiguous endpoints',async()=>{
+ const {createAaseCatalog}=await import('../src/lib/aase.ts');
+ const build=(l:any)=>createAaseCatalog(JSON.parse(read('content/aase/course.json')),[l],JSON.parse(read('content/aase/sources.json')),'2026-11-11',JSON.parse(read('content/aase/course.en.json')));
+ assert.doesNotThrow(()=>build(lesson));
+ for(const change of ['count','kind','endpoints','markup']){
+  const copy=structuredClone(lesson);
+  for(const lang of ['zh','en']){
+   const f=copy.text[lang].sections.find((s:any)=>s.id==='transitions').blocks.find((b:any)=>b.kind==='cards');
+   if(change==='count')f.items.pop();
+   if(change==='kind')f.kind='flow';
+   if(change==='endpoints')f.items[0].title='Ambiguous transition';
+   if(change==='markup')f.html='<script>unreviewed()</script>';
+  }
+  assert.throws(()=>build(copy),/invalid wireframe/);
+ }
+});

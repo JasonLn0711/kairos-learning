@@ -58,3 +58,7 @@ source preserved；中文編輯底稿已建立。尚待完整雙語成稿、五�
 - [W3C WCAG 2.2 SC 3.3.1](https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html)：自動偵測錯誤需辨認項目並以文字描述；如何修正與程式關聯尚涉及其他準則，本文沒有宣稱單一準則代表完整無障礙驗證。
 
 先前狀態段落是保存當時的進度；最新驗收與發布狀態以 [本次回執](../../../../releases/2026-11-11-aase-m04-04-replacement.md) 為準。
+
+## 原始段落完整性檢查
+
+`python3 scripts/aase_m0404_source.py --check`逐一核對原供稿151個段落，`source-coverage.json`保存段落雜湊、前100字、成稿位置與編輯處理。一般段落逐字核對，表格逐格核對，三題僅正規化題號；九項明列編輯與favicon另行記錄。檢查不以成稿標題數代替原稿覆蓋；英譯仍依完整成稿逐節人工核對意義與教學深度。
