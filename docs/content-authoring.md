@@ -736,3 +736,9 @@ InformationHierarchyDiagram 由受限 cards／flow 承接包含、樹狀、比�
 AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.json轉入正式正文；`--check`比對同步。五組既有flow／cards依序為5／4／11／2／2項，只有需求至交付為flow。WireframeDiagram保留四畫面的2×2／窄版重排、十一條起點／事件／終點關係、上傳分支比較與兩張任務卡；不把條件出口畫成必經步驟。驗證器限制課次、位置、種類、節點數、欄位與轉換端點形狀。十個固定白名單SVG由`aase_m0404_svg.py`同源生成，各小於100000 bytes；下載排版差異記在來源對照。三個供稿開放題沿原生參考答案；qa=[]，不提供提交或AI批改。
 
 檢查入口為`tests/aase-m0404-replacement.test.ts`與`playwright.aase-m0404.config.ts`；正式站設定`AASE_BASE_URL`。來源、原版、逐節採用、圖意差異與實測／發布結果見[本次回執](releases/2026-11-11-aase-m04-04-replacement.md)。
+
+## AASE M05-04 SDD 五步變更（2026-11-11）
+
+供稿、前版、單圖與[逐小節對照](sources/aase/m05-04/replacement-2026-11-11/source-map.md)由本repo保存。v1.1.0保留原發布日及六個既有錨點，完整雙語承接七節、六列影響表、五列人機分工、兩段候選情境、Markdown範本與三題開放檢核。第四欄仍為候選，三欄工作坊參考程式未改。
+
+`SddChangeDiagram.svelte`只呈現本課loop的五步flow；模型拒絕錯誤位置、種類、節點數與額外標記欄位。`scripts/aase_m0504_svg.py --check`核對同源雙語SVG。正文及搜尋保留所有節點文字，手機以HTML換行，最後節點強調決策，四個箭頭依序向下。維護檢查為 `tests/aase-m0504-replacement.test.ts` 與 `playwright.aase-m0504.config.ts`；正式站指定 `AASE_BASE_URL`。發布與實測另記回執。
