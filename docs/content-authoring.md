@@ -787,6 +787,21 @@ v1.1.0 保留原發布日與六個舊錨點，十節與導言完整雙語由 `sc
 
 驗證入口為 `tests/aase-m0604-replacement.test.ts`、`playwright.aase-m0604.config.ts`；正式站指定 `AASE_BASE_URL`。檢查全文順序、四尺寸與200%、鍵盤、無JS、搜尋、圖檔位元組與字框重疊。來源、實測與發布狀態由[回執](releases/2026-11-11-aase-m06-04-replacement.md)承接。
 
+
+## AASE M07-01｜環境、骨架與工具鏈（2026-11-11）
+
+[完整來源與對照](sources/aase/m07-01/replacement-2026-11-11/source-map.md)保存九節供稿、四 PNG、前版與雙語成稿。`scripts/aase_m0701_content.py --check`核對正式 JSON；舊六錨點保留，其中 observe 位於停止服務步驟。原三題另存前版，供稿三題以 Q04–Q06 沿既有參考答案收合，qa=[]。
+
+`EnvironmentSetupDiagram.svelte`沿受限 cards／flow 資料，以 HTML dl、ul、ol 與局部程式碼捲動呈現 8 列配對、3 平行環境、5 步順序與 2 平台替代路徑。`aase.ts`限定各節圖數、節點數及關係，拒絕任意欄位；`scripts/aase_m0701_svg.py --check`核對同源的八份固定路徑 SVG，元素與屬性使用 allowlist。原始程式碼保留，PowerShell 命令另補，英文逐項解釋共享範本。
+
+單元為`tests/aase-m0701-replacement.test.ts`；瀏覽器為`playwright.aase-m0701.config.ts`，正式站使用 AASE_BASE_URL。全文、四尺寸、200%、無 JS、鍵盤、搜尋、八圖幾何與下載位元組依[發布回執](releases/2026-11-11-aase-m07-01-replacement.md)記錄。本次不更改工作坊規格或套件版本。
+
+## AASE M06-05 身分、授權與工作階段完整供稿（2026-11-11）
+
+AASE-M06-C05 v1.1.0 保留原日期、URL 與六個舊錨點，導言及八節完整雙語、六表、五個深層小節與三題新檢核。原文、三 PNG、前版及採用差異見[來源對照](sources/aase/m06-05/replacement-2026-11-11/source-map.md)。`aase_m0605_content.py` 由完整稿及 figures.json 生成正式 JSON，`aase_m0605_svg.py` 由正式資料生成六個受限 SVG，兩者支援 `--check`。
+
+`SessionAccessDiagram.svelte` 僅處理本課四因素、Session／權限條件分支與瀏覽器／伺服器分工；資料驗證限定 cards 與 4／6／3 節點，不接受任意標記。全文與搜尋共用資料，手機重排保持拒絕與許可的條件標籤。瀏覽器檢查為 `playwright.aase-m0605.config.ts`，正式站指定 AASE_BASE_URL；實測及發布證據見[回執](releases/2026-11-11-aase-m06-05-replacement.md)。候選 architecture.md 保持待實作／待驗證，不宣稱 Streamlit 原型具備正式登入或多人隔離。
+
 ## AASE M06-03｜C4 四視角與七圖（2026-11-11）
 
 `AASE-M06-C03` v1.1.0 的[完整來源與逐節對照](sources/aase/m06-03/replacement-2026-11-11/README.md)承接導言、原八章、四層小節與 Session State 小節、四表及原三題三選項。原六錨點、發布日與課次 URL 保留；architecture.md 模板同行附中英，code 兩語一致。
