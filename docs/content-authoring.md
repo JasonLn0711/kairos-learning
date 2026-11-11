@@ -759,3 +759,9 @@ v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有�
 v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
 
 OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
+
+## AASE M06-05 身分、授權與工作階段完整供稿（2026-11-11）
+
+AASE-M06-C05 v1.1.0 保留原日期、URL 與六個舊錨點，導言及八節完整雙語、六表、五個深層小節與三題新檢核。原文、三 PNG、前版及採用差異見[來源對照](sources/aase/m06-05/replacement-2026-11-11/source-map.md)。`aase_m0605_content.py` 由完整稿及 figures.json 生成正式 JSON，`aase_m0605_svg.py` 由正式資料生成六個受限 SVG，兩者支援 `--check`。
+
+`SessionAccessDiagram.svelte` 僅處理本課四因素、Session／權限條件分支與瀏覽器／伺服器分工；資料驗證限定 cards 與 4／6／3 節點，不接受任意標記。全文與搜尋共用資料，手機重排保持拒絕與許可的條件標籤。瀏覽器檢查為 `playwright.aase-m0605.config.ts`，正式站指定 AASE_BASE_URL；實測及發布證據見[回執](releases/2026-11-11-aase-m06-05-replacement.md)。候選 architecture.md 保持待實作／待驗證，不宣稱 Streamlit 原型具備正式登入或多人隔離。
