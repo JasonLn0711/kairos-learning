@@ -891,3 +891,11 @@ v1.1.0／revision 4 保留原發布日與六個既有錨點，十節完整雙語
 四圖共用 figures.json，節點數 4／3／3／4；第一圖為條件分支、第二圖為三欄文字模擬、第三圖為平行責任、第四圖為事件流程。`DataValidationDiagram.svelte` 限本課固定位置與數量，HTML 可搜尋並依容器重排；輸入變更清除舊結果，80／81 的 Unicode code point 與 Python 空白語義由 `validation-demo.ts` 對照測試。無 JS 保留預設資料與規則並停用操作，不保存輸入、提交作答或記錄學習進度。`aase_m0704_svg.py` 以同源資料輸出八份受限 SVG；圖二下載固定為尚未檢查的靜態預設。
 
 單元為 `tests/aase-m0704-replacement.test.ts`，瀏覽器為 `playwright.aase-m0704.config.ts`，正式站指定 `AASE_BASE_URL`。修復後原稿範例與補充矩陣在來源目錄用 `python3 -m pytest -q` 驗證；沒有改動工作坊與 ZIP。實際驗證與發布見[本次回執](releases/2026-11-11-aase-m07-04-replacement.md)。
+
+## AASE M08-02｜TDD 完整供稿與三圖（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六個舊錨點。[來源對照](sources/aase/m08-02/replacement-2026-11-11/source-map.md)保存原稿、三PNG、前版與雙語採用稿；`scripts/aase_m0802_content.py --check`核對正式JSON，`scripts/aase_m0802_svg.py --check`核對六份受限SVG。完整導言、九節、自動門／檢驗機／提款GWT、四表、三階段程式、三補測、AI提示與三題均進正文。
+
+`TddDiagram.svelte`只呈現本課flow 3／cards 3／flow 4，`aase.ts`限制位置、種類、節點與欄位。循環的回返、平行結果與協作順序各自保留；正文、搜尋及匯出同源，無JS仍可閱讀。圖2保留來源環境差異，本版另以兩個pytest版本實跑，區分測試集合擴充與重構。
+
+單元`tests/aase-m0802-replacement.test.ts`、瀏覽器`playwright.aase-m0802.config.ts`；正式站設定`AASE_BASE_URL`。範例用`python3 scripts/check-aase-m0802-example.py /absolute/path/to/venv/bin/python`核對五個階段／測試集合組合，結果記於忽略的`.local/aase/m0802/`。[回執](releases/2026-11-11-aase-m08-02-replacement.md)記錄規則、驗證及發布；原稿未附可核實影片網址，沒有新增推測連結。
