@@ -131,7 +131,7 @@ test('M05 English preserves Chinese rules, candidate status, answer keys and tem
 
 test('M06 English preserves Chinese architecture, graph identities, code and answer semantics',()=>{
  for(const n of [1,3,4,5,6]){
-  const before=read(`docs/sources/aase/m06-en/aase-m06-c0${n}.before.json`),l=n===4?read('docs/sources/aase/m06-04/replacement-2026-11-11/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
+  const before=read(`docs/sources/aase/m06-en/aase-m06-c0${n}.before.json`),l=n===6?read('docs/sources/aase/m06-06/replacement-2026-11-11/prior-lesson.json'):n===5?read('docs/sources/aase/m06-05/replacement-2026-11-11/prior-lesson.json'):n===4?read('docs/sources/aase/m06-04/replacement-2026-11-11/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
   assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
@@ -158,7 +158,7 @@ test('M07 English preserves Chinese slices, executable examples, sources and ans
 test('M08 English preserves Chinese verification layers, executable examples and answer semantics',()=>{
  let codeCount=0;
  for(let n=1;n<=6;n++){
-  const before=read(`docs/sources/aase/m08-en/aase-m08-c0${n}.before.json`),l=n===6?read('docs/sources/aase/m08-06/replacement-2026-11-11/previous/lesson.json'):lessons.find(x=>x.id===before.id)!;
+  const before=read(`docs/sources/aase/m08-en/aase-m08-c0${n}.before.json`),l=n===6?read('docs/sources/aase/m08-06/replacement-2026-11-11/previous/lesson.json'):n===1?read('docs/sources/aase/m08-01/replacement-2026-11-11/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
   assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}

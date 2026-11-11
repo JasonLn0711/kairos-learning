@@ -174,6 +174,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='methods'?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid task analysis figure');
       }
+      if(l.id==='AASE-M06-C05'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='controls'?[4,6]:s.id==='session'?[3]:[];
+        if(figures.length!==expected.length||figures.some((f,i)=>f.kind!=='cards'||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[i]||f.items.some(item=>!keys(item,['title','body']))))fail('invalid session access figure');
+      }
       if(l.id==='AASE-M04-C06'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected=s.id==='recovery'?[2,2,3]:s.id==='access'?[7]:s.id==='state-transitions'?[5]:[];
@@ -215,6 +220,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
           const tables=(s.blocks??[]).filter(b=>b.kind==='table');
           if(tables.length!==1||tables[0].kind!=='table'||JSON.stringify(tables[0].headers)!=='["Name","Status","Type"]'||JSON.stringify(tables[0].rows)!=='[["orders","200","fetch"],["session","101","websocket"]]')fail('invalid simulated Network entries');
         }
+      }
+      if(l.id==='AASE-M08-C01'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected:Record<string,number>={layers:6,record:3,collaboration:4};
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='collaboration'?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(i=>!keys(i,['title','body']))))fail('invalid verification evidence figure');
       }
       for(const b of s.blocks??[]){
         if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}
