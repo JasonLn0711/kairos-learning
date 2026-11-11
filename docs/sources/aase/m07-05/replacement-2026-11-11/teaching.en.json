@@ -1,0 +1,370 @@
+[
+  {
+    "id": "introduction",
+    "heading": "M07-05 · Vertical slice three: preview and export",
+    "paragraphs": [
+      "This lesson continues the first two vertical slices: build a form, validate its data, then add reliable preview and export. The goal is to connect previews and reports to an exact input version, beyond adding two buttons.",
+      "Data that passed a check earlier is not evidence that the current data still passes. A result must identify the data actually checked; changes affecting that result require a new check."
+    ]
+  },
+  {
+    "id": "risk",
+    "heading": "1. Why a successful check is not enough",
+    "paragraphs": [
+      "Suppose a bank loan form asks for application ID A001, applicant code C123 and document type “收入證明” (income certificate). Selecting Check data confirms that all three fields are filled and makes an application report available. These are synthetic values; nothing is submitted to a bank.",
+      "Try the demo below: check first, then change “收入證明” to “戶籍謄本” (household registration transcript). The new data is still complete, but cannot be downloaded immediately. The earlier check covered the income-certificate version; the edited version needs its own check."
+    ],
+    "blocks": [
+      {
+        "kind": "cards",
+        "caption": "Figure 1 | Bank application form — interactive demo",
+        "description": "Teaching simulation. Check first, then edit document type; a check result belongs only to its snapshot.",
+        "items": [
+          {
+            "title": "Application ID",
+            "body": "A001"
+          },
+          {
+            "title": "Applicant code",
+            "body": "C123"
+          },
+          {
+            "title": "Document type",
+            "body": "收入證明"
+          },
+          {
+            "title": "Initial state",
+            "body": "Current data is unchecked. Select Check data."
+          }
+        ]
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "The demo invalidates a check as soon as input changes. Even restoring the original text requires a fresh check. Synthetic values remain only in this tab; the page submits no form, records no score and implements no official identity or approval process."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "analogy",
+    "heading": "2. Five concepts: 1. Snapshot",
+    "paragraphs": [
+      "A snapshot is like a photograph. An inspector checks a car’s brakes and issues a certificate. Replacing the brakes afterward means the old certificate cannot directly establish the safety of the new brakes.",
+      "Software follows the same idea. When the user checks data and it passes, retain a copy of that input. Before preview or export, compare the current record with the checked snapshot."
+    ],
+    "blocks": [
+      {
+        "kind": "step",
+        "heading": "Store and compare a snapshot",
+        "paragraphs": [
+          "Teaching example for three text fields."
+        ],
+        "code": "checked_snapshot = record.copy()\n\n# Before preview or export:\ncurrent_record == checked_snapshot"
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "This works for the lesson’s three simple text fields. record.copy() is a shallow copy: nested mutable objects may still be shared and need a different snapshot design. Databases, concurrent editors and distributed systems typically also need version identifiers, transactions or optimistic locking."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "state",
+    "heading": "2. Invalidation: edits invalidate old results",
+    "paragraphs": [
+      "This resembles cache invalidation. Suppose an online shop says “Cart confirmed, total TWD 2,000.” The user adds an item and the total becomes TWD 3,500. The system must update the confirmation and cannot check out using the old TWD 2,000 result.",
+      "The rule is to invalidate the old result whenever data affecting that result changes. A change that remains syntactically valid still cannot reuse success for a different record.",
+      "Streamlit can retain a checked snapshot in Session State and clear it with on_change when a field change is committed. Session State retains values between reruns in one session; it is not a permanent database. This browser demo instead responds immediately to input events. Streamlit text widgets invoke their callback when changes are committed, so verify the two timings separately."
+    ],
+    "sourceIds": [
+      "streamlit-session"
+    ]
+  },
+  {
+    "id": "export",
+    "heading": "3. Revalidation: check again at the export boundary",
+    "paragraphs": [
+      "Hiding a download button is only one part of protection. Other code, tests or an API may call the export function directly, so the interface and export boundary each have a responsibility."
+    ],
+    "blocks": [
+      {
+        "kind": "table",
+        "caption": "Two checks: interface and export",
+        "headers": [
+          "Location",
+          "Responsibility"
+        ],
+        "rows": [
+          [
+            "Interface (UI)",
+            "Do not present stale previews or download actions."
+          ],
+          [
+            "Export function",
+            "Validate the data and reject invalid content even when the interface is bypassed."
+          ]
+        ]
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "For example, a hospital registration interface may flag a missing medical-record number. If backend code can still directly generate a report claiming completeness, a gap remains. Interface restrictions guide the user; trusted processing logic enforces the data rules.",
+          "Revalidation covers valid data and, where required, correspondence to the checked version. In the workshop, reference/rules.py export_report(record) rechecks the three fields and length limits and exports allowed fields only. It receives no snapshot, so cannot itself establish that the version previously passed an interaction check. The caller in reference/app.py separately compares checked with record. This page’s download demo checks both the snapshot and fields when generating its report.",
+          "If export becomes a directly callable API, the trusted side should obtain a controlled version, verify correspondence and check operation permissions. A caller’s claim that data was checked is insufficient. Local dictionary equality does not implement formal authorization."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "allowlist",
+    "heading": "4. Allowlist: export only explicitly permitted fields",
+    "paragraphs": [
+      "Suppose the internal object has these five fields while the external report needs only the first three. Exporting the whole object may expose internal testing notes and sensitive information. SECRET below is an illustrative string only."
+    ],
+    "blocks": [
+      {
+        "kind": "step",
+        "heading": "Internal object example",
+        "paragraphs": [
+          "Teaching example for three text fields."
+        ],
+        "code": "{\n  \"application_id\": \"A001\",\n  \"applicant_code\": \"C123\",\n  \"document_type\": \"收入證明\",\n  \"debug_notes\": \"內部測試紀錄\",\n  \"internal_token\": \"SECRET\"\n}"
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "First declare an allowlist, then select those keys from validated data:"
+        ]
+      },
+      {
+        "kind": "step",
+        "heading": "Select allowlisted fields",
+        "paragraphs": [
+          "Teaching example for three text fields."
+        ],
+        "code": "FIELDS = [\n    \"application_id\",\n    \"applicant_code\",\n    \"document_type\",\n]\nexport_data = {key: record[key] for key in FIELDS}"
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "The default is no output unless explicitly permitted. This resembles the principle of least privilege: provide only what the task requires. An allowlist controls field scope; it does not automatically validate field values, recipients or access permissions."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "scope",
+    "heading": "5. Scope: define what passing means",
+    "paragraphs": [
+      "When software checks only whether three fields are filled and displays complete, readers may infer too much. The status means those fields meet the current completeness rules. Identity authenticity, document correctness and bank loan approval each require separate evidence.",
+      "Include scope in exported data to explain the meaning of complete. A limited technical check supports a correspondingly limited conclusion; business, legal and security guarantees require their own conditions."
+    ],
+    "blocks": [
+      {
+        "kind": "step",
+        "heading": "Controlled report example",
+        "paragraphs": [
+          "Teaching example for three text fields."
+        ],
+        "code": "{\n  \"status\": \"complete\",\n  \"scope\": \"僅代表教學欄位完整性，不代表正式受理\",\n  \"data\": {\n    \"application_id\": \"A001\",\n    \"applicant_code\": \"C123\",\n    \"document_type\": \"收入證明\"\n  }\n}"
+      }
+    ]
+  },
+  {
+    "id": "workflow",
+    "heading": "3. Connect the five concepts into a reliable flow",
+    "paragraphs": [
+      "As you read the figure, ask whether the current data passes the rules and is still the checked record. Input, validation, snapshot, invalidation, revalidation, allowlisting and scope make the report traceable to its checked version."
+    ],
+    "blocks": [
+      {
+        "kind": "flow",
+        "caption": "Figure 2 | Reliable preview and export flow",
+        "description": "Arrows indicate check order and conditional destinations. Edits return to validation; only unchanged data that still passes can advance to export.",
+        "items": [
+          {
+            "title": "User enters data",
+            "body": "Current Record"
+          },
+          {
+            "title": "Check and validate",
+            "body": "Validation; correct failures and check again"
+          },
+          {
+            "title": "Pass and save snapshot",
+            "body": "Checked Snapshot"
+          },
+          {
+            "title": "Data changed",
+            "body": "Invalidate old snapshot → return to Check and validate"
+          },
+          {
+            "title": "Data unchanged",
+            "body": "Rules pass: allow preview → revalidate before export"
+          },
+          {
+            "title": "Revalidate + select allowed fields",
+            "body": "Revalidation + Allowlist; on failure stop export and check again"
+          },
+          {
+            "title": "Output JSON report",
+            "body": "Include the scope statement (Scope)"
+          }
+        ]
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "The reference shows two branches side by side. This page preserves that layout on wide screens and stacks the alternatives on narrow screens; the branches are not sequential steps. Explicit return text ends the edited-data branch so it cannot be read as direct permission to export.",
+          "Revalidation covers valid current input and its correspondence to the checked version. Failure before saving a snapshot returns to correction. Failure at any export check stops generation of a complete report."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "industries",
+    "heading": "4. Applications in other industries",
+    "paragraphs": [
+      "For any workflow that checks before producing an outcome, ask whether the outcome still corresponds to the checked input and version. The following are design analogies; actual industry review rules require separate definition."
+    ],
+    "blocks": [
+      {
+        "kind": "table",
+        "caption": "Data edits and rechecking across industries",
+        "headers": [
+          "Industry",
+          "Checked content",
+          "Later change",
+          "Appropriate response"
+        ],
+        "rows": [
+          [
+            "Healthcare",
+            "A set of laboratory data has been checked",
+            "A test value is corrected",
+            "Invalidate the old report and repeat required checks and review."
+          ],
+          [
+            "Finance",
+            "Loan data passed field checks",
+            "The requested amount changes",
+            "Recheck before producing a revised report."
+          ],
+          [
+            "Manufacturing",
+            "A quality checklist is complete",
+            "The component batch changes",
+            "Do not apply the old inspection result directly to the new batch."
+          ],
+          [
+            "Logistics",
+            "A shipment list is confirmed",
+            "Address or quantity changes",
+            "Reconcile data before producing a new shipping document."
+          ],
+          [
+            "Scientific research",
+            "An analysis result was validated",
+            "The dataset or parameters change",
+            "Repeat necessary validation so the report matches the experiment version."
+          ]
+        ]
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "These cases share one principle: a result must be traceable to its input, rules and version. A success flag with no identifiable subject cannot explain which current record it applies to."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "run",
+    "heading": "5. How to accept the implementation",
+    "paragraphs": [
+      "Connect this lesson to Given–When–Then by specifying an observable state change:"
+    ],
+    "blocks": [
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "- Given: all three fields are complete and the check passed.\n- When: the user clears one field.\n- Then: invalidate the old successful preview and download entry point; require a fresh check."
+        ]
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "Also test three cases: a valid edit still cannot reuse the old snapshot; direct export of incomplete data is rejected; extra internal fields do not appear in the report.",
+          "pytest checks data rules; Streamlit AppTest simulates interface operations and inspects elements and state. Actual downloaded JSON, Chinese encoding and the filename still need a real browser or another suitable check. Seeing a button does not establish correct download bytes.",
+          "From the extracted workshop root, enter reference, run tests and start app.py. Fill three synthetic values, check and download; clear document type and commit the edit to confirm the old result and download disappear. Completing the field again still requires selecting Check."
+        ]
+      },
+      {
+        "kind": "step",
+        "heading": "Run slice three",
+        "paragraphs": [
+          "Teaching example for three text fields."
+        ],
+        "code": "cd reference\npython -m pytest -q\npython -m streamlit run app.py --server.address 127.0.0.1"
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "Clearing a session snapshot does not delete files already downloaded to the computer. Those files have their own retention and management responsibilities."
+        ]
+      }
+    ],
+    "sourceIds": [
+      "streamlit-apptest",
+      "gherkin"
+    ]
+  },
+  {
+    "id": "misread",
+    "heading": "6. Managing the trustworthiness of results",
+    "paragraphs": [
+      "Connect the lesson to software engineering by separately examining data, correspondence of results, and export authority and scope."
+    ],
+    "blocks": [
+      {
+        "kind": "table",
+        "caption": "Three levels of judgment",
+        "headers": [
+          "Level",
+          "Question"
+        ],
+        "rows": [
+          [
+            "Validity",
+            "Does the current data meet the rules?"
+          ],
+          [
+            "Consistency",
+            "Does the preview or report correspond to current data?"
+          ],
+          [
+            "Authorization & Scope",
+            "Who may export, and what does the result establish?"
+          ]
+        ]
+      },
+      {
+        "kind": "prose",
+        "paragraphs": [
+          "The local prototype mainly addresses the first two levels and the scope statement in the third. Formal authentication, multiuser authorization and persistent storage remain separate design and verification requirements for an enterprise system.",
+          "The same applies when an AI Agent generates reports. An earlier successful tool call does not establish that subsequently edited data still meets export conditions. The tool boundary should check data and authorization itself and retain the version to which the result belongs."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "understanding",
+    "heading": "7. Check your understanding",
+    "paragraphs": [
+      "You are building a factory quality-management system. A batch checklist passes validation and receives a “check complete” status. An operator changes BATCH-100 to BATCH-101; every other field stays the same and the new batch identifier is valid. Answer the four questions below in your own words before opening the reference reasoning.",
+      "A validation result is a limited assurance about particular data, rules and a version. Each preview or report should identify its input and the conclusion supported by its completeness status."
+    ]
+  }
+]

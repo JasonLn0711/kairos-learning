@@ -22,7 +22,7 @@ AASE-M07-C04 v1.1.0／revision 4：原發布日 2026-11-05、原課次／網址�
 | 模型／安全邊界／Unicode | aase-m0704-replacement.test.ts | 來源／產生器、矩陣、Unicode、額外節點與任意 markup 拒絕通過 |
 | 內容／回歸／型別 | pnpm run validate:content；pnpm test；pnpm run check | 通過；型別 0 errors／0 warnings；最新測試總數見 checks.json |
 | 發布閘門 | node scripts/check-publication-boundary.mjs | 第二 fixture、草稿／未來日期及英文 course draft/future 閘門通過；最後重建乾淨正式輸出 |
-| 靜態發布 | pnpm run validate:release；python3 scripts/validate_release.py | 通過；406 HTML、語言配對、連結／錨點與資產一致性 |
+| 靜態發布 | pnpm run validate:release；python3 scripts/validate_release.py | 通過；406 HTML、語言配對、連結／錨點與 811 資產一致性 |
 | HTML-01–04、A11Y-01–03、INT-01 | playwright.aase-m0704.config.ts | 兩語全文／表格／code／參考解析、320／390／768／1280、200%、鍵盤／修正／重設、無 JS 與搜尋通過 |
 | FIG-01／03–06 | 八 SVG bounds／文字重疊／回讀位元組；390 中文與1280英文四圖逐張視讀 | 通過；圖解分組與方向清楚，每圖小於 100000 bytes |
 | 依賴稽核 | pnpm audit --audit-level=high | 4 low，無 high／critical |
@@ -32,8 +32,12 @@ AASE-M07-C04 v1.1.0／revision 4：原發布日 2026-11-05、原課次／網址�
 
 ## Git 與正式站
 
-待填：來源／實作提交、遠端整合、部署 run、正式兩語全文及八 SVG 回讀結果。
+來源提交 `0502b42`；實作提交 `30d312e`。整合遠端 `d7f396b`，保留同期 M06-02／M06-04／M07-02／M07-05 等修改；共用來源、呈現器與歷史測試的六份衝突逐項合併，整合後 335 項單元測試、型別、發布閘門及 release 通過。
+
+遠端 M07-05 source-map.md 既有文末空白在 staged diff 檢查中出現，保留該既有來源；本次相對遠端的變更另以 git diff --check 核對。待填：整合提交、部署 run、正式兩語全文及八 SVG 回讀結果。
 
 ## 驗證界線
 
 已驗證的是本課內容、網頁操作、靜態發布及指定瀏覽器尺寸。學習者作答、真實裝置、完整輔助科技認證與 Streamlit 工作坊的當次 runtime 尚未驗收。本次沒有建立批改、學習進度、正式核准或資料保存服務；沒有新增依賴、變更其他課次或啟用其他專案工作。
+
+整合後瀏覽器全文比對另外抓到共用呈現器條件改寫使 M07-04 初始條列未走 AaseProse；已將本課加入遠端新條件，保留其他課程分支，再重新驗證全文與無 JavaScript 條列。
