@@ -16,9 +16,9 @@
 | 規則 | 範圍與方法 | 本次狀態 |
 | --- | --- | --- |
 | WRITE-01–06、08–11 | 原稿逐章逐小節、比喻、八項服務、兩組分類、四狀態、五方法、六行業、兩研究方法、模板與三題；雙語深度與形狀；版本日期 | 完成來源／成稿逐節閱讀及對照；詳見 source-map |
-| HTML-01–04 | 全文逐區塊順序、320／390／768／1280、200% 文字、局部表格／程式碼捲動、無 JS | 初輪瀏覽器兩語通過；圖 5 版型修正後待最終重跑 |
-| FIG-01–06 | 六種關係、同源搜尋與 12 SVG、文字框及重疊、下載位元組 | 初輪兩語通過；手機與桌面截圖已檢視；最終重跑待填 |
-| A11Y-01–03 | 語意結構、原生答案收合、Tab／Shift+Tab／Enter／Space、可見焦點、可鍵盤局部捲動 | 初輪通過；屬本頁檢查，非全站無障礙認證 |
+| HTML-01–04 | 全文逐區塊順序、320／390／768／1280、200% 文字、局部表格／程式碼捲動、無 JS | 最終整合後兩語通過，包含圖 5 版型修正 |
+| FIG-01–06 | 六種關係、同源搜尋與 12 SVG、文字框及重疊、下載位元組 | 最終兩語通過；兩語六圖的手機與桌面共 24 張截圖已逐張檢視 |
+| A11Y-01–03 | 語意結構、原生答案收合、Tab／Shift+Tab／Enter／Space、可見焦點、可鍵盤局部捲動 | 最終通過；屬本頁檢查，非全站無障礙認證 |
 | INT-01 | 無新增參數互動或運算 | 不適用；圖為可閱讀的靜態教材 |
 
 初輪驗證修正了小節內條列與選項擠在標題的問題。既有英文／短標題歷史測試改以本次保存的前版檢查原遷移，不讓歷史等值檢查阻擋已授權抽換；本次正文另有獨立測試。
@@ -28,7 +28,11 @@
 - 原件：`sha256sum -c SHA256SUMS`（來源目錄）八件通過。
 - 生成器：`python3 scripts/aase_m0403_content.py --check`；`python3 scripts/aase_m0403_svg.py --check`。
 - 新測試：`tests/aase-m0403-replacement.test.ts`；瀏覽器：`pnpm exec playwright test --config playwright.aase-m0403.config.ts`。本機證據：隔離工作樹 `.local/aase/m0403/`；正式站以 `AASE_BASE_URL=https://learn.cs-kairos.com` 指定。
-- 全套單元初輪 283／283 通過；型別檢查 0 errors／0 warnings。publication-boundary 初輪通過草稿、未來日期與英文入口關閉；最終整合後結果待填。
-- 最終 release、Git 提交、遠端一致性、Pages 工作流程及正式站全文／12 圖回讀：待完成。
+- 整合遠端後全套單元 297／297 通過；型別檢查 0 errors／0 warnings。publication-boundary 最終通過草稿、未來日期與英文入口關閉，並重建乾淨正式輸出。
+- 最終 `pnpm run validate:content`、`pnpm run validate:release`、`git diff --check` 通過；最終瀏覽器兩語 2／2 通過。`pnpm audit --audit-level=high` 通過，現有 4 low；共用 HTML 六個 Python 測試及六份 MATLAB ZIP 雜湊均通過。
+- 原始來源提交 `9779ade`、教材實作 `73bf11f`、保留雙方歷史的整合 `e642b97`。保留同期 M03-05／M04-01／M04-02 與 CEH 更新；衝突解決後重新執行上述驗證。
+- Git 推送、遠端一致性、Pages 工作流程及正式站全文／12 圖回讀：待完成。
 
 尚未進行實際學員、輔助科技或實體手機驗收；教材中的設計候選與靜態草圖不等於真實使用者測試成果。發布也不代表理解或課程完成。
+
+最終本機日誌留在 `/tmp/kairos-m0403-tests.log`、`/tmp/kairos-m0403-check.log`、`/tmp/kairos-m0403-final-boundary.log`、`/tmp/kairos-m0403-final-release.log`、`/tmp/kairos-m0403-final-browser.log`。瀏覽器結構化結果在隔離工作樹 `.local/aase/m0403/results.json`，截圖與 trace 同目錄；正式站驗收會更新該結果。
