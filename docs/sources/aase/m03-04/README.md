@@ -9,3 +9,5 @@
 AaseProse 將供稿小節標題、引文、清單與 HTTPS 連結呈現為語意 HTML。舊 comparison 錨點保留在四名詞標題；其他舊章節錨點維持。七表與完整 problem.md 的中英結構一致，英文另逐欄解讀共用 code；Q05–Q08 為物流開放題與原生參考解析，不建立提交／評分／學習狀態。
 
 修改雙語稿或 figures.json 後，執行 `python3 scripts/aase_m0304_content.py`、`python3 scripts/aase_m0304_svg.py`；兩者均支援 `--check`。專屬測試為 `tests/aase-m0304-six-figures.test.ts`、`playwright.aase-m0304.config.ts`，正式站使用 `AASE_BASE_URL`。完整規則、實測範圍與待驗事項以發布回執為準。
+
+2026-11-11 正式狀態：v1.2.0／revision 5 已發布；中英正式站與十二份 SVG 已回讀核對。真人理解與實體手機驗收維持未執行。
