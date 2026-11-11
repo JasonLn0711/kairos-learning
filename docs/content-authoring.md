@@ -756,7 +756,7 @@ v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有�
 
 ## AASE M05-05｜OpenSpec 與輕量 Markdown（2026-11-11）
 
-v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
+v1.1.1／revision 5 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
 
 OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
 
@@ -772,6 +772,12 @@ SystemContextLessonDiagram復用ArchitectureDiagram與受限cards；四張圖的
 ## AASE M07-02 規格與工作契約（2026-11-11）
 
 v1.1.0 的[完整來源與逐節對照](sources/aase/m07-02/replacement-2026-11-11/source-map.md)保留十節供稿、兩張 PNG 及前版。`scripts/aase_m0702_content.py --check` 核對完整雙語正文、七表與四個開放檢核；原任務 code 保持一致，英文附逐項解讀。TaskContractDiagram 使用五步 flow／兩情境 cards，`aase.ts` 限定位置、關係與數量。四份 SVG 由既有文字序列化器同源產生，`scripts/aase_m0702_svg.py --check` 核對同步；頁面維持可選取 HTML、無 JS 正文與原生答案收合。單元入口為 `tests/aase-m0702-replacement.test.ts`，瀏覽器入口為 `playwright.aase-m0702.config.ts`，正式站指定 `AASE_BASE_URL`。[回執](releases/2026-11-11-aase-m07-02-replacement.md)記錄本次實測及發布層次。
+
+## AASE M06-04｜Browser、HTTP、API 與資料流
+
+v1.1.0 保留原發布日與六個舊錨點，十節與導言完整雙語由 `scripts/aase_m0604_content.py` 產生，`--check` 核對成稿同步。[來源與逐節對照](sources/aase/m06-04/replacement-2026-11-11/README.md)保存原稿、四 PNG、前版及原題全部選項。四圖為六步 flow／三層 cards／兩條四節點架構鏈／固定 Network 模擬表；`WebDataFlowDiagram.svelte` 以語意 HTML 重排，只有第一圖與架構內部有箭頭，101 明示為協定升級。八 SVG 由 `aase_m0604_svg.py` 同源匯出。正文保留四個完整程式／訊息範例、五教學表、六產業與三題 Q04–Q06，qa=[]。
+
+驗證入口為 `tests/aase-m0604-replacement.test.ts`、`playwright.aase-m0604.config.ts`；正式站指定 `AASE_BASE_URL`。檢查全文順序、四尺寸與200%、鍵盤、無JS、搜尋、圖檔位元組與字框重疊。來源、實測與發布狀態由[回執](releases/2026-11-11-aase-m06-04-replacement.md)承接。
 
 
 ## AASE M07-01｜環境、骨架與工具鏈（2026-11-11）
