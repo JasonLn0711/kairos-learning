@@ -1,5 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
+const plain=(value:string)=>value.replace(/^> /gm,'');
 const lesson=JSON.parse(readFileSync('content/aase/lessons/aase-m05-c03.json','utf8'));
 async function completeBody(page:Page,lang:'zh'|'en'){
  for(const s of lesson.text[lang].sections){
@@ -17,11 +18,11 @@ async function completeBody(page:Page,lang:'zh'|'en'){
     tokens.push(b.description);
    }
   }
-  for(const value of tokens){const token=(/^(- |\d+\. )/.test(value)?value.replace(/^(- |\d+\. )/gm,''):value).replace(/\s/g,'');const found=actual.indexOf(token,cursor);expect(found,`${lang}/${s.id}: ordered ${value.slice(0,45)}`).toBeGreaterThanOrEqual(cursor);cursor=found+token.length;}
+  for(const value of tokens){const token=plain(/^(- |\d+\. )/.test(value)?value.replace(/^(- |\d+\. )/gm,''):value).replace(/\s/g,'');const found=actual.indexOf(token,cursor);expect(found,`${lang}/${s.id}: ordered ${value.slice(0,45)}`).toBeGreaterThanOrEqual(cursor);cursor=found+token.length;}
   for(const b of s.blocks??[]){
-   if(b.kind==='prose'){for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));}
-   if(b.kind==='step'){await expect(section.getByRole('heading',{level:3,name:b.heading,exact:true})).toHaveText(b.heading);for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));if(b.code)await expect(section.getByRole('heading',{level:3,name:b.heading,exact:true}).locator('..').locator('code')).toHaveText(b.code);}
-   if(b.kind==='cards'||b.kind==='flow'){for(const i of b.items){if(s.id==='measure')continue;await expect(section).toContainText(i.title);for(const p of i.body.split("\n\n"))for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));}await expect(section).toContainText(b.description);}
+   if(b.kind==='prose'){for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(plain(line.replace(/^(- |\d+\. )/,'')));}
+   if(b.kind==='step'){await expect(section.getByRole('heading',{level:3,name:b.heading,exact:true})).toHaveText(b.heading);for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(plain(line.replace(/^(- |\d+\. )/,'')));if(b.code)await expect(section.getByRole('heading',{level:3,name:b.heading,exact:true}).locator('..').locator('code')).toHaveText(b.code);}
+   if(b.kind==='cards'||b.kind==='flow'){for(const i of b.items){if(s.id==='measure')continue;await expect(section).toContainText(i.title);for(const p of i.body.split("\n\n"))for(const line of p.split('\n'))await expect(section).toContainText(plain(line.replace(/^(- |\d+\. )/,'')));}await expect(section).toContainText(b.description);}
    if(b.kind==='table'){const table=section.getByRole('table',{name:b.caption});await expect(table.locator('th')).toHaveText(b.headers);await expect(table.locator('td')).toHaveText(b.rows.flat());}
   }
  }

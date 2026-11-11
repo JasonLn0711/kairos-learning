@@ -124,7 +124,7 @@ test('M05 English preserves Chinese rules, candidate status, answer keys and tem
   assert.equal(l.contentVersion,n===3?'1.0.4':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
   const en=getPage('/en/courses/aase/v1/m05/concepts/m05-0'+n+'/')!.aaseConcept!.lesson!;
-  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual((n===3?l.text.en:en.text.en).sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
+  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual((n===3?l.text.en:en.text.en).sections.flatMap((s:any)=>s.blocks??[]).flatMap((b:any)=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
  }
  assert.equal(build().concepts.find(c=>c.id==='AASE-M05-C05')!.workshopDepth,'extension');
 });
