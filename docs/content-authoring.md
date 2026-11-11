@@ -737,6 +737,12 @@ AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.jso
 
 檢查入口為`tests/aase-m0404-replacement.test.ts`與`playwright.aase-m0404.config.ts`；正式站設定`AASE_BASE_URL`。來源、原版、逐節採用、圖意差異與實測／發布結果見[本次回執](releases/2026-11-11-aase-m04-04-replacement.md)。
 
+## AASE M05-04 SDD 五步變更（2026-11-11）
+
+供稿、前版、單圖與[逐小節對照](sources/aase/m05-04/replacement-2026-11-11/source-map.md)由本repo保存。v1.1.0保留原發布日及六個既有錨點，完整雙語承接七節、六列影響表、五列人機分工、兩段候選情境、Markdown範本與三題開放檢核。第四欄仍為候選，三欄工作坊參考程式未改。
+
+`SddChangeDiagram.svelte`只呈現本課loop的五步flow；模型拒絕錯誤位置、種類、節點數與額外標記欄位。`scripts/aase_m0504_svg.py --check`核對同源雙語SVG。正文及搜尋保留所有節點文字，手機以HTML換行，最後節點強調決策，四個箭頭依序向下。維護檢查為 `tests/aase-m0504-replacement.test.ts` 與 `playwright.aase-m0504.config.ts`；正式站指定 `AASE_BASE_URL`。發布與實測另記回執。
+
 ### AASE M05-01 Prompt 與 Spec（2026-11-11）
 
 v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有段落錨點。`scripts/aase_m0501_content.py` 由完整成稿生成 JSON，`--check` 核對同步；三張表、R-01～R-04／T-01～T-04、Agent 任務、BDD 情境與三題原始理解檢核在正文呈現。既有三題為補充檢核，供稿三題沿原生答案展開，不建立提交或評分服務。兩語保留相同中文 spec.md 程式碼，英文有完整條款解讀。
