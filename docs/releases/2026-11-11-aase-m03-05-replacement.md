@@ -2,7 +2,7 @@
 
 本次以完整新供稿抽換成功指標、假設與需求紀錄教材，保留跨產業案例、公式推導、表格、物流problem.md與五道理解問題。中英各十二section、六組圖與十二份SVG，新增四瑕疵／兩良品雙滑桿及全部阻擋示範。版本v1.2.0、revision 5、修訂日2026-11-11；原發布日2026-11-05與原有十一錨點保留。
 
-正式路徑：[中文](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-05/)、[英文](https://learn.cs-kairos.com/en/courses/aase/v1/m03/concepts/m03-05/)。本機實作與驗證已完成；Git與正式站結果於下方另記。
+正式路徑：[中文](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-05/)、[英文](https://learn.cs-kairos.com/en/courses/aase/v1/m03/concepts/m03-05/)。本機實作、驗證、Git推送與正式站回讀已完成，分層證據如下。
 
 ## 原始材料、內容與所有權
 
@@ -38,7 +38,15 @@ SuccessEvidenceDiagram僅處理本課固定六圖，模型限制節點數、種�
 
 ## Git、部署與正式站
 
-待補實際提交、推送、部署與正式站回讀結果；本機通過不代填正式發布。
+來源提交`510931e`、教材／圖解／驗證提交`5601bbe`分開保留，已推送`origin/main`；推送後fetch核對分歧0／0，沒有force push。發布基準`b3b4abf`及其先前歷史均保留。Git未配置作者身分時，依本repo既有提交使用單次`git -c`作者設定，不改全域設定。
+
+[Pages 42984332108](https://github.com/JasonLn0711/kairos-learning/actions/runs/42984332108)成功，部署提交`5601bbe555e6524e5c58fb987d93226653499729`。CI再次通過稽核、內容、單元、共享HTML契約、型別、真實發布閘門、release與既有下載校驗。
+
+`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0305.config.ts`：中英2項通過，30.4秒。對正式站重跑與本機相同的全文／順序、十二section、六表、原模板、五題及解析、六組圖、四尺寸／200%、無全頁溢出、字級／行高、搜尋、鍵盤／原生收合／局部捲動、雙滑桿／全部阻擋、無JS預設與控制停用、十二SVG字框／重疊／實際下載位元組核對。兩頁均顯示v1.2.0，並非僅檢查HTTP成功或部署綠燈。
+
+正式ZIP與SHA256SUMS回應200，與候選位元組完全一致。ZIP 30179 bytes，SHA256 `9d68bac80f54e555d08809169f07435863348bac942f4349cd204829fad4d4bd`；SHA256SUMS 87 bytes，SHA256 `3aa7e46d4488e79e45e6faa1f4fe21913796f9a0be8c94df99e818976be84987`。
+
+隔離候選的`.local/aase/m0305/`保留`local-results.json`、`live-results.json`、`browser-live.log`、`deployment.json`、`live-downloads/results.json`與下載原件。來源八個雜湊、原發布日／翻譯閘門、原十一錨點、雙語六表／六圖／五題已再次核對。正文與所有要求的圖示均已進入正式頁，完整性與發布稽核通過；實體裝置與讀者接受度的範圍保持如下。
 
 ## 待驗範圍
 
