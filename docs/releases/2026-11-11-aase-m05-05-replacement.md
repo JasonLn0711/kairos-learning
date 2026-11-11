@@ -44,3 +44,11 @@
 - `m05-05-1-zh.svg`：2982 bytes。
 - `m05-05-2-en.svg`：3053 bytes。
 - `m05-05-2-zh.svg`：2736 bytes。
+
+### 遠端整合與最終本機結果
+
+來源提交 `541eb30`、教材提交 `e8f25f0`；第一次整合遠端至 `d2dcf9e` 使用 merge commit `6551584`，保留其他課次的全部遠端變更。重新執行單元 313/313、型別 0 errors／0 warnings、publication-boundary、validate:release 及兩語瀏覽器 2/2 均通過；原始附件 bytes 再次與三個保存原件相等。瀏覽器測試補驗下載連結的 Shift+Tab → Tab、可見焦點及 Enter 開圖。
+
+執行平台 Linux x86_64、Node v22.23.4、pnpm 10.34.9、Playwright Chromium headless；正式 CI 依 repo 使用 Node 24。`pnpm audit --audit-level=high` 通過（4 low）；靜態 HTML contract 6/6 通過。
+
+原工作目錄的無關髒檔未改動；沒有合併或提交那些未完成修改。網站、來源與詳細驗證由 kairos-learning 擁有。實機與讀者理解保留待驗，沒有推定學員完成。
