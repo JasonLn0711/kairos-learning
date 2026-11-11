@@ -1,14 +1,15 @@
 {
   "id": "AASE-M05-C04",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "cucumber-bdd",
     "nasa-requirements",
-    "openspec-concepts-pinned"
+    "openspec-concepts-pinned",
+    "nasa-bidirectional-traceability"
   ],
   "qa": [],
   "text": {
@@ -28,10 +29,10 @@
       "sections": [
         {
           "id": "living-spec",
-          "heading": "規格要參與變更，而非寫完就封存",
+          "heading": "每次需求改變，都要維持一致",
           "paragraphs": [
-            "SDD（Spec-Driven Development，規格驅動開發）在本課指：以可討論、可版本控制的規格引導變更，再用實作與證據回頭核對。這是課程的工作定義，不宣稱所有工具採同一個標準流程，也不表示必須先寫完整套規格才能開始小步實作。",
-            "Cucumber的BDD方法強調具體例子與持續協作；OpenSpec也讓規格與變更文件在迭代中修訂。本課借這些方法說明如何維持一致，但保留它們各自的名稱、目的與工具差異。"
+            "軟體每次需求改變，都要確認規格、畫面、資料、程式和測試仍然一致。SDD（Spec-Driven Development，規格驅動開發）在本課指：以可討論、可版本控制的規格引導變更，再用實作與證據回頭核對。",
+            "規格記下為什麼修改、哪些地方應該修改、實際改了什麼，以及如何證明修改正確。這是課程的工作定義；不同工具的流程與名稱各有差異。文件的用途是支援討論、追溯與核對，篇幅依變更需要決定。"
           ],
           "sourceIds": [
             "cucumber-bdd",
@@ -40,118 +41,228 @@
         },
         {
           "id": "analogy",
-          "heading": "像修改食譜後同步採購與檢查",
+          "heading": "一、從餐廳理解變更的影響",
           "paragraphs": [
-            "如果餐點改為不含某項食材，食譜、採購單、製作步驟與出餐檢查都要相應更新。只改菜單名稱，廚房仍可能照舊製作；只換食材卻不改標示，也會造成誤解。",
-            "需求變更同樣會跨文件與程式。小步不是只改一個檔案，而是讓一項可說明的變更，在合理範圍內維持規格、介面、規則與驗證一致。"
-          ]
-        },
-        {
-          "id": "proposal",
-          "heading": "先把第四欄視為候選變更",
-          "paragraphs": [
-            "合成提案C-02希望新增「收件批次代號」作第四個必要欄位。先確認用途、資料來源、型別、有效值與舊資料如何處理；本章只做影響分析，不修改三欄參考解答，也不宣稱提案已獲真實單位核准。",
-            "若課堂決定採用，可暫定沿既有字串規則作練習，但需在提案寫明這是教學決定，並確認輸出允許清單是否增加該欄。原本缺漏、空白、結果過期與不正式受理的約束仍要成立。"
-          ],
-          "blocks": [
-            {
-              "kind": "table",
-              "caption": "表 1｜候選第四欄的影響分析",
-              "headers": [
-                "範圍",
-                "需要核對的影響",
-                "不能只改什麼"
-              ],
-              "rows": [
-                [
-                  "problem.md／spec.md",
-                  "新增欄位的理由、定義、舊資料策略、正常與負向情境",
-                  "只在聊天新增一行要求"
-                ],
-                [
-                  "wireframe.svg／介面",
-                  "欄位名稱、必要提示、三欄完成文案及回復方式",
-                  "只改欄位數字，漏掉說明"
-                ],
-                [
-                  "rules.py／輸出",
-                  "必要欄位集合、型別與長度、匯出允許清單",
-                  "只加文字輸入框"
-                ],
-                [
-                  "app.py／狀態",
-                  "輸入變更使結果失效、預覽及下載仍對應目前資料",
-                  "沿用可能過期的完成結果"
-                ],
-                [
-                  "tests/／交接",
-                  "完整案例加入新欄、缺少新欄案例、舊情境回歸、README限制",
-                  "把原測試刪掉或只更新預期值求綠燈"
-                ]
-              ]
-            }
+            "假設你經營連鎖餐廳，因顧客需求，決定把一道雞肉料理改成不含花生的版本。廚師不再加花生之後，還有哪些環節需要同步？",
+            "- 菜單上的過敏原標示是否更新？\n- 採購清單是否需要調整？\n- 廚師使用的食譜是否改變？\n- 外送平台的餐點資訊是否正確？\n- 廚房是否可能發生交叉接觸？\n- 出餐前要怎麼確認符合新要求？",
+            "如果只口頭通知廚師，其他環節仍可能沿用舊資料。這個類比說明依賴關係如何擴散：一次變更要沿著相關資訊與作業逐一檢查。此處只用來理解軟體變更，不提供餐飲過敏原安全認證或操作程序。"
           ]
         },
         {
           "id": "loop",
-          "heading": "由規格到驗證，再回到決定",
+          "heading": "二、SDD 的核心工作流程",
           "paragraphs": [
-            "先記變更目的與影響，再修訂對應情境；實作時留下Diff（差異）供審查，執行針對性測試與仍受影響的回歸。發現規格不清時，可以回頭修改候選與設計，但要保留理由，不讓模型默默擴大責任。",
-            "NASA需求檢查表重視可追溯與驗證。本課用穩定需求代號連到情境、檔案與真實結果；連結存在本身還不是通過，必須能找到證據且範圍相符。"
+            "先記錄變更理由與核准狀態，再把新規則及必須保留的舊規則寫清楚。依影響分析實作，執行新情境與受影響的回歸測試，最後以證據作接受、修正或暫緩的決定。"
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "圖 1｜一項規格變更的工作迴圈",
-              "description": "依序處理以便審查；學到新資訊時可回修，這不是一次通過後永不更改的瀑布階段。",
+              "caption": "圖 1｜SDD 的五步變更流程",
+              "description": "這是反覆迭代的流程，不代表每一步只能執行一次。",
               "items": [
                 {
-                  "title": "目的與影響",
-                  "body": "記錄候選變更、負責角色、資料與相依範圍，保留尚未定義事項。"
+                  "title": "需求變更（Change Request）",
+                  "body": "為什麼要改？誰提出？是否已核准？"
                 },
                 {
-                  "title": "條款與情境",
-                  "body": "描述新行為及舊承諾，列完整、缺漏與過期結果案例。"
+                  "title": "更新規格（Specification）",
+                  "body": "新的規則是什麼？原有規則哪些不能破壞？"
                 },
                 {
-                  "title": "實作與審查",
-                  "body": "在允許範圍修改，檢查Diff是否真的涵蓋規則與輸出。"
+                  "title": "影響分析與實作（Implementation）",
+                  "body": "修改哪些畫面、資料、程式與文件？"
                 },
                 {
-                  "title": "驗證與決定",
-                  "body": "記真實測試結果及限制，決定接受、修正或暫緩，回填目前規格。"
+                  "title": "測試與驗證（Verification）",
+                  "body": "新功能正確嗎？舊功能有沒有被破壞？"
+                },
+                {
+                  "title": "審查、決策與留下證據",
+                  "body": "接受、修正或暫緩；必要時回到前面重新確認"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 三個一定要理解的名詞",
+                "Specification（規格）：軟體應該遵守的規則。好比食譜寫明每份餐點必須使用哪些食材。",
+                "Diff（差異）：修改前後的差別。把新舊食譜並排，便能檢查具體改了哪些內容；程式與文件也用差異檢視審查。",
+                "Regression Testing（回歸測試）：修改後重新確認原本正常的功能沒有被破壞。例如改了付款功能，仍要檢查退款與訂單查詢。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "proposal",
+          "heading": "三、案例：從三個必填欄位增加第四個",
+          "paragraphs": [
+            "合成情境 C-02：公司的收件系統原有三個必要欄位，現在有人提議增加「收件批次代號」。如果只交代 AI Coding Agent「幫我新增一個收件批次代號的輸入框」，畫面可能很快出現欄位，但其他規則仍沿用三欄版本。",
+            "Change Impact Analysis（變更影響分析）先盤點可能受影響的地方。一項變更不一定修改所有檔案，卻需要逐項檢查相依範圍。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜第四個欄位的變更影響",
+              "headers": [
+                "影響範圍",
+                "必須考慮的問題"
+              ],
+              "rows": [
+                [
+                  "需求與規格",
+                  "第四欄是否必填？允許哪些值？舊資料怎麼處理？"
+                ],
+                [
+                  "UI / UX",
+                  "欄位放哪裡？沒有填寫要怎麼提示？"
+                ],
+                [
+                  "驗證規則",
+                  "少了第四欄是否禁止完成？"
+                ],
+                [
+                  "輸出資料",
+                  "匯出的 JSON、CSV 或文件是否加入新欄位？"
+                ],
+                [
+                  "程式狀態",
+                  "修改輸入後，舊的驗證結果是否需要失效？"
+                ],
+                [
+                  "測試",
+                  "新增哪些案例？原本哪些測試要重新執行？"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 把需求寫成可以檢驗的規格",
+                "假設負責人確認：「新的收件資料必須填寫第四欄，否則不得完整匯出。」可以沿用 M05-03 的 Given / When / Then：Given 交代起始條件，When 指出動作，Then 描述可觀察的結果。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "情境一｜缺少第四欄",
+              "paragraphs": [
+                "以下是候選規格與紀錄範本，尚未實作。"
+              ],
+              "code": "Scenario: 缺少收件批次代號\n\nGiven 使用者已填寫原本三個必要欄位\nAnd 收件批次代號為空白\n\nWhen 使用者執行資料驗證\n\nThen 系統應顯示缺少收件批次代號\nAnd 系統不得提供完整資料匯出"
+            },
+            {
+              "kind": "step",
+              "heading": "情境二｜驗證後修改輸入",
+              "paragraphs": [
+                "以下是候選規格與紀錄範本，尚未實作。"
+              ],
+              "code": "Scenario: 驗證完成後修改輸入資料\n\nGiven 四個必要欄位均已通過驗證\n\nWhen 使用者清空收件批次代號\n\nThen 原本的驗證結果應失效\nAnd 系統不得沿用舊結果完成匯出"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "第一個情境確認新規則，第二個情境防止沿用過期結果。這些仍是候選規格；採用前要確認有效值、舊資料政策與輸出契約。",
+                "本課保留三欄參考解答，沒有實作第四欄，也沒有真實單位核准的證據。若課堂暫用既有字串規則，要把它記成教學決定，並核對輸出允許清單、空白與缺漏規則。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "collaboration",
+          "heading": "四、人類與 AI Agent 如何分工",
+          "paragraphs": [
+            "工程師可能只記得改程式而漏掉文件。AI Coding Agent 可以很快改動大量檔案；若只要求「支援第四個欄位」，它可能自行猜測必填性、格式或資料庫修改。這些猜測需要需求負責人確認。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 2｜可審查的人機分工",
+              "headers": [
+                "人類主要負責",
+                "AI Agent 可以協助"
+              ],
+              "rows": [
+                [
+                  "決定真正的業務需求",
+                  "盤點可能受影響的檔案"
+                ],
+                [
+                  "確認規則與例外",
+                  "起草規格和測試案例"
+                ],
+                [
+                  "核准變更範圍",
+                  "修改程式、介面及相關文件"
+                ],
+                [
+                  "審查實作差異",
+                  "執行測試、彙整結果"
+                ],
+                [
+                  "決定是否接受成果",
+                  "提供可檢查的修改與驗證證據"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "從需求找到設計、實作與測試，也從測試或實作回頭找到需求，稱為雙向可追溯性（Bidirectional Traceability）。NASA SWE-052 說明需求、設計、程式及驗證之間的追溯關係；本課借用這個原理，不宣稱合成案例已符合 NASA 的專案要求。",
+                "為每條需求配置穩定代號，再連到情境、檔案與實際結果。連結存在只證明建立了關係；審查時仍需打開證據，核對版本、範圍及結果。"
               ]
             }
           ],
           "sourceIds": [
-            "nasa-requirements"
+            "nasa-bidirectional-traceability"
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "五、把相同思考用到不同產業",
+          "paragraphs": [
+            "以下三個合成情境都從需求沿依賴關係追查；實際採用的規則由各單位確認。",
+            "### 醫院：新增過敏史必填欄位",
+            "需要檢查舊病歷如何顯示、缺漏是否阻擋送出、誰有權修改，以及相關提醒和測試是否同步。輸入框只涵蓋介面的一部分。",
+            "### 物流：新增特殊配送標記",
+            "逐項檢查訂單頁面、倉儲系統、司機端、標籤列印和異常配送處理。資料表新增欄位後，仍需確認各端如何讀取與呈現。",
+            "### 銀行：新增貸款審核條件",
+            "除了判斷邏輯，還需核對原有客戶案件、審批流程、拒絕原因及稽核紀錄受到的影響。需求改變往往沿著系統依賴擴散。"
           ]
         },
         {
           "id": "drift",
-          "heading": "分辨規格錯誤與程式偏離",
+          "heading": "六、最容易犯的三個錯誤",
           "paragraphs": [
-            "如果規格已確認「缺件不得完整匯出」，程式卻仍可下載，這是實作偏離，不能把規格改成允許缺件來消除失敗。若領域需求確實改變，才以明確提案修訂承諾，並重新檢查影響與責任。",
-            "測試全綠也可能因測錯、少測或預期值被改錯。審查者需核對情境、測試及程式的關係。例如新增第四欄後，原完整資料可能變成缺件；應區分要更新的測試資料與刻意保留的舊資料負向情境。"
+            "第一，只改程式，規格仍停在舊版。下一位工程師或 AI Agent 可能依舊文件再把行為改回去，因此應同步維護已確認的規格。",
+            "第二，為了讓測試通過，反過來改要求。若已確認缺少必填資料不得匯出，程式卻仍可匯出，應修正實作偏離；真正業務需求改變時，另以明確提案修訂承諾並重新審查。",
+            "第三，把全部綠燈當成完成。測試可能漏掉情境，或預期結果被改錯；要拿真實規格逐條核對測試。新增第四欄後，原完整資料可能成為缺件，應區分需要更新的測試資料與刻意保留的舊資料負向案例。"
           ]
         },
         {
           "id": "record",
-          "heading": "留下可以追到實際檔案的紀錄",
+          "heading": "七、從一份 Markdown 開始",
           "paragraphs": [
-            "現有參考專案確實有spec.md、rules.py、app.py與tests/test_rules.py／test_app.py；它們可用來練習影響盤點。下例寫的是計畫，不表示這些檔案已改成四欄，也沒有新增不存在的測試名稱來冒充通過證據。",
-            "常見誤解是「規格寫好了，Agent之後全部負責」。人類仍需確認規則、審查Diff及判斷證據是否足夠；Agent可協助編輯與執行，但不能自行把未知需求變成正式責任。"
+            "每次變更先留下目的、狀態、未知規則、可觀察行為、影響範圍、驗證計畫、實作證據與最終決策。一份 Markdown 就能開始，後續再依協作需求擴充。"
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "第四欄變更的紙上計畫",
+              "heading": "最小 SDD 變更紀錄",
               "paragraphs": [
-                "將以下合成範例放入 spec.md，依你的課堂情境修改；這不是實際單位規定或研究結果。"
+                "以下是候選規格與紀錄範本，尚未實作。"
               ],
-              "code": "# C-02 候選：新增收件批次代號（未實作）\n目的／來源：合成課堂情境，實際用途待確認\n待決：有效值、舊資料策略、輸出欄位、確認角色\n規格：補正常、缺少第四欄、空白、修改後過期情境\n影響：spec.md、wireframe.svg、rules.py、app.py、tests/\n既有約束：拒絕缺件完整匯出，結果對應目前輸入\n驗證計畫：規則與介面測試、下載及鍵盤任務回歸\n執行命令／結果：未執行，保持待驗\n決定：先完成影響審查，再決定是否納入\n界線：本課三欄參考解答沒有因這份計畫而改變"
+              "code": "# CHANGE-001：新增必要欄位\n\n## 目的\n為什麼提出這項變更？\n\n## 狀態\n候選／已核准／實作中／已驗證\n\n## 待確認事項\n哪些規則還不能自行假設？\n\n## 規格\n修改後應出現哪些可觀察行為？\n\n## 影響範圍\n哪些畫面、資料、程式和測試可能受影響？\n\n## 驗證計畫\n如何確認新需求與既有功能？\n\n## 實作證據\n修改的檔案、Commit、Diff、測試結果\n\n## 最終決策\n接受、退回修正或暫緩"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這份紀錄可逐步擴展成需求追溯矩陣（Requirements Traceability Matrix），讓每條需求連到實作、測試及驗證證據。多人協作或版本增多時，可評估 OpenSpec；工具支援文件流程，需求確認與驗證責任仍由負責角色承擔。",
+                "現有參考專案的 spec.md、wireframe.svg、rules.py、app.py、tests/test_rules.py 與 tests/test_app.py 可作影響盤點。寫下計畫不表示這些檔案已改成四欄，也不能填入不存在的測試名稱冒充通過證據。"
+              ]
             }
+          ],
+          "sourceIds": [
+            "openspec-concepts-pinned"
           ]
         }
       ],
@@ -165,7 +276,30 @@
         "expected": "一份可審查的C-02變更計畫，能由候選要求追到受影響檔案與待驗情境。",
         "check": "沒有把三欄參考解答誤寫為已修改；能區分需求變更與為求測試通過而改要求。",
         "cleanup": "保留原始參考專案，紙上計畫使用合成資料；未授權或未決項目不自行啟用。"
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M05-C04-Q04",
+          "prompt": "概念判斷｜某位工程師發現必填檢查沒有生效，為了讓測試通過，直接把規格的「必填」改成「選填」。這是正常需求變更還是掩蓋實作錯誤？為什麼？",
+          "answer": [
+            "這是掩蓋實作錯誤。已確認的必填規則仍有效，應修正檢查並驗證；若業務需求確實變更，另提案、核准並檢查影響。"
+          ]
+        },
+        {
+          "id": "AASE-M05-C04-Q05",
+          "prompt": "情境分析｜電商把「訂單滿 1,000 元免運費」改成「滿 1,500 元免運費」。除了公式，至少提出四個必須同步檢查的系統或流程。",
+          "answer": [
+            "可檢查商品頁與活動文案、購物車門檻提示、結帳計價與金額邊界測試、客服與退款流程、優惠疊加規則及訂單輸出。列出影響後確認實際政策，並測試 1,000、1,499、1,500 元等邊界。"
+          ]
+        },
+        {
+          "id": "AASE-M05-C04-Q06",
+          "prompt": "AI 協作實務｜Agent 回報「已完成修改，所有測試均通過」。接受前要哪些證據？如何判斷測試涵蓋需求？",
+          "answer": [
+            "要求已核准規格、範圍與 Diff、受影響檔案、實際命令／版本／結果、負向與回歸案例及未驗事項。逐條將需求連到測試斷言，再檢查斷言與可觀察行為；綠燈本身無法證明測試完整。"
+          ]
+        }
+      ]
     },
     "en": {
       "summary": "Connect a requirement change to specification, design, code and verification, retaining its reason and commitments that must still hold.",
@@ -183,10 +317,10 @@
       "sections": [
         {
           "id": "living-spec",
-          "heading": "Keep the Specification Involved in Changes",
+          "heading": "Keep Every Change Consistent",
           "paragraphs": [
-            "In this course, Spec-Driven Development (SDD) uses discussable, version-controlled specifications to guide changes, then checks them against implementation and evidence. This is a course working definition, not a universal tool standard or a requirement to finish every specification before implementing a small slice.",
-            "Cucumber’s BDD emphasizes examples and continued collaboration; OpenSpec also revises specification and change artifacts iteratively. The course uses these ideas for consistency while retaining their separate names, purposes and tools."
+            "Whenever requirements change, check that specifications, screens, data, code and tests remain consistent. In this course, Spec-Driven Development (SDD) means guiding changes with discussable, version-controlled specifications and checking them against implementation and evidence.",
+            "A specification records why a change is needed, what should change, what actually changed and how correctness will be demonstrated. This is a course working definition; tools have different workflows and names. Document length follows the needs of discussion, traceability and review."
           ],
           "sourceIds": [
             "cucumber-bdd",
@@ -195,118 +329,228 @@
         },
         {
           "id": "analogy",
-          "heading": "Update Purchasing and Checks When a Recipe Changes",
+          "heading": "1. Understand Impact Through a Restaurant",
           "paragraphs": [
-            "Removing an ingredient from a meal affects the recipe, purchase list, preparation and serving checks. A changed menu alone may leave old cooking practices; swapping ingredients without labeling also confuses people.",
-            "Requirement changes likewise span documents and code. A small step is one explainable, reasonably bounded change keeping specification, interface, rules and verification consistent, not necessarily one edited file."
-          ]
-        },
-        {
-          "id": "proposal",
-          "heading": "Treat the Fourth Field as a Candidate First",
-          "paragraphs": [
-            "Synthetic proposal C-02 adds “intake batch code” as a fourth required field. Clarify purpose, source, type, valid values and old-data treatment first. This lesson analyzes impact only: it does not change the three-field reference or claim actual organizational approval.",
-            "If the class adopts it, existing string rules can be a provisional teaching choice. Record that decision and confirm whether the output allowlist gains the field. Missing-input, whitespace, stale-result and no-official-acceptance constraints still apply."
-          ],
-          "blocks": [
-            {
-              "kind": "table",
-              "caption": "Table 1 | Impact Analysis for a Proposed Fourth Field",
-              "headers": [
-                "Area",
-                "Impact to Review",
-                "Insufficient Change"
-              ],
-              "rows": [
-                [
-                  "problem.md / spec.md",
-                  "Reason, definition, old-data policy, normal and negative scenarios.",
-                  "A new sentence in chat only."
-                ],
-                [
-                  "wireframe.svg / interface",
-                  "Name, required guidance, three-field completion wording and recovery.",
-                  "Changing the field count without explanations."
-                ],
-                [
-                  "rules.py / output",
-                  "Required-field set, types, lengths and output allowlist.",
-                  "Only adding a text input."
-                ],
-                [
-                  "app.py / state",
-                  "Edits invalidate results; preview/download match current input.",
-                  "Reusing potentially stale completion."
-                ],
-                [
-                  "tests/ / handoff",
-                  "New field in valid input, a missing-new-field case, regressions and README limits.",
-                  "Deleting old tests or changing expected values solely for green results."
-                ]
-              ]
-            }
+            "Imagine a restaurant chain changing a chicken dish to a peanut-free version at customers’ request. After the cook stops adding peanuts, which other parts need attention?",
+            "- Has the menu’s allergen labeling changed?\n- Does the purchasing list need updating?\n- Has the cooking recipe changed?\n- Is the delivery platform’s description correct?\n- Could cross-contact occur in the kitchen?\n- How will the new requirement be checked before serving?",
+            "An oral instruction to the cook may leave other processes using old information. This analogy shows how dependencies propagate: follow relevant information and operations through each affected area. It illustrates software change and supplies no food-allergen safety certification or operating procedure."
           ]
         },
         {
           "id": "loop",
-          "heading": "Move from Specification to Verification and Back to Decisions",
+          "heading": "2. The Core SDD Workflow",
           "paragraphs": [
-            "Record purpose/impact, revise scenarios, then retain the implementation diff for review. Run targeted tests and affected regressions. Unclear specifications can lead back to proposal/design changes, with reasons retained rather than silent model expansion of responsibility.",
-            "NASA’s checklist emphasizes traceability and verification. Stable requirement IDs connect scenarios, files and actual results. Links alone are not a pass: evidence must exist and match the claim’s scope."
+            "Record the reason and approval state, then specify new rules and retained commitments. Implement according to impact analysis, test new scenarios and affected regressions, and use evidence to accept, revise or defer."
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "Figure 1 | The Work Loop for One Specification Change",
-              "description": "The order supports review; new information can lead back to revisions. These are not immutable waterfall phases.",
+              "caption": "Figure 1 | Five Steps for an SDD Change",
+              "description": "This is an iterative process; each step may be revisited.",
               "items": [
                 {
-                  "title": "Purpose and impact",
-                  "body": "Record candidate change, responsible role, data/dependency scope and unresolved definitions."
+                  "title": "Change Request",
+                  "body": "Why change? Who proposed it? Has it been approved?"
                 },
                 {
-                  "title": "Clauses and scenarios",
-                  "body": "Describe new behavior and retained commitments through complete, missing-input and stale-result cases."
+                  "title": "Specification",
+                  "body": "What are the new rules? Which existing rules must remain intact?"
                 },
                 {
-                  "title": "Implementation and review",
-                  "body": "Change within allowed scope and inspect the diff for rules and output coverage."
+                  "title": "Impact Analysis and Implementation",
+                  "body": "Which screens, data, code and documents change?"
                 },
                 {
-                  "title": "Verification and decision",
-                  "body": "Record actual results and limits; accept, revise or defer, updating the current specification."
+                  "title": "Testing and Verification",
+                  "body": "Does the new behavior work? Do existing features still work?"
+                },
+                {
+                  "title": "Review, Decision and Evidence",
+                  "body": "Accept, revise or defer; return to earlier steps when necessary."
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Three terms to understand",
+                "Specification: rules the software must follow, like a recipe listing required ingredients for each serving.",
+                "Diff: the difference between before and after. Comparing old and new recipes reveals specific edits; code and document reviews similarly inspect diffs.",
+                "Regression Testing: recheck previously working behavior after a change. A payment change may require checking refunds and order lookup as well."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "proposal",
+          "heading": "3. Case: Add a Fourth Required Field",
+          "paragraphs": [
+            "Synthetic proposal C-02 adds an “intake batch code” to a company’s three-required-field intake system. Asking an AI Coding Agent only to add the input may quickly produce a visible field while other rules still assume three fields.",
+            "Change Impact Analysis identifies potentially affected areas first. One change need not modify every file, but it requires checking all relevant dependencies."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Impact of the Fourth Field",
+              "headers": [
+                "Area",
+                "Questions to resolve"
+              ],
+              "rows": [
+                [
+                  "Requirements and specification",
+                  "Is it required? Which values are valid? How is old data handled?"
+                ],
+                [
+                  "UI / UX",
+                  "Where is it placed? What guidance appears when it is missing?"
+                ],
+                [
+                  "Validation rules",
+                  "Does a missing fourth field block completion?"
+                ],
+                [
+                  "Output data",
+                  "Does exported JSON, CSV or a document include the field?"
+                ],
+                [
+                  "Program state",
+                  "Does editing input invalidate previous validation?"
+                ],
+                [
+                  "Tests",
+                  "Which new cases and existing regression tests are needed?"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Turn the request into testable specifications",
+                "Suppose the owner confirms that new intake records need the fourth field before complete export. Reuse M05-03’s Given / When / Then: Given defines starting conditions, When names the action, and Then specifies observable outcomes."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Scenario 1 | Missing fourth field",
+              "paragraphs": [
+                "The Chinese-language block is a candidate specification or record template, not an implemented change."
+              ],
+              "code": "Scenario: 缺少收件批次代號\n\nGiven 使用者已填寫原本三個必要欄位\nAnd 收件批次代號為空白\n\nWhen 使用者執行資料驗證\n\nThen 系統應顯示缺少收件批次代號\nAnd 系統不得提供完整資料匯出"
+            },
+            {
+              "kind": "step",
+              "heading": "Scenario 2 | Edit after validation",
+              "paragraphs": [
+                "The Chinese-language block is a candidate specification or record template, not an implemented change."
+              ],
+              "code": "Scenario: 驗證完成後修改輸入資料\n\nGiven 四個必要欄位均已通過驗證\n\nWhen 使用者清空收件批次代號\n\nThen 原本的驗證結果應失效\nAnd 系統不得沿用舊結果完成匯出"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The first Chinese-language scenario says: given the original three fields are filled and the batch code is blank, when validation runs, report the missing batch code and prohibit complete export. The second says: given all four fields passed validation, when the batch code is cleared, invalidate the prior result and prohibit export based on it. Both remain candidate specifications; valid values, old-data policy and output contracts require confirmation.",
+                "The three-field reference stays intact. This lesson implements no fourth field and has no actual organizational approval. If a class provisionally reuses existing string rules, record that teaching decision and review the output allowlist, whitespace and missing-input rules."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "collaboration",
+          "heading": "4. Divide Responsibility Between People and Agents",
+          "paragraphs": [
+            "Engineers can change code and overlook documents. AI Coding Agents can change many files quickly; an instruction to “support the fourth field” may lead an agent to guess required status, format or database changes. The requirements owner must resolve those guesses."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 2 | Reviewable Human–Agent Responsibilities",
+              "headers": [
+                "People primarily own",
+                "An AI agent can assist with"
+              ],
+              "rows": [
+                [
+                  "Decide actual business needs",
+                  "Identify potentially affected files"
+                ],
+                [
+                  "Confirm rules and exceptions",
+                  "Draft specifications and test cases"
+                ],
+                [
+                  "Approve change scope",
+                  "Edit code, interface and documents"
+                ],
+                [
+                  "Review implementation diffs",
+                  "Run tests and summarize results"
+                ],
+                [
+                  "Decide whether to accept",
+                  "Provide inspectable changes and verification evidence"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Bidirectional Traceability means following requirements to design, implementation and tests, and following tests or implementation back to requirements. NASA SWE-052 describes links among requirements, design, code and verification. This course applies the principle without claiming the synthetic case meets NASA project requirements.",
+                "Give requirements stable IDs and link them to scenarios, files and actual results. A link establishes a relationship; reviewers must still open the evidence and check version, scope and result."
               ]
             }
           ],
           "sourceIds": [
-            "nasa-requirements"
+            "nasa-bidirectional-traceability"
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "5. Apply the Same Reasoning Across Industries",
+          "paragraphs": [
+            "These three synthetic cases follow dependencies from a changed requirement. Each organization confirms its actual rules.",
+            "### Hospital: require allergy history",
+            "Check how old records appear, whether missing history blocks submission, who can edit it, and whether related alerts and tests are updated. An input box covers only part of the interface.",
+            "### Logistics: add a special-delivery marker",
+            "Inspect the order page, warehouse system, driver app, label printing and delivery-exception handling. After adding a database field, confirm how every consumer reads and presents it.",
+            "### Bank: add a loan-review condition",
+            "Beyond decision logic, inspect existing customer cases, approval workflow, rejection reasons and audit records. Requirement changes often propagate through system dependencies."
           ]
         },
         {
           "id": "drift",
-          "heading": "Distinguish Specification Errors from Implementation Drift",
+          "heading": "6. Three Common Mistakes",
           "paragraphs": [
-            "If confirmed rules prohibit complete export for missing input but code permits download, fix implementation drift. Do not rewrite the requirement to erase failure. Actual domain changes need explicit proposals, review and renewed impact/responsibility checks.",
-            "Green tests can result from incorrect, missing or wrongly updated checks. Review links among scenarios, tests and code. After adding a fourth field, formerly valid input may become incomplete: distinguish fixtures needing updates from old-data negative cases deliberately retained."
+            "First, code changes while the specification stays old. The next engineer or agent may follow the old document and undo the intended behavior, so maintain confirmed specifications alongside implementation.",
+            "Second, requirements are rewritten merely to pass tests. If confirmed rules prohibit complete export with missing required data but code permits it, correct implementation drift. Actual business changes need explicit proposals, revised commitments and renewed review.",
+            "Third, all-green tests are treated as completion. Tests may omit scenarios or have incorrect expected results; compare them with actual specifications. A fourth field can make formerly complete fixtures incomplete: distinguish fixtures to update from deliberately retained old-data negative cases."
           ]
         },
         {
           "id": "record",
-          "heading": "Connect the Plan to Actual Files",
+          "heading": "7. Start with One Markdown File",
           "paragraphs": [
-            "The reference contains spec.md, rules.py, app.py and tests/test_rules.py / test_app.py for impact review. The plan below does not claim four-field edits or invent test names as passing evidence.",
-            "A common mistake is transferring every responsibility to the agent once a specification exists. People still confirm rules, review diffs and assess evidence. Agents can edit and execute without authority to turn unknown needs into official responsibilities."
+            "For each change, record purpose, status, unresolved rules, observable behavior, impact, verification plan, implementation evidence and final decision. Start with Markdown and expand when collaboration requires it."
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "Tabletop Plan for the Fourth Field",
+              "heading": "A Minimal SDD Change Record",
               "paragraphs": [
-                "The original Traditional Chinese C-02 template records an unimplemented synthetic proposal, purpose/source, unresolved values/old-data/output/owner decisions, new scenarios, affected files, retained constraints, planned verification and an unexecuted status. The three-field reference remains unchanged; adapt this plan without inventing actual approvals or findings."
+                "The Chinese-language block is a candidate specification or record template, not an implemented change."
               ],
-              "code": "# C-02 候選：新增收件批次代號（未實作）\n目的／來源：合成課堂情境，實際用途待確認\n待決：有效值、舊資料策略、輸出欄位、確認角色\n規格：補正常、缺少第四欄、空白、修改後過期情境\n影響：spec.md、wireframe.svg、rules.py、app.py、tests/\n既有約束：拒絕缺件完整匯出，結果對應目前輸入\n驗證計畫：規則與介面測試、下載及鍵盤任務回歸\n執行命令／結果：未執行，保持待驗\n決定：先完成影響審查，再決定是否納入\n界線：本課三欄參考解答沒有因這份計畫而改變"
+              "code": "# CHANGE-001：新增必要欄位\n\n## 目的\n為什麼提出這項變更？\n\n## 狀態\n候選／已核准／實作中／已驗證\n\n## 待確認事項\n哪些規則還不能自行假設？\n\n## 規格\n修改後應出現哪些可觀察行為？\n\n## 影響範圍\n哪些畫面、資料、程式和測試可能受影響？\n\n## 驗證計畫\n如何確認新需求與既有功能？\n\n## 實作證據\n修改的檔案、Commit、Diff、測試結果\n\n## 最終決策\n接受、退回修正或暫緩"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The Chinese template’s eight headings are purpose, state (candidate / approved / implementing / verified), unresolved questions, observable specification, affected screens/data/code/tests, verification plan, files/commit/diff/test evidence, and acceptance/revision/deferral decision. It can grow into a Requirements Traceability Matrix linking each requirement to implementation, tests and evidence. For more collaborators or versions, evaluate OpenSpec; tooling supports the document workflow while responsible people retain requirements and verification decisions.",
+                "The reference project’s spec.md, wireframe.svg, rules.py, app.py, tests/test_rules.py and tests/test_app.py support impact review. A plan does not establish fourth-field edits or permit invented test names to stand in for passing evidence."
+              ]
             }
+          ],
+          "sourceIds": [
+            "openspec-concepts-pinned"
           ]
         }
       ],
@@ -320,7 +564,30 @@
         "expected": "A reviewable C-02 change plan connecting a candidate requirement to affected files and pending scenarios.",
         "check": "Do not describe the three-field reference as modified. Distinguish a real requirement change from weakening commitments to make tests pass.",
         "cleanup": "Keep the original reference project. Use synthetic data and do not activate undecided or unauthorized work."
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M05-C04-Q04",
+          "prompt": "Concept judgment｜An engineer makes a broken required-field check pass by changing the specification from required to optional. Is this a legitimate requirement change or concealment of a bug, and why?",
+          "answer": [
+            "It conceals an implementation error. The confirmed rule remains valid: repair and verify the check. A genuine business change needs a separate proposal, approval and impact review."
+          ]
+        },
+        {
+          "id": "AASE-M05-C04-Q05",
+          "prompt": "Scenario analysis｜An online shop raises free shipping from orders of 1,000 to 1,500 currency units. Besides the formula, name at least four systems or workflows to inspect.",
+          "answer": [
+            "Inspect product/promotional copy, cart threshold guidance, checkout and amount-boundary tests, support/refund procedures, discount combinations and order output. Confirm actual policy and test boundaries such as 1,000, 1,499 and 1,500."
+          ]
+        },
+        {
+          "id": "AASE-M05-C04-Q06",
+          "prompt": "AI collaboration｜An agent reports “changes complete; all tests pass.” What evidence do you require before acceptance, and how do you check requirements coverage?",
+          "answer": [
+            "Request approved specifications, scope/diff, affected files, actual commands/versions/results, negative/regression cases and unverified items. Map every requirement to assertions, then compare assertions with observable behavior; green results alone cannot prove coverage."
+          ]
+        }
+      ]
     }
   },
   "checks": [

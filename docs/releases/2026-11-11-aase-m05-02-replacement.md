@@ -30,9 +30,10 @@
 - HTML-01–04、FIG-01–06、A11Y-01–03：雙語 320／390／768／1280 CSS px，正常與 200% 根字級；無頁面水平溢出，圖文至少 16px、行高至少 1.7。390／1280 截圖目視比對原圖分組、平行與順序。
 - 鍵盤：參考解析 Enter／Space；下載 Tab／Shift+Tab／Enter、可見焦點；寬表格與 code-region 局部鍵盤捲動。
 - 關閉 JavaScript：雙語完整正文、五圖、表格、程式碼、原生參考答案與導覽仍保留。
+- 圖中文字對背景最低對比 14.01:1；有意義的卡片邊線與背景最低對比 4.26:1，顏色另有標題與分組輔助。
 - 十張 SVG：與產生器及下載位元組一致，瀏覽器字型就緒後檢查文字 viewBox 範圍與成對遮蓋；目視確認字句與群組。
 - `tests/aase-m0502-replacement.test.ts`：來源七檔雜湊、正式採用全文、雙語結構、五圖與題目；變造數量／種類／注入欄位拒絕；draft／future 不進搜尋。
-- 全套單元測試：311 通過。歷史翻譯／標題測試以封存 prior-lesson 核對原時點，新的教材由本次專用測試驗證。
+- 全套單元測試：整合前 311 通過；整合 M05-04 後 313 通過。歷史翻譯／標題測試以封存 prior-lesson 核對原時點，新的教材由本次專用測試驗證。
 - `pnpm run validate:content`、`pnpm run check`、publication-boundary、正式 build 與 `pnpm run validate:release` 已執行；最後整合後結果見發布段。
 
 本機證據：隔離工作樹 `.local/aase/m0502/`，含結果 JSON、雙語五圖手機／桌面截圖與十張 SVG 截圖。正式站採 `AASE_BASE_URL=https://learn.cs-kairos.com` 執行相同測試，結果另存後更新本紀錄。
