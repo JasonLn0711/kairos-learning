@@ -1,10 +1,10 @@
 {
   "id": "AASE-M07-C06",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "git-diff",
     "effective-agents",
@@ -28,90 +28,649 @@
       "sections": [
         {
           "id": "review",
-          "heading": "審查的是修改與行為",
+          "heading": "M07-06｜審查 Diff、工具紀錄與決策：如何知道 AI Agent 真的把事情做好？",
           "paragraphs": [
-            "Agent 摘要幫助定位重點，實際 Diff 才顯示檔案如何改變。從本次 spec 的驗收情境出發，逐項查哪些修改實作它、哪些測試驗證它，以及是否加入本次未授權的服務或檔案。",
-            "不要只數新增行數。幾行改動也可能移除匯出重新驗證；大量格式變更則可能遮住一個關鍵條件，讓審查更難。"
+            "AI Agent 回報完成後，需要核對規格（Specification）、變更（Diff）與證據（Evidence），再由負責人決定接受、要求修正或延後。程式能執行，只證明當次執行的結果；是否符合要求，仍要逐項驗收。"
           ]
         },
         {
           "id": "analogy",
-          "heading": "像核對估價單、施工差異與試運轉",
+          "heading": "一、先用生活案例理解：為什麼不能只相信「做完了」？",
           "paragraphs": [
-            "估價單說明約定工作，施工紀錄指出實際改動，試運轉結果顯示能否達成要求。三者任一缺少，都無法單憑承包者的完成說明接受成果。",
-            "軟體審查也要連起要求、變更與證據。決策紀錄要寫出為何接受或退回，讓下一個人能重現判斷，而非只留下「看起來可以」。"
-          ]
-        },
-        {
-          "id": "diff",
-          "heading": "依 Git 的資料位置查看差異",
-          "paragraphs": [
-            "git diff 預設看工作區相對暫存區的差異；git diff --cached 看已暫存、準備提交的差異。兩者都可能需要看，否則只檢查其中一邊會漏掉內容。",
-            "git status --short 另指出未追蹤檔案。新建 tests/ 若還未加入追蹤，不能期待普通 diff 自動列出完整內容；先打開它們檢查，再決定是否逐路徑暫存。"
-          ],
-          "blocks": [
-            {
-              "kind": "step",
-              "heading": "唯讀審查命令",
-              "paragraphs": [
-                "在自己的 Git 專案執行；尚未建立 Git 時先人工比對副本，不假裝命令已成功。"
-              ],
-              "code": "git status --short\ngit diff --stat\ngit diff -- app.py rules.py tests/\ngit diff --cached -- app.py rules.py tests/"
-            }
-          ]
-        },
-        {
-          "id": "evidence",
-          "heading": "工具紀錄需要足以定位執行",
-          "paragraphs": [
-            "記錄命令、工作目錄、退出結果及有用輸出。測試全綠仍需確認跑的是哪個階段；在 slices/01-form 跑過測試，不能作為 reference 匯出已驗證的證據。",
-            "工具可能因權限或環境被拒絕，也可能命令成功卻只跑到無關測試。把實際執行與 Agent 推論分欄；對未執行、失敗、通過及仍待驗的狀態保持原意。"
+            "假設你請裝潢公司幫你重新裝修廚房。",
+            "你提出三項要求：",
+            "- 更換水龍頭。\n- 修復漏水的水管。\n- 不可以動到原本的電線配置。",
+            "三天後，師傅告訴你：",
+            "「全部完成了，而且我們測試過，沒有問題。」",
+            "你會直接付款驗收嗎？",
+            "一般不會。因為你還需要確認：",
+            "- 水龍頭是不是真的換了？\n- 水管是否真的不再漏水？\n- 師傅有沒有擅自修改電線？\n- 所謂「測試過」，到底測試了什麼？",
+            "這與 AI Coding Agent 完全相同。"
           ],
           "blocks": [
             {
               "kind": "cards",
-              "caption": "圖 1｜審查的三種依據",
-              "description": "三張卡片是交叉核對的材料，並非自動通過程序。",
+              "caption": "圖 1｜三項依據一起支持人的審查",
+              "description": "規格、Diff、證據是平行核對材料；共同供負責人決定接受／要求修正／延後。下方箭頭表示彙整，不表示三者有先後順序。",
               "items": [
                 {
                   "title": "規格",
-                  "body": "驗收情境、範圍與不做清單。"
+                  "body": "應該做什麼：需求、驗收條件與不做清單"
                 },
                 {
-                  "title": "變更",
-                  "body": "追蹤及未追蹤檔案、Diff 與依賴。"
+                  "title": "Diff",
+                  "body": "實際改了什麼：檔案、設定與行為"
                 },
                 {
                   "title": "證據",
-                  "body": "實際命令、結果、操作與限制。"
+                  "body": "是否有效：相關測試、操作與限制"
+                },
+                {
+                  "title": "人的審查與決策",
+                  "body": "接受／要求修正／延後"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這個流程適用於很多產業。"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 1",
+              "headers": [
+                "產業",
+                "規格",
+                "變更",
+                "驗證證據"
+              ],
+              "rows": [
+                [
+                  "建築",
+                  "設計圖與合約",
+                  "施工變更紀錄",
+                  "檢驗與試運轉"
+                ],
+                [
+                  "醫療行政",
+                  "病歷處理規則",
+                  "系統設定變更",
+                  "合成測試資料與稽核結果"
+                ],
+                [
+                  "銀行",
+                  "徵信作業規範",
+                  "審核邏輯修改",
+                  "測試案例及覆核"
+                ],
+                [
+                  "軟體開發",
+                  "功能需求與驗收條件",
+                  "Git Diff",
+                  "自動測試及實際操作"
+                ],
+                [
+                  "AI Agent",
+                  "任務與授權範圍",
+                  "程式、檔案、設定變動",
+                  "工具紀錄與實測結果"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "驗收要確認交付成果是否有足夠證據支持；回報文字本身不足以證明完成。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "diff-example",
+          "heading": "二、什麼是 Diff？為什麼 AI 開發一定要看？",
+          "paragraphs": [
+            "Diff 是 Difference 的縮寫，意思是「差異」。",
+            "假設你請 AI 修改一段 Python 程式，原本規定每次匯出報告之前，都必須檢查資料。",
+            "原始程式："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "範例 1",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": "def export_report(record):\n    validate(record)\n    return create_report(record)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "AI 修改後："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 2",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": "def export_report(record):\n    return create_report(record)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "程式變短了，而且可能仍然可以執行。",
+                "但仔細看，AI 把 `validate(record)` 刪掉了。",
+                "也就是說，資料即使不完整，也可能被匯出。",
+                "這就是 Diff 審查（Diff Review） 的價值。",
+                "Git 能把前後版本的差異顯示出來："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 3",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": " def export_report(record):\n-    validate(record)\n     return create_report(record)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這裡的 `-` 代表該行被刪除，`+` 則代表新增的內容。沒有標記的行通常是供你理解的上下文。",
+                "因此，審查時不能只問「程式有沒有執行成功」，還要問「修改是否破壞了原本的規則」。",
+                "更重要的是，改動的行數不等於風險大小。刪掉一行安全驗證，可能比新增一千行介面程式更危險。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "diff",
+          "heading": "三、Git 的三個位置：工作區、暫存區、版本紀錄",
+          "paragraphs": [
+            "這是本節最需要建立的技術基礎。",
+            "想像你正在寫一份重要研究報告。",
+            "你有一份正式保存的版本、一份準備送出的版本，以及桌面上正在修改的草稿。",
+            "Git 的運作概念非常接近。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 2｜Git 三個位置與操作",
+              "description": "箭頭表示簡化操作：git add 將選定內容寫入暫存區；git commit 以暫存內容建立提交。HEAD 通常參照目前分支最新提交，不是儲存區。",
+              "items": [
+                {
+                  "title": "Working Tree（工作區）",
+                  "body": "目前正在編輯的實際檔案，如桌上草稿。下一步：git add，選擇放入下一版的內容。"
+                },
+                {
+                  "title": "Staging Area / Index（暫存區）",
+                  "body": "已挑選、準備提交的內容，如整理好的送件版本。下一步：git commit，建立版本紀錄。"
+                },
+                {
+                  "title": "Repository 與 HEAD",
+                  "body": "Repository 保存提交歷史；HEAD 通常指向目前分支最新提交，如正式保存的報告版本。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這是簡化操作圖。Git 比較並非單向流程：工作區與暫存區可以保有不同修改。Repository 保存物件與歷史；HEAD 是參照，通常指向目前分支的最新提交，本身不是儲存區。",
+                "此外，還有一種容易被忽略的檔案：",
+                "Untracked File（未追蹤檔案），就是新建立、但 Git 尚未納入追蹤的檔案。",
+                "例如 AI 自行建立了一個 `tests/test_export.py`，但沒有執行 `git add`，一般 `git diff` 不會顯示該檔案的完整內容。",
+                "### 四個重要指令"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 2",
+              "headers": [
+                "Git 指令",
+                "用白話說明"
+              ],
+              "rows": [
+                [
+                  "`git status --short`",
+                  "查看哪些檔案被修改、暫存或尚未追蹤"
+                ],
+                [
+                  "`git diff`",
+                  "查看工作區相對暫存區、尚未暫存的修改"
+                ],
+                [
+                  "`git diff --cached`",
+                  "查看暫存區相對最新提交、準備送出的修改"
+                ],
+                [
+                  "`git diff HEAD`",
+                  "查看目前檔案相對最新提交的差異；仍不涵蓋未追蹤檔案"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些比較方式也可在 [Git 官方 git-diff 文件](https://git-scm.com/docs/git-diff) 中核對。",
+                "### 實際操作示範",
+                "假設 AI 完成程式修改，你在專案目錄執行："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 4",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": "git status --short"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "可能得到："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 5",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": " M app.py\nM  rules.py\n?? tests/"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些符號可以這樣理解：",
+                "` M app.py` 代表工作區中的 `app.py` 已修改，但尚未暫存。",
+                "`M  rules.py` 代表 `rules.py` 有修改已經放進暫存區。",
+                "`?? tests/` 代表 `tests/` 目錄內存在未追蹤檔案。",
+                "現在你只執行："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 6",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": "git diff"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "可能只看得到 `app.py` 的修改。",
+                "如果因此認為 `rules.py` 與 `tests/` 沒問題，就會漏掉尚未審查的內容。",
+                "所以完整的基本審查應包含："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 7",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": "# 查看狀態\ngit status --short\n\n# 查看尚未暫存的修改\ngit diff\n\n# 查看已暫存的修改\ngit diff --cached\n\n# 查看最新提交以來的已追蹤檔案差異\ngit diff HEAD"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "還需要打開未追蹤檔案，檢查內容。",
+                "如果 Agent 已經自行提交，工作區可能完全乾淨。這時還要檢查提交紀錄，例如 `git log` 與 `git show`，不能把「沒有未提交變更」誤認成「Agent 沒改過東西」。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "git-diff"
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "四、工具紀錄：AI 說測試成功，究竟測試了什麼？",
+          "paragraphs": [
+            "這是第二個容易犯錯的地方。",
+            "假設你請 AI 建立一套線上報名系統，包含表單填寫、資料檢查和報名證明下載。",
+            "AI 回覆：",
+            "> 功能已完成，測試全部通過。",
+            "但你打開工具執行紀錄，發現的是："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "範例 8",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": "工作目錄：/project/slices/01-form\n\n執行命令：\npython -m pytest -q\n\n退出碼：0\n\n輸出：\n4 passed in 0.18s"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "以上為假設的教學紀錄，不是實際執行結果。",
+                "這份紀錄能證明什麼？",
+                "它能證明在該目錄執行的 pytest 命令成功結束，而且有四個測試通過。",
+                "但它不能證明下載功能正確，因為這個目錄可能只有表單測試，沒有任何匯出測試。",
+                "這裡需要認識四個概念："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 3",
+              "headers": [
+                "專有名詞",
+                "白話解釋"
+              ],
+              "rows": [
+                [
+                  "Command",
+                  "實際執行的命令"
+                ],
+                [
+                  "Working Directory",
+                  "命令在哪個資料夾執行"
+                ],
+                [
+                  "Exit Code",
+                  "程式結束時回傳的狀態碼，通常 0 表示命令成功"
+                ],
+                [
+                  "Test Coverage",
+                  "測試涵蓋到哪些程式或行為；通過測試不代表所有需求都已驗證"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "因此，真正要確認的是「證據是否支持 AI 所提出的主張」。"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "圖 3｜證據強度的差別",
+              "headers": [
+                "AI 說法",
+                "實際證據",
+                "可合理判斷"
+              ],
+              "rows": [
+                [
+                  "程式已完成",
+                  "只有文字摘要",
+                  "尚未證實"
+                ],
+                [
+                  "測試成功",
+                  "表單測試 4 passed",
+                  "僅證明該批測試通過"
+                ],
+                [
+                  "匯出功能正確",
+                  "匯出測試通過，且實際下載內容核對正確",
+                  "有較直接的支持證據"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "想想看，這和科學研究非常接近。",
+                "研究者說「我的方法有效」，你不能只看結論，而要確認實驗條件、資料集、指標和結果。",
+                "AI Agent 的工具紀錄，其實就像研究實驗中的執行紀錄。"
               ]
             }
           ]
         },
         {
           "id": "decision",
-          "heading": "遇到超出範圍的修改如何處理",
+          "heading": "五、超出任務範圍的修改，為什麼也是問題？",
           "paragraphs": [
-            "若 Agent 加入外部 API，先查本次是否授權；本課沒有這項需求。要求移除本次新增內容，同時保留其他人的既有修改，不用整個目錄還原來省略審查。",
-            "有些變更是合理的實作細節，有些則改了需求。前者在既定範圍核對後接受，後者由負責人更新規格或延後。不要讓一次 Diff 審查默默改變課程的單人合成資料邊界。"
-          ]
-        },
-        {
-          "id": "record",
-          "heading": "留下簡短但足夠的決策紀錄",
-          "paragraphs": [
-            "每次切片保留驗收情境、修改路徑、命令與結果、差距及決定。不要把完整私人對話、憑證或真實資料複製進公開紀錄；保留能支持判斷的必要資訊即可。",
-            "下一篇會利用這些紀錄縮小錯誤範圍，並在保留其他工作的前提下修復或復原。"
+            "假設你經營一間診所，請工程師修改預約系統的日期顯示。",
+            "原本要求很單純：把日期從美式格式改成臺灣常用格式。",
+            "但 AI 修改程式時，順便加入了一個外部分析 API，將預約資料傳送到第三方服務。",
+            "即使日期顯示正確，也不能直接接受。",
+            "因為外部 API 並不是你授權的功能，而且可能產生資料外傳風險。",
+            "這涉及兩個原則。",
+            "Scope（工作範圍）： AI 只能在本次核准的任務邊界內工作。合理的實作細節可以審查後接受，但新增資料傳輸、權限或業務行為應另行核准。",
+            "Least Privilege（最小權限）： AI 應只有完成任務需要的工具、資源與權限，而不是可以任意修改所有系統。",
+            "[OWASP AI Agent Security 指南](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html)，也將工具權限、人工核准、敏感資料保護與可觀測性列為重要控制。",
+            "這裡還有一個容易忽略的問題。",
+            "發現 AI 修改了不該修改的內容時，不應立即使用可能清除所有未提交工作的命令，例如："
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "審查紀錄欄位",
+              "heading": "範例 9",
               "paragraphs": [
-                "放入自己的 review-notes.md，依實際結果填寫。"
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
               ],
-              "code": "切片與驗收情境：\n修改與新增檔案：\n審查的 Diff 範圍：\n命令／工作目錄／退出結果：\n操作結果：\n發現差距與未執行事項：\n接受／要求修正／延後及理由："
+              "code": "git reset --hard\ngit clean -fd"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些命令具有破壞性，可能連其他人尚未保存的工作也一起清除。此處供辨識風險，不是練習執行指令。",
+                "較安全的方向是先確認哪些內容屬於本次 Agent 新增，再針對特定檔案或修改範圍處理，保留無關工作。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-agent-security"
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "六、實際建立一套 AI Agent 審查流程",
+          "paragraphs": [
+            "把前面的觀念整合起來，你可以在每次 AI Coding Agent 完成任務後，依照下面的流程進行。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 4｜五步審查流程",
+              "description": "數字與連線表示建議審查順序；每一步都要依本次任務範圍實際執行。",
+              "items": [
+                {
+                  "title": "核對規格",
+                  "body": "確認功能、驗收條件與不允許修改的範圍。"
+                },
+                {
+                  "title": "檢查檔案變更",
+                  "body": "查看工作區、暫存區、未追蹤檔案，必要時檢查 Agent 已建立的提交。"
+                },
+                {
+                  "title": "檢查工具紀錄",
+                  "body": "確認命令、目錄、退出碼、輸出與未執行事項。"
+                },
+                {
+                  "title": "獨立驗證行為",
+                  "body": "執行直接對應需求的正常、錯誤與邊界測試，必要時人工操作。"
+                },
+                {
+                  "title": "留下決策紀錄",
+                  "body": "寫下接受、要求修正或延後的理由及未解風險。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 審查紀錄長什麼樣？",
+                "教材建議使用 `review-notes.md`，留下足以追溯審查決策的資訊。",
+                "以下是一份假設的示範紀錄："
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 5｜review-notes.md — 範例",
+              "description": "以下全為假設示例，不能視為已實測結果。",
+              "items": [
+                {
+                  "title": "任務",
+                  "body": "資料檢核與報告匯出"
+                },
+                {
+                  "title": "驗收要求",
+                  "body": "缺漏資料不得產生完整報告。"
+                },
+                {
+                  "title": "修改檔案",
+                  "body": "app.py、rules.py、tests/"
+                },
+                {
+                  "title": "實際工具結果（假設）",
+                  "body": "在表單切片執行 pytest，4 個測試通過。"
+                },
+                {
+                  "title": "發現問題",
+                  "body": "匯出時的重新驗證被移除；尚無證據顯示下載內容經過驗證。"
+                },
+                {
+                  "title": "決策：要求修正",
+                  "body": "理由：不符合驗收規格，現有測試不足以證明匯出功能正確。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這份紀錄讓下一位接手的人知道已證實事項、待驗項目與決策依據。公開紀錄保留判斷所需資訊，私人對話、憑證與真實個人資料留在適當的私有範圍。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "decisions",
+          "heading": "七、再深入一層：AI Agent 審查的三種決策",
+          "paragraphs": [
+            "依規格與證據選擇決策，並記錄下一步。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 4",
+              "headers": [
+                "決策",
+                "適用條件",
+                "後續行動"
+              ],
+              "rows": [
+                [
+                  "接受（Accept）",
+                  "符合規格、修改範圍合理、關鍵測試通過",
+                  "進入提交或交付流程"
+                ],
+                [
+                  "要求修正（Revise）",
+                  "核心規格未達成、測試不足或包含不當修改",
+                  "限定範圍重新修改、驗證"
+                ],
+                [
+                  "延後（Defer）",
+                  "發現新需求，但不屬於本次核准範圍",
+                  "記錄為新的需求或任務"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這裡最重要的觀念，是不要把「發現新需求」與「修復原本承諾的功能」混在一起。",
+                "例如你請 AI 做一個餐廳訂位系統，它發現可以順便加上會員推薦功能。",
+                "會員推薦可能是一個很好的想法，但不是這一次訂位系統的驗收條件。",
+                "因此可以將推薦功能延後，而不是因為 AI 已經實作就直接接受。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "misconceptions",
+          "heading": "八、五個常見誤區",
+          "paragraphs": [
+            "下表對照五種判斷陷阱與檢查方向。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 5",
+              "headers": [
+                "常見想法",
+                "正確理解"
+              ],
+              "rows": [
+                [
+                  "`git diff` 沒輸出，所以沒有修改",
+                  "還可能有已暫存、未追蹤或已提交的變更"
+                ],
+                [
+                  "測試全綠，代表整套系統沒問題",
+                  "只能支持測試實際涵蓋的範圍"
+                ],
+                [
+                  "只改一行，風險應該很小",
+                  "一行就可能關閉重要驗證"
+                ],
+                [
+                  "AI 多做功能代表更好",
+                  "多做的內容可能超出授權與需求"
+                ],
+                [
+                  "Git 沒有顯示變更，代表系統沒有副作用",
+                  "程式也可能修改資料庫、呼叫外部 API 或影響遠端服務"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "最後一點尤其值得注意：Git 主要追蹤版本控制範圍內的檔案內容，不會自動替你記錄所有外部系統的變化。",
+                "因此，風險較高的 Agent 不只要審查程式差異，還需要適當的執行紀錄、權限控制與外部操作稽核。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "九、理解檢核：你會如何審查這個 Agent？",
+          "paragraphs": [
+            "假設你請 AI 修改一套保險理賠系統，需求為：",
+            "「如果申請人缺少必要證明文件，系統不得產生顯示『審核完成』的報告。」",
+            "AI 回覆：「功能已完成，所有測試通過。」",
+            "你調查後得到這些資訊："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "範例 10",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": "git status --short\n\n M app.py\nM  rules.py\n?? tests/"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "工具紀錄顯示："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 11",
+              "paragraphs": [
+                "教學用程式／命令／輸出；執行情境與限制見相鄰解說。"
+              ],
+              "code": "工作目錄：/project/slices/01-form\n命令：python -m pytest -q\n結果：5 passed"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "另外，你在 `rules.py` 的 Diff 中發現，原本匯出前的 `validate()` 被移除。",
+                "請閱讀下方三道問題與逐題參考解析。本頁為自我檢核，不提交回答或記錄學習成績。",
+                "負責人將每項承諾連到實際變更與相關證據，留下可追溯的決策。"
+              ]
             }
           ]
         }
@@ -126,7 +685,33 @@
         "expected": "review-notes.md 能將至少一條要求連到具體 Diff 與實測結果。",
         "check": "不把 Agent 摘要當執行證據；能說明兩種 diff 與未追蹤檔案的差別。",
         "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M07-C06-Q04",
+          "prompt": "你會先檢查哪些 Git 位置？為什麼只執行 git diff 不夠？",
+          "answer": [
+            "先以 git status --short 定位工作區、暫存區與未追蹤檔案，再分別查看 git diff、git diff --cached、git diff HEAD，並打開 tests/。",
+            "本例 app.py 未暫存、rules.py 已暫存；普通 git diff 會漏掉暫存區與未追蹤內容。若 Agent 已提交，另以 git log／git show 審查相關提交。"
+          ]
+        },
+        {
+          "id": "AASE-M07-C06-Q05",
+          "prompt": "5 passed 能否證明報告匯出正確？還需要什麼證據？",
+          "answer": [
+            "不能。紀錄只支持在 /project/slices/01-form 的該批測試通過；先核對實際測試名稱、內容與執行範圍。",
+            "補上缺漏證明不得產生「審核完成」報告的匯出測試，以及文件齊備的正常案例、邊界案例與實際下載內容核對。未跑的檢查仍標為待驗。"
+          ]
+        },
+        {
+          "id": "AASE-M07-C06-Q06",
+          "prompt": "你會接受、要求修正還是延後？請說明原因。",
+          "answer": [
+            "要求修正：匯出前 validate() 被移除，核心驗收要求尚未獲得支持；不能以表單測試全綠接受。",
+            "在本次範圍恢復或實作等效的匯出驗證，保留無關工作，重跑相關測試及下載核對後再決策。新需求才另列延後；不得把原承諾缺陷直接延後。"
+          ]
+        }
+      ]
     },
     "en": {
       "summary": "Cross-check Agent work against specifications, diffs and actual tool outcomes, retaining traceable reasons to accept or return each change.",
@@ -144,90 +729,649 @@
       "sections": [
         {
           "id": "review",
-          "heading": "Review Changes and Behavior",
+          "heading": "M07-06 | Reviewing diffs, tool records and decisions: how do you know an AI Agent did the job?",
           "paragraphs": [
-            "An Agent summary helps locate work; the actual diff shows what changed. Start with this task’s acceptance scenarios and identify implementing changes, verifying tests and any service/file outside the authorized scope.",
-            "Do not judge by added line count. A few lines can remove export revalidation, while large formatting changes can obscure one crucial condition and make review harder."
+            "After an AI Agent reports completion, compare the specification, changes (diff) and evidence. The responsible person then accepts the work, requests revision or defers it. A program running establishes only the outcome of that execution; each requirement still needs acceptance checks."
           ]
         },
         {
           "id": "analogy",
-          "heading": "Compare the Work Order, Changes and Trial Run",
+          "heading": "1. A familiar example: why a completion report needs checking",
           "paragraphs": [
-            "A work order describes the agreement, construction records show actual changes, and a trial run shows whether requirements are met. If any is absent, a contractor’s completion report alone cannot support acceptance.",
-            "Software review also connects requirements, changes and evidence. Record why you accept or return the work so the next person can reproduce the judgment rather than relying on “looks fine.”"
-          ]
-        },
-        {
-          "id": "diff",
-          "heading": "Inspect the Different Locations in Git",
-          "paragraphs": [
-            "By default, git diff compares the working tree with the staging area. git diff --cached shows staged changes prepared for commit. Review both where relevant; inspecting only one can miss content.",
-            "git status --short also identifies untracked files. Ordinary diff does not automatically show the full content of newly created untracked tests/. Open those files, inspect them, then decide which paths to stage."
-          ],
-          "blocks": [
-            {
-              "kind": "step",
-              "heading": "Read-only Review Commands",
-              "paragraphs": [
-                "Run in your own Git project. Before Git is initialized, compare copies manually rather than claiming these commands succeeded."
-              ],
-              "code": "git status --short\ngit diff --stat\ngit diff -- app.py rules.py tests/\ngit diff --cached -- app.py rules.py tests/"
-            }
-          ]
-        },
-        {
-          "id": "evidence",
-          "heading": "Tool Records Must Identify the Execution",
-          "paragraphs": [
-            "Record command, working directory, exit outcome and useful output. Even green tests need a stage check: tests run in slices/01-form cannot demonstrate verified reference export.",
-            "Tools can be denied by permissions or environment; a successful command can also run irrelevant tests. Keep actual execution separate from Agent inference, preserving the meanings of unexecuted, failed, passed and still pending."
+            "Suppose you hire a contractor to renovate your kitchen.",
+            "You specify three requirements:",
+            "- Replace the faucet.\n- Repair the leaking pipe.\n- Leave the existing electrical wiring unchanged.",
+            "Three days later, the contractor says:",
+            "“Everything is finished, and we tested it without any problems.”",
+            "Would you immediately pay and accept the work?",
+            "Usually you would first check:",
+            "- Was the faucet actually replaced?\n- Does the pipe still leak?\n- Did the contractor change wiring without permission?\n- What exactly did “tested” cover?",
+            "Apply the same checks to an AI Coding Agent."
           ],
           "blocks": [
             {
               "kind": "cards",
-              "caption": "Figure 1 | Three Sources for Review",
-              "description": "These cards are cross-checking materials, not an automatic acceptance procedure.",
+              "caption": "Figure 1 | Three inputs to human review",
+              "description": "Specification, diff and evidence are parallel review inputs. Together they inform acceptance, revision or deferral. The downward arrow means aggregation, not a sequence between inputs.",
               "items": [
                 {
                   "title": "Specification",
-                  "body": "Acceptance scenarios, scope and exclusions."
+                  "body": "What should be done: requirements, acceptance conditions and exclusions"
                 },
                 {
-                  "title": "Changes",
-                  "body": "Tracked and untracked files, diffs and dependencies."
+                  "title": "Diff",
+                  "body": "What changed: files, configuration and behavior"
                 },
                 {
                   "title": "Evidence",
-                  "body": "Actual commands, results, interactions and limitations."
+                  "body": "Does it work: relevant tests, operations and limits"
+                },
+                {
+                  "title": "Human review and decision",
+                  "body": "Accept / Revise / Defer"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This acceptance approach applies across industries."
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 1",
+              "headers": [
+                "Industry",
+                "Specification",
+                "Changes",
+                "Verification evidence"
+              ],
+              "rows": [
+                [
+                  "Construction",
+                  "Plans and contract",
+                  "Construction change records",
+                  "Inspection and trial operation"
+                ],
+                [
+                  "Medical administration",
+                  "Medical-record handling rules",
+                  "System configuration changes",
+                  "Synthetic test data and audit results"
+                ],
+                [
+                  "Banking",
+                  "Credit-assessment rules",
+                  "Review-logic changes",
+                  "Test cases and secondary review"
+                ],
+                [
+                  "Software development",
+                  "Requirements and acceptance conditions",
+                  "Git diff",
+                  "Automated tests and actual operation"
+                ],
+                [
+                  "AI Agent",
+                  "Task and authorized scope",
+                  "Code, file and configuration changes",
+                  "Tool records and executed results"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Evaluate whether evidence supports the delivered work. The quality of the completion message alone cannot establish acceptance."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "diff-example",
+          "heading": "2. What is a diff, and why review it?",
+          "paragraphs": [
+            "Diff is short for difference: it shows changes between versions.",
+            "Suppose you ask an AI to modify Python code whose original rule requires checking data before every report export.",
+            "Original code:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Example 1",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": "def export_report(record):\n    validate(record)\n    return create_report(record)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "After the AI's change:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 2",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": "def export_report(record):\n    return create_report(record)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The code is shorter and might still run.",
+                "However, the AI removed `validate(record)`.",
+                "Incomplete data could now be exported.",
+                "Diff review helps identify this change in behavior.",
+                "Git can show the difference between the two versions:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 3",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": " def export_report(record):\n-    validate(record)\n     return create_report(record)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Here, `-` marks a removed line and `+` marks an added line. Unmarked lines normally provide context.",
+                "Ask both whether the program ran and whether the modification broke an existing rule.",
+                "Changed line count does not measure risk. Removing one validation line can be more dangerous than adding a thousand lines of interface code."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "diff",
+          "heading": "3. Three Git locations: working tree, staging area and history",
+          "paragraphs": [
+            "Review begins by distinguishing Git's data locations.",
+            "Imagine writing an important research report.",
+            "You have a formally saved version, a version prepared for delivery and a draft currently being edited on your desk.",
+            "This is a useful analogy for Git."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 2 | Git locations and operations",
+              "description": "Arrows show simplified operations: git add writes selected content to the index; git commit records the index as a commit. HEAD usually references the current branch tip; it is not a storage area.",
+              "items": [
+                {
+                  "title": "Working Tree",
+                  "body": "The files currently being edited, like a draft on your desk. Next: git add selects content for the next version."
+                },
+                {
+                  "title": "Staging Area / Index",
+                  "body": "Selected content prepared for commit, like a delivery copy. Next: git commit creates a version record."
+                },
+                {
+                  "title": "Repository and HEAD",
+                  "body": "The repository stores history; HEAD usually references the current branch tip, like the formally saved report version."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This is a simplified operation diagram. Git comparisons are not a one-way pipeline: the working tree and staging area can contain different edits. The repository stores objects and history; HEAD is a reference, usually to the current branch's latest commit, rather than a storage area itself.",
+                "Also check files that Git has not yet started tracking.",
+                "An Untracked File is a newly created file not yet included in Git's tracked content.",
+                "If an Agent creates `tests/test_export.py` without running `git add`, ordinary `git diff` will not show its complete contents.",
+                "### Four useful commands"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 2",
+              "headers": [
+                "Git command",
+                "Plain-language meaning"
+              ],
+              "rows": [
+                [
+                  "`git status --short`",
+                  "List modified, staged and untracked files"
+                ],
+                [
+                  "`git diff`",
+                  "Compare unstaged working-tree changes against the index"
+                ],
+                [
+                  "`git diff --cached`",
+                  "Compare staged changes against the current commit"
+                ],
+                [
+                  "`git diff HEAD`",
+                  "Compare tracked working-tree content against the current commit; untracked files remain excluded"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Check these comparison modes in the [official git-diff documentation](https://git-scm.com/docs/git-diff).",
+                "### Worked inspection",
+                "After the AI edits the project, run this in the project directory:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 4",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": "git status --short"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A hypothetical result is:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 5",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": " M app.py\nM  rules.py\n?? tests/"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Read the two status columns carefully:",
+                "` M app.py` means `app.py` has unstaged working-tree changes.",
+                "`M  rules.py` means changes to `rules.py` have been staged.",
+                "`?? tests/` means the directory contains untracked files.",
+                "If you now run only:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 6",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": "git diff"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "you may see only the changes in `app.py`.",
+                "That does not establish that `rules.py` or `tests/` is safe; their contents have not yet been reviewed.",
+                "A basic review combines these commands:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 7",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": "# 查看狀態\ngit status --short\n\n# 查看尚未暫存的修改\ngit diff\n\n# 查看已暫存的修改\ngit diff --cached\n\n# 查看最新提交以來的已追蹤檔案差異\ngit diff HEAD"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The comments mean: inspect status, unstaged changes, staged changes and tracked changes against HEAD. Open untracked files separately and read their contents.",
+                "If the Agent has already committed its changes, the working tree may be clean. Inspect commit history with `git log` and `git show`; “no uncommitted changes” does not mean the Agent changed nothing."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "git-diff"
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "4. Tool records: what did the passing tests cover?",
+          "paragraphs": [
+            "A successful command needs a scope check.",
+            "Suppose you ask an AI to build an online registration system with form entry, data validation and downloadable registration certificates.",
+            "The AI reports:",
+            "> The feature is complete and all tests passed.",
+            "The tool execution record shows:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Example 8",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": "工作目錄：/project/slices/01-form\n\n執行命令：\npython -m pytest -q\n\n退出碼：0\n\n輸出：\n4 passed in 0.18s"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This is a hypothetical teaching log, not an actual execution result. Its labels mean working directory, command, exit code and output.",
+                "What does it establish?",
+                "It establishes that pytest completed successfully in that directory and reported four passing tests.",
+                "It does not establish correct downloads: that directory might contain form tests without export tests.",
+                "Distinguish four terms:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 3",
+              "headers": [
+                "Term",
+                "Meaning"
+              ],
+              "rows": [
+                [
+                  "Command",
+                  "The command actually executed"
+                ],
+                [
+                  "Working Directory",
+                  "The directory where the command ran"
+                ],
+                [
+                  "Exit Code",
+                  "The program's termination status; usually 0 means command success"
+                ],
+                [
+                  "Test Coverage",
+                  "The code or behavior exercised; passing tests do not establish verification of every requirement"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Check whether the evidence supports the Agent's specific claim."
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Figure 3 | What the evidence supports",
+              "headers": [
+                "Agent claim",
+                "Actual evidence",
+                "Supported judgment"
+              ],
+              "rows": [
+                [
+                  "Code complete",
+                  "Text summary only",
+                  "Unproven"
+                ],
+                [
+                  "Tests successful",
+                  "Form tests: 4 passed",
+                  "Only that test batch passed"
+                ],
+                [
+                  "Export correct",
+                  "Export tests pass and downloaded content is checked",
+                  "More direct supporting evidence"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The same reasoning applies to scientific research.",
+                "When a researcher claims a method works, inspect experimental conditions, datasets, metrics and results as well as the conclusion.",
+                "Agent tool records serve a similar purpose to experimental execution records."
               ]
             }
           ]
         },
         {
           "id": "decision",
-          "heading": "Handle Changes Beyond the Agreed Scope",
+          "heading": "5. Why out-of-scope changes also need correction",
           "paragraphs": [
-            "If the Agent adds an external API, check authorization first; this course needs none. Remove only the newly introduced scope while preserving other people’s existing edits. Do not restore an entire directory to avoid reviewing it.",
-            "Some changes are reasonable implementation details; others alter requirements. Review and accept the former within existing scope. The responsible person must update the specification or defer the latter. One diff review must not silently change the course’s single-user synthetic-data boundary."
-          ]
-        },
-        {
-          "id": "record",
-          "heading": "Keep a Short, Sufficient Decision Record",
-          "paragraphs": [
-            "For each slice, retain acceptance scenarios, changed paths, commands/results, gaps and decisions. Keep only information supporting the judgment; copy no complete private conversations, credentials or real data into public records.",
-            "The next lesson uses these records to narrow faults and repair or restore changes while preserving other work."
+            "Suppose you run a clinic and ask an engineer to change how appointment dates are displayed.",
+            "The request is to replace a US-style date format with the format commonly used in Taiwan.",
+            "While doing so, the AI adds an external analytics API that sends appointment data to a third-party service.",
+            "Correct date formatting alone cannot justify accepting this work.",
+            "The external API was not authorized and could disclose data.",
+            "Two principles apply.",
+            "Scope: the AI works within this task's approved boundary. Reasonable implementation details can be reviewed within that boundary; new data transfers, permissions or business behavior require separate approval.",
+            "Least Privilege: give the AI only the tools, resources and permissions required for the task, rather than unrestricted access to every system.",
+            "The [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html) discusses tool permissions, human approval, sensitive-data protection and observability.",
+            "Preserve other work when correcting unauthorized edits.",
+            "Do not immediately run commands that could erase all uncommitted work, such as:"
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "Review Record Fields",
+              "heading": "Example 9",
               "paragraphs": [
-                "Fill your own review-notes.md from actual results. The unchanged Traditional Chinese template records slice/scenario, changed/new files, diff scope, command/directory/exit, observed behavior, gaps/unexecuted work and acceptance/correction/deferral with reasons."
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
               ],
-              "code": "切片與驗收情境：\n修改與新增檔案：\n審查的 Diff 範圍：\n命令／工作目錄／退出結果：\n操作結果：\n發現差距與未執行事項：\n接受／要求修正／延後及理由："
+              "code": "git reset --hard\ngit clean -fd"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These are destructive commands and may remove other people's unsaved work too. They are shown for recognition, not as exercise instructions.",
+                "First identify what this Agent task introduced. Then correct specific files or change ranges while preserving unrelated work."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-agent-security"
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "6. Build an Agent review procedure",
+          "paragraphs": [
+            "After each AI Coding Agent task, use the following procedure."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 4 | Five-step review procedure",
+              "description": "Numbers and connectors show the recommended review order. Execute each step within this task’s actual scope.",
+              "items": [
+                {
+                  "title": "Check the specification",
+                  "body": "Confirm features, acceptance conditions and excluded changes."
+                },
+                {
+                  "title": "Inspect file changes",
+                  "body": "Review working-tree, staged and untracked content, plus Agent-created commits where needed."
+                },
+                {
+                  "title": "Inspect tool records",
+                  "body": "Confirm command, directory, exit code, output and unexecuted work."
+                },
+                {
+                  "title": "Verify behavior independently",
+                  "body": "Run normal, error and boundary tests directly tied to requirements, with manual operation where needed."
+                },
+                {
+                  "title": "Record the decision",
+                  "body": "Explain acceptance, revision or deferral and unresolved risks."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### What should a review record contain?",
+                "Use `review-notes.md` to retain enough information to trace the decision.",
+                "The following is a hypothetical example."
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 5 | review-notes.md — example",
+              "description": "Everything below is a hypothetical example, not an executed result.",
+              "items": [
+                {
+                  "title": "Task",
+                  "body": "Data validation and report export"
+                },
+                {
+                  "title": "Acceptance condition",
+                  "body": "Missing data must prevent a complete report."
+                },
+                {
+                  "title": "Changed files",
+                  "body": "app.py, rules.py, tests/"
+                },
+                {
+                  "title": "Tool outcome (hypothetical)",
+                  "body": "pytest in the form slice reports 4 passing tests."
+                },
+                {
+                  "title": "Finding",
+                  "body": "Export revalidation was removed; downloaded content has not been shown to be verified."
+                },
+                {
+                  "title": "Decision: revise",
+                  "body": "Reason: acceptance conditions are unmet and existing tests do not establish correct export."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The next reviewer can see what has been established, what remains unverified and why a decision was made. Keep private conversations, credentials and real personal data out of public records."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "decisions",
+          "heading": "7. Three review decisions",
+          "paragraphs": [
+            "Choose a decision from requirements and evidence, and record the next action."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 4",
+              "headers": [
+                "Decision",
+                "When it applies",
+                "Next action"
+              ],
+              "rows": [
+                [
+                  "Accept",
+                  "Requirements met, scope appropriate and key checks passed",
+                  "Proceed to the separately authorized commit or delivery process"
+                ],
+                [
+                  "Revise",
+                  "Core requirements unmet, insufficient tests or inappropriate changes",
+                  "Restrict the correction scope, revise and verify again"
+                ],
+                [
+                  "Defer",
+                  "A new requirement falls outside this task's approved scope",
+                  "Record a separate requirement or task"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Separate a newly discovered requirement from a defect in the originally promised feature.",
+                "For example, an AI building a restaurant reservation system discovers an opportunity to add member recommendations.",
+                "Recommendations may be useful, but they are outside this reservation task's acceptance conditions.",
+                "Defer that feature rather than accepting it merely because the AI implemented it."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "misconceptions",
+          "heading": "8. Five common misconceptions",
+          "paragraphs": [
+            "The table compares five reasoning traps with the checks they require."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 5",
+              "headers": [
+                "Assumption",
+                "Correct interpretation"
+              ],
+              "rows": [
+                [
+                  "No `git diff` output means no changes",
+                  "Staged, untracked or already committed changes may still exist"
+                ],
+                [
+                  "Green tests establish the whole system works",
+                  "They support only the behavior actually covered"
+                ],
+                [
+                  "A one-line change has little risk",
+                  "One line can disable important validation"
+                ],
+                [
+                  "More AI features are always better",
+                  "Extra behavior may exceed authorization and requirements"
+                ],
+                [
+                  "No Git changes means no system side effects",
+                  "Programs can alter databases, call external APIs or affect remote services"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Git primarily tracks file content within version control. It does not automatically record every external-system change.",
+                "Higher-risk Agents also need appropriate execution records, permission controls and external-operation audits."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "9. Understanding check: how would you review this Agent?",
+          "paragraphs": [
+            "Suppose you ask an AI to modify an insurance-claim system with this requirement:",
+            "“If an applicant lacks required supporting documents, the system must not generate a report marked ‘Review complete’.”",
+            "The AI says, “The feature is complete and all tests passed.”",
+            "You find this hypothetical status output:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Example 10",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": "git status --short\n\n M app.py\nM  rules.py\n?? tests/"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The hypothetical tool log shows:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 11",
+              "paragraphs": [
+                "Teaching code, commands or output; execution conditions and limits are explained alongside."
+              ],
+              "code": "工作目錄：/project/slices/01-form\n命令：python -m pytest -q\n結果：5 passed"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The labels identify the working directory, command and result. In the diff for `rules.py`, you also find that the pre-export `validate()` call was removed.",
+                "Read each question and its reference explanation below. These are self-checks; the page does not submit answers or record learner scores.",
+                "The responsible reviewer connects each promise to the actual changes and relevant evidence, then records a traceable decision."
+              ]
             }
           ]
         }
@@ -242,119 +1386,36 @@
         "expected": "review-notes.md links at least one requirement to a specific diff and executed result.",
         "check": "Do not treat an Agent summary as execution evidence. Explain both diff views and untracked files.",
         "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M07-C06-Q04",
+          "prompt": "Which Git locations would you inspect first, and why is git diff alone insufficient?",
+          "answer": [
+            "Use git status --short to locate working-tree, staged and untracked changes. Review git diff, git diff --cached and git diff HEAD, and open tests/ separately.",
+            "Here app.py is unstaged and rules.py is staged; ordinary git diff misses staged and untracked content. If the Agent already committed, inspect relevant commits with git log and git show."
+          ]
+        },
+        {
+          "id": "AASE-M07-C06-Q05",
+          "prompt": "Does 5 passed establish correct export? What additional evidence is needed?",
+          "answer": [
+            "No. The log supports only that test batch in /project/slices/01-form. Inspect the actual test names, contents and execution scope.",
+            "Add export tests proving missing documents prevent a “Review complete” report, plus a complete-document success case, boundary cases and checks of actual downloaded content. Unexecuted checks remain pending."
+          ]
+        },
+        {
+          "id": "AASE-M07-C06-Q06",
+          "prompt": "Would you accept, request revision or defer? Explain your decision.",
+          "answer": [
+            "Request revision: pre-export validate() was removed and the core acceptance condition lacks supporting evidence. Passing form tests cannot justify acceptance.",
+            "Restore or implement equivalent export validation within the task scope, preserve unrelated work, then rerun relevant tests and download checks before deciding again. Defer new requirements separately, rather than deferring a defect in the original promise."
+          ]
+        }
+      ]
     }
   },
-  "checks": [
-    {
-      "id": "AASE-M07-C06-Q01",
-      "answer": 1,
-      "text": {
-        "zh": {
-          "prompt": "git diff 沒輸出，能否認定完全沒修改？",
-          "options": [
-            "可以",
-            "不行，還需看暫存區與未追蹤檔案",
-            "可以，只要 Agent 說完成",
-            "不行，所以無法審查"
-          ],
-          "rationales": [
-            "預設比較範圍有限。",
-            "其他位置仍可能有變更。",
-            "摘要不改變 Git 範圍。",
-            "可組合多種檢查。"
-          ]
-        },
-        "en": {
-          "prompt": "No output from git diff: does that establish no changes anywhere?",
-          "options": [
-            "Yes.",
-            "No; inspect staged and untracked files too.",
-            "Yes, if the Agent says it finished.",
-            "No; review is therefore impossible."
-          ],
-          "rationales": [
-            "Its default comparison is limited.",
-            "Other locations may contain changes.",
-            "A summary does not change Git’s comparison scope.",
-            "Combine the relevant checks."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M07-C06-Q02",
-      "answer": 2,
-      "text": {
-        "zh": {
-          "prompt": "表單切片測試通過能否證明匯出正確？",
-          "options": [
-            "能，都是 Python",
-            "能，頁面能開",
-            "不能，需對應匯出情境的測試與操作",
-            "不能，所以測試沒用"
-          ],
-          "rationales": [
-            "語言相同不代表涵蓋範圍相同。",
-            "啟動不能證明下載內容。",
-            "證據必須涵蓋所主張的行為。",
-            "範圍清楚的測試仍有價值。"
-          ]
-        },
-        "en": {
-          "prompt": "Do passing form-slice tests establish correct export?",
-          "options": [
-            "Yes; both use Python.",
-            "Yes; the page opens.",
-            "No; tests and operations must cover export scenarios.",
-            "No; therefore tests are useless."
-          ],
-          "rationales": [
-            "The same language does not mean the same coverage.",
-            "Startup does not establish download contents.",
-            "Evidence must cover the claimed behavior.",
-            "Tests with clear scope remain useful."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M07-C06-Q03",
-      "answer": 3,
-      "text": {
-        "zh": {
-          "prompt": "發現未授權外部 API，合適的處理是？",
-          "options": [
-            "只從回報刪掉描述",
-            "整個專案強制還原",
-            "因為功能多就接受",
-            "界定本次新增範圍並修正，保留無關工作"
-          ],
-          "rationales": [
-            "程式行為仍存在。",
-            "可能損失其他工作。",
-            "超出授權與規格。",
-            "兼顧範圍與資料保全。"
-          ]
-        },
-        "en": {
-          "prompt": "What should you do about an unauthorized external API?",
-          "options": [
-            "Remove its description from the report only.",
-            "Force-restore the whole project.",
-            "Accept it because it adds features.",
-            "Identify and correct this task’s added scope while preserving unrelated work."
-          ],
-          "rationales": [
-            "The behavior would remain.",
-            "That can destroy other work.",
-            "It exceeds authorization and specification.",
-            "This respects scope and preserves work."
-          ]
-        }
-      }
-    }
-  ],
+  "checks": [],
   "translations": {
     "en": {
       "status": "published",
