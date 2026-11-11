@@ -1,6 +1,6 @@
 # M07-04 資料檢核供稿抽換紀錄
 
-來源保存日期：2026-11-11。狀態：source preserved；完整雙語正文與圖解已實作，發布驗證進行中。
+來源保存日期：2026-11-11。狀態：source preserved／adopted／validated／published；完整雙語正文、四圖與互動已正式上線。
 
 正本屬於 kairos-learning；本目錄保留使用者原稿、四張參考 PNG 及抽換前正式 JSON。SHA256SUMS 可核對原件；原稿中的網址修正敘述、來源卡文字、壓平程式碼及網頁按鈕文字均原樣保留。學習者作答、理解與實機驗收尚無證據。
 
@@ -54,3 +54,7 @@
 2026-11-11 核對 [Python 3.12 字串與 strip](https://docs.python.org/3.12/library/stdtypes.html#text-sequence-type-str)、[pytest 參數化](https://docs.pytest.org/en/stable/how-to/parametrize.html)與[Streamlit widget 行為](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior)。本次用本機 Python 實測範例與邊界；網頁示範不是 Streamlit runtime 的驗收。原稿末句「完成三題就掌握能力」改以實作與負向測試作為能力證據，參考答案展開不記錄分數、提交或學習完成。
 
 來源保存與採用遵循 WRITE-04／05／06／09／10；全文到頁面遵循 WRITE-11、HTML-01–04；圖解與下載遵循 FIG-01／03–06；互動遵循 INT-01；鍵盤與參考答案遵循 A11Y-01–03。具體實測與正式站證據由本次發布回執承接。
+
+## 本次完成證據
+
+原稿與前版六項雜湊、Python 43 項、最終全套 368 項、本課正式瀏覽器 8 項及 Pages run 42992145430 均通過；兩語版本、日期、正文與八 SVG 已由正式網址回讀。完整命令、規則編號、圖意差異及驗證界線見[發布回執](../../../../releases/2026-11-11-aase-m07-04-replacement.md)與其 checks.json。既有「下一關」保留為本次工作順序紀錄，已執行結果以該回執為準。

@@ -868,9 +868,11 @@ v1.1.0／revision 4 的[來源與逐小節對照](sources/aase/m09-02/replacemen
 
 ## AASE M09-01 Git、Diff、Commit 與還原（2026-11-11）
 
-M09-01 v1.1.0 由[完整雙語稿與逐小節對照](sources/aase/m09-01/replacement-2026-11-11/source-map.md)產生，保存十節、五表、十段指令及三題四選項。`python3 scripts/aase_m0901_content.py --check` 核對同步；既有六錨點及原發布日保留。`GitHistorySection.svelte` 承接本課正文順序與受限四位置 flow／四條件 cards；文字跳脫，只有固定裝飾 SVG 箭頭。aase.ts 限定圖位置、節點數、種類、欄位及 add／commit／push 標籤順序；並列條件不接箭頭。`python3 scripts/aase_m0901_svg.py --check` 由同源模型核對四份受審核 SVG。
+M09-01 v1.1.1 由[完整雙語稿與逐小節對照](sources/aase/m09-01/replacement-2026-11-11/source-map.md)產生，保存十節、五表、十段指令及三題四選項。`python3 scripts/aase_m0901_content.py --check` 核對同步；既有六錨點及原發布日保留。`GitHistorySection.svelte` 承接本課正文順序與受限四位置 flow／四條件 cards；文字跳脫，只有固定裝飾 SVG 箭頭。aase.ts 限定圖位置、節點數、種類、欄位及 add／commit／push 標籤順序；並列條件不接箭頭。`python3 scripts/aase_m0901_svg.py --check` 由同源模型核對四份受審核 SVG。
 
 `tests/aase-m0901-replacement.test.ts` 實跑 A–D 合成 Git 練習；`playwright.aase-m0901.config.ts` 驗證兩語全文、四尺寸、200%、無JS、鍵盤、搜尋與下載。正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`。結果與限制見[本次回執](releases/2026-11-11-aase-m09-01-replacement.md)。
+
+M09-01 的固定 email_off 註解僅保護合成指令，避免正式站 CDN 變更 `learner@example.invalid`。內容欄位仍全部跳脫；本機及正式站皆檢查原始命令、註解與無保護連結。
 
 ## AASE M07-06 審查 Diff、工具紀錄與決策（2026-11-11）
 
@@ -899,3 +901,11 @@ v1.1.0／revision 4 保留原發布日與六個舊錨點。[來源對照](source
 `TddDiagram.svelte`只呈現本課flow 3／cards 3／flow 4，`aase.ts`限制位置、種類、節點與欄位。循環的回返、平行結果與協作順序各自保留；正文、搜尋及匯出同源，無JS仍可閱讀。圖2保留來源環境差異，本版另以兩個pytest版本實跑，區分測試集合擴充與重構。
 
 單元`tests/aase-m0802-replacement.test.ts`、瀏覽器`playwright.aase-m0802.config.ts`；正式站設定`AASE_BASE_URL`。範例用`python3 scripts/check-aase-m0802-example.py /absolute/path/to/venv/bin/python`核對五個階段／測試集合組合，結果記於忽略的`.local/aase/m0802/`。[回執](releases/2026-11-11-aase-m08-02-replacement.md)記錄規則、驗證及發布；原稿未附可核實影片網址，沒有新增推測連結。
+
+## AASE M08-04 AppTest 完整供稿（2026-11-11）
+
+AASE-M08-C04 v1.1.0／revision 4 保留原發布日、路徑及六個舊錨點；`run` 錨點位於啟動命令的 h3。供稿導言及九節、三個實作步驟、四表、五段程式／指令與三道四選題完整雙語進入正文。[來源對照](sources/aase/m08-04/replacement-2026-11-11/source-map.md)保存原稿、三 PNG、前版、成稿及修正。`aase_m0804_content.py --check`核對稿件、共享程式與JSON；可執行程式在 `resources/aase/examples/m08-04/`，隨既有工作坊ZIP發布。
+
+`AppTestDiagram.svelte`以受限ConceptVisual呈現三步流程、三個含欄位值的相繼狀態、五項無箭頭語法清單。HTML文字可搜尋、原生重排，六SVG由`aase_m0804_svg.py`同源生成並限制元素與屬性。`aase.ts`拒絕錯誤位置、關係、節點數及額外標記欄位。題目保留原有概念ID，依供稿順序為Q01／Q03／Q02，答案B／C／D；參考解析沿原生details，不建立虛假提交或學習紀錄。
+
+單元為`tests/aase-m0804-replacement.test.ts`；瀏覽器為`playwright.aase-m0804.config.ts`，正式站指定`AASE_BASE_URL`。全文順序、四尺寸／200%、無JS、鍵盤、搜尋、SVG文字邊界／重疊與下載bytes由同一檢查承接。AppTest固定1.51.0實測；啟動本課app於127.0.0.1:8584後，可執行`node scripts/check-aase-m0804-example.mjs`核對真實下載及三階段；各層結果見[發布回執](releases/2026-11-11-aase-m08-04-replacement.md)。
