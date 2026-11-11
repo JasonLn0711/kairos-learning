@@ -56,6 +56,18 @@ try{
      assert.equal(await figure.locator('.relations li').count(),spec.edges.length);
      assert.equal(await figure.locator('.connections text').count(),spec.edges.filter(edge=>edge[2]).length,'Every conditional/shared-secret edge keeps its visible label');
     }
+    if(name==='certificate'&&width===1280&&scale===1){
+     const noteBoxes=await figure.evaluate(el=>{
+      const sequence=el.querySelector('.sequence').getBoundingClientRect();
+      return [...el.querySelectorAll('.sequence .local')].map(node=>{const box=node.getBoundingClientRect();return {left:(box.left-sequence.left)/sequence.width,width:box.width/sequence.width};});
+     });
+     for(const [i,[left,width]] of [[0,2/3],[2/3,1/3],[1/3,2/3]].entries()){
+      assert.ok(Math.abs(noteBoxes[i].left-left)<.005&&Math.abs(noteBoxes[i].width-width)<.005,'TLS annotation must cover only its participating roles');
+     }
+     const asset=await page.request.get(new URL(await figure.locator('a[download]').getAttribute('href'),page.url()).href);
+     const svg=await asset.text();
+     for(const [x,w] of [[28,556],[604,268],[316,556]])assert.ok(svg.includes(`x="${x}"`)&&svg.includes(`width="${w}"`),'TLS SVG annotation boundaries');
+    }
     if(name==='bytes')assert.deepEqual(await figure.locator('.bytes').evaluateAll(grids=>grids.map(g=>g.children.length)),[16,32]);
     if(name==='hidden')assert.equal(await figure.locator('.outer>.node').count(),1);
     if((width===320||width===1280)&&scale===1){
@@ -70,6 +82,8 @@ try{
     }
    }
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   assert.equal(await page.locator('h2[id^="p2-cont"],h2[id^="p3-cont"]').count(),0,'Continuation subheadings must stay below the section heading');
+   assert.ok(await page.locator('h4[id^="p2-cont-u"]').count()>7);
    for(const part of [2,3]){
     const id=part===2?'p2-cont-u269':'p3-cont-u336';
     const exercise=page.locator('#'+id).locator('..');

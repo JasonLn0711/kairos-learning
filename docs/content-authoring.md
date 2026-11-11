@@ -687,6 +687,14 @@ v1.2.0／revision 6 以新供稿取代餐廳版本；[逐小節來源對照](sou
 
 驗收順序：單元／型別 → SSR 圖解 fixture → 發布邊界與最終 production build → validate:release → 新 preview／完整頁面瀏覽器。SSR fixture 或 SvelteKit sync 會刷新生成檔，不可與 production build 並行，也不可在最終建置後執行而沿用舊 preview；完整頁面檢查同時核對 HTML／client bootstrap 識別碼。
 
+## AASE M04-05 完整供稿與六圖（2026-11-11）
+
+v1.1.0／revision 5 保留 2026-11-05 原發布日及七個舊錨點，導言與十節完整雙語由 `scripts/aase_m0405_content.py` 從[成稿與來源對照](sources/aase/m04-05/replacement-2026-11-11/source-map.md)產生；`--check` 核對同步。四張完整表、版本 3／4 範例與三個開放問題及參考解析沿既有模型呈現，qa 空陣列，不新增提交或評分服務。
+
+`DisclosureStatesDiagram.svelte` 僅承接本課六張固定 cards：列印兩卡、設定三列、基本／進階兩卡、手風琴三列、四狀態並列、變更前後兩節點加兩種策略。只有圖 6 有兩個向下箭頭；手機重排保留策略互斥與四狀態並列語意。手風琴為靜態結構示意，必要正文直接顯示。模型限制六圖位置、節點數、cards 種類及欄位；資料不含任意 HTML／SVG 標記。`scripts/aase_m0405_svg.py` 從正式 JSON 匯出十二份固定白名單 SVG，小於100000 bytes；HTML、搜尋與下載共用資料。原 PNG 在來源目錄保存，圖 3 以清楚進階入口修正淡化呈現，其餘差異及查核界線見 source-map。
+
+維護檢查為 `tests/aase-m0405-replacement.test.ts`、`playwright.aase-m0405.config.ts`；正式站以 `AASE_BASE_URL=https://learn.cs-kairos.com` 執行。全文順序、四尺寸／200%、鍵盤、無 JS、搜尋、十二 SVG 文字邊界／重疊／位元組及兩個工作坊下載同時核對。實際驗證與發布結果見[回執](releases/2026-11-11-aase-m04-05-replacement.md)。
+
 ### 11/10 續篇來源版本與 17 張圖 — 2026-11-11
 
 兩份續篇與 17 張圖沿用同一日期頁，v1.2.0 保留既有較新完整稿及錨點，再接續本批完整供稿版。來源／逐段雙語／採用對照見 [continuation-17-reference](sources/ceh-notes/2026-11-10/continuation-17-reference/source-map.md)。661 筆來源單位的實際正文由 `ceh_note_continuation.py` 採用；`check-ceh-continuation-source.py --check` 已加入 release gate，核對原始 bytes、正規化、來源範圍及真正正文，不以單純字數或圖名代替完整性。
@@ -708,6 +716,14 @@ v1.2.0／revision 5 的[來源對照](sources/aase/m03-05/replacement-2026-11-11
 SuccessEvidenceDiagram沿受限cards／flow，revision 5限定evidence-chain／metrics／measure／assumptions／trace／understanding節點數6／3／4／4／4／7，只有第一圖為flow。第二圖是三個平行角色，第六圖使用主張區與六列dl。`successMetrics`固定四瑕疵兩良品，檢查整數邊界；兩個range與全部阻擋按鈕只計算合成資料，無JS停用互動並保留預設及公式。十二個SVG由`aase_m0305_svg.py`從正式模型產生，`--check`比對位元組，下載固定預設。
 
 單元與瀏覽器入口仍為`tests/aase-m0305-replacement.test.ts`、`playwright.aase-m0305.config.ts`。正式站設定AASE_BASE_URL。驗證範圍含完整正文與順序、四尺寸／200%、鍵盤／無JS、兩滑桿、全部阻擋、搜尋、十二SVG邊界／重疊／下載；實際結果與待驗事項見[發布回執](releases/2026-11-11-aase-m03-05-replacement.md)。
+
+## AASE M04-03 完整供稿與六圖（2026-11-11）
+
+AASE-M04-C03 v1.1.0／revision 4 保留原發布日與六個舊錨點。完整來源、六張 PNG、前版及逐節採用在[來源對照](sources/aase/m04-03/replacement-2026-11-11/source-map.md)；兩語各導言及九節、三表、六圖、完整 wireframe-notes.md 模板，三題四選項使用 Q04–Q06 與既有原生參考解析。qa=[]，沒有作答儲存或理解完成主張。
+
+InformationHierarchyDiagram 由受限 cards／flow 承接包含、樹狀、比較、狀態對照、版型與流程；節點數 3／5／2／4／2／5，只有最後五步為 flow。sitemapGroups 解析兩空格子層級，aase.ts 核對完整八個子頁的父子關係；HTML、搜尋、12 份獨立 SVG 同源，固定 SVG 元素及屬性白名單。
+
+`python3 scripts/aase_m0403_content.py --check` 與 `python3 scripts/aase_m0403_svg.py --check` 核對生成一致；單元為 `tests/aase-m0403-replacement.test.ts`，瀏覽器為 `playwright.aase-m0403.config.ts`，正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`。全文順序、四尺寸／200%、無 JS、鍵盤、搜尋與圖檔幾何／下載驗證見[發布回執](releases/2026-11-11-aase-m04-03-replacement.md)。
 
 ## AASE M04-06 完整供稿與復原圖解（2026-11-11）
 
