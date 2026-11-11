@@ -769,6 +769,10 @@ SystemContextLessonDiagram復用ArchitectureDiagram與受限cards；四張圖的
 
 維護使用`python3 scripts/aase_m0602_content.py --check`、`python3 scripts/aase_m0602_svg.py --check`、`tests/aase-m0602-replacement.test.ts`與`playwright.aase-m0602.config.ts`，正式站以AASE_BASE_URL指定。[驗證與發布回執](releases/2026-11-11-aase-m06-02-replacement.md)分開記錄本機、正式站與未驗事項。
 
+## AASE M07-02 規格與工作契約（2026-11-11）
+
+v1.1.0 的[完整來源與逐節對照](sources/aase/m07-02/replacement-2026-11-11/source-map.md)保留十節供稿、兩張 PNG 及前版。`scripts/aase_m0702_content.py --check` 核對完整雙語正文、七表與四個開放檢核；原任務 code 保持一致，英文附逐項解讀。TaskContractDiagram 使用五步 flow／兩情境 cards，`aase.ts` 限定位置、關係與數量。四份 SVG 由既有文字序列化器同源產生，`scripts/aase_m0702_svg.py --check` 核對同步；頁面維持可選取 HTML、無 JS 正文與原生答案收合。單元入口為 `tests/aase-m0702-replacement.test.ts`，瀏覽器入口為 `playwright.aase-m0702.config.ts`，正式站指定 `AASE_BASE_URL`。[回執](releases/2026-11-11-aase-m07-02-replacement.md)記錄本次實測及發布層次。
+
 ## AASE M06-04｜Browser、HTTP、API 與資料流
 
 v1.1.0 保留原發布日與六個舊錨點，十節與導言完整雙語由 `scripts/aase_m0604_content.py` 產生，`--check` 核對成稿同步。[來源與逐節對照](sources/aase/m06-04/replacement-2026-11-11/README.md)保存原稿、四 PNG、前版及原題全部選項。四圖為六步 flow／三層 cards／兩條四節點架構鏈／固定 Network 模擬表；`WebDataFlowDiagram.svelte` 以語意 HTML 重排，只有第一圖與架構內部有箭頭，101 明示為協定升級。八 SVG 由 `aase_m0604_svg.py` 同源匯出。正文保留四個完整程式／訊息範例、五教學表、六產業與三題 Q04–Q06，qa=[]。
