@@ -30,6 +30,7 @@ test('debugging model rejects altered figure semantics and keeps unpublished tra
   const l=structuredClone(lesson);for(const lang of ['zh','en']){const b=l.text[lang].sections.find((s:any)=>s.id===section).blocks.find((b:any)=>b.kind==='cards'||b.kind==='flow');if(change==='kind')b.kind=b.kind==='cards'?'flow':'cards';if(change==='extra')b.items.push({...b.items[0]});if(change==='missing')b.items.pop();if(change==='markup')b.items[0].html='<svg onload="alert(1)"/>';}
   assert.throws(()=>build(l),/invalid debugging figure/);
  }
+ const labels=structuredClone(lesson);for(const lang of ['zh','en'])labels.text[lang].sections.find((s:any)=>s.id==='bug').blocks[0].items[0].body='one label';assert.throws(()=>build(labels),/invalid debugging mode labels/);
  const l=structuredClone(lesson);l.status='draft';for(const lang of ['zh','en']as const)assert.equal(build(l).forLanguage(lang)!.searchEntries.length,0);
  const future=structuredClone(lesson);future.publishedOn='2099-01-01';future.date='2099-01-01';future.translations.en.publishedOn='2099-01-01';for(const lang of ['zh','en']as const)assert.equal(build(future).forLanguage(lang)!.searchEntries.length,0);
  const en=structuredClone(lesson);en.translations.en.status='draft';assert.equal(build(en).forLanguage('en')!.searchEntries.length,0);

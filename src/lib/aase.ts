@@ -211,6 +211,7 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const expected:Record<string,number>={analogy:6,bug:6,loop:3,'agent-task':4};
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(['analogy','loop'].includes(s.id)?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid debugging figure');
+        if(s.id==='bug'&&figures.some(f=>(f.kind==='cards'||f.kind==='flow')&&(f.items[0].body.split('｜').length!==2||f.items[0].body.split('｜').some(v=>!v.trim()))))fail('invalid debugging mode labels');
       }
       for(const b of s.blocks??[]){
         if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}

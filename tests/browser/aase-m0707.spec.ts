@@ -59,8 +59,8 @@ for(const lang of ['zh','en']){
   await fields.nth(2).fill('財務報表');await check.click();await expect(report).toBeVisible();
   await fields.nth(2).fill('資產負債表');await expect(report).toHaveCount(0);await fields.nth(2).fill('財務報表');await expect(report).toHaveCount(0);
   await check.click();await expect(report).toBeVisible();await fields.nth(0).fill('乙公司');await expect(report).toHaveCount(0);await check.click();
-  const download=page.waitForEvent('download');await report.click();expect((await download).suggestedFilename()).toBe('synthetic-report.txt');
-  const parsed=JSON.parse(decodeURIComponent((await report.getAttribute('href'))!.split(',')[1]));expect(parsed).toEqual({simulation:true,checkedInput:{name:'乙公司',taxId:'12345678',docType:'財務報表'}});
+  const download=page.waitForEvent('download');await report.click();const saved=await download;expect(saved.suggestedFilename()).toBe('synthetic-report.txt');
+  const parsed=JSON.parse(decodeURIComponent((await report.getAttribute('href'))!.split(',')[1]));expect(parsed).toEqual({simulation:true,checkedInput:{name:'乙公司',taxId:'12345678',docType:'財務報表'}});expect(JSON.parse(readFileSync((await saved.path())!,'utf8'))).toEqual(parsed);
   const copy=page.locator('[data-debugging-figure="4"] button');await expect(copy).toBeEnabled();
   await context.grantPermissions(['clipboard-read','clipboard-write']);await copy.focus();await page.keyboard.press('Enter');
   const copied=await page.evaluate(()=>navigator.clipboard.readText());expect(copied).toContain(lesson.text[lang].sections.find((s:any)=>s.id==='agent-task').blocks[0].items[2].body);
