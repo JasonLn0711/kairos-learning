@@ -41,7 +41,7 @@ for(const path of paths)test(`${path}: English teaching, reflow, keyboard and no
   const entry=english.modules.flatMap((m:any)=>m.concepts).find((c:any)=>c.id===lesson.id);const code=lesson.id.slice(5,8)+'-'+lesson.id.slice(-2);
   await expect(page.locator('h1')).toHaveText(code+' · '+entry.title);await expect(page.locator('.article-metadata>span').first()).toHaveText(code);await expect(page.locator('.next-links')).not.toContainText('AASE M');
   await checkArchitecture(page,lesson);
-  for(const s of lesson.text.en.sections){await expect(page.locator('h2#'+s.id)).toHaveText(s.heading);for(const p of s.paragraphs)for(const line of p.split('\n'))await expect(page.locator('h2#'+s.id).locator('..')).toContainText(line.replace(/^(- |\d+\. )/,''));}
+  for(const s of lesson.text.en.sections){await expect(page.locator('h2#'+s.id)).toHaveText(s.heading);for(const p of s.paragraphs)for(const line of p.split('\n'))await expect(page.locator('h2#'+s.id).locator('..')).toContainText(line.replace(/^(?:- |\d+\. )/,''));}
   await expect(page.locator('.article-reading-guide')).toContainText(lesson.text.en.readingGuide.goal);
   await expect(page.locator('.article-metadata')).toContainText('v'+lesson.contentVersion);
   await expect(page.locator('.article-metadata time').first()).toHaveAttribute('datetime',lesson.publishedOn);

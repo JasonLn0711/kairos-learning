@@ -75,4 +75,4 @@ def adopt_continuation(note):
   for lang in ['zh','en']:part['text'][lang]['sections'].extend(edition[lang])
  for id,title,url in [('nist-800111','NIST SP 800-111 — Storage encryption scopes','https://csrc.nist.gov/pubs/sp/800/111/final'),('veracrypt-security-model','VeraCrypt — Security Model','https://veracrypt.io/en/Security%20Model.html'),('retrieval-practice','Roediger and Karpicke — Test-enhanced learning','https://pubmed.ncbi.nlm.nih.gov/16507066/'),('spacing-review','Cepeda et al. — Distributed practice and retention intervals','https://pubmed.ncbi.nlm.nih.gov/16719566/')]:
   if not any(source['id']==id for source in note['sources']):note['sources'].append({'id':id,'title':title,'url':url,'checkedOn':'2026-11-11'})
- note['contentVersion']='1.2.0';note['revision']=3;note['revisedOn']='2026-11-11'
+ note['contentVersion']='1.2.1';note['revision']=4;note['revisedOn']='2026-11-11'

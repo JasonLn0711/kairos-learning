@@ -106,8 +106,9 @@ def render_continuation(b,lang,spec):
     sx=162+a*288;tx=162+z*288;head=-8 if tx>sx else 8
     path(f'M{sx} {y}H{tx}m{head}-6 {-head} 6 {head} 6',i in [1,3,4,5]);y+=40
    else:
-    startbox=len(out);ty=y;y=text(item['title'],450,y+28,40,20,True,True);y=text(item['body'],450,y+6,43,18,False,True)+14
-    out.insert(startbox,rect(28,ty,844,y-ty,'#fff6e9'));y+=24
+    x,w={0:(28,556),6:(604,268),8:(316,556)}[i]
+    startbox=len(out);ty=y;y=text(item['title'],x+w/2,y+28,int((w-32)/20),20,True,True);y=text(item['body'],x+w/2,y+6,int((w-32)/18),18,False,True)+14
+    out.insert(startbox,rect(x,ty,w,y-ty,'#fff6e9'));y+=24
   for i in range(3):out.insert(lifeline_index,f'<path d="M{162+i*288} {start}V{y}" fill="none" stroke="#a2aaa6" stroke-width="2"/>')
  else:raise ValueError(layout)
  y=text(b['description'],28,y+32,43,17)+18

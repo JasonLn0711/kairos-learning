@@ -62,3 +62,7 @@ source preserved；中文編輯底稿已建立。尚待完整雙語成稿、五�
 ## 原始段落完整性檢查
 
 `python3 scripts/aase_m0404_source.py --check`逐一核對原供稿151個段落，`source-coverage.json`保存段落雜湊、前100字、成稿位置與編輯處理。一般段落逐字核對，表格逐格核對，三題僅正規化題號；九項明列編輯與favicon另行記錄。檢查不以成稿標題數代替原稿覆蓋；英譯仍依完整成稿逐節人工核對意義與教學深度。
+
+## 最新狀態
+
+source preserved／adopted decision／validated／published均完成；正式站兩語v1.1.0及十份SVG已回讀。151段對照與完整雙語深度核對、五圖關係、原發布日與六個有效錨點均保留。部署與測試證據見[正式回執](../../../../releases/2026-11-11-aase-m04-04-replacement.md#正式發布回執)。前述初始進度段落保留為歷程。
