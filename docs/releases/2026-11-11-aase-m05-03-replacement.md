@@ -17,7 +17,7 @@
 - python3 scripts/aase_m0503_svg.py --check：通過；六SVG依序zh 1551／2237／2018 bytes，en 1719／2423／2255 bytes，皆<100000。
 - pnpm run validate:content：通過。
 - pnpm run check：0 errors／0 warnings。
-- pnpm test：283／283通過（整合遠端主線前）。
+- pnpm test：整合前283／283通過，首次整合後311／311通過。
 - node scripts/check-publication-boundary.mjs：實際草稿／未來日期／英文課程閘門建置通過，fixtures移除後乾淨重建。
 - pnpm run validate:release：通過。
 - pnpm exec playwright test --config playwright.aase-m0503.config.ts：2／2通過，包含完整雙語全文及六圖檢查。
@@ -26,8 +26,16 @@
 
 ## 發布
 
-隔離工作樹分支codex/aase-m0503-20261111保留主工作目錄無關修改。整合遠端主線、最終驗證、正式部署及回讀待補。
+隔離工作樹分支codex/aase-m0503-20261111保留主工作目錄無關修改。來源提交273969b、實作a82be77，整合遠端主線77797d9保留雙方歷史。後續整合、正式部署及回讀待補。
 
 ## 待驗與界線
 
 真人裝置與完整輔助科技驗收未執行。理解檢核未收到學習者答案；教材測試不證明銀行／醫院系統實作或學習者通過。Planning僅需持有定位與發布狀態，本次詳細來源與證據留在kairos-learning。
+
+## 整合後補充驗證
+
+- 型別檢查0 errors／0 warnings；實際發布閘門、release再次通過。
+- 針對本課的雙語瀏覽器2／2再次通過（8.2s）；四尺寸各100%／200%、無JS、鍵盤、搜尋及六SVG均通過。
+- pnpm audit --audit-level=high通過，現有4項low；六項static HTML unittest通過。
+- AASE既有英文全套：57通過／6失敗；失敗課次M02-02、M02-03、M03-01、M03-04、M04-01、M04-03。前幾項是既有768px圖解可讀性斷言，部分為新版h3已渲染但舊測試仍尋找###原始標記。M05-03在此既有套件通過。另以尚未包含本次修改的正式站重跑M02-02與M03-04，重現相同兩項失敗，日誌/tmp/m0503-baseline-live-regression.log。本次未擴大修訂這些獨立章節。
+- CEH M04共用版型回歸：22／22通過。AASE工作坊Python環境本次未啟動，靜態頁與下載檢查另列，不能將其視為後端驗收。
