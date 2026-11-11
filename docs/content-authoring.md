@@ -754,6 +754,12 @@ v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有�
 
 `PromptSpecDiagram.svelte` 使用既有 flow 資料模型，五節點維持參考圖的直向閱讀順序，Verification 獨立框線，回修說明明示回到適當階段；手機換行而不縮小整張圖。驗證器限制此課五節點與受限文字欄位。`scripts/aase_m0501_svg.py` 沿受審核流程 exporter 產生兩份 SVG，大小均低於 100000 bytes；HTML、搜尋與匯出同源。檢查用 `tests/aase-m0501-replacement.test.ts`、`playwright.aase-m0501.config.ts`；正式站以 `AASE_BASE_URL` 指定。詳見[逐節對照](sources/aase/m05-01/replacement-2026-11-11/source-map.md)與[驗收回執](releases/2026-11-11-aase-m05-01-replacement.md)。
 
+## AASE M05-05｜OpenSpec 與輕量 Markdown（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
+
+OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
+
 
 ## AASE M06-02｜C4 System Context 供稿抽換
 
