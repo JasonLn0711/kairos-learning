@@ -12,12 +12,21 @@
 - WRITE-06、08：原發布日、版號、修訂日與課次維持既有模型。
 - 來源 SHA256SUMS 五項通過。
 - 生成器及六份 SVG `--check` 通過。
-- 隔離工作樹整合遠端後 `pnpm run validate:content` 通過；`pnpm test` 最終 324 通過；型別檢查零錯誤／零警告。
+- 隔離工作樹整合遠端後 `pnpm run validate:content` 通過；`pnpm test` 在推送提交 65b9ada 上 337 通過；型別檢查零錯誤／零警告。
 - HTML-01–04、FIG-01–06、A11Y-01–03：兩語全文、四尺寸 320／390／768／1280、200% 文字、無 JavaScript、原生展開、鍵盤與六圖下載位元組一致，最終四項 Playwright 通過；另核對搜尋同源文字、六份 SVG 文字邊界與文字間重疊，並讀圖檢查手機／桌面截圖。
 
 ## 發布狀態
 
-內容提交 `3392574`，整合遠端 `419842e`。發布邊界、release 檢查與最後瀏覽器驗收均已通過；尚待推送及正式站回讀，本回執目前不主張上線。執行細節留在本 repo，原工作目錄的其他教材修改保留。
+內容提交 `3392574`，連線標籤與圖檔修正 `9a486b1`，完整驗收 `3a38d56`／`411dfd7`，保留同期遠端更新後以 `65b9ada5766835479c1f596fab2993f13068704b` 推送 main；推送後 fetch 實測 divergence 為 `0 0`。
+
+[Pages 工作 42991019517](https://github.com/JasonLn0711/kairos-learning/actions/runs/42991019517)以該提交完成全部發布閘門並部署成功。正式站中英文各回讀 HTTP 200，均顯示 v1.1.0／版本修訂 2026-11-11。以 `AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0606.config.ts` 執行正式站四項測試，全數通過，包含全文／表格／程式碼、四尺寸、200% 文字、無 JavaScript、鍵盤、搜尋、六 SVG byte equality 及字框／重疊。實測範圍只涵蓋本篇。
+
+- [繁體中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m06/concepts/m06-06/)
+- [英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m06/concepts/m06-06/)
+- [結構化驗收資料](2026-11-11-aase-m06-06-checks.json)保存提交、工作編號、測試範圍及六圖 SHA-256。
+
+本機與正式站瀏覽器證據分別保存於忽略目錄 `.local/aase/m0606/local/` 與 `.local/aase/m0606/production/`，CI 回應及正式頁 HTML 在 `.local/aase/m0606/evidence/`。額外的 Python urllib 直讀回傳 HTTP 403；實際 Chromium 讀頁及正式站 Playwright 檢查通過，不將該輔助 HTTP 檢查列為通過。原工作目錄其他教材修改保持原狀。
+
 
 ## 待驗界線
 
