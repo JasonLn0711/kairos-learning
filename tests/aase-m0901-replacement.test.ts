@@ -10,7 +10,7 @@ const root='docs/sources/aase/m09-01/replacement-2026-11-11/';
 const lesson=read('content/aase/lessons/aase-m09-c01.json'),prior=read(root+'previous-lesson.json');
 const build=(l:any)=>createAaseCatalog(read('content/aase/course.json'),[l],read('content/aase/sources.json'),'2026-11-11',read('content/aase/course.en.json'));
 test('M09-01 retains source, publication, six anchors and complete bilingual structure',()=>{
- assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,prior.revision+1);assert.equal(lesson.publishedOn,prior.publishedOn);assert.deepEqual(lesson.translations,prior.translations);assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.contentVersion,'1.1.1');assert.equal(lesson.revision,prior.revision+2);assert.equal(lesson.publishedOn,prior.publishedOn);assert.deepEqual(lesson.translations,prior.translations);assert.deepEqual(lesson.qa,[]);
  for(const lang of ['zh','en'] as const){
   const t=lesson.text[lang],blocks=t.sections.flatMap((s:any)=>s.blocks??[]);
   assert.equal(t.sections.length,11);for(const s of prior.text[lang].sections)assert.ok(t.sections.some((v:any)=>v.id===s.id),s.id);

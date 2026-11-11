@@ -16,7 +16,7 @@ async function body(page:Page,lang:'zh'|'en'){
 }
 for(const lang of ['zh','en'] as const)test(`${lang}: complete body, reference diagrams, reflow, keyboard, SVG and no JS`,async({page,browser,baseURL,request})=>{
  const path=`${lang==='en'?'/en':''}/courses/aase/v1/m09/concepts/m09-01/`;
- await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.0');await body(page,lang);await expect(page.locator('.git-figure')).toHaveCount(2);await expect(page.locator('.transition')).toHaveCount(3);
+ await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.1');await body(page,lang);await expect(page.locator('article pre .__cf_email__,article pre a[href*="email-protection"]')).toHaveCount(0);if(!process.env.AASE_BASE_URL){const html=await(await request.get(path)).text();expect(html).toContain('<!--email_off-->');expect(html).toContain('<!--/email_off-->');}await expect(page.locator('.git-figure')).toHaveCount(2);await expect(page.locator('.transition')).toHaveCount(3);
  for(const width of [320,390,768,1280])for(const scale of [1,2]){
   await page.setViewportSize({width,height:900});await page.evaluate(s=>document.documentElement.style.setProperty('font-size',s*100+'%','important'),scale);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

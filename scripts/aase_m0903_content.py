@@ -56,7 +56,7 @@ def parse(raw,lang):
  return sections
 
 def main():
- lesson=json.loads((SOURCE/'prior-lesson.json').read_text());lesson.update(revision=4,contentVersion='1.1.0',date='2026-11-11')
+ lesson=json.loads((SOURCE/'prior-lesson.json').read_text());lesson.update(revision=5,contentVersion='1.1.1',date='2026-11-11')
  for lang in ['zh','en']:
   lesson['text'][lang]['sections']=parse((SOURCE/f'teaching.{lang}.md').read_text(),lang)
  # Keep literal example code identical across the language pair, as required by the host model.

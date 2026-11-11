@@ -1,6 +1,6 @@
 # M09-03 完整供稿抽換紀錄
 
-本課正本為 `content/aase/lessons/aase-m09-c03.json`，公開路徑 `/courses/aase/v1/m09/concepts/m09-03/`；英文加 `/en`。本次採用 v1.1.0／revision 4，保留原發布日 2026-11-05，版本修訂日 2026-11-11。發布與實測由[回執](../../../../releases/2026-11-11-aase-m09-03-replacement.md)記錄。
+本課正本為 `content/aase/lessons/aase-m09-c03.json`，公開路徑 `/courses/aase/v1/m09/concepts/m09-03/`；英文加 `/en`。本次採用 v1.1.1／revision 5，保留原發布日 2026-11-05，版本修訂日 2026-11-11。發布與實測由[回執](../../../../releases/2026-11-11-aase-m09-03-replacement.md)記錄。
 
 ## 來源保存
 
