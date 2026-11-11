@@ -103,8 +103,8 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
       }
       if(l.id==='AASE-M03-C04'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
-        const expected:Record<string,number>={analogy:4,workflow:5};
-        if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='workflow'?'flow':'cards'))fail('invalid MVP scope figure');}
+        const expected:Record<string,number>=l.revision>=5?{analogy:5,workflow:2,scope:3,constraints:4,change:5,decision:6}:{analogy:4,workflow:5};
+        if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(l.revision>=5?(['analogy','decision'].includes(s.id)?'flow':'cards'):(s.id==='workflow'?'flow':'cards')))fail('invalid MVP scope figure');}
         else if(figures.length)fail('invalid MVP scope figure');
       }
       if(l.id==='AASE-M03-C05'&&l.revision>=4){
