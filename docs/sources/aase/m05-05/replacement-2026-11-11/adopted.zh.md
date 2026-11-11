@@ -1,0 +1,387 @@
+# AASE M05-05｜OpenSpec 與輕量 Markdown 流程：如何讓 AI 按照規格開發軟體？
+
+這一課的核心觀念：寫軟體不只是告訴 AI「幫我做什麼」，還要讓 AI、人類工程師與專案管理者清楚知道：目前系統承諾什麼、準備修改什麼、為什麼修改，以及如何證明修改正確。
+
+本課主要理解五件事：
+
+1. 為什麼有了需求文件，仍然需要「變更管理」？
+2. OpenSpec 是什麼？和一般 Markdown 文件有何不同？
+3. OpenSpec 的 `specs`、`proposal`、`design`、`tasks` 各自負責什麼？
+4. 一人小專案與多人協作專案，應該怎麼選擇？
+5. 如何從提出需求、修改程式，一路追蹤到測試與驗收？
+
+## 一、先用餐廳的例子理解：為什麼需要管理規格？
+
+假設你經營一家連鎖餐廳，開發了一套點餐系統。
+
+原本的規定是：
+
+「客人完成付款之後，訂單才可以送進廚房。」
+
+這就是一條規格（Specification，簡稱 Spec）。
+
+有一天，營運主管提出新的想法：
+
+「我們希望讓熟客可以先下單，30 分鐘內再付款。」
+
+這項新規定還沒有正式批准。
+
+如果工程師或 AI 直接修改程式，就可能讓所有客人都能不付款就出餐，造成營運損失。
+
+所以你必須區分兩件事：
+
+- 目前有效的規格： 付款完成後，才能送單進廚房。
+- 候選變更： 考慮允許符合資格的熟客先下單、後付款。
+
+候選變更不是已批准的規定。
+
+這個區別，就是 OpenSpec 最重要的設計思想之一。
+
+更進一步，假設主管決定批准新功能，你還需要回答：哪些客人符合資格？信用額度是多少？逾期怎麼辦？誰負責寫程式？怎麼測試？
+
+光有一句「允許熟客先下單」，遠遠不夠。
+
+OpenSpec 要解決的，就是讓這些不同性質的資訊有清楚的位置、關係及變更紀錄，避免團隊把想法、決策與已完成的功能混為一談。
+
+## 二、OpenSpec 到底是什麼？
+
+OpenSpec 是一套協助開發者與 AI Coding Agent 管理軟體規格及變更的工具。
+
+它不是新的程式語言，也不是另一個大型語言模型。
+
+你可以把它想成：
+
+一套替軟體團隊建立的「現行規定、修訂提案、施工圖、工作清單與歷史紀錄」管理制度。
+
+@figure1
+
+OpenSpec 的基本文件分工如下。
+
+| 文件            | 白話意思   | 主要回答          |
+| ------------- | ------ | ------------- |
+| `specs/`      | 現行作業規定 | 現在系統應該如何運作？   |
+| `proposal.md` | 修改提案   | 為什麼要改？改什麼？    |
+| 變更中的 `specs/` | 新舊規定差異 | 哪些要求新增、修改或移除？ |
+| `design.md`   | 技術施工圖  | 打算怎麼實現？       |
+| `tasks.md`    | 工作清單   | 需要完成哪些工作？     |
+| 測試與證據         | 驗收紀錄   | 如何知道真的做對了？    |
+
+注意：最後一項不表示有個 `tasks.md` 就能自動證明測試成功。測試必須真的執行，結果也必須保存。
+
+### 看懂資料夾，你就理解了一半
+
+以下使用餐廳訂單系統的合成示例；是文件內容示意，不是已執行 CLI 的輸出。design.md 是否需要，依變更與版本決定：
+
+```
+openspec/
+├── specs/                         # current accepted specifications
+│   └── ordering/
+│       └── spec.md
+└── changes/                       # changes under discussion or implementation
+    └── allow-pay-later/
+        ├── proposal.md            # why and what changes
+        ├── specs/
+        │   └── ordering/
+        │       └── spec.md        # candidate specification delta
+        ├── design.md              # implementation approach, when needed
+        └── tasks.md               # work checklist
+```
+
+這裡有兩個都叫 `spec.md` 的檔案，卻有不同責任。
+
+位於最上層 `openspec/specs/` 的是目前有效的規格（Source of Truth，權威規格來源）；位於 `openspec/changes/` 的是尚待確認、實作或合併的規格差異。
+
+不能因為兩個檔案名稱相同，就認為其內容具有相同效力。
+
+## 三、實際走一遍：如何從提案走到交付？
+
+@figure2
+
+### 步驟 1：先確認目前的規定
+
+目前的 `spec.md` 可能寫著：
+
+```
+# Order-processing specification
+
+## R-01 Payment
+The system MUST confirm successful payment
+before sending an order to the kitchen.
+
+## R-02 Unpaid orders
+Unpaid orders MUST NOT enter food preparation.
+```
+
+假設營運主管希望增加「熟客可先保留訂單、30 分鐘內付款」。
+
+這時候先不要叫 AI 改程式，因為「保留訂單」和「開始製作餐點」是兩件不同的事情。
+
+### 步驟 2：建立 proposal.md
+
+提案可以這樣寫：
+
+```
+# Proposal: deferred payment for eligible regular customers
+
+## Why
+Some regular customers want to reserve an order
+and complete payment later.
+
+## Scope
+- Eligible regular customers can reserve an order for 30 minutes.
+- Cancel the reservation if unpaid at the 30-minute deadline.
+- Send the order to the kitchen only after payment.
+
+## Out of scope
+- Allowing all customers to order before payment.
+- Preparing food before payment.
+```
+
+你會發現，這個提案不只有「要做什麼」，還有「不做什麼」。
+
+因為 AI 可能自行假設「允許延後付款」代表「允許餐點先製作」。明確寫出排除事項，可以減少這類錯誤解讀。
+
+### 步驟 3：建立 Delta Spec
+
+Delta 是「差異」的意思。
+
+在 OpenSpec 中，Delta Spec 是用來描述相對於目前規格的變更，常見類型包含：
+
+- `ADDED`：增加原本沒有的要求。
+- `MODIFIED`：修改既有要求。
+- `REMOVED`：取消既有要求。
+
+例如，新增以下需求：
+
+```
+## ADDED Requirements
+
+### Requirement: Regular-customer reservation
+The system MUST allow eligible regular customers
+to reserve an unpaid order for at most 30 minutes.
+
+#### Scenario: Reservation expires
+- GIVEN an eligible regular customer creates an unpaid reservation
+- WHEN the 30-minute deadline is reached
+- THEN the system cancels the reservation
+- AND the order MUST NOT be sent to the kitchen
+```
+
+這就是前面 M05-03 教過的 Given／When／Then。
+
+它讓規格不只是一句抽象的敘述，而是可以轉換成測試的具體行為。
+
+請特別注意： 因為目前 R-01 已經禁止未付款送單進廚房，這次不需要重新新增一條相同規定。只要補充新的「保留訂單」行為，並檢查新功能沒有破壞 R-01 即可。
+
+這樣才能避免規格重複與互相矛盾。
+
+### 步驟 4：建立 design.md
+
+現在才討論怎麼寫程式。
+
+例如：
+
+```
+# Technical design
+
+1. Add the reserved order state.
+2. Store the reservation deadline in expires_at.
+3. Cancel unpaid reservations at expiry.
+4. Recheck payment before sending an order to the kitchen.
+5. Log every reservation and cancellation event.
+```
+
+這裡有個重要區別：
+
+- Spec 說的是：系統應該做到什麼。
+- Design 說的是：工程師打算怎麼做到。
+
+如果今天使用 Python，明天改用 Java，技術設計可能不同，但「未付款不得送進廚房」這條業務規則仍然成立。
+
+因此，好的規格應避免不必要地綁死特定實作方法。
+
+### 步驟 5：建立 tasks.md
+
+接下來將設計拆成具體工作。
+
+```
+# Development tasks
+
+- [ ] Add the reservation state
+- [ ] Implement the reservation deadline
+- [ ] Add the payment-status check
+- [ ] Build the reservation interface
+- [ ] Test successful reservation
+- [ ] Test reservation expiry
+- [ ] Test that unpaid orders cannot reach the kitchen
+- [ ] Review the code changes
+```
+
+這一份文件就可以成為 AI Coding Agent 的工作範圍。
+
+任務清單追蹤工作；驗收仍須對照 specs 中的行為要求與實際證據。
+
+假設 AI 把所有工作都勾選完成，卻沒有執行測試，那麼只能說工作被標記為完成，不能證明功能正確。
+
+### 步驟 6：真正驗證後，才更新規格
+
+需要至少核對三種不同的證據：
+
+| 檢查      | 目的               |
+| ------- | ---------------- |
+| 文件格式檢查  | 規格文件符合工具要求嗎？     |
+| 功能與負向測試 | 程式真的按照規格運作嗎？     |
+| 人類審查    | 業務規則、設計和變更是否可接受？ |
+
+例如，可以測試：
+
+「一般顧客試圖保留未付款訂單時，系統必須拒絕。」
+
+「符合資格的熟客保留訂單後，超過 30 分鐘未付款，系統應取消保留。」
+
+「即使使用者繞過前端介面直接呼叫 API，未付款訂單仍不得傳給廚房。」
+
+最後一項特別重要，因為介面禁止某個動作，不代表後端真的阻止該動作。
+
+通過必要驗證、取得適當批准後，可以將已接受的變更更新到目前規格，並封存相關提案與歷史紀錄。
+
+注意，Archive（封存）是一項規格管理操作，並不是安全性、品質或部署成功的證明。
+
+## 四、什麼時候不需要 OpenSpec？用 Markdown 就夠了嗎？
+
+這正是本章另一個主要學習目標。
+
+OpenSpec 並不是開發軟體的必要條件。
+
+假設你正在開發一個只有自己使用的小工具，功能單純、變更很少。
+
+你完全可以用一份 Markdown 檔案記錄：
+
+```
+# spec.md
+
+## Current specification
+R-01: Missing data MUST NOT be marked complete.
+
+## Change history
+C-01: Add a missing-data reminder.
+
+## Design
+Show a text reminder for missing fields.
+
+## Tasks
+- [ ] Add the missing-data check
+- [ ] Add the interface reminder
+- [ ] Write tests
+
+## Verification record
+Status: not yet tested
+```
+
+只要這份文件維護得當，沒有必要為了形式而建立大量額外檔案。
+
+### 一個實用的選擇矩陣
+
+| 判斷條件        | 輕量 Markdown | OpenSpec |
+| ----------- | ----------- | -------- |
+| 一個人開發       | 通常優先        | 可選       |
+| 少量且簡單的需求    | 通常優先        | 可選       |
+| 經常修改既有需求    | 可以，但要自律維護   | 較適合評估    |
+| 多人同時修改多個功能  | 容易增加同步負擔    | 較適合評估    |
+| 需要追蹤每次修改的原因 | 手動紀錄        | 有明確變更結構  |
+| 團隊無法維護額外工具  | 較適合         | 可能增加負擔   |
+
+選擇依據不是專案看起來有多專業，而是規格管理的複雜度是否值得增加工具成本。
+
+真正需要管理的是：
+
+「哪些規定已被接受？誰有權修改？什麼時候修改？如何確認沒有破壞原有系統？」
+
+如果用 Markdown 就能清楚回答，沒有必要立即導入 OpenSpec。若多人協作導致版本、差異與審查頻繁混亂，OpenSpec 的結構就可能帶來價值。
+
+## 五、換成其他產業，觀念是否一樣？
+
+規格管理的基本原理也適用其他產業；實際的業務規則與風險須依情境確認。以下都是合成教學示例。
+
+| 產業 | 目前規格         | 候選變更           | 重要驗證        |
+| -- | ------------ | -------------- | ----------- |
+| 醫療 | 過敏紀錄須提示醫護人員  | 增加特定藥物交互作用警示   | 高風險情境不能漏報   |
+| 銀行 | 未經核准不得完成特定交易 | 增加符合資格的小額交易自動化 | 不可繞過必要授權    |
+| 電商 | 付款後建立出貨單     | 增加預購保留功能       | 不可超賣或重複扣款   |
+| 製造 | 異常設備需停止特定作業  | 增加異常分級與維護通知    | 嚴重異常不可被錯誤放行 |
+| 教育 | 教師發布成績後學生可查閱 | 增加成績複查申請       | 不可擅自修改最終成績  |
+
+以銀行為例，假設原本規定每筆特定交易都必須由兩人審核。
+
+有人提出：「低於一定金額的交易，讓 AI 自動批准。」
+
+如果直接交給 AI 寫程式，很容易只把「金額小於某個門檻」當作唯一條件，忽略授權、累積限額、異常偵測與稽核責任。
+
+正確做法是先確認業務規則、法規及授權要求，再由規格明確界定允許和禁止的行為，最後透過測試驗證。OpenSpec 能管理這些決策文件，卻不能自行判定什麼規則具有法律或組織效力。
+
+## 六、五個最容易混淆的觀念
+
+### 1. Spec 不等於 Prompt
+
+Prompt 是你這次對 AI 說的話；Spec 是專案希望持續維護、可供人員審查及驗收的行為要求。
+
+### 2. 規格不等於現實
+
+即使規格寫著「不得匯出過期資料」，程式仍可能存在漏洞。規格代表應遵守的承諾，不代表已證明的系統行為。
+
+### 3. Bug 不一定需要修改規格
+
+如果目前規格已經禁止匯出過期資料，而程式還是允許，那是實作偏離規格，應修正程式並測試，不應再建立一條重複需求。
+
+### 4. 終端機命令和 Agent 指令不同
+
+例如，教材查核版本中的 `openspec validate` 是終端機命令；`/opsx:propose` 則是在支援的 AI 助理對話環境中使用的工作流程指令。不同版本和工具的支援方式需要重新核對。
+
+### 5. OpenSpec 並不強制瀑布式開發
+
+它允許反覆修改提案、規格與設計。實作發現假設錯誤時，應回到文件修正，而不是為了維持原先流程硬把錯誤方案做完。官方也強調迭代與既有系統變更。
+
+## 七、本章可以立即完成的最小練習
+
+你不需要安裝 OpenSpec，也不需要 Node.js 或 AI Agent，就能先練習這個觀念。
+
+找一個簡單的業務規則，例如「修改輸入資料後，原有檢查結果必須失效」，然後寫在 `spec.md`：
+
+- 目前有效規格是什麼？
+- 要提出新需求，還是修復違反既有規格的 Bug？
+- 如果要變更，修改前後的要求各是什麼？
+- 工程上準備如何處理？
+- 哪些工作尚待完成？
+- 有哪些實際驗證證據？哪些尚未測試？
+
+最後比較：使用同一份 Markdown 管理，或改用 OpenSpec 的分離資料夾結構，哪一種對這個專案比較容易維護。
+
+教材本身也明確將這一章定位為文件對照練習，而非安裝、執行 CLI 或完成真實 Agent 協作。
+
+可由頁尾來源開啟 OpenSpec 官方 Quickstart。本課沿用 2026-11-05 查核的提交 3e4d5f0769e2857c8eb54f149cbf5e4f703fa04c（package.json 標示 1.16.0）作為固定基準，不代表已安裝或執行 CLI。2026-11-11 回讀官方 Quickstart 仍見五步循環，但目前示例採自然語言，直接啟用 skill 的語法依工具而異；design.md 依變更需要產生。附圖的三個斜線指令須按實際版本與支援助理核對。
+
+## 八、理解檢核：換你判斷
+
+以下是合成情境。先自行回答，再展開頁尾的參考解析；本頁不提交答案、不評分，也不記錄學習完成。
+
+情境：醫院的檢驗報告系統
+
+目前規格規定：「所有必要檢驗項目齊全後，才能將報告標記為完整。」
+
+某次測試發現，即使有一項檢驗值缺漏，系統仍可輸出標記為完整的報告。
+
+同時，醫院提出一項新需求：「當檢驗值超過危急值門檻時，自動發出通知。」
+
+問題 1：缺漏資料仍可輸出完整報告，應該視為新功能需求，還是既有規格的實作錯誤？為什麼？
+
+問題 2：危急值自動通知的新需求，應該記錄在哪些文件？各文件負責什麼？
+
+問題 3：如果 AI 已經將 tasks.md 全部勾選，能否直接宣布功能通過驗收？還需要什麼證據？
+
+問題 4：假設只有一位工程師維護原型；另一種情況是五位工程師共同維護正式系統。你會分別選 Markdown 還是 OpenSpec？為什麼？
+
+參考解析位於本頁「理解檢核」，可自行展開比較。
+
+本章最應帶走的一句話是：
+
+讓 AI 寫出程式，只是軟體工程的一部分；讓人知道為什麼這樣寫、依據什麼規格、修改了什麼，以及有什麼證據證明它正確，才是可維護的 AI 協作軟體開發。

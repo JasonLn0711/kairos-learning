@@ -1,0 +1,795 @@
+# CEH 概念導向課程｜11/10（續 2/3）
+
+9 題整合教學｜M01 資安治理 × M20 密碼學｜基礎到進階
+
+本堂課最重要的結論：資安不是把工具裝好、資料加密就結束，而是必須從「誰有權操作、如何管理風險、發生問題怎麼處理、如何保護資料、憑什麼相信對方」建立完整的防護體系。
+
+本次實際收到 9 題（第 10–18 題），涵蓋 7 個教材子章節。我們將它們整合為五個知識單元，避免同一概念反覆教學。
+
+## 一、課程總覽
+
+學完後，你應該能夠：
+
+1. 判斷資安測試是否具備合法授權，以及 White Hat、Grey Hat、Black Hat 的差異。
+2. 理解 ISO 風險管理標準、SOC 分層職責與 BCP 營運持續管理。
+3. 正確選擇資料清除方式，區分 Delete、Clear、Purge、Destroy。
+4. 解釋對稱與非對稱密碼學的運作方式，辨別區塊長度與金鑰長度。
+5. 理解 Hash、HMAC、數位簽章、CA、PKI 與 TLS 如何共同保障資訊安全。
+
+### 答案速覽表
+
+| 原始題號        | 最佳答案                                    | 核心考點                    |
+| ----------- | --------------------------------------- | ----------------------- |
+| 10. EC-Q535 | D. White Hat Hacker                     | 合法授權的倫理駭客               |
+| 11. P3-Q110 | B. Laboratory-grade recovery infeasible | Purge 資料清除等級            |
+| 12. P1-Q063 | C. ISO/IEC 27005:2022                   | 資訊安全風險管理                |
+| 13. P3-Q086 | A. Tier 1 Analyst                       | SOC 初步監控與分流             |
+| 14. P3-Q088 | C. BCP                                  | 災難期間維持營運                |
+| 15. EC-Q284 | D. Blowfish                             | 64-bit 區塊、32–448-bit 金鑰 |
+| 16. EC-Q032 | D. Asymmetric Encryption                | 公開金鑰密碼學與金鑰建立            |
+| 17. P3-Q074 | C. Hashing                              | 單向雜湊與完整性檢查              |
+| 18. P3-Q121 | C. Certificate Authority                | CA 核發及簽署憑證              |
+
+這些答案是依題幹及技術規範重新判斷，並非直接採信題庫答案。尤其以下四點必須區分考試簡化與實務事實：
+
+- 第 11 題的 Purge 並非數學上保證「絕對不可能復原」，而是使最先進實驗室技術的復原嘗試不可行。
+- 第 12 題的 ISO/IEC 27005 是風險管理指引，ISO/IEC 27001 則規定 ISMS 應滿足的要求。
+- 第 16 題的非對稱密碼學可以用於建立共享金鑰，但不能因此認為所有非對稱加密方式都能自動防止中間人攻擊。
+- 第 17 題的 Hash 可以偵測資料差異，但沒有可信參考值或驗證機制時，不能單靠 Hash 抵抗惡意竄改。
+
+## 二、整體知識地圖
+
+我們以一家提供線上病歷服務的醫院為例。
+
+醫院必須保護病人的個資，允許資安人員合法測試，監控攻擊、維持服務不中斷，並在設備報廢時避免病歷資料外洩。
+
+一套資安防護如何形成閉環
+
+\#chatgpt-mermaid-\_r_t3\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_t3\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_t3\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_t3\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_t3\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_t3\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_t3\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_t3\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_t3\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_t3\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_t3\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_t3\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_t3\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_t3\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_t3\_ p{margin:0;}#chatgpt-mermaid-\_r_t3\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_t3\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_t3\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_t3\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_t3\_ .label text,#chatgpt-mermaid-\_r_t3\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_t3\_ .node rect,#chatgpt-mermaid-\_r_t3\_ .node circle,#chatgpt-mermaid-\_r_t3\_ .node ellipse,#chatgpt-mermaid-\_r_t3\_ .node polygon,#chatgpt-mermaid-\_r_t3\_ .node path{fill:rgb(226, 242, 230);stroke:rgb(107, 198, 127);stroke-width:1px;}#chatgpt-mermaid-\_r_t3\_ .rough-node .label text,#chatgpt-mermaid-\_r_t3\_ .node .label text,#chatgpt-mermaid-\_r_t3\_ .image-shape .label,#chatgpt-mermaid-\_r_t3\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_t3\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_t3\_ .rough-node .label,#chatgpt-mermaid-\_r_t3\_ .node .label,#chatgpt-mermaid-\_r_t3\_ .image-shape .label,#chatgpt-mermaid-\_r_t3\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_t3\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_t3\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_t3\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_t3\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_t3\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_t3\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_t3\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_t3\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_t3\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_t3\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_t3\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_t3\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_t3\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_t3\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_t3\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_t3\_ .icon-shape,#chatgpt-mermaid-\_r_t3\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_t3\_ .icon-shape p,#chatgpt-mermaid-\_r_t3\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_t3\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_t3\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_t3\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_t3\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_t3\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_t3\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_t3\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_t3\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_t3\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_t3\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_t3\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_t3\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_t3\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_t3\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_t3\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_t3\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(237, 250, 242);stroke:rgb(166, 211, 184);stroke-width:1px;}#chatgpt-mermaid-\_r_t3\_ .node rect,#chatgpt-mermaid-\_r_t3\_ .node circle,#chatgpt-mermaid-\_r_t3\_ .node ellipse,#chatgpt-mermaid-\_r_t3\_ .node polygon,#chatgpt-mermaid-\_r_t3\_ .node path{fill:rgb(217, 244, 228);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_t3\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_t3\_ .mermaid-decision .label-container{fill:rgb(237, 250, 242);stroke:rgb(195, 220, 205);stroke-dasharray:2px,2px;}#chatgpt-mermaid-\_r_t3\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_t3\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_t3\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}辨識與評估風險ISO/IEC 27005選擇與實施防護Encryption / PKI授權驗證防護White Hat Testing持續監控與應變SOC Tier 1–3維持關鍵業務BCP / Recovery管理資料生命週期Purge / Destroy紀錄與持續改善
+
+這是教學用的整合架構，不代表 ISO 標準規定所有措施必須按照此單一路徑執行。
+
+| 知識單元      | 要回答的問題            | 對應題目     |
+| --------- | ----------------- | -------- |
+| 1. 合法授權   | 誰可以測試系統？          | 10       |
+| 2. 風險與營運  | 如何選擇防護、處理警報、維持營運？ | 12、13、14 |
+| 3. 資料生命週期 | 資料不要了，怎樣才算安全清除？   | 11       |
+| 4. 加密與金鑰  | 如何保密，以及如何讓雙方取得金鑰？ | 15、16    |
+| 5. 完整性與信任 | 如何知道資料沒被修改、對方是真的？ | 17、18    |
+
+接下來依照這五個單元學習。
+
+## 三、核心概念整合
+
+### 單元 1｜什麼時候駭客是在合法協助？（第 10 題）
+
+1\. 白話解釋：想像你請鎖匠測試門鎖
+
+你請鎖匠試著打開你家的門，目的是確認門鎖是否安全。
+
+鎖匠成功打開門，代表你發現了安全漏洞；但因為他有你的授權，而且依照約定測試，所以這是一項合法的安全檢查。
+
+假如同一位鎖匠沒有經過鄰居同意，就跑去測試鄰居家的門鎖，即使只是為了提醒對方有安全問題，也不會自動變成合法行為。
+
+最關鍵的差異不是技術，而是授權、範圍與行為。
+
+2\. 正式定義
+
+White Hat Hacker（白帽駭客）是經授權、為改善安全而進行測試的安全研究或測試人員。
+
+在組織環境中，通常涉及兩個重要文件或約定：
+
+- Authorization：正式授權。
+- Rules of Engagement（ROE）：交戰規則，規範允許的測試目標、時間、技術、限制與應變程序。
+
+3\. 運作原理：合法測試有邊界
+
+取得測試授權
+
+確認有權代表目標資產授權的人
+
+確定 Scope 與 ROE
+
+目標、時間、方法、資料處理、停止條件
+
+執行測試、保存證據
+
+限制影響，避免不必要的資料取得
+
+回報漏洞與修復建議
+
+使組織能夠降低實際風險
+
+4\. 實際案例
+
+醫院聘請資安團隊測試 `patient.example.com`。合約只授權該網站與特定測試 API。
+
+測試人員發現醫院還有另一個由外包商營運的系統。即使使用同一個品牌或網域，也不能直接推論它已包含在授權範圍內。
+
+OWASP 的測試指引同樣強調測試範圍、合法授權、安全港條款及 ROE 的重要性。
+
+[image](https://www.google.com/s2/favicons?domain=https://wstg.owasp.org\&sz=32)
+
+OWASP Web Security Testing Guide+1
+
+
+
+5\. 比較與區別
+
+| 類型            | 典型特徵                         |
+| ------------- | ---------------------------- |
+| White Hat     | 經授權，以防禦與改善安全為目的              |
+| Grey Hat      | 可能未取得授權，但未必以惡意破壞為目的          |
+| Black Hat     | 惡意入侵、竊取或破壞等行為                |
+| Script Kiddie | 主要描述依賴現成工具、技術理解有限的人，並非法律授權分類 |
+
+6\. 回到 EC-Q535
+
+答案是 D. White Hat Hacker。
+
+判斷關鍵是公司聘請、取得許可、符合法律界線。因此 A 不適合，因為 Script Kiddie 描述的是技術行為與能力；B、C 也不符合題目明確的合法授權情境。
+
+7\. 進階補充
+
+擁有授權不代表所有行為都被允許。例如，測試期間意外取得真實病歷，還需要遵守資料最小化、保密及通報程序。
+
+因此，白帽駭客的核心專業能力不只是找到漏洞，還包括控制測試風險與保護受測組織。
+
+### 單元 2｜風險管理、SOC 與 BCP 如何合作？（第 12、13、14 題）
+
+這三道題看似完全不同，其實分別回答三個問題：
+
+事前如何管理風險？平常如何偵測問題？災難發生時如何維持營運？
+
+1\. 白話解釋：把醫院想成一艘船
+
+船長出海前需要評估風浪與設備問題，這是風險管理。
+
+航行時需要有人持續觀察雷達，有異常立即通報，這類似 SOC。
+
+如果引擎真的故障，船仍需要備援動力、通訊與應急航行計畫，這類似 BCP。
+
+三者不能互相取代。
+
+2\. 正式定義：先認識 ISO 27000 家族
+
+| 標準                 | 核心角色           | 白話記憶         |
+| ------------------ | -------------- | ------------ |
+| ISO/IEC 27001:2022 | ISMS 要求        | 組織如何建立資安管理制度 |
+| ISO/IEC 27002:2022 | 資安控制措施指引       | 有哪些安全措施可選用   |
+| ISO/IEC 27005:2022 | 資訊安全風險管理指引     | 如何識別、評估、處置風險 |
+| ISO/IEC 27701:2025 | 隱私資訊管理系統（PIMS） | 如何管理個資隱私     |
+
+這裡最容易混淆的是 27001 和 27005。
+
+ISO/IEC 27001 規定 ISMS 的管理要求；ISO/IEC 27005 則針對資訊安全風險評估、處置等活動提供專門指引。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.iso.org\&sz=32)
+
+Information security management systems+2
+
+
+
+版本核對：第 12 題選項 A 使用 ISO/IEC 27701:2019，但該版本已於 2025 年由 ISO/IEC 27701:2025 取代。這不影響本題答案。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.iso.org\&sz=32)
+
+Requirements and guidance
+
+
+
+3\. 運作原理：從風險到營運持續
+
+假設醫院使用一台對外提供登入服務的 VPN 設備。
+
+| 風險元素              | 醫院案例            |
+| ----------------- | --------------- |
+| Asset（資產）         | 病歷系統與服務可用性      |
+| Threat（威脅）        | 勒索軟體攻擊者         |
+| Vulnerability（弱點） | VPN 存在未修補漏洞     |
+| Impact（衝擊）        | 病歷系統中斷、病人資料外洩   |
+| Treatment（處置）     | 修補、限制存取、加強監控與備援 |
+
+風險評估不等於只計算 CVSS 分數，而是必須理解威脅、弱點、可能性、業務衝擊及現有控制措施。
+
+常見處置策略包括降低（Mitigate）、避免（Avoid）、分擔或移轉部分損失（Share/Transfer）、接受（Accept）。接受風險仍須由適當的風險負責人決策。
+
+接下來，問題變成：即使防護做了，仍然有人攻擊，怎麼辦？
+
+這就是 SOC（Security Operations Center，資安維運中心）的工作。
+
+SOC 常見的事件分流程序
+
+\#chatgpt-mermaid-\_r_v4\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_v4\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_v4\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_v4\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_v4\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_v4\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_v4\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_v4\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_v4\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_v4\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_v4\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_v4\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_v4\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_v4\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_v4\_ p{margin:0;}#chatgpt-mermaid-\_r_v4\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_v4\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_v4\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_v4\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_v4\_ .label text,#chatgpt-mermaid-\_r_v4\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_v4\_ .node rect,#chatgpt-mermaid-\_r_v4\_ .node circle,#chatgpt-mermaid-\_r_v4\_ .node ellipse,#chatgpt-mermaid-\_r_v4\_ .node polygon,#chatgpt-mermaid-\_r_v4\_ .node path{fill:rgb(226, 242, 230);stroke:rgb(107, 198, 127);stroke-width:1px;}#chatgpt-mermaid-\_r_v4\_ .rough-node .label text,#chatgpt-mermaid-\_r_v4\_ .node .label text,#chatgpt-mermaid-\_r_v4\_ .image-shape .label,#chatgpt-mermaid-\_r_v4\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_v4\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_v4\_ .rough-node .label,#chatgpt-mermaid-\_r_v4\_ .node .label,#chatgpt-mermaid-\_r_v4\_ .image-shape .label,#chatgpt-mermaid-\_r_v4\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_v4\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_v4\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_v4\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_v4\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_v4\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_v4\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_v4\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_v4\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_v4\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_v4\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_v4\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_v4\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_v4\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_v4\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_v4\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_v4\_ .icon-shape,#chatgpt-mermaid-\_r_v4\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_v4\_ .icon-shape p,#chatgpt-mermaid-\_r_v4\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_v4\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_v4\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_v4\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_v4\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_v4\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_v4\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_v4\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_v4\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_v4\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_v4\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_v4\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_v4\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_v4\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_v4\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_v4\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_v4\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(237, 250, 242);stroke:rgb(166, 211, 184);stroke-width:1px;}#chatgpt-mermaid-\_r_v4\_ .node rect,#chatgpt-mermaid-\_r_v4\_ .node circle,#chatgpt-mermaid-\_r_v4\_ .node ellipse,#chatgpt-mermaid-\_r_v4\_ .node polygon,#chatgpt-mermaid-\_r_v4\_ .node path{fill:rgb(217, 244, 228);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_v4\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_v4\_ .mermaid-decision .label-container{fill:rgb(237, 250, 242);stroke:rgb(195, 220, 205);stroke-dasharray:2px,2px;}#chatgpt-mermaid-\_r_v4\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_v4\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_v4\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}SIEM / EDR 偵測到警報Tier 1 初步確認與分級是否有足夠跡象需要進一步調查？記錄、結案或持續觀察Tier 2 深入調查與處置必要時升級 Tier 3進階分析 / Threat Hunting重大事件啟動事件應變指揮否是
+
+此圖為常見職責劃分；實際組織可由自動化平台、MDR 服務或不同編制分擔工作。
+
+| SOC 角色             | 常見職責                       |
+| ------------------ | -------------------------- |
+| Tier 1 Analyst     | 初步監控、確認警報、分類、判斷是否升級        |
+| Tier 2 Analyst     | 深入分析事件、調查證據、執行或協助處置        |
+| Tier 3 Analyst     | 複雜事件分析、Threat Hunting、改善偵測 |
+| SOC Manager        | 管理團隊、流程、資源、品質與績效           |
+| Incident Commander | 在重大事件中協調處置、決策與通訊           |
+
+Microsoft Defender 的官方作業指引也將 Tier 1 的工作明確列為事件分流、排序及必要時升級。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn
+
+
+
+4\. 實際案例：勒索軟體攻擊醫院
+
+凌晨 2 點，EDR 顯示某台伺服器出現大量異常檔案操作。
+
+Tier 1 先確認警報是否可信、涉及哪些資產、是否符合升級門檻。Tier 2 再深入調查程序執行、網路連線與受影響設備。若確認是重大事件，應變團隊依既定程序進行隔離、溝通與恢復。
+
+但病人現在就要看診，不能單純等待技術人員修復。
+
+這時必須啟動 Business Continuity Plan（BCP，營運持續計畫），例如使用核准的替代病歷程序、調整非緊急服務、保持緊急通訊，直到核心系統恢復。
+
+5\. 比較與區別：BCP、DRP、IRP
+
+| 文件          | 關注重點           | 典型問題            |
+| ----------- | -------------- | --------------- |
+| BCP         | 關鍵業務如何持續       | 系統故障時，醫院怎麼繼續看診？ |
+| DRP（災難復原計畫） | 系統與技術資源如何復原    | 怎麼復原資料庫、伺服器與網路？ |
+| IRP（事件應變計畫） | 如何偵測、分析與處理資安事件 | 怎麼確認與遏止勒索軟體攻擊？  |
+
+BCP 涵蓋整個業務，而 DRP 通常聚焦於技術系統與復原工作。ISO 22301 是相關的營運持續管理國際標準。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.iso.org\&sz=32)
+
+Business continuity management systems+1
+
+
+
+還要認識兩個重要指標：
+
+- RTO（Recovery Time Objective）：希望在多長時間內恢復業務或服務。
+- RPO（Recovery Point Objective）：最多能容忍損失多長時間的資料。
+
+例如，若系統 RPO 設為 15 分鐘，不代表一定能達標。還要確認備份、複寫與實際復原測試結果。
+
+6\. 回到三道考題
+
+P1-Q063 → C. ISO/IEC 27005:2022。 題幹直接要求「識別、評估、處置資訊安全風險」，因此選 27005。27001 是整體 ISMS 要求，27002 是控制措施指引，27701 則聚焦隱私資訊管理。
+
+P3-Q086 → A. Tier 1 Analyst。 題幹的關鍵詞是 initial monitoring and triaging（初步監控與分流）。Tier 3、SOC Manager 及 Incident Commander 不是一般情況下第一線初步分流的預設角色。
+
+P3-Q088 → C. BCP。 題目問重大災難期間及之後如何維持營運。SLA 是服務水準協議，NDA 是保密協議，AUP 是可接受使用政策，都不是營運持續計畫。
+
+7\. 進階補充：事件應變不等於營運持續
+
+真正成熟的組織會同時問兩個問題：
+
+「我們能不能阻止攻擊擴大？」與「即使攻擊還沒處理完，最重要的服務能不能繼續？」
+
+只關注第一個問題，可能讓技術團隊成功隔離了攻擊，卻沒有為臨床工作建立可行的替代流程。
+
+### 單元 3｜Delete、Clear、Purge、Destroy 到底有何不同？（第 11 題）
+
+1\. 白話解釋：你把文件丟進垃圾桶，真的不見了嗎？
+
+想像有四種做法：
+
+第一種是移除資料的目錄記錄，就像把一本書從圖書館索引中刪除，但書可能仍在架上。
+
+第二種是以適當的方法清除資料，讓一般介面難以恢復。
+
+第三種採取更強的資料消除方法，讓具有先進實驗室技術的人也無法在可行成本內復原。
+
+第四種則是把保存資料的媒體實際銷毀。
+
+這四種方式的保證程度不同。
+
+2\. 正式定義
+
+NIST SP 800-88 Rev. 2《Guidelines for Media Sanitization》於 2025 年 9 月 26 日正式發布，取代 2014 年的 Rev. 1。這是本題應採用的重要現行參考。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.nist.gov\&sz=32)
+
+NIST
+
+
+
+| 方法      | 安全目標                       | 典型用途        |
+| ------- | -------------------------- | ----------- |
+| Delete  | 移除檔案或邏輯參照，不等於 Sanitization | 日常檔案管理      |
+| Clear   | 阻止透過一般使用者介面進行資料復原          | 適當條件下的媒體重用  |
+| Purge   | 使先進實驗室技術復原目標資料不可行          | 較高保證程度的安全重用 |
+| Destroy | 以物理銷毀使媒體無法再用來儲存資料          | 不重用或需要銷毀的媒體 |
+
+3\. 運作原理：Purge 強調的是復原不可行性
+
+NIST 對 Purge 的定義，強調使用物理或邏輯技術，使目標資料無法透過現有最先進的實驗室方法可行地復原。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+CSRC
+
+
+
+這不代表每台硬碟都可以使用同一種清除指令。
+
+硬碟、SSD、USB 隨身碟與其他儲存媒體的內部運作差異很大，例如 SSD 有 Flash Translation Layer（FTL）及備用儲存區，單純覆寫使用者可見的磁區，不一定涵蓋所有原始資料位置。
+
+另外一種重要技術是 Cryptographic Erase（CE，加密抹除）。
+
+假設整個儲存媒體的資料原本就使用適當的金鑰加密，且能安全地清除所有必要的解密金鑰，便可能達到所需的資料清除目標。但是否符合 Purge，仍需確認加密實作、金鑰副本、媒體支援與清除驗證等前提。
+
+4\. 實際案例
+
+醫院要將存放病歷資料的 SSD 移交給外部回收廠商。
+
+資訊人員只按作業系統的「刪除檔案」，並不能證明病歷資料已安全消除。
+
+正確決策必須先確認資料敏感程度、媒體類型、是否要重用、可支援的清除方法，接著執行、驗證並留存紀錄。若媒體無法可靠清除，且不需要重用，可能需要選擇適當的物理銷毀。
+
+5\. 比較與區別
+
+請記住，Purge 不等於 Destroy。
+
+Purge 通常希望媒體仍可重用，但原始資料已不可行地復原；Destroy 則使媒體失去原本的儲存用途。
+
+而且安全清除的範圍不能只包含主磁碟。如果資料另存於 Snapshot、Backup、其他儲存節點或外部備份，也需要獨立管理。
+
+6\. 回到 P3-Q110
+
+最佳答案是 B. To make data recovery impossible even with laboratory-grade tools.
+
+但題目中的 impossible 不夠精確。考試意圖是「即使使用實驗室級技術也難以復原」，正式標準則使用 infeasible（不可行）這個概念。
+
+A 只是刪除檔案指標，C 是硬體回收而非清除定義，D 是資料封存，與銷毀目的相反。
+
+7\. 進階補充
+
+對實務決策來說，不要只問「我用了什麼清除工具」，還要問：
+
+「這個工具是否真的對該媒體及該資料範圍有效？有沒有驗證證據？」
+
+NIST Rev. 2 特別強調組織層級的媒體清除管理、方法適用性及對廠商實作的信任評估，而非只列出一組固定的硬碟覆寫指令。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+### 單元 4｜對稱式加密與非對稱式加密（第 15、16 題）
+
+1\. 白話解釋：加密就像把資料鎖進保險箱
+
+想像你要將一份機密報告傳給同事。
+
+你可以用一把鑰匙鎖住保險箱，讓同事使用同一把鑰匙開啟。這類似對稱式加密（Symmetric Encryption）。
+
+但新的問題出現了：
+
+你要如何安全地把鑰匙交給同事？
+
+如果你直接在不安全的網路上傳送鑰匙，攻擊者可能先偷到鑰匙，再打開保險箱。
+
+這就是公開金鑰密碼學（Public-Key Cryptography）要協助解決的問題之一。
+
+2\. 正式定義
+
+| 特性   | 對稱式加密                   | 非對稱式密碼學                     |
+| ---- | ----------------------- | --------------------------- |
+| 金鑰   | 雙方使用相同共享祕密金鑰，或相應的共享金鑰材料 | 使用 Public Key 與 Private Key |
+| 主要用途 | 大量資料加解密                 | 金鑰建立、數位簽章、部分加密用途            |
+| 運算效率 | 通常較適合大量資料               | 通常不直接用來加密大量資料               |
+| 代表技術 | AES、Blowfish、Twofish    | RSA、ECDH/ECDHE、ECDSA 等不同機制  |
+| 主要困難 | 安全管理共享金鑰                | 公開金鑰的身分驗證與私鑰保護              |
+
+要注意，ECDH/ECDHE 是非對稱的金鑰協議（Key Agreement），不是傳統意義的公開金鑰加密；ECDSA 則是數位簽章演算法。它們都屬於公開金鑰密碼學的應用。
+
+3\. 運作原理：Block Size 不等於 Key Size
+
+這是第 15 題最重要的技術觀念。
+
+假設有一個區塊加密演算法，每次處理 64 bits（8 bytes）的資料。
+
+我們說它的 Block Size = 64 bits。
+
+而加密金鑰可以有不同長度，這稱為 Key Size。
+
+Block Size 決定演算法一次處理多少位元；Key Size 影響金鑰空間與暴力猜測的難度，但並非評估安全性的唯一因素。
+
+區塊長度與金鑰長度：兩個獨立參數
+
+Blowfish 區塊
+
+64 bits
+
+每個區塊處理 8 bytes
+
+AES 區塊
+
+128 bits
+
+每個區塊處理 16 bytes
+
+金鑰長度則是另一項設定。例如 Blowfish 支援 32–448 bits 的金鑰，但無論使用多長的金鑰，區塊長度仍是 64 bits。
+
+4\. 實際案例：辨識 Blowfish、Twofish 與 AES
+
+| 演算法      | Block Size | Key Size             | 核心區別                             |
+| -------- | ---------- | -------------------- | -------------------------------- |
+| Blowfish | 64 bits    | 32–448 bits          | 舊式對稱區塊加密                         |
+| Twofish  | 128 bits   | 典型為 128、192、256 bits | AES 競賽決選演算法                      |
+| AES      | 128 bits   | 128、192、256 bits     | 現代廣泛使用的標準區塊加密                    |
+| RC4      | 不適用        | 可變                   | 串流加密演算法（Stream Cipher），已不適合新系統使用 |
+
+Blowfish 的特徵由原設計者 Bruce Schneier 的文件確認；Twofish 及 AES 的規格也可分別由原設計資料和 NIST FIPS 197 查證。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.schneier.com\&sz=32)
+
+Schneier on Security+2
+
+
+
+這裡有一個重要的安全問題。
+
+假設 Blowfish 使用 256-bit 金鑰，你可能會認為金鑰已經非常長，因此一切都安全。
+
+但 64-bit 區塊長度仍然可能造成生日界限（Birthday Bound）相關風險。在某些模式與大量資料使用情境下，約 \\(2^{32}\\) 個區塊的規模就需要特別注意碰撞問題。
+
+Sweet32 研究展示了 64-bit 區塊加密在特定長連線及協定條件下的攻擊風險。這個問題不會因為將 Blowfish 金鑰從 128 bits 增加至 448 bits 就自動消失。
+
+[image](https://www.google.com/s2/favicons?domain=https://sweet32.info\&sz=32)
+
+sweet32.info
+
+
+
+5\. 比較與區別：為什麼現代系統常使用混合式密碼架構？
+
+現代 HTTPS 的典型做法，不是只使用對稱式或非對稱式其中一種，而是利用不同技術的優點。
+
+混合式密碼學：各技術負責不同任務
+
+\#chatgpt-mermaid-\_r_11e\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_11e\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_11e\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_11e\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_11e\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_11e\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_11e\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_11e\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_11e\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_11e\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_11e\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_11e\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_11e\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_11e\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_11e\_ p{margin:0;}#chatgpt-mermaid-\_r_11e\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_11e\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_11e\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_11e\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_11e\_ .label text,#chatgpt-mermaid-\_r_11e\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_11e\_ .node rect,#chatgpt-mermaid-\_r_11e\_ .node circle,#chatgpt-mermaid-\_r_11e\_ .node ellipse,#chatgpt-mermaid-\_r_11e\_ .node polygon,#chatgpt-mermaid-\_r_11e\_ .node path{fill:rgb(226, 242, 230);stroke:rgb(107, 198, 127);stroke-width:1px;}#chatgpt-mermaid-\_r_11e\_ .rough-node .label text,#chatgpt-mermaid-\_r_11e\_ .node .label text,#chatgpt-mermaid-\_r_11e\_ .image-shape .label,#chatgpt-mermaid-\_r_11e\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_11e\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_11e\_ .rough-node .label,#chatgpt-mermaid-\_r_11e\_ .node .label,#chatgpt-mermaid-\_r_11e\_ .image-shape .label,#chatgpt-mermaid-\_r_11e\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_11e\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_11e\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_11e\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_11e\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_11e\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_11e\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_11e\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_11e\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_11e\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_11e\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_11e\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_11e\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_11e\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_11e\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_11e\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_11e\_ .icon-shape,#chatgpt-mermaid-\_r_11e\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_11e\_ .icon-shape p,#chatgpt-mermaid-\_r_11e\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_11e\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_11e\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_11e\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_11e\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_11e\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_11e\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_11e\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_11e\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_11e\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_11e\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_11e\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_11e\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_11e\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_11e\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_11e\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_11e\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(237, 250, 242);stroke:rgb(166, 211, 184);stroke-width:1px;}#chatgpt-mermaid-\_r_11e\_ .node rect,#chatgpt-mermaid-\_r_11e\_ .node circle,#chatgpt-mermaid-\_r_11e\_ .node ellipse,#chatgpt-mermaid-\_r_11e\_ .node polygon,#chatgpt-mermaid-\_r_11e\_ .node path{fill:rgb(217, 244, 228);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_11e\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_11e\_ .mermaid-decision .label-container{fill:rgb(237, 250, 242);stroke:rgb(195, 220, 205);stroke-dasharray:2px,2px;}#chatgpt-mermaid-\_r_11e\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_11e\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_11e\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}用非對稱金鑰建立機制ECDHE產生共享祕密利用 KDF 導出連線加密金鑰使用對稱式 AEAD例如 AES-GCM憑證 / 數位簽章驗證連線對象保密且具有完整性保護的應用資料傳輸
+
+這是功能關係圖，不是精確的 TLS 封包時序圖。
+
+6\. 回到兩道考題
+
+EC-Q284 → D. Blowfish。
+
+決定性線索是「64-bit 區塊」以及「32–448-bit 可變金鑰」。Twofish、AES 的區塊都是 128 bits，RC4 則不是區塊加密。
+
+題目中的「DES 替代品」是輔助線索，不能單靠這個描述判斷，因為多種演算法都曾被設計或評估作為 DES 的替代方案。
+
+另有一個題幹推論限制：真實情況下，通常無法僅憑截取的一段密文，就直接確認使用的演算法。還需要協定資訊、實作紀錄或其他證據。
+
+EC-Q032 → D. Asymmetric Encryption。
+
+四個選項中，只有非對稱密碼學最符合安全金鑰分配或建立的概念。
+
+Disk Encryption 是使用場景，Symmetric Encryption 需要預先處理共享金鑰問題，Hash Functions 則不是用來將可解密的金鑰安全傳送給對方。
+
+7\. 進階補充
+
+現代 TLS 1.3 可以使用 ECDHE 建立共享祕密，再導出傳輸金鑰，使用 AES-GCM 等 AEAD（Authenticated Encryption with Associated Data）演算法保護資料。
+
+此外，2026 年 7 月發布的 RFC 9846 已取代原本的 RFC 8446，成為 TLS 1.3 的更新規範。它保留 TLS 1.3 的主要架構，並收緊若干安全要求，包括禁止在不同連線間重複使用 KeyShare 值。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\&sz=32)
+
+RFC Editor
+
+
+
+因此，真正安全的密碼學系統，不只取決於演算法名稱，還包括金鑰管理、身分驗證、模式與實作細節。
+
+### 單元 5｜Hash、MAC、數位簽章與 PKI（第 17、18 題）
+
+1\. 白話解釋：文件指紋與身分證明
+
+想像你寄給同事一份重要合約。
+
+你希望確認兩件事：
+
+第一，合約內容有沒有被更改？
+
+第二，這份合約是不是真的由你發出的？
+
+這其實是兩個不同問題。
+
+Hash 可以幫助檢查內容是否一致，但單純的 Hash 無法證明發送者身分。
+
+如果需要驗證內容來源，就必須再加入共享祕密金鑰或數位簽章等機制。
+
+2\. 正式定義
+
+| 技術                  | 核心目的             | 是否使用祕密金鑰    |
+| ------------------- | ---------------- | ----------- |
+| Hash（例如 SHA-256）    | 產生固定長度的摘要        | 否           |
+| HMAC                | 驗證訊息完整性及共享金鑰持有者  | 是，共享金鑰      |
+| Digital Signature   | 驗證簽署者及資料完整性      | 是，簽署者私鑰     |
+| Digital Certificate | 將身分與公開金鑰建立受信任的連結 | CA 使用簽章金鑰   |
+| PKI                 | 管理公開金鑰、憑證與信任關係   | 涉及多種金鑰與管理程序 |
+
+3\. 運作原理：Hash 為什麼叫單向函數？
+
+假設將以下資料輸入 SHA-256：
+
+`hospital-record-001`
+
+它會產生 256-bit 的摘要（Digest）。只要原始資料改變，摘要通常也會隨之改變。
+
+Hash 主要用來建立資料摘要
+
+原始文件 A
+
+Hash(A)
+
+修改後文件 B
+
+Hash(B)
+
+通常 Hash(A) ≠ Hash(B)。但要有可信任的比較基準，才能有效偵測竄改。
+
+密碼學雜湊函數追求的重要性質包括：
+
+- Preimage Resistance：給定摘要，計算上難以找出能產生該摘要的原始輸入。
+- Second Preimage Resistance：已知一份資料，難以找到另一份不同資料產生相同摘要。
+- Collision Resistance：難以找到任意兩份不同資料具有相同摘要。
+
+這裡的「單向」是計算上難以逆推，不代表對短密碼或低熵輸入完全無法進行字典猜測。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+CSRC
+
+
+
+4\. 實際案例：攻擊者同時替換文件與 Hash
+
+假設你從網路下載一份程式，網站也提供 SHA-256 值。
+
+你下載後計算摘要，發現完全相同。
+
+能否直接斷定程式安全？
+
+不能。
+
+如果攻擊者同時控制程式與網站公布的摘要，就可能一起替換兩者。
+
+因此，Hash 能支援完整性檢查，但要對抗惡意竄改，還必須確保比較的摘要來源可信，或採用 HMAC、數位簽章等具有身分或金鑰驗證能力的技術。
+
+5\. 比較與區別：Hash、HMAC、Signature
+
+- Hash：回答「兩份資料是否相同？」
+- HMAC：回答「這份資料是否由掌握共享祕密金鑰的一方產生，且未被修改？」
+- Digital Signature：回答「是否由相對應私鑰的持有者簽署，且內容未被修改？」
+
+HMAC 使用密碼學雜湊函數搭配祕密金鑰。NIST 明確將它定義為具金鑰的訊息認證碼。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+CSRC
+
+
+
+HMAC 的限制是雙方共享同一祕密，因此通常不能像適當設計的數位簽章一樣，獨立證明究竟是哪個共享金鑰持有者產生訊息。
+
+6\. 回到 P3-Q074
+
+答案是 C. Hashing。
+
+題幹的關鍵是 one-way function。
+
+Symmetric Encryption 與 Asymmetric Encryption 主要是可透過適當金鑰還原的加解密機制；Encoding 則是資料表示方式的轉換，例如 Base64，不是安全雜湊。
+
+但題目說 Hash 用來「ensure data integrity」過於簡略。正確理解應是：Hash 搭配可信比較值，可用於檢查完整性；單獨一個未受保護的摘要，不提供對抗主動攻擊者的完整性保證。
+
+#### PKI：那麼誰能證明公開金鑰真的屬於對方？
+
+假設你打開銀行網站。
+
+攻擊者也能生成一組自己的 Public Key 和 Private Key，並宣稱自己是銀行。
+
+因此，公開金鑰本身不等於可信任的身分。
+
+PKI（Public Key Infrastructure，公開金鑰基礎建設）透過憑證、CA 和信任鏈等機制處理這個問題。
+
+典型 TLS 1.3：憑證驗證與金鑰建立
+
+瀏覽器網站伺服器憑證機構 CA瀏覽器網站伺服器憑證機構 CA#chatgpt-mermaid-\_r_129\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_129\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_129\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_129\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_129\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_129\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_129\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_129\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_129\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_129\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_129\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_129\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_129\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_129\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_129\_ p{margin:0;}#chatgpt-mermaid-\_r_129\_ .actor{stroke:rgb(107, 198, 127);fill:rgb(226, 242, 230);stroke-width:1;}#chatgpt-mermaid-\_r_129\_ rect.actor.outer-path[data-look="neo"]{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_129\_ rect.note[data-look="neo"]{stroke:rgb(239, 139, 87);fill:rgb(243, 243, 243);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_129\_ text.actor>tspan{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_129\_ .actor-line{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_129\_ .innerArc{stroke-width:1.5;stroke-dasharray:none;}#chatgpt-mermaid-\_r_129\_ .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_129\_ .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_129\_ [id$="-arrowhead"] path{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_129\_ .sequenceNumber{fill:#707070;}#chatgpt-mermaid-\_r_129\_ [id$="-sequencenumber"]{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_129\_ [id$="-crosshead"] path{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_129\_ .messageText{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_129\_ .labelBox{stroke:rgba(0, 0, 0, 0.1);fill:rgb(252, 252, 252);filter:none;}#chatgpt-mermaid-\_r_129\_ .labelText,#chatgpt-mermaid-\_r_129\_ .labelText>tspan{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_129\_ .loopText,#chatgpt-mermaid-\_r_129\_ .loopText>tspan{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_129\_ .sectionTitle,#chatgpt-mermaid-\_r_129\_ .sectionTitle>tspan{fill:rgb(13, 13, 13);stroke:none;}#chatgpt-mermaid-\_r_129\_ .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:rgba(0, 0, 0, 0.1);fill:rgba(0, 0, 0, 0.1);}#chatgpt-mermaid-\_r_129\_ .note{stroke:rgb(239, 139, 87);fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_129\_ .noteText,#chatgpt-mermaid-\_r_129\_ .noteText>tspan{fill:rgb(13, 13, 13);stroke:none;font-weight:normal;}#chatgpt-mermaid-\_r_129\_ .activation0{fill:rgb(243, 243, 243);stroke:hsl(0, 0%, 85.2941176471%);}#chatgpt-mermaid-\_r_129\_ .activation1{fill:rgb(243, 243, 243);stroke:hsl(0, 0%, 85.2941176471%);}#chatgpt-mermaid-\_r_129\_ .activation2{fill:rgb(243, 243, 243);stroke:hsl(0, 0%, 85.2941176471%);}#chatgpt-mermaid-\_r_129\_ .actorPopupMenu{position:absolute;}#chatgpt-mermaid-\_r_129\_ .actorPopupMenuPanel{position:absolute;fill:rgb(226, 242, 230);box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#chatgpt-mermaid-\_r_129\_ .actor-man circle,#chatgpt-mermaid-\_r_129\_ line{fill:rgb(226, 242, 230);stroke-width:2px;}#chatgpt-mermaid-\_r_129\_ g rect.rect{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_129\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_129\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_129\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_129\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_129\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_129\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_129\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_129\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_129\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_129\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}網站先完成憑證申請與簽發驗證憑證鏈、網域、簽章等以導出的對稱金鑰保護應用資料核發並簽署憑證ClientHello + key_shareServerHello + key_shareCertificate + CertificateVerifyFinishedFinished
+
+示意標準憑證式 TLS 1.3 交握的主要訊息；省略部分選用訊息、加密層次與驗證細節。依據 RFC 9846。
+
+[image](https://www.google.com/s2/favicons?domain=https://datatracker.ietf.org\&sz=32)
+
+IETF Datatracker
+
+CA（Certificate Authority，憑證機構）負責依照憑證政策驗證申請資訊、核發及簽署憑證。瀏覽器則負責驗證信任鏈、網域名稱、有效期限與其他適用條件。
+
+CA 不需要取得網站伺服器的私鑰才能替它簽發憑證。
+
+NIST 的 CA 定義也明確包括核發憑證及相關憑證管理職責。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+CSRC
+
+
+
+回到 P3-Q121 → C. Certificate Authority。
+
+User 是憑證使用者或申請者，不是預設簽發機構。Browser 通常是驗證憑證的一方；ISP 提供網路連線服務，除非另有 CA 身分，否則不因為是 ISP 就能簽署受信任憑證。
+
+7\. 進階補充：HTTPS 不只是加密
+
+TLS 1.3 的常見憑證式連線，結合了 ECDHE 金鑰建立、憑證與簽章驗證、金鑰導出，以及 AEAD 對稱加密。
+
+因此，一條真正受保護的連線通常需要同時考慮機密性（Confidentiality）、完整性（Integrity）及身分驗證（Authentication）。
+
+只有加密而沒有適當的身分驗證，可能仍遭遇中間人攻擊；只有 Hash 而沒有受保護的驗證方式，也不能保證資料沒有遭到有意竄改。
+
+## 四、逐題判斷的關鍵陷阱
+
+九題的最佳答案都可以確定，但有些題目的教學描述需要加上條件。以下是最值得在筆記中標註的四個限制。
+
+| 原題      | 容易誤記成               | 更精確的技術判斷               |
+| ------- | ------------------- | ---------------------- |
+| P3-Q110 | Purge 絕對不可能復原       | 在指定技術與攻擊能力下，復原不可行      |
+| EC-Q284 | 加密金鑰愈長就必然愈安全        | 還要考慮區塊大小、運作模式與實作       |
+| EC-Q032 | 非對稱加密可以單獨解決所有金鑰交換問題 | 需要適當的金鑰建立協定及對等方驗證      |
+| P3-Q074 | 有 Hash 就能防止竄改       | 需要可信摘要來源，或使用 MAC、簽章等機制 |
+
+這四項差異非常重要，因為 CEH 題目可能測試的是一個概念的典型功能，但在研究或實務環境中，你必須進一步問：此功能成立的安全假設是什麼？
+
+## 五、主動回憶與間隔複習
+
+以下 7 張卡片涵蓋本批九題的主要概念。建議先在心中回答，再點選「顯示答案」。
+
+EC-Q535
+
+合法白帽測試最重要的條件是什麼？
+
+顯示答案
+
+P1-Q063
+
+ISO/IEC 27001、27002、27005 分別負責什麼？
+
+顯示答案
+
+P3-Q086、P3-Q088
+
+SOC Tier 1 和 BCP 解決的是相同問題嗎？
+
+顯示答案
+
+P3-Q110
+
+Purge 與 Clear 的安全保證有何不同？
+
+顯示答案
+
+EC-Q284
+
+為什麼 Blowfish 使用 448-bit 金鑰仍不代表適合長時間大量資料加密？
+
+顯示答案
+
+EC-Q032
+
+非對稱密碼學如何與對稱式加密合作？
+
+顯示答案
+
+P3-Q074、P3-Q121
+
+Hash、HMAC 與 CA 簽署的憑證分別能做什麼？
+
+顯示答案
+
+### 建議複習間隔
+
+以今天 2026/11/10 為起點的示範排程
+
+D+1
+
+11/11
+
+D+3
+
+11/13
+
+D+7
+
+11/17
+
+D+14
+
+11/24
+
+D+30
+
+12/10
+
+這些是實務上的起始間隔，不是所有人都適用的固定遺忘曲線公式。
+
+調整規則是：答錯或無法自行解釋，隔天再測；答對但猶豫，維持較短間隔；能正確回答並應用於新情境，再逐步延長間隔。每次複習應混入其他 M01、M20 題目，而非只重做這九題。
+
+間隔學習（Spacing）及提取練習（Retrieval Practice）有研究支持，但具體最佳排程仍依內容、學習者及保留期限而變化。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.nature.com\&sz=32)
+
+Nature+1
+
+
+
+## 六、理解檢核｜5 道新情境題
+
+本部分不提供正解。請先獨立作答，之後將依你的答案逐題批改，分析推理及需要補強的概念。
+
+1
+
+一家醫院授權你測試兩個指定 API。你發現第三個由外包商管理的 API 可能有高風險漏洞，但不在合約範圍內。最適當的行動是什麼？
+
+A. 立即測試，因為發現漏洞可以保護病人
+
+B. 暫停對該 API 的主動測試，請求確認或擴充授權
+
+C. 只要不用破壞性工具，就可以先測試
+
+D. 請另一位研究員測試，就不算違反自己的授權
+
+2
+
+醫院要建立風險評估方法、處理 SOC 警報，以及制定重大災難期間的診療作業計畫。哪一組配對最符合各項工作的目的？
+
+A. ISO 27002／Tier 3／SLA
+
+B. ISO 27005／Tier 1／BCP
+
+C. ISO 27701／SOC Manager／NDA
+
+D. ISO 27001／Incident Commander／AUP
+
+3
+
+一台存有敏感病歷的 SSD 即將交給外部回收商。磁碟曾加密，但目前無法確認是否有未加密區域或外部金鑰副本。最佳做法是什麼？
+
+A. 刪除所有檔案並清空垃圾桶
+
+B. 只要執行金鑰刪除就必然達到 Purge
+
+C. 確認加密涵蓋範圍與媒體特性，採合適清除方法並驗證留證
+
+D. 直接交給回收商，因為 SSD 難以復原
+
+4
+
+某系統使用 64-bit 區塊加密演算法，金鑰為 256 bits，且持續在同一金鑰下處理大量資料。最值得優先進一步評估的是什麼？
+
+A. 256-bit 金鑰代表不存在任何加密風險
+
+B. 所有安全問題都只能由暴力破解造成
+
+C. 區塊長度、運作模式與資料量可能造成生日界限相關風險
+
+D. 把金鑰增加到 448 bits 就能保證解決所有問題
+
+5
+
+一家企業 API 會將資料及其 SHA-256 值傳送給客戶，但攻擊者有機會同時修改兩者。企業另外使用 HTTPS，但客戶端未正確驗證伺服器憑證。哪項改善最合適？
+
+A. 將 SHA-256 改為 Base64
+
+B. 正確驗證 TLS 伺服器身分，並依需求採用經驗證的完整性保護機制
+
+C. 將 SHA-256 重複計算十次即可解決身分驗證問題
+
+D. 只提高資料壓縮率，避免攻擊者辨認內容
+
+已作答 0 / 5 題提交答案並批改
+
+這次課程要建立的核心能力，是從題目描述辨識出真正的安全目標、所使用的技術，以及安全保證成立的必要條件。能夠做到這三件事，就不只是記住九個答案，而是具備分析更多 CEH 題目的基礎。

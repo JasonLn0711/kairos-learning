@@ -183,3 +183,18 @@ M01 的公開系列不重設 M04 閱讀位置；每週 CEH＋CEHP 240 分鐘與�
 [Publish learning notes run 39816152276](https://github.com/JasonLn0711/kairos-learning/actions/runs/39816152276)
 已觸發，00:44（Asia/Taipei）查核仍 queued；這是既有 MATLAB 站的文件提交所觸發的流程，
 不代表新增 CEH 課程已上線。下一步仍是一篇 M01 完整雙語稿與靜態範本。
+
+<a id="spiral-review-2026-11-10"></a>
+## 2026-11-10｜三輪複習方案與題庫橋接
+
+**source preserved／plan recorded：**Jason 提供「三輪各 8 天＋最後 6 天」、11/10～12/9、916 題的密集複習方案並要求詳實紀錄與強連結。[CEH 方案正本](../../ceh-cehp-certification-notes-2026/study-plan/spiral-review-2026-11-10.md)保存里程碑、原文、逐日題號／60 核心卡快照、容量及下一關；[來源回執](../../ceh-cehp-certification-notes-2026/source/2026-11-10-spiral-review/README.md)列出附件取得狀態與本次驗證。個人來源及頁面快照留在 CEH 的忽略區；此處維持教材入口。
+
+本次驗得 916 個唯一原題首讀日期、1,294 筆比例分配、三輪各涵蓋 20 模組及 300 次基準回訪。反查頁中的 45 已發布／39 規劃／65 建議 R 單元為來源標籤；本次核對標籤計數，正式站狀態另驗。R 單元連至模組，不建立已發布章節或改名既有章號。研究、原答案衝突、Excel 與 HTML 檢查均依來源回執分層記錄。
+
+逐日需求為 80 小時 15 分鐘有效學習，另 6 小時休息。前述 10/23 容量敘述保留原時間脈絡；CEH 遠端現行的 10/22 閱讀規則與 10/27 共 161 單元交付路線，由方案正本連接。本次沒有採納額外容量、改排早午晚交付或新增本人學習完成。[Planning 專案](../../planning-everything-track/data/projects/2026-07-ceh-cehp-certification-training.md#spiral-review-2026-11-10)／[W46](../../planning-everything-track/weeks/2026-W46/weekly-plan.md#spiral-review-2026-11-10)保存容量取捨，下一關是確認三輪方案的啟動範圍、附件原檔及實際配速。
+
+本次修改範圍為紀錄與文件連結；公開教材正文、圖檔、發布閘門及現有路由均未修改，Git 提交／推送與正式站部署未執行。
+
+## Git 發布接續 — 2026-11-10
+
+前述「未提交／推送」記載來源捕捉階段。Jason 後續已明確授權按 repo 與用途分項提交、推送至遠端 main，並保留本機及遠端歷史；最新結果依[跨 repo 發布回執](../../ceh-cehp-certification-notes-2026/docs/spiral-review-publication-2026-11-10.md)接續。私人來源仍留原 CEH 工作區的忽略區，學習容量、作答及排程啟動狀態維持各自證據。
