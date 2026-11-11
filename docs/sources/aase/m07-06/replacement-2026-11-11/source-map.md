@@ -1,6 +1,6 @@
 # M07-06 供稿抽換紀錄
 
-狀態：source preserved；中英正文與五組圖解已實作，驗收及發布見回執。
+狀態：source preserved／implemented／validated／published。中英正文、五組圖解及正式站回讀均完成；精確證據見回執。
 
 來源：使用者於本次任務提供的原稿及五張 PNG，原文逐位元組保存在 source-original.txt；待替換正文保存在 prior-lesson.json。SHA256SUMS 涵蓋來源與前版。
 
