@@ -10,7 +10,7 @@
 
 ## 實測與發布
 
-待本輪檢查完成後填入實際結果與部署 commit/run。此狀態尚不代表 published。
+狀態：source preserved → adopted decision → implementation → validated → published。下列證據分別記錄本課及共用回歸，未將廣域初次失敗當成全站完成。
 
 ### 已觀察結果
 
@@ -23,3 +23,20 @@
 - 預設全套測試埠已由其他工作占用，廣域中文回歸使用忽略目錄內的同測試副本，僅將 4215／8515–8517 換成本次 4415／8815–8817，未修改產品或正式測試設定。
 
 來源提交 `0fcab0e`；教材實作 `e27798c`；[PR #108](https://github.com/JasonLn0711/kairos-learning/pull/108)。各次整合使用 merge 保留遠端與本次歷史；沒有覆蓋其他工作目錄。
+
+
+### 正式部署與回讀
+
+發布 source commit：`e8e6fe97ae6615102dc41aa124a61e6799e1430d`。main 以非破壞性 merge 保留來源及遠端更新；兩次非快轉拒絕後繼續整合，未 force-push。推送後 fetch 核對當時 divergence `0 0`。PR #108 已合併，GitHub 記錄的 PR mergeCommit 為 `f4e8d73`，其後的整合提交 e8e6fe9 承接完整本次內容及其他既有發布。
+
+[Pages 工作 42991605640](https://github.com/JasonLn0711/kairos-learning/actions/runs/42991605640) 成功，GitHub 回報 completed／success（更新時間 2026-11-11 17:02:51，Asia/Taipei）。內容、單元、型別、靜態 HTML 契約、真正 draft／future 邊界建置、release、下載雜湊及 artifact 可見性檢查全部通過後，才由 Pages 部署。該來源提交於本機重驗 `pnpm test` 348 項通過、型別零錯誤／警告。
+
+正式站以 `AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0703.config.ts` 回讀：2 passed，19.6 秒。兩語 v1.1.0、八節正文、三表、Python 程式碼、三個新開放問題、可操作三欄表單、空白預覽、三欄變更清除舊結果、文字跳脫、鍵盤／焦點、四尺寸／200%、無 JS 靜態例、前後篇／語言切換、搜尋及六 SVG 下載／標籤邊界／重疊均通過。SVG 回應與此版本六份圖檔逐位元組一致。
+
+- [繁體中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m07/concepts/m07-03/)
+- [English live page](https://learn.cs-kairos.com/en/courses/aase/v1/m07/concepts/m07-03/)
+- 本次本機及正式截圖／結果保留在工作目錄忽略路徑 `.local/aase/m0703/`；正式結果為 results.json，本機結果另存 local-results.json。供稿、前版及逐節對照持續由來源目錄承接。
+
+正式回讀後另核對當前遠端：本課 JSON、兩個專用元件及六 SVG 仍與已回讀版本相同；採用模型與正式 JSON 相等。主工作目錄僅同步本次專屬檔案及共用檔的本課分支，未搬入其他工作樹的未提交變更。
+
+待驗範圍：真人裝置操作、獨立讀者理解與真實業務使用均未評估。廣域回歸初次其他課次的失敗與後續併行更新，不由本課的正式回讀推定為已解決；原工作坊 ZIP、後續驗證／匯出／授權能力亦不因本課表單示範而新增。
