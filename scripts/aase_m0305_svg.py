@@ -1,11 +1,11 @@
-"""Export the five success evidence figures from the validated lesson model."""
+"""Export the six success evidence figures from the validated lesson model."""
 import argparse,json
 from pathlib import Path
 from html import escape
 import xml.etree.ElementTree as ET
 from aase_m0104_svg import wrap
 ROOT=Path(__file__).resolve().parents[1]
-SECTIONS=['evidence-chain','metrics','measure','analogy','trace']
+SECTIONS=['evidence-chain','metrics','measure','assumptions','trace','understanding']
 def render(f,n,lang):
  nodes=[]
  def text(value,x,y,width,size=20,bold=False):
@@ -13,28 +13,19 @@ def render(f,n,lang):
   for j,line in enumerate(lines):nodes.append(f'<text x="{x}" y="{y+j*36}" font-size="{size}" font-weight="{650 if bold else 400}">{escape(line)}</text>')
   return y+len(lines)*36
  y=text(f['caption'],36,44,40,24,True)+24
- cols=2 if n==4 else 1;width=476 if cols==2 else 968
- if n==3:
-  y=text(f['items'][0]['title']+'   3 / 4',36,y,42,22,True)+12
-  nodes.append(f'<rect x="36" y="{y}" width="968" height="20" rx="10" fill="#e4e9ec"/>')
-  nodes.append(f'<circle cx="762" cy="{y+10}" r="12" fill="#ffffff" stroke="#637982"/>')
-  for value in range(5):text(str(value),36+value*239,y+55,2,18)
-  y+=112
-  end=text(f['items'][1]['title'],36,y,20)
-  end=text('75%',36,end+8,20,30,True)
-  right=text(f['items'][2]['title'],530,y,20,22,True)
-  right=text(f['items'][2]['body'],530,right+8,20)
-  y=text(f['items'][3]['body'],36,max(end,right)+28,43)+32
- for i,item in enumerate([] if n==3 else f['items']):
-  x=36+(i%cols)*492
+ cols=3 if n==2 else 1;width=312 if cols==3 else 968
+ for i,item in enumerate(f['items']):
+  x=36+(i%cols)*328
   if i%cols==0:row=y;ends=[]
-  start=len(nodes);offset=58 if n==2 else 24;end=text(item['title'],x+offset,row,(width-offset-24)/24,22,True)
+  start=len(nodes);offset=24;end=text(item['title'],x+offset,row,(width-offset-24)/24,22,True)
   for paragraph in item['body'].split('\n\n'):end=text(paragraph,x+offset,end+8,(width-offset-24)/22)
-  fill,stroke=('#e9f2f7','#d9eaf4') if n==1 and i in [2,3] else ('#fff2ea','#b15840') if n==5 and i==4 else ('#fbfcfd','#d5dce0')
+  fill,stroke=('#e9f2f7','#a8c8ed') if n==1 and i==3 else ('#e9f7f2','#82ccb7') if n==1 and i==5 else ('#fff2ea','#b15840') if n==5 and i==2 else ('#fbfcfd','#d5dce0')
   nodes.insert(start,f'<rect x="{x}" y="{row-28}" width="{width}" height="{end-row+42}" rx="10" fill="{fill}" stroke="{stroke}"/>');ends.append(end)
-  if n==2:
-   shape='m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6l8-4Zm-4 10 3 3 5-6' if i==0 else 'M9 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM2 21v-3a7 7 0 0 1 14 0v3M17 4a3 3 0 0 1 0 6m1 4a5 5 0 0 1 4 5'
-   nodes.append(f'<path d="{shape}" transform="translate({x+14} {row-18})" fill="none" stroke="#18252c" stroke-width="1.6"/>')
+  if n==3 and i<2:
+   nodes.append(f'<rect x="{x+24}" y="{end+6}" width="920" height="12" rx="6" fill="#e4e9ec"/>')
+   nodes.append(f'<circle cx="{x+24+(690 if i==0 else 0)}" cy="{end+12}" r="10" fill="#ffffff" stroke="#637982"/>')
+   end+=36;ends[-1]=end
+   nodes[start]=f'<rect x="{x}" y="{row-28}" width="{width}" height="{end-row+42}" rx="10" fill="{fill}" stroke="{stroke}"/>'
   if i%cols==cols-1 or i==len(f['items'])-1:
    y=max(ends)+52
    if n==1 and i<len(f['items'])-1:
@@ -54,4 +45,4 @@ if __name__=='__main__':
    if args.check:assert out.read_bytes()==data,f'Out of date: {out}'
    else:out.write_bytes(data)
    print(out.name,len(data),'bytes')
- print('PASS: 10 SVG exports checked.' if args.check else 'PASS: 10 SVG exports generated.')
+ print('PASS: 12 SVG exports checked.' if args.check else 'PASS: 12 SVG exports generated.')
