@@ -667,3 +667,9 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 三份正文由 `scripts/reconstruct-ceh-notes.py` 與 `ceh_note_part1.py`／`ceh_note_part2.py`／`ceh_note_part3.py` 重建；`--check` 與 `scripts/audit-ceh-note-adoption.py --check` 已納入 validate:release，驗證同步、原附件雜湊及明確逐標題採用映射。原始資料不可由生成結果覆寫。
 
 驗收順序：單元／型別 → SSR 圖解 fixture → 發布邊界與最終 production build → validate:release → 新 preview／完整頁面瀏覽器。SSR fixture 或 SvelteKit sync 會刷新生成檔，不可與 production build 並行，也不可在最終建置後執行而沿用舊 preview；完整頁面檢查同時核對 HTML／client bootstrap 識別碼。
+
+## AASE M04-02｜任務分析與條件回復
+
+[2026-11-11來源及逐節對照](sources/aase/m04-02/replacement-2026-11-11/README.md)保存八章供稿、五張原圖、舊版及編輯差異。修改完整中英稿或`figures.json`後執行`scripts/aase_m0402_content.py`與`scripts/aase_m0402_svg.py`（皆支援`--check`）。正式資料保留六個既有錨點，新增各小節；三個物流問題使用原生開放檢核與編輯參考答案，不提供送答服務。
+
+`TaskAnalysisDiagram.svelte`沿既有cards／flow承接五種固定版型：goal六節點、plans六／五節點、methods五階段、walkthrough三條件。`aase.ts`限制位置、種類、數量及欄位；不接受HTML、任意SVG或外部圖片路徑。HTA分解與流程順序分開，二分支手機重排不相接。文字、搜尋與十份受審核SVG同源。驗收用`tests/aase-m0402-replacement.test.ts`與`playwright.aase-m0402.config.ts`；正式站設定`AASE_BASE_URL`。結果見[回執](releases/2026-11-11-aase-m04-02-replacement.md)。
