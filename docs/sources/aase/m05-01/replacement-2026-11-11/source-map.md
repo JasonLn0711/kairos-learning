@@ -20,7 +20,7 @@
 
 技術查核：2026-11-11 讀取 NASA Appendix C 與 Cucumber BDD 官方文件。NASA 支持明確、可追溯與可驗證要求；Cucumber 支持跨角色具體情境與反覆協作，不將 Given／When／Then 寫法等同完整 BDD。
 
-狀態：source preserved、implementation validated（本機）；正式發布與回讀見[發布回執](../../../../releases/2026-11-11-aase-m05-01-replacement.md)。詳細證據由本倉庫擁有；Planning 僅需保留定位、狀態、驗證與下一閘門。稀缺資源為逐節內容核對與正式站驗收時間。
+狀態：source preserved、implementation validated、published；正式站雙語與兩份 SVG 已回讀通過。正式發布與回讀見[發布回執](../../../../releases/2026-11-11-aase-m05-01-replacement.md)。詳細證據由本倉庫擁有；Planning 僅需保留定位、狀態、驗證與下一閘門。稀缺資源為逐節內容核對與正式站驗收時間。
 
 成稿處理：英文完整翻譯九節；正式頁的 spec.md 保留與中文相同的來源程式碼，另以英文逐條解讀 R-01～R-04 與 T-01～T-04。兩語的程式碼位元組一致。供稿三題保持原始 A–C 選項與開放題，答案放在原生展開區；先前版本的三題保留為補充理解檢核。缺課提醒的兩節門檻與防重規則是新增的合成參考答案，不是學校正式規則。
 
