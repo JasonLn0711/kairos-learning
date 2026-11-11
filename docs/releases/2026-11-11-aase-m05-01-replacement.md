@@ -18,10 +18,14 @@ NASA Appendix C 與 Cucumber BDD 官方文件已查核；前者支持明確、�
 - HTML-01～04、FIG-01～06、A11Y-01～03：雙語瀏覽器檢查全部正文、表格、程式碼、流程節點與答案；320／390／768／1280 CSS px 及 200% 文字，頁面無水平溢出，正文與圖文至少 16 px、1.7 行高；文字與底色對比為 15.26:1、箭頭與底色為 5.77:1；表格及程式碼以具名局部容器鍵盤捲動。
 - Enter／Space 展開收合參考答案、Tab／Shift+Tab 與可見焦點通過；鍵盤開啟 SVG、HTTP 200、下載 bytes 等於正式資產且小於 100000 bytes；SVG 文字無越界或彼此重疊。兩語圖解手機／桌面與 SVG 截圖已目視核對，保留節點順序、箭頭與 Verification 框。
 - 無 JavaScript 仍可閱讀九節、圖解與原生答案；搜尋包含正文與五節點；前後篇指向 M04-06 與 M05-02。INT-01 不適用，這次沒有新增計算或模擬互動。
-- `pnpm run validate:content`、308 項 `pnpm test`、`pnpm run check`（0 errors／0 warnings）、publication-boundary（隔離 fixture、草稿／未來、英文閘門與清潔重建）、`pnpm run validate:release` 通過。兩個 generator 的 `--check` 通過。雙語 Playwright 2 項通過。
+- `pnpm run validate:content`、合併最新基線後 311 項 `pnpm test`、`pnpm run check`（0 errors／0 warnings）、publication-boundary（隔離 fixture、草稿／未來、英文閘門與清潔重建）、`pnpm run validate:release` 通過。兩個 generator 的 `--check` 通過。雙語 Playwright 2 項通過。
 
-本機結果與截圖在隔離工作樹 `.local/aase/m0501/local/`、`local-results.json`；初輪修正的是測試對 inline backtick 與清單 textContent 的假設，不把失敗當成產品驗收通過。表格另以本課範圍設定 1rem／1.8 行高。實機輔助科技、真人試讀與學員理解尚未評估。
+本機結果與截圖在隔離工作樹 `.local/aase/m0501/local/`、`local-results.json`；初輪修正的是測試對 inline backtick 與清單 textContent 的假設，不把失敗當成產品驗收通過。表格另以本課範圍設定 1rem／1.8 行高。額外測試也確認本課拒絕四節點、錯誤圖種與未授權欄位，並維持草稿／未來內容的中英發布閘門。實機輔助科技、真人試讀與學員理解尚未評估。
 
 ## 發布閘門
 
 待提交、遠端品質檢查、部署與正式站頁面／圖檔回讀。完成後在此追加具體 commit、run、URL 與結果；本機通過不等於正式站已上線。
+
+合併前基線：Pages run 42986713205（5241d8091216ffbf62071f5a8791c5074d15f0a3）於檢查當時成功；後續仍有其他課次部署排隊，正式回讀須依本次部署 commit 確認。`pnpm audit --audit-level=high` 通過（4 low，無 high／critical）；既有六份 MATLAB／參考 ZIP SHA-256 全數通過。
+
+驗證執行紀錄：合併後曾在 publication-boundary 的暫存英文閘門尚未移除時啟動額外測試；該次測試不作正式結果。待原程序結束並確認 fixture 全數清理後重跑，311 項通過。一次瀏覽器啟動遇到 4297 埠瞬間占用；確認該埠已無監聽後重跑，未修改應用程式來略過檢查。

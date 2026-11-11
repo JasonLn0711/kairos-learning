@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
+import {createAaseCatalog,type AaseLesson} from '../src/lib/aase.ts';
 import {getPage,searchEntries} from '../src/lib/server/catalog.ts';
 const source='docs/sources/aase/m05-01/replacement-2026-11-11/';
 const read=(p:string)=>JSON.parse(readFileSync(p,'utf8'));
@@ -22,4 +23,19 @@ test('M05-01 preserves supplied originals and derives the full bilingual lesson 
  }
  assert.deepEqual(lesson.checks,read(source+'previous/aase-m05-c01.json').checks);
  assert.equal(lesson.text.zh.sections[3].blocks.find((b:any)=>b.code).code,lesson.text.en.sections[3].blocks.find((b:any)=>b.code).code);
+});
+
+test('M05-01 constrains workflow data and retains independent publication gates',()=>{
+ const all=readdirSync('content/aase/lessons').map(f=>read('content/aase/lessons/'+f));
+ const catalog=(lessons:AaseLesson[])=>createAaseCatalog(read('content/aase/course.json'),lessons,read('content/aase/sources.json'),'2026-11-11',read('content/aase/course.en.json'));
+ for(const mutate of [(f:any)=>f.items.pop(),(f:any)=>{f.kind='cards';},(f:any)=>{f.items[0].src='javascript:invalid';}]){
+  const ls=structuredClone(all),l=ls.find(l=>l.id===lesson.id)!;
+  for(const lang of ['zh','en'])mutate(l.text[lang].sections.find((s:any)=>s.id==='verification').blocks[0]);
+  assert.throws(()=>catalog(ls),/invalid prompt-spec workflow/);
+ }
+ for(const gate of ['draft','future']){
+  const ls=structuredClone(all),l=ls.find(l=>l.id===lesson.id)!;
+  if(gate==='draft')l.status='draft';else l.publishedOn=l.date=l.translations.en.publishedOn='2099-01-01';
+  const c=catalog(ls);assert.ok(!c.lessons.some(l=>l.id===lesson.id));assert.ok(!c.forLanguage('en')!.lessons.some(l=>l.id===lesson.id));assert.ok(!c.searchEntries.some(e=>e.id===lesson.id));
+ }
 });
