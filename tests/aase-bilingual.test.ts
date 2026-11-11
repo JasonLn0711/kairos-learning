@@ -97,34 +97,34 @@ test('historic M01 English additions retain Chinese teaching and original accept
 
 test('M03 English preserves Chinese sources, synthetic records, checks and version history',()=>{
  for(let n=1;n<=5;n++){
-  const before=read(`docs/sources/aase/m03-en/aase-m03-c0${n}.before.json`),l=n===4?read('docs/sources/aase/m03-04/replacement-2026-11-09/prior-lesson.json'):n===5?read('docs/sources/aase/m03-05/replacement-2026-11-09/prior-lesson.json'):n===1?read('docs/sources/aase/m03-01/replacement-2026-11-07/previous.json'):n===2?read('docs/sources/aase/m03-02/replacement-2026-11-07/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
+  const before=read(`docs/sources/aase/m03-en/aase-m03-c0${n}.before.json`),l=n===3?read('docs/sources/aase/m03-03/replacement-2026-11-11/prior-lesson.json'):n===4?read('docs/sources/aase/m03-04/replacement-2026-11-09/prior-lesson.json'):n===5?read('docs/sources/aase/m03-05/replacement-2026-11-09/prior-lesson.json'):n===1?read('docs/sources/aase/m03-01/replacement-2026-11-07/previous.json'):n===2?read('docs/sources/aase/m03-02/replacement-2026-11-07/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
   assert.equal(l.contentVersion,n===1?'1.0.4':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
   const en=getPage('/en/courses/aase/v1/m03/concepts/m03-0'+n+'/')!.aaseConcept!.lesson!;
-  assert.ok(en.text.en);assert.ok(!en.text.zh);const historical=n<=2||n===4||n===5?l.text.en:en.text.en;assert.deepEqual(historical.sections.flatMap((s:any)=>s.blocks??[]).flatMap((b:any)=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
+  assert.ok(en.text.en);assert.ok(!en.text.zh);const historical=l.text.en;assert.deepEqual(historical.sections.flatMap((s:any)=>s.blocks??[]).flatMap((b:any)=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
  }
 });
 
 test('M04 English preserves Chinese evidence boundaries, original diagrams, checks and templates',()=>{
  for(let n=1;n<=6;n++){
-  const before=read(`docs/sources/aase/m04-en/aase-m04-c0${n}.before.json`),l=n===1?read('docs/sources/aase/m04-01/replacement-2026-11-09/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
+  const before=read(`docs/sources/aase/m04-en/aase-m04-c0${n}.before.json`),l=n===5?read('docs/sources/aase/m04-05/replacement-2026-11-11/previous/aase-m04-c05.json'):n===3?read('docs/sources/aase/m04-03/replacement-2026-11-11/prior-lesson.json'):n===4?read('docs/sources/aase/m04-04/replacement-2026-11-11/prior-lesson.json'):n===6?read('docs/sources/aase/m04-06/replacement-2026-11-11/prior-lesson.json'):n===2?read('docs/sources/aase/m04-02/replacement-2026-11-11/prior-lesson.json'):n===1?read('docs/sources/aase/m04-01/replacement-2026-11-09/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
   assert.equal(l.contentVersion,n===5?'1.0.3':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
   const en=getPage('/en/courses/aase/v1/m04/concepts/m04-0'+n+'/')!.aaseConcept!.lesson!;
-  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual((n===1?l.text.en as typeof en.text.en:en.text.en).sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
+  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual((l.text.en as typeof en.text.en).sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
  }
 });
 
 test('M05 English preserves Chinese rules, candidate status, answer keys and template bytes',()=>{
  for(let n=1;n<=5;n++){
-  const before=read(`docs/sources/aase/m05-en/aase-m05-c0${n}.before.json`),l=lessons.find(x=>x.id===before.id)!;
+  const before=read(`docs/sources/aase/m05-en/aase-m05-c0${n}.before.json`),l=n===2?read('docs/sources/aase/m05-02/replacement-2026-11-11/prior-lesson.json'):n===5?read('docs/sources/aase/m05-05/replacement-2026-11-11/previous/lesson.json'):n===3?read('docs/sources/aase/m05-03/replacement-2026-11-11/prior-lesson.json'):n===1?read('docs/sources/aase/m05-01/replacement-2026-11-11/previous/aase-m05-c01.json'):n===4?read('docs/sources/aase/m05-04/replacement-2026-11-11/previous/lesson.json'):lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.equal(l.publishedOn,before.publishedOn);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);
   assert.equal(l.contentVersion,n===3?'1.0.4':'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);assert.equal(q.text.en!.options.length,4);assert.equal(q.text.en!.rationales.length,4);}
-  const en=getPage('/en/courses/aase/v1/m05/concepts/m05-0'+n+'/')!.aaseConcept!.lesson!;
-  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual(en.text.en.sections.flatMap(s=>s.blocks??[]).flatMap(b=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
+  const en=n===2?{text:{en:l.text.en,zh:undefined}}:n===1||n===3||n===4||n===5?{text:{en:l.text.en,zh:undefined}}:getPage('/en/courses/aase/v1/m05/concepts/m05-0'+n+'/')!.aaseConcept!.lesson!;
+  assert.ok(en.text.en);assert.ok(!en.text.zh);assert.deepEqual(en.text.en.sections.flatMap((s:any)=>s.blocks??[]).flatMap((b:any)=>'code' in b?[b.code]:[]),before.text.zh.sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>'code' in b).map((b:any)=>b.code));
  }
  assert.equal(build().concepts.find(c=>c.id==='AASE-M05-C05')!.workshopDepth,'extension');
 });

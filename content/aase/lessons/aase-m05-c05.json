@@ -1,22 +1,23 @@
 {
   "id": "AASE-M05-C05",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "openspec-concepts-pinned",
-    "openspec-start-pinned"
+    "openspec-start-pinned",
+    "openspec-quickstart-20261111"
   ],
   "qa": [],
   "text": {
     "zh": {
-      "summary": "以同一需求比較OpenSpec的文件關係與輕量Markdown流程，選擇能清楚維護規格、變更與驗證的做法。",
+      "summary": "用餐廳保留訂單案例讀懂 OpenSpec 的規格、變更與驗證分工，並比較一人原型和多人協作何時適合輕量 Markdown。",
       "objectives": [
-        "分開OpenSpec的目前規格、候選變更、設計與任務清單。",
-        "用同一缺件需求對照輕量Markdown與OpenSpec文件。",
-        "依協作、變更與維護成本選工具，保留格式檢查與行為驗證的差異。"
+        "區分現行規格、候選變更、設計、任務與驗證證據。",
+        "以餐廳案例走過提案、Delta Spec、設計、任務及接受流程。",
+        "依協作、變更與維護成本選擇 Markdown 或 OpenSpec。"
       ],
       "readingGuide": {
         "goal": "分開OpenSpec的目前規格、候選變更、設計與任務清單。",
@@ -27,70 +28,137 @@
       "sections": [
         {
           "id": "purpose",
-          "heading": "工具協助維護關係，不能替你決定規則",
+          "heading": "核心問題",
           "paragraphs": [
-            "OpenSpec是協助AI協作規格驅動開發的工具。它把目前規格與候選變更分開，讓提案、規格差異、設計及任務能一起被檢視。本課將它放在線上延伸；十小時工作坊可先用Markdown完成可驗收的規格。",
-            "本篇固定查核提交3e4d5f0769e2857c8eb54f149cbf5e4f703fa04c；該提交package.json標示1.16.0。這是文件與原始碼查核基準，不表示本次已安裝、初始化或執行其CLI，之後的命令與整合方式仍需按實際版本核對。"
-          ],
-          "sourceIds": [
-            "openspec-concepts-pinned"
+            "這一課的核心觀念：寫軟體不只是告訴 AI「幫我做什麼」，還要讓 AI、人類工程師與專案管理者清楚知道：目前系統承諾什麼、準備修改什麼、為什麼修改，以及如何證明修改正確。",
+            "本課主要理解五件事：",
+            "1. 為什麼有了需求文件，仍然需要「變更管理」？\n2. OpenSpec 是什麼？和一般 Markdown 文件有何不同？\n3. OpenSpec 的 `specs`、`proposal`、`design`、`tasks` 各自負責什麼？\n4. 一人小專案與多人協作專案，應該怎麼選擇？\n5. 如何從提出需求、修改程式，一路追蹤到測試與驗收？"
           ]
         },
         {
           "id": "analogy",
-          "heading": "像一個有分類的修訂資料夾",
+          "heading": "一、先用餐廳的例子理解：為什麼需要管理規格？",
           "paragraphs": [
-            "目前有效的作業說明與「打算修改」的提案，不應混成同一份已核准文件。提案寫為何改，設計寫如何做，任務列待做工作；完成後，保留變更歷史，再讓有效說明反映已接受的結果。",
-            "小組也能用簡單資料夾做到類似分工。需要的是清楚的正本、狀態與連結，不是檔案越多越專業。若同一規則複製到很多地方卻沒有同步責任，導入工具仍會造成規格漂移。"
+            "假設你經營一家連鎖餐廳，開發了一套點餐系統。",
+            "原本的規定是：",
+            "「客人完成付款之後，訂單才可以送進廚房。」",
+            "這就是一條規格（Specification，簡稱 Spec）。",
+            "有一天，營運主管提出新的想法：",
+            "「我們希望讓熟客可以先下單，30 分鐘內再付款。」",
+            "這項新規定還沒有正式批准。",
+            "如果工程師或 AI 直接修改程式，就可能讓所有客人都能不付款就出餐，造成營運損失。",
+            "所以你必須區分兩件事：",
+            "- 目前有效的規格： 付款完成後，才能送單進廚房。\n- 候選變更： 考慮允許符合資格的熟客先下單、後付款。",
+            "候選變更不是已批准的規定。",
+            "這個區別，就是 OpenSpec 最重要的設計思想之一。",
+            "更進一步，假設主管決定批准新功能，你還需要回答：哪些客人符合資格？信用額度是多少？逾期怎麼辦？誰負責寫程式？怎麼測試？",
+            "光有一句「允許熟客先下單」，遠遠不夠。",
+            "OpenSpec 要解決的，就是讓這些不同性質的資訊有清楚的位置、關係及變更紀錄，避免團隊把想法、決策與已完成的功能混為一談。"
           ]
         },
         {
           "id": "artifacts",
-          "heading": "先讀懂文件各自負責什麼",
+          "heading": "二、OpenSpec 到底是什麼？",
           "paragraphs": [
-            "查核版本將openspec/specs/作為目前規格，openspec/changes/放候選變更。候選內的proposal.md交代目的與範圍、design.md交代技術做法、tasks.md列工作，規格差異放在該變更的specs/。資料夾是關係示意，不代表本repo已啟用OpenSpec。",
-            "Delta（差異）規格可描述新增、修改與移除；修改既有要求時要能看懂修改後完整意思，而非只寫一句「同前但更安全」。彙整與封存讓變更進入目前規格，也仍需人類核對接受條件及驗證，不會替軟體行為背書。"
+            "OpenSpec 是一套協助開發者與 AI Coding Agent 管理軟體規格及變更的工具。",
+            "它不是新的程式語言，也不是另一個大型語言模型。",
+            "你可以把它想成：",
+            "一套替軟體團隊建立的「現行規定、修訂提案、施工圖、工作清單與歷史紀錄」管理制度。"
           ],
           "blocks": [
             {
+              "kind": "flow",
+              "caption": "圖 1｜三個 Agent 指令與文件分工",
+              "description": "箭頭表示建議的工作順序；先審查提案，實作後取得測試證據，再接受與封存。封存後可回到規劃下一次變更。斜線語法依版本與助理核對；四種文件是責任分工，design.md 依需要建立。",
+              "items": [
+                {
+                  "title": "/opsx:propose",
+                  "body": "proposal.md｜為什麼改、改什麼\ndesign.md｜技術做法\nspecs/｜候選規格差異\ntasks.md｜工作清單"
+                },
+                {
+                  "title": "/opsx:apply",
+                  "body": "人類先審查文件；Agent 依 tasks.md 實作。\n實際執行功能與負向測試，保存結果。"
+                },
+                {
+                  "title": "/opsx:archive",
+                  "body": "已接受的候選差異 → openspec/specs/ 現行規格\nADDED 新增／MODIFIED 修改／REMOVED 移除\n保留提案歷史；封存不證明測試或部署成功。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "OpenSpec 的基本文件分工如下。"
+              ]
+            },
+            {
               "kind": "table",
-              "caption": "表 1｜同一個過期結果要求的文件分工",
+              "caption": "表 1",
               "headers": [
-                "責任",
-                "OpenSpec查核版本的對應",
-                "本課輕量Markdown候選"
+                "文件",
+                "白話意思",
+                "主要回答"
               ],
               "rows": [
                 [
-                  "目前承諾",
-                  "openspec/specs/receiving/spec.md",
-                  "spec.md的已確認R-02"
+                  "specs/",
+                  "現行作業規定",
+                  "現在系統應該如何運作？"
                 ],
                 [
-                  "為何改／改什麼",
-                  "openspec/changes/block-stale-export/proposal.md",
-                  "spec.md變更紀錄C-01，或獨立change.md"
+                  "proposal.md",
+                  "修改提案",
+                  "為什麼要改？改什麼？"
                 ],
                 [
-                  "規格差異",
-                  "該變更下specs/receiving/spec.md",
-                  "C-01列舊句、新句與受影響情境"
+                  "變更中的 specs/",
+                  "新舊規定差異",
+                  "哪些要求新增、修改或移除？"
                 ],
                 [
-                  "技術做法",
-                  "該變更下design.md",
-                  "設計註記：輸入修改使檢查快照失效"
+                  "design.md",
+                  "技術施工圖",
+                  "打算怎麼實現？"
                 ],
                 [
-                  "實作任務",
-                  "該變更下tasks.md",
-                  "待做清單：規則、介面、測試及審查"
+                  "tasks.md",
+                  "工作清單",
+                  "需要完成哪些工作？"
                 ],
                 [
-                  "驗證證據",
-                  "需連到實際檢查與測試結果",
-                  "evidence.md記命令、結果、環境與未驗項"
+                  "測試與證據",
+                  "驗收紀錄",
+                  "如何知道真的做對了？"
                 ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "注意：最後一項不表示有個 `tasks.md` 就能自動證明測試成功。測試必須真的執行，結果也必須保存。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "看懂資料夾，你就理解了一半",
+              "paragraphs": [
+                "以下使用餐廳訂單系統的合成示例；是文件內容示意，不是已執行 CLI 的輸出。design.md 是否需要，依變更與版本決定："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 1",
+              "paragraphs": [
+                "合成文件示例；不是已執行命令的輸出。"
+              ],
+              "code": "openspec/\n├── specs/                         # current accepted specifications\n│   └── ordering/\n│       └── spec.md\n└── changes/                       # changes under discussion or implementation\n    └── allow-pay-later/\n        ├── proposal.md            # why and what changes\n        ├── specs/\n        │   └── ordering/\n        │       └── spec.md        # candidate specification delta\n        ├── design.md              # implementation approach, when needed\n        └── tasks.md               # work checklist"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這裡有兩個都叫 `spec.md` 的檔案，卻有不同責任。",
+                "位於最上層 `openspec/specs/` 的是目前有效的規格（Source of Truth，權威規格來源）；位於 `openspec/changes/` 的是尚待確認、實作或合併的規格差異。",
+                "不能因為兩個檔案名稱相同，就認為其內容具有相同效力。"
               ]
             }
           ],
@@ -99,57 +167,430 @@
           ]
         },
         {
-          "id": "commands",
-          "heading": "分清終端機、Agent對話與測試",
+          "id": "change-workflow",
+          "heading": "三、實際走一遍：如何從提案走到交付？",
           "paragraphs": [
-            "固定版本文件將openspec init與openspec validate等列為終端機命令，/opsx:propose、/opsx:apply、/opsx:archive等在支援的AI助理對話使用；可用指令也與profile（工作流程設定）有關。看到斜線指令不代表可直接貼進作業系統終端機。",
-            "本章只辨識這些責任，不提供未實測的安裝成功畫面。要做完整工具操作，先由教師在隔離練習專案核對版本、支援助理及產生檔案，再按該版本文件執行。格式驗證能檢查文件結構，不能取代pytest、AppTest、瀏覽器與任務證據；封存也不能被當成所有測試通過的證明。"
+            "以下以餐廳訂單的候選變更走一遍文件與驗證流程。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 2｜五步協作循環",
+              "description": "依官方 Quickstart 的五步關係整理，Apply + Verify 明列本課的驗證責任。箭頭為建議順序，發現錯誤可回修文件；Archive 後回到 Explore 規劃下一次變更。這不是工具強制的品質閘門。",
+              "items": [
+                {
+                  "title": "Explore",
+                  "body": "釐清問題與選項。"
+                },
+                {
+                  "title": "Propose",
+                  "body": "提出修改方案與規格。"
+                },
+                {
+                  "title": "Review",
+                  "body": "人類審查與修正。"
+                },
+                {
+                  "title": "Apply + Verify",
+                  "body": "實作、檢查、測試並保存證據。"
+                },
+                {
+                  "title": "Archive",
+                  "body": "更新目前規格，保留歷史。"
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "步驟 1：先確認目前的規定",
+              "paragraphs": [
+                "目前的 `spec.md` 可能寫著："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 2",
+              "paragraphs": [
+                "合成文件示例；不是已執行命令的輸出。"
+              ],
+              "code": "# Order-processing specification\n\n## R-01 Payment\nThe system MUST confirm successful payment\nbefore sending an order to the kitchen.\n\n## R-02 Unpaid orders\nUnpaid orders MUST NOT enter food preparation."
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "假設營運主管希望增加「熟客可先保留訂單、30 分鐘內付款」。",
+                "這時候先不要叫 AI 改程式，因為「保留訂單」和「開始製作餐點」是兩件不同的事情。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "步驟 2：建立 proposal.md",
+              "paragraphs": [
+                "提案可以這樣寫："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 3",
+              "paragraphs": [
+                "合成文件示例；不是已執行命令的輸出。"
+              ],
+              "code": "# Proposal: deferred payment for eligible regular customers\n\n## Why\nSome regular customers want to reserve an order\nand complete payment later.\n\n## Scope\n- Eligible regular customers can reserve an order for 30 minutes.\n- Cancel the reservation if unpaid at the 30-minute deadline.\n- Send the order to the kitchen only after payment.\n\n## Out of scope\n- Allowing all customers to order before payment.\n- Preparing food before payment."
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "你會發現，這個提案不只有「要做什麼」，還有「不做什麼」。",
+                "因為 AI 可能自行假設「允許延後付款」代表「允許餐點先製作」。明確寫出排除事項，可以減少這類錯誤解讀。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "步驟 3：建立 Delta Spec",
+              "paragraphs": [
+                "Delta 是「差異」的意思。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "在 OpenSpec 中，Delta Spec 是用來描述相對於目前規格的變更，常見類型包含：",
+                "- `ADDED`：增加原本沒有的要求。\n- `MODIFIED`：修改既有要求。\n- `REMOVED`：取消既有要求。",
+                "例如，新增以下需求："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 4",
+              "paragraphs": [
+                "合成文件示例；不是已執行命令的輸出。"
+              ],
+              "code": "## ADDED Requirements\n\n### Requirement: Regular-customer reservation\nThe system MUST allow eligible regular customers\nto reserve an unpaid order for at most 30 minutes.\n\n#### Scenario: Reservation expires\n- GIVEN an eligible regular customer creates an unpaid reservation\n- WHEN the 30-minute deadline is reached\n- THEN the system cancels the reservation\n- AND the order MUST NOT be sent to the kitchen"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這就是前面 M05-03 教過的 Given／When／Then。",
+                "它讓規格不只是一句抽象的敘述，而是可以轉換成測試的具體行為。",
+                "請特別注意： 因為目前 R-01 已經禁止未付款送單進廚房，這次不需要重新新增一條相同規定。只要補充新的「保留訂單」行為，並檢查新功能沒有破壞 R-01 即可。",
+                "這樣才能避免規格重複與互相矛盾。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "步驟 4：建立 design.md",
+              "paragraphs": [
+                "現在才討論怎麼寫程式。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "例如："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 5",
+              "paragraphs": [
+                "合成文件示例；不是已執行命令的輸出。"
+              ],
+              "code": "# Technical design\n\n1. Add the reserved order state.\n2. Store the reservation deadline in expires_at.\n3. Cancel unpaid reservations at expiry.\n4. Recheck payment before sending an order to the kitchen.\n5. Log every reservation and cancellation event."
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這裡有個重要區別：",
+                "- Spec 說的是：系統應該做到什麼。\n- Design 說的是：工程師打算怎麼做到。",
+                "如果今天使用 Python，明天改用 Java，技術設計可能不同，但「未付款不得送進廚房」這條業務規則仍然成立。",
+                "因此，好的規格應避免不必要地綁死特定實作方法。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "步驟 5：建立 tasks.md",
+              "paragraphs": [
+                "接下來將設計拆成具體工作。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例 6",
+              "paragraphs": [
+                "合成文件示例；不是已執行命令的輸出。"
+              ],
+              "code": "# Development tasks\n\n- [ ] Add the reservation state\n- [ ] Implement the reservation deadline\n- [ ] Add the payment-status check\n- [ ] Build the reservation interface\n- [ ] Test successful reservation\n- [ ] Test reservation expiry\n- [ ] Test that unpaid orders cannot reach the kitchen\n- [ ] Review the code changes"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這一份文件就可以成為 AI Coding Agent 的工作範圍。",
+                "任務清單追蹤工作；驗收仍須對照 specs 中的行為要求與實際證據。",
+                "假設 AI 把所有工作都勾選完成，卻沒有執行測試，那麼只能說工作被標記為完成，不能證明功能正確。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "步驟 6：真正驗證後，才更新規格",
+              "paragraphs": [
+                "需要至少核對三種不同的證據："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 2",
+              "headers": [
+                "檢查",
+                "目的"
+              ],
+              "rows": [
+                [
+                  "文件格式檢查",
+                  "規格文件符合工具要求嗎？"
+                ],
+                [
+                  "功能與負向測試",
+                  "程式真的按照規格運作嗎？"
+                ],
+                [
+                  "人類審查",
+                  "業務規則、設計和變更是否可接受？"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "例如，可以測試：",
+                "「一般顧客試圖保留未付款訂單時，系統必須拒絕。」",
+                "「符合資格的熟客保留訂單後，超過 30 分鐘未付款，系統應取消保留。」",
+                "「即使使用者繞過前端介面直接呼叫 API，未付款訂單仍不得傳給廚房。」",
+                "最後一項特別重要，因為介面禁止某個動作，不代表後端真的阻止該動作。",
+                "通過必要驗證、取得適當批准後，可以將已接受的變更更新到目前規格，並封存相關提案與歷史紀錄。",
+                "注意，Archive（封存）是一項規格管理操作，並不是安全性、品質或部署成功的證明。"
+              ]
+            }
           ],
           "sourceIds": [
-            "openspec-start-pinned"
+            "openspec-start-pinned",
+            "openspec-quickstart-20261111"
           ]
         },
         {
           "id": "choose",
-          "heading": "依維護問題選擇流程",
+          "heading": "四、什麼時候不需要 OpenSpec？用 Markdown 就夠了嗎？",
           "paragraphs": [
-            "若是單人、單一收件原型且變更少，spec.md加變更與證據欄位可能已足夠。若多人需要共同審查多項候選變更、追蹤不同規格差異，可評估OpenSpec是否降低同步成本，同時考慮團隊是否能維護其格式與工具環境。這是本課的選擇框架，沒有宣稱任何工具普遍較好。",
-            "採用之前先用同一要求試走一輪：誰確認規則、誰審查變更、證據放哪裡、何時更新目前規格。若這些答案還不清楚，先補協作責任；安裝工具不會自動決定業務權威、執行權限或資料可公開範圍。"
+            "這正是本章另一個主要學習目標。",
+            "OpenSpec 並不是開發軟體的必要條件。",
+            "假設你正在開發一個只有自己使用的小工具，功能單純、變更很少。",
+            "你完全可以用一份 Markdown 檔案記錄："
           ],
           "blocks": [
             {
-              "kind": "cards",
-              "caption": "圖 1｜兩種做法都要維持的責任",
-              "description": "兩張卡並列比較文件管理方式；右邊不是左邊完成後必然升級的階段。",
-              "items": [
-                {
-                  "title": "輕量Markdown",
-                  "body": "用一份明確正本、變更紀錄與證據連結支援小型專案；避免只有聊天決定。"
-                },
-                {
-                  "title": "OpenSpec",
-                  "body": "用目前規格與候選變更的結構管理協作；仍核對內容、Diff、任務及真實驗證。"
-                }
+              "kind": "step",
+              "heading": "範例 7",
+              "paragraphs": [
+                "合成文件示例；不是已執行命令的輸出。"
+              ],
+              "code": "# spec.md\n\n## Current specification\nR-01: Missing data MUST NOT be marked complete.\n\n## Change history\nC-01: Add a missing-data reminder.\n\n## Design\nShow a text reminder for missing fields.\n\n## Tasks\n- [ ] Add the missing-data check\n- [ ] Add the interface reminder\n- [ ] Write tests\n\n## Verification record\nStatus: not yet tested"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "只要這份文件維護得當，沒有必要為了形式而建立大量額外檔案。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "一個實用的選擇矩陣",
+              "paragraphs": [
+                "以下依文件責任逐項說明。"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 3",
+              "headers": [
+                "判斷條件",
+                "輕量 Markdown",
+                "OpenSpec"
+              ],
+              "rows": [
+                [
+                  "一個人開發",
+                  "通常優先",
+                  "可選"
+                ],
+                [
+                  "少量且簡單的需求",
+                  "通常優先",
+                  "可選"
+                ],
+                [
+                  "經常修改既有需求",
+                  "可以，但要自律維護",
+                  "較適合評估"
+                ],
+                [
+                  "多人同時修改多個功能",
+                  "容易增加同步負擔",
+                  "較適合評估"
+                ],
+                [
+                  "需要追蹤每次修改的原因",
+                  "手動紀錄",
+                  "有明確變更結構"
+                ],
+                [
+                  "團隊無法維護額外工具",
+                  "較適合",
+                  "可能增加負擔"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "選擇依據不是專案看起來有多專業，而是規格管理的複雜度是否值得增加工具成本。",
+                "真正需要管理的是：",
+                "「哪些規定已被接受？誰有權修改？什麼時候修改？如何確認沒有破壞原有系統？」",
+                "如果用 Markdown 就能清楚回答，沒有必要立即導入 OpenSpec。若多人協作導致版本、差異與審查頻繁混亂，OpenSpec 的結構就可能帶來價值。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "五、換成其他產業，觀念是否一樣？",
+          "paragraphs": [
+            "規格管理的基本原理也適用其他產業；實際的業務規則與風險須依情境確認。以下都是合成教學示例。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 4",
+              "headers": [
+                "產業",
+                "目前規格",
+                "候選變更",
+                "重要驗證"
+              ],
+              "rows": [
+                [
+                  "醫療",
+                  "過敏紀錄須提示醫護人員",
+                  "增加特定藥物交互作用警示",
+                  "高風險情境不能漏報"
+                ],
+                [
+                  "銀行",
+                  "未經核准不得完成特定交易",
+                  "增加符合資格的小額交易自動化",
+                  "不可繞過必要授權"
+                ],
+                [
+                  "電商",
+                  "付款後建立出貨單",
+                  "增加預購保留功能",
+                  "不可超賣或重複扣款"
+                ],
+                [
+                  "製造",
+                  "異常設備需停止特定作業",
+                  "增加異常分級與維護通知",
+                  "嚴重異常不可被錯誤放行"
+                ],
+                [
+                  "教育",
+                  "教師發布成績後學生可查閱",
+                  "增加成績複查申請",
+                  "不可擅自修改最終成績"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "以銀行為例，假設原本規定每筆特定交易都必須由兩人審核。",
+                "有人提出：「低於一定金額的交易，讓 AI 自動批准。」",
+                "如果直接交給 AI 寫程式，很容易只把「金額小於某個門檻」當作唯一條件，忽略授權、累積限額、異常偵測與稽核責任。",
+                "正確做法是先確認業務規則、法規及授權要求，再由規格明確界定允許和禁止的行為，最後透過測試驗證。OpenSpec 能管理這些決策文件，卻不能自行判定什麼規則具有法律或組織效力。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "commands",
+          "heading": "六、五個最容易混淆的觀念",
+          "paragraphs": [
+            "分清以下五組概念，才能判讀文件與執行證據。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "1. Spec 不等於 Prompt",
+              "paragraphs": [
+                "Prompt 是你這次對 AI 說的話；Spec 是專案希望持續維護、可供人員審查及驗收的行為要求。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "2. 規格不等於現實",
+              "paragraphs": [
+                "即使規格寫著「不得匯出過期資料」，程式仍可能存在漏洞。規格代表應遵守的承諾，不代表已證明的系統行為。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "3. Bug 不一定需要修改規格",
+              "paragraphs": [
+                "如果目前規格已經禁止匯出過期資料，而程式還是允許，那是實作偏離規格，應修正程式並測試，不應再建立一條重複需求。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "4. 終端機命令和 Agent 指令不同",
+              "paragraphs": [
+                "例如，教材查核版本中的 `openspec validate` 是終端機命令；`/opsx:propose` 則是在支援的 AI 助理對話環境中使用的工作流程指令。不同版本和工具的支援方式需要重新核對。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "5. OpenSpec 並不強制瀑布式開發",
+              "paragraphs": [
+                "它允許反覆修改提案、規格與設計。實作發現假設錯誤時，應回到文件修正，而不是為了維持原先流程硬把錯誤方案做完。官方也強調迭代與既有系統變更。"
               ]
             }
           ]
         },
         {
           "id": "exercise-notes",
-          "heading": "不用安裝，也能先練文件對照",
+          "heading": "七、本章可以立即完成的最小練習",
           "paragraphs": [
-            "本篇練習採同一個已出現的規則：輸入修改後不能沿用舊完整結果。建立紙上C-01，分別標示目前承諾、候選差異、設計、任務與待驗證據；若目前規格已包含這條，寫成檢查是否有實作偏離，不虛構一次新增功能。",
-            "常見誤解是「tasks.md全部打勾就代表驗收」。任務勾選只有工作狀態，仍需對照實際檔案與執行結果。完成本章代表理解文件分工與工具選擇，不等於已會所有OpenSpec命令或完成真實Agent協作。"
+            "你不需要安裝 OpenSpec，也不需要 Node.js 或 AI Agent，就能先練習這個觀念。",
+            "找一個簡單的業務規則，例如「修改輸入資料後，原有檢查結果必須失效」，然後寫在 `spec.md`：",
+            "- 目前有效規格是什麼？\n- 要提出新需求，還是修復違反既有規格的 Bug？\n- 如果要變更，修改前後的要求各是什麼？\n- 工程上準備如何處理？\n- 哪些工作尚待完成？\n- 有哪些實際驗證證據？哪些尚未測試？",
+            "最後比較：使用同一份 Markdown 管理，或改用 OpenSpec 的分離資料夾結構，哪一種對這個專案比較容易維護。",
+            "教材本身也明確將這一章定位為文件對照練習，而非安裝、執行 CLI 或完成真實 Agent 協作。",
+            "可由頁尾來源開啟 OpenSpec 官方 Quickstart。本課沿用 2026-11-05 查核的提交 3e4d5f0769e2857c8eb54f149cbf5e4f703fa04c（package.json 標示 1.16.0）作為固定基準，不代表已安裝或執行 CLI。2026-11-11 回讀官方 Quickstart 仍見五步循環，但目前示例採自然語言，直接啟用 skill 的語法依工具而異；design.md 依變更需要產生。附圖的三個斜線指令須按實際版本與支援助理核對。"
           ],
-          "blocks": [
-            {
-              "kind": "step",
-              "heading": "同一規則的輕量變更紀錄",
-              "paragraphs": [
-                "將以下合成範例放入 spec.md，依你的課堂情境修改；這不是實際單位規定或研究結果。"
-              ],
-              "code": "# C-01 文件對照（紙上練習，未啟用OpenSpec）\n目前承諾：修改輸入後舊結果失效\n候選問題：若程式仍允許舊完整匯出，屬實作偏離\n提案目的：恢復目前輸入與報告的一致\n規格差異：已含R-02則不重複新增；缺少時先確認\n設計註記：清除舊檢查快照；匯出端重驗證\n任務：核對規則、介面、測試及Diff\n證據：實際命令、結果、環境；未做就寫待驗\n接受與彙整：按實際決定更新目前規格與歷史\n工具選擇：寫出輕量Markdown或OpenSpec的理由"
-            }
+          "sourceIds": [
+            "openspec-start-pinned",
+            "openspec-quickstart-20261111"
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "八、理解檢核：換你判斷",
+          "paragraphs": [
+            "以下是合成情境。先自行回答，再展開頁尾的參考解析；本頁不提交答案、不評分，也不記錄學習完成。",
+            "情境：醫院的檢驗報告系統",
+            "目前規格規定：「所有必要檢驗項目齊全後，才能將報告標記為完整。」",
+            "某次測試發現，即使有一項檢驗值缺漏，系統仍可輸出標記為完整的報告。",
+            "同時，醫院提出一項新需求：「當檢驗值超過危急值門檻時，自動發出通知。」",
+            "參考解析位於本頁「理解檢核」，可自行展開比較。",
+            "本章最應帶走的一句話是：",
+            "讓 AI 寫出程式，只是軟體工程的一部分；讓人知道為什麼這樣寫、依據什麼規格、修改了什麼，以及有什麼證據證明它正確，才是可維護的 AI 協作軟體開發。"
           ]
         }
       ],
@@ -163,14 +604,44 @@
         "expected": "spec.md附有兩種流程的文件關係對照、採用理由及明確的未執行界線。",
         "check": "能指出目前規格與候選差異不同；知道終端機與助理指令責任，也不虛構CLI或測試結果。",
         "cleanup": "保持紙上與未啟用標記，不為完成概念練習改寫現有專案設定；只用合成資料。"
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M05-C05-Q04",
+          "prompt": "問題 1：缺漏資料仍可輸出完整報告，應該視為新功能需求，還是既有規格的實作錯誤？為什麼？",
+          "answer": [
+            "這是既有規格的實作錯誤。現行規格已要求必要項目齊全才可標記完整；先修正完整性判斷及匯出端，測試缺漏情境，不另新增重複規則。"
+          ]
+        },
+        {
+          "id": "AASE-M05-C05-Q05",
+          "prompt": "問題 2：危急值自動通知的新需求，應該記錄在哪些文件？各文件負責什麼？",
+          "answer": [
+            "proposal.md 說明危急值通知的目的與範圍；變更內 specs/ 說明新增行為及可測試情境；design.md 在需要時交代通知方式與技術決策；tasks.md 拆出實作、測試及審查工作。openspec/specs/ 保留目前有效規格，通過團隊接受程序後才整合已接受的變更。"
+          ]
+        },
+        {
+          "id": "AASE-M05-C05-Q06",
+          "prompt": "問題 3：如果 AI 已經將 tasks.md 全部勾選，能否直接宣布功能通過驗收？還需要什麼證據？",
+          "answer": [
+            "任務勾選只記錄工作狀態。仍須核對文件格式、實際功能與負向測試、程式碼及人類審查；保存命令、環境、結果及尚未驗證事項。封存也不能代替這些證據。"
+          ]
+        },
+        {
+          "id": "AASE-M05-C05-Q07",
+          "prompt": "問題 4：假設只有一位工程師維護原型；另一種情況是五位工程師共同維護正式系統。你會分別選 Markdown 還是 OpenSpec？為什麼？",
+          "answer": [
+            "一人維護簡單且少變更的原型，通常先用 Markdown；五人共同修改多項正式功能，可評估 OpenSpec 降低差異與審查同步成本。人數不是唯一門檻，還須比較需求複雜度、變更頻率、接受權責與工具維護能力。"
+          ]
+        }
+      ]
     },
     "en": {
-      "summary": "Compare OpenSpec’s artifact relationships with lightweight Markdown for the same requirement, choosing a maintainable way to connect specifications, changes and verification.",
+      "summary": "Use restaurant reservations to understand OpenSpec specifications, changes and verification, then compare lightweight Markdown for solo prototypes and collaboration.",
       "objectives": [
-        "Distinguish OpenSpec current specifications, candidate changes, design and task lists.",
-        "Map one missing-input requirement across lightweight Markdown and OpenSpec artifacts.",
-        "Choose tools around collaboration, change and maintenance costs, separating format checks from behavior verification."
+        "Distinguish current specifications, candidate changes, design, tasks and verification evidence.",
+        "Follow a restaurant example through proposal, delta, design, tasks and acceptance.",
+        "Choose Markdown or OpenSpec around collaboration, change and maintenance costs."
       ],
       "readingGuide": {
         "goal": "Distinguish OpenSpec current specifications, candidate changes, design and task lists.",
@@ -181,70 +652,137 @@
       "sections": [
         {
           "id": "purpose",
-          "heading": "Use Tools to Maintain Relationships, Not Decide Rules",
+          "heading": "The Central Question",
           "paragraphs": [
-            "OpenSpec supports AI-assisted spec-driven development, separating current specifications from proposed changes so proposals, deltas, design and tasks can be reviewed together. This is an online extension; the ten-hour workshop can first produce verifiable Markdown specifications.",
-            "This lesson pins source review to commit 3e4d5f0769e2857c8eb54f149cbf5e4f703fa04c, whose package.json reports 1.16.0. This is a documentation/source baseline, not evidence of installation, initialization or CLI execution. Check later commands and integrations against the actual version."
-          ],
-          "sourceIds": [
-            "openspec-concepts-pinned"
+            "Software work requires AI, engineers and project managers to know what the system currently promises, what may change, why it should change and how correctness will be demonstrated.",
+            "This lesson addresses five questions:",
+            "1. Why do requirements documents still need change management?\n2. What is OpenSpec, and how does it differ from ordinary Markdown files?\n3. What responsibilities belong to specs, proposal, design and tasks?\n4. How should a solo project and a collaborative project choose a workflow?\n5. How can a request be traced through implementation, testing and acceptance?"
           ]
         },
         {
           "id": "analogy",
-          "heading": "Like an Organized Revision Folder",
+          "heading": "1. Why Manage Specifications? Start with a Restaurant",
           "paragraphs": [
-            "Current instructions should remain distinct from proposed revisions. A proposal explains why, design explains how and tasks list work. After completion, preserve history and update current instructions to reflect accepted outcomes.",
-            "A small team can organize similar responsibilities with simple folders. Clear authoritative records, states and links matter more than file count. Tools still permit drift if copied rules lack synchronization ownership."
+            "Suppose you run a restaurant chain and develop an ordering system.",
+            "Its original rule is:",
+            "“An order may reach the kitchen only after the customer completes payment.”",
+            "This is a specification, often shortened to spec.",
+            "An operations manager proposes a new idea:",
+            "“Let regular customers order first and pay within 30 minutes.”",
+            "This proposed rule has not yet been approved.",
+            "If an engineer or AI changes the code immediately, it might let every customer receive food without paying, causing operational losses.",
+            "Separate these two records:",
+            "- Current specification: payment must complete before an order reaches the kitchen.\n- Candidate change: consider letting eligible regular customers order first and pay later.",
+            "A candidate change is not an approved rule.",
+            "Keeping these states separate is a central OpenSpec design principle.",
+            "Even if the manager approves the feature, questions remain: who qualifies, what credit limit applies, what happens after the deadline, who implements it and how will it be tested?",
+            "“Let regular customers order first” leaves those decisions unresolved.",
+            "OpenSpec gives these different kinds of information explicit locations, relationships and change histories, helping a team distinguish ideas, decisions and completed functionality."
           ]
         },
         {
           "id": "artifacts",
-          "heading": "Understand Each Artifact’s Responsibility",
+          "heading": "2. What Is OpenSpec?",
           "paragraphs": [
-            "The reviewed version keeps current specifications in openspec/specs/ and candidate changes in openspec/changes/. Within a change, proposal.md explains purpose/scope, design.md explains technical approach, tasks.md lists work and specs/ holds specification deltas. These paths illustrate relationships, not an OpenSpec installation in this repository.",
-            "Delta specifications describe additions, modifications and removals. A modified requirement needs its full updated meaning, not “same as before but safer.” Merging and archiving integrate changes into current specifications, still requiring human acceptance and verification rather than certifying software behavior."
+            "OpenSpec helps developers and AI coding agents manage software specifications and changes.",
+            "It is neither a programming language nor another large language model.",
+            "Think of it as:",
+            "A system for organizing current rules, revision proposals, technical plans, work lists and history for a software team."
           ],
           "blocks": [
             {
+              "kind": "flow",
+              "caption": "Figure 1 | Three Agent Instructions and Their Artifacts",
+              "description": "Arrows show the suggested sequence: review the proposal, implement and obtain test evidence, then accept and archive. Return to planning for the next change. Check slash syntax against the version and assistant. The four artifact types divide responsibilities; create design.md when needed.",
+              "items": [
+                {
+                  "title": "/opsx:propose",
+                  "body": "proposal.md | Why and what changes\ndesign.md | Technical approach\nspecs/ | Candidate specification deltas\ntasks.md | Work checklist"
+                },
+                {
+                  "title": "/opsx:apply",
+                  "body": "People review the documents first; the agent implements tasks.md.\nRun functional and negative tests and retain results."
+                },
+                {
+                  "title": "/opsx:archive",
+                  "body": "Accepted candidate deltas → current openspec/specs/\nADDED / MODIFIED / REMOVED requirements\nKeep proposal history; archive does not certify tests or deployment."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The basic artifact responsibilities are:"
+              ]
+            },
+            {
               "kind": "table",
-              "caption": "Table 1 | Artifact Responsibilities for One Stale-Result Rule",
+              "caption": "Table 1",
               "headers": [
-                "Responsibility",
-                "Reviewed OpenSpec Version",
-                "Lightweight Markdown Candidate"
+                "Artifact",
+                "Plain-language role",
+                "Main question"
               ],
               "rows": [
                 [
-                  "Current commitment",
-                  "openspec/specs/receiving/spec.md",
-                  "Confirmed R-02 in spec.md."
+                  "specs/",
+                  "Current operating rules",
+                  "How should the system behave now?"
                 ],
                 [
-                  "Why / what changes",
-                  "openspec/changes/block-stale-export/proposal.md",
-                  "C-01 in spec.md or a separate change.md."
+                  "proposal.md",
+                  "Change proposal",
+                  "Why change, and what changes?"
                 ],
                 [
-                  "Specification delta",
-                  "specs/receiving/spec.md within that change",
-                  "C-01 with old/new wording and affected scenarios."
+                  "specs/ within a change",
+                  "Difference from current rules",
+                  "Which requirements are added, modified or removed?"
                 ],
                 [
-                  "Technical approach",
-                  "design.md within that change",
-                  "Design notes: edits invalidate the checked snapshot."
+                  "design.md",
+                  "Technical plan",
+                  "How will it be implemented?"
                 ],
                 [
-                  "Implementation tasks",
-                  "tasks.md within that change",
-                  "Rules, interface, tests and review checklist."
+                  "tasks.md",
+                  "Work list",
+                  "What work remains?"
                 ],
                 [
-                  "Verification evidence",
-                  "Link actual checks and test results",
-                  "Commands, results, environment and pending items in evidence.md."
+                  "Tests and evidence",
+                  "Acceptance records",
+                  "How do we know it works?"
                 ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A tasks.md file does not itself prove that tests passed. Run the tests and retain their actual results."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Read the Folder Structure",
+              "paragraphs": [
+                "This synthetic restaurant example illustrates document contents, not output from an executed CLI. Whether design.md is needed depends on the change and version:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 1",
+              "paragraphs": [
+                "Synthetic document contents, not output from an executed command."
+              ],
+              "code": "openspec/\n├── specs/                         # current accepted specifications\n│   └── ordering/\n│       └── spec.md\n└── changes/                       # changes under discussion or implementation\n    └── allow-pay-later/\n        ├── proposal.md            # why and what changes\n        ├── specs/\n        │   └── ordering/\n        │       └── spec.md        # candidate specification delta\n        ├── design.md              # implementation approach, when needed\n        └── tasks.md               # work checklist"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Two files are both named spec.md, but their responsibilities differ.",
+                "The top-level openspec/specs/ holds the current specification, the authoritative source of requirements. The spec inside openspec/changes/ describes a difference awaiting confirmation, implementation or integration.",
+                "Identical filenames do not give the contents identical authority."
               ]
             }
           ],
@@ -253,57 +791,430 @@
           ]
         },
         {
-          "id": "commands",
-          "heading": "Distinguish Terminals, Agent Chat and Tests",
+          "id": "change-workflow",
+          "heading": "3. Work Through a Change from Proposal to Delivery",
           "paragraphs": [
-            "In the pinned documentation, openspec init and openspec validate are terminal commands. /opsx:propose, /opsx:apply and /opsx:archive run in supported AI assistant conversations; available commands also depend on workflow profiles. A slash command is not automatically an operating-system terminal command.",
-            "This lesson identifies responsibilities without inventing successful installation screenshots. Before full tool practice, the teacher should verify version, supported assistant and generated files in an isolated practice project, then follow that version’s documentation. Format validation checks structure, not pytest, AppTest, browser or task outcomes. Archiving is not proof that every test passed."
+            "The following follows a candidate restaurant-order change through its documents and verification."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 2 | Five-Step Collaboration Loop",
+              "description": "Based on the official Quickstart relationship; Apply + Verify explicitly includes this lesson’s verification responsibility. Arrows show a suggested sequence. Correct documents when assumptions fail; return from Archive to Explore for the next change. These are not tool-enforced quality gates.",
+              "items": [
+                {
+                  "title": "Explore",
+                  "body": "Clarify the problem and options."
+                },
+                {
+                  "title": "Propose",
+                  "body": "Propose a change and its requirements."
+                },
+                {
+                  "title": "Review",
+                  "body": "People review and correct the plan."
+                },
+                {
+                  "title": "Apply + Verify",
+                  "body": "Implement, check, test and retain evidence."
+                },
+                {
+                  "title": "Archive",
+                  "body": "Update current specifications and preserve history."
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Step 1: Confirm the Current Rules",
+              "paragraphs": [
+                "The current spec.md might contain:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 2",
+              "paragraphs": [
+                "Synthetic document contents, not output from an executed command."
+              ],
+              "code": "# Order-processing specification\n\n## R-01 Payment\nThe system MUST confirm successful payment\nbefore sending an order to the kitchen.\n\n## R-02 Unpaid orders\nUnpaid orders MUST NOT enter food preparation."
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose operations now wants eligible regular customers to reserve an order and pay within 30 minutes.",
+                "Clarify the rule before requesting code: reserving an order and starting food preparation are different actions."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Step 2: Create proposal.md",
+              "paragraphs": [
+                "The proposal could read:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 3",
+              "paragraphs": [
+                "Synthetic document contents, not output from an executed command."
+              ],
+              "code": "# Proposal: deferred payment for eligible regular customers\n\n## Why\nSome regular customers want to reserve an order\nand complete payment later.\n\n## Scope\n- Eligible regular customers can reserve an order for 30 minutes.\n- Cancel the reservation if unpaid at the 30-minute deadline.\n- Send the order to the kitchen only after payment.\n\n## Out of scope\n- Allowing all customers to order before payment.\n- Preparing food before payment."
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The proposal states both the intended work and its exclusions.",
+                "AI might otherwise interpret deferred payment as permission to prepare food before payment. Explicit exclusions reduce that ambiguity."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Step 3: Create a Delta Spec",
+              "paragraphs": [
+                "Delta means difference."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "An OpenSpec delta describes changes relative to the current specification. Common categories include:",
+                "- ADDED: a requirement that did not previously exist.\n- MODIFIED: a change to an existing requirement.\n- REMOVED: an existing requirement is withdrawn.",
+                "For example, add this requirement:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 4",
+              "paragraphs": [
+                "Synthetic document contents, not output from an executed command."
+              ],
+              "code": "## ADDED Requirements\n\n### Requirement: Regular-customer reservation\nThe system MUST allow eligible regular customers\nto reserve an unpaid order for at most 30 minutes.\n\n#### Scenario: Reservation expires\n- GIVEN an eligible regular customer creates an unpaid reservation\n- WHEN the 30-minute deadline is reached\n- THEN the system cancels the reservation\n- AND the order MUST NOT be sent to the kitchen"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This uses the Given / When / Then pattern introduced in M05-03.",
+                "It turns an abstract statement into concrete behavior that can become a test.",
+                "R-01 already prohibits sending an unpaid order to the kitchen. Do not add a duplicate rule. Add the new reservation behavior and verify that it preserves R-01.",
+                "This helps prevent duplicated or contradictory requirements."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Step 4: Create design.md",
+              "paragraphs": [
+                "Now consider implementation."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "For example:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 5",
+              "paragraphs": [
+                "Synthetic document contents, not output from an executed command."
+              ],
+              "code": "# Technical design\n\n1. Add the reserved order state.\n2. Store the reservation deadline in expires_at.\n3. Cancel unpaid reservations at expiry.\n4. Recheck payment before sending an order to the kitchen.\n5. Log every reservation and cancellation event."
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Keep these responsibilities distinct:",
+                "- Spec states what the system must do.\n- Design explains how engineers intend to implement it.",
+                "Switching from Python to Java may change the design while preserving the business rule that unpaid orders must not reach the kitchen.",
+                "Keep specifications independent of unnecessary implementation choices."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Step 5: Create tasks.md",
+              "paragraphs": [
+                "Break the design into concrete work:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example 6",
+              "paragraphs": [
+                "Synthetic document contents, not output from an executed command."
+              ],
+              "code": "# Development tasks\n\n- [ ] Add the reservation state\n- [ ] Implement the reservation deadline\n- [ ] Add the payment-status check\n- [ ] Build the reservation interface\n- [ ] Test successful reservation\n- [ ] Test reservation expiry\n- [ ] Test that unpaid orders cannot reach the kitchen\n- [ ] Review the code changes"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This document can define the AI coding agent’s work scope.",
+                "The checklist tracks work; acceptance still requires the behavior defined in specs and actual evidence.",
+                "If AI checks every task without running tests, that records a completion claim without proving correct functionality."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Step 6: Verify Before Updating Current Specifications",
+              "paragraphs": [
+                "Check at least three distinct kinds of evidence:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 2",
+              "headers": [
+                "Check",
+                "Purpose"
+              ],
+              "rows": [
+                [
+                  "Document-format validation",
+                  "Do the documents meet the tool’s structural requirements?"
+                ],
+                [
+                  "Functional and negative tests",
+                  "Does the implementation behave as specified?"
+                ],
+                [
+                  "Human review",
+                  "Are the business rules, design and change acceptable?"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Example tests include:",
+                "“An ordinary, non-eligible customer attempting to reserve an unpaid order must be rejected.”",
+                "“An eligible regular customer’s unpaid reservation is canceled after the 30-minute deadline.”",
+                "“An unpaid order must not reach the kitchen even when a user bypasses the frontend and calls the API directly.”",
+                "The final case checks the backend boundary: a disabled interface action does not establish server-side enforcement.",
+                "After the necessary verification and appropriate approval, integrate the accepted change into current specifications and archive the proposal and history.",
+                "Archive is a specification-management operation. It does not certify security, quality or deployment success."
+              ]
+            }
           ],
           "sourceIds": [
-            "openspec-start-pinned"
+            "openspec-start-pinned",
+            "openspec-quickstart-20261111"
           ]
         },
         {
           "id": "choose",
-          "heading": "Choose a Workflow for the Maintenance Problem",
+          "heading": "4. When Is Lightweight Markdown Enough?",
           "paragraphs": [
-            "For one person, one intake prototype and few changes, spec.md plus change/evidence fields may suffice. With several collaborators reviewing multiple proposals and deltas, assess whether OpenSpec reduces synchronization work and whether the team can maintain formats and tooling. This is a course decision framework, not a universal tool ranking.",
-            "Before adoption, walk one requirement through rule confirmation, change review, evidence storage and current-spec updates. If responsibilities are unclear, resolve them first. Installation does not decide business authority, execution permissions or data publication scope."
+            "Choosing a maintainable workflow is another major lesson objective.",
+            "Software development does not require OpenSpec.",
+            "For a small tool used only by you, with simple functionality and infrequent changes:",
+            "One Markdown file can record the following:"
           ],
           "blocks": [
             {
-              "kind": "cards",
-              "caption": "Figure 1 | Responsibilities Shared by Both Approaches",
-              "description": "The cards compare artifact management in parallel. OpenSpec is not an inevitable next stage after lightweight Markdown.",
-              "items": [
-                {
-                  "title": "Lightweight Markdown",
-                  "body": "Use an explicit authoritative specification, change history and evidence links for a small project instead of chat-only decisions."
-                },
-                {
-                  "title": "OpenSpec",
-                  "body": "Structure current specifications and candidate changes for collaboration, still reviewing content, diffs, tasks and actual verification."
-                }
+              "kind": "step",
+              "heading": "Example 7",
+              "paragraphs": [
+                "Synthetic document contents, not output from an executed command."
+              ],
+              "code": "# spec.md\n\n## Current specification\nR-01: Missing data MUST NOT be marked complete.\n\n## Change history\nC-01: Add a missing-data reminder.\n\n## Design\nShow a text reminder for missing fields.\n\n## Tasks\n- [ ] Add the missing-data check\n- [ ] Add the interface reminder\n- [ ] Write tests\n\n## Verification record\nStatus: not yet tested"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A well-maintained file can be sufficient without creating extra files for their own sake."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "A Practical Selection Matrix",
+              "paragraphs": [
+                "The following explains each document responsibility."
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 3",
+              "headers": [
+                "Condition",
+                "Lightweight Markdown",
+                "OpenSpec"
+              ],
+              "rows": [
+                [
+                  "One developer",
+                  "Usually start here",
+                  "Optional"
+                ],
+                [
+                  "Few, simple requirements",
+                  "Usually start here",
+                  "Optional"
+                ],
+                [
+                  "Frequent changes to existing requirements",
+                  "Possible with disciplined maintenance",
+                  "Worth evaluating"
+                ],
+                [
+                  "Several people changing several features",
+                  "Synchronization burden may grow",
+                  "Worth evaluating"
+                ],
+                [
+                  "Reasons for each change must be traceable",
+                  "Record manually",
+                  "Explicit change structure"
+                ],
+                [
+                  "Team cannot maintain additional tooling",
+                  "Often suitable",
+                  "May add maintenance burden"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Compare the complexity of specification management with the extra tooling cost.",
+                "The questions to manage are:",
+                "“Which rules have been accepted? Who can change them? When did they change? How do we check that existing behavior remains intact?”",
+                "If Markdown answers those questions clearly, immediate adoption is unnecessary. OpenSpec’s structure may help when collaboration repeatedly confuses versions, deltas and reviews."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "5. Does This Apply to Other Industries?",
+          "paragraphs": [
+            "The same specification-management principles apply across industries; actual rules and risks depend on context. These are synthetic teaching examples."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 4",
+              "headers": [
+                "Industry",
+                "Current rule",
+                "Candidate change",
+                "Important verification"
+              ],
+              "rows": [
+                [
+                  "Healthcare",
+                  "Show allergy records to clinical staff",
+                  "Add selected drug-interaction alerts",
+                  "High-risk situations must not be missed"
+                ],
+                [
+                  "Banking",
+                  "Specified transactions require approval",
+                  "Automate eligible small transactions",
+                  "Required authorization cannot be bypassed"
+                ],
+                [
+                  "E-commerce",
+                  "Create shipment orders after payment",
+                  "Add preorder reservations",
+                  "Prevent overselling and duplicate charges"
+                ],
+                [
+                  "Manufacturing",
+                  "Stop specified operations for abnormal equipment",
+                  "Add severity levels and maintenance notices",
+                  "Do not incorrectly release serious abnormalities"
+                ],
+                [
+                  "Education",
+                  "Students see grades after teacher publication",
+                  "Add grade-review requests",
+                  "Do not modify final grades without authority"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose a bank’s current rule requires two reviewers for each specified transaction.",
+                "Someone proposes: “Let AI automatically approve transactions below a certain amount.”",
+                "A direct coding request may focus only on the amount threshold, overlooking authorization, aggregate limits, anomaly detection and audit responsibility.",
+                "Confirm the business rules, applicable legal requirements and authority first. Specify permitted and prohibited behavior, then test it. OpenSpec manages decision documents; it cannot decide their legal or organizational authority."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "commands",
+          "heading": "6. Five Common Confusions",
+          "paragraphs": [
+            "Distinguish these five concepts when interpreting documents and execution evidence."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "1. Specification and Prompt",
+              "paragraphs": [
+                "A prompt is what you tell AI in a particular interaction. A specification is a maintained set of behavioral requirements that people can review and use for acceptance."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "2. Specification and Reality",
+              "paragraphs": [
+                "Code can contain a defect even if its specification prohibits exporting stale data. Specifications state commitments; they do not prove observed behavior."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "3. A Bug Does Not Always Require a Specification Change",
+              "paragraphs": [
+                "If the specification already prohibits stale exports but code permits them, fix and test the implementation. Do not create a duplicate requirement."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "4. Terminal Commands and Agent Instructions",
+              "paragraphs": [
+                "In the reviewed version, openspec validate is a terminal command, while /opsx:propose is a workflow instruction in a supported AI assistant. Check actual version and tool support before use."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "5. OpenSpec Does Not Require Waterfall Development",
+              "paragraphs": [
+                "Proposals, specifications and designs can be revised iteratively. If implementation exposes a mistaken assumption, correct the documents and continue from the revised plan. The official material also addresses iteration and changes to existing systems."
               ]
             }
           ]
         },
         {
           "id": "exercise-notes",
-          "heading": "Map Artifacts Before Installing Tools",
+          "heading": "7. A Minimal Exercise You Can Do Now",
           "paragraphs": [
-            "Use the existing rule that edited input cannot reuse old complete results. Draft tabletop C-01 with current commitment, candidate delta, design, tasks and pending evidence. If the specification already includes it, investigate implementation drift rather than inventing a new feature.",
-            "Checking every tasks.md box is not acceptance. Checklists report work status and still need actual files/results. Finishing this lesson establishes artifact understanding and tool-selection reasoning, not mastery of every OpenSpec command or actual agent collaboration."
+            "You can practice the concept without installing OpenSpec, Node.js or an AI agent.",
+            "Choose a simple rule, such as “editing input invalidates the previous check result,” and record these questions in spec.md:",
+            "- What is the current specification?\n- Is this a new requirement or a bug violating an existing rule?\n- If it is a change, what are the old and new requirements?\n- What engineering approach is proposed?\n- What work remains?\n- What actual verification evidence exists, and what is untested?",
+            "Compare maintaining one Markdown file with using OpenSpec’s separate folders. Which is easier to maintain for this project?",
+            "This is a document-comparison exercise, not installation, CLI execution or completed collaboration with a real agent.",
+            "The source list links to the official OpenSpec Quickstart. This lesson retains the 2026-11-05 reviewed commit 3e4d5f0769e2857c8eb54f149cbf5e4f703fa04c (package.json: 1.16.0) as its fixed baseline; no installation or CLI execution is claimed. The 2026-11-11 Quickstart still presents five steps, but its current examples use natural-language requests, direct skill invocation varies by tool and design.md is created when needed. Check the pictured slash commands against the actual version and supported assistant."
           ],
-          "blocks": [
-            {
-              "kind": "step",
-              "heading": "Lightweight Change Record for One Rule",
-              "paragraphs": [
-                "The original Traditional Chinese tabletop C-01 template records the existing edit-invalidation commitment, potential implementation drift, consistency goal, whether R-02 already exists, snapshot/export design notes, tasks, actual-or-pending evidence, acceptance/history updates and tool-selection reasons. OpenSpec is not enabled by this exercise; adapt the record without inventing actual results."
-              ],
-              "code": "# C-01 文件對照（紙上練習，未啟用OpenSpec）\n目前承諾：修改輸入後舊結果失效\n候選問題：若程式仍允許舊完整匯出，屬實作偏離\n提案目的：恢復目前輸入與報告的一致\n規格差異：已含R-02則不重複新增；缺少時先確認\n設計註記：清除舊檢查快照；匯出端重驗證\n任務：核對規則、介面、測試及Diff\n證據：實際命令、結果、環境；未做就寫待驗\n接受與彙整：按實際決定更新目前規格與歷史\n工具選擇：寫出輕量Markdown或OpenSpec的理由"
-            }
+          "sourceIds": [
+            "openspec-start-pinned",
+            "openspec-quickstart-20261111"
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "8. Understanding Check: Make the Judgment",
+          "paragraphs": [
+            "Use this synthetic scenario. Answer for yourself, then expand the reference explanations at the bottom of the page. This page does not submit answers, assign scores or record learning completion.",
+            "Scenario: a hospital laboratory-report system.",
+            "The current specification states: “A report can be marked complete only when all required test items are present.”",
+            "A test finds that a report can still be exported as complete when one required value is missing.",
+            "The hospital also proposes a new requirement: “Automatically notify staff when a test value exceeds a critical-value threshold.”",
+            "Reference explanations are available under the page’s understanding checks.",
+            "The main idea to retain is:",
+            "Maintainable AI-assisted engineering makes the reason, specification, change and supporting evidence traceable alongside the code."
           ]
         }
       ],
@@ -317,119 +1228,40 @@
         "expected": "spec.md with an artifact-relationship comparison, adoption reasons and explicit unexecuted-tool boundaries.",
         "check": "Distinguish current specs from candidate deltas and terminal from assistant commands. Invent no CLI or test results.",
         "cleanup": "Keep tabletop and not-enabled labels. Do not change project configuration merely to finish this concept exercise. Use synthetic data only."
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M05-C05-Q04",
+          "prompt": "Question 1: Is the incomplete report a new feature requirement or an implementation defect? Why?",
+          "answer": [
+            "This is an implementation defect: the current specification already requires all mandatory items before marking a report complete. Fix completeness and export enforcement, test missing-value cases and avoid a duplicate requirement."
+          ]
+        },
+        {
+          "id": "AASE-M05-C05-Q05",
+          "prompt": "Question 2: Which documents should record critical-value notification, and what does each document do?",
+          "answer": [
+            "proposal.md explains the purpose and scope of critical-value notifications. The change’s specs/ defines new behavior and testable scenarios. When needed, design.md records notification mechanisms and technical decisions. tasks.md lists implementation, testing and review. Current openspec/specs/ remains authoritative until accepted changes are integrated through the team’s acceptance process."
+          ]
+        },
+        {
+          "id": "AASE-M05-C05-Q06",
+          "prompt": "Question 3: If AI checks every tasks.md item, can the feature be accepted immediately? What evidence is still needed?",
+          "answer": [
+            "Checked tasks record work status. Still inspect document format, actual functional and negative tests, code and human review. Retain commands, environment, results and unverified items. Archiving cannot replace this evidence."
+          ]
+        },
+        {
+          "id": "AASE-M05-C05-Q07",
+          "prompt": "Question 4: Would you choose Markdown or OpenSpec for one engineer maintaining a prototype, and for five engineers maintaining a production system? Why?",
+          "answer": [
+            "For a simple, infrequently changed solo prototype, usually start with Markdown. Five people changing several production features may evaluate OpenSpec to reduce synchronization costs around deltas and review. Headcount alone does not decide: consider complexity, change frequency, acceptance responsibility and tooling maintenance."
+          ]
+        }
+      ]
     }
   },
-  "checks": [
-    {
-      "id": "AASE-M05-C05-Q01",
-      "answer": 1,
-      "text": {
-        "zh": {
-          "prompt": "OpenSpec的目前規格與候選變更，哪個理解正確？",
-          "options": [
-            "所有候選一建立就算已接受",
-            "目前規格記承諾，候選變更另記目的、差異及工作，接受與驗證仍需核對",
-            "只要有tasks.md就不需規格",
-            "所有工具檔案都等同測試證據"
-          ],
-          "rationales": [
-            "候選狀態不能自動升為已接受。",
-            "資料分工有助審查，但不會取代確認與驗證。",
-            "任務清單不能完整定義行為。",
-            "文件角色不同，也可能根本未執行測試。"
-          ]
-        },
-        "en": {
-          "prompt": "How should current OpenSpec specifications and proposed changes be understood?",
-          "options": [
-            "Creating any candidate makes it accepted.",
-            "Current specs record commitments; changes separately record purpose, deltas and work, still requiring acceptance and verification.",
-            "tasks.md removes the need for specifications.",
-            "Every tool artifact is test evidence."
-          ],
-          "rationales": [
-            "A candidate does not automatically become accepted.",
-            "Separation supports review without replacing confirmation and verification.",
-            "A task list does not fully define behavior.",
-            "Artifacts have different roles and tests may not have run."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M05-C05-Q02",
-      "answer": 2,
-      "text": {
-        "zh": {
-          "prompt": "OpenSpec格式驗證通過，可直接證明什麼？",
-          "options": [
-            "正式系統完全安全",
-            "真實使用者都能完成任務",
-            "指定文件符合該格式檢查；程式行為仍需對應測試",
-            "所有Agent修改都正確"
-          ],
-          "rationales": [
-            "格式檢查不涵蓋完整安全。",
-            "沒有真人任務證據。",
-            "結論限於檢查實際涵蓋範圍。",
-            "修改仍需審查與驗證。"
-          ]
-        },
-        "en": {
-          "prompt": "What does passing OpenSpec format validation directly establish?",
-          "options": [
-            "Complete production security.",
-            "Every actual user can finish tasks.",
-            "The specified documents satisfy that format check; behavior still needs corresponding tests.",
-            "Every agent change is correct."
-          ],
-          "rationales": [
-            "A format check does not cover complete security.",
-            "There is no participant task evidence.",
-            "The conclusion stays within the check’s coverage.",
-            "Changes still need review and verification."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M05-C05-Q03",
-      "answer": 3,
-      "text": {
-        "zh": {
-          "prompt": "本章完成紙上文件對照後，應如何記錄？",
-          "options": [
-            "已學會並實測所有OpenSpec命令",
-            "已正式啟用OpenSpec",
-            "已完成真實Agent部署",
-            "完成文件分工與選擇練習；CLI、整合與實作保持未執行"
-          ],
-          "rationales": [
-            "練習未執行所有命令。",
-            "沒有修改設定或初始化。",
-            "紙上練習不代表真實部署。",
-            "狀態符合實際完成範圍。"
-          ]
-        },
-        "en": {
-          "prompt": "How should completion of this tabletop comparison be recorded?",
-          "options": [
-            "All OpenSpec commands learned and tested.",
-            "OpenSpec formally enabled.",
-            "Actual agent deployment completed.",
-            "Artifact-role and selection exercises complete; CLI, integration and implementation remain unexecuted."
-          ],
-          "rationales": [
-            "The exercise did not execute all commands.",
-            "No configuration or initialization occurred.",
-            "Tabletop work is not actual deployment.",
-            "This matches status to work actually completed."
-          ]
-        }
-      }
-    }
-  ],
+  "checks": [],
   "translations": {
     "en": {
       "status": "published",
