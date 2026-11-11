@@ -24,6 +24,7 @@ try {
       assert.equal(await entry.count(),1);await entry.click();
       assert.equal(await page.locator('h1').textContent(),title);
       await page.locator(`.reading-list a[href="${prefix}/ceh-notes/${note.date}/"]`).click();
+      await page.waitForLoadState('load');
       assert.equal(await page.locator('h1').textContent(),note.text[lang].title);
       if(width===320){
         const bootstrap=(await page.locator('script').allTextContents()).find(s=>s.includes('kit.start'));
