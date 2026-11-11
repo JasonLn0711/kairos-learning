@@ -760,6 +760,14 @@ v1.1.1／revision 5 保留原發布日與六個既有 section 錨點；[來源�
 
 OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
 
+## AASE M08-01｜驗證證據完整供稿（2026-11-11）
+
+v1.1.0／revision 4 的[來源對照](sources/aase/m08-01/replacement-2026-11-11/source-map.md)保存完整原文、三PNG、前版、雙語稿及SHA256SUMS。八section承接導言與七節，保留五驗證面向、五步紀錄流程、兩表、完整verification-notes.md及三道三選項原題。六個既有錨點與原發布日保留；新題Q04–Q06使用原生收合解析，qa=[]。
+
+`aase_m0801_content.py`生成正式JSON；`VerificationEvidenceDiagram`呈現規格＋五平行面向cards（6節點）、三證據狀態cards（3節點）、協作flow（4節點／3箭頭）。前兩圖不把平行面向或狀態串接成流程。`aase.ts`限制圖的位置、種類、數量與欄位；六SVG由同源JSON經`aase_m0801_svg.py`輸出並以固定白名單檢查。
+
+生成器`--check`、`tests/aase-m0801-replacement.test.ts`及`playwright.aase-m0801.config.ts`檢查同步、固定圖契約、全文順序、四尺寸／200%、無JS、鍵盤、搜尋及SVG下載位元組／文字邊界。正式站使用`AASE_BASE_URL=https://learn.cs-kairos.com`；實測與發布狀態見[回執](releases/2026-11-11-aase-m08-01-replacement.md)。
+
 ## AASE M07-05 預覽與匯出供稿抽換（2026-11-11）
 
 v1.1.0／revision 4 保留原發布日與六錨點；[來源對照](sources/aase/m07-05/replacement-2026-11-11/source-map.md)保存原文、兩PNG、前版與完整雙語JSON稿。`aase_m0705_content.py --check`核對十二節、三表、兩圖及四開放題；qa維持空陣列。
@@ -809,3 +817,21 @@ v1.1.0 保留原發布日與六個舊錨點，十節與導言完整雙語由 `sc
 AASE-M06-C05 v1.1.0 保留原日期、URL 與六個舊錨點，導言及八節完整雙語、六表、五個深層小節與三題新檢核。原文、三 PNG、前版及採用差異見[來源對照](sources/aase/m06-05/replacement-2026-11-11/source-map.md)。`aase_m0605_content.py` 由完整稿及 figures.json 生成正式 JSON，`aase_m0605_svg.py` 由正式資料生成六個受限 SVG，兩者支援 `--check`。
 
 `SessionAccessDiagram.svelte` 僅處理本課四因素、Session／權限條件分支與瀏覽器／伺服器分工；資料驗證限定 cards 與 4／6／3 節點，不接受任意標記。全文與搜尋共用資料，手機重排保持拒絕與許可的條件標籤。瀏覽器檢查為 `playwright.aase-m0605.config.ts`，正式站指定 AASE_BASE_URL；實測及發布證據見[回執](releases/2026-11-11-aase-m06-05-replacement.md)。候選 architecture.md 保持待實作／待驗證，不宣稱 Streamlit 原型具備正式登入或多人隔離。
+
+## AASE M06-03｜C4 四視角與七圖（2026-11-11）
+
+`AASE-M06-C03` v1.1.0 的[完整來源與逐節對照](sources/aase/m06-03/replacement-2026-11-11/README.md)承接導言、原八章、四層小節與 Session State 小節、四表及原三題三選項。原六錨點、發布日與課次 URL 保留；architecture.md 模板同行附中英，code 兩語一致。
+
+`C4ViewsDiagram.svelte` 僅用於本課固定七圖：放大層級、邏輯角色與三實例、C1 邊界、C2 應用與儲存、程序內四元件、Streamlit 程序與外部下載、四階段盤點。依序節點數4／4／3／5／4／6／4；aase.ts限制圖位置、cards種類、數量與文字欄位。並列副本／元件不加時序箭頭，支付及下載關係明列真正端點，窄欄保留內外與程序包含關係。
+
+正式 JSON 同源產生 HTML／搜尋／十四份 SVG；`python3 scripts/aase_m0603_svg.py --check`核對衍生檔。`tests/aase-m0603-replacement.test.ts`檢查原件／版本／錨點／三選項、範例執行及非法資料拒絕；`playwright.aase-m0603.config.ts`核對全文、四尺寸／200%／無JS、鍵盤、SVG字框及下載。正式站設定 `AASE_BASE_URL=https://learn.cs-kairos.com`。實際檢查與發布狀態見[回執](releases/2026-11-11-aase-m06-03-replacement.md)。
+
+## AASE M06-01｜流程與架構完整抽換（2026-11-11）
+
+本課v1.1.0使用既有sections／prose／step／table／cards／flow；兩語各導言加八節、三表、兩Python範例、三題三選項。`FlowArchitectureDiagram.svelte`依本課固定五圖呈現餐廳時序、三個平行接收者、完整性是／否與重查回圈、Streamlit主機內同程序／規則／狀態、C4逐層縮放；窄版保留關係文字及分組，下載SVG共用正式JSON。驗證器限定本課revision>=4的位置、種類、節點數5／5／7／6／4及欄位。
+
+維護`python3 scripts/aase_m0601_content.py --check`、`python3 scripts/aase_m0601_svg.py --check`、`tests/aase-m0601-replacement.test.ts`及`playwright.aase-m0601.config.ts`；正式站設定AASE_BASE_URL。完整供稿、舊版、圖意差異及逐小節採用在[來源對照](sources/aase/m06-01/replacement-2026-11-11/source-map.md)，本輪各層證據在[回執](releases/2026-11-11-aase-m06-01-replacement.md)。
+
+## AASE M08-06｜資安負向情境與回歸證據（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六錨點；導言及原九節、五表、七個 code 區塊、三題 4／4／3 選項完整雙語抽換。原稿、參考圖、前版、逐小節採用與截斷程式的修正見[來源紀錄](sources/aase/m08-06/replacement-2026-11-11/README.md)。`aase_m0806_content.py --check`核對成稿及正式 JSON；`aase_m0806_svg.py --check`核對兩語 SVG。五步垂直 flow 由 RegressionEvidenceDiagram 呈現，最後淡綠，aase.ts 限制一圖五節點及文字欄位。單元 tests/aase-m0806-replacement.test.ts；瀏覽器 playwright.aase-m0806.config.ts。獨立 pytest 三例只驗非空字串與允許欄位，多人授權保持未實作、未驗證。實測及正式站回讀見[回執](releases/2026-11-11-aase-m08-06-replacement.md)。
