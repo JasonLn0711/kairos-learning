@@ -103,6 +103,10 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='commands'&&i===0?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid environment setup figure');
       }
       if(l.id==='AASE-M01-C03'&&['differences','identity'].includes(s.id)){const cards=(s.blocks??[]).filter(b=>b.kind==='cards');if(cards.length!==1||cards[0].kind!=='cards'||cards[0].items.length!==(s.id==='differences'?6:3))fail('invalid organization teaching layout');}
+      if(l.id==='AASE-M08-C06'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(s.id==='analogy'?1:0)||figures.some(f=>f.kind!=='flow'||!keys(f,['kind','caption','description','items'])||f.items.length!==5||f.items.some(item=>!keys(item,['title','body']))))fail('invalid regression evidence figure');
+      }
       if(l.id==='AASE-M01-C04'&&['analogy','workflow','testing'].includes(s.id)){const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');const figure=figures[0];if(figures.length!==1||!figure||(figure.kind!=='cards'&&figure.kind!=='flow')||figure.items.length!==(s.id==='analogy'?2:s.id==='workflow'?5:3)||figure.kind!==(s.id==='workflow'?'flow':'cards'))fail('invalid requirements interview figure');}
       if(l.id==='AASE-M02-C01'&&l.revision>=4){
         const expected:Record<string,number>={pipeline:6,units:2,analogy:4,attention:3,'attention-example':2,limits:4};
@@ -201,6 +205,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='workflow'?'flow':'cards')||f.items.some(item=>!keys(item,['title','body'])||/[<>]/.test(item.title+item.body))))fail('invalid information hierarchy figure');
         if(s.id==='navigation'){const f=figures[0];if(f?.kind==='cards'){const counts=f.items.slice(1).map(item=>sitemapGroups(item.body).map(g=>g.children.length));if(JSON.stringify(counts)!=='[[3,0,0],[0,0,0,0],[0,0,0,0,0,0],[2,3,0]]')fail('invalid sitemap relationships');}}
+      }
+      if(l.id==='AASE-M06-C01'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='analogy'?[5,5]:s.id==='runtime'?[7,6]:s.id==='c4'?[4]:[];
+        if(figures.length!==expected.length||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[i]||f.kind!==(s.id==='analogy'&&i===0?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid flow architecture figure');
       }
       if(l.id==='AASE-M04-C01'){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
