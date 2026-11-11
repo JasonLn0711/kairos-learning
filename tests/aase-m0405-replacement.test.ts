@@ -34,3 +34,22 @@ test('M04-05 rejects extra nodes, flows, unknown markup and bilingual drift; kee
   const c=build(l);assert.equal(c.forLanguage('en')!.searchEntries.length,0);assert.equal(c.forLanguage('zh')!.searchEntries.length,gate==='translation'?1:0);
  }
 });
+test('every supplied Chinese paragraph and table cell reaches the body, with explicit editorial replacements',()=>{
+ const source=readFileSync(root+'pasted-text-1.txt','utf8');
+ const actual=build(lesson).forLanguage('zh')!.searchEntries[0].text;
+ const norm=(s:string)=>s.replace(/[`#\s|→▸▾［］：:。；，、？（）「」！？]/g,'');
+ const replacements:Record<string,string>={
+  'Nielsen Norman Group 的原始研究特別強調':'Nielsen Norman Group 的設計文章說明',
+  '教學示意圖：四張卡片是不同情境，不是每次執行必然依序經過的四個步驟。':'四張卡是不同情境，並非每次操作必然經過的四個步驟。',
+  '這是整堂課最容易被低估、但非常重要的部分。':'系統狀態需要在介面中明確呈現。',
+  'W3C 的 WCAG 規範也要求不能只用顏色傳達資訊；對於會動態更新的系統狀態，還應讓輔助科技適當得知變化。':'W3C 的 WCAG 規範要求資訊不能只用顏色傳達。動態狀態訊息應能由程式判定，讓輔助科技在不移動焦點的情況下適當通知使用者；輸入欄位則需要可辨識的標籤或指示。'
+ };
+ let checked=0;
+ for(let paragraph of source.split(/\n\s*\n/)){
+  if(/^\[(image|Progressive|7 SaaS|Accordions)/.test(paragraph)||/^# AASE|^AI 協作/.test(paragraph)||['CS Kairos Learn','NN/G','W3C+2','11','提交三題作答並取得解析&#x20;'].includes(paragraph.trim()))continue;
+  for(const [old,value]of Object.entries(replacements))paragraph=paragraph.replace(old,value);
+  const tokens=paragraph.startsWith('|')?paragraph.split('\n').filter(row=>!/^\|[\s|:-]+\|$/.test(row)).flatMap(row=>row.split('|').map(x=>x.trim()).filter(Boolean)):[paragraph];
+  for(const token of tokens){assert.ok(norm(actual).includes(norm(token)),`Missing source teaching: ${token}`);checked++;}
+ }
+ assert.ok(checked>140,`Only ${checked} source units checked`);
+});
