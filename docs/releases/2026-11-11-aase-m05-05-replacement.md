@@ -24,7 +24,7 @@
 
 ## 發布
 
-尚待必要閘門、提交推送、Pages 成功及正式頁與圖檔回讀。工作位於隔離工作樹 `/tmp/kairos-aase-m0505`，原工作目錄的其他教材修改保持原樣。
+v1.1.0 已經 PR #105 合併並部署，後續連線排版 patch 的發布回讀見下。工作位於隔離工作樹 `/tmp/kairos-aase-m0505`，原工作目錄的其他教材修改保持原樣。
 
 實機、讀者理解、真實 OpenSpec CLI 操作與真實餐廳／醫療／銀行系統行為未驗；本次交付為教材抽換與網站發布。
 
@@ -54,3 +54,18 @@
 原工作目錄的無關髒檔未改動；沒有合併或提交那些未完成修改。網站、來源與詳細驗證由 kairos-learning 擁有。實機與讀者理解保留待驗，沒有推定學員完成。
 
 第二次整合保留遠端 PR #104／`4c38e0d` 的 M05-01，merge commit `f4cd73c`。整合後歷史測試的英語取樣也改回已保存前版，最終 `pnpm test` 315/315、型別 0 errors／0 warnings、兩語 browser 2/2（含 v1.1.0／修訂日期）、publication-boundary 與 validate:release 通過。M05-01 原始供稿有既存 EOF 空行，整合差異檢查曾指出；本次觸及檔案的 `git diff --check` 通過，沒有為此改寫其他課原稿。
+
+
+## v1.1.0 正式發布與回歸發現
+
+[PR #105](https://github.com/JasonLn0711/kairos-learning/pull/105) 已合併至 main，部署來源 `8564c51f528ca63f8cc4936bbb9f5f074ea73a0d`；[PR CI 42988649083](https://github.com/JasonLn0711/kairos-learning/actions/runs/42988649083) 與 [Pages 42988941849](https://github.com/JasonLn0711/kairos-learning/actions/runs/42988941849) 成功。Pages 完成於 2026-11-11 16:43:59 +08:00；正式站專屬兩語 2/2 通過，全文、兩圖、四 SVG bytes／bounds／overlap 與鍵盤／無JS均回讀。固定提交的 package 1.16.0、三個 Agent 指令與五份文件責任也再次回讀官方原始碼確認。
+
+全課程遠端回歸執行完成（50 passed、12 failed、3 skipped；3 個本機 Streamlit 流程依遠端模式設計跳過）。其中 M05-05 在 768px 的兩個 li 包含右側裝飾箭頭而超出節點 clientWidth；頁面無水平溢出，仍改進此圖的節點幾何。其餘未通過課次與錯誤另附最終 checks 紀錄，沒有宣稱全站驗收通過。
+
+工作坊 Python 原先未在隔離工作樹安裝；已用既有 requirements 建立忽略的 `.local/aase-venv` 並執行 reference pytest，23/23 通過，工作坊 ZIP 30 個檔案及 SHA-256 與既有產物一致。此環境與套件不進 Git 或網站。
+
+## v1.1.1 節點連線排版修正
+
+版本 v1.1.0 → v1.1.1，revision 4 → 5，同日修訂；保留原發布日。箭頭改置於下一張卡片前方，避免算入上一張卡片的水平 scrollWidth；三欄／五列、六支箭頭、流向、資料及 SVG 均不變。專屬測試新增每個節點在四尺寸／200% 下的水平溢出斷言；通用既有測試不變。
+
+本機 v1.1.1 專屬 2/2、通用本篇 1/1、單元與型別及 release 結果通過；正式站與 CI 結果待本 patch 部署後補記。

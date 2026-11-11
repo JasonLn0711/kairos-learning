@@ -44,10 +44,12 @@
 
 正式頁：[繁體中文](https://learn.cs-kairos.com/courses/aase/v1/m06/concepts/m06-02/)、[English](https://learn.cs-kairos.com/en/courses/aase/v1/m06/concepts/m06-02/)。於`2026-11-11T16:50:26+08:00`完成正式站Playwright全套回讀：2項通過，0失敗／略過，23.5秒。兩語逐段全文與順序、五表、四圖端點及關係、三題解析、搜尋、四尺寸、200%文字、無JS、鍵盤與全部八份SVG均通過；SVG實際下載與本機來源逐位元組相同，無字框越界或文字重疊。
 
-正式回讀命令：`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0602.config.ts`。本機與正式結果分開保存於checks.json。正式證據產生後，僅整合遠端兩份M05-02文件回執提交，應用與本課資產沒有變動；本回執以`[skip ci]`文件提交補記，保留已驗證部署。
+正式回讀命令：`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0602.config.ts`。本機與正式結果分開保存於checks.json。正式證據產生後，快轉整合遠端至`61dd7d1`，保留M05-02回執及M07-02並行更新。差異檢查確認本課JSON、架構驗證器與八份SVG沒有變動；共用AaseLesson僅增加M07-02分支，M06-02接線保留。本回執以`[skip ci]`文件提交補記；已驗證部署提交仍明確記為616a293，不將M07-02後續部署視為本次已驗證結果。
 
 本次完整本機命令：`pnpm run validate:content`、`pnpm test`、`pnpm run check`、`python3 -m unittest discover -s scripts -p test_validation_html.py`、`node scripts/check-publication-boundary.mjs`、`pnpm run validate:release`、`pnpm audit --audit-level=high`、`pnpm exec playwright test --config playwright.aase-m0602.config.ts`，另有兩個M06-02產生器的`--check`。
 
 ## 待驗與責任邊界
 
 未執行實體手機、完整螢幕閱讀器或真人理解度研究；瀏覽器模擬與自查解析不作學習完成證據。本次只涉及M06-02及必要共用模型／呈現接線，未宣稱全站教材已改善。原始來源、實作與驗收由kairos-learning持有；Planning僅承接定位、聚合狀態及下一關。
+
+發布回執快轉整合後，再驗目前工作樹：325項單元全數通過，型別0錯誤0警告；M06-02來源／SVG同步及模型拒絕檢查也在該套件內通過。此輪只證明整合後本機狀態，正式站結果仍以上述實測時間與部署提交為準。
