@@ -24,10 +24,18 @@
 | A11Y-01–03 | 語意、下載、焦點、原生收合、局部捲動 | 通過Tab／Shift+Tab下載焦點、Enter開圖、Enter／Space原生解析、表格／程式碼局部捲動及無JS原生解析。 |
 | INT-01 | 參數互動 | 不適用；本課無模擬器或分數計算。 |
 
-已通過：原基線283項、整合遠端各章後337項單元測試；內容驗證；svelte-check零錯誤／零警告；publication-boundary的第二概念、draft／future與英文課程關閉實際建置；validate:release。另通過三項AASE雙語回歸（本課、英文目錄／搜尋與下載、CEH共用框架計算樣式）、共用HTML單元與高嚴重度依賴稽核。另通過22項CEH雙語、無JS、原生答案、舊路由及圖檔回歸。合併修正後重跑內容／型別／全單元、完整publication-boundary、release與本課瀏覽器。
+已通過：原基線283項、推送前整合版343項單元測試，正式部署CI另通過348項；內容驗證；svelte-check零錯誤／零警告；publication-boundary的第二概念、draft／future與英文課程關閉實際建置；validate:release。另通過三項AASE雙語回歸（本課、英文目錄／搜尋與下載、CEH共用框架計算樣式）、共用HTML單元與高嚴重度依賴稽核。另通過22項CEH雙語、無JS、原生答案、舊路由及圖檔回歸。合併修正後重跑內容／型別／全單元、完整publication-boundary、release與本課瀏覽器。
 
-瀏覽器入口：`pnpm exec playwright test --config playwright.aase-m0601.config.ts`。正式站設定`AASE_BASE_URL=https://learn.cs-kairos.com`；證據存於執行工作樹`.local/aase/m0601/`。整合後本機瀏覽器兩項測試通過，結果見`.local/aase/m0601/results.json`及三十張圖檔。SVG共十份均小於100000 bytes；尺寸與SHA256見[檢查清單](2026-11-11-aase-m06-01-checks.json)。已修正320px／200%時主機巢狀內距造成的文字擠壓，並重新通過全部尺寸。手機的規則／狀態連線各明列Python程序，保留平行關係。正式站結果與Git/Pages回執待本輪發布補入，不以本機測試推定已上線。
+瀏覽器入口：`pnpm exec playwright test --config playwright.aase-m0601.config.ts`。正式站設定`AASE_BASE_URL=https://learn.cs-kairos.com`；證據存於執行工作樹`.local/aase/m0601/`。整合後本機瀏覽器兩項測試通過，本機結果保存在`.local/aase/m0601-local-final/results.json`，正式站結果見`.local/aase/m0601/results.json`及對應圖檔。SVG共十份均小於100000 bytes；尺寸與SHA256見[檢查清單](2026-11-11-aase-m06-01-checks.json)。已修正320px／200%時主機巢狀內距造成的文字擠壓，並重新通過全部尺寸。手機的規則／狀態連線各明列Python程序，保留平行關係。正式站兩語驗收亦通過，詳見下方部署回執。
 
-## 所有權與下一關
+## 正式發布與回讀
 
-稀缺資源為完整供稿逐小節與五圖實測所需的編輯／驗收時間。教材、來源、實作及詳細證據由kairos-learning持有；Planning如需同步，僅承接locator、狀態、驗證／發布回執與下一關。使用隔離工作樹`/tmp/kairos-m0601-20261111`，不納入原工作目錄其他章節的未提交修改。本課瀏覽器與圖意目視已完成；下一關為推送、Pages成功及雙語正式頁／十圖回讀。實體手機、螢幕閱讀器完整認證與學員理解未驗。
+- 原件與成稿保存提交：`1e81e12`；正文與五圖實作：`06372f4`；本次完整整合推送：`9b04e076bf97468e9c6b9e2409bc6c4152565c96`。後續合併保留遠端與本次全部歷史，未強制推送。推送後曾確認分歧`0 0`。
+- Pages成功：[run 42991605640](https://github.com/JasonLn0711/kairos-learning/actions/runs/42991605640)，部署提交`e8e6fe97ae6615102dc41aa124a61e6799e1430d`包含本次推送；2026-11-11 17:02:48 Asia/Taipei回報成功。來源／單元348項／型別／publication-boundary／release／原下載雜湊及實際Pages部署步驟全部成功。先前待部署排程因佇列更新而取消，未把取消當成正式上線。
+- 正式站指令：`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0601.config.ts`，兩語2項通過、0失敗（24.0秒）。核對實際v1.1.0、完整正文順序、三表、兩段程式碼、三題及逐選項解析、五圖、搜尋文字與十份SVG位元組；包含320／390／768／1280px、100%／200%、鍵盤、無JS與局部捲動。工作坊下載維持原雜湊。
+- 200%目視驗收另檢查主機／程序內標籤；窄版使用較小固定內距，保留至少4em文字欄寬，字級維持放大。標籤仍可換行，沒有縮字或隱藏內部節點。
+- 部署前正式頁仍為v1.0.2；部署後以一般瀏覽器回讀確認v1.1.0。Python urllib的預設請求曾回403，正式驗收使用正常瀏覽器及Playwright API實際成功，不以該403推定網站未上線。
+
+## 所有權與後續界線
+
+稀缺資源為完整供稿逐小節與五圖實測所需的編輯／驗收時間。教材、來源、實作及詳細證據由kairos-learning持有；Planning如需同步，僅承接locator、狀態、驗證／發布回執與下一關。使用隔離工作樹`/tmp/kairos-m0601-20261111`，不納入原工作目錄其他章節的未提交修改。本次來源保存、正文／圖解採用、靜態／瀏覽器驗證、Git發布、Pages部署及雙語正式頁／十圖回讀均完成。後續如有讀者回饋，再依指定範圍修訂。實體手機、螢幕閱讀器完整認證與學員理解未驗。
