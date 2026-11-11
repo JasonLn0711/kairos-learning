@@ -1,0 +1,344 @@
+{
+  "id": "AASE-M07-C03",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "streamlit-text-input-151",
+    "streamlit-apptest",
+    "nng-heuristics"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "完成從輸入欄位到未檢核預覽的最小任務，先驗證操作與狀態，再增加業務規則。",
+      "objectives": [
+        "建立三個具標籤欄位與單一主要動作。",
+        "說明垂直切片如何連起畫面、程式與觀察結果。",
+        "避免在規則尚未實作時顯示完整或成功。"
+      ],
+      "readingGuide": {
+        "goal": "建立三個具標籤欄位與單一主要動作。",
+        "startingPoint": "已啟用環境的工作坊；自己的 starter 專案與 slices/01-form/ 分開。",
+        "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
+        "output": "可執行表單及一次從輸入到預覽的驗收紀錄，清楚標示規則尚未實作。"
+      },
+      "sections": [
+        {
+          "id": "slice",
+          "heading": "讓一個小任務可以從頭走到尾",
+          "paragraphs": [
+            "垂直切片是把一項使用者任務穿過需要的程式層次，得到可觀察結果。本次是「填入三欄後查看自己輸入了什麼」；不先做所有畫面，也不先把所有底層函式寫完才讓人操作。",
+            "工作坊 slices/01-form/ 提供這一階段的教師快照。學員先在自己的 starter 專案依規格實作，再用快照比較；保留原作品，才能知道自己卡在哪一個行為。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像先開通一條可試走的短路線",
+          "paragraphs": [
+            "短路線有入口、路標與可到達的終點，讓人試走並回報問題。它還沒通往所有目的地，告示就要清楚說明範圍。",
+            "表單切片的終點是未檢核輸入預覽。若按鈕已叫「產生完整報告」，使用者會把尚不存在的判定當成真的，後續補規則也無法消除當下誤導。"
+          ]
+        },
+        {
+          "id": "behavior",
+          "heading": "欄位名稱、識別鍵與畫面回饋",
+          "paragraphs": [
+            "申請編號、申請人代號、文件類型是人看的標籤；application_id、applicant_code、document_type 是程式用的穩定鍵。標籤要能指出用途，不依賴會在輸入後消失的提示文字。",
+            "快照用 st.text_input 接收文字，按主要動作後 st.json 顯示當次字典。畫面標示「必填」只是告知要求；第一階段還沒有執行必填判定，不能宣稱通過。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜第一切片的最短操作",
+              "description": "依畫面順序前進；本次預覽不具完整性判定。",
+              "items": [
+                {
+                  "title": "填寫三欄",
+                  "body": "以合成值測試，可保留一欄空白。"
+                },
+                {
+                  "title": "查看本次輸入",
+                  "body": "按鈕明示未檢核。"
+                },
+                {
+                  "title": "核對內容",
+                  "body": "看見當次值與空白，沒有完整報告下載。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "在獨立目錄執行教師快照",
+          "paragraphs": [
+            "先完成 M07-01 的環境準備，回到解壓根目錄，再執行以下命令。pytest 與 Streamlit 各自有結果；服務啟動後需要在瀏覽器完成任務，不能只看命令沒報錯。",
+            "輸入 SYN-001 與 DEMO-A，文件類型留空，啟動「查看本次輸入（未檢核）」。應看見未檢核提示與空白欄位，不出現完整成功或報告下載。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "執行切片一",
+              "paragraphs": [
+                "下列命令僅啟動教師快照；自己的專案在另外的目錄。"
+              ],
+              "code": "cd slices/01-form\npython -m pytest -q\npython -m streamlit run app.py --server.address 127.0.0.1"
+            }
+          ]
+        },
+        {
+          "id": "verify",
+          "heading": "檢查鍵盤與過期預覽",
+          "paragraphs": [
+            "用 Tab 移動到三欄及主要按鈕，確認焦點可見且順序合理，以 Enter 或 Space 啟動按鈕。視覺上看見欄位不代表鍵盤一定能完成操作。",
+            "變更申請編號並讓輸入提交重跑，先前預覽應消失；重新按按鈕才顯示新值。這一階段沒有保存通過狀態，快照的測試也確認沒有下載按鈕。"
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "把這次改動留成下一次的起點",
+          "paragraphs": [
+            "「一次產生完整網站比較快」會讓初學者難以分清哪個變更造成失敗。先審查表單切片的 Diff，保留命令、操作與尚未實作範圍，再開始規則切片。",
+            "若 Agent 提早加入完整標記或下載，回到本次 spec 移除這些行為；不要把多做功能自動列為通過。圖、程式與畫面都應反映同一階段。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "已啟用環境的工作坊；自己的 starter 專案與 slices/01-form/ 分開。",
+        "steps": [
+          "在自己的專案完成三欄及查看未檢核輸入的動作。",
+          "留一欄空白，用鍵盤查看輸入，確認提示與沒有完整下載。",
+          "修改一欄並重跑，核對舊預覽消失；與教師快照比較並記錄 Diff。"
+        ],
+        "expected": "可執行表單及一次從輸入到預覽的驗收紀錄，清楚標示規則尚未實作。",
+        "check": "能區分欄位標示與實際驗證，不將空白資料標為完整。",
+        "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
+      }
+    },
+    "en": {
+      "summary": "Complete a minimal path from fields to an unvalidated preview, checking interaction and state before adding business rules.",
+      "objectives": [
+        "Create three labeled fields and one primary action.",
+        "Explain how a vertical slice connects interface, code and observable results.",
+        "Avoid complete/success claims before rules exist."
+      ],
+      "readingGuide": {
+        "goal": "Create three labeled fields and one primary action.",
+        "startingPoint": "The workshop with its environment activated; keep your starter project separate from slices/01-form/.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "A runnable form and an input-to-preview acceptance record clearly identifying absent rules."
+      },
+      "sections": [
+        {
+          "id": "slice",
+          "heading": "Make One Small Task Work from End to End",
+          "paragraphs": [
+            "A vertical slice takes one user task through the necessary program layers to an observable outcome. Here the task is entering three fields and viewing those values. You need neither every screen first nor every low-level function before anyone can interact.",
+            "slices/01-form/ is the teacher snapshot for this stage. Implement the agreed behavior in your own starter project first, then compare the snapshot. Keep your work so you can identify the behavior that caused difficulty."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Open a Short Route People Can Try",
+          "paragraphs": [
+            "A short route has an entrance, signs and a reachable destination so people can try it and report problems. Since it does not reach every destination, signs must explain its scope.",
+            "The form slice ends at an unvalidated input preview. Naming the button “Generate complete report” would imply a decision that does not yet exist; adding rules later cannot undo misleading feedback already given."
+          ]
+        },
+        {
+          "id": "behavior",
+          "heading": "Field Labels, Stable Keys and Feedback",
+          "paragraphs": [
+            "Application ID, applicant code and document type are human-readable labels. application_id, applicant_code and document_type are stable program keys. Labels should explain purpose without relying on placeholder text that disappears after entry.",
+            "The snapshot collects text with st.text_input, then presents the current dictionary with st.json after the primary action. “Required” labels communicate a requirement; the first stage does not enforce required-field validation and must not claim it passed."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | The Shortest Interaction in Slice One",
+              "description": "Follow interface order. This preview makes no completeness decision.",
+              "items": [
+                {
+                  "title": "Fill three fields",
+                  "body": "Use synthetic values; one field may remain blank."
+                },
+                {
+                  "title": "View current input",
+                  "body": "The action explicitly says the values are unvalidated."
+                },
+                {
+                  "title": "Check the content",
+                  "body": "See current values and blanks, without a complete-report download."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "Run the Teacher Snapshot in Its Own Directory",
+          "paragraphs": [
+            "Finish M07-01 environment preparation, return to the extracted root, then run these commands. pytest and Streamlit have separate results. After startup, perform the browser task; a command returning no error is insufficient.",
+            "Enter SYN-001 and DEMO-A, leaving document type blank. Activate “查看本次輸入（未檢核）” (view current input, unvalidated). Expect the unvalidated notice and blank field, with neither a complete-success message nor report download."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Run Slice One",
+              "paragraphs": [
+                "These commands start the teacher snapshot only. Keep your own project in another directory."
+              ],
+              "code": "cd slices/01-form\npython -m pytest -q\npython -m streamlit run app.py --server.address 127.0.0.1"
+            }
+          ]
+        },
+        {
+          "id": "verify",
+          "heading": "Check the Keyboard and Stale Previews",
+          "paragraphs": [
+            "Use Tab to reach all three fields and the primary button. Check visible focus and meaningful order, then activate the button with Enter or Space. Visible fields alone do not establish that the task works by keyboard.",
+            "Change the application ID and commit the input change to trigger a rerun. The previous preview should disappear; press the button again to see the new value. This stage stores no passed status, and its tests also assert that no download button exists."
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "Keep This Change as the Next Starting Point",
+          "paragraphs": [
+            "Generating the whole website at once makes it harder for beginners to identify which change caused a failure. Review the form-slice diff and retain commands, operations and unimplemented scope before starting validation.",
+            "If the Agent adds a complete marker or download early, remove those behaviors against this task’s spec. Extra features do not automatically pass acceptance. Diagram, code and interface should describe the same stage."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "The workshop with its environment activated; keep your starter project separate from slices/01-form/.",
+        "steps": [
+          "Implement three fields and the action to view unvalidated input in your project.",
+          "Leave one field blank and use the keyboard to view input; verify the notice and absence of a complete download.",
+          "Change a field and rerun; verify the old preview disappears, then compare with the snapshot and record the diff."
+        ],
+        "expected": "A runnable form and an input-to-preview acceptance record clearly identifying absent rules.",
+        "check": "Distinguish a required label from executed validation. Do not mark blank data complete.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M07-C03-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "第一切片的可接受終點是什麼？",
+          "options": [
+            "正式核准",
+            "當次未檢核輸入預覽",
+            "多人隔離",
+            "所有模組完成"
+          ],
+          "rationales": [
+            "不在範圍。",
+            "提供可操作且誠實的階段結果。",
+            "尚未實作。",
+            "一個切片只交付一部分。"
+          ]
+        },
+        "en": {
+          "prompt": "What is an acceptable endpoint for slice one?",
+          "options": [
+            "Official approval.",
+            "A preview of current unvalidated input.",
+            "Multiuser isolation.",
+            "Completion of every module."
+          ],
+          "rationales": [
+            "That is outside scope.",
+            "It delivers a usable and honest stage result.",
+            "That is not implemented.",
+            "One slice delivers only part of the system."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M07-C03-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "欄位標上必填，就能宣稱資料完整嗎？",
+          "options": [
+            "可以，標籤會自動保證",
+            "可以，只要畫面簡潔",
+            "不可以，還需規則實際判斷",
+            "不可以，所以不需標籤"
+          ],
+          "rationales": [
+            "標籤不等於判定。",
+            "簡潔不保證正確。",
+            "第二切片才加入判定。",
+            "標籤仍是必要操作資訊。"
+          ]
+        },
+        "en": {
+          "prompt": "Does labeling a field required establish complete data?",
+          "options": [
+            "Yes; the label guarantees it.",
+            "Yes, if the screen is simple.",
+            "No; rules must actually evaluate the input.",
+            "No; therefore no label is needed."
+          ],
+          "rationales": [
+            "A label is not a decision.",
+            "Simplicity does not establish correctness.",
+            "Slice two adds that evaluation.",
+            "Labels remain necessary interaction information."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M07-C03-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "Agent 提早加上未驗證的完整報告下載，應如何驗收？",
+          "options": [
+            "因為功能多而接受",
+            "只看畫面漂亮程度",
+            "略過 Diff",
+            "依本次 spec 修正，先保留未檢核範圍"
+          ],
+          "rationales": [
+            "可能誤導使用者。",
+            "還需驗證行為。",
+            "無法核對修改。",
+            "先交付符合約定的小任務。"
+          ]
+        },
+        "en": {
+          "prompt": "The Agent adds an unverified complete-report download early. How should you accept it?",
+          "options": [
+            "Accept because it has more features.",
+            "Judge only its appearance.",
+            "Skip the diff.",
+            "Correct it against this task’s spec and retain the unvalidated scope first."
+          ],
+          "rationales": [
+            "It may mislead users.",
+            "Behavior still needs verification.",
+            "That prevents review of changes.",
+            "Deliver the agreed small task first."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
