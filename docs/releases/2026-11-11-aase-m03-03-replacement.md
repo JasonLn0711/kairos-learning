@@ -54,7 +54,7 @@
 - 最終提交的本機檢查：309／309 單元測試、型別 0 errors／0 warnings、建置、`validate:release`、本篇雙語瀏覽器 2／2 全部通過。共用教材元件以主線新版為基礎增加 M03-03，逐一確認其他元件分派沒有遺漏或重複。
 - [Pages run 42986713205](https://github.com/JasonLn0711/kairos-learning/actions/runs/42986713205) 成功，包含 audit、內容、單元、共用 HTML、型別、完整 publication-boundary、release、下載雜湊及正式部署。
 - `AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0303.config.ts --output .local/aase/m0303/production/browser`：正式站 2／2 通過，26.3 秒；無 skipped、flaky 或 unexpected。實測 UTC 開始時間為 2026-11-11T08:27:03.206Z（臺灣 16:27:03）。
-- [中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-03/)／[英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m03/concepts/m03-03/) 顯示 v1.1.0；逐段正文、每格表格、原樣 code、圖模型、四題解析與搜尋均比對通過。舊三題片段與 14 個有向出口有效；radio、重查、真實剪貼簿讀寫、複製失敗退化、走讀切換與邊界、鍵盤焦點、原生 details、局部捲動均實測。四尺寸、200% 文字與無 JavaScript 通過，十個 SVG HTTP 200、位元組等於本機，文字不越界或互相重疊。
+- [中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-03/)／[英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m03/concepts/m03-03/) 顯示 v1.1.0；逐段正文、每格表格、原樣 code、圖模型、四題解析與搜尋均比對通過。舊三題片段與 14 個有向出口有效；radio、重查、真實剪貼簿讀寫、注入寫入拒絕後的複製失敗退化、走讀切換與邊界、鍵盤焦點、原生 details、局部捲動均實測。四尺寸、200% 文字與無 JavaScript 通過，十個 SVG HTTP 200、位元組等於本機，文字不越界或互相重疊。
 - [機器可讀回執](2026-11-11-aase-m03-03-checks.json) 列出圖檔大小與 SHA256、檢查範圍、時間、部署及剩餘界線；本機／正式站 JSON、截圖與日誌分開保留在 `.local/aase/m0303/local-final/` 與 `production/`。
 
 | 完成要求 | 權威證據 | 結果 |
