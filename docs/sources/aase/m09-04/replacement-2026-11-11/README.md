@@ -29,7 +29,7 @@
 - source preserved：原稿、三張圖與舊版已保存。
 - teaching.zh.md：保留完整教學稿，僅移除兩段重複 favicon／站名來源卡；原件仍逐字保留。
 - implementation complete：完整英文對譯、正式 JSON、三圖與原三題已採入；由兩個產生器核對同步。
-- validated：逐節雙語核對、內容與型別閘門及335項測試通過；瀏覽器與正式站結果由[發布回執](../../../../releases/2026-11-11-aase-m09-04-replacement.md)接續記錄。
+- validated：逐節雙語核對、內容與型別閘門及350項測試通過；瀏覽器與正式站結果由[發布回執](../../../../releases/2026-11-11-aase-m09-04-replacement.md)接續記錄。
 - publication pending：此次尚未提交、推送或部署；工作樹其他課程修改保留原狀。
 
 適用 WRITE-05、06、09–11、HTML-01–04、FIG-01–06、A11Y-01–03。原稿的「提交答案並請你批改」採既有靜態參考答案模式，沒有新增批改服務或學習完成紀錄。

@@ -39,8 +39,10 @@ try{
    const href=`/images/aase/m09-04-${n}-${lang}.svg`;const response=await context.request.get(base+href);assert.equal(response.status(),200);assert.deepEqual(await response.body(),readFileSync('site'+href));
    const svg=await context.newPage();await svg.goto(base+href);
    assert.deepEqual(await svg.locator('text').evaluateAll(nodes=>nodes.filter(e=>{const b=e.getBBox(),v=e.ownerSVGElement.viewBox.baseVal;return b.x<0||b.y<0||b.x+b.width>v.width+1||b.y+b.height>v.height+1}).map(e=>e.textContent)),[]);
-   await svg.setContent(`<html><body style="margin:0"><img src="${base+href}" style="width:1000px;height:auto"></body></html>`);await svg.locator('img').screenshot({path:`${evidence}/${lang}-svg-${n}.png`});await svg.close();
+   assert.deepEqual(await svg.locator('text').evaluateAll(nodes=>{const boxes=nodes.map(e=>({b:e.getBBox(),t:e.textContent})),overlaps=[];for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){const a=boxes[i].b,b=boxes[j].b;if(Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x)>1&&Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y)>1)overlaps.push([boxes[i].t,boxes[j].t]);}return overlaps;}),[]);
+   await svg.close();const preview=await context.newPage();await preview.setViewportSize({width:1100,height:1000});await preview.setContent(`<html><body style="margin:0"><img src="${base+href}" style="width:1000px;height:auto"></body></html>`);await preview.locator('img').screenshot({path:`${evidence}/${lang}-svg-${n}.png`});await preview.close();
   }
+  const search=await (await context.request.get(base+'/search-index.json')).json();const entry=search.find(e=>e.id===lesson.id&&e.lang===lang);assert.ok(entry);for(const section of lesson.text[lang].sections)for(const p of section.paragraphs)assert.ok(entry.text.includes(p));
   await context.close();results.push(`${lang}: 200% text, native answer keyboard, local table focus, six source-matched download checks`);
  }
  writeFileSync(`${evidence}/results.json`,JSON.stringify({base,results},null,2)+'\n');console.log(results.join('\n'));
