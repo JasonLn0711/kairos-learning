@@ -1,0 +1,55 @@
+# M06-02｜C4 System Context 完整抽換與發布回執
+
+使用者供稿與四圖為本次主來源。M06-02由v1.0.2更新為v1.1.0，revision 4，原發布日2026-11-05保留，修訂日2026-11-11。[來源、逐節採用、圖意與修正](../sources/aase/m06-02/replacement-2026-11-11/source-map.md)保存原稿、四PNG、前版、雙語稿與SHA-256。正式內容在`content/aase/lessons/aase-m06-c02.json`。
+
+## 已採用的內容與範圍
+
+導言及九節完整進入中英正文：餐廳比喻與五問、C4四層及醫院四層表、銀行範例、收件五步及箭頭比較、教育／醫療／物流、Agent五種判斷、三個易混淆觀念、完整七節architecture.md及合約審查三題。五張表、四組圖與原問題選項均保留；前兩題各三個選項，第三題開放說明。六個舊章節錨點保留。答案沿原生details，沒有新增批改、送出或學習進度紀錄。
+
+四圖保留節點、責任、方向及用途。HTML沿既有範圍分組與方向列，手機原生重排；附件的空間位置、人物圖形與斜線路徑改為可選取文字及明列端點。銀行圖保留SES→Customer，依Simon Brown／c4model.com的CC BY 4.0例圖改編並署名。原稿聊天導覽、favicon與追蹤參數只從正文移除，來源檔保留。
+
+## 驗證
+
+執行環境：Ubuntu、Node.js v22.23.4、pnpm 10.34.9；本機Playwright Chromium。正式CI採Node 24，兩者證據分開。
+
+| 規則 | 範圍與結果 | 證據 |
+| --- | --- | --- |
+| WRITE-01–05、09–11 | 逐節人工核對來源、雙語稿、正式JSON與全文頁面；通過 | source-map、teaching.zh.md、teaching.en.md、瀏覽器全文與順序核對 |
+| WRITE-06、08 | v1.1.0、revision 4、原發布日保留；M06-02可讀課次 | 正式JSON、資訊列及單元檢查 |
+| HTML-01–04 | 兩語320／390／768／1280px與200%文字無整頁溢出；無JS仍有全文、圖與答案 | `.local/aase/m0602/results.json`及browser測試 |
+| FIG-01、03–06 | 節點、範圍、方向與用途可選取／搜尋；四張圖重排，八SVG字框及文字重疊檢查、下載位元組一致通過 | figures.json、產生器、瀏覽器及目視截圖 |
+| A11Y-01–03 | 表頭、圖說、正文與原理直接可見；Tab／Shift+Tab、Enter下載、Enter／Space解析及局部鍵盤捲動通過 | browser測試；未宣稱完整WCAG認證 |
+| INT-01 | 不適用：靜態圖與原生參考答案，沒有計算器或批改服務 | 正式頁與內容模型 |
+
+首輪發現兩表名稱相同，已分開命名並以可存取完整名稱核對。型別檢查發現拒絕案例測試在型別收窄後直接寫入額外欄位，改以Object.assign構造非法測試資料，保留拒絕檢查。兩輪整合的衝突（AaseLesson、aase-labels及content-authoring）保留遠端新教材與本課變更；歷史版測試改檢查本次保存前版，新版測試另外覆蓋。
+
+已實測：內容驗證通過、322項單元通過、型別0錯誤0警告、本機雙語瀏覽器2項通過（內含四尺寸、200%、無JS、鍵盤與八圖）。發布邊界四組情境與乾淨重建、完整release閘門、6項靜態HTML檢查均通過；pnpm audit有4項low，沒有high／critical。
+
+| SVG | 繁中 bytes | 英文 bytes |
+| --- | ---: | ---: |
+| 餐廳，m06-02-1 | 4551 | 4838 |
+| C4四層，m06-02-2 | 1759 | 2129 |
+| 銀行，m06-02-3 | 4224 | 4578 |
+| 收件，m06-02-4 | 2688 | 3032 |
+
+每檔均小於100000 bytes。資產路徑為`/images/aase/m06-02-{1..4}-{zh|en}.svg`。產生器以固定元素與屬性白名單序列化，文字跳脫，不接收任意SVG或事件。
+
+結構化驗收摘要與資產雜湊見[checks.json](2026-11-11-aase-m06-02-checks.json)。
+
+## 發布狀態
+
+本次從隔離工作樹`/tmp/kairos-m0602`完成，原工作目錄的其他教材未提交修改保留。來源提交8692385；正文提交bd0e8a1；整合提交a354076保留首批遠端139筆歷史，再整合3c1f378及其M05-02／M05-05並行更新，沒有覆寫或force-push。
+
+2026-11-11已推送`origin HEAD:main`，推送後fetch確認0 0。部署提交為`616a2935c4561d9cbf8ac391dbdff1d014f081d4`；[Pages run 42989840968](https://github.com/JasonLn0711/kairos-learning/actions/runs/42989840968)為success，Node 24 CI的內容、322項單元、6項HTML、型別、發布邊界、release及下載雜湊均通過。部署前正式頁為v1.0.2，部署後為v1.1.0。
+
+正式頁：[繁體中文](https://learn.cs-kairos.com/courses/aase/v1/m06/concepts/m06-02/)、[English](https://learn.cs-kairos.com/en/courses/aase/v1/m06/concepts/m06-02/)。於`2026-11-11T16:50:26+08:00`完成正式站Playwright全套回讀：2項通過，0失敗／略過，23.5秒。兩語逐段全文與順序、五表、四圖端點及關係、三題解析、搜尋、四尺寸、200%文字、無JS、鍵盤與全部八份SVG均通過；SVG實際下載與本機來源逐位元組相同，無字框越界或文字重疊。
+
+正式回讀命令：`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0602.config.ts`。本機與正式結果分開保存於checks.json。正式證據產生後，快轉整合遠端至`61dd7d1`，保留M05-02回執及M07-02並行更新。差異檢查確認本課JSON、架構驗證器與八份SVG沒有變動；共用AaseLesson僅增加M07-02分支，M06-02接線保留。本回執以`[skip ci]`文件提交補記；已驗證部署提交仍明確記為616a293，不將M07-02後續部署視為本次已驗證結果。
+
+本次完整本機命令：`pnpm run validate:content`、`pnpm test`、`pnpm run check`、`python3 -m unittest discover -s scripts -p test_validation_html.py`、`node scripts/check-publication-boundary.mjs`、`pnpm run validate:release`、`pnpm audit --audit-level=high`、`pnpm exec playwright test --config playwright.aase-m0602.config.ts`，另有兩個M06-02產生器的`--check`。
+
+## 待驗與責任邊界
+
+未執行實體手機、完整螢幕閱讀器或真人理解度研究；瀏覽器模擬與自查解析不作學習完成證據。本次只涉及M06-02及必要共用模型／呈現接線，未宣稱全站教材已改善。原始來源、實作與驗收由kairos-learning持有；Planning僅承接定位、聚合狀態及下一關。
+
+發布回執快轉整合後，再驗目前工作樹：325項單元全數通過，型別0錯誤0警告；M06-02來源／SVG同步及模型拒絕檢查也在該套件內通過。此輪只證明整合後本機狀態，正式站結果仍以上述實測時間與部署提交為準。
