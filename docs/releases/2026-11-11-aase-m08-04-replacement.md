@@ -29,7 +29,7 @@ HTML-01–04、FIG-01–06、A11Y-01–03：語意HTML、可選取文字、容�
 | 程式 | Streamlit 1.51.0／pytest，三階段 | 1 passed；成功狀態與完整JSON正確，輸入變更清除舊報告 |
 | 回歸敏感性 | 只在副本移除on_change回呼 | 第三階段assert not at.success按預期失敗；原程式1 passed |
 | 真實app | 127.0.0.1:8584，check-aase-m0804-example.mjs | 三階段、report.json檔名與完整JSON、Enter／Space／Tab／Shift+Tab通過 |
-| 單元 | pnpm test | 324／324通過；新測試含圖解無效資料拒絕及發布閘門 |
+| 單元 | pnpm test | 初輪324／324，保留並行版本合併後339／339通過；新測試含圖解無效資料拒絕及發布閘門 |
 | 型別 | pnpm run check | 0 errors／0 warnings |
 | 靜態HTML契約 | python3 -m unittest discover -s scripts -p test_validation_html.py | 6／6通過 |
 | 依賴 | pnpm audit --audit-level=high | 通過high門檻；4項既有low |
@@ -48,3 +48,7 @@ HTML-01–04、FIG-01–06、A11Y-01–03：語意HTML、可選取文字、容�
 目前本機完整內容與驗證已完成；正式Git提交、推送、Pages部署及正式站回讀待本輪後續紀錄，尚不宣稱正式站已更新。正式回讀使用`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0804.config.ts`，必須核對同版全文與全部資產後才完成。
 
 實體手機、完整螢幕閱讀器、真人理解與學員實作接受仍是獨立待驗層。本課AppTest、真實瀏覽器及文章驗收各自記錄，不宣稱正式收件系統、安全控制或學員已通過。
+
+## 合併後驗證
+
+來源提交8484645、正文與驗證提交9a2d82b、保留並行M06／M07版本的合併cadbac6。合併時保留各課次渲染、資料驗證、歷史遷移測試及撰稿指南。M08-04原生清單分支在衝突合併時漏接，新增瀏覽器斷言確實偵測到銀行四步及餐廳三規則／五步操作未成為ol／ul；修復本課分支後重建，中英2／2通過（10.1s），339／339單元及型別零錯誤／警告。六份SVG重新核對幾何與bytes，圖2中文圖說的末尾孤立標點也已調整換行。原工作目錄無關修改未攜入隔離工作樹。
