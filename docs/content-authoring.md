@@ -843,3 +843,17 @@ M07-07 v1.1.0 的[來源、前版與逐節對照](sources/aase/m07-07/replacemen
 `DebuggingDiagram.svelte` 使用同源可搜尋 HTML、容器重排與固定下載路徑。`stale-report.ts` 對照 Bug 的舊快照存在與 Fixed 的完整性／快照一致性，編輯時另使舊結果失效；下載僅為標記 simulation=true 的本機合成文字。無 JS 控制停用，保留預設三欄與完整靜態比較；範本可手動選字。原發布日、路徑、六個舊錨點及雙語閘門保持；新 Q04–Q06 三選項與原生參考解析不建立作答或學習狀態。
 
 本課單元入口 `tests/aase-m0707-replacement.test.ts`，瀏覽器入口 `playwright.aase-m0707.config.ts`；正式站指定 `AASE_BASE_URL=https://learn.cs-kairos.com`。驗證／發布分層與具體結果見[發布回執](releases/2026-11-11-aase-m07-07-replacement.md)。
+
+## AASE M09-03｜成果展示與驗收證據（2026-11-11）
+
+完整九節供稿、兩張參考 PNG、前版與逐小節採用見[來源紀錄](sources/aase/m09-03/replacement-2026-11-11/README.md)。v1.1.0 保留原發布日及六個舊錨點；原三題與工作坊具體追溯表作補充，三個新開放問題及編輯解析沿原生收合，qa=[]。
+
+`aase_m0903_content.py`由雙語採用稿產生正式 JSON；`aase_m0903_svg.py`同源產生四份受限 SVG。AcceptanceEvidenceDiagram 只接本課五步 flow／三列 cards，HTML 保留垂直閱讀及實際觀察強調，下載不接受任意標記。兩支腳本的 `--check`、`tests/aase-m0903-replacement.test.ts` 與 `playwright.aase-m0903.config.ts` 分別核對同步、資料邊界及實際全文／四尺寸／放大／無 JS／鍵盤／下載。發布狀態以[回執](releases/2026-11-11-aase-m09-03-replacement.md)為準。
+
+## AASE M09-02｜README、限制與交接（2026-11-11）
+
+v1.1.0／revision 4 的[來源與逐小節對照](sources/aase/m09-02/replacement-2026-11-11/README.md)保存原文、兩張PNG與前版。七章完整雙語保留餐廳四小節、兩表、示意命令、三種證據、三行摘要README及原三道開放問題；另保留既有工作坊實際命令與六個錨點，原發布日不變。
+
+`aase_m0902_content.py --check`核對雙語稿與正式JSON；`aase_m0902_svg.py --check`核對四份白名單SVG。HandoffSection僅承接本課四階段flow與八項cards，aase.ts限制位置、種類、數量及文字欄位，維持HTML／搜尋／SVG同源。清單計數0–8只代表文件盤點，重設清除本頁選取；無JS保留八列，互動停用。
+
+單元`tests/aase-m0902-replacement.test.ts`，瀏覽器`playwright.aase-m0902.config.ts`；正式站使用AASE_BASE_URL。全文、表格、四尺寸／200%、無JS、鍵盤、勾選重設、搜尋及四SVG下載／字框檢查由[回執](releases/2026-11-11-aase-m09-02-replacement.md)記錄。
