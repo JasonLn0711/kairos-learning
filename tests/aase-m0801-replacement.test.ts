@@ -17,6 +17,7 @@ test('M08-01 preserves source scope, original checks and all existing anchors',(
  }
  assert.equal(lesson.publishedOn,'2026-11-05');assert.deepEqual(lesson.qa,[]);
  assert.deepEqual(lesson.checks.map((q:any)=>q.answer),[1,2,1]);assert.deepEqual(lesson.checks.map((q:any)=>q.text.zh.options.length),[3,3,3]);
+ execFileSync('sha256sum',['-c','SHA256SUMS'],{cwd:'docs/sources/aase/m08-01/replacement-2026-11-11'});
  for(const file of ['content','svg'])execFileSync('python3',[`scripts/aase_m0801_${file}.py`,'--check']);
 });
 test('M08-01 fixed figure contract rejects missing perspectives and injected export fields',()=>{
