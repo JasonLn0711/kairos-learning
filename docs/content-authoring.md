@@ -687,6 +687,12 @@ v1.2.0／revision 6 以新供稿取代餐廳版本；[逐小節來源對照](sou
 
 驗收順序：單元／型別 → SSR 圖解 fixture → 發布邊界與最終 production build → validate:release → 新 preview／完整頁面瀏覽器。SSR fixture 或 SvelteKit sync 會刷新生成檔，不可與 production build 並行，也不可在最終建置後執行而沿用舊 preview；完整頁面檢查同時核對 HTML／client bootstrap 識別碼。
 
+## AASE M04-02｜任務分析與條件回復
+
+[2026-11-11來源及逐節對照](sources/aase/m04-02/replacement-2026-11-11/README.md)保存八章供稿、五張原圖、舊版及編輯差異。修改完整中英稿或`figures.json`後執行`scripts/aase_m0402_content.py`與`scripts/aase_m0402_svg.py`（皆支援`--check`）。正式資料保留六個既有錨點，新增各小節；三個物流問題使用原生開放檢核與編輯參考答案，不提供送答服務。
+
+`TaskAnalysisDiagram.svelte`沿既有cards／flow承接五種固定版型：goal六節點、plans六／五節點、methods五階段、walkthrough三條件。`aase.ts`限制位置、種類、數量及欄位；不接受HTML、任意SVG或外部圖片路徑。HTA分解與流程順序分開，二分支手機重排不相接。文字、搜尋與十份受審核SVG同源。驗收用`tests/aase-m0402-replacement.test.ts`與`playwright.aase-m0402.config.ts`；正式站設定`AASE_BASE_URL`。結果見[回執](releases/2026-11-11-aase-m04-02-replacement.md)。
+
 ## AASE M03-05 十節新供稿與六圖（2026-11-11）
 
 v1.2.0／revision 5 的[來源對照](sources/aase/m03-05/replacement-2026-11-11/source-map.md)保存完整原文、六張PNG、待換前版與雙語稿。原十節、導言與分母界線成為十二section，舊十一錨點、原發布日與翻譯閘門保留；五個原開放問題搭配Q08–Q12參考解析，qa=[]。`normalize-source.py --check`核對原文與明列正規化；`aase_m0305_content.py --check`核對雙語稿、圖解及正式JSON。
@@ -694,3 +700,9 @@ v1.2.0／revision 5 的[來源對照](sources/aase/m03-05/replacement-2026-11-11
 SuccessEvidenceDiagram沿受限cards／flow，revision 5限定evidence-chain／metrics／measure／assumptions／trace／understanding節點數6／3／4／4／4／7，只有第一圖為flow。第二圖是三個平行角色，第六圖使用主張區與六列dl。`successMetrics`固定四瑕疵兩良品，檢查整數邊界；兩個range與全部阻擋按鈕只計算合成資料，無JS停用互動並保留預設及公式。十二個SVG由`aase_m0305_svg.py`從正式模型產生，`--check`比對位元組，下載固定預設。
 
 單元與瀏覽器入口仍為`tests/aase-m0305-replacement.test.ts`、`playwright.aase-m0305.config.ts`。正式站設定AASE_BASE_URL。驗證範圍含完整正文與順序、四尺寸／200%、鍵盤／無JS、兩滑桿、全部阻擋、搜尋、十二SVG邊界／重疊／下載；實際結果與待驗事項見[發布回執](releases/2026-11-11-aase-m03-05-replacement.md)。
+
+## AASE M04-06 完整供稿與復原圖解（2026-11-11）
+
+完整雙語稿、五參考圖與前版見[來源目錄](sources/aase/m04-06/replacement-2026-11-11/README.md)。以 `python3 scripts/aase_m0406_content.py` 生成正文，`python3 scripts/aase_m0406_svg.py` 生成十份SVG，兩者支援 `--check`。RecoveryDiagram僅在本課revision≥4承接五個cards圖，節點數2／2／3／7／5；驗證器限制種類、欄位與數量。圖4為可聚焦摘要連結的靜態定義清單，圖5為替代條件分支，不是線性流程。
+
+檢查入口為 `tests/aase-m0406-replacement.test.ts` 與 `playwright.aase-m0406.config.ts`，正式站指定 `AASE_BASE_URL=https://learn.cs-kairos.com`。來源、逐小節採用、適用規則、實測與發布界線見[回執](releases/2026-11-11-aase-m04-06-replacement.md)。
