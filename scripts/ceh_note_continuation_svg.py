@@ -95,7 +95,11 @@ def render_continuation(b,lang,spec):
  elif layout=='sequence':
   top=y;ends=[]
   for i,item in enumerate(items[:3]):ends.append(card(item,28+i*288,y,268))
-  y=max(ends)+32;start=y;lifeline_index=len(out)
+  header_bottom=max(ends)
+  for i,end in enumerate(ends):
+   original=rect(28+i*288,top,268,end-top)
+   out[out.index(original)]=rect(28+i*288,top,268,header_bottom-top)
+  y=header_bottom+32;start=header_bottom;lifeline_index=len(out)
   directions=[None,(0,1),(2,1),(1,2),(1,2),(1,2),None,(2,1),None]
   for i,item in enumerate(items[3:]):
    if directions[i]:

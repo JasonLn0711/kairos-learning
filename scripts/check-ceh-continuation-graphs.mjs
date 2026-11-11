@@ -66,6 +66,16 @@ try{
      }
      const asset=await page.request.get(new URL(await figure.locator('a[download]').getAttribute('href'),page.url()).href);
      const svg=await asset.text();
+     const endpoints=await page.evaluate(markup=>{
+      const doc=new DOMParser().parseFromString(markup,'image/svg+xml');
+      const boxes=[...doc.querySelectorAll('rect[fill="#e6f5ec"]')];
+      const lines=[...doc.querySelectorAll('path[stroke="#a2aaa6"]')];
+      return boxes.map((rect,i)=>{
+       const [x,y]=lines.find(line=>+line.getAttribute('d').match(/^M([\d.]+)/)[1]===+rect.getAttribute('x')+134).getAttribute('d').match(/^M([\d.]+) ([\d.]+)/).slice(1).map(Number);
+       return Math.abs(x-(+rect.getAttribute('x')+134))<.1&&Math.abs(y-(+rect.getAttribute('y') + +rect.getAttribute('height')))<.1;
+      });
+     },svg);
+     assert.deepEqual(endpoints,[true,true,true],'Every CA/server/browser SVG lifeline must touch its own role box');
      for(const [x,w] of [[28,556],[604,268],[316,556]])assert.ok(svg.includes(`x="${x}"`)&&svg.includes(`width="${w}"`),'TLS SVG annotation boundaries');
     }
     if(name==='bytes')assert.deepEqual(await figure.locator('.bytes').evaluateAll(grids=>grids.map(g=>g.children.length)),[16,32]);
@@ -85,7 +95,7 @@ try{
    assert.equal(await page.locator('h2[id^="p2-cont"],h2[id^="p3-cont"]').count(),0,'Continuation subheadings must stay below the section heading');
    assert.ok(await page.locator('h4[id^="p2-cont-u"]').count()>7);
    for(const part of [2,3]){
-    const id=part===2?'p2-cont-u269':'p3-cont-u336';
+    const id=part===2?'p2-cont-u269':'p3-cont-u338';
     const exercise=page.locator('#'+id).locator('..');
     assert.equal(await exercise.locator('form,input,button,details').count(),0,'Original exercise must not expose an answer key or submission UI');
    }

@@ -42,3 +42,23 @@ AI 協作軟體工程 M04-05「漸進揭露、極簡與必要狀態」採用使�
 最新候選 c2dcd59：內容、305 項單元、型別 0 錯誤／0 警告、乾淨 production build 與 release 檢查通過。整合 M04-03 前的 M04-04／05／06 中英完整圖解／正文檢查共6／6通過（29.0秒）；本課在最新 production build 再次執行兩語全文、圖檔、搜尋、無 JS 與下載驗證，結果由發布段落承接。publication-boundary 前一整合版已通過，GitHub Pages 在部署前再次執行該檢查，以實際部署 SHA 為準。
 
 本次來源提交 7b2d9fb、教材與六圖 fa62d28、採用紀錄 6583f24、逐段核對與修正 08b13d5；後續 merge 保留遠端所有歷史。原工作目錄的其他未提交修改維持原樣。正式推送／部署與回讀完成後補上確切 run ID、部署 SHA 及 fetch 後分歧。
+
+
+## 正式發布與回讀｜2026-11-11
+
+本課發布提交 `d66d7ab5ffc507ea430e5f36eb7a1d0bb22ec849` 已推送 origin/main。其 Pages 待部署工作42986481671被較新整合版取代；[成功 Pages 42986496147](https://github.com/JasonLn0711/kairos-learning/actions/runs/42986496147)部署 `f168152c1fc2743b023c068c87e4e1a02cd4330e`，祖先包含 d66d7ab，部署步驟於臺灣時間2026-11-11 16:24:16成功。該 SHA 的單元、型別、publication-boundary、release、下載 checksum 與 Pages 部署皆成功。
+
+包含同期 MVP 的 f168152 本機307項單元與型別0錯誤0警告再次通過；本課本機2／2通過（13.1秒）。這些數字限定該快照，後續同期章節合併不以舊數字代替新的整站驗證。
+
+正式站執行 `AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0405.config.ts`：中文14.8秒、英文12.3秒，中英2／2通過，總27.4秒。實際頁面：
+
+- [中文 M04-05](https://learn.cs-kairos.com/courses/aase/v1/m04/concepts/m04-05/)／[English M04-05](https://learn.cs-kairos.com/en/courses/aase/v1/m04/concepts/m04-05/)皆顯示v1.1.0、原發布2026-11-05與修訂2026-11-11；全部十一 section、四張表、版本範例、三題與解析逐段／逐儲存格及順序核對。
+- 六組圖解、四狀態並列、兩個資料變更箭頭、進階設定入口與手風琴示意完整；四尺寸與200%字級、正文16px／1.7、全頁無水平溢出、具名局部捲動、鍵盤焦點、原生答案與無JS通過。正式截圖另目視中文手機進階設定與英文桌面四狀態，保留分組及所有必要狀態資訊。
+- 實際搜尋包含正文、每個表格儲存格及圖節點／圖說／說明；M04-04與M04-06導覽可達。
+- 十二份正式SVG皆HTTP200、小於100000 bytes，文字順序與模型相符、無viewBox越界或文字互相重疊，下載位元組與產物完全一致；正式ZIP與SHA256SUMS同樣200且逐位元組相同。原 PNG 與全文保持來源保存層。
+
+正式報告為 `.local/aase/m0405/results.json`，本機快照另存 `local-results.json`；廣泛回歸結果為 `local-regression-results.json`，正式 log `/tmp/m0405-production-browser.log`，各語手機／桌面與SVG截圖在同目錄。來源原件及前版的SHA256、正文生成器與SVG生成器同步核對通過。詳細證據保留在本repo的忽略目錄，公開回執保留版本、指令、結果及限制。
+
+正式回讀後快轉整合至origin/main 4975b08，確認本課生成器同步，分歧0／0；同期 M03-03／M03-04 等提交及原工作目錄無關修改完整保留。本回執後續以文件提交推送，不更改已驗證的教材資料或正式資產。
+
+剩餘驗收層為實體手機、完整讀屏與獨立讀者理解；廣泛回歸的六項既有768px幾何差距維持另案，未升格為本課或全站通過。Planning未改動，詳細來源、教學、驗證及發布正本留在kairos-learning。

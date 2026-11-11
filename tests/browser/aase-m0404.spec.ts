@@ -5,8 +5,10 @@ const norm=(s:string)=>s.replace(/\s+/g,' ').trim();
 for(const lang of ['zh','en'] as const){
  const path=`${lang==='en'?'/en':''}/courses/aase/v1/m04/concepts/m04-04/`;
  test(`${lang}: full body, responsive figures, keyboard, no JS and downloads`,async({browser,page,request})=>{
-  await page.goto(path);await expect(page.locator('body')).toContainText('v1.1.0');
+  await page.goto(path);await expect(page.locator('body')).toContainText('v1.1.0');await expect(page.locator('.wireframe-diagram[data-figure="4"] .upload-node')).toHaveCount(12);await expect(page.locator('.wireframe-diagram[data-figure="4"] .branch')).toHaveCount(2);
   const body=norm(await page.locator('article').innerText());
+  const index=await(await request.get('/search-index.json')).json();const entry=index.find((e:any)=>e.id===lesson.id&&e.lang===lang);expect(entry).toBeTruthy();
+  for(const section of lesson.text[lang].sections){for(const p of section.paragraphs)expect(entry.text).toContain(p);for(const block of section.blocks??[]){if(block.kind==='prose')for(const p of block.paragraphs)expect(entry.text).toContain(p);if(['cards','flow'].includes(block.kind))for(const item of block.items){expect(entry.text).toContain(item.title);expect(entry.text).toContain(item.body);}}}
   const verify=(value:string)=>expect(body).toContain(norm(value.replace(/^- /gm,'').replace(/^\d+\. /gm,'')));
   for(const section of lesson.text[lang].sections){
    await expect(page.locator('#'+section.id)).toHaveText(section.heading);
@@ -33,7 +35,7 @@ for(const lang of ['zh','en'] as const){
    await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
    const bad=await page.locator('article p,article li,article figcaption').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1)}).map(e=>e.textContent?.slice(0,80)));expect(bad).toEqual([]);
   }
-  await page.goto(path);const summary=page.locator('section').filter({has:page.locator('h2#checks')}).locator('details summary').first();await summary.focus();await page.keyboard.press('Enter');await expect(page.locator('section').filter({has:page.locator('h2#checks')}).locator('details').first()).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(page.locator('section').filter({has:page.locator('h2#checks')}).locator('details').first()).not.toHaveAttribute('open','');
+  await page.goto(path);const summary=page.locator('section').filter({has:page.locator('h2#checks')}).locator('details summary').first();await summary.focus();await page.keyboard.press('Enter');await expect(page.locator('section').filter({has:page.locator('h2#checks')}).locator('details').first()).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(page.locator('section').filter({has:page.locator('h2#checks')}).locator('details').first()).not.toHaveAttribute('open','');await page.keyboard.press('Tab');await expect(page.locator('h3#AASE-M04-C04-Q05').locator('..').locator('summary')).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(summary).toBeFocused();expect(await summary.evaluate(e=>parseFloat(getComputedStyle(e).outlineWidth))).toBeGreaterThan(0);
   for(let n=1;n<=5;n++){
    const response=await request.get(`/images/aase/m04-04-${n}-${lang}.svg`);expect(response.ok()).toBeTruthy();
    expect(await response.body()).toEqual(readFileSync(`site/images/aase/m04-04-${n}-${lang}.svg`));
