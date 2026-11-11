@@ -88,6 +88,12 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const count=s.id==='risk'?4:s.id==='workflow'?7:0;
         if(figures.length!==(count?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==(s.id==='risk'?'cards':'flow')||f.items.length!==count||!keys(f,['kind','caption','description','items'])||f.items.some(i=>!keys(i,['title','body']))))fail('invalid preview export figure');
       }
+      if(l.id==='AASE-M09-C01'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='analogy'?'flow':s.id==='lab'?'cards':undefined;
+        if(figures.length!==(expected?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==expected||f.items.length!==4||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body'])||/[<>]/.test(item.title+item.body))))fail('invalid Git history figure');
+        if(s.id==='analogy'){const f=figures[0];if(f?.kind==='flow'&&f.items.some((item,i)=>item.body.split('\n').length!==(i<3?2:1)||i<3&&!item.body.split('\n')[1].startsWith(['git add','git commit','git push'][i])))fail('invalid Git transition labels');}
+      }
       if(l.id==='AASE-M05-C04'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
         if(figures.length!==(s.id==='loop'?1:0)||figures.some(f=>f.kind!=='flow'||f.items.length!==5||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid SDD change figure');
@@ -107,6 +113,12 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected:Record<string,number[]>={analogy:[8],layers:[3],commands:[5,2]};
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='commands'&&i===0?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid environment setup figure');
+      }
+      if(l.id==='AASE-M08-C03'&&l.revision>=4){
+        const expected:Record<string,number>={map:5,delivery:3,cases:3};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='map'?'flow':'cards')||f.items.some(i=>!keys(i,['title','body']))))fail('invalid rule testing figure');
+        if(s.id==='delivery'){const f=figures[0];if(!f||f.kind!=='cards'||f.items.map(i=>i.body).join('|')!=='999|60|1000')fail('invalid delivery defaults');}
       }
       if(l.id==='AASE-M01-C03'&&['differences','identity'].includes(s.id)){const cards=(s.blocks??[]).filter(b=>b.kind==='cards');if(cards.length!==1||cards[0].kind!=='cards'||cards[0].items.length!==(s.id==='differences'?6:3))fail('invalid organization teaching layout');}
       if(l.id==='AASE-M08-C06'&&l.revision>=4){
@@ -262,6 +274,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const count=s.id==='analogy'?5:s.id==='walkthrough'?3:0;
         if(figures.length!==(count?1:0)||figures.some(f=>f.kind!==(count===5?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.length!==count||f.items.some(item=>!keys(item,['title','body']))))fail('invalid acceptance evidence figure');
+      }
+      if(l.id==='AASE-M09-C02'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
+        const count=s.id==='analogy'?4:s.id==='checklist'?8:0;
+        if(figures.length!==(count?1:0)||figures.some(f=>(f.kind!=='flow'&&f.kind!=='cards')||f.kind!==(s.id==='analogy'?'flow':'cards')||f.items.length!==count||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid handoff figure');
       }
       for(const b of s.blocks??[]){
         if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}

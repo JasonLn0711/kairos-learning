@@ -14,11 +14,11 @@
 | --- | --- | --- |
 | 原稿／前版保存、逐小節完整性及雙語深度 | WRITE-01–06、09–11 | 原件與編輯稿分層；source-map逐項列出導言、七節、十小節與原題；兩語案例、數值、條件及限制對應 |
 | 內容／固定圖模型 | FIG-05、HTML-01 | 通過：內容驗證、兩生成器 --check；固定圖契約拒絕少節點、錯誤種類、任意資產及markup |
-| 單元與型別 | WRITE-11 | 通過：321項單元測試；svelte-check 0 errors／0 warnings |
-| 發布邊界與靜態資產／連結 | WRITE-11、FIG-03 | 通過：隔離fixture、draft／future、英文課程draft／future閘門及乾淨重建；validate:release含406 HTML、連結與785靜態資產檢查 |
+| 單元與型別 | WRITE-11 | 通過：本機最後整合339項單元測試；正式部署6810cac的CI共341項通過、0失敗；svelte-check 0 errors／0 warnings |
+| 發布邊界與靜態資產／連結 | WRITE-11、FIG-03 | 通過：隔離fixture、draft／future、英文課程draft／future閘門及乾淨重建；validate:release含本機406 HTML／829靜態資產；正式部署CI為406 HTML／843靜態資產，連結與位元組檢查通過 |
 | 雙語全文、四尺寸及200% | HTML-01–04、FIG-01–06 | 通過：中英2個完整流程；320／390／768／1280 CSS px、100%／200%文字；逐段全文、表格、code、圖解順序及搜尋全文 |
 | 無JS、鍵盤、原生答案收合、SVG | A11Y-01–03 | 通過：無JS全文／收合、Enter／Space、Tab／Shift+Tab焦點、表格與code局部捲動；六SVG文字邊界／無重疊與下載位元組相等 |
-| 正式部署與回讀 | WRITE-11 | 尚待本機驗收完成後發布並回讀 |
+| 正式部署與回讀 | WRITE-11 | 通過：部署42991324344／6810cac；正式中英全文、四尺寸／200%、無JS、鍵盤、搜尋及六SVG位元組均通過 |
 
 本機證據保存在隔離工作樹 `.local/aase/m0801/`，包含測試JSON、桌面／手機圖解及獨立SVG截圖；不將其視為真人理解或正式系統測試。
 
@@ -35,3 +35,16 @@
 | 1 | 2398 | 2948 |
 | 2 | 1709 | 1937 |
 | 3 | 2243 | 2620 |
+
+## 正式發布證據
+
+- 來源保存提交：`cfed453`；完整教材與圖解實作：`0bf0620`。同期遠端教材以合併保留雙方歷史，沒有強制推送。
+- 首次推送本次完整內容至main：`d80aac2a044587cd874629e397c7edcd946b5587`；推送後fetch確認差異`0 0`。
+- 原排程42991188183因後續整合更新而取消；其內容由後續整合版本承接，並非已完成部署。
+- [正式部署42991324344](https://github.com/JasonLn0711/kairos-learning/actions/runs/42991324344)成功，部署來源`6810cac8e4803a40636d122c3ceea474e5421645`包含上述M08-01推送。該run的內容、341項單元、6項HTML單元、型別、audit、publication-boundary、release、checksum、上傳及deploy步驟均成功。
+- [中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m08/concepts/m08-01/)與[英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m08/concepts/m08-01/)已實際回讀：v1.1.0／2026-11-11，逐段正文、兩表、完整code、三圖及原題均進入實際頁面。
+- 正式站執行`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0801.config.ts`：2 passed（17.9s）。包括320／390／768／1280、100%／200%文字、無JS、原生答案收合、鍵盤焦點與局部捲動、同源搜尋全文、六SVG文字邊界／無重疊及HTTP下載位元組與本地原檔相等。正式手機／桌面截圖亦已回看。
+- 原文與三PNG另與本次附件逐位元組核對相等；SHA256SUMS八項均通過。兩產生器--check通過。
+- 本機audit以high為閾值通過，另有4項既有low警示；本次未更新依賴。網站回讀不構成課文情境系統的實際驗證。
+
+本回執更新只保存觀察結果，不改動部署內容；後續同期章節的發布狀態由各自回執持有。

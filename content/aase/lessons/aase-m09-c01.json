@@ -1,10 +1,10 @@
 {
   "id": "AASE-M09-C01",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "git-recording",
     "git-diff",
@@ -27,123 +27,623 @@
       },
       "sections": [
         {
-          "id": "history",
-          "heading": "讓變更有理由，也有可找回的起點",
+          "id": "intro",
+          "heading": "導言",
           "paragraphs": [
-            "M07 的 Diff 告訴你現在改了什麼，Git 提交（Commit）則保存暫存區的專案快照，讓下次能比較、定位及回復。每次切片先核對驗收情境，再把相關檔案放進同一個有目的的提交。",
-            "提交保存在本機，不代表已推送遠端、部署或通過驗收。這些狀態分開記錄；也不要把真實資料、金鑰或未確認可公開的內容寫進歷史。"
-          ]
+            "這一節的主題是 Git、Diff、Commit 與 Restore（還原），屬於 AASE 課程的「M09 版本控制、交付與持續改善」。\n\n本課屬於 M09，正式路徑為 /courses/aase/v1/m09/concepts/m09-01/；原稿提到的 m04 路徑應以此修正。"
+          ],
+          "blocks": []
+        },
+        {
+          "id": "history",
+          "heading": "一、先用一句白話理解",
+          "paragraphs": [
+            "Git 就像一套專門管理工作修改歷史的系統。它不只是幫你記住做過什麼，更讓你知道誰改了什麼、為什麼改，以及出問題時怎麼恢復。\n\n想像你正在撰寫一份重要報告：\n\n星期一完成第一版，星期二修改數據，星期三增加圖表，星期四發現星期二的某個數據改錯了。\n\n如果沒有版本控制，你可能必須尋找：\n\n- `報告_最終版.docx`\n- `報告_最終版2.docx`\n- `報告_真的最終版.docx`\n- `報告_最後修改版.docx`\n\n但有了 Git，你可以找到星期二的修改紀錄，比較錯在哪裡，再決定要恢復哪些部分。\n\n最重要的是：你可以只復原錯誤的部分，而不必犧牲星期三、星期四其他正確的工作。\n\n這一節要練習的工程能力是：讓每次修改都能被檢查、被理解、被追溯，必要時還能安全復原。Git 特別適合文字檔；報告比喻不代表 Word 檔也能獲得同樣的逐行比較。"
+          ],
+          "blocks": []
         },
         {
           "id": "analogy",
-          "heading": "像整理一份能追溯修訂的工程紀錄",
+          "heading": "二、Git 的四個重要位置：理解整套系統的關鍵",
           "paragraphs": [
-            "工作臺上可能同時放著不同任務的材料；暫存區像本次要歸檔的清單，提交是實際封存的一版。只記一句「完成」會讓接手者難以知道它對應哪個要求。",
-            "好的提交說明指出變更目的，例如「表單切片：新增三欄及未檢核預覽」。測試與限制可在相關紀錄連結，不把無關修正一併混入。"
+            "Git 最容易讓初學者困惑的地方，是「修改」、「暫存」、「提交」、「發布」其實是四件不同的事情。\n\n想像你是一位出版社編輯，正在編輯一本書。\n\n讀圖時由上向下看，箭頭標示兩個位置之間的動作。"
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "圖 1｜從修改到可追溯提交",
-              "description": "先核對範圍再保存；遠端發布與實際部署另行驗證。",
+              "caption": "圖 1｜Git 的四個位置",
+              "description": "向下箭頭依序表示 git add、git commit、git push；這是簡化的單向路徑。推送到遠端不代表已部署，也不代表測試或驗收通過。",
               "items": [
                 {
-                  "title": "工作區",
-                  "body": "編輯程式、測試與文件。"
+                  "title": "1. 工作區（Working Directory）",
+                  "body": "你正在修改的草稿\ngit add：挑選本次要歸檔的內容"
                 },
                 {
-                  "title": "審查 Diff",
-                  "body": "核對規格及修改範圍，也查看未追蹤檔案。"
+                  "title": "2. 暫存區（Staging Area / Index）",
+                  "body": "已選定、準備封存的修改\ngit commit：正式建立版本紀錄"
                 },
                 {
-                  "title": "暫存指定路徑",
-                  "body": "只加入這次準備提交的內容。"
+                  "title": "3. 本機儲存庫（Local Repository）",
+                  "body": "已封存、可以追溯的版本歷史\ngit push：將提交送往遠端"
                 },
                 {
-                  "title": "提交快照",
-                  "body": "記錄目的與版本，再分別處理推送及部署。"
+                  "title": "4. 遠端儲存庫（Remote Repository）",
+                  "body": "例如 GitHub 上的共享版本紀錄"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 1. 工作區：正在修改的草稿"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "你在 VS Code 裡修改程式，就是改變工作區的檔案。\n\n可能修改三個檔案，其中只有一個已經完成，另外兩個還是半成品。\n\nGit 不會因為你按了儲存，就自動建立 Commit。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 2. 暫存區：這次到底要交哪些修改？"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "假設你同時在做兩件事：\n\nA：修正訂單總額計算錯誤。\n\nB：開發會員登入功能。\n\n訂單總額已經修好了，但會員登入只寫到一半。\n\n你應該只把 A 放進暫存區，提交 A，不要把 B 一起封存。\n\n這就是 `git add` 的作用。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 3. Commit：留下正式版本紀錄"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Commit 是 Git 儲存當次暫存內容的版本快照（Snapshot），包含作者／提交者資料、時間、訊息及歷史關係。署名欄位保存設定的身分資料，本身不驗證真實身分。\n\n你可以把它理解成：\n\n「在這個時間點，我正式確認這些內容是一個有意義的修改版本。」\n\n每個 Commit 會有識別碼，方便之後尋找、比較與引用。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 4. Push：分享版本，不等於產品上線"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "即使你已經 Commit，紀錄通常仍只在自己的電腦。\n\n執行 `git push` 後，才會將適用的本機提交送往設定的遠端儲存庫。\n\n但 GitHub 上有新程式，不代表網站已更新。是否正式部署（Deployment），取決於另外的發布流程。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "diff",
+          "heading": "三、Diff：先看清楚改了什麼",
+          "paragraphs": [
+            "Diff 是 Difference 的縮寫，意思是「差異」。\n\n想像一間醫院正在修訂標準作業程序（SOP）。以下是合成的文字比較案例，供練習 Diff 判讀。\n\n原版：\n\n> 手術前，護理師必須核對患者姓名。\n\n新版：\n\n> 手術前，護理師必須核對患者姓名、出生日期及手術部位。\n\nDiff 就能指出這次新增了哪些要求。\n\n在 Git 裡，常會看到類似這樣的內容："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "指令與範例 1",
+              "paragraphs": [
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
+              ],
+              "code": "- 手術前，護理師必須核對患者姓名。\n+ 手術前，護理師必須核對患者姓名、出生日期及手術部位。"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`-` 代表舊版本移除的內容，`+` 代表新版本增加的內容。\n\n這很重要，因為你不應只問「現在的程式能不能跑」，還應問「這次究竟改動了哪些地方，有沒有不相關的變動」。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 兩個最容易混淆的 Diff"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 1",
+              "headers": [
+                "指令",
+                "在比較什麼？"
+              ],
+              "rows": [
+                [
+                  "git diff",
+                  "工作區相對於暫存區，還沒暫存的修改"
+                ],
+                [
+                  "git diff --cached",
+                  "暫存區相對於目前提交（HEAD），準備提交的修改"
+                ],
+                [
+                  "git status --short",
+                  "各檔案目前是修改、暫存，還是尚未追蹤"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "在一般已切換分支的情境，`HEAD` 透過目前分支指向該分支頂端的 Commit；分離 HEAD（detached HEAD）時，則直接指向切換到的 Commit，不一定是任何分支的最新提交。\n\n有個容易忽略的細節：新建立、尚未被追蹤的檔案，不一定會出現在一般 `git diff` 裡。\n\n因此，不可以因為 `git diff` 沒有輸出，就斷定完全沒有任何新檔案或變更。要搭配 `git status` 檢查。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "commit",
+          "heading": "四、Commit：一次提交，最好只完成一個明確目的",
+          "paragraphs": [
+            "假設你請 AI Coding Agent 幫忙開發一個電商系統。\n\n它完成了以下修改："
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 2",
+              "headers": [
+                "修改內容",
+                "是否適合同一個 Commit？"
+              ],
+              "rows": [
+                [
+                  "修正商品金額計算公式",
+                  "適合"
+                ],
+                [
+                  "增加金額計算的自動測試",
+                  "適合"
+                ],
+                [
+                  "順便修改登入頁面的顏色",
+                  "不適合"
+                ],
+                [
+                  "順便修改資料庫連線設定",
+                  "不適合，需另行確認"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "前兩項屬於同一個目的：修正金額計算錯誤。\n\n後兩項與這個目的不直接相關，應該拆開處理。\n\n一個好的 Commit 訊息，例如："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "指令與範例 2",
+              "paragraphs": [
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
+              ],
+              "code": "git commit -m \"fix: 修正訂單折扣計算錯誤\""
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "比較不好的訊息："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "指令與範例 3",
+              "paragraphs": [
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
+              ],
+              "code": "git commit -m \"更新\""
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "因為過了三個月，別人看到「更新」根本不知道你更新了什麼。\n\n更成熟的方式，是讓 Commit 可以對應到需求或規格，例如 `REQ-003：修正折扣計算`，並保留相關測試紀錄。\n\nCommit 保存修改歷史；程式品質仍須由相關檢查與測試支持。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "restore",
+          "heading": "五、Restore：只救回需要恢復的部分",
+          "paragraphs": [
+            "這是整篇教材最值得練習的地方。\n\n假設你在律師事務所，同時修改兩份文件：\n\n`contract.txt` 是今天不小心改錯的合約條款。\n\n`case-notes.txt` 是另一位同事今天新增的重要案件分析。\n\n你想把合約條款回復到昨天的版本，但不能影響案件分析。\n\n正確的思考方法是：\n\n「我要恢復哪個檔案？從哪個歷史版本恢復？目前還有哪些修改必須保留？」\n\n在 Git 中，假設這兩個檔案都有已提交的基準版本，你已確認目標檔案的修改可以捨棄，並先備份，而且 HEAD 確實含有要恢復的基準內容，就可以使用："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "指令與範例 4",
+              "paragraphs": [
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
+              ],
+              "code": "git restore --source=HEAD --worktree -- contract.txt"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這行指令可以拆成四部分："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 3",
+              "headers": [
+                "語法",
+                "白話意思"
+              ],
+              "rows": [
+                [
+                  "git restore",
+                  "我要還原內容"
+                ],
+                [
+                  "--source=HEAD",
+                  "使用 HEAD 所指 Commit 的內容當作來源"
+                ],
+                [
+                  "--worktree",
+                  "只修改工作區的檔案"
+                ],
+                [
+                  "-- contract.txt",
+                  "只針對這個指定路徑"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這行指令不依日期挑選版本；先確認 HEAD 是預期基準，否則改用已核對的歷史 Commit。\n\n`--` 是分隔符號，告訴 Git 後面是檔案路徑，而非指令選項。\n\n這個指令不會主動修改 `case-notes.txt`，也不會清除既有的 Commit 歷史；但是它會覆蓋 `contract.txt` 在工作區的現有內容，因此一定要先檢查及保護尚未保存的修改。\n\n如果 `contract.txt` 內同時有你希望保留的其他修改，就不應直接整份覆蓋。可以先備份，再考慮使用 `git restore -p` 逐段選擇。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Restore、Revert、Reset 不一樣"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 4",
+              "headers": [
+                "指令",
+                "主要用途",
+                "注意事項"
+              ],
+              "rows": [
+                [
+                  "git restore",
+                  "還原指定檔案或修改",
+                  "可能覆蓋尚未提交的內容"
+                ],
+                [
+                  "git restore --staged",
+                  "取消暫存，不刪除工作區修改",
+                  "適合不小心 git add 後使用；預設來源為 HEAD"
+                ],
+                [
+                  "git revert",
+                  "以新 Commit 抵銷先前某次提交",
+                  "適合已分享歷史的協作情境；可能需要解決衝突"
+                ],
+                [
+                  "git reset --hard",
+                  "將目前分支／HEAD、暫存區及工作區重設到指定提交",
+                  "可能造成工作遺失，不能隨意使用"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "對初學者而言，先學會查看 `status`、`diff`，再做指定路徑的 Restore，比直接使用強制重設安全得多。"
               ]
             }
           ]
         },
         {
           "id": "lab",
-          "heading": "先在獨立目錄練習",
+          "heading": "六、實際操作：10 分鐘完成一次 Git 練習",
           "paragraphs": [
-            "新建並進入空白 git-lab/，不要在既有專案或包含其他工作的位置初始化。以下身分只供本機合成練習；正式專案使用自己獲准的署名設定，不修改全域設定。",
-            "用編輯器建立 slice-notes.md，內容記「切片一：三欄輸入及未檢核預覽」，再建立 keep.txt，內容記「其他工作：原始紀錄」。另建 .gitignore，排除 .venv/、__pycache__/、.pytest_cache/ 與 .env；忽略規則不會自動清除已追蹤檔案或歷史中的內容。"
+            "這裡按照教材精神，建立完全獨立的練習資料夾，不接觸正式專案，也不使用真實個資。\n\n以下命令適用於 Linux、macOS 或 Windows 的 WSL Bash 終端機。請選擇尚無 git-lab 的父目錄；若建立目錄失敗就停止，不要進入既有資料夾繼續操作。"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "初始化本機練習",
+              "kind": "prose",
               "paragraphs": [
-                "只在剛建立的空白 git-lab/ 執行，不設定遠端，也不推送。"
-              ],
-              "code": "git init\ngit config user.name \"AASE Learner\"\ngit config user.email \"aase@example.invalid\""
+                "### 步驟 A：建立自己的練習儲存庫"
+              ]
             },
             {
               "kind": "step",
-              "heading": ".gitignore｜練習內容",
+              "heading": "指令與範例 5",
               "paragraphs": [
-                "逐行放入 .gitignore；這些模式不取代提交前的內容檢查。"
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
               ],
-              "code": ".venv/\n__pycache__/\n.pytest_cache/\n.env"
+              "code": "mkdir git-lab\ncd git-lab\n\ngit init\n\ngit config user.name \"AASE Learner\"\ngit config user.email \"learner@example.invalid\""
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`git init` 是建立 Git 儲存庫。\n\n後面兩個 `git config` 則是在這個練習專案裡設定提交署名，而不是修改所有專案的全域設定。\n\n接著建立三個檔案："
+              ]
             },
             {
               "kind": "step",
-              "heading": "建立基準提交",
+              "heading": "指令與範例 6",
               "paragraphs": [
-                "確認三個檔案內容後，逐路徑暫存；不要用全目錄加入代替審查。"
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
               ],
-              "code": "git status --short\ngit add .gitignore slice-notes.md keep.txt\ngit diff --cached\ngit commit -m \"建立合成切片紀錄基準\"\ngit log -1 --oneline"
+              "code": "printf \".venv/\\n__pycache__/\\n.pytest_cache/\\n.env\\n\" > .gitignore\n\nprintf \"切片一：三欄輸入及未檢核預覽\\n\" > slice-notes.md\n\nprintf \"其他工作：原始紀錄\\n\" > keep.txt"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "其中 `.gitignore` 是告訴 Git 哪些符合規則的未追蹤檔案不應被納入一般版本管理。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 步驟 B：第一次正式提交"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "指令與範例 7",
+              "paragraphs": [
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
+              ],
+              "code": "git status --short\n\ngit add .gitignore slice-notes.md keep.txt\n\ngit diff --cached\n\ngit commit -m \"建立合成切片紀錄基準\"\n\ngit log -1 --oneline"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "執行後，你會建立第一個 Commit。\n\n`git log -1 --oneline` 能顯示最新一筆提交的簡短識別碼與訊息。\n\n這個版本，就是後面練習要恢復的基準。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 步驟 C：模擬同時做兩項修改"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "指令與範例 8",
+              "paragraphs": [
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
+              ],
+              "code": "printf \"誤加：完整報告已完成\\n\" >> slice-notes.md\n\nprintf \"其他工作：尚待完成\\n\" >> keep.txt\n\ngit status --short\n\ngit diff -- slice-notes.md keep.txt\n\ngit diff --cached -- slice-notes.md keep.txt"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "現在兩個檔案都被修改了，但尚未暫存。\n\n目標是把 `slice-notes.md` 恢復到原版，同時保留 `keep.txt` 的新內容。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 步驟 D：先備份，再局部恢復"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "指令與範例 9",
+              "paragraphs": [
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
+              ],
+              "code": "cp slice-notes.md slice-notes.backup.md\n\ngit restore --source=HEAD --worktree -- slice-notes.md\n\ngit status --short\n\ngit diff -- slice-notes.md\n\ngit diff -- keep.txt"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "以下是預期條件，請對照實際檔案與歷史逐項核對；勾號不表示你已經執行成功。"
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 2｜預期驗收結果",
+              "description": "四項是同次練習的並列核對條件；勾號表示預期條件，實際成功須檢查檔案與歷史。",
+              "items": [
+                {
+                  "title": "slice-notes.md",
+                  "body": "恢復到原本內容"
+                },
+                {
+                  "title": "keep.txt",
+                  "body": "新修改還在"
+                },
+                {
+                  "title": "slice-notes.backup.md",
+                  "body": "備份仍存在"
+                },
+                {
+                  "title": "Commit",
+                  "body": "原本紀錄仍可查詢"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這就是一次成功的局部還原（Selective Restoration）。\n\n要注意，備份檔目前仍是未追蹤檔案；如果後來使用 `git add .`，它也可能被納入暫存，因此提交前仍應逐項審查。"
+              ]
             }
           ]
         },
         {
-          "id": "diff",
-          "heading": "分清兩種差異與未追蹤檔案",
+          "id": "applications",
+          "heading": "七、跨產業應用：這套觀念並不只適用於程式設計",
           "paragraphs": [
-            "git diff 預設看工作區相對暫存區，git diff --cached 看準備提交的內容相對 HEAD。新檔案尚未追蹤時要另看 status 及檔案內容；沒有 diff 不能推定完全沒有修改。",
-            "完成基準提交後，在 slice-notes.md 加入「誤加：完整報告已完成」，在 keep.txt 加入「其他工作：尚待完成」。查看差異，確認兩者都只在工作區，且暫存區沒有這次修改。"
+            "版本紀錄幫助團隊確認每項變更對應的目的。"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "還原前的唯讀核對",
+              "kind": "prose",
               "paragraphs": [
-                "先保留現況；若有別人的或已暫存修改，先停止這個簡化練習並釐清範圍。"
-              ],
-              "code": "git status --short\ngit diff -- slice-notes.md keep.txt\ngit diff --cached -- slice-notes.md keep.txt"
+                "### 軟體工程：AI Agent 修改程式"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "AI Agent 一次修改 20 個檔案。工程師先看 Diff，檢查是否改到不相關的權限設定，確認測試之後，再建立對應功能的 Commit。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 建築工程：設計變更管理"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "結構工程師修改材料規格，透過可追溯的版本紀錄，確認修改理由、核准版本與受影響的設計文件，避免施工單位使用錯誤版本。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 科學研究：實驗可重現性"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "研究團隊調整資料前處理程式與模型參數。透過 Commit，能確認每次實驗對應哪個程式版本，降低混用不同實驗設定的風險；資料、環境及執行參數仍須各自記錄。\n\n要注意，以上是將版本控制的思維應用於不同產業，不代表所有文件都適合直接放進 Git。\n\nGit 特別適合程式、Markdown、JSON 等文字型檔案；Word、圖片及大型二進位資料，可能需要搭配其他版本或文件管理工具。"
+              ]
             }
           ]
         },
         {
-          "id": "restore",
-          "heading": "只還原已確認的路徑",
+          "id": "mistakes",
+          "heading": "八、最容易犯的三個錯誤",
           "paragraphs": [
-            "先用編輯器把目前 slice-notes.md 另存為 slice-notes.backup.md，確認副本可讀。以下明確從 HEAD 回復工作區的 slice-notes.md，會覆蓋該檔目前內容；keep.txt 的其他修改應保持。",
-            "這個練習以目標檔只有本次修改為前提。若同一檔案混有其他工作，先保留副本並分段處理，不整份覆蓋。還原後核對檔案及 Diff；程式檔則需重跑受影響測試。"
+            "### 錯誤一：以為 Git 已經幫你保存所有東西"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "局部回復基準",
+              "kind": "prose",
               "paragraphs": [
-                "僅在本篇獨立練習且已保留副本後執行。"
+                "已提交的歷史包含實際納入 Commit 的內容。尚未追蹤、尚未暫存、未正式提交的修改，不能假設都受到保護。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 錯誤二：把密碼提交後，再用 .gitignore 隱藏"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "假設你不小心把 API Key 放進 `.env` 並提交。\n\n後來才在 `.gitignore` 加入："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "指令與範例 10",
+              "paragraphs": [
+                "依本節條件執行或判讀；示例指令與實際練習分開。"
               ],
-              "code": "git restore --source=HEAD --worktree -- slice-notes.md\ngit diff -- slice-notes.md\ngit diff -- keep.txt\ngit status --short"
+              "code": ".env"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這不會自動從既有 Git 歷史清除已提交的金鑰。\n\n如果金鑰可能已經暴露，還需要撤銷或輪替金鑰、檢查暴露範圍，並依專案流程處理歷史及相關副本。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 錯誤三：直接讓 AI Agent 自行重設所有修改"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果你交代 AI Agent「有問題就把 Git 恢復乾淨」，它可能採用過度廣泛的還原方式，導致你尚未提交的工作遺失。\n\n比較安全的工作規則是：\n\n> 每次變更先顯示 Diff，明確說明要保留與還原的檔案；涉及覆蓋工作區、重寫歷史或刪除內容時，必須確認影響範圍。\n\n這也涉及 AI Agent 工作流程中的權限與責任邊界。"
+              ]
             }
           ]
         },
         {
           "id": "handoff",
-          "heading": "用歷史支持接手與復原",
+          "heading": "九、整節重點整理",
           "paragraphs": [
-            "將此方法帶回三次切片：每次提交對應規格、修改及測試結果，交接時提供提交識別碼。修復已公開變更時要遵循專案協作流程，不能為了整理紀錄任意重寫別人的歷史。",
-            "Git 保存的是你交給它的內容；沒有提交或另存的工作仍需保護。本機提交也不是遠端備份、權限控制或個資清理工具。下一篇把啟動、限制與復原方式整理到 README。"
+            "用下表區分各觀念的用途與界線。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 5",
+              "headers": [
+                "觀念",
+                "最重要的記憶"
+              ],
+              "rows": [
+                [
+                  "Git",
+                  "管理專案的版本與修改歷史"
+                ],
+                [
+                  "Working Directory",
+                  "目前正在編輯的檔案"
+                ],
+                [
+                  "Staging Area",
+                  "挑選下一次 Commit 的內容"
+                ],
+                [
+                  "Diff",
+                  "比較版本或狀態之間的差異"
+                ],
+                [
+                  "Commit",
+                  "保存一次有意義的版本快照"
+                ],
+                [
+                  "HEAD",
+                  "目前切換到的提交，一般透過分支指向"
+                ],
+                [
+                  "Restore",
+                  "從指定來源還原指定檔案或修改"
+                ],
+                [
+                  "Push",
+                  "將本機提交傳送到遠端，不等於部署"
+                ],
+                [
+                  ".gitignore",
+                  "忽略特定未追蹤檔案，不能消除既有歷史秘密"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "你真正應該建立的習慣是：\n\n確認需求 → 修改 → 檢查 Diff → 測試 → 選擇暫存內容 → Commit → 驗證交付\n\n這個流程能讓個人開發、團隊協作與 AI Agent 自動修改都變得更容易審查和接手。工作坊三次切片都可用提交識別碼串起規格、修改與測試結果；修正已公開的內容時，依協作流程保留共享歷史。下一篇將啟動、限制與復原方式整理到 README。"
+              ]
+            }
           ]
+        },
+        {
+          "id": "understanding",
+          "heading": "十、理解檢核",
+          "paragraphs": [
+            "請先回答下方理解檢核的三題，再展開參考解析。接著實際完成上面的 `git-lab` 練習，核對 `slice-notes.md` 已恢復且 `keep.txt` 新修改仍在；選對答案與實際完成還原分開驗證。"
+          ],
+          "blocks": []
         }
       ],
       "exercise": {
@@ -173,123 +673,623 @@
       },
       "sections": [
         {
-          "id": "history",
-          "heading": "Give Changes a Reason and a Recoverable Starting Point",
+          "id": "intro",
+          "heading": "Introduction",
           "paragraphs": [
-            "M07 diffs show current changes; a Git commit records the project snapshot prepared in the staging area for later comparison, diagnosis and recovery. Check each slice’s acceptance scenarios, then group related files into one purposeful commit.",
-            "A local commit does not establish remote push, deployment or acceptance. Record those statuses separately and keep real data, keys and unapproved public material out of history."
-          ]
+            "This lesson covers Git, Diff, Commit and Restore in AASE M09, Version Control, Delivery and Continuous Improvement.\n\nThe lesson belongs under m09, not m04. Its canonical route is /courses/aase/v1/m09/concepts/m09-01/."
+          ],
+          "blocks": []
+        },
+        {
+          "id": "history",
+          "heading": "1. A Plain-language Starting Point",
+          "paragraphs": [
+            "Git manages the history of changes to a project. It helps you inspect what changed, who recorded the change, why it was made and how to recover when something goes wrong.\n\nImagine writing an important report. You finish the first version on Monday, change the data on Tuesday, add charts on Wednesday and discover on Thursday that Tuesday's data change was wrong.\n\nWithout version control, you might have to search through these files:\n\n- `報告_最終版.docx` (report_final)\n- `報告_最終版2.docx` (report_final2)\n- `報告_真的最終版.docx` (report_really_final)\n- `報告_最後修改版.docx` (report_last_revision)\n\nWith Git, you can find Tuesday's recorded changes, compare the error and decide which parts to restore. You can recover the incorrect part while preserving the valid work from Wednesday and Thursday.\n\nThe engineering skill is to make each change inspectable, understandable and traceable, with a way to recover the required content. Git works particularly well with text; the report analogy does not imply that Word files offer the same line-by-line comparison."
+          ],
+          "blocks": []
         },
         {
           "id": "analogy",
-          "heading": "Maintain a Traceable Engineering Record",
+          "heading": "2. Four Important Places in Git",
           "paragraphs": [
-            "A workbench may hold material for different tasks. The staging area resembles the selected material to archive now; a commit records that version. “Done” alone does not explain the requirement it serves.",
-            "A useful message states purpose, such as “Form slice: add three fields and an unvalidated preview.” Link relevant tests and limits without mixing unrelated repairs into that commit."
+            "Editing, staging, committing and sharing are separate actions. Imagine editing a book at a publishing house. Read the figure from top to bottom: each labeled arrow names an action between two locations."
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "Figure 1 | From Edits to a Traceable Commit",
-              "description": "Review scope before recording it. Verify remote publication and actual deployment separately.",
+              "caption": "Figure 1 | Four Places in Git",
+              "description": "Downward arrows label git add, git commit and git push in order. This is a simplified forward path. Push does not establish deployment, passing tests or acceptance.",
               "items": [
                 {
-                  "title": "Working tree",
-                  "body": "Edit code, tests and documents."
+                  "title": "1. Working Directory",
+                  "body": "The draft you are editing\ngit add: select content to record"
                 },
                 {
-                  "title": "Review the diff",
-                  "body": "Check specification/scope and inspect untracked files too."
+                  "title": "2. Staging Area / Index",
+                  "body": "Selected changes ready to record\ngit commit: record a version"
                 },
                 {
-                  "title": "Stage selected paths",
-                  "body": "Include only content ready for this commit."
+                  "title": "3. Local Repository",
+                  "body": "Recorded, traceable version history\ngit push: send commits to the remote"
                 },
                 {
-                  "title": "Commit the snapshot",
-                  "body": "Record purpose and version, then handle push and deployment separately."
+                  "title": "4. Remote Repository",
+                  "body": "Shared version history, for example on GitHub"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 1. Working Directory: The Draft You Are Editing"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Editing a file in VS Code changes the working directory. You might edit three files, with only one ready and two unfinished. Saving a file does not automatically create a commit."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 2. Staging Area: What Belongs in This Commit?"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose task A fixes an order-total calculation and task B adds member login. The calculation is fixed, but login is only half finished. Stage A and commit A while leaving B out of this snapshot. `git add` selects the content to stage."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 3. Commit: Record a Version"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A commit records the snapshot prepared in staging, together with authorship/committer information, timestamps, a message and history relationships. You can read it as: “At this point I record this content as a meaningful revision.”\n\nEvery commit has an identifier for finding, comparing and referencing it later. The signature fields record the supplied identity; they do not by themselves verify a person's identity."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 4. Push: Share Versions"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A commit usually remains on your computer until it is shared. `git push` sends applicable local commits to the configured remote repository. New code on GitHub does not establish that a website has changed: deployment follows its own release process. Push, testing and acceptance each need their own evidence."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "diff",
+          "heading": "3. Diff: Inspect What Changed",
+          "paragraphs": [
+            "Diff means difference. Imagine a hospital revising a standard operating procedure (SOP). The original says: “Before surgery, the nurse must check the patient's name.” The revision says: “Before surgery, the nurse must check the patient's name, date of birth and surgical site.” This is a synthetic text-comparison example, not clinical guidance.\n\nA diff identifies the added requirements. The retained Chinese example reads as follows:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Commands and Example 1",
+              "paragraphs": [
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
+              ],
+              "code": "- 手術前，護理師必須核對患者姓名。\n+ 手術前，護理師必須核對患者姓名、出生日期及手術部位。"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A leading `-` marks content removed from the old version; `+` marks content added to the new version. Ask both whether the program runs and which specific parts changed, including any unrelated changes."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Two Easily Confused Diffs"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 1",
+              "headers": [
+                "Command",
+                "Comparison or status"
+              ],
+              "rows": [
+                [
+                  "git diff",
+                  "Working directory relative to staging: changes not yet staged"
+                ],
+                [
+                  "git diff --cached",
+                  "Staging relative to the current commit (HEAD): changes prepared for committing"
+                ],
+                [
+                  "git status --short",
+                  "Whether paths are modified, staged or untracked"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "On an ordinary checked-out branch, HEAD refers through that branch to its current tip commit. In detached HEAD state, it refers directly to the checked-out commit; it need not be the newest commit on a branch.\n\nNew untracked files are not shown by ordinary `git diff`. An empty diff therefore does not prove there are no new files or changes elsewhere. Check `git status` and inspect the untracked file contents too."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "commit",
+          "heading": "4. Commit: One Clear Purpose at a Time",
+          "paragraphs": [
+            "Suppose an AI Coding Agent is developing an e-commerce system and makes these changes:"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 2",
+              "headers": [
+                "Change",
+                "Same commit?"
+              ],
+              "rows": [
+                [
+                  "Fix the product-price formula",
+                  "Yes"
+                ],
+                [
+                  "Add automated tests for the price calculation",
+                  "Yes"
+                ],
+                [
+                  "Also change the login page colors",
+                  "No"
+                ],
+                [
+                  "Also change database connection settings",
+                  "No; confirm separately"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The first two support one purpose: correcting the calculation. Handle the unrelated appearance and connection changes separately.\n\nA useful message states the purpose. The following retained command means “fix the order-discount calculation”:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Commands and Example 2",
+              "paragraphs": [
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
+              ],
+              "code": "git commit -m \"fix: 修正訂單折扣計算錯誤\""
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A vague message such as “update” is less useful:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Commands and Example 3",
+              "paragraphs": [
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
+              ],
+              "code": "git commit -m \"更新\""
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Three months later, a reader cannot tell what “update” means. A stronger record links the commit to a requirement or specification, such as `REQ-003: fix discount calculation`, and retains the related test record.\n\nA commit provides history evidence. It does not establish that the code is free of defects."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "restore",
+          "heading": "5. Restore: Recover Only What You Need",
+          "paragraphs": [
+            "Imagine working at a law firm on two files. `contract.txt` contains a contract clause you accidentally changed today. `case-notes.txt` contains important new case analysis added by a colleague.\n\nYou want the contract back at yesterday's version while preserving the analysis. First ask: which file, which source version and which current changes must remain?\n\nAssume both files have committed baselines, you have confirmed that the target edits can be discarded and you have made a backup. If HEAD contains the intended baseline, use:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Commands and Example 4",
+              "paragraphs": [
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
+              ],
+              "code": "git restore --source=HEAD --worktree -- contract.txt"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The command has four parts:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 3",
+              "headers": [
+                "Syntax",
+                "Meaning"
+              ],
+              "rows": [
+                [
+                  "git restore",
+                  "Restore file content"
+                ],
+                [
+                  "--source=HEAD",
+                  "Use the content from the commit referenced by HEAD"
+                ],
+                [
+                  "--worktree",
+                  "Change only the working-directory file"
+                ],
+                [
+                  "-- contract.txt",
+                  "Limit the operation to this path"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`--` separates options from file paths. This command does not select a version by calendar date: check that HEAD really contains the intended content, or supply the verified historical commit instead.\n\nThe command does not target `case-notes.txt` and does not erase existing commits. It does overwrite the current working-directory content of `contract.txt`, so inspect and protect unsaved changes first.\n\nIf the target file also contains work you want to keep, preserve a backup and consider `git restore -p` to select individual hunks instead of replacing the whole file."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Restore, Revert and Reset Have Different Uses"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 4",
+              "headers": [
+                "Command",
+                "Main purpose",
+                "Caution"
+              ],
+              "rows": [
+                [
+                  "git restore",
+                  "Restore selected files or changes",
+                  "Can overwrite uncommitted content"
+                ],
+                [
+                  "git restore --staged",
+                  "Unstage while preserving working-directory edits",
+                  "Useful after staging by mistake; default source is HEAD"
+                ],
+                [
+                  "git revert",
+                  "Create a new commit that reverses an earlier commit",
+                  "Suitable for shared history; conflicts may need resolution"
+                ],
+                [
+                  "git reset --hard",
+                  "Reset the current branch/HEAD, staging and working directory to a commit",
+                  "Can lose work; do not use casually"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Start by inspecting status and diffs, then restore a confirmed source and path. This gives a narrower recovery scope than a whole-project hard reset."
               ]
             }
           ]
         },
         {
           "id": "lab",
-          "heading": "Practice in a Separate Directory First",
+          "heading": "6. A Ten-minute Git Practice",
           "paragraphs": [
-            "Create and enter an empty git-lab/, preserving existing projects and other work. The identity below is for this local synthetic exercise only; use authorized authorship in real projects and leave global configuration unchanged.",
-            "Create slice-notes.md with “切片一：三欄輸入及未檢核預覽” (slice one: three fields and unvalidated preview), and keep.txt with “其他工作：原始紀錄” (other work: original note). Add .gitignore entries for .venv/, __pycache__/, .pytest_cache/ and .env. Ignore rules do not remove already tracked files or historical content."
+            "Create a completely separate exercise directory. Do not use a production project or real personal data. The commands target a Linux, macOS or Windows WSL Bash terminal. Use a parent directory where `git-lab` does not already exist; if creation fails, stop rather than entering an existing directory."
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "Initialize the Local Lab",
+              "kind": "prose",
               "paragraphs": [
-                "Run only in the new empty git-lab/, without configuring a remote or pushing."
-              ],
-              "code": "git init\ngit config user.name \"AASE Learner\"\ngit config user.email \"aase@example.invalid\""
+                "### Step A: Create the Exercise Repository"
+              ]
             },
             {
               "kind": "step",
-              "heading": ".gitignore | Exercise Contents",
+              "heading": "Commands and Example 5",
               "paragraphs": [
-                "Put these patterns on separate lines. They do not replace pre-commit content inspection."
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
               ],
-              "code": ".venv/\n__pycache__/\n.pytest_cache/\n.env"
+              "code": "mkdir git-lab\ncd git-lab\n\ngit init\n\ngit config user.name \"AASE Learner\"\ngit config user.email \"learner@example.invalid\""
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`git init` creates the repository. The two `git config` commands set the exercise's local commit identity rather than changing global settings for every project.\n\nCreate three files. The retained Chinese strings mean “slice one: three input fields and an unvalidated preview” and “other work: original record”:"
+              ]
             },
             {
               "kind": "step",
-              "heading": "Create a Baseline Commit",
+              "heading": "Commands and Example 6",
               "paragraphs": [
-                "Inspect the three files, then stage explicit paths. The retained Chinese commit message means “create synthetic slice-record baseline.”"
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
               ],
-              "code": "git status --short\ngit add .gitignore slice-notes.md keep.txt\ngit diff --cached\ngit commit -m \"建立合成切片紀錄基準\"\ngit log -1 --oneline"
+              "code": "printf \".venv/\\n__pycache__/\\n.pytest_cache/\\n.env\\n\" > .gitignore\n\nprintf \"切片一：三欄輸入及未檢核預覽\\n\" > slice-notes.md\n\nprintf \"其他工作：原始紀錄\\n\" > keep.txt"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`.gitignore` tells Git which matching untracked files to leave out of ordinary version control. It does not remove already tracked files or erase history."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Step B: Make the First Commit"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Commands and Example 7",
+              "paragraphs": [
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
+              ],
+              "code": "git status --short\n\ngit add .gitignore slice-notes.md keep.txt\n\ngit diff --cached\n\ngit commit -m \"建立合成切片紀錄基準\"\n\ngit log -1 --oneline"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This creates the first commit. `git log -1 --oneline` shows its short identifier and message. The Chinese message means “create synthetic slice-record baseline.” This is the version to restore later."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Step C: Simulate Two Concurrent Edits"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Commands and Example 8",
+              "paragraphs": [
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
+              ],
+              "code": "printf \"誤加：完整報告已完成\\n\" >> slice-notes.md\n\nprintf \"其他工作：尚待完成\\n\" >> keep.txt\n\ngit status --short\n\ngit diff -- slice-notes.md keep.txt\n\ngit diff --cached -- slice-notes.md keep.txt"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The appended strings mean “mistaken addition: full report completed” and “other work: pending.” Both files now have unstaged changes. The goal is to restore `slice-notes.md` to its original content while retaining the addition to `keep.txt`."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Step D: Back Up, Then Restore Selectively"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Commands and Example 9",
+              "paragraphs": [
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
+              ],
+              "code": "cp slice-notes.md slice-notes.backup.md\n\ngit restore --source=HEAD --worktree -- slice-notes.md\n\ngit status --short\n\ngit diff -- slice-notes.md\n\ngit diff -- keep.txt"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Read the following as expected conditions, then verify the real files and history. The check symbols are not evidence that you have already run the exercise."
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Expected Acceptance Conditions",
+              "description": "Four parallel checks for the same exercise. Check symbols denote expected conditions; inspect actual files and history to establish success.",
+              "items": [
+                {
+                  "title": "slice-notes.md",
+                  "body": "Restored to its original content"
+                },
+                {
+                  "title": "keep.txt",
+                  "body": "New edits remain"
+                },
+                {
+                  "title": "slice-notes.backup.md",
+                  "body": "Backup still exists"
+                },
+                {
+                  "title": "Commit",
+                  "body": "Original history is still available"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Meeting all four conditions demonstrates selective restoration in this lab. The backup remains untracked. A later `git add .` could stage it too, so inspect each path before committing."
+              ]
             }
           ]
         },
         {
-          "id": "diff",
-          "heading": "Distinguish Both Diffs and Untracked Files",
+          "id": "applications",
+          "heading": "7. Applications Across Industries",
           "paragraphs": [
-            "git diff compares the working tree with staging by default; git diff --cached compares staged content with HEAD. Inspect status and contents for untracked files. An empty diff does not establish that nothing changed anywhere.",
-            "After the baseline, append “誤加：完整報告已完成” (mistaken claim: complete report finished) to slice-notes.md and “其他工作：尚待完成” (other work: pending) to keep.txt. Check that both edits are in the working tree only, with neither staged."
+            "Version records help teams identify which change belongs to which purpose."
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "Read-only Checks Before Restoration",
+              "kind": "prose",
               "paragraphs": [
-                "Preserve current state. If another person’s work or staged edits are present, stop this simplified exercise and establish scope first."
-              ],
-              "code": "git status --short\ngit diff -- slice-notes.md keep.txt\ngit diff --cached -- slice-notes.md keep.txt"
+                "### Software Engineering: AI Agent Changes"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "An AI Agent changes 20 files. The engineer reviews the diff, checks whether unrelated permission settings changed, checks the tests and then records the relevant feature in a commit."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Construction: Design Change Management"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A structural engineer changes material specifications. Traceable revisions help identify the reason, approved version and affected design documents, reducing the risk that builders use the wrong version."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Scientific Research: Reproducibility"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A research team changes preprocessing code and model parameters. A commit identifies the code version for an experiment and reduces configuration mix-ups. Data, environment and run settings still require their own records.\n\nThese examples apply version-control thinking across industries. They do not imply that every document belongs directly in Git. Git is especially suitable for code, Markdown, JSON and other text. Word documents, images and large binary data may need complementary document/version-management tools."
+              ]
             }
           ]
         },
         {
-          "id": "restore",
-          "heading": "Restore Only the Confirmed Path",
+          "id": "mistakes",
+          "heading": "8. Three Common Mistakes",
           "paragraphs": [
-            "First save the current slice-notes.md as readable slice-notes.backup.md. The command explicitly restores the working-tree slice-notes.md from HEAD, overwriting its current contents. Other edits in keep.txt must remain.",
-            "This exercise assumes the target contains only this task’s edit. For mixed work, preserve a copy and recover selected sections instead of overwriting the whole file. Check files and diffs afterward, rerunning affected tests for program changes."
+            "### Mistake 1: Assuming Git Has Saved Everything"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "Recover the Baseline Selectively",
+              "kind": "prose",
               "paragraphs": [
-                "Use only in this independent lab after saving the backup."
+                "Committed history contains the content actually included in commits. Untracked, unstaged or otherwise uncommitted work must be protected separately; do not assume it is recoverable from committed history."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Mistake 2: Committing a Secret, Then Hiding It with .gitignore"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose an API key was committed in `.env`. You later add this ignore pattern:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Commands and Example 10",
+              "paragraphs": [
+                "Run or interpret under this section’s conditions; distinguish examples from the lab."
               ],
-              "code": "git restore --source=HEAD --worktree -- slice-notes.md\ngit diff -- slice-notes.md\ngit diff -- keep.txt\ngit status --short"
+              "code": ".env"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This does not erase the committed key from existing history. If exposure is possible, revoke or rotate the key, assess the exposure and handle history and relevant copies through the project's incident process."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Mistake 3: Letting an Agent Reset All Changes"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "An instruction like “clean up Git if there is a problem” can lead an agent to use an overly broad restore operation and lose your uncommitted work.\n\nA safer working rule is:\n\n> Show the diff first and identify which files to keep and restore. Before overwriting working-directory content, rewriting history or deleting content, establish the affected scope.\n\nThis is also a question of authority and responsibility in the agent's workflow."
+              ]
             }
           ]
         },
         {
           "id": "handoff",
-          "heading": "Use History for Handoff and Recovery",
+          "heading": "9. Key Concepts",
           "paragraphs": [
-            "Apply the method to the three slices: connect each commit to requirements, changes and test results, and give successors its identifier. Follow project collaboration rules for published changes; preserve other people’s history rather than rewriting it for tidiness.",
-            "Git preserves content entrusted to it. Protect uncommitted or unsaved work separately. A local commit is neither a remote backup, permission control nor personal-data cleanup tool. The next lesson records startup, limits and recovery in README."
+            "Use this table to distinguish the roles and limits of each concept."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 5",
+              "headers": [
+                "Concept",
+                "What to remember"
+              ],
+              "rows": [
+                [
+                  "Git",
+                  "Manage project versions and change history"
+                ],
+                [
+                  "Working Directory",
+                  "Files currently being edited"
+                ],
+                [
+                  "Staging Area",
+                  "Content selected for the next commit"
+                ],
+                [
+                  "Diff",
+                  "Compare versions or states"
+                ],
+                [
+                  "Commit",
+                  "Record a meaningful version snapshot"
+                ],
+                [
+                  "HEAD",
+                  "Current checked-out commit, normally through the active branch"
+                ],
+                [
+                  "Restore",
+                  "Recover selected paths or hunks from a specified source"
+                ],
+                [
+                  "Push",
+                  "Send local commits to a remote; deployment is separate"
+                ],
+                [
+                  ".gitignore",
+                  "Ignore matching untracked files; historical secrets remain"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Build this habit:\n\nConfirm requirements → edit → inspect diff → test → choose staged content → commit → verify delivery.\n\nIt makes individual work, team collaboration and AI Agent changes easier to review and hand over. Connect commit identifiers to requirements, changes and test results across the workshop's three slices. Follow shared-history procedures when correcting published changes. The next lesson puts startup, limits and recovery instructions in README."
+              ]
+            }
           ]
+        },
+        {
+          "id": "understanding",
+          "heading": "10. Check Your Understanding",
+          "paragraphs": [
+            "Answer the three questions in the understanding-check section before opening their reference explanations. Complete the `git-lab` exercise too: verify that `slice-notes.md` is restored while `keep.txt` retains its new work. Choosing an answer and demonstrating recovery are separate checks."
+          ],
+          "blocks": []
         }
       ],
       "exercise": {
@@ -307,109 +1307,109 @@
   },
   "checks": [
     {
-      "id": "AASE-M09-C01-Q01",
+      "id": "AASE-M09-C01-Q04",
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "Commit 最直接保存什麼？",
+          "prompt": "你修改了三個程式檔，只想提交其中一個已完成的功能。應該怎麼做？",
           "options": [
-            "所有未追蹤檔案",
-            "暫存區準備的專案快照",
-            "正式部署狀態",
-            "全部使用者的驗收"
+            "直接 git add . 並 Commit",
+            "檢查 Diff，只暫存與該功能相關的修改",
+            "直接 Push，Git 會自行選擇",
+            "先刪除其他檔案"
           ],
           "rationales": [
-            "未加入者不會自動進入。",
-            "需先核對暫存內容。",
-            "提交與部署分開。",
-            "需要各自證據。"
+            "可能把未完成或無關修改一起暫存。",
+            "先核對內容，再挑選同一目的的修改。",
+            "Push 傳送提交，不替你挑選工作區內容。",
+            "應保留其他工作，不需要刪除。"
           ]
         },
         "en": {
-          "prompt": "What does a commit most directly record?",
+          "prompt": "You edited three program files and want to commit only one completed feature. What should you do?",
           "options": [
-            "Every untracked file.",
-            "The project snapshot prepared in staging.",
-            "Production deployment status.",
-            "Acceptance by every user."
+            "Run git add . and commit immediately",
+            "Review the diff and stage only changes for that feature",
+            "Push directly; Git will choose",
+            "Delete the other files first"
           ],
           "rationales": [
-            "Files not added are not included automatically.",
-            "Inspect staged content first.",
-            "Commit and deployment are separate.",
-            "Those need their own evidence."
+            "This may stage unfinished or unrelated work.",
+            "Inspect content, then select changes for one purpose.",
+            "Push sends commits; it does not select working-directory edits.",
+            "Preserve the other work; deletion is unnecessary."
           ]
         }
       }
     },
     {
-      "id": "AASE-M09-C01-Q02",
+      "id": "AASE-M09-C01-Q05",
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "目標檔混有其他工作，還原前應怎麼做？",
+          "prompt": "已經 Commit 之後，是否代表正式網站上線？",
           "options": [
-            "直接整份覆蓋",
-            "先保留現況並釐清或分段回復",
-            "刪掉其他人的內容",
-            "只改提交訊息"
+            "是，Commit 就是部署",
+            "不是，提交、推送、部署與驗收是不同狀態",
+            "只要有 GitHub 就一定上線",
+            "只要測試通過就一定上線"
           ],
           "rationales": [
-            "可能遺失工作。",
-            "確認來源、路徑與保留範圍。",
-            "未獲授權。",
-            "無法回復檔案內容。"
+            "提交只建立版本紀錄。",
+            "每個狀態都需要對應證據。",
+            "遠端儲存庫不等於正式執行環境。",
+            "測試通過仍須完成發布與驗收流程。"
           ]
         },
         "en": {
-          "prompt": "The target file contains other work. What should precede restoration?",
+          "prompt": "Does making a commit mean the production website is live?",
           "options": [
-            "Overwrite it immediately.",
-            "Preserve current state and clarify scope or recover selected sections.",
-            "Delete the other person’s content.",
-            "Change only the commit message."
+            "Yes; commit is deployment",
+            "No; commit, push, deployment and acceptance are separate states",
+            "Having GitHub always means it is live",
+            "Passing tests always means it is live"
           ],
           "rationales": [
-            "That may lose work.",
-            "Identify source, paths and what must remain.",
-            "That is unauthorized.",
-            "That does not restore file content."
+            "A commit records a version.",
+            "Each state requires its own evidence.",
+            "A remote repository is not the production runtime.",
+            "Passing tests still leaves release and acceptance steps."
           ]
         }
       }
     },
     {
-      "id": "AASE-M09-C01-Q03",
+      "id": "AASE-M09-C01-Q06",
       "answer": 2,
       "text": {
         "zh": {
-          "prompt": "加上 .gitignore 就能清除歷史秘密嗎？",
+          "prompt": "你想恢復 A 檔案，但 B 檔案有尚未提交的重要工作。最佳做法是？",
           "options": [
-            "能，會刪除所有歷史",
-            "能，推送就完成",
-            "不能，仍需檢查已追蹤內容與依事件處理",
-            "不能，所以不用審查"
+            "git reset --hard，全部清除",
+            "直接刪除 A 和 B",
+            "先查看狀態與 Diff、保護現況，再指定來源及 A 的路徑進行還原",
+            "不用確認直接覆蓋整個專案"
           ],
           "rationales": [
-            "忽略不改既有歷史。",
-            "推送也不會自動清除。",
-            "需針對實際暴露採取措施。",
-            "更需要提交前核對。"
+            "可能遺失 B 的工作。",
+            "會破壞需要保留的內容。",
+            "明確控制來源、路徑與保留範圍。",
+            "缺少範圍確認，可能覆蓋重要工作。"
           ]
         },
         "en": {
-          "prompt": "Does adding .gitignore remove historical secrets?",
+          "prompt": "You want to restore file A while file B contains important uncommitted work. What is best?",
           "options": [
-            "Yes; all history is deleted.",
-            "Yes; pushing completes cleanup.",
-            "No; inspect tracked content and respond to the actual exposure.",
-            "No; therefore review is unnecessary."
+            "Use git reset --hard to clear everything",
+            "Delete A and B",
+            "Inspect status and diffs, protect current work, then restore a specified source and path A",
+            "Overwrite the whole project without checking"
           ],
           "rationales": [
-            "Ignoring does not change existing history.",
-            "Push does not remove it automatically.",
-            "Address the actual exposure separately.",
-            "Pre-commit review is still necessary."
+            "This can lose work in B.",
+            "This destroys content that must remain.",
+            "Control the source, target path and preserved scope.",
+            "The scope is unconfirmed and important work may be overwritten."
           ]
         }
       }
