@@ -24,10 +24,10 @@
 | A11Y-01–03 | 語意、下載、焦點、原生收合、局部捲動 | 通過Tab／Shift+Tab下載焦點、Enter開圖、Enter／Space原生解析、表格／程式碼局部捲動及無JS原生解析。 |
 | INT-01 | 參數互動 | 不適用；本課無模擬器或分數計算。 |
 
-已通過：283項單元測試；內容驗證；svelte-check零錯誤／零警告；publication-boundary的第二概念、draft／future與英文課程關閉實際建置；validate:release。後續修正後依受影響範圍重新檢查。
+已通過：原基線283項、整合遠端各章後321項單元測試；內容驗證；svelte-check零錯誤／零警告；publication-boundary的第二概念、draft／future與英文課程關閉實際建置；validate:release。另通過三項AASE雙語回歸（本課、英文目錄／搜尋與下載、CEH共用框架計算樣式；6.3秒）、共用HTML單元與高嚴重度依賴稽核。合併修正後重跑內容／型別／全單元、完整publication-boundary、release與本課瀏覽器。
 
-瀏覽器入口：`pnpm exec playwright test --config playwright.aase-m0601.config.ts`。正式站設定`AASE_BASE_URL=https://learn.cs-kairos.com`；證據存於執行工作樹`.local/aase/m0601/`。本機瀏覽器兩項測試通過（11.1秒），結果見`.local/aase/m0601/results.json`及三十張圖檔。SVG共十份均小於100000 bytes；尺寸與SHA256見[檢查清單](2026-11-11-aase-m06-01-checks.json)。已修正320px／200%時主機巢狀內距造成的文字擠壓，並重新通過全部尺寸。手機的規則／狀態連線各明列Python程序，保留平行關係。正式站結果與Git/Pages回執待本輪發布補入，不以本機測試推定已上線。
+瀏覽器入口：`pnpm exec playwright test --config playwright.aase-m0601.config.ts`。正式站設定`AASE_BASE_URL=https://learn.cs-kairos.com`；證據存於執行工作樹`.local/aase/m0601/`。整合後本機瀏覽器兩項測試通過（15.7秒），結果見`.local/aase/m0601/results.json`及三十張圖檔。SVG共十份均小於100000 bytes；尺寸與SHA256見[檢查清單](2026-11-11-aase-m06-01-checks.json)。已修正320px／200%時主機巢狀內距造成的文字擠壓，並重新通過全部尺寸。手機的規則／狀態連線各明列Python程序，保留平行關係。正式站結果與Git/Pages回執待本輪發布補入，不以本機測試推定已上線。
 
 ## 所有權與下一關
 
-稀缺資源為完整供稿逐小節與五圖實測所需的編輯／驗收時間。教材、來源、實作及詳細證據由kairos-learning持有；Planning僅承接locator、狀態、驗證／發布回執與下一關。使用隔離工作樹`/tmp/kairos-m0601-20261111`，不納入原工作目錄其他章節的未提交修改。下一關是完成本課瀏覽器與目視、提交推送、Pages成功及雙語正式頁／十圖回讀。實體手機、螢幕閱讀器完整認證與學員理解未驗。
+稀缺資源為完整供稿逐小節與五圖實測所需的編輯／驗收時間。教材、來源、實作及詳細證據由kairos-learning持有；Planning僅承接locator、狀態、驗證／發布回執與下一關。使用隔離工作樹`/tmp/kairos-m0601-20261111`，不納入原工作目錄其他章節的未提交修改。本課瀏覽器與圖意目視已完成；下一關為推送、Pages成功及雙語正式頁／十圖回讀。實體手機、螢幕閱讀器完整認證與學員理解未驗。
