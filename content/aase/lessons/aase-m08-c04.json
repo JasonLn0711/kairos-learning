@@ -1,10 +1,10 @@
 {
   "id": "AASE-M08-C04",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "streamlit-apptest-151",
     "streamlit-session",
@@ -21,130 +21,432 @@
       ],
       "readingGuide": {
         "goal": "用 AppTest 建立並重跑 Streamlit 情境。",
-        "startingPoint": "自己的第三切片副本，含 app.py、rules.py、tests/ 及 Streamlit 1.51.0。",
+        "startingPoint": "Python 虛擬環境、Streamlit 1.51.0、pytest 與本課 app.py；先讀 M08-03 的規則測試。",
         "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
         "output": "一份 AppTest 回歸腳本，加上分開記錄的真實瀏覽器驗證。"
       },
       "sections": [
         {
           "id": "interface",
-          "heading": "規則正確，還要確認畫面有接對",
+          "heading": "規則寫對之後，如何驗證使用者操作？",
           "paragraphs": [
-            "rules.py 拒絕缺件，不代表 app.py 一定顯示正確提示。按鈕可能沒呼叫規則、成功訊息可能沒清除，或修改輸入後仍留下下載入口。介面測試把使用者操作與畫面結果連起來。",
-            "AppTest 模擬 Streamlit app，可設定 widget 值、執行程式並檢查顯示內容與 Session State。本課採固定 1.51.0；實際支援行為以該版本與本次執行結果為準。"
-          ]
-        },
-        {
-          "id": "analogy",
-          "heading": "像用操作腳本反覆走一條櫃臺流程",
-          "paragraphs": [
-            "操作腳本會指出先填哪個欄位、何時按檢查、應看到什麼。只檢查櫃臺存在，無法知道填錯時是否有人告知如何修正。",
-            "AppTest 幫你重複執行這條腳本，但它不是站在實際瀏覽器前的使用者；畫面排版、鍵盤焦點與下載位元組需要另外觀察。"
-          ]
-        },
-        {
-          "id": "rerun",
-          "heading": "輸入、重跑與觀察要連在一起",
-          "paragraphs": [
-            "建立 AppTest 後呼叫 run() 產生初始畫面；變更 widget 或按按鈕後，再明確 run()，才檢查該次結果。不要把上一個重跑留下的值當成本次操作已執行。",
-            "範例以穩定 key 找三個欄位；按鈕只有一個主要檢查動作，因此使用 at.button[0]。如果你的專案新增多個按鈕，先調整定位方式，不讓測試誤按另一個動作。"
+            "程式的規則寫對了，不代表使用者操作畫面時，系統就一定會做對。例如，銀行申請系統規定「資料不完整，不可以產生報告」。後端函式已能拒絕缺漏，畫面與狀態管理仍可能出錯：",
+            "1. 使用者沒有填完資料。\n2. 畫面卻顯示「檢查成功」。\n3. 使用者補齊資料後，畫面沒有更新。\n4. 使用者又把資料刪掉，卻仍然可以下載之前產生的報告。",
+            "這些是介面與狀態管理的錯誤，不一定是業務規則本身的錯誤。Streamlit 的 AppTest 能自動模擬操作，檢查畫面和程式狀態是否符合預期。讀圖時，請把每個斷言連回前一次輸入與重新執行。"
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "圖 1｜三個連續的驗收狀態",
-              "description": "每一步都更新輸入並重跑，觀察當次結果。",
+              "caption": "圖 1｜模擬輸入、重新執行、檢查結果",
+              "description": "箭頭表示測試動作的順序。每次修改輸入，都要確認新操作造成的結果，避免沿用上一次的狀態。",
               "items": [
                 {
-                  "title": "缺漏",
-                  "body": "只填兩欄，按檢查後有缺漏提示，無完整下載。"
+                  "title": "模擬輸入",
+                  "body": "填寫欄位"
                 },
                 {
-                  "title": "補正",
-                  "body": "補齊第三欄並檢查，出現成功與下載元件。"
+                  "title": "重新執行",
+                  "body": "run()"
                 },
                 {
-                  "title": "變更",
-                  "body": "清空第三欄並重跑，舊成功、下載與快照失效。"
+                  "title": "檢查結果",
+                  "body": "assert"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "每次修改輸入，都要確認新操作造成的結果，避免沿用上一次的狀態。本課延續 M08-03 的規則測試，進一步檢查使用者任務如何經由介面完成。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "一、為什麼需要 AppTest？用餐廳點餐理解",
+          "paragraphs": [
+            "想像你經營一家餐廳，推出自助點餐機。點餐系統有三條規則：",
+            "- 沒有選餐點，不能送出訂單。\n- 選好餐點、數量和付款方式，才能確認訂單。\n- 訂單確認後，如果顧客修改內容，原本的確認結果必須失效。",
+            "你可以分別測試規則與操作。業務規則測試（Business Rule Testing）直接呼叫檢查函式，傳入沒有餐點的訂單，確認它會拒絕；上一課 M08-03 的 pytest 主要在做這件事。",
+            "介面測試（UI Testing）則模擬顧客使用點餐機：",
+            "1. 不選餐點，按下送出。\n2. 檢查畫面是否出現「請選擇餐點」。\n3. 選好餐點，再按送出。\n4. 檢查畫面是否顯示成功。\n5. 改變餐點，檢查舊訂單的確認狀態是否消失。",
+            "AppTest 讓 Python 自動重演這些操作，省去每次人工重複點擊的工作。它模擬 Streamlit 程式，並未真正操作 Chrome 或 Firefox；排版、焦點與實際下載另做瀏覽器驗證。"
+          ]
+        },
+        {
+          "id": "layers",
+          "heading": "二、先掌握整張地圖：軟體測試有不同層次",
+          "paragraphs": [
+            "不同層次回答不同問題，應依任務一起安排。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1",
+              "headers": [
+                "測試層次",
+                "白話理解",
+                "想確認什麼"
+              ],
+              "rows": [
+                [
+                  "Unit Test 單元測試",
+                  "單獨檢查一項規則",
+                  "金額計算對不對？"
+                ],
+                [
+                  "UI AppTest",
+                  "模擬操作軟體介面",
+                  "輸入後，提示與按鈕有沒有正確更新？"
+                ],
+                [
+                  "Browser E2E Test",
+                  "在真實瀏覽器走完整流程",
+                  "點擊下載後，檔案真的下載了嗎？"
+                ],
+                [
+                  "Usability Test 易用性測試",
+                  "找真實使用者完成任務",
+                  "使用者看得懂提示嗎？"
+                ],
+                [
+                  "Security Test 安全測試",
+                  "測試安全邊界與不當操作",
+                  "未授權的人是否能取得其他人的資料？"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些測試互相補充。例如 AppTest 顯示「下載按鈕存在」，只證明模擬測試看到了該元件，不能證明使用者的電腦已收到正確檔案。就像點餐機顯示「訂單成功」，還需要另行確認廚房真的收到訂單。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "rerun",
+          "heading": "三、本課最重要的三階段測試",
+          "paragraphs": [
+            "本課以「收件資料檢核系統」為例，填寫案件編號、申請人代碼、文件類型。圖中三個階段是同一次情境的連續操作；向下箭頭表示修改輸入後再檢查結果。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 2｜缺漏、補正、再次修改的三階段測試",
+              "description": "向下箭頭表示同一情境的操作順序。第三階段清除舊成功、下載與已檢查狀態，要求以新輸入重新驗證。",
+              "items": [
+                {
+                  "title": "階段 1｜資料缺漏",
+                  "body": "案件編號：SYN-001\n申請人代碼：DEMO-A\n文件類型：未填寫\n顯示「缺少文件類型」；不得提供下載。"
+                },
+                {
+                  "title": "階段 2｜補齊資料並檢查成功",
+                  "body": "文件類型：合成申請表\n顯示檢查成功，出現下載按鈕。"
+                },
+                {
+                  "title": "階段 3｜再次修改輸入",
+                  "body": "文件類型：再次清空\n舊成功訊息、下載按鈕、已檢查狀態全部失效。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "第三階段容易被忽略：系統曾產生正確結果，使用者後來卻改變輸入。舊結果若沒有失效，就可能下載到和目前畫面不一致的資料，這叫過期狀態（Stale State）。",
+                "> 凡是某個結果依賴一組輸入，只要那組輸入改變，就必須重新判斷舊結果是否仍然有效。",
+                "本例採用「欄位變更就清除成功狀態與報告」的策略，要求重新檢查。相同原則也適用於金融審批、醫療報告、研究資料處理與物流調度；各系統仍須依自己的規格決定何時重新驗證。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "terms",
+          "heading": "四、理解 AppTest 的六個核心名詞",
+          "paragraphs": [
+            "先分清楚輸入元件、跨重跑保存的資料，以及測試明確執行的動作。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 2",
+              "headers": [
+                "名詞",
+                "白話意思"
+              ],
+              "rows": [
+                [
+                  "Streamlit",
+                  "用 Python 快速建立互動式網頁應用的框架"
+                ],
+                [
+                  "Widget",
+                  "輸入框、按鈕、選單等操作元件"
+                ],
+                [
+                  "AppTest",
+                  "模擬執行 Streamlit App、設定輸入並檢查結果的測試工具"
+                ],
+                [
+                  "Session State",
+                  "替目前使用工作階段記住資料與狀態"
+                ],
+                [
+                  "run()",
+                  "明確重新執行程式，讓新輸入產生新畫面"
+                ],
+                [
+                  "assert",
+                  "宣告條件必須成立，不成立就讓測試失敗"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Session State 可以用購物車理解：你把三樣商品加入購物車，切換頁面後，網站仍記得購物車裡的內容。這個比喻說明跨操作保留資料，實際保存範圍與生命週期仍取決於系統實作。",
+                "Streamlit 的元件操作會引起程式重新執行，Session State 能讓資料跨重跑保留。AppTest 則要求測試程式明確呼叫 run()；設定輸入值之後，先重跑，再觀察新畫面。"
               ]
             }
           ]
         },
         {
           "id": "example",
-          "heading": "完整的介面測試範例",
+          "heading": "五、動手實作：建立一個可以自動測試的應用程式",
           "paragraphs": [
-            "在自己的第三切片副本建立 tests/test_app_contract.py，與 app.py 及 rules.py 保持同一專案結構。Path 依測試檔位置尋找 app.py，避免依啟動 shell 的偶然位置猜測入口。",
-            "每階段都檢查不應出現的狀態；只有正向成功斷言，無法保護缺漏拒絕或過期結果失效。"
+            "這個教學用簡化範例延續三欄合成資料，展示缺漏阻擋與過期結果失效。正式收件或審批系統還需要符合自身規格的授權、資料隔離與後端驗證。"
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "tests/test_app_contract.py",
+              "heading": "專案結構",
               "paragraphs": [
-                "使用已安裝 Streamlit 1.51.0 與 pytest 的環境執行。"
+                "在自己的合成練習專案依序操作。"
               ],
-              "code": "from pathlib import Path\nfrom streamlit.testing.v1 import AppTest\n\n\ndef test_input_change_invalidates_report():\n    app = str(Path(__file__).resolve().parents[1] / \"app.py\")\n    at = AppTest.from_file(app).run()\n    assert not at.exception\n    at.text_input(key=\"application_id\").input(\"SYN-001\")\n    at.text_input(key=\"applicant_code\").input(\"DEMO-A\")\n    at.button[0].click().run()\n    assert \"缺少文件類型\" in at.error[0].value\n    assert at.text_input(key=\"application_id\").value == \"SYN-001\"\n    assert not at.success\n    assert not at.get(\"download_button\")\n    at.text_input(key=\"document_type\").input(\"合成申請表\").run()\n    at.button[0].click().run()\n    assert not at.exception\n    assert at.success\n    assert len(at.get(\"download_button\")) == 1\n    at.text_input(key=\"document_type\").input(\"\").run()\n    assert not at.exception\n    assert not at.success\n    assert not at.get(\"download_button\")\n    assert \"checked\" not in at.session_state"
+              "code": "my-project/\n├── app.py\n└── tests/\n    └── test_app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 第一步：寫出應用程式 app.py",
+                "將下列完整程式存為 app.py。三個欄位使用穩定 key，測試可依 key 找到元件；檢查按鈕也有自己的 key。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "app.py",
+              "paragraphs": [
+                "合成資料範例；兩語共用相同程式與介面標籤。"
+              ],
+              "code": "import json\nimport streamlit as st\n\nFIELDS = {\n    \"application_id\": \"案件編號\",\n    \"applicant_code\": \"申請人代碼\",\n    \"document_type\": \"文件類型\",\n}\n\n\ndef invalidate():\n    st.session_state.pop(\"checked\", None)\n    st.session_state.pop(\"report\", None)\n\n\nst.title(\"收件資料檢核\")\nfor key, label in FIELDS.items():\n    st.text_input(label, key=key, on_change=invalidate)\n\nif st.button(\"檢查\", key=\"check\"):\n    missing = [\n        label for key, label in FIELDS.items()\n        if not st.session_state[key].strip()\n    ]\n    if missing:\n        invalidate()\n        st.error(\"缺少：\" + \"、\".join(missing))\n    else:\n        data = {\n            key: st.session_state[key].strip()\n            for key in FIELDS\n        }\n        st.session_state[\"report\"] = json.dumps(\n            {\"status\": \"complete\", \"data\": data},\n            ensure_ascii=False,\n            indent=2,\n        )\n        st.session_state[\"checked\"] = True\n\nif st.session_state.get(\"checked\"):\n    st.success(\"檢查成功\")\n    st.download_button(\n        \"下載報告\",\n        data=st.session_state[\"report\"],\n        file_name=\"report.json\",\n        mime=\"application/json\",\n        key=\"download\",\n    )"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "on_change=invalidate 表示輸入欄位的值改變時，先執行 invalidate()，清除過去的確認結果。pop(\"checked\", None) 表示有該狀態就刪除，沒有就不做任何事；report 也以相同方式清除。",
+                "按下檢查後，程式先去除欄位前後空白，找出缺少的資料。缺漏時清除舊結果並顯示錯誤；完整時把本次資料序列化成 JSON，保存報告並設定 checked。成功與下載區放在按鈕條件之外，讓後續重跑仍能依目前狀態顯示；輸入一變動，回呼便使舊報告失效。",
+                "### 第二步：使用 AppTest 模擬操作",
+                "將下列測試存為 tests/test_app.py。Path 依測試檔的位置找到 app.py，讓測試不依賴啟動 shell 的偶然目錄。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "tests/test_app.py",
+              "paragraphs": [
+                "合成資料範例；兩語共用相同程式與介面標籤。"
+              ],
+              "code": "import json\nfrom pathlib import Path\nfrom streamlit.testing.v1 import AppTest\n\nAPP = Path(__file__).resolve().parents[1] / \"app.py\"\n\n\ndef test_three_stages():\n    at = AppTest.from_file(str(APP)).run()\n    assert not at.exception\n\n    # 1. 缺漏：只填兩個欄位\n    at.text_input(key=\"application_id\").input(\"SYN-001\")\n    at.text_input(key=\"applicant_code\").input(\"DEMO-A\")\n    at.button(key=\"check\").click().run()\n    assert not at.exception\n    assert at.error\n    assert \"文件類型\" in at.error[0].value\n    assert at.text_input(key=\"application_id\").value == \"SYN-001\"\n    assert not at.success\n    assert not at.get(\"download_button\")\n\n    # 2. 補正：填完第三個欄位，再按檢查\n    at.text_input(key=\"document_type\").input(\"合成申請表\").run()\n    at.button(key=\"check\").click().run()\n    assert not at.exception\n    assert not at.error\n    assert at.success\n    assert len(at.get(\"download_button\")) == 1\n    assert at.session_state[\"checked\"] is True\n    assert json.loads(at.session_state[\"report\"]) == {\n        \"status\": \"complete\",\n        \"data\": {\n            \"application_id\": \"SYN-001\",\n            \"applicant_code\": \"DEMO-A\",\n            \"document_type\": \"合成申請表\",\n        },\n    }\n\n    # 3. 變更：重新清空第三個欄位\n    at.text_input(key=\"document_type\").input(\"\").run()\n    assert not at.exception\n    assert not at.success\n    assert not at.get(\"download_button\")\n    assert \"checked\" not in at.session_state\n    assert \"report\" not in at.session_state"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "第一階段只填兩欄，確認錯誤提到文件類型、已填資料保留，且成功與下載元件都不存在。第二階段補齊第三欄再按檢查，確認成功、下載元件及 checked/report 狀態。第三階段再次清空第三欄，確認舊成功、下載、checked 與 report 全部消失。",
+                "測試檢查每次操作後的畫面與狀態是否符合規格。Streamlit 1.51.0 沒有獨立的 at.download_button 操作 API，本課使用 at.get(\"download_button\") 檢查元件存在；這不代表實際下載成功。範例固定使用此版本，升級時應重新核對 API 與測試結果。",
+                "### 第三步：執行測試",
+                "在專案根目錄使用獨立 Python 虛擬環境，安裝教材指定版本，再執行測試。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "安裝與測試",
+              "paragraphs": [
+                "在自己的合成練習專案依序操作。"
+              ],
+              "code": "python -m venv .venv\nsource .venv/bin/activate\npython -m pip install streamlit==1.51.0 pytest\npython -m pytest -q tests/test_app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "測試通過，代表這次執行的自動化斷言成立。仍需啟動真實程式，重演相同操作，檢查下載檔名 report.json、中文資料、status 與欄位內容是否對應目前輸入。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "啟動應用程式",
+              "paragraphs": [
+                "在自己的合成練習專案依序操作。"
+              ],
+              "code": "python -m streamlit run app.py",
+              "id": "run"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "瀏覽器中先填兩欄並按檢查，應看到缺漏提示；補齊並檢查後下載 JSON；接著清空文件類型並離開欄位，舊成功與下載入口應消失。也用 Tab、Shift+Tab、Enter 與 Space 檢查焦點和按鈕操作。用 Ctrl+C 停止自己啟動的服務，執行 deactivate 離開虛擬環境。"
+              ]
             }
           ]
         },
         {
-          "id": "run",
-          "heading": "從元件驗證走到真實瀏覽器",
+          "id": "syntax",
+          "heading": "六、把 AppTest 程式翻成白話",
           "paragraphs": [
-            "在專案根目錄執行 python -m pytest -q tests/test_app_contract.py，再啟動 app.py，用鍵盤完成相同任務。下載 JSON 後讀取檔名、中文、status、scope 與允許欄位。",
-            "AppTest 中下載元件出現只是狀態證據，未證明檔案真的送到裝置。真實瀏覽器也不會替代人是否理解提示的任務觀察；三者要各自留下結果。"
+            "把語法與它要觀察的效果對照。以下五項是語法清單，並非一支必須從上到下連續執行的測試。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 3｜五種 AppTest 語法的白話對照",
+              "description": "這五項各自說明一種操作或斷言；沒有箭頭，不代表必須依此順序連續執行。",
+              "items": [
+                {
+                  "title": "AppTest.from_file(\"app.py\")",
+                  "body": "告訴測試工具：「我要測試這支應用程式。」"
+                },
+                {
+                  "title": ".input(\"SYN-001\")",
+                  "body": "模擬使用者在指定輸入框填寫 SYN-001。"
+                },
+                {
+                  "title": ".click().run()",
+                  "body": "模擬按下按鈕，再重新執行程式。"
+                },
+                {
+                  "title": "assert at.success",
+                  "body": "要求新畫面必須出現成功提示。"
+                },
+                {
+                  "title": "assert not at.success",
+                  "body": "要求畫面不得出現成功提示。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "回歸測試（Regression Test）是修改程式後再執行過去的測試，確認原本正常的功能沒有被意外破壞。例如系統原本會拒絕資料缺漏，加入匯出功能後卻讓缺漏資料也能下載；保留缺漏、成功及修改後失效的測試，就能提早發現這種變動。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industry",
+          "heading": "七、AppTest 在其他行業可以測試什麼？",
+          "paragraphs": [
+            "換一個產業時，先找出哪個結果依賴哪些輸入，再設計變更後的斷言。"
           ],
           "blocks": [
             {
               "kind": "table",
-              "caption": "表 1｜此工具的驗證範圍",
+              "caption": "表 3",
               "headers": [
-                "項目",
-                "AppTest",
-                "另需驗證"
+                "行業",
+                "介面操作情境",
+                "重要斷言"
               ],
               "rows": [
                 [
-                  "錯誤／成功與 Session State",
-                  "可依腳本斷言",
-                  "規格本身是否正確"
+                  "醫療",
+                  "病患預約後改變預約日期",
+                  "舊預約摘要不得冒充新日期的確認結果"
                 ],
                 [
-                  "下載元件可見性",
-                  "可核對是否出現",
-                  "真實檔案位元組與檔名"
+                  "電商",
+                  "顧客使用折價券後修改購物車",
+                  "應重新計算金額，不保留失效折扣"
                 ],
                 [
-                  "鍵盤與手機排版",
-                  "不能由本測試推定",
-                  "真實瀏覽器與尺寸檢查"
+                  "人資",
+                  "員工修改請假日期",
+                  "舊天數與舊核准狀態不得錯誤沿用"
                 ],
                 [
-                  "使用者看懂提示",
-                  "不能由元件存在推定",
-                  "任務觀察"
+                  "物流",
+                  "倉庫人員修改出貨數量",
+                  "舊運費與出貨確認結果必須重新判斷"
+                ],
+                [
+                  "教育",
+                  "學生修改報名資料",
+                  "資料不完整時，舊的完成狀態必須失效"
                 ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些情境共用「輸入資料 → 驗證 → 產生結果 → 輸入改變 → 舊結果失效」的判斷流程。辨識這條依賴關係，就能把相同測試思維套用到其他系統；實際欄位與有效性條件仍由各系統規格定義。"
               ]
             }
           ]
         },
         {
           "id": "misread",
-          "heading": "先看失敗原因，再決定修哪裡",
+          "heading": "八、AppTest 的能力邊界：最容易犯的四個錯誤",
           "paragraphs": [
-            "若 AppTest 出現例外，先檢查路徑、依賴與程式輸出；若只是定位不到元件，確認目前階段真的有該元件。不要把第一切片拿來跑第三切片下載情境，再把差距當作錯誤修掉。",
-            "測試腳本的行為與自己的規格不同時，先確認需求差異。不得為了讓測試變綠，把未確認的欄位、登入或外部服務偷偷加入作品。"
+            "讀測試結果時，請同時說明已執行的情境與還需要的證據。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 4",
+              "headers": [
+                "常見誤解",
+                "正確觀念"
+              ],
+              "rows": [
+                [
+                  "測試全部通過，代表軟體沒有 Bug",
+                  "只代表已執行的測試情境通過"
+                ],
+                [
+                  "有下載按鈕，代表下載成功",
+                  "還必須確認實際檔案及內容"
+                ],
+                [
+                  "修改輸入後，不必重新執行測試",
+                  "AppTest 需要明確 run()"
+                ],
+                [
+                  "畫面正常就代表安全",
+                  "還需要權限、資料隔離、後端驗證等測試"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "假設使用者 A 和 B 都能登入。測試 A 能下載自己的報告，不能推論 A 絕對無法下載 B 的報告；必須另外設計授權驗證與跨使用者隔離測試。AppTest 可檢查部分可見介面行為，後端安全控制仍須有對應驗證。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "九、理解檢核：先判斷，再查看解析",
+          "paragraphs": [
+            "請在下方「理解檢核」先選答案，思考理由，再展開各題的參考解析。三題分別檢查 run()、過期狀態與實際下載的證據界線；本頁使用原生展開功能，選答與閱讀解析不作為學習完成紀錄。",
+            "要帶走的能力是把一個使用者任務分成「操作、狀態轉換、預期結果」，用可重複執行的斷言核對系統。下一個練習可以刻意製造「輸入修改後仍可下載舊報告」的錯誤，確認 AppTest 會失敗，再修復並重新驗證。"
           ]
         }
       ],
       "exercise": {
-        "environment": "自己的第三切片副本，含 app.py、rules.py、tests/ 及 Streamlit 1.51.0。",
+        "environment": "Python 虛擬環境、Streamlit 1.51.0、pytest 與本課 app.py；先讀 M08-03 的規則測試。",
         "steps": [
-          "加入完整測試，在專案根目錄執行並保存結果。",
-          "逐步指出缺漏、補正及變更各由哪些斷言保護。",
-          "啟動真實瀏覽器重演，另外讀取下載 JSON，記錄鍵盤與下載結果。"
+          "依本課建立 app.py 與 tests/test_app.py，執行三階段測試並保存輸出。",
+          "在自己的副本暫時移除 on_change=invalidate，重跑測試，確認第三階段會失敗；恢復回呼再測。",
+          "啟動真實程式，用鍵盤重演三階段並下載 report.json，核對檔名、中文與 JSON 內容，分開記錄結果。"
         ],
         "expected": "一份 AppTest 回歸腳本，加上分開記錄的真實瀏覽器驗證。",
         "check": "每次操作有明確重跑；過期結果與下載消失受到檢查，不把模擬元件當真實下載證據。",
@@ -160,130 +462,432 @@
       ],
       "readingGuide": {
         "goal": "Create and rerun Streamlit scenarios with AppTest.",
-        "startingPoint": "Your slice-three copy with app.py, rules.py, tests/ and Streamlit 1.51.0.",
+        "startingPoint": "A Python virtual environment, Streamlit 1.51.0, pytest and this lesson’s app.py; read the rule tests in M08-03 first.",
         "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
         "output": "An AppTest regression script with separately recorded real-browser verification."
       },
       "sections": [
         {
           "id": "interface",
-          "heading": "Correct Rules Still Need the Right Interface Connection",
+          "heading": "After the rules are correct, how do you verify user operations?",
           "paragraphs": [
-            "rules.py rejecting incomplete input does not establish correct feedback in app.py. A button may fail to call rules, success may remain stale or input changes may leave a download available. Interface tests connect operations to displayed results.",
-            "AppTest simulates a Streamlit app, allowing widget values, script execution, display inspection and Session State checks. This course pins 1.51.0; rely on that version’s supported behavior and actual execution."
-          ]
-        },
-        {
-          "id": "analogy",
-          "heading": "Replay a Counter-service Script",
-          "paragraphs": [
-            "An operation script says which field to fill, when to check and what should appear. Merely establishing that a counter exists says nothing about correction guidance after invalid input.",
-            "AppTest repeats this script but is not a person using a real browser. Observe layout, keyboard focus and download bytes separately."
-          ]
-        },
-        {
-          "id": "rerun",
-          "heading": "Connect Input, Rerun and Observation",
-          "paragraphs": [
-            "After creating AppTest, call run() for the initial screen. After changing widgets or pressing a button, explicitly run() before checking the new result. Values retained from an earlier rerun do not establish that the new action executed.",
-            "The example locates three fields by stable keys. With one primary check action, it uses at.button[0]. If your project has more buttons, adjust targeting first so the test does not trigger another action."
+            "Correct program rules do not guarantee correct behavior when someone uses the screen. Consider a bank application system with the rule “Incomplete data must not produce a report.” Even if a backend function rejects omissions, the interface and state management may still fail:",
+            "1. The user leaves required data incomplete.\n2. The screen nevertheless displays “Check successful.”\n3. The user completes the data, but the screen does not update.\n4. The user deletes data again but can still download an earlier report.",
+            "These are interface and state-management failures, which may occur even when the business rules are correct. Streamlit AppTest automates simulated operations and inspects the resulting display and program state. Read each assertion in relation to the preceding input and rerun."
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "Figure 1 | Three Consecutive Acceptance States",
-              "description": "Update input and rerun at each step, observing the current result.",
+              "caption": "Figure 1 | Input, rerun and inspect",
+              "description": "Arrows show the order of test actions. After each input change, inspect the new result instead of reusing the previous state.",
               "items": [
                 {
-                  "title": "Omission",
-                  "body": "Fill two fields and check; expect missing-data feedback without complete download."
+                  "title": "Simulate input",
+                  "body": "Fill the fields"
                 },
                 {
-                  "title": "Correction",
-                  "body": "Fill the third field and check; expect success and a download component."
+                  "title": "Rerun",
+                  "body": "run()"
                 },
                 {
-                  "title": "Change",
-                  "body": "Clear the third field and rerun; old success, download and snapshot become invalid."
+                  "title": "Inspect results",
+                  "body": "assert"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "After every input change, verify the result of the new operation rather than reusing the previous state. Building on the rule tests in M08-03, this lesson checks how a user task is completed through the interface."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "1. Why use AppTest? Think of restaurant ordering",
+          "paragraphs": [
+            "Imagine running a restaurant with a self-service ordering kiosk. Its system has three rules:",
+            "- An order cannot be submitted without a selected meal.\n- The meal, quantity and payment method must be selected before confirmation.\n- Changing a confirmed order must invalidate its previous confirmation.",
+            "Test rules and operations separately. Business Rule Testing calls the checking function directly with an order that has no meal and verifies rejection. The pytest examples in M08-03 mainly address this layer.",
+            "UI Testing simulates a customer using the kiosk:",
+            "1. Submit without selecting a meal.\n2. Check for “Please select a meal.”\n3. Select a meal and submit again.\n4. Check that the screen indicates success.\n5. Change the meal and check that the previous confirmation disappears.",
+            "AppTest lets Python replay these operations automatically, reducing repeated manual clicking. It simulates the Streamlit program without operating Chrome or Firefox; verify layout, focus and actual downloads separately in a browser."
+          ]
+        },
+        {
+          "id": "layers",
+          "heading": "2. See the map: software testing has different layers",
+          "paragraphs": [
+            "Different layers answer different questions. Plan them together according to the task."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1",
+              "headers": [
+                "Test layer",
+                "Plain-language meaning",
+                "Question to verify"
+              ],
+              "rows": [
+                [
+                  "Unit Test",
+                  "Check one rule in isolation",
+                  "Is the amount calculated correctly?"
+                ],
+                [
+                  "UI AppTest",
+                  "Simulate interface operations",
+                  "Do feedback and buttons update correctly after input?"
+                ],
+                [
+                  "Browser E2E Test",
+                  "Complete the workflow in a real browser",
+                  "Does clicking download actually deliver the file?"
+                ],
+                [
+                  "Usability Test",
+                  "Ask real users to complete a task",
+                  "Do users understand the feedback?"
+                ],
+                [
+                  "Security Test",
+                  "Test security boundaries and improper operations",
+                  "Can an unauthorized person obtain someone else's data?"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These tests complement one another. Seeing a download button in AppTest only establishes that the simulated test found that component; it does not establish that the user's computer received the correct file. An ordering kiosk can display “Order successful” while delivery to the kitchen still needs separate confirmation."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "rerun",
+          "heading": "3. The three-stage test at the center of this lesson",
+          "paragraphs": [
+            "The example is an intake-data checking system with three fields: application ID, applicant code and document type. The three stages in the figure are successive operations in one scenario. Downward arrows mean changing input and then inspecting the new result."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 2 | Omission, correction and another edit",
+              "description": "Downward arrows show operations in one scenario. Stage three clears old success, download and checked state, requiring validation of the new input.",
+              "items": [
+                {
+                  "title": "Stage 1 | Missing data",
+                  "body": "Application ID: SYN-001\nApplicant code: DEMO-A\nDocument type: not filled in\nShow missing document-type feedback; no download."
+                },
+                {
+                  "title": "Stage 2 | Complete data and check",
+                  "body": "Document type: 合成申請表\nShow success and a download button."
+                },
+                {
+                  "title": "Stage 3 | Edit input again",
+                  "body": "Document type: cleared again\nInvalidate old success, download and checked state."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The third stage is easy to overlook: the system produced a correct result, but the user subsequently changed its input. If the old result remains valid, the user may download data that no longer matches the screen. This is Stale State.",
+                "> Whenever a result depends on a set of inputs, changing those inputs requires reconsidering whether the previous result is still valid.",
+                "This example clears success state and the report whenever a field changes, requiring another check. The same principle applies to financial approvals, medical reports, research-data processing and logistics scheduling; each system's specification still determines when revalidation is necessary."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "terms",
+          "heading": "4. Six core AppTest terms",
+          "paragraphs": [
+            "Distinguish input components, data retained across reruns and the action that the test explicitly executes."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 2",
+              "headers": [
+                "Term",
+                "Plain-language meaning"
+              ],
+              "rows": [
+                [
+                  "Streamlit",
+                  "A framework for building interactive web applications quickly in Python"
+                ],
+                [
+                  "Widget",
+                  "An input field, button, selector or other interface component"
+                ],
+                [
+                  "AppTest",
+                  "A tool that simulates a Streamlit app, sets input and inspects results"
+                ],
+                [
+                  "Session State",
+                  "Data and state remembered for the current user session"
+                ],
+                [
+                  "run()",
+                  "Explicitly rerun the program so new input produces a new screen"
+                ],
+                [
+                  "assert",
+                  "Require a condition to hold, failing the test if it does not"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Think of Session State as a shopping cart: after adding three items and switching pages, the site still remembers them. The analogy illustrates retaining data across operations; actual storage scope and lifetime depend on implementation.",
+                "Streamlit widget interactions trigger script reruns, while Session State retains data across them. AppTest requires the test program to call run() explicitly: set input, rerun and then inspect the new screen."
               ]
             }
           ]
         },
         {
           "id": "example",
-          "heading": "A Complete Interface Test",
+          "heading": "5. Build an application you can test automatically",
           "paragraphs": [
-            "Create tests/test_app_contract.py in your slice-three copy, retaining app.py and rules.py in the same project structure. Path locates app.py relative to the test file instead of guessing from the launching shell’s directory.",
-            "Assert absent states at each stage too. Positive success assertions alone do not protect omission rejection or stale-result invalidation."
+            "This simplified teaching example uses the same three synthetic fields to demonstrate blocking omissions and invalidating stale results. A production intake or approval system also needs authorization, data isolation and backend validation appropriate to its specification."
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "tests/test_app_contract.py",
+              "heading": "Project structure",
               "paragraphs": [
-                "Run with Streamlit 1.51.0 and pytest installed. The retained Chinese omission text, synthetic input and stable keys match the actual reference interface."
+                "Follow these steps in your own synthetic practice project."
               ],
-              "code": "from pathlib import Path\nfrom streamlit.testing.v1 import AppTest\n\n\ndef test_input_change_invalidates_report():\n    app = str(Path(__file__).resolve().parents[1] / \"app.py\")\n    at = AppTest.from_file(app).run()\n    assert not at.exception\n    at.text_input(key=\"application_id\").input(\"SYN-001\")\n    at.text_input(key=\"applicant_code\").input(\"DEMO-A\")\n    at.button[0].click().run()\n    assert \"缺少文件類型\" in at.error[0].value\n    assert at.text_input(key=\"application_id\").value == \"SYN-001\"\n    assert not at.success\n    assert not at.get(\"download_button\")\n    at.text_input(key=\"document_type\").input(\"合成申請表\").run()\n    at.button[0].click().run()\n    assert not at.exception\n    assert at.success\n    assert len(at.get(\"download_button\")) == 1\n    at.text_input(key=\"document_type\").input(\"\").run()\n    assert not at.exception\n    assert not at.success\n    assert not at.get(\"download_button\")\n    assert \"checked\" not in at.session_state"
+              "code": "my-project/\n├── app.py\n└── tests/\n    └── test_app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Step 1: Write app.py",
+                "Save the complete program below as app.py. Stable keys identify the three fields in tests; the check button has its own key too."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "app.py",
+              "paragraphs": [
+                "Synthetic-data example; both languages share identical code and interface labels."
+              ],
+              "code": "import json\nimport streamlit as st\n\nFIELDS = {\n    \"application_id\": \"案件編號\",\n    \"applicant_code\": \"申請人代碼\",\n    \"document_type\": \"文件類型\",\n}\n\n\ndef invalidate():\n    st.session_state.pop(\"checked\", None)\n    st.session_state.pop(\"report\", None)\n\n\nst.title(\"收件資料檢核\")\nfor key, label in FIELDS.items():\n    st.text_input(label, key=key, on_change=invalidate)\n\nif st.button(\"檢查\", key=\"check\"):\n    missing = [\n        label for key, label in FIELDS.items()\n        if not st.session_state[key].strip()\n    ]\n    if missing:\n        invalidate()\n        st.error(\"缺少：\" + \"、\".join(missing))\n    else:\n        data = {\n            key: st.session_state[key].strip()\n            for key in FIELDS\n        }\n        st.session_state[\"report\"] = json.dumps(\n            {\"status\": \"complete\", \"data\": data},\n            ensure_ascii=False,\n            indent=2,\n        )\n        st.session_state[\"checked\"] = True\n\nif st.session_state.get(\"checked\"):\n    st.success(\"檢查成功\")\n    st.download_button(\n        \"下載報告\",\n        data=st.session_state[\"report\"],\n        file_name=\"report.json\",\n        mime=\"application/json\",\n        key=\"download\",\n    )"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "on_change=invalidate runs invalidate() when an input field changes, clearing the previous confirmation. pop(\"checked\", None) removes that state if present and otherwise does nothing; report is cleared in the same way.",
+                "When the check button is pressed, the program trims surrounding whitespace and identifies missing fields. Missing data clears old results and displays an error; complete data is serialized to JSON, saved as the report and marked checked. The success and download area sits outside the button condition so subsequent reruns display it according to current state; a field change triggers the callback to invalidate the old report.",
+                "### Step 2: Simulate operations with AppTest",
+                "Save the following test as tests/test_app.py. Path finds app.py relative to the test file, avoiding dependence on the launching shell's incidental working directory."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "tests/test_app.py",
+              "paragraphs": [
+                "Synthetic-data example; both languages share identical code and interface labels."
+              ],
+              "code": "import json\nfrom pathlib import Path\nfrom streamlit.testing.v1 import AppTest\n\nAPP = Path(__file__).resolve().parents[1] / \"app.py\"\n\n\ndef test_three_stages():\n    at = AppTest.from_file(str(APP)).run()\n    assert not at.exception\n\n    # 1. 缺漏：只填兩個欄位\n    at.text_input(key=\"application_id\").input(\"SYN-001\")\n    at.text_input(key=\"applicant_code\").input(\"DEMO-A\")\n    at.button(key=\"check\").click().run()\n    assert not at.exception\n    assert at.error\n    assert \"文件類型\" in at.error[0].value\n    assert at.text_input(key=\"application_id\").value == \"SYN-001\"\n    assert not at.success\n    assert not at.get(\"download_button\")\n\n    # 2. 補正：填完第三個欄位，再按檢查\n    at.text_input(key=\"document_type\").input(\"合成申請表\").run()\n    at.button(key=\"check\").click().run()\n    assert not at.exception\n    assert not at.error\n    assert at.success\n    assert len(at.get(\"download_button\")) == 1\n    assert at.session_state[\"checked\"] is True\n    assert json.loads(at.session_state[\"report\"]) == {\n        \"status\": \"complete\",\n        \"data\": {\n            \"application_id\": \"SYN-001\",\n            \"applicant_code\": \"DEMO-A\",\n            \"document_type\": \"合成申請表\",\n        },\n    }\n\n    # 3. 變更：重新清空第三個欄位\n    at.text_input(key=\"document_type\").input(\"\").run()\n    assert not at.exception\n    assert not at.success\n    assert not at.get(\"download_button\")\n    assert \"checked\" not in at.session_state\n    assert \"report\" not in at.session_state"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Stage one fills only two fields and checks that the error names document type, entered data remains and both success and download components are absent. Stage two completes the third field and checks for success, a download component and checked/report state. Stage three clears the third field again and checks that old success, download, checked and report all disappear.",
+                "The test checks whether the screen and state after each operation satisfy the specification. Streamlit 1.51.0 has no dedicated at.download_button operation API; this lesson uses at.get(\"download_button\") to inspect component presence, which does not establish a real download. The example pins this version; recheck APIs and test results when upgrading.",
+                "### Step 3: Run the test",
+                "Use an isolated Python virtual environment from the project root, install the specified version and execute the test."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Install and test",
+              "paragraphs": [
+                "Follow these steps in your own synthetic practice project."
+              ],
+              "code": "python -m venv .venv\nsource .venv/bin/activate\npython -m pip install streamlit==1.51.0 pytest\npython -m pytest -q tests/test_app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Passing means the assertions executed in this run held. Start the actual program, replay the operations and inspect the download filename report.json, Chinese data, status and field values against the current input."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Start the application",
+              "paragraphs": [
+                "Follow these steps in your own synthetic practice project."
+              ],
+              "code": "python -m streamlit run app.py",
+              "id": "run"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "In the browser, fill two fields and check for omission feedback; complete the third field, check and download JSON. Then clear document type and leave the field: old success and the download entry should disappear. Also use Tab, Shift+Tab, Enter and Space to inspect focus and button operation. Stop the service you started with Ctrl+C and leave the virtual environment with deactivate."
+              ]
             }
           ]
         },
         {
-          "id": "run",
-          "heading": "Move from Components to a Real Browser",
+          "id": "syntax",
+          "heading": "6. Translate AppTest code into everyday language",
           "paragraphs": [
-            "From the project root, run python -m pytest -q tests/test_app_contract.py, then start app.py and perform the same task by keyboard. Download JSON and inspect filename, Chinese content, status, scope and allowed fields.",
-            "A download component in AppTest is state evidence, not proof of file delivery to a device. A real browser also cannot replace observing whether a person understands feedback; keep separate results for all three."
+            "Match each expression to the effect it inspects. The five entries below are a syntax reference, not a test that must execute continuously from top to bottom."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 3 | Five AppTest expressions in plain language",
+              "description": "Each entry explains an operation or assertion. There are no arrows: the entries are not a required execution sequence.",
+              "items": [
+                {
+                  "title": "AppTest.from_file(\"app.py\")",
+                  "body": "Tell the test tool which application to test."
+                },
+                {
+                  "title": ".input(\"SYN-001\")",
+                  "body": "Simulate entering SYN-001 in the selected input field."
+                },
+                {
+                  "title": ".click().run()",
+                  "body": "Simulate pressing the button, then rerun the program."
+                },
+                {
+                  "title": "assert at.success",
+                  "body": "Require a success message on the new screen."
+                },
+                {
+                  "title": "assert not at.success",
+                  "body": "Require no success message on the screen."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A Regression Test reruns existing tests after a program change to check that previously working behavior has not been damaged. For example, a system may correctly reject missing data until a new export feature permits incomplete downloads. Retaining tests for omission, success and invalidation after edits helps expose such changes early."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industry",
+          "heading": "7. What can AppTest check in other industries?",
+          "paragraphs": [
+            "When changing industries, identify which inputs a result depends on, then design assertions for changes to those inputs."
           ],
           "blocks": [
             {
               "kind": "table",
-              "caption": "Table 1 | This Tool’s Verification Scope",
+              "caption": "Table 3",
               "headers": [
-                "Item",
-                "AppTest",
-                "Further verification"
+                "Industry",
+                "Interface scenario",
+                "Important assertion"
               ],
               "rows": [
                 [
-                  "Errors/success and Session State",
-                  "Assert with a script.",
-                  "Whether the specification itself is correct."
+                  "Healthcare",
+                  "A patient changes the date after booking",
+                  "The old summary must not represent confirmation of the new date"
                 ],
                 [
-                  "Download-component visibility",
-                  "Check presence or absence.",
-                  "Actual file bytes and filename."
+                  "E-commerce",
+                  "A customer changes the cart after applying a coupon",
+                  "Recalculate the amount without retaining an invalid discount"
                 ],
                 [
-                  "Keyboard and mobile layout",
-                  "Not established by this test.",
-                  "Real-browser and viewport checks."
+                  "Human resources",
+                  "An employee changes leave dates",
+                  "Do not reuse the old duration or approval state incorrectly"
                 ],
                 [
-                  "User understanding of feedback",
-                  "Not established by component presence.",
-                  "Task observation."
+                  "Logistics",
+                  "A warehouse worker changes shipment quantity",
+                  "Reconsider the previous shipping cost and confirmation"
+                ],
+                [
+                  "Education",
+                  "A student changes registration data",
+                  "Incomplete data must invalidate the previous completion state"
                 ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These scenarios share the reasoning sequence “Input → validation → result → changed input → invalidated old result.” Recognizing that dependency transfers the testing approach to other systems; each system's specification still defines the actual fields and validity conditions."
               ]
             }
           ]
         },
         {
           "id": "misread",
-          "heading": "Read the Failure Before Choosing the Repair",
+          "heading": "8. AppTest boundaries: four common mistakes",
           "paragraphs": [
-            "For AppTest exceptions, inspect paths, dependencies and output. For an unlocated component, check whether the current stage includes it. A third-slice download test is not appropriate for slice one; do not “repair” that intentional difference.",
-            "If a test differs from your specification, clarify requirements first. Do not silently add unconfirmed fields, login or external services just to make tests green."
+            "When interpreting results, state both the scenarios executed and the evidence still needed."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 4",
+              "headers": [
+                "Common misconception",
+                "Correct interpretation"
+              ],
+              "rows": [
+                [
+                  "All tests passed, so the software has no bugs",
+                  "Only the executed scenarios passed"
+                ],
+                [
+                  "A download button exists, so downloading succeeded",
+                  "The actual file and contents still need verification"
+                ],
+                [
+                  "Input changes do not require running the test again",
+                  "AppTest requires an explicit run()"
+                ],
+                [
+                  "A normal-looking screen establishes security",
+                  "Authorization, data isolation and backend validation also need tests"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose users A and B can both log in. Testing that A can download their own report does not establish that A cannot download B's report. Design separate authorization and cross-user isolation tests. AppTest can inspect some visible interface behavior; backend security controls still require corresponding verification."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "9. Check your understanding before reading explanations",
+          "paragraphs": [
+            "In “Check your understanding” below, choose an answer and consider your reasoning before expanding each reference explanation. The three questions address run(), stale state and evidence for real downloads. This page uses native disclosures; choosing answers and reading explanations does not record learning completion.",
+            "The skill to take away is separating a user task into operations, state transitions and expected results, then checking the system with repeatable assertions. As a next exercise, deliberately introduce a bug that leaves an old report downloadable after input changes, verify that AppTest fails, repair the program and rerun it."
           ]
         }
       ],
       "exercise": {
-        "environment": "Your slice-three copy with app.py, rules.py, tests/ and Streamlit 1.51.0.",
+        "environment": "A Python virtual environment, Streamlit 1.51.0, pytest and this lesson’s app.py; read the rule tests in M08-03 first.",
         "steps": [
-          "Add the complete test, run it from the project root and retain results.",
-          "Identify assertions protecting omission, correction and change at each step.",
-          "Replay in a real browser and read the downloaded JSON separately, recording keyboard/download outcomes."
+          "Create app.py and tests/test_app.py from this lesson, run the three-stage test and retain output.",
+          "Temporarily remove on_change=invalidate in your own copy. Rerun and confirm stage three fails; restore the callback and test again.",
+          "Start the actual program, replay all three stages by keyboard and download report.json. Verify its name, Chinese text and JSON contents, recording results separately."
         ],
         "expected": "An AppTest regression script with separately recorded real-browser verification.",
         "check": "Each operation has an explicit rerun. Check removal of stale results/downloads; simulated components are not real-download evidence.",
@@ -297,105 +901,105 @@
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "AppTest 變更 widget 後，應如何檢查新結果？",
+          "prompt": "使用者修改輸入後，AppTest 要如何取得新畫面？",
           "options": [
-            "只看舊值",
-            "明確 run() 後檢查當次狀態",
-            "直接推定成功",
-            "改寫 spec"
+            "直接檢查上次的結果",
+            "呼叫 run() 後再檢查",
+            "只要改變輸入就一定成功",
+            "把測試中的 assert 刪除"
           ],
           "rationales": [
-            "可能尚未執行新情境。",
-            "確保觀察對應重跑。",
-            "缺少證據。",
-            "不是操作測試步驟。"
+            "上次結果可能仍是舊畫面。",
+            "明確重跑後，斷言才能對應本次輸入。",
+            "設定輸入本身不會自動重跑 AppTest。",
+            "刪除斷言會失去驗證。"
           ]
         },
         "en": {
-          "prompt": "After changing an AppTest widget, how should you inspect new results?",
+          "prompt": "After input changes, how does AppTest obtain the new screen?",
           "options": [
-            "Inspect old values only.",
-            "Call run() explicitly, then inspect the current state.",
-            "Assume success directly.",
-            "Rewrite spec."
+            "Inspect the previous result directly.",
+            "Call run(), then inspect.",
+            "Changing input guarantees success.",
+            "Delete the assertions."
           ],
           "rationales": [
-            "The new scenario may not have executed.",
-            "Match observation to the rerun.",
-            "There is no evidence.",
-            "That is not an operation-testing step."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M08-C04-Q02",
-      "answer": 2,
-      "text": {
-        "zh": {
-          "prompt": "哪項需要另做真實瀏覽器驗證？",
-          "options": [
-            "模擬中的 error 文字",
-            "Session State 的 checked",
-            "下載檔案實際位元組與鍵盤焦點",
-            "模擬中的 success 元件"
-          ],
-          "rationales": [
-            "可由 AppTest 核對。",
-            "可在模擬中檢查。",
-            "超出本 AppTest 腳本的證明範圍。",
-            "可由 AppTest 核對。"
-          ]
-        },
-        "en": {
-          "prompt": "Which needs separate real-browser verification?",
-          "options": [
-            "Simulated error text.",
-            "The checked value in Session State.",
-            "Actual download bytes and keyboard focus.",
-            "The simulated success component."
-          ],
-          "rationales": [
-            "AppTest can inspect this.",
-            "The simulation can check this.",
-            "These exceed the proof scope of this AppTest script.",
-            "AppTest can inspect this."
+            "The previous result may still be stale.",
+            "An explicit rerun connects assertions to the current input.",
+            "Setting input does not automatically rerun AppTest.",
+            "Removing assertions removes verification."
           ]
         }
       }
     },
     {
       "id": "AASE-M08-C04-Q03",
-      "answer": 3,
+      "answer": 2,
       "text": {
         "zh": {
-          "prompt": "清空第三欄後應檢查什麼？",
+          "prompt": "訂單成功後，使用者將必填資料清空。什麼行為最合理？",
           "options": [
-            "仍能下載舊報告",
-            "只檢查頁面標題",
-            "成功文字存在就好",
-            "舊成功、下載與 checked 都失效"
+            "仍保留原本成功與下載狀態",
+            "只改變畫面顏色",
+            "使舊確認結果失效，要求重新檢查",
+            "刪掉全部使用者帳號"
           ],
           "rationales": [
-            "違反目前輸入契約。",
-            "未涵蓋狀態轉換。",
-            "此時不應成功。",
-            "完整覆蓋本課失效要求。"
+            "資料已改變，舊成功可能不再有效。",
+            "顏色變更無法清除過期報告。",
+            "結果依賴輸入；變更後先失效，再重新驗證。",
+            "刪除帳號與本次輸入驗證無關。"
           ]
         },
         "en": {
-          "prompt": "What should you check after clearing the third field?",
+          "prompt": "After a successful order, the user clears required data. What should happen?",
           "options": [
-            "The old report can still download.",
-            "Only the page title.",
-            "Success text is present.",
-            "Old success, download and checked are all invalidated."
+            "Retain the previous success and download state.",
+            "Only change the screen color.",
+            "Invalidate the old confirmation and require another check.",
+            "Delete all user accounts."
           ],
           "rationales": [
-            "That violates the current-input contract.",
-            "That misses the state transition.",
-            "Success should be absent now.",
-            "These cover the course’s invalidation requirement."
+            "Changed data may invalidate the previous success.",
+            "A color change does not clear a stale report.",
+            "The result depends on input; invalidate it and revalidate.",
+            "Deleting accounts is unrelated to validating this input."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C04-Q02",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "AppTest 已確認下載按鈕存在。下一步最重要的是？",
+          "options": [
+            "宣布完整系統驗收通過",
+            "不需要其他測試",
+            "只測試按鈕顏色",
+            "用真實瀏覽器驗證下載檔案與內容"
+          ],
+          "rationales": [
+            "元件存在不足以證明完整系統通過驗收。",
+            "實際下載仍缺少證據。",
+            "顏色不是檔案交付證據。",
+            "讀取實際檔案，確認檔名、內容與目前輸入一致。"
+          ]
+        },
+        "en": {
+          "prompt": "AppTest confirms the download button exists. What is the most important next step?",
+          "options": [
+            "Declare complete system acceptance.",
+            "Do no further testing.",
+            "Only test the button color.",
+            "Verify the downloaded file and contents in a real browser."
+          ],
+          "rationales": [
+            "Component presence does not establish complete system acceptance.",
+            "Actual downloading still lacks evidence.",
+            "Color is not evidence of file delivery.",
+            "Inspect the actual filename and contents against the current input."
           ]
         }
       }

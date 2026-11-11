@@ -768,3 +768,11 @@ v1.1.0／revision 4保留原發布日與六個既有章節錨點。完整導言�
 SystemContextLessonDiagram復用ArchitectureDiagram與受限cards；四張圖的HTML、搜尋與八份SVG來自正式模型。模型保留每個外部節點與主系統直接相連的條件，允許已連結節點間的補充關係，以保留銀行範例SES→Customer。圖像版面差異、作者及CC BY 4.0授權見來源對照。
 
 維護使用`python3 scripts/aase_m0602_content.py --check`、`python3 scripts/aase_m0602_svg.py --check`、`tests/aase-m0602-replacement.test.ts`與`playwright.aase-m0602.config.ts`，正式站以AASE_BASE_URL指定。[驗證與發布回執](releases/2026-11-11-aase-m06-02-replacement.md)分開記錄本機、正式站與未驗事項。
+
+## AASE M08-04 AppTest 完整供稿（2026-11-11）
+
+AASE-M08-C04 v1.1.0／revision 4 保留原發布日、路徑及六個舊錨點；`run` 錨點位於啟動命令的 h3。供稿導言及九節、三個實作步驟、四表、五段程式／指令與三道四選題完整雙語進入正文。[來源對照](sources/aase/m08-04/replacement-2026-11-11/source-map.md)保存原稿、三 PNG、前版、成稿及修正。`aase_m0804_content.py --check`核對稿件、共享程式與JSON；可執行程式在 `resources/aase/examples/m08-04/`，隨既有工作坊ZIP發布。
+
+`AppTestDiagram.svelte`以受限ConceptVisual呈現三步流程、三個含欄位值的相繼狀態、五項無箭頭語法清單。HTML文字可搜尋、原生重排，六SVG由`aase_m0804_svg.py`同源生成並限制元素與屬性。`aase.ts`拒絕錯誤位置、關係、節點數及額外標記欄位。題目保留原有概念ID，依供稿順序為Q01／Q03／Q02，答案B／C／D；參考解析沿原生details，不建立虛假提交或學習紀錄。
+
+單元為`tests/aase-m0804-replacement.test.ts`；瀏覽器為`playwright.aase-m0804.config.ts`，正式站指定`AASE_BASE_URL`。全文順序、四尺寸／200%、無JS、鍵盤、搜尋、SVG文字邊界／重疊與下載bytes由同一檢查承接。AppTest固定1.51.0實測；啟動本課app於127.0.0.1:8584後，可執行`node scripts/check-aase-m0804-example.mjs`核對真實下載及三階段；各層結果見[發布回執](releases/2026-11-11-aase-m08-04-replacement.md)。
