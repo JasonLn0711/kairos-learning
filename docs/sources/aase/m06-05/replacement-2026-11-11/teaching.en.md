@@ -275,7 +275,7 @@ The specification tells the team where checks belong, which conditions must deny
 
 ## 8. Check your understanding
 
-A law firm has three users: lawyer A, lawyer B and administrator C.
+A law firm has three users: lawyer A, lawyer B and administrative staff member C.
 
 A handles case X, B handles case Y, and C assists with administrative work on selected cases. All three are logged in.
 
