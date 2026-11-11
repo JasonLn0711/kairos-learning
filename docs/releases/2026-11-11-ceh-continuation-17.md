@@ -14,7 +14,7 @@
 
 適用 WRITE-01–06、09–11、HTML-01–04、FIG-01–06、A11Y-01–03；未新增計算互動，INT-01 參數計算不適用。下列實測僅支持本輪範圍，不能由來源雜湊、圖名數或單一綠燈推論全站改善。
 
-- `pnpm run validate:content`、`pnpm test`：最終合併後 298 項測試全部通過。
+- `pnpm run validate:content`、`pnpm test`：最終發布快照 309 項測試全部通過。
 - `pnpm run check`：0 errors／0 warnings；`python3 -m unittest discover -s scripts -p test_validation_html.py`：6 項通過。
 - `node scripts/check-publication-boundary.mjs`：draft／future、英文課程閘門與乾淨正式重建通過；`pnpm run validate:release` 全部通過，包含本批來源逐單位稽核。
 - `check-ceh-continuation-diagrams.mjs`：17 圖 SSR／無 JS fixture、雙語四尺寸／200% 共 16 組案例、34 SVG 字框／重疊與下載通過。
@@ -30,7 +30,7 @@
 
 ## 發布閘門
 
-尚未發布此輪續篇修訂。完成必要驗證後提交／推送，等待實際 Pages run，回讀雙語全文與 34 新 SVG，再填入正式發布證據。`kairos-learning` 擁有原稿、教材、實作、圖解及發布證據；Planning 僅持定位、狀態、容量、驗證及下一閘門。
+已完成來源保存、完整採用、驗證與正式發布。最終網站為 v1.2.2／revision 5；原發布日保持 2026-11-10，版本修訂日為 2026-11-11。`kairos-learning` 擁有原稿、教材、實作、圖解及發布證據；Planning 僅持定位、狀態、容量、驗證及下一閘門。
 
 ## TLS 註記框修正
 
@@ -39,3 +39,14 @@
 續篇子標題沿每日筆記既有 h4 呈現，避免通用 SourceBody 的 h2 跳回文章上層；增加實際頁面標題階層回歸檢查。
 
 下載 SVG 三個角色框統一列高，三條生命線分別從自身角色框底部起始；新增端點數值回歸檢查。
+
+## 正式發布與逐項回讀
+
+- 發布提交 `f05f044f31d22fc6e11ec7463041277fd6df2568`，推送 `origin HEAD:main`；推送後 fetch 驗證 divergence `0 0`。此前與並行 AASE 發布均以 merge 保留兩邊歷史，沒有 force-push。
+- [Pages run 42987132405](https://github.com/JasonLn0711/kairos-learning/actions/runs/42987132405) 已成功部署同一提交；309 項本機測試及該次 CI 的內容／型別／發布邊界／release gate 各自保留其證據範圍。
+- 2026-11-11T08:35Z，回讀[中文日期頁](https://learn.cs-kairos.com/ceh-notes/2026-11-10/)與[英文日期頁](https://learn.cs-kairos.com/en/ceh-notes/2026-11-10/)，確認 v1.2.2、原發布 2026-11-10、版本修訂 2026-11-11。
+- `CEH_NOTES_BASE_URL=https://learn.cs-kairos.com node scripts/check-ceh-notes-browser.mjs` 正式站完整通過：兩語全部正文、四尺寸／200%、無 JS、鍵盤、卡片／既有檢核、搜尋與全部 64 SVG 的文字幾何及下載 bytes。原稿的十道情境題保持無答案鍵。
+- 同樣 base 執行 `check-ceh-continuation-graphs.mjs`，正式站 16 組案例通過；17 圖每條箭頭的實際起訖、沒有穿過其他節點、全部條件標籤、16／32 格、巢狀卷、TLS 註記範圍及 SVG 生命線端點均通過。並確認續篇子標題在 section 下維持 h4，原始情境題沒有提交／答案介面。
+- 原始兩份文字及 17 張 PNG 共 19 個公開 raw URL 均 HTTP 200、bytes／SHA-256 與 manifest 相符（固定於已發布的來源提交後代 `38b9295`）；後續修正沒有修改原始附件。忽略證據：`.local/ceh-notes/production-original-19.json` 與 `hydrated-continuation/result.json`（內含正式站 base）。
+- 第一次正式檢查曾在長頁載入完成前讀取 script，報 `Missing application bootstrap`。實際 HTML 已有 v1.2.2 與 bootstrap；檢查器改為等待日期頁 load 完成，再照原有條件比對初始化識別碼與資產，不放寬內容、幾何或下載判定。修正後完整重跑通過。
+- 發布後回執與檢查器等待修正以 `[skip ci]` 提交，不另外改動網站內容；正式頁的已驗證版本仍對應上述發布提交。未進行的真人理解、實機、完整螢幕閱讀器與全部標準 errata 審閱維持前述界線。
