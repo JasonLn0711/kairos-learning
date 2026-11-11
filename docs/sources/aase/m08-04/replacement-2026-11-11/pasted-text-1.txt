@@ -1,0 +1,345 @@
+# M08-04｜Streamlit AppTest 的介面測試：白話完整教學
+
+AASE · M08 測試、品質與安全驗證
+
+這一課最重要的觀念：程式的規則寫對了，不代表使用者操作畫面時，系統就一定會做對。
+
+例如，你開發了一套銀行申請系統，規定「資料不完整，不可以產生報告」。
+
+你已經測試後端程式，證明缺少資料時會拒絕產生報告。但使用者可能遇到另一個問題：
+
+1. 使用者沒有填完資料。
+2. 畫面卻顯示「檢查成功」。
+3. 使用者補齊資料後，畫面沒有更新。
+4. 使用者又把資料刪掉，卻仍然可以下載之前產生的報告。
+
+這些都是介面與狀態管理的錯誤，不一定是業務規則本身的錯誤。
+
+Streamlit 的 AppTest，就是用來自動模擬使用者操作，並檢查畫面和程式狀態是否符合預期的測試工具。
+
+本課核心流程是：
+
+模擬輸入
+
+填寫欄位
+
+重新執行
+
+run()
+
+檢查結果
+
+assert
+
+每次修改輸入，都要確認新操作造成的結果，而非沿用上一次的狀態。
+
+我已找到原課程。你提供的網址把 M08-04 放在 `m04` 路徑下；實際教材位於 [M08-04｜Streamlit AppTest 的介面測試](https://learn.cs-kairos.com/courses/aase/v1/m08/concepts/m08-04/?utm_source=chatgpt.com)。以下會依照該教材內容，補上白話原理、跨產業例子及實作。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.cs-kairos.com\&sz=32)
+
+CS Kairos Learn
+
+
+
+## 一、為什麼需要 AppTest？用餐廳點餐理解
+
+想像你經營一家餐廳，推出自助點餐機。
+
+點餐系統有三條規則：
+
+- 沒有選餐點，不能送出訂單。
+- 選好餐點、數量和付款方式，才能確認訂單。
+- 訂單確認後，如果顧客修改內容，原本的確認結果必須失效。
+
+你可以分別測試兩件事。
+
+第一件：規則是否正確？
+
+你直接呼叫系統的檢查函式，傳入一筆沒有餐點的訂單，確認它會拒絕。
+
+這叫做業務規則測試（Business Rule Testing），上一課 M08-03 的 pytest 主要就在做這件事。
+
+第二件：畫面操作是否正確？
+
+你需要模擬顧客真的使用點餐機：
+
+1. 不選餐點，按下送出。
+2. 檢查畫面是否出現「請選擇餐點」。
+3. 選好餐點，再按送出。
+4. 檢查畫面是否顯示成功。
+5. 改變餐點，檢查舊訂單的確認狀態是否消失。
+
+這就是介面測試（UI Testing）。
+
+AppTest 可以讓 Python 自動執行上述操作，不需要每次安排真人站在電腦前重複點擊。
+
+不過，它是模擬 Streamlit 程式，不是真正操作 Chrome 或 Firefox。這個差異非常重要。
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.streamlit.io\&sz=32)
+
+Streamlit Docs
+
+
+
+## 二、先掌握整張地圖：軟體測試有不同層次
+
+| 測試層次                 | 白話理解        | 想確認什麼             |
+| -------------------- | ----------- | ----------------- |
+| Unit Test 單元測試       | 單獨檢查一項規則    | 金額計算對不對？          |
+| UI AppTest           | 模擬操作軟體介面    | 輸入後，提示與按鈕有沒有正確更新？ |
+| Browser E2E Test     | 在真實瀏覽器走完整流程 | 點擊下載後，檔案真的下載了嗎？   |
+| Usability Test 易用性測試 | 找真實使用者完成任務  | 使用者看得懂提示嗎？        |
+| Security Test 安全測試   | 測試安全邊界與不當操作 | 未授權的人是否能取得其他人的資料？ |
+
+這些不是互相取代的工具。
+
+例如 AppTest 顯示「下載按鈕存在」，只能證明模擬測試看到了該元件，不能直接證明使用者的電腦已經收到正確的檔案。
+
+這就像餐廳點餐機顯示「訂單成功」，不代表廚房真的收到訂單。
+
+## 三、本課最重要的三階段測試
+
+課程以一個「收件資料檢核系統」為例，需要填寫三個欄位：案件編號、申請人代碼、文件類型。
+
+階段 1
+
+資料缺漏
+
+案件編號
+
+SYN-001
+
+申請人代碼
+
+DEMO-A
+
+文件類型
+
+未填寫
+
+顯示「缺少文件類型」；不得提供下載
+
+階段 2
+
+補齊資料並檢查成功
+
+文件類型
+
+合成申請表
+
+顯示檢查成功，出現下載按鈕
+
+階段 3
+
+再次修改輸入
+
+文件類型
+
+再次清空
+
+舊成功訊息、下載按鈕、已檢查狀態全部失效
+
+第三階段最容易被忽略。
+
+因為系統可能已經產生過正確結果，但是使用者後來改變了輸入內容。如果舊結果沒有失效，使用者可能下載到和目前畫面不一致的資料。
+
+這種問題叫做 Stale State（過期狀態）。
+
+更一般地說：
+
+> 凡是某個結果依賴一組輸入，只要那組輸入改變，就必須重新判斷舊結果是否仍然有效。
+
+這個原則不限於軟體介面，金融審批、醫療報告、研究資料處理與物流調度都適用。
+
+## 四、理解 AppTest 的六個核心名詞
+
+| 名詞            | 白話意思                            |
+| ------------- | ------------------------------- |
+| Streamlit     | 用 Python 快速建立互動式網頁應用的框架         |
+| Widget        | 畫面上的輸入框、按鈕、選單等操作元件              |
+| AppTest       | 模擬執行 Streamlit App、設定輸入並檢查結果的工具 |
+| Session State | 系統替目前使用工作階段記住的資料與狀態             |
+| `run()`       | 明確重新執行程式，讓新輸入產生新畫面              |
+| `assert`      | 宣告「這個條件必須成立」，不成立就讓測試失敗          |
+
+特別說明 `Session State`。
+
+想像你在購物網站把三樣東西放進購物車。你切換頁面，網站仍記得購物車有哪些東西。
+
+這種「記住目前操作狀態」的概念，就可以用 Session State 來理解。
+
+Streamlit 的元件操作會引起程式重新執行，而 Session State 能讓資料跨越重新執行保留下來。AppTest 則要求測試程式明確呼叫 `run()`。
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.streamlit.io\&sz=32)
+
+Streamlit Docs+1
+
+
+
+## 五、動手實作：建立一個可以自動測試的應用程式
+
+以下是教學用的簡化範例，延續課程的三欄合成資料。它不是正式收件或審批系統。
+
+建立這樣的專案：
+
+```
+my-project/
+├── app.py
+└── tests/
+    └── test_app.py
+```
+
+### 第一步：寫出應用程式 app.py
+
+```
+import jsonimport streamlit as stFIELDS = {    "application_id": "案件編號",    "applicant_code": "申請人代碼",    "document_type": "文件類型",}def invalidate():    st.session_state.pop("checked", None)    st.session_state.pop("report", None)st.title("收件資料檢核")for key, label in FIELDS.items():    st.text_input(label, key=key, on_change=invalidate)if st.button("檢查", key="check"):    missing = [        label for key, label in FIELDS.items()        if not st.session_state[key].strip()    ]    if missing:        invalidate()        st.error("缺少：" + "、".join(missing))    else:        data = {            key: st.session_state[key].strip()            for key in FIELDS        }        st.session_state["report"] = json.dumps(            {"status": "complete", "data": data},            ensure_ascii=False,
+```
+
+這段程式最值得注意的是：
+
+`on_change=invalidate`
+
+它表示：當輸入欄位的值改變時，先執行 `invalidate()`，把過去已確認的結果清除。
+
+其中 `pop("checked", None)` 的意思是「有這個狀態就刪除；沒有就不做任何事」。
+
+因此，當使用者修改先前已經檢查成功的資料，系統不會繼續保留舊報告。
+
+### 第二步：使用 AppTest 模擬操作
+
+在 `tests/test_app.py` 寫入：
+
+```
+from pathlib import Pathfrom streamlit.testing.v1 import AppTestAPP = Path(__file__).resolve().parents[1] / "app.py"def test_three_stages():    at = AppTest.from_file(str(APP)).run()    assert not at.exception    # 1. 缺漏：只填兩個欄位    at.text_input(key="application_id").input("SYN-001")    at.text_input(key="applicant_code").input("DEMO-A")    at.button(key="check").click().run()    assert at.error    assert "文件類型" in at.error[0].value    assert not at.success    assert not at.get("download_button")    # 2. 補正：填完第三個欄位    at.text_input(key="document_type").input(        "合成申請表"    ).run()    at.button(key="check").click().run()    assert not at.exception    assert at.success    assert at.get("download_button")    # 3. 變更：重新清空第三個欄位    at.text_input(key="document_type").input("").run()    assert not at.exception    assert not at.success
+```
+
+這段測試不是在檢查「畫面好不好看」。
+
+它是在檢查每個操作之後，畫面是否呈現符合規格的狀態。
+
+注意：教材使用 `at.get("download_button")` 檢查下載元件是否存在；Streamlit 1.51.0 並沒有提供獨立的 `at.download_button` 操作 API。這段測試不能據此推定實際下載成功。以上程式供練習使用，本次沒有在 Streamlit 環境實際執行驗證。
+
+### 第三步：執行測試
+
+安裝教材使用的版本：
+
+```
+python -m pip install streamlit==1.51.0 pytest
+```
+
+執行 AppTest：
+
+```
+python -m pytest -q tests/test_app.py
+```
+
+再啟動真實程式：
+
+```
+python -m streamlit run app.py
+```
+
+如果測試通過，代表已執行的自動化斷言成立。
+
+但還要另外使用真實瀏覽器，確認下載檔案的內容、檔名，以及實際操作體驗。
+
+## 六、把 AppTest 程式翻成白話
+
+最常用的操作其實不多。
+
+`AppTest.from_file("app.py")`
+
+告訴測試工具：「我要測試這支應用程式。」
+
+`.input("SYN-001")`
+
+模擬使用者在指定輸入框填寫 SYN-001。
+
+`.click().run()`
+
+模擬按下按鈕，再重新執行程式。
+
+`assert at.success`
+
+要求新畫面必須出現成功提示。
+
+`assert not at.success`
+
+要求畫面不得出現成功提示。
+
+另一個常見概念是 Regression Test（回歸測試）。
+
+意思是：今天修改程式後，再執行過去寫好的測試，確認原本正常的功能沒有被意外破壞。
+
+例如，原本的系統正確拒絕資料缺漏，但某次加入新的匯出功能後，這個保護機制失效了。回歸測試的目的，就是讓這類問題盡早浮現。
+
+## 七、AppTest 在其他行業可以測試什麼？
+
+| 行業 | 介面操作情境        | 重要斷言                |
+| -- | ------------- | ------------------- |
+| 醫療 | 病患預約後改變預約日期   | 舊預約摘要不得冒充新日期的確認結果   |
+| 電商 | 顧客使用折價券後修改購物車 | 應重新計算金額，不保留失效折扣     |
+| 人資 | 員工修改請假日期      | 舊天數與舊核准狀態不得錯誤沿用     |
+| 物流 | 倉庫人員修改出貨數量    | 舊運費與出貨確認結果必須重新判斷    |
+| 教育 | 學生修改報名資料      | 舊的完成狀態不得在資料不完整時繼續顯示 |
+
+這裡有一個跨產業的重要抽象原則：
+
+輸入資料 → 驗證 → 產生結果 → 輸入改變 → 舊結果失效。
+
+一旦能辨識這個流程，就能把同樣的測試思維套用到許多系統。
+
+## 八、AppTest 的能力邊界：最容易犯的四個錯誤
+
+| 常見誤解              | 正確觀念                 |
+| ----------------- | -------------------- |
+| 測試全部通過，代表軟體沒有 Bug | 只代表已執行的測試情境通過        |
+| 有下載按鈕，代表下載成功      | 還必須確認實際檔案及內容         |
+| 修改輸入後，不必重新執行測試    | AppTest 需要明確 `run()` |
+| 畫面正常就代表安全         | 還需要權限、資料隔離、後端驗證等測試   |
+
+尤其是安全性問題。
+
+假設使用者 A 和 B 都能登入一套系統。你測試了 A 可以下載自己的報告，並不能因此推論 A 絕對無法下載 B 的報告。
+
+這需要另外設計授權驗證與跨使用者隔離測試。AppTest 可以測量部分可見的介面行為，但不能取代後端安全控制的驗證。
+
+## 九、理解檢核：現在請你判斷
+
+請先作答，提交後再查看解析。
+
+1\. 使用者修改輸入後，AppTest 要如何取得新畫面？
+
+A. 直接檢查上次的結果
+
+B. 呼叫 run() 後再檢查
+
+C. 只要改變輸入就一定成功
+
+D. 把測試中的 assert 刪除
+
+2\. 訂單成功後，使用者將必填資料清空。什麼行為最合理？
+
+A. 仍保留原本成功與下載狀態
+
+B. 只改變畫面顏色
+
+C. 使舊確認結果失效，要求重新檢查
+
+D. 刪掉全部使用者帳號
+
+3\. AppTest 已確認下載按鈕存在。下一步最重要的是？
+
+A. 宣布完整系統驗收通過
+
+B. 不需要其他測試
+
+C. 只測試按鈕顏色
+
+D. 用真實瀏覽器驗證下載檔案與內容
+
+提交答案並查看解析
+
+本課真正要帶走的能力： 不只是會寫 `AppTest`，而是能把一個使用者任務拆成「操作、狀態轉換、預期結果」，再用可重複執行的測試證明系統符合要求。
+
+下一步最值得練習的不是增加更多測試數量，而是刻意製造一次「資料修改後仍可下載舊報告」的錯誤，確認你的 AppTest 能偵測到它，再修復程式並重新驗證。

@@ -1,14 +1,17 @@
 {
   "id": "AASE-M07-C04",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "pytest-usage",
     "streamlit-apptest",
-    "gherkin"
+    "gherkin",
+    "python-strings-312",
+    "pytest-parametrize",
+    "agile-tdd"
   ],
   "qa": [],
   "text": {
@@ -28,123 +31,518 @@
       "sections": [
         {
           "id": "problem",
-          "heading": "畫面限制之外，規則也要站得住",
+          "heading": "一、這一課最重要的觀念",
           "paragraphs": [
-            "M05 已規定三欄去除首尾空白後須非空，且不超過 80 字元；這些是合成教學規則。畫面 max_chars 限制輸入長度，但其他程式仍可能直接呼叫函式，規則要在函式層保護自己的契約。",
-            "slices/02-validation/rules.py 只負責資料判定，不呼叫 Streamlit。這讓測試可以直接傳入 None、數字、超長字串或缺少鍵，而不必先開瀏覽器製造每種輸入。"
-          ]
-        },
-        {
-          "id": "analogy",
-          "heading": "像收件臺與檢查清單分工",
-          "paragraphs": [
-            "收件臺幫人填寫、指出缺漏，檢查清單則定義哪些條件必須符合。換一個櫃臺不該讓清單規則消失；畫面變漂亮也不會使缺件自動變完整。",
-            "程式用 validate(record) 接收資料，回傳錯誤訊息列表。空列表表示本次三欄通過，並不涵蓋真實文件內容、身分或正式業務資格。"
-          ]
-        },
-        {
-          "id": "cases",
-          "heading": "先寫可觀察的正反案例",
-          "paragraphs": [
-            "正常資料可用 SYN-001、DEMO-A、合成申請表。負向案例依每一個必要鍵測空字串、純空白、None、數字、81 字元及缺鍵；另測 80 字元可通過與首尾空白處理。",
-            "將案例寫成測試，先觀察未實作時的失敗，再做最小實作。失敗應源自預期的規則差距，語法錯誤或套件未安裝還不能證明驗收測試有抓到需求。"
+            "畫面不讓使用者輸入錯誤資料，不代表系統真的具備資料驗證能力。",
+            "這一課要教的是：把「什麼資料才算合格」的判斷規則，從畫面中獨立出來，做成可以重複使用、獨立測試的程式。",
+            "想像你開了一家銀行。",
+            "銀行櫃員會先幫客戶確認申請書有沒有填寫完整。但銀行不能只靠櫃員的目視檢查，就認定所有進入系統的資料一定正確。",
+            "因為資料還可能來自網路 API、其他銀行系統、批次匯入，甚至是 AI Agent 自動產生的內容。",
+            "所以真正的設計應該是："
           ],
           "blocks": [
             {
-              "kind": "table",
-              "caption": "表 1｜讓測試跨過畫面限制",
-              "headers": [
-                "輸入",
-                "預期",
-                "驗證層"
-              ],
-              "rows": [
-                [
-                  "三欄有效文字",
-                  "無錯誤",
-                  "規則函式"
-                ],
-                [
-                  "文件類型只有空白",
-                  "指出缺少文件類型",
-                  "規則＋介面"
-                ],
-                [
-                  "缺少 application_id 鍵",
-                  "指出缺少申請編號",
-                  "規則函式"
-                ],
-                [
-                  "80／81 字元",
-                  "80 通過、81 拒絕",
-                  "規則函式"
-                ],
-                [
-                  "補齊缺欄後重新檢查",
-                  "保留原值並顯示當次通過",
-                  "介面"
-                ]
+              "kind": "cards",
+              "caption": "圖 1｜介面與資料檢核",
+              "description": "箭頭表示資料送至規則層；不通過與通過是互斥結果，不是先後步驟。",
+              "items": [
+                {
+                  "title": "使用者介面（UI）",
+                  "body": "方便輸入、提醒必填、限制字數"
+                },
+                {
+                  "title": "資料檢核（Validation）",
+                  "body": "確認欄位、資料型別、空白及長度符合規則"
+                },
+                {
+                  "title": "不通過",
+                  "body": "顯示原因，保留資料供修正"
+                },
+                {
+                  "title": "通過",
+                  "body": "表示本次欄位符合指定規則"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這也正是教材的核心：建立一個不依賴 Streamlit 介面的 `validate(record)` 函式，獨立判斷資料，再讓畫面呈現結果。"
               ]
             }
           ]
         },
         {
-          "id": "flow",
-          "heading": "從函式結果回到可修正的畫面",
+          "id": "analogy",
+          "heading": "二、為什麼叫做「垂直切片二」？",
           "paragraphs": [
-            "按「檢查資料」才取得本次 validate 的結果。有錯誤時列出缺少什麼及重新檢查方式，原本已填值保留；無錯誤時說明三欄通過，但尚未提供報告與匯出。",
-            "第二階段成功訊息只在這次按鈕觸發的重跑出現。下一次輸入變更提交後，畫面重跑並清除先前結果；重新按檢查才產生當次結果。"
+            "先理解 Vertical Slice（垂直切片）。",
+            "假設你要開一間餐廳，完整的營運系統包括點餐、廚房、收款、外送、庫存及會員。",
+            "你有兩種開發方式。",
+            "第一種：水平開發（Horizontal Development）",
+            "先做完全部畫面，再做全部後端，最後才串接。問題是，即使每一層都完成一部分，可能還沒有任何一道菜能真正從點餐走到出餐。",
+            "第二種：垂直切片（Vertical Slice）",
+            "先完成一個小而完整、可以實際操作的功能，例如「點一份餐點並成功送出訂單」，讓它穿過必要的介面、邏輯及資料層。",
+            "接著逐次增加功能。",
+            "對照這套 AASE 教材："
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1",
+              "headers": [
+                "階段",
+                "實際完成什麼"
+              ],
+              "rows": [
+                [
+                  "M07-03 第一切片",
+                  "建立三個輸入欄位，能看見輸入內容，但尚未檢核"
+                ],
+                [
+                  "M07-04 第二切片",
+                  "建立資料檢核規則，辨識有效與無效資料"
+                ],
+                [
+                  "M07-05 第三切片",
+                  "根據符合規則的當次資料，提供預覽與匯出"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這樣做的好處是，每一次交付都能回答：「目前到底完成了什麼？有什麼證據？」而不是等到整個系統完成才開始測試。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "三、資料檢核究竟在檢查哪些事情？",
+          "paragraphs": [
+            "以教材的合成收件系統為例，有三個欄位：",
+            "- `application_id`：申請編號\n- `applicant_code`：申請人代號\n- `document_type`：文件類型",
+            "教材規定：三個欄位都必須是文字，去除首尾空白後不能為空，而且不能超過 80 個字元。",
+            "下面可以實際改變輸入，觀察驗證規則的作用。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 2｜互動練習：模擬資料檢核",
+              "description": "只模擬文字欄位規則。缺鍵、None、數字另以 Python 測試；不保存資料，不代表正式受理。",
+              "items": [
+                {
+                  "title": "申請編號",
+                  "body": "SYN-001"
+                },
+                {
+                  "title": "申請人代號",
+                  "body": "DEMO-A"
+                },
+                {
+                  "title": "文件類型",
+                  "body": "合成申請表"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這個互動範例只模擬文字欄位規則；程式層的缺鍵、None、數字等測試將在下節處理。",
+                "這一課最重要的測試類型可以整理如下："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 2",
+              "headers": [
+                "測試類型",
+                "例子",
+                "預期"
+              ],
+              "rows": [
+                [
+                  "正常資料",
+                  "`\"SYN-001\"`",
+                  "通過"
+                ],
+                [
+                  "空字串",
+                  "`\"\"`",
+                  "拒絕"
+                ],
+                [
+                  "純空白",
+                  "`\"   \"`",
+                  "拒絕"
+                ],
+                [
+                  "缺少欄位",
+                  "沒有 `application_id`",
+                  "拒絕"
+                ],
+                [
+                  "錯誤型別",
+                  "`12345` 或 `None`",
+                  "拒絕"
+                ],
+                [
+                  "長度邊界",
+                  "80 字元",
+                  "通過"
+                ],
+                [
+                  "超過邊界",
+                  "81 字元",
+                  "拒絕"
+                ],
+                [
+                  "首尾空白",
+                  "`\"  SYN-001  \"`",
+                  "去除首尾空白後判定"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "注意，這些都是教學用完整性規則，不是正式銀行或醫療系統的全部業務檢核。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation",
+          "heading": "四、用 Python 實作資料檢核：把規則從畫面拿出來",
+          "paragraphs": [
+            "這是本課真正的技術重點。",
+            "我們把程式拆成三個部分："
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 3｜畫面、規則與測試分工",
+              "description": "三列是平行責任，沒有時間順序；同一規則可由畫面與測試呼叫。",
+              "items": [
+                {
+                  "title": "app.py — 畫面層",
+                  "body": "負責讓使用者輸入、呈現錯誤、修改資料"
+                },
+                {
+                  "title": "rules.py — 規則層",
+                  "body": "負責判斷資料是否合法，不依賴畫面"
+                },
+                {
+                  "title": "tests/test_rules.py — 測試層",
+                  "body": "負責用正常與異常資料檢查規則是否正確"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 1. 建立規則函式",
+                "以下是符合這堂課規則的簡化實作。工作坊現有 rules.py 將缺鍵、非字串及空白合併提示為「缺少…」；此處示範細分錯誤原因，並另外拒絕非 dict 輸入。兩者的三欄文字規則一致，訊息與輸入契約不同。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 1",
+              "paragraphs": [
+                "使用合成資料，依本節說明執行或判讀。"
+              ],
+              "code": "# rules.py\nFIELDS = {\n    \"application_id\": \"申請編號\",\n    \"applicant_code\": \"申請人代號\",\n    \"document_type\": \"文件類型\",\n}\n\n\ndef validate(record):\n    errors = []\n    if not isinstance(record, dict):\n        return [\"資料格式必須是字典\"]\n    for key, label in FIELDS.items():\n        if key not in record:\n            errors.append(f\"缺少{label}\")\n            continue\n        value = record[key]\n        if not isinstance(value, str):\n            errors.append(f\"{label}必須是文字\")\n            continue\n        cleaned = value.strip()\n        if not cleaned:\n            errors.append(f\"{label}不可為空白\")\n        elif len(cleaned) > 80:\n            errors.append(f\"{label}不可超過80字元\")\n    return errors"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "逐段用白話解釋：",
+                "`FIELDS` 是檢查清單，告訴程式需要哪些資料。",
+                "`isinstance(value, str)` 是檢查這筆資料是不是文字。例如 `123` 是整數，而 `\"123\"` 是文字，兩者不相同。",
+                "`strip()` 是移除文字前後的空白。例如 `\"  DEMO-A  \"` 處理後會是 `\"DEMO-A\"`。但這裡只是拿處理後的文字做判斷，沒有直接修改原始資料。",
+                "`len(cleaned)` 是計算處理後字串的長度。",
+                "`errors.append(...)` 是把發現的問題加入清單。",
+                "最後，`return errors` 把所有發現的問題交還給呼叫者。如果清單是空的 `[]`，代表本次資料通過這組規則。",
+                "這個函式最重要的特點是：完全沒有使用 Streamlit、HTML 或任何畫面元件。",
+                "所以無論資料來自網站、手機 App、API 或 AI Agent，都可以呼叫相同的規則函式。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "python-strings-312"
+          ]
+        },
+        {
+          "id": "testing",
+          "heading": "五、怎麼確定這個函式真的正確？先寫測試",
+          "paragraphs": [
+            "這裡會碰到兩個重要術語：",
+            "- Unit Test（單元測試）：單獨檢查某個函式是否符合預期。\n- Test-Driven Development（TDD，測試驅動開發）：先定義測試與預期結果，觀察合理的失敗，再實作功能直到測試通過，最後整理程式。",
+            "測試失敗時，先確認失敗來自尚未實作的規則；語法錯誤或未安裝 pytest，不能當作測試已抓到需求的證據。",
+            "例如你不能只測試「正常資料能不能過關」，還必須測試「異常資料會不會被拒絕」。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "程式與指令 2",
+              "paragraphs": [
+                "使用合成資料，依本節說明執行或判讀。"
+              ],
+              "code": "# tests/test_rules.py\nimport pytest\nfrom rules import validate\n\nVALID = {\n    \"application_id\": \"SYN-001\",\n    \"applicant_code\": \"DEMO-A\",\n    \"document_type\": \"合成申請表\",\n}\n\n\ndef test_valid_record():\n    assert validate(VALID) == []\n\n\n@pytest.mark.parametrize(\"bad_value\", [\"\", \"   \", None, 123, \"X\" * 81])\ndef test_invalid_document_type(bad_value):\n    record = {**VALID, \"document_type\": bad_value}\n    assert validate(record) != []\n\n\n@pytest.mark.parametrize(\"missing_key\", list(VALID.keys()))\ndef test_missing_field(missing_key):\n    record = VALID.copy()\n    del record[missing_key]\n    assert validate(record) != []"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這裡有幾個術語要認識："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 3",
+              "headers": [
+                "名詞",
+                "白話意思"
+              ],
+              "rows": [
+                [
+                  "`pytest`",
+                  "Python 常用的自動測試工具"
+                ],
+                [
+                  "`assert`",
+                  "要求一個條件成立，否則測試失敗"
+                ],
+                [
+                  "`parametrize`",
+                  "用多組不同資料重複執行同一項測試"
+                ],
+                [
+                  "Positive Test",
+                  "確認正確資料可以通過"
+                ],
+                [
+                  "Negative Test",
+                  "確認錯誤資料會被拒絕"
+                ],
+                [
+                  "Boundary Test",
+                  "專門測試 80 與 81 這種邊界值"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這份精簡測試尚未逐欄涵蓋所有負向值，也沒有明列 80 字元、首尾空白及非 dict 案例；請依第三節矩陣補齊。",
+                "要特別注意，上面的部分測試只檢查「有沒有拒絕」，還沒有確認錯誤訊息是否精確、是否方便使用者理解。正式的驗收測試應該進一步檢查訊息內容。",
+                "### 為什麼不能只測畫面？",
+                "假設醫院的掛號系統限制出生年份只能輸入四個數字。",
+                "正常使用者在網頁輸入五個數字時，畫面可能自動阻止。",
+                "但另一個醫院系統透過 API 傳入："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 3",
+              "paragraphs": [
+                "使用合成資料，依本節說明執行或判讀。"
+              ],
+              "code": "{\n  \"birth_year\": \"abcd\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果後端沒有檢查規則，資料仍可能進入系統。",
+                "因此，前端檢查主要改善操作體驗；真正接收與處理資料的可信邊界，也必須執行相應的驗證。",
+                "任何可能繞過畫面的資料入口，都不能只依賴畫面上的限制。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "pytest-parametrize",
+            "agile-tdd"
+          ]
+        },
+        {
+          "id": "flow",
+          "heading": "六、資料通過後又被修改，該怎麼辦？",
+          "paragraphs": [
+            "這是本課另一個非常重要的觀念：過期的驗證結果（Stale Validation Result）。",
+            "假設一份申請書：",
+            "1. 使用者填好三欄，按下「檢查資料」。\n2. 系統顯示「完整性檢核通過」。\n3. 使用者把其中一欄刪除。\n4. 如果畫面仍然顯示「通過」，就會造成誤導。",
+            "這背後涉及一個軟體工程概念：State（狀態）與 State Invalidation（狀態失效）。",
+            "資料檢核的成功狀態，是針對某一個特定版本的輸入所產生的。",
+            "所以："
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "圖 1｜規則與畫面的分工",
-              "description": "同一規則函式可由介面及測試呼叫，以下呈現使用者操作循環。",
+              "caption": "圖 4｜資料變更使舊結果失效",
+              "description": "箭頭表示事件順序。資料 B 是否合格，必須重新執行檢核。",
               "items": [
                 {
-                  "title": "取得輸入",
-                  "body": "保留三欄目前值。"
+                  "title": "使用者輸入資料 A",
+                  "body": "取得這次輸入的三欄值"
                 },
                 {
-                  "title": "呼叫 validate",
-                  "body": "檢查必要、型別、空白與長度。"
+                  "title": "檢核通過，結果屬於資料 A",
+                  "body": "此結果只對 A 有效"
                 },
                 {
-                  "title": "呈現結果",
-                  "body": "有錯則提示並保留輸入；否則說明本次通過。"
+                  "title": "使用者修改成資料 B",
+                  "body": "輸入版本已改變"
                 },
                 {
-                  "title": "修正後重查",
-                  "body": "變更資料後不沿用舊結果。"
+                  "title": "舊結果失效",
+                  "body": "重新執行檢核，才能知道 B 是否合格"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這個原理不只適用於表單。",
+                "例如電商平台顯示「付款資料已驗證」，但使用者後來更換信用卡；工廠品質管理系統顯示「批次檢驗通過」，但批次資料又被修改；AI Agent 產生的報告經過審查，但上游輸入文件後來更新。",
+                "這些情況都需要思考：原本的驗證結果是否還有效？",
+                "本頁示範在輸入事件發生時立即清除舊結果。工作坊 Streamlit 在欄位變更提交並觸發重跑後清除；尚未提交給 Python 的瀏覽器輸入，不代表伺服器已重新檢查。",
+                "教材明確要求，修改輸入後應清除先前成功訊息，並重新檢核，而且第二切片尚未提供正式報告匯出。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industry",
+          "heading": "七、不同產業如何運用這種設計？",
+          "paragraphs": [
+            "以下六個合成例子對照「規則檢查什麼」與「仍需另行判定什麼」。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 4",
+              "headers": [
+                "產業",
+                "資料檢核的例子",
+                "驗證通過不代表什麼"
+              ],
+              "rows": [
+                [
+                  "銀行",
+                  "申請編號存在、格式正確、必要欄位完整",
+                  "不代表授信核准"
+                ],
+                [
+                  "醫療",
+                  "病歷欄位完整、數值型別正確",
+                  "不代表診斷正確"
+                ],
+                [
+                  "製造業",
+                  "批號存在、重量為正數、日期合法",
+                  "不代表產品品質合格"
+                ],
+                [
+                  "電商",
+                  "商品數量為正整數、地址必填",
+                  "不代表付款完成"
+                ],
+                [
+                  "人力資源",
+                  "履歷必要欄位完整",
+                  "不代表求職者符合錄取條件"
+                ],
+                [
+                  "AI Agent",
+                  "工具呼叫參數符合 Schema",
+                  "不代表工具操作已獲授權"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這裡要建立一個更深的認識：",
+                "資料檢核只是整個可信任系統的一道關卡，而不是全部。",
+                "可以區分為四個層次：",
+                "1. 結構檢核（Structural Validation）：欄位是否存在、型別是否正確。\n2. 業務規則檢核（Business Validation）：數值、長度、日期及其他業務條件是否符合。\n3. 授權檢查（Authorization）：執行者有沒有權限處理這筆資料。\n4. 真實性與業務判定：資料是否真實、申請是否應批准、文件是否有效。",
+                "M07-04 聚焦在前兩者的基礎部分，不應把「三欄通過」誤解為後兩者也通過。"
               ]
             }
           ]
         },
         {
           "id": "run",
-          "heading": "執行第二切片與針對性測試",
+          "heading": "八、如何讓 AI Coding Agent 完成這個切片？",
           "paragraphs": [
-            "先停止先前服務、回解壓根目錄，再進入此階段。各階段分開執行 pytest，避免同名 rules 模組在同一次測試程序互相混用。",
-            "直接閱讀 tests/test_rules.py 的每組輸入與斷言，再閱讀 tests/test_app.py 的缺漏、補正及結果消失情境。測試數量不能取代檢查它到底驗證什麼。"
+            "你可以依據這堂課，將工作交給 AI Coding Agent，但必須先明確定義規則與驗收條件。",
+            "### Agent 工作指令範例",
+            "可複製後配合自己的專案調整。"
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "執行第二切片",
+              "heading": "程式與指令 4",
               "paragraphs": [
-                "整組測試通過後啟動介面，重演缺漏與補正。"
+                "使用合成資料，依本節說明執行或判讀。"
+              ],
+              "code": "任務：完成 M07-04 資料檢核切片。\n\n1. 閱讀 spec.md 與現有 app.py。\n2. 建立獨立的 rules.py，提供 validate(record)。\n3. 依 spec 實作三欄必填、字串型別、\n   去除首尾空白及最多 80 字元的規則。\n4. 先建立正向、負向及邊界測試。\n5. 將檢核結果接回既有 UI。\n6. 錯誤時保留輸入，顯示可修正的提示。\n7. 輸入一旦修改，先前的檢核結果失效。\n8. 不增加報告匯出或未經規格要求的功能。\n\n驗收：\n- 直接呼叫 validate 可拒絕異常資料。\n- pytest 全部通過。\n- 瀏覽器可完成錯誤修正與重新檢查。\n- 提供 Diff、測試命令及實際執行結果。\n- 未執行的測試不可宣稱通過。"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "在教材工作坊目錄中，對應的執行命令是："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 5",
+              "paragraphs": [
+                "使用合成資料，依本節說明執行或判讀。"
               ],
               "code": "cd slices/02-validation\npython -m pytest -q\npython -m streamlit run app.py --server.address 127.0.0.1"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這兩種驗證有不同目的：`pytest` 檢查程式規則，啟動 Streamlit 後還需要在瀏覽器實際操作，才能確認人機互動、錯誤修正和狀態更新是否正常。",
+                "不要只因為 Agent 回報「已完成」，就視為真的通過。應保存程式差異（Diff）、測試結果及實際操作證據。"
+              ]
             }
           ]
         },
         {
           "id": "misread",
-          "heading": "規則與驗收都需要留下依據",
+          "heading": "九、最後整理：這一課要真正帶走的五件事",
           "paragraphs": [
-            "常見誤解是「有星號、有字數限制就不需函式驗證」。將規則限制在 UI 會讓直接函式呼叫繞過要求，也難以確認負向情境。",
-            "另一個誤解是「通過就能匯出」。本階段還沒實作報告契約與匯出邊界，成功訊息需清楚說明範圍。下一篇才把當次通過資料接到預覽與下載。"
+            "1. 畫面限制不等於資料一定合法。\n2. 驗證規則應能脫離 UI 獨立執行。\n3. 不只測正確資料，也要測空白、缺鍵、型別錯誤與邊界值。\n4. 資料一旦修改，先前的檢核結果就不能直接沿用。\n5. 通過完整性檢核，不等於業務核准、資料真實或操作已獲授權。",
+            "本課 Python len(str) 計算 Unicode code point。本頁示範也使用相同計數，保留空白規則對照；像部分 emoji 在 JavaScript 的 UTF-16 length 會算成兩個單位，不可直接拿來當 Python 長度。",
+            "再補充一個進階實務細節：正式系統還必須明確定義「80 字元」是指 Unicode code point、使用者感知字元（grapheme cluster），還是其他計數方式，避免前後端對中文及組合字元的長度判定不一致。"
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "十、理解檢核",
+          "paragraphs": [
+            "假設你開發一套工廠品質檢驗系統。畫面已經限制批次編號最多 80 字元，而且必填。",
+            "但某個 AI Agent 可以直接透過 API 傳入："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "程式與指令 6",
+              "paragraphs": [
+                "使用合成資料，依本節說明執行或判讀。"
+              ],
+              "code": "{\n  \"batch_id\": \"   \",\n  \"inspector_code\": 123,\n  \"document_type\": \"品質檢驗單\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "請回答以下三個問題：",
+                "用這三題的答案、自行實作的 `validate(record)` 及負向測試，提出本課主要能力的證據。參考答案用來比對理解，展開答案不代表已完成學習。"
+              ]
+            }
           ]
         }
       ],
@@ -158,7 +556,30 @@
         "expected": "rules.py、對應測試與操作紀錄可證明第二切片符合三欄規則。",
         "check": "直接呼叫函式也拒絕負向資料，畫面不把當次通過誤作正式受理。",
         "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M07-C04-Q04",
+          "prompt": "問題 1：為什麼不能因為 UI 已經限制輸入，就認定這筆資料一定有效？",
+          "answer": [
+            "UI 限制只作用於畫面路徑；Agent 能透過 API 繞過畫面。接收資料的程式仍須執行驗證。"
+          ]
+        },
+        {
+          "id": "AASE-M07-C04-Q05",
+          "prompt": "問題 2：以上資料至少有哪些問題？應由哪一層程式負責檢查？",
+          "answer": [
+            "batch_id 去除空白後為空，inspector_code 是數字。工廠案例需依自己的 Schema 在接收邊界檢查必填與型別；不能直接套用本課三個收件欄位名稱。"
+          ]
+        },
+        {
+          "id": "AASE-M07-C04-Q06",
+          "prompt": "問題 3：使用者修正資料後，如果畫面繼續沿用修改前的檢核結果，會產生什麼風險？如何解決？",
+          "answer": [
+            "沿用舊結果會把另一版本的資料誤顯示為合格。輸入變更先清除結果，重新檢查目前資料；結果要綁定當次輸入。"
+          ]
+        }
+      ]
     },
     "en": {
       "summary": "Separate completeness rules from the interface, test blanks, types, missing keys and lengths directly, then present results that support correction.",
@@ -176,123 +597,518 @@
       "sections": [
         {
           "id": "problem",
-          "heading": "Rules Must Hold Beyond Interface Limits",
+          "heading": "1. The main idea of this lesson",
           "paragraphs": [
-            "M05 specifies three nonempty text fields after trimming leading/trailing whitespace, each at most 80 characters. These are synthetic teaching rules. max_chars limits interface entry, but other code may call functions directly; the function must protect its contract.",
-            "slices/02-validation/rules.py evaluates data without calling Streamlit. Tests can therefore pass None, numbers, overlong strings or missing keys directly without manufacturing every input in a browser."
-          ]
-        },
-        {
-          "id": "analogy",
-          "heading": "Separate the Intake Counter from Its Checklist",
-          "paragraphs": [
-            "The counter helps people enter data and correct omissions; the checklist defines required conditions. Changing counters should not remove rules, and a better-looking screen does not make missing material complete.",
-            "validate(record) returns a list of errors. An empty list means this record passed the three-field rules, without establishing document truth, identity or official eligibility."
-          ]
-        },
-        {
-          "id": "cases",
-          "heading": "Define Observable Positive and Negative Cases",
-          "paragraphs": [
-            "Use SYN-001, DEMO-A and a synthetic application-form label for a valid record. For each required key, test an empty string, whitespace only, None, a number, 81 characters and absence of the key. Also test acceptance at 80 characters and trimming.",
-            "Write tests, observe the unimplemented behavior failing, then make the smallest implementation. Failure should expose the expected rule gap. A syntax error or missing package does not establish that the acceptance test detects the requirement."
+            "Preventing invalid input on screen does not establish that the system validates its data.",
+            "This lesson separates the rules for acceptable data from the screen so they can be reused and tested independently.",
+            "Imagine opening a bank.",
+            "A teller helps customers check whether their application forms are complete. The bank still cannot assume that every record entering its systems is correct merely because a teller looked at a form.",
+            "Data may also arrive through a web API, another bank’s system, a batch import or content produced by an AI Agent.",
+            "The design therefore separates these responsibilities:"
           ],
           "blocks": [
             {
-              "kind": "table",
-              "caption": "Table 1 | Test Beyond Interface Restrictions",
-              "headers": [
-                "Input",
-                "Expected outcome",
-                "Verification layer"
-              ],
-              "rows": [
-                [
-                  "Valid text in all three fields",
-                  "No errors.",
-                  "Rule function"
-                ],
-                [
-                  "Whitespace-only document type",
-                  "Identify missing document type.",
-                  "Rules + interface"
-                ],
-                [
-                  "Missing application_id key",
-                  "Identify missing application ID.",
-                  "Rule function"
-                ],
-                [
-                  "80/81 characters",
-                  "Accept 80, reject 81.",
-                  "Rule function"
-                ],
-                [
-                  "Fill the missing field and check again",
-                  "Preserve existing values and show the current pass.",
-                  "Interface"
-                ]
+              "kind": "cards",
+              "caption": "Figure 1 | Interface and data validation",
+              "description": "Arrows send data to the rule layer. Failed and passed are mutually exclusive outcomes, not consecutive steps.",
+              "items": [
+                {
+                  "title": "User interface (UI)",
+                  "body": "Help entry, remind users of required fields and limit length"
+                },
+                {
+                  "title": "Data validation",
+                  "body": "Check fields, types, whitespace and length against the rules"
+                },
+                {
+                  "title": "Failed",
+                  "body": "Show reasons and retain data for correction"
+                },
+                {
+                  "title": "Passed",
+                  "body": "The current fields meet the stated rules"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Create a `validate(record)` function independent of Streamlit. It judges the record, and the interface presents its result."
               ]
             }
           ]
         },
         {
-          "id": "flow",
-          "heading": "Turn Function Results into Correctable Feedback",
+          "id": "analogy",
+          "heading": "2. Why call this vertical slice two?",
           "paragraphs": [
-            "Pressing “檢查資料” (check data) obtains the current validate result. Errors identify what is missing and how to recheck while preserving filled values. With no errors, state that the three fields passed, while report preview/export remain absent.",
-            "The stage-two success message appears only in the rerun triggered by that check. Committing the next input change reruns the page and removes the prior result; another check generates the current result."
+            "Start with the meaning of a Vertical Slice.",
+            "Imagine a restaurant whose full operating system includes ordering, the kitchen, payments, delivery, inventory and membership.",
+            "There are two ways to develop it.",
+            "The first is Horizontal Development.",
+            "Build all screens, then all backend logic, then connect them. Each layer may be partly complete while no single meal can yet travel from ordering to serving.",
+            "The second is a Vertical Slice.",
+            "Complete a small, usable function such as ordering one meal and successfully submitting that order. It crosses the necessary interface, logic and data layers.",
+            "Add further capabilities one at a time.",
+            "In this AASE workshop:"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1",
+              "headers": [
+                "Stage",
+                "What it actually completes"
+              ],
+              "rows": [
+                [
+                  "M07-03, slice one",
+                  "Three input fields display the entered values, without validation."
+                ],
+                [
+                  "M07-04, slice two",
+                  "Data rules distinguish valid and invalid records."
+                ],
+                [
+                  "M07-05, slice three",
+                  "Currently valid data supports preview and export."
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Each delivery can answer “What works now, and what evidence shows it?” Testing starts with each slice rather than waiting for the entire system."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "3. What does data validation check?",
+          "paragraphs": [
+            "The synthetic intake system has three fields:",
+            "- `application_id`: application ID\n- `applicant_code`: applicant code\n- `document_type`: document type",
+            "All three must be strings, nonempty after removing leading and trailing whitespace, and at most 80 characters after that removal.",
+            "Change the inputs below to observe the rules."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Interactive practice: simulate validation",
+              "description": "Text-field rules only. Test missing keys, None and numbers in Python. No data storage or official acceptance.",
+              "items": [
+                {
+                  "title": "Application ID",
+                  "body": "SYN-001"
+                },
+                {
+                  "title": "Applicant code",
+                  "body": "DEMO-A"
+                },
+                {
+                  "title": "Document type",
+                  "body": "合成申請表"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This interactive example simulates text-field rules only. Missing keys, None and numbers are tested at the program layer in the following sections.",
+                "The main test categories are:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 2",
+              "headers": [
+                "Test category",
+                "Example",
+                "Expected result"
+              ],
+              "rows": [
+                [
+                  "Valid input",
+                  "`\"SYN-001\"`",
+                  "Accept"
+                ],
+                [
+                  "Empty string",
+                  "`\"\"`",
+                  "Reject"
+                ],
+                [
+                  "Whitespace only",
+                  "`\"   \"`",
+                  "Reject"
+                ],
+                [
+                  "Missing field",
+                  "No `application_id` key",
+                  "Reject"
+                ],
+                [
+                  "Wrong type",
+                  "`12345` or `None`",
+                  "Reject"
+                ],
+                [
+                  "Length boundary",
+                  "80 characters",
+                  "Accept"
+                ],
+                [
+                  "Beyond boundary",
+                  "81 characters",
+                  "Reject"
+                ],
+                [
+                  "Surrounding whitespace",
+                  "`\"  SYN-001  \"`",
+                  "Judge after trimming"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These are teaching rules for completeness, not the complete business checks of a production banking or medical system."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "implementation",
+          "heading": "4. Implement validation in Python outside the screen",
+          "paragraphs": [
+            "The technical task is to separate responsibilities.",
+            "Split the program into three parts:"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 3 | Interface, rules and tests",
+              "description": "These are parallel responsibilities, not a timeline. The interface and tests can call the same rule function.",
+              "items": [
+                {
+                  "title": "app.py — Interface",
+                  "body": "Accept input, display errors and support corrections"
+                },
+                {
+                  "title": "rules.py — Rules",
+                  "body": "Judge data independently of the interface"
+                },
+                {
+                  "title": "tests/test_rules.py — Tests",
+                  "body": "Check rules using valid and invalid data"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 1. Create the rule function",
+                "This simplified implementation follows the lesson’s rules. The workshop’s existing rules.py combines missing keys, nonstrings and blanks into a “missing…” message. This example distinguishes those causes and additionally rejects non-dict input. The three text-field rules agree; their messages and input contracts differ."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and commands 1",
+              "paragraphs": [
+                "Use synthetic data and follow this section to run or interpret the example."
+              ],
+              "code": "# rules.py\nFIELDS = {\n    \"application_id\": \"申請編號\",\n    \"applicant_code\": \"申請人代號\",\n    \"document_type\": \"文件類型\",\n}\n\n\ndef validate(record):\n    errors = []\n    if not isinstance(record, dict):\n        return [\"資料格式必須是字典\"]\n    for key, label in FIELDS.items():\n        if key not in record:\n            errors.append(f\"缺少{label}\")\n            continue\n        value = record[key]\n        if not isinstance(value, str):\n            errors.append(f\"{label}必須是文字\")\n            continue\n        cleaned = value.strip()\n        if not cleaned:\n            errors.append(f\"{label}不可為空白\")\n        elif len(cleaned) > 80:\n            errors.append(f\"{label}不可超過80字元\")\n    return errors"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Read the implementation piece by piece:",
+                "`FIELDS` is the checklist of required data.",
+                "`isinstance(value, str)` checks whether a value is text. For example, `123` is an integer, whereas `\"123\"` is a string.",
+                "`strip()` removes leading and trailing whitespace. `\"  DEMO-A  \"` becomes `\"DEMO-A\"` for the check, but the function does not change the original record.",
+                "`len(cleaned)` measures the resulting string.",
+                "`errors.append(...)` adds a discovered problem to the list.",
+                "`return errors` returns every discovered problem to the caller. An empty list `[]` means this record passed this set of rules.",
+                "The function uses no Streamlit, HTML or screen components.",
+                "A website, mobile app, API or AI Agent can therefore call the same rule function."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "python-strings-312"
+          ]
+        },
+        {
+          "id": "testing",
+          "heading": "5. How do you know the function is correct? Write tests first",
+          "paragraphs": [
+            "Two terms describe the approach:",
+            "- Unit Test: check one function against its expected behavior in isolation.\n- Test-Driven Development (TDD): define tests and expected outcomes, observe a meaningful failure, implement until tests pass, then refactor.",
+            "A failure should expose an unimplemented rule. A syntax error or missing pytest installation does not establish that the test detected the requirement.",
+            "Check both whether valid data passes and whether invalid data is rejected."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Code and commands 2",
+              "paragraphs": [
+                "Use synthetic data and follow this section to run or interpret the example."
+              ],
+              "code": "# tests/test_rules.py\nimport pytest\nfrom rules import validate\n\nVALID = {\n    \"application_id\": \"SYN-001\",\n    \"applicant_code\": \"DEMO-A\",\n    \"document_type\": \"合成申請表\",\n}\n\n\ndef test_valid_record():\n    assert validate(VALID) == []\n\n\n@pytest.mark.parametrize(\"bad_value\", [\"\", \"   \", None, 123, \"X\" * 81])\ndef test_invalid_document_type(bad_value):\n    record = {**VALID, \"document_type\": bad_value}\n    assert validate(record) != []\n\n\n@pytest.mark.parametrize(\"missing_key\", list(VALID.keys()))\ndef test_missing_field(missing_key):\n    record = VALID.copy()\n    del record[missing_key]\n    assert validate(record) != []"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These terms help you read the tests:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 3",
+              "headers": [
+                "Term",
+                "Plain meaning"
+              ],
+              "rows": [
+                [
+                  "`pytest`",
+                  "A commonly used Python automated-testing tool"
+                ],
+                [
+                  "`assert`",
+                  "Require a condition to hold; otherwise the test fails"
+                ],
+                [
+                  "`parametrize`",
+                  "Run one test with multiple sets of data"
+                ],
+                [
+                  "Positive Test",
+                  "Confirm valid data is accepted"
+                ],
+                [
+                  "Negative Test",
+                  "Confirm invalid data is rejected"
+                ],
+                [
+                  "Boundary Test",
+                  "Test thresholds such as 80 and 81 explicitly"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This compact suite does not yet apply every invalid value to every field. It also omits explicit 80-character, trimming and non-dict cases. Complete it using the matrix in section 3.",
+                "Some tests only ask whether rejection occurred. They do not check precise, useful error wording. Acceptance tests should also inspect the messages.",
+                "### Why not test only the screen?",
+                "Suppose a hospital registration screen restricts a birth year to four digits.",
+                "The page might prevent a normal user from entering five digits.",
+                "Another hospital system may instead send this through an API:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and commands 3",
+              "paragraphs": [
+                "Use synthetic data and follow this section to run or interpret the example."
+              ],
+              "code": "{\n  \"birth_year\": \"abcd\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Without backend rules, the data may still enter the system.",
+                "Frontend checks improve operation. The trust boundary that receives and processes the data must also perform the relevant validation.",
+                "Every entry point that can bypass the screen needs appropriate checks beyond the screen’s constraints."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "pytest-parametrize",
+            "agile-tdd"
+          ]
+        },
+        {
+          "id": "flow",
+          "heading": "6. What if a record changes after passing?",
+          "paragraphs": [
+            "A Stale Validation Result is a result that no longer describes the current input.",
+            "Consider an application form:",
+            "1. The user fills in all three fields and presses “Check data.”\n2. The system displays “Completeness check passed.”\n3. The user clears a field.\n4. A continuing “passed” message would now mislead the user.",
+            "This involves State and State Invalidation: a stored status may need to be invalidated after its dependencies change.",
+            "A successful validation result belongs to one specific version of the input.",
+            "The sequence is:"
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "Figure 1 | Responsibilities of Rules and Interface",
-              "description": "The interface and tests can call the same rule function. This figure shows the user’s correction cycle.",
+              "caption": "Figure 4 | Input changes invalidate old results",
+              "description": "Arrows show event order. Data B requires another check before its validity is known.",
               "items": [
                 {
-                  "title": "Read input",
-                  "body": "Keep the three current field values."
+                  "title": "User enters data A",
+                  "body": "Read this input’s three values"
                 },
                 {
-                  "title": "Call validate",
-                  "body": "Check required values, types, blanks and length."
+                  "title": "Check passes; result belongs to A",
+                  "body": "The result applies only to A"
                 },
                 {
-                  "title": "Present results",
-                  "body": "On errors, explain and retain input; otherwise state this check passed."
+                  "title": "User changes input to data B",
+                  "body": "The input version has changed"
                 },
                 {
-                  "title": "Correct and recheck",
-                  "body": "Do not reuse a prior result after changing data."
+                  "title": "Old result is invalid",
+                  "body": "Check again to determine whether B passes"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The principle applies beyond forms.",
+                "An online store may show verified payment details before the customer changes cards. A factory may show a passed batch check before its batch data changes. An AI Agent’s report may be reviewed before its upstream source document is updated.",
+                "In each case, ask whether the original result still applies.",
+                "This page’s demonstration clears the old result immediately on an input event. The Streamlit workshop clears it after a committed field change triggers a rerun. Browser edits not yet submitted to Python do not establish a fresh server-side check.",
+                "After input changes, clear the previous success and check again. Slice two does not yet provide formal report export."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industry",
+          "heading": "7. How does this design apply in different industries?",
+          "paragraphs": [
+            "These six synthetic examples distinguish what a rule checks from what still requires a separate judgment."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 4",
+              "headers": [
+                "Industry",
+                "Validation example",
+                "What passing does not establish"
+              ],
+              "rows": [
+                [
+                  "Banking",
+                  "Application ID exists, format is correct, required fields are present",
+                  "Credit approval"
+                ],
+                [
+                  "Healthcare",
+                  "Required medical-record fields and correct numeric types",
+                  "Correct diagnosis"
+                ],
+                [
+                  "Manufacturing",
+                  "Batch number exists, weight is positive, dates are valid",
+                  "Product quality acceptance"
+                ],
+                [
+                  "E-commerce",
+                  "Quantity is a positive integer and address is present",
+                  "Completed payment"
+                ],
+                [
+                  "Human resources",
+                  "Required résumé fields are present",
+                  "Candidate eligibility for hiring"
+                ],
+                [
+                  "AI Agent",
+                  "Tool arguments match a Schema",
+                  "Authorization to operate the tool"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The distinction extends beyond field completeness.",
+                "Data validation is one gate in a trustworthy system.",
+                "Separate four layers:",
+                "1. Structural Validation: required fields exist and types are correct.\n2. Business Validation: values, lengths, dates and other business conditions meet the rules.\n3. Authorization: the actor has permission to handle this record.\n4. Truth and business judgment: the data is true, the application should be approved and the document is valid.",
+                "M07-04 covers basic parts of the first two layers. Passing three fields does not establish the other two."
               ]
             }
           ]
         },
         {
           "id": "run",
-          "heading": "Run Slice Two and Inspect Focused Tests",
+          "heading": "8. How can an AI Coding Agent complete this slice?",
           "paragraphs": [
-            "Stop the previous service, return to the extracted root, then enter this stage. Run pytest separately per stage to prevent same-named rules modules from being mixed within one test process.",
-            "Read each input and assertion in tests/test_rules.py, then the missing-field, correction and disappearing-result scenarios in tests/test_app.py. A test count cannot replace examining what behavior it covers."
+            "Define the rules and acceptance criteria before assigning the work to an AI Coding Agent.",
+            "### Example Agent work instruction",
+            "Copy the instruction and adapt it to your project. The shared code block is in Traditional Chinese; its eight tasks require reading spec.md/app.py, extracting validate into rules.py, enforcing required string/trim/80 rules, writing positive/negative/boundary tests, connecting the UI, retaining input on error, invalidating old results and keeping export outside this slice. Acceptance requires direct-function rejection, passing pytest, browser correction/rechecking, a Diff with commands and actual results, and honest reporting of unexecuted checks."
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "Run Slice Two",
+              "heading": "Code and commands 4",
               "paragraphs": [
-                "After the full test group passes, start the interface and repeat omission and correction."
+                "Use synthetic data and follow this section to run or interpret the example."
+              ],
+              "code": "任務：完成 M07-04 資料檢核切片。\n\n1. 閱讀 spec.md 與現有 app.py。\n2. 建立獨立的 rules.py，提供 validate(record)。\n3. 依 spec 實作三欄必填、字串型別、\n   去除首尾空白及最多 80 字元的規則。\n4. 先建立正向、負向及邊界測試。\n5. 將檢核結果接回既有 UI。\n6. 錯誤時保留輸入，顯示可修正的提示。\n7. 輸入一旦修改，先前的檢核結果失效。\n8. 不增加報告匯出或未經規格要求的功能。\n\n驗收：\n- 直接呼叫 validate 可拒絕異常資料。\n- pytest 全部通過。\n- 瀏覽器可完成錯誤修正與重新檢查。\n- 提供 Diff、測試命令及實際執行結果。\n- 未執行的測試不可宣稱通過。"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "From the workshop directory, run:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and commands 5",
+              "paragraphs": [
+                "Use synthetic data and follow this section to run or interpret the example."
               ],
               "code": "cd slices/02-validation\npython -m pytest -q\npython -m streamlit run app.py --server.address 127.0.0.1"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These commands serve different purposes. pytest checks program rules. Starting Streamlit still requires browser operation to verify interaction, correction and state updates.",
+                "An Agent’s “done” report is insufficient by itself. Retain the Diff, test results and actual operation evidence."
+              ]
             }
           ]
         },
         {
           "id": "misread",
-          "heading": "Keep Evidence for Both Rules and Acceptance",
+          "heading": "9. Five things to take away",
           "paragraphs": [
-            "A required marker or character limit does not replace function validation. UI-only rules can be bypassed by direct function calls and make negative behavior harder to verify.",
-            "A passed check does not yet permit export in this stage. Report contracts and export boundaries are unimplemented, so success feedback must state its scope. The next lesson connects currently passed data to preview and download."
+            "1. Screen restrictions do not establish valid data.\n2. Validation rules should run independently of the UI.\n3. Test blanks, missing keys, wrong types and boundaries as well as valid data.\n4. After input changes, the previous validation result cannot be reused unchanged.\n5. Completeness does not establish business approval, data truth or permission to act.",
+            "Python len(str) counts Unicode code points. This page uses the same counting unit and checks whitespace consistently. Some emoji occupy two JavaScript UTF-16 length units, so that length cannot simply stand in for Python’s count.",
+            "A production system must define whether “80 characters” means Unicode code points, user-perceived characters (grapheme clusters) or another unit. Otherwise frontend and backend may disagree on Chinese or combining characters."
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "10. Check your understanding",
+          "paragraphs": [
+            "You are building a factory quality-inspection system. Its screen makes the batch number required and limits it to 80 characters.",
+            "An AI Agent can call the API directly with:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Code and commands 6",
+              "paragraphs": [
+                "Use synthetic data and follow this section to run or interpret the example."
+              ],
+              "code": "{\n  \"batch_id\": \"   \",\n  \"inspector_code\": 123,\n  \"document_type\": \"品質檢驗單\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Answer these three questions:",
+                "Use the three answers, your own `validate(record)` implementation and its negative tests to demonstrate the lesson’s main skills. Reference answers support comparison; reading them does not establish learner mastery."
+              ]
+            }
           ]
         }
       ],
@@ -306,119 +1122,33 @@
         "expected": "rules.py, matching tests and operation records demonstrating slice two’s three-field rules.",
         "check": "Direct function calls reject negative data too, and the screen does not present a current pass as official acceptance.",
         "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
-      }
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M07-C04-Q04",
+          "prompt": "Question 1: Why do UI restrictions not establish that this record is valid?",
+          "answer": [
+            "UI restrictions apply to the screen path. An Agent may bypass it through an API, so the receiving program must validate the data."
+          ]
+        },
+        {
+          "id": "AASE-M07-C04-Q05",
+          "prompt": "Question 2: What problems does this record contain, and which program layer should check them?",
+          "answer": [
+            "batch_id becomes empty after trimming and inspector_code is a number. Validate required fields and types against the factory’s own Schema at its receiving boundary; do not substitute this lesson’s three intake field names."
+          ]
+        },
+        {
+          "id": "AASE-M07-C04-Q06",
+          "prompt": "Question 3: After the user corrects the data, what risk arises if the screen keeps the old validation result? How should it be resolved?",
+          "answer": [
+            "Reusing an old result can label another input version as valid. Clear the result when input changes, check the current record again and bind the result to that input."
+          ]
+        }
+      ]
     }
   },
-  "checks": [
-    {
-      "id": "AASE-M07-C04-Q01",
-      "answer": 1,
-      "text": {
-        "zh": {
-          "prompt": "為何要直接測試 rules.py？",
-          "options": [
-            "為了取代所有使用者測試",
-            "讓非畫面路徑的錯誤資料也受規則約束",
-            "因為畫面永遠不會錯",
-            "只為增加測試數"
-          ],
-          "rationales": [
-            "仍需不同層次驗證。",
-            "保護函式邊界且便於測試。",
-            "介面也需檢查。",
-            "應由需求決定案例。"
-          ]
-        },
-        "en": {
-          "prompt": "Why test rules.py directly?",
-          "options": [
-            "To replace every user test.",
-            "To enforce rules on invalid data arriving outside the interface path.",
-            "Because the interface is never wrong.",
-            "Only to increase the test count."
-          ],
-          "rationales": [
-            "Verification still needs different layers.",
-            "This protects the function boundary and supports testing.",
-            "The interface also needs checks.",
-            "Requirements should determine cases."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M07-C04-Q02",
-      "answer": 2,
-      "text": {
-        "zh": {
-          "prompt": "文件類型是純空白時應得到什麼？",
-          "options": [
-            "完整",
-            "直接匯出",
-            "缺少文件類型，保留其他已填值",
-            "自動猜測正式文件"
-          ],
-          "rationales": [
-            "不符合非空規則。",
-            "尚無合格報告。",
-            "支持修正且遵守規格。",
-            "不應推定業務內容。"
-          ]
-        },
-        "en": {
-          "prompt": "What should whitespace-only document type produce?",
-          "options": [
-            "Complete.",
-            "Immediate export.",
-            "A missing-document-type error, preserving other filled values.",
-            "A guessed official document."
-          ],
-          "rationales": [
-            "It violates the nonempty rule.",
-            "There is no valid report yet.",
-            "This supports correction and follows the specification.",
-            "Do not infer business content."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M07-C04-Q03",
-      "answer": 3,
-      "text": {
-        "zh": {
-          "prompt": "第二切片成功後修改輸入，應如何處理？",
-          "options": [
-            "沿用舊成功",
-            "再次輸入不影響結果",
-            "先下載舊資料",
-            "使舊結果消失，重新檢查"
-          ],
-          "rationales": [
-            "結果不再代表目前輸入。",
-            "值已經改變。",
-            "本階段尚無下載。",
-            "符合當次結果的生命週期。"
-          ]
-        },
-        "en": {
-          "prompt": "After slice two succeeds, the user changes input. What should happen?",
-          "options": [
-            "Keep the old success.",
-            "Further input cannot affect the result.",
-            "Download the old data first.",
-            "Remove the old result and require a fresh check."
-          ],
-          "rationales": [
-            "It no longer describes current input.",
-            "The value has changed.",
-            "This stage has no download.",
-            "This follows the lifecycle of a current result."
-          ]
-        }
-      }
-    }
-  ],
+  "checks": [],
   "translations": {
     "en": {
       "status": "published",
