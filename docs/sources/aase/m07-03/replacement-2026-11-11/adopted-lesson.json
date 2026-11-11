@@ -1,0 +1,799 @@
+{
+  "id": "AASE-M07-C03",
+  "status": "published",
+  "revision": 4,
+  "contentVersion": "1.1.0",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-11",
+  "sourceIds": [
+    "streamlit-text-input-151",
+    "streamlit-apptest",
+    "nng-heuristics",
+    "streamlit-session"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "完成從輸入欄位到未檢核預覽的最小任務，先驗證操作與狀態，再增加業務規則。",
+      "objectives": [
+        "建立三個具標籤欄位與單一主要動作。",
+        "說明垂直切片如何連起畫面、程式與觀察結果。",
+        "避免在規則尚未實作時顯示完整或成功。"
+      ],
+      "readingGuide": {
+        "goal": "建立三個具標籤欄位與單一主要動作。",
+        "startingPoint": "已啟用環境的工作坊；自己的 starter 專案與 slices/01-form/ 分開。",
+        "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
+        "output": "可執行表單及一次從輸入到預覽的驗收紀錄，清楚標示規則尚未實作。"
+      },
+      "sections": [
+        {
+          "id": "slice",
+          "heading": "先完成一條能操作到尾的流程",
+          "paragraphs": [
+            "開發軟體時，可以先完成一個很小、但使用者真的能從頭操作到尾的功能。例如銀行徵信系統，先讓使用者「輸入三項資料 → 按下按鈕 → 看見剛剛輸入的內容」，再逐步加入帳號、資料庫、審核、報表與權限管理。這就是垂直切片（Vertical Slice）。",
+            "想像要開一家餐廳。方式 A 是先裝潢全部座位、買齊設備、設計整本菜單與營運制度；過了一個月，可能仍無法服務客人。這像先做所有畫面，再做所有後端，最後才整合。",
+            "方式 B 是先布置一個座位，準備一種餐點，走完點餐、製作、送餐。餐廳雖然尚未全部完成，已能讓一位客人走完完整體驗。垂直切片選擇有明確起點、終點與可驗證結果的使用者任務。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜橫向開發與垂直切片的比較",
+              "description": "左邊按層分別完成，右邊按任務穿過所需層次；分層方塊不表示時序。並非每個切片都需要資料庫，本課只需輸入與預覽。",
+              "items": [
+                {
+                  "title": "橫向分層開發",
+                  "body": "所有 UI 畫面\n所有業務邏輯\n所有資料處理"
+                },
+                {
+                  "title": "切片 1",
+                  "body": "UI\n邏輯\n資料"
+                },
+                {
+                  "title": "切片 2",
+                  "body": "UI\n邏輯\n資料"
+                },
+                {
+                  "title": "切片 3",
+                  "body": "UI\n邏輯\n資料"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "橫向開發在各層完成後才整合，可能較晚驗證使用者流程。垂直切片每次完成一項任務所需的層次，儘早取得可操作的結果。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "二、用不同產業理解垂直切片",
+          "paragraphs": [
+            "第一階段先完成「輸入 → 看見結果」，後續的判定有各自需要的規則、資料與責任。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "各產業的第一切片",
+              "headers": [
+                "產業",
+                "第一個可以完成的切片",
+                "暫時不做"
+              ],
+              "rows": [
+                [
+                  "醫療",
+                  "輸入病人基本資訊並預覽",
+                  "診斷、健保申報"
+                ],
+                [
+                  "電商",
+                  "選擇商品數量並查看訂單草稿",
+                  "金流、物流"
+                ],
+                [
+                  "教育",
+                  "輸入作業名稱和內容並預覽",
+                  "自動評分、成績排名"
+                ],
+                [
+                  "製造業",
+                  "輸入設備編號與量測數據並預覽",
+                  "異常判定、自動停機"
+                ],
+                [
+                  "銀行",
+                  "輸入申請編號等三欄並預覽",
+                  "徵信審核、正式報告"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "behavior",
+          "heading": "三、親自操作：第一個表單切片",
+          "paragraphs": [
+            "下面的教學示範可以修改三欄並查看結果。三欄預計都為必填，目前尚未實作必填驗證；請使用合成測試資料。申請編號預設 SYN-001，申請人代號預設 DEMO-A，文件類型保持空白。",
+            "實驗一：文件類型留空，按「查看本次輸入（未檢核）」，仍應看到包含空白的預覽。實驗二：產生預覽後修改申請編號，舊預覽應立即消失，再按按鈕才顯示新資料。這兩個行為都是本次驗收點。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 2｜收件資料表單",
+              "description": "三個欄位預計都為必填，但目前尚未實作必填驗證。請使用合成測試資料。",
+              "items": [
+                {
+                  "title": "申請編號（預計必填）",
+                  "body": "SYN-001"
+                },
+                {
+                  "title": "申請人代號（預計必填）",
+                  "body": "DEMO-A"
+                },
+                {
+                  "title": "文件類型（預計必填）",
+                  "body": "（空白）"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "四、為什麼「必填」標籤不等於真的有檢查？",
+          "paragraphs": [
+            "想像掛號系統顯示「身分證字號（必填）」，卻在使用者沒有輸入時回覆「掛號成功」。UI 標示是告訴使用者應該填寫；Validation（資料驗證）則是程式實際檢查輸入是否符合規則。前者溝通要求，後者執行判斷。",
+            "M07-03 先完成表單和未檢核預覽；M07-04 才加入缺漏、空白、資料型別、長度等驗證規則；M07-05 再處理預覽與匯出。即使 AI Coding Agent 很有效率，也應遵守本次規格；尚未實作的「通過審核」「完整報告」會誤導使用者。"
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "五、真正寫程式時，要怎麼實作？",
+          "paragraphs": [
+            "教材採用 Streamlit，用 Python 建立網頁互動介面。以下完整範例可以獨立存成 app.py；請先使用已安裝 Streamlit 的 Python 環境。",
+            "把 session_state 想成櫃檯人員面前的暫存工作紙：客人改資料，先前整理好的結果就必須作廢，重新整理後才展示。Streamlit 的 on_change 在文字變更提交（例如離開欄位或按 Enter）後觸發；本頁示範則在每次輸入時清除。驗收 Python 範例時，請先提交變更再核對預覽消失。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "獨立 app.py",
+              "paragraphs": [
+                "程式只顯示未檢核輸入，不執行業務判定。"
+              ],
+              "code": "\"\"\"Standalone lesson example; synthetic input and unvalidated preview only.\"\"\"\nimport streamlit as st\n\nst.title(\"收件資料預覽\")\nst.caption(\"請使用合成測試資料。本階段未實作必填驗證，也不持久保存資料。\")\nif \"preview\" not in st.session_state:\n    st.session_state.preview = None\n\ndef clear_preview():\n    st.session_state.preview = None\n\nst.text_input(\"申請編號（預計必填）\", key=\"application_id\", on_change=clear_preview)\nst.text_input(\"申請人代號（預計必填）\", key=\"applicant_code\", on_change=clear_preview)\nst.text_input(\"文件類型（預計必填）\", key=\"document_type\", on_change=clear_preview)\nif st.button(\"查看本次輸入（未檢核）\"):\n    st.session_state.preview = {\n        \"application_id\": st.session_state.application_id,\n        \"applicant_code\": st.session_state.applicant_code,\n        \"document_type\": st.session_state.document_type,\n    }\nif st.session_state.preview is not None:\n    st.info(\"以下資料尚未經過完整性檢核\")\n    st.json(st.session_state.preview)\n"
+            },
+            {
+              "kind": "step",
+              "heading": "啟動範例",
+              "paragraphs": [
+                "服務啟動後，在瀏覽器實際操作兩個實驗。"
+              ],
+              "code": "python -m streamlit run app.py"
+            },
+            {
+              "kind": "table",
+              "caption": "範例中的專有名詞",
+              "headers": [
+                "名詞",
+                "白話解釋"
+              ],
+              "rows": [
+                [
+                  "st.text_input",
+                  "在網頁放一個文字輸入框"
+                ],
+                [
+                  "st.button",
+                  "放一個可以按的按鈕"
+                ],
+                [
+                  "session_state",
+                  "記住目前這次操作中的資料與畫面狀態"
+                ],
+                [
+                  "on_change",
+                  "使用者修改欄位、變更被提交時觸發的動作"
+                ],
+                [
+                  "st.json",
+                  "把資料用 JSON 格式顯示"
+                ],
+                [
+                  "application_id",
+                  "程式使用的穩定欄位識別名稱（Key）"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "目前範例沒有資料庫、持久保存或業務檢核；這是本次切片的範圍。工作坊 slices/01-form/ 是另一份教師快照，請與自己的 starter 專案分開，保留原作品與 Diff。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "streamlit-text-input-151",
+            "streamlit-session"
+          ]
+        },
+        {
+          "id": "verify",
+          "heading": "六、如何知道第一切片已經完成？",
+          "paragraphs": [
+            "由你實際驗收，才能知道 Agent 交付是否符合規格。Nielsen Norman Group 的系統狀態可見性原則提醒我們，畫面應清楚說明目前狀態，讓使用者理解操作結果。",
+            "Diff 是兩個程式版本之間的差異。要求 Agent 只修改這個切片需要的檔案，再用 git diff 核對變更，留下測試與實際操作紀錄。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "第一切片驗收表",
+              "headers": [
+                "驗收問題",
+                "通過條件"
+              ],
+              "rows": [
+                [
+                  "表單能使用嗎？",
+                  "三個欄位能輸入文字"
+                ],
+                [
+                  "欄位用途清楚嗎？",
+                  "每個欄位都有持續可見的標籤"
+                ],
+                [
+                  "可以操作嗎？",
+                  "能用 Tab 移動焦點，並操作主要按鈕"
+                ],
+                [
+                  "結果正確嗎？",
+                  "預覽顯示當次資料，包括空白"
+                ],
+                [
+                  "會誤導使用者嗎？",
+                  "沒有「已通過審核」等不實狀態"
+                ],
+                [
+                  "舊結果會失效嗎？",
+                  "修改輸入後，不再顯示過期預覽"
+                ],
+                [
+                  "可以審查變更嗎？",
+                  "保留 Diff、測試與實際操作紀錄"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "nng-heuristics"
+          ]
+        },
+        {
+          "id": "roadmap",
+          "heading": "七、把這堂課連到整個開發流程",
+          "paragraphs": [
+            "每完成一階段，就有能操作、檢查與回歸測試的基礎，讓介面或資料流程問題提早浮現。真正需要的安全邊界、資料結構與模組介面，仍應隨風險與需求適度提前規劃。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 3｜從第一切片逐步擴充",
+              "description": "編號表示課程逐步增加的責任；每階段以自己的證據驗收。",
+              "items": [
+                {
+                  "title": "M07-03：建立表單",
+                  "body": "輸入資料 → 顯示未檢核預覽。"
+                },
+                {
+                  "title": "M07-04：加入資料檢核",
+                  "body": "輸入資料 → 依業務規則檢查 → 顯示通過或錯誤。"
+                },
+                {
+                  "title": "M07-05：預覽與匯出",
+                  "body": "輸入資料 → 檢核 → 預覽有效結果 → 匯出。"
+                },
+                {
+                  "title": "M07-06、M07-07：審查與修復",
+                  "body": "確認 AI 的修改內容、測試證據、錯誤原因，以及是否能安全復原。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "八、理解檢核：退貨系統",
+          "paragraphs": [
+            "一家電商公司要求第一切片：「讓顧客輸入訂單編號、商品名稱、退貨原因，並查看輸入預覽。」Agent 完成表單後，自行加入「退貨審核通過」與「退款成功」訊息，實際上沒有連接訂單系統或退款功能。",
+            "先用自己的話回答：這個 Agent 是否算完成第一切片，為什麼？如果修改訂單編號後還保留舊預覽，會有什麼風險？你會如何規劃第二個垂直切片，讓系統逐步接近可用的退貨服務？下方保留可展開的參考解析，供回答後核對。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "已啟用環境的工作坊；自己的 starter 專案與 slices/01-form/ 分開。",
+        "steps": [
+          "在自己的專案完成三欄及查看未檢核輸入的動作。",
+          "留一欄空白，用鍵盤查看輸入，確認提示與沒有完整下載。",
+          "修改一欄並重跑，核對舊預覽消失；與教師快照比較並記錄 Diff。"
+        ],
+        "expected": "可執行表單及一次從輸入到預覽的驗收紀錄，清楚標示規則尚未實作。",
+        "check": "能區分欄位標示與實際驗證，不將空白資料標為完整。",
+        "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M07-C03-Q04",
+          "prompt": "這個 Agent 是否算完成第一切片？為什麼？",
+          "answer": [
+            "未符合本次規格。表單完成只證明輸入與預覽部分；核准與退款訊息沒有真實執行依據，應移除並重新驗收。"
+          ]
+        },
+        {
+          "id": "AASE-M07-C03-Q05",
+          "prompt": "修改訂單編號後保留舊預覽，會有什麼風險？",
+          "answer": [
+            "使用者可能把舊訂單資料當成目前輸入的結果，造成確認或後續處理錯誤。輸入變更時清除預覽，再由明確動作產生新結果。"
+          ]
+        },
+        {
+          "id": "AASE-M07-C03-Q06",
+          "prompt": "如何規劃第二個垂直切片？",
+          "answer": [
+            "先加入有明確規則的資料檢核，逐欄指出缺漏與錯誤，確認修正後能重新檢查；訂單查詢、退貨核准與退款另有資料及權限需求，依後續規格分步驗收。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "summary": "Complete a minimal path from fields to an unvalidated preview, checking interaction and state before adding business rules.",
+      "objectives": [
+        "Create three labeled fields and one primary action.",
+        "Explain how a vertical slice connects interface, code and observable results.",
+        "Avoid complete/success claims before rules exist."
+      ],
+      "readingGuide": {
+        "goal": "Create three labeled fields and one primary action.",
+        "startingPoint": "The workshop with its environment activated; keep your starter project separate from slices/01-form/.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "A runnable form and an input-to-preview acceptance record clearly identifying absent rules."
+      },
+      "sections": [
+        {
+          "id": "slice",
+          "heading": "Complete one usable path from start to finish",
+          "paragraphs": [
+            "Software development can begin with a small feature that a user can operate from beginning to end. For a bank credit-review system, start with “enter three values → press a button → see those values,” then add accounts, databases, reviews, reports and access management. This is a vertical slice.",
+            "Imagine opening a restaurant. Approach A decorates every seat, buys all equipment and designs the entire menu and operating procedures first. A month later, it may still serve no customers. This resembles building every screen, then every backend component, and integrating only at the end.",
+            "Approach B prepares one seat and one meal and completes ordering, cooking and serving. The restaurant is unfinished, but one customer can experience the complete path. A vertical slice selects a user task with a clear start, endpoint and verifiable result."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Horizontal layers and vertical slices",
+              "description": "The left groups work by layer; the right groups necessary layers by user task. Layer boxes do not indicate temporal order. Not every slice needs a database; this lesson only needs input and preview.",
+              "items": [
+                {
+                  "title": "Horizontal layers",
+                  "body": "All UI screens\nAll business logic\nAll data handling"
+                },
+                {
+                  "title": "Slice 1",
+                  "body": "UI\nLogic\nData"
+                },
+                {
+                  "title": "Slice 2",
+                  "body": "UI\nLogic\nData"
+                },
+                {
+                  "title": "Slice 3",
+                  "body": "UI\nLogic\nData"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Horizontal development integrates after the separate layers are finished and may validate the user journey late. A vertical slice completes the necessary layers for one task at a time, producing something usable early."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "2. Understand vertical slices across industries",
+          "paragraphs": [
+            "The first stage completes “input → visible result.” Later decisions require their own rules, data and responsibilities."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "First slices across industries",
+              "headers": [
+                "Industry",
+                "First usable slice",
+                "Deferred scope"
+              ],
+              "rows": [
+                [
+                  "Healthcare",
+                  "Enter basic patient information and preview it",
+                  "Diagnosis and insurance claims"
+                ],
+                [
+                  "E-commerce",
+                  "Choose a quantity and view a draft order",
+                  "Payments and shipping"
+                ],
+                [
+                  "Education",
+                  "Enter an assignment name and content and preview them",
+                  "Automatic grading and rankings"
+                ],
+                [
+                  "Manufacturing",
+                  "Enter an equipment ID and measurements and preview them",
+                  "Anomaly decisions and automatic shutdown"
+                ],
+                [
+                  "Banking",
+                  "Enter an application ID and two other fields and preview them",
+                  "Credit review and official reports"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "behavior",
+          "heading": "3. Try the first form slice",
+          "paragraphs": [
+            "The teaching demo below lets you edit three fields and view the result. All three are intended to be required, but required-field validation is not implemented at this stage. Use synthetic data: SYN-001 for the application ID, DEMO-A for the applicant code, and a blank document type.",
+            "Experiment one: leave document type blank and press “View current input (unvalidated).” A preview including the blank value should still appear. Experiment two: after generating a preview, edit the application ID. The old preview should disappear immediately; press the button again to show the new values. Both behaviors are acceptance points."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Intake form",
+              "description": "All three fields are intended to be required, but required-field validation is not implemented. Use synthetic test data.",
+              "items": [
+                {
+                  "title": "Application ID (intended required)",
+                  "body": "SYN-001"
+                },
+                {
+                  "title": "Applicant code (intended required)",
+                  "body": "DEMO-A"
+                },
+                {
+                  "title": "Document type (intended required)",
+                  "body": "(blank)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "4. Why a required label does not enforce validation",
+          "paragraphs": [
+            "Imagine a registration system labels an identity field “required” but displays “Registration successful” when it is empty. A UI label tells the user what to enter. Validation is program logic that actually checks whether input meets rules. The former communicates a requirement; the latter executes a decision.",
+            "M07-03 builds the form and unvalidated preview. M07-04 adds rules for missing values, whitespace, data types and length; M07-05 handles preview and export. An efficient AI Coding Agent must still follow the current specification. Unimplemented “approved” or “complete report” messages would mislead users."
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "5. Implement the slice in Python",
+          "paragraphs": [
+            "This lesson uses Streamlit to build a web interface in Python. Save the complete example below as app.py in a Python environment with Streamlit installed.",
+            "Think of session_state as a temporary worksheet at a service desk. When a customer changes data, the previously prepared result must be discarded before showing a new one. Streamlit runs on_change when an edited text value is committed, for example by leaving the field or pressing Enter. The demo on this page clears its preview on each input event. When accepting the Python example, commit the field change before checking that the preview disappears."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Standalone app.py",
+              "paragraphs": [
+                "The program displays unvalidated input without making business decisions."
+              ],
+              "code": "\"\"\"Standalone lesson example; synthetic input and unvalidated preview only.\"\"\"\nimport streamlit as st\n\nst.title(\"收件資料預覽\")\nst.caption(\"請使用合成測試資料。本階段未實作必填驗證，也不持久保存資料。\")\nif \"preview\" not in st.session_state:\n    st.session_state.preview = None\n\ndef clear_preview():\n    st.session_state.preview = None\n\nst.text_input(\"申請編號（預計必填）\", key=\"application_id\", on_change=clear_preview)\nst.text_input(\"申請人代號（預計必填）\", key=\"applicant_code\", on_change=clear_preview)\nst.text_input(\"文件類型（預計必填）\", key=\"document_type\", on_change=clear_preview)\nif st.button(\"查看本次輸入（未檢核）\"):\n    st.session_state.preview = {\n        \"application_id\": st.session_state.application_id,\n        \"applicant_code\": st.session_state.applicant_code,\n        \"document_type\": st.session_state.document_type,\n    }\nif st.session_state.preview is not None:\n    st.info(\"以下資料尚未經過完整性檢核\")\n    st.json(st.session_state.preview)\n"
+            },
+            {
+              "kind": "step",
+              "heading": "Start the example",
+              "paragraphs": [
+                "After startup, perform both experiments in the browser."
+              ],
+              "code": "python -m streamlit run app.py"
+            },
+            {
+              "kind": "table",
+              "caption": "Terms in the example",
+              "headers": [
+                "Term",
+                "Plain explanation"
+              ],
+              "rows": [
+                [
+                  "st.text_input",
+                  "Place a text input on the page"
+                ],
+                [
+                  "st.button",
+                  "Place an actionable button"
+                ],
+                [
+                  "session_state",
+                  "Retain data and UI state for the current session"
+                ],
+                [
+                  "on_change",
+                  "Run an action when a changed field value is committed"
+                ],
+                [
+                  "st.json",
+                  "Display data in JSON format"
+                ],
+                [
+                  "application_id",
+                  "A stable field identifier used by the program (key)"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The example has no database, persistent storage or business validation. That defines this slice. The workshop slices/01-form/ directory is a separate teacher snapshot; keep it separate from your own starter project and retain your work and diff."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "streamlit-text-input-151",
+            "streamlit-session"
+          ]
+        },
+        {
+          "id": "verify",
+          "heading": "6. Accept the first slice using observable evidence",
+          "paragraphs": [
+            "Accept the result by operating it and checking it against the specification. Nielsen Norman Group’s visibility-of-system-status heuristic calls for clear feedback so users understand the current state and the result of their actions.",
+            "A diff shows the changes between two program versions. Ask the Agent to change only the files needed for this slice, inspect them with git diff, and retain tests and actual operation records."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Slice-one acceptance checklist",
+              "headers": [
+                "Question",
+                "Passing condition"
+              ],
+              "rows": [
+                [
+                  "Can the form be used?",
+                  "All three fields accept text"
+                ],
+                [
+                  "Are purposes clear?",
+                  "Every field has a persistent visible label"
+                ],
+                [
+                  "Is it operable?",
+                  "Tab reaches the fields and primary button, which can be activated"
+                ],
+                [
+                  "Is the result correct?",
+                  "The preview shows current values, including blanks"
+                ],
+                [
+                  "Does feedback mislead?",
+                  "No unsupported “approved” status"
+                ],
+                [
+                  "Does the old result expire?",
+                  "Changing input removes the stale preview"
+                ],
+                [
+                  "Can changes be reviewed?",
+                  "Retain the diff, tests and actual operation records"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "nng-heuristics"
+          ]
+        },
+        {
+          "id": "roadmap",
+          "heading": "7. Connect the slice to the development process",
+          "paragraphs": [
+            "Each stage leaves a usable basis for inspection and regression testing, exposing interface and data-flow problems early. Plan necessary security boundaries, data structures and module interfaces in advance as risk and requirements warrant."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 3 | Extend the first slice gradually",
+              "description": "Numbers indicate increasing course responsibilities. Accept each stage using its own evidence.",
+              "items": [
+                {
+                  "title": "M07-03: Build the form",
+                  "body": "Input → unvalidated preview."
+                },
+                {
+                  "title": "M07-04: Add data validation",
+                  "body": "Input → check business rules → pass or errors."
+                },
+                {
+                  "title": "M07-05: Preview and export",
+                  "body": "Input → validation → preview a valid result → export."
+                },
+                {
+                  "title": "M07-06 and M07-07: Review and repair",
+                  "body": "Inspect AI changes, test evidence, failure causes and safe recovery."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "8. Check your understanding: a returns system",
+          "paragraphs": [
+            "An e-commerce company specifies this first slice: “Let customers enter an order number, product name and return reason, then view the input preview.” The Agent builds the form but also adds “Return approved” and “Refund successful,” without connecting to the order system or implementing refunds.",
+            "Answer in your own words: has the Agent completed the first slice, and why? What risks arise if the old preview remains after the order number changes? How would you plan the second vertical slice toward a usable returns service? Expand the reference explanations below after attempting the questions."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "The workshop with its environment activated; keep your starter project separate from slices/01-form/.",
+        "steps": [
+          "Implement three fields and the action to view unvalidated input in your project.",
+          "Leave one field blank and use the keyboard to view input; verify the notice and absence of a complete download.",
+          "Change a field and rerun; verify the old preview disappears, then compare with the snapshot and record the diff."
+        ],
+        "expected": "A runnable form and an input-to-preview acceptance record clearly identifying absent rules.",
+        "check": "Distinguish a required label from executed validation. Do not mark blank data complete.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      },
+      "openChecks": [
+        {
+          "id": "AASE-M07-C03-Q04",
+          "prompt": "Has the Agent completed the first slice, and why?",
+          "answer": [
+            "It does not meet the current specification. A working form establishes only input and preview behavior; approval and refund claims lack implemented actions. Remove them and repeat acceptance."
+          ]
+        },
+        {
+          "id": "AASE-M07-C03-Q05",
+          "prompt": "What risks arise from a stale preview after an order-number change?",
+          "answer": [
+            "Users may mistake old order data for the result of current input, causing incorrect confirmation or processing. Clear the preview on input change and require an explicit action to create a fresh result."
+          ]
+        },
+        {
+          "id": "AASE-M07-C03-Q06",
+          "prompt": "How would you plan the second slice?",
+          "answer": [
+            "Add explicit validation rules with field-level missing-value and error feedback, then verify that corrected input can be checked again. Order lookup, approval and refunds have further data and authorization requirements and need later scoped acceptance."
+          ]
+        }
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M07-C03-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "第一切片的可接受終點是什麼？",
+          "options": [
+            "正式核准",
+            "當次未檢核輸入預覽",
+            "多人隔離",
+            "所有模組完成"
+          ],
+          "rationales": [
+            "不在範圍。",
+            "提供可操作且誠實的階段結果。",
+            "尚未實作。",
+            "一個切片只交付一部分。"
+          ]
+        },
+        "en": {
+          "prompt": "What is an acceptable endpoint for slice one?",
+          "options": [
+            "Official approval.",
+            "A preview of current unvalidated input.",
+            "Multiuser isolation.",
+            "Completion of every module."
+          ],
+          "rationales": [
+            "That is outside scope.",
+            "It delivers a usable and honest stage result.",
+            "That is not implemented.",
+            "One slice delivers only part of the system."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M07-C03-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "欄位標上必填，就能宣稱資料完整嗎？",
+          "options": [
+            "可以，標籤會自動保證",
+            "可以，只要畫面簡潔",
+            "不可以，還需規則實際判斷",
+            "不可以，所以不需標籤"
+          ],
+          "rationales": [
+            "標籤不等於判定。",
+            "簡潔不保證正確。",
+            "第二切片才加入判定。",
+            "標籤仍是必要操作資訊。"
+          ]
+        },
+        "en": {
+          "prompt": "Does labeling a field required establish complete data?",
+          "options": [
+            "Yes; the label guarantees it.",
+            "Yes, if the screen is simple.",
+            "No; rules must actually evaluate the input.",
+            "No; therefore no label is needed."
+          ],
+          "rationales": [
+            "A label is not a decision.",
+            "Simplicity does not establish correctness.",
+            "Slice two adds that evaluation.",
+            "Labels remain necessary interaction information."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M07-C03-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "Agent 提早加上未驗證的完整報告下載，應如何驗收？",
+          "options": [
+            "因為功能多而接受",
+            "只看畫面漂亮程度",
+            "略過 Diff",
+            "依本次 spec 修正，先保留未檢核範圍"
+          ],
+          "rationales": [
+            "可能誤導使用者。",
+            "還需驗證行為。",
+            "無法核對修改。",
+            "先交付符合約定的小任務。"
+          ]
+        },
+        "en": {
+          "prompt": "The Agent adds an unverified complete-report download early. How should you accept it?",
+          "options": [
+            "Accept because it has more features.",
+            "Judge only its appearance.",
+            "Skip the diff.",
+            "Correct it against this task’s spec and retain the unvalidated scope first."
+          ],
+          "rationales": [
+            "It may mislead users.",
+            "Behavior still needs verification.",
+            "That prevents review of changes.",
+            "Deliver the agreed small task first."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
