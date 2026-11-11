@@ -683,6 +683,14 @@ v1.2.0／revision 5 依十節供稿完整抽換。六圖依序為 analogy flow 5
 
 AaseProse 承接既有文字段落、清單、固定 h3、小節引用及 InlineText HTTPS 連結；四名詞保留 comparison 錨點。雙語七表與 code 對齊，英文逐欄解讀共用 problem.md。新 Q05–Q08 為物流開放題；原生參考解析不建立作答／學習狀態。前版、完整供稿、六圖及來源核對見[來源對照](sources/aase/m03-04/replacement-2026-11-11/source-map.md)，驗證與發布狀態見[回執](releases/2026-11-11-aase-m03-04-six-figures.md)。
 
+### 11/10 續篇來源版本與 17 張圖 — 2026-11-11
+
+兩份續篇與 17 張圖沿用同一日期頁，v1.2.0 保留既有較新完整稿及錨點，再接續本批完整供稿版。來源／逐段雙語／採用對照見 [continuation-17-reference](sources/ceh-notes/2026-11-10/continuation-17-reference/source-map.md)。661 筆來源單位的實際正文由 `ceh_note_continuation.py` 採用；`check-ceh-continuation-source.py --check` 已加入 release gate，核對原始 bytes、正規化、來源範圍及真正正文，不以單純字數或圖名代替完整性。
+
+17 個固定圖名與版型登記在 `note-diagram-specs.json`。`NoteContinuationDiagram` 使用 HTML 節點、容器重排及經量測的 SVG 連線，連線端點／條件固定於受審核 spec，內容仍只允許 title／body 文字。平行保護範圍、巢狀卷與 16／32 位元組格各有專用結構；CA／網站／瀏覽器序列區分事先簽發與連線內往返。沒有 JS 時節點及具名關係文字直接可讀。`ceh_note_continuation_svg.py` 序列化同源文字，沿既有 allowlist 及每圖小於 100000 bytes 的邊界。
+
+本批原始回憶問題各七個、情境題各五題；附件未附翻面答案，保留來源界線；情境題依供稿先不提供答案鍵。`check-ceh-continuation-diagrams.mjs` 檢查 SSR／無 JS、四尺寸／200% 及 34 份匯出；`check-ceh-continuation-graphs.mjs` 檢查真正頁面的量測端點。最終頁面與發布證據見 [本輪回執](releases/2026-11-11-ceh-continuation-17.md)。
+
 ## AASE M04-02｜任務分析與條件回復
 
 [2026-11-11來源及逐節對照](sources/aase/m04-02/replacement-2026-11-11/README.md)保存八章供稿、五張原圖、舊版及編輯差異。修改完整中英稿或`figures.json`後執行`scripts/aase_m0402_content.py`與`scripts/aase_m0402_svg.py`（皆支援`--check`）。正式資料保留六個既有錨點，新增各小節；三個物流問題使用原生開放檢核與編輯參考答案，不提供送答服務。
