@@ -795,3 +795,9 @@ v1.1.0 保留原發布日與六個舊錨點，十節與導言完整雙語由 `sc
 `EnvironmentSetupDiagram.svelte`沿受限 cards／flow 資料，以 HTML dl、ul、ol 與局部程式碼捲動呈現 8 列配對、3 平行環境、5 步順序與 2 平台替代路徑。`aase.ts`限定各節圖數、節點數及關係，拒絕任意欄位；`scripts/aase_m0701_svg.py --check`核對同源的八份固定路徑 SVG，元素與屬性使用 allowlist。原始程式碼保留，PowerShell 命令另補，英文逐項解釋共享範本。
 
 單元為`tests/aase-m0701-replacement.test.ts`；瀏覽器為`playwright.aase-m0701.config.ts`，正式站使用 AASE_BASE_URL。全文、四尺寸、200%、無 JS、鍵盤、搜尋、八圖幾何與下載位元組依[發布回執](releases/2026-11-11-aase-m07-01-replacement.md)記錄。本次不更改工作坊規格或套件版本。
+
+## AASE M09-04｜技術變動與持續工程責任
+
+v1.1.0／revision 4 以[完整供稿與對照](sources/aase/m09-04/replacement-2026-11-11/README.md)抽換九個正文區段，保留原發布日、網址與六個舊錨點；中英保留三種遷移案例、兩表及原三題三選項（Q04–Q06）。前版與三張 PNG 完整封存。`aase_m0904_content.py --check`核對雙語稿，`aase_m0904_svg.py --check`核對六份同源受審核 SVG。
+
+TechnologyChangeDiagram 使用可搜尋 HTML：兩欄平行對照、六步五箭頭流程、五層無箭頭責任列。窄版保留分組與順序；aase.ts限制三圖的位置、種類、節點數2／6／5及文字欄位。`tests/aase-m0904-replacement.test.ts`檢查身份、兩語表格、答案及非法關係拒絕；`node scripts/check-aase-m0904-browser.mjs`檢查全文、四尺寸、200%、無JS、鍵盤與下載，正式站使用AASE_BASE_URL。歷史遷移測試核對封存前版，本次由新測試承接。部署證據見本次發布回執。
