@@ -66,11 +66,33 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
     if(!text(t.summary)||t.objectives.length<2||t.objectives.some(x=>!text(x))||t.sections.length<5||!l.sourceIds.length||l.sourceIds.some(id=>!sourceIds.has(id)))fail('incomplete lesson');
     if(new Set(t.sections.map(s=>s.id)).size!==t.sections.length)fail('duplicate section');
     for(const s of t.sections){
+      if(l.id==='AASE-M08-C02'&&l.revision>=4){
+        const expected:Record<string,number>={analogy:3,evidence:3,'agent-workflow':4};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='evidence'?'cards':'flow')||!keys(f,['kind','caption','description','items'])||f.items.some(i=>!keys(i,['title','body']))))fail('invalid TDD figure');
+      }
+
       if(!/^[a-z][a-z0-9-]*$/.test(s.id)||!text(s.heading)||['discussion','objectives','practice','checks','sources'].includes(s.id)||s.id.startsWith('qa-')||!s.paragraphs.length||s.paragraphs.some(p=>!text(p))||(s.sourceIds??[]).some(id=>!l.sourceIds.includes(id)))fail('invalid section');
+      if(l.id==='AASE-M07-C03'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=['slice','behavior'].includes(s.id)?'cards':s.id==='roadmap'?'flow':undefined;
+        if(figures.length!==(expected?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==expected||f.items.length!==(s.id==='behavior'?3:4)||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid vertical slice figure');
+        const figure=figures[0];
+        if(figure&&(figure.kind==='cards'||figure.kind==='flow')){
+          if(s.id==='slice'&&figure.items.some(item=>item.body.split('\n').length!==3))fail('invalid vertical slice layers');
+          if(s.id==='behavior'&&figure.items.map(item=>item.body).join('|')!==`SYN-001|DEMO-A|${lang==='zh'?'（空白）':'(blank)'}`)fail('invalid vertical slice defaults');
+        }
+      }
       if(l.id==='AASE-M07-C05'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const count=s.id==='risk'?4:s.id==='workflow'?7:0;
         if(figures.length!==(count?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==(s.id==='risk'?'cards':'flow')||f.items.length!==count||!keys(f,['kind','caption','description','items'])||f.items.some(i=>!keys(i,['title','body']))))fail('invalid preview export figure');
+      }
+      if(l.id==='AASE-M09-C01'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='analogy'?'flow':s.id==='lab'?'cards':undefined;
+        if(figures.length!==(expected?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==expected||f.items.length!==4||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body'])||/[<>]/.test(item.title+item.body))))fail('invalid Git history figure');
+        if(s.id==='analogy'){const f=figures[0];if(f?.kind==='flow'&&f.items.some((item,i)=>item.body.split('\n').length!==(i<3?2:1)||i<3&&!item.body.split('\n')[1].startsWith(['git add','git commit','git push'][i])))fail('invalid Git transition labels');}
       }
       if(l.id==='AASE-M05-C04'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
@@ -92,7 +114,23 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const expected:Record<string,number[]>={analogy:[8],layers:[3],commands:[5,2]};
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='commands'&&i===0?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid environment setup figure');
       }
+      if(l.id==='AASE-M08-C03'&&l.revision>=4){
+        const expected:Record<string,number>={map:5,delivery:3,cases:3};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='map'?'flow':'cards')||f.items.some(i=>!keys(i,['title','body']))))fail('invalid rule testing figure');
+        if(s.id==='delivery'){const f=figures[0];if(!f||f.kind!=='cards'||f.items.map(i=>i.body).join('|')!=='999|60|1000')fail('invalid delivery defaults');}
+      }
+      if(l.id==='AASE-M07-C04'&&l.revision>=4){
+        const expected:Record<string,number>={problem:4,cases:3,implementation:3,flow:4};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='flow'?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid data validation figure');
+        if(s.id==='cases'){const f=figures[0];if(!f||f.kind!=='cards'||f.items.map(i=>i.body).join('|')!=='SYN-001|DEMO-A|合成申請表')fail('invalid validation demo defaults');}
+      }
       if(l.id==='AASE-M01-C03'&&['differences','identity'].includes(s.id)){const cards=(s.blocks??[]).filter(b=>b.kind==='cards');if(cards.length!==1||cards[0].kind!=='cards'||cards[0].items.length!==(s.id==='differences'?6:3))fail('invalid organization teaching layout');}
+      if(l.id==='AASE-M08-C06'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(s.id==='analogy'?1:0)||figures.some(f=>f.kind!=='flow'||!keys(f,['kind','caption','description','items'])||f.items.length!==5||f.items.some(item=>!keys(item,['title','body']))))fail('invalid regression evidence figure');
+      }
       if(l.id==='AASE-M01-C04'&&['analogy','workflow','testing'].includes(s.id)){const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');const figure=figures[0];if(figures.length!==1||!figure||(figure.kind!=='cards'&&figure.kind!=='flow')||figure.items.length!==(s.id==='analogy'?2:s.id==='workflow'?5:3)||figure.kind!==(s.id==='workflow'?'flow':'cards'))fail('invalid requirements interview figure');}
       if(l.id==='AASE-M02-C01'&&l.revision>=4){
         const expected:Record<string,number>={pipeline:6,units:2,analogy:4,attention:3,'attention-example':2,limits:4};
@@ -192,6 +230,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='workflow'?'flow':'cards')||f.items.some(item=>!keys(item,['title','body'])||/[<>]/.test(item.title+item.body))))fail('invalid information hierarchy figure');
         if(s.id==='navigation'){const f=figures[0];if(f?.kind==='cards'){const counts=f.items.slice(1).map(item=>sitemapGroups(item.body).map(g=>g.children.length));if(JSON.stringify(counts)!=='[[3,0,0],[0,0,0,0],[0,0,0,0,0,0],[2,3,0]]')fail('invalid sitemap relationships');}}
       }
+      if(l.id==='AASE-M06-C01'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='analogy'?[5,5]:s.id==='runtime'?[7,6]:s.id==='c4'?[4]:[];
+        if(figures.length!==expected.length||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[i]||f.kind!==(s.id==='analogy'&&i===0?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid flow architecture figure');
+      }
       if(l.id==='AASE-M04-C01'){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected=l.revision>=6?(s.id==='analogy'?[3]:s.id==='three-lenses'?[4]:s.id==='quality'?[5]:s.id==='case'?[2]:[]):s.id==='case'?[4,3]:s.id==='quality'?[2]:s.id==='record'?[5]:s.id==='task-analysis'?[6]:[];
@@ -226,6 +269,33 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected:Record<string,number[]>={analogy:[4],definition:[4],restaurant:[3,5,4],containers:[6],record:[4]};
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>f.kind!=='cards'||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id][i]||f.items.some(item=>!keys(item,['title','body']))))fail('invalid C4 views figure');
+      }
+      if(l.id==='AASE-M07-C07'&&l.revision>=4){
+        const expected:Record<string,number>={analogy:6,bug:6,loop:3,'agent-task':4};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(['analogy','loop'].includes(s.id)?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid debugging figure');
+        if(s.id==='bug'&&figures.some(f=>(f.kind==='cards'||f.kind==='flow')&&(f.items[0].body.split('｜').length!==2||f.items[0].body.split('｜').some(v=>!v.trim()))))fail('invalid debugging mode labels');
+      }
+      if(l.id==='AASE-M09-C03'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const count=s.id==='analogy'?5:s.id==='walkthrough'?3:0;
+        if(figures.length!==(count?1:0)||figures.some(f=>f.kind!==(count===5?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.length!==count||f.items.some(item=>!keys(item,['title','body']))))fail('invalid acceptance evidence figure');
+      }
+      if(l.id==='AASE-M09-C02'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
+        const count=s.id==='analogy'?4:s.id==='checklist'?8:0;
+        if(figures.length!==(count?1:0)||figures.some(f=>(f.kind!=='flow'&&f.kind!=='cards')||f.kind!==(s.id==='analogy'?'flow':'cards')||f.items.length!==count||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid handoff figure');
+      }
+      if(l.id==='AASE-M09-C04'&&l.revision>=4){
+        const expected:Record<string,number>={contracts:2,plan:6,continue:5};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='plan'?'flow':'cards')||f.items.some(i=>!keys(i,['title','body']))))fail('invalid technology change figure');
+      }
+      if(l.id==='AASE-M08-C05' && l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='workflow'?['flow',6]:s.id==='improve'?['cards',2]:[];
+        if(figures.length!==(expected.length?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==expected[0]||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[1]||f.items.some(item=>!keys(item,['title','body']))))fail('invalid usability figure');
+        if(s.id==='notes'){const tables=(s.blocks??[]).filter(b=>b.kind==='table');if(tables.length!==1||tables[0].headers.length!==2||tables[0].rows.length!==9)fail('invalid usability record');}
       }
       for(const b of s.blocks??[]){
         if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}
