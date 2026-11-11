@@ -1,6 +1,6 @@
 # 2026-11-11｜CEH 11/10 兩份續篇與 17 圖
 
-範圍：同日第 2／3 部分，第 10–27 題的兩份供稿與 17 張圖。筆記日期與原發布日保持 2026-11-10；本輪增加教學範圍為 v1.2.0、revision 3、版本修訂 2026-11-11。
+範圍：同日第 2／3 部分，第 10–27 題的兩份供稿與 17 張圖。筆記日期與原發布日保持 2026-11-10；本輪增加教學範圍為 v1.2.0／revision 3；TLS 註記範圍修正後為 v1.2.1／revision 4，版本修訂 2026-11-11。
 
 ## 正本、來源與採用
 
@@ -14,7 +14,7 @@
 
 適用 WRITE-01–06、09–11、HTML-01–04、FIG-01–06、A11Y-01–03；未新增計算互動，INT-01 參數計算不適用。下列實測僅支持本輪範圍，不能由來源雜湊、圖名數或單一綠燈推論全站改善。
 
-- `pnpm run validate:content`、`pnpm test`：合併後 296 項測試全部通過。
+- `pnpm run validate:content`、`pnpm test`：最終合併後 298 項測試全部通過。
 - `pnpm run check`：0 errors／0 warnings；`python3 -m unittest discover -s scripts -p test_validation_html.py`：6 項通過。
 - `node scripts/check-publication-boundary.mjs`：draft／future、英文課程閘門與乾淨正式重建通過；`pnpm run validate:release` 全部通過，包含本批來源逐單位稽核。
 - `check-ceh-continuation-diagrams.mjs`：17 圖 SSR／無 JS fixture、雙語四尺寸／200% 共 16 組案例、34 SVG 字框／重疊與下載通過。
@@ -31,3 +31,7 @@
 ## 發布閘門
 
 尚未發布此輪續篇修訂。完成必要驗證後提交／推送，等待實際 Pages run，回讀雙語全文與 34 新 SVG，再填入正式發布證據。`kairos-learning` 擁有原稿、教材、實作、圖解及發布證據；Planning 僅持定位、狀態、容量、驗證及下一閘門。
+
+## TLS 註記框修正
+
+最後圖意核對將事先申請框限定 CA／伺服器、本機驗證框限定瀏覽器、應用保護框限定伺服器／瀏覽器；手機依角色文字重排。同源 HTML／SVG 與桌面參與角色範圍測試一併修正，34 SVG fixture、型別及 release gate 重跑通過。
