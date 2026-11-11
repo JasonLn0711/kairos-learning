@@ -6,4 +6,4 @@
 4. Streamlit：使用者→瀏覽器；瀏覽器↔Python／Streamlit程序（Streamlit通訊）；程序↔rules.py、程序↔Session State，同程序內呼叫與狀態，不表示額外網路服務。執行主機包住Python、規則及記憶體；JSON下載留在使用者裝置。圖中主機外框不能當成程序外框，需另明示rules.py與狀態在同一程序。
 5. C4：Context→Container→Component→Code表示逐層放大，不是執行順序或相依部署。每層有名稱、核心問題與C1–C4標籤；Container不限定Docker。
 
-下載SVG需與可搜尋HTML同源；每圖小於100000 bytes，四尺寸／200%／無JS、圖意、下載及正式站回讀均待本輪實測。
+下載SVG與可搜尋HTML同源；十份圖檔各小於100000 bytes。四尺寸／200%／無JS、圖意、鍵盤、下載及中英正式站回讀已通過本輪驗收，詳見發布回執。實體裝置及完整螢幕閱讀器認證尚未執行。
