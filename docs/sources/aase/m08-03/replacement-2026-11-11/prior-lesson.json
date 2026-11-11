@@ -1,0 +1,364 @@
+{
+  "id": "AASE-M08-C03",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "pytest-parametrize",
+    "pytest-assert",
+    "pytest-usage"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "用參數化測試覆蓋三欄的有效、無效與長度邊界，直接驗證規則及匯出契約。",
+      "objectives": [
+        "把驗收情境寫成輸入、動作與結果。",
+        "用 pytest 參數化及例外斷言檢查業務規則。",
+        "核對匯出內容與函式沒有意外改動輸入。"
+      ],
+      "readingGuide": {
+        "goal": "把驗收情境寫成輸入、動作與結果。",
+        "startingPoint": "自己的第三切片副本、rules.py、pytest 8.4.2，與已確認 spec.md。",
+        "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
+        "output": "tests/test_rules_contract.py 與實際結果覆蓋三欄規則及受控匯出。"
+      },
+      "sections": [
+        {
+          "id": "rule",
+          "heading": "先找出不依賴畫面的規則",
+          "paragraphs": [
+            "reference/rules.py 的 validate 接收字典、回傳錯誤列表；export_report 在產生 JSON 前重新驗證，不合法時拋出 ValueError。直接呼叫這兩個函式，就能檢查畫面輸入限制以外的資料。",
+            "三個必要鍵是 application_id、applicant_code、document_type。去除首尾空白後須為非空字串且最多 80 字元；這是教學合成規則，不是正式文件受理條件。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像用同一張檢查表逐一量測不同樣本",
+          "paragraphs": [
+            "每個樣本換一個條件，其餘維持已知有效，才能看清楚哪個條件造成失敗。若一次把所有欄位都清空，只知道整體有錯，難以確認每一欄的規則都受到保護。",
+            "參數化讓同一組斷言套用到多筆資料。案例數增加要來自有意義的條件組合，不能用大量重複資料營造已驗證所有情況的印象。"
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "正常、無效、邊界與輸出契約",
+          "paragraphs": [
+            "必要欄位要測空字串、純空白、缺鍵與錯誤型別；長度要測剛好 80 與 81。正常匯出再核對去除首尾空白、固定結構與允許欄位，避免只測拒絕而漏掉可用路徑。",
+            "測試期望應從 spec 推得，不直接把函式目前回傳值複製成答案。規則若有歧義，先回到規格與負責人，不任意放寬測試。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜一份測試需要哪些資訊",
+              "description": "依輸入、執行與斷言閱讀，每一案例都能回答哪個要求受到保護。",
+              "items": [
+                {
+                  "title": "Arrange｜準備",
+                  "body": "建立有效基準，只替換本次要測的欄位。"
+                },
+                {
+                  "title": "Act｜執行",
+                  "body": "直接呼叫 validate 或 export_report。"
+                },
+                {
+                  "title": "Assert｜斷言",
+                  "body": "確認錯誤、例外或匯出結果符合規格。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "example",
+          "heading": "可加入自己專案的完整測試範例",
+          "paragraphs": [
+            "在自己的第三切片副本建立 tests/test_rules_contract.py。以下兩個參數化裝飾器組合三個欄位與六種無效值；每例都應有錯誤且拒絕匯出。",
+            "正常案例核對 JSON 資料完全等於允許的三欄，並檢查原輸入未被改寫。這仍不是全部正式系統契約，其他業務需求需另外定義。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "tests/test_rules_contract.py",
+              "paragraphs": [
+                "檔案需能 import 同專案 rules.py；不要把不同階段的 rules 放在同一測試程序。"
+              ],
+              "code": "import json\nimport pytest\nfrom rules import validate, export_report\n\nGOOD = {\"application_id\": \"SYN-001\", \"applicant_code\": \"DEMO-A\", \"document_type\": \"合成申請表\"}\n\n\n@pytest.mark.parametrize(\"field\", tuple(GOOD))\n@pytest.mark.parametrize(\"bad\", [\"\", \"   \", \"\\t\\n\", None, 42, \"x\" * 81])\ndef test_each_invalid_field_is_rejected(field, bad):\n    record = {**GOOD, field: bad}\n    assert validate(record)\n    with pytest.raises(ValueError):\n        export_report(record)\n\n\n@pytest.mark.parametrize(\"size,accepted\", [(80, True), (81, False)])\ndef test_length_boundary(size, accepted):\n    record = {**GOOD, \"application_id\": \"x\" * size}\n    assert (validate(record) == []) is accepted\n\n\ndef test_valid_export_uses_only_allowed_fields():\n    record = {**GOOD, \"application_id\": \" SYN-001 \", \"debug_note\": \"not-exported\"}\n    result = json.loads(export_report(record))\n    assert result[\"status\"] == \"complete\"\n    assert result[\"data\"] == GOOD\n    assert \"debug_note\" not in result[\"data\"]\n    assert record[\"application_id\"] == \" SYN-001 \"\n\n\ndef test_missing_key_is_rejected():\n    record = GOOD.copy()\n    del record[\"document_type\"]\n    with pytest.raises(ValueError):\n        export_report(record)"
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "執行與閱讀失敗",
+          "paragraphs": [
+            "在自己的第三切片根目錄執行 python -m pytest -q tests/test_rules_contract.py。若測試失敗，先讀案例參數、斷言及實際值，再查規則；若是 import 或環境錯誤，先修正執行位置。",
+            "範例可通過時，再執行該專案整組測試。記錄實際數量與退出結果，不預填固定成功數；日後新增測試後，數量會隨內容改變。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "規則測試命令",
+              "paragraphs": [
+                "先確認已啟用工作坊環境，並在自己的第三切片目錄。"
+              ],
+              "code": "python -m pytest -q tests/test_rules_contract.py\npython -m pytest -q"
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "通過不代表測過所有資料",
+          "paragraphs": [
+            "UI 不讓輸入 81 字元，仍需測函式拒絕超長直接呼叫；例外測試只寫「有任何錯誤」也可能把程式缺陷當成正確拒絕。使用預期 ValueError，必要時再核對錯誤訊息或類型。",
+            "規則測試無法判斷錯誤提示是否好找、鍵盤是否能完成任務或 JSON 真實下載是否正確。下一篇接著測介面，之後再安排人的任務觀察。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "自己的第三切片副本、rules.py、pytest 8.4.2，與已確認 spec.md。",
+        "steps": [
+          "加入完整範例並執行，逐一說明無效、邊界與正常案例。",
+          "核對一筆失敗時顯示的參數與斷言，確認不是環境問題。",
+          "執行整組測試，保存命令、版本、結果與未涵蓋情境。"
+        ],
+        "expected": "tests/test_rules_contract.py 與實際結果覆蓋三欄規則及受控匯出。",
+        "check": "有效路徑、例外類型、80／81 邊界與允許欄位都有斷言，未把測試數量當成完整性保證。",
+        "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
+      }
+    },
+    "en": {
+      "summary": "Use parametrized tests for valid, invalid and length-boundary values in three fields, directly checking rules and the export contract.",
+      "objectives": [
+        "Express acceptance scenarios as input, action and result.",
+        "Use pytest parametrization and exception assertions for business rules.",
+        "Check exported content and absence of unintended input mutation."
+      ],
+      "readingGuide": {
+        "goal": "Express acceptance scenarios as input, action and result.",
+        "startingPoint": "Your slice-three copy, rules.py, pytest 8.4.2 and confirmed spec.md.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "tests/test_rules_contract.py and actual results covering three-field rules and controlled export."
+      },
+      "sections": [
+        {
+          "id": "rule",
+          "heading": "Locate Rules Independent of the Interface",
+          "paragraphs": [
+            "reference/rules.py validate accepts a dictionary and returns errors. export_report revalidates before JSON generation and raises ValueError on invalid data. Direct calls check inputs beyond interface restrictions.",
+            "The required keys are application_id, applicant_code and document_type. Each must be a nonempty string after trimming, at most 80 characters. These are synthetic teaching rules, not official document-acceptance conditions."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Measure Different Samples with the Same Checklist",
+          "paragraphs": [
+            "Change one sample condition while keeping the others valid to see which condition causes failure. Clearing every field at once shows an overall error but makes it harder to verify protection for each field.",
+            "Parametrization applies the same assertions to several inputs. Add cases for meaningful combinations, without using repeated data to imply that all conditions were tested."
+          ]
+        },
+        {
+          "id": "cases",
+          "heading": "Normal, Invalid, Boundary and Output-contract Cases",
+          "paragraphs": [
+            "Test empty strings, whitespace-only values, missing keys and wrong types, plus lengths exactly 80 and 81. Also check successful export, trimming, fixed structure and allowed fields so rejection tests do not omit the usable path.",
+            "Derive expectations from spec rather than copying current function outputs as answers. Resolve ambiguous rules with the specification and owner; do not arbitrarily weaken tests."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Information Needed in a Test",
+              "description": "Read preparation, execution and assertions; identify the requirement each case protects.",
+              "items": [
+                {
+                  "title": "Arrange",
+                  "body": "Create a valid baseline and replace only the field being tested."
+                },
+                {
+                  "title": "Act",
+                  "body": "Call validate or export_report directly."
+                },
+                {
+                  "title": "Assert",
+                  "body": "Check errors, exceptions or export results against the specification."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "example",
+          "heading": "A Complete Test Example for Your Project",
+          "paragraphs": [
+            "Create tests/test_rules_contract.py in your slice-three copy. The two stacked parametrization decorators combine three fields with six invalid values. Every case must report errors and reject export.",
+            "The normal case checks that JSON data equals exactly the three allowed fields and that input is unchanged. This is not a complete production-system contract; define other business needs separately."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "tests/test_rules_contract.py",
+              "paragraphs": [
+                "The file must import this project’s rules.py. Keep different stages’ rules out of the same test process. The unchanged synthetic document label and program keys match the reference."
+              ],
+              "code": "import json\nimport pytest\nfrom rules import validate, export_report\n\nGOOD = {\"application_id\": \"SYN-001\", \"applicant_code\": \"DEMO-A\", \"document_type\": \"合成申請表\"}\n\n\n@pytest.mark.parametrize(\"field\", tuple(GOOD))\n@pytest.mark.parametrize(\"bad\", [\"\", \"   \", \"\\t\\n\", None, 42, \"x\" * 81])\ndef test_each_invalid_field_is_rejected(field, bad):\n    record = {**GOOD, field: bad}\n    assert validate(record)\n    with pytest.raises(ValueError):\n        export_report(record)\n\n\n@pytest.mark.parametrize(\"size,accepted\", [(80, True), (81, False)])\ndef test_length_boundary(size, accepted):\n    record = {**GOOD, \"application_id\": \"x\" * size}\n    assert (validate(record) == []) is accepted\n\n\ndef test_valid_export_uses_only_allowed_fields():\n    record = {**GOOD, \"application_id\": \" SYN-001 \", \"debug_note\": \"not-exported\"}\n    result = json.loads(export_report(record))\n    assert result[\"status\"] == \"complete\"\n    assert result[\"data\"] == GOOD\n    assert \"debug_note\" not in result[\"data\"]\n    assert record[\"application_id\"] == \" SYN-001 \"\n\n\ndef test_missing_key_is_rejected():\n    record = GOOD.copy()\n    del record[\"document_type\"]\n    with pytest.raises(ValueError):\n        export_report(record)"
+            }
+          ]
+        },
+        {
+          "id": "run",
+          "heading": "Execute and Read Failures",
+          "paragraphs": [
+            "From your slice-three root, run python -m pytest -q tests/test_rules_contract.py. On failure, read parameters, assertion and actual values before investigating rules. For import/environment errors, check the execution location first.",
+            "Once the example passes, run all tests in that project. Record actual counts and exit outcomes rather than prefilled success totals; counts change as tests are added."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Rule-test Commands",
+              "paragraphs": [
+                "Confirm the workshop environment is activated and you are in your own slice-three directory."
+              ],
+              "code": "python -m pytest -q tests/test_rules_contract.py\npython -m pytest -q"
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "Passing Does Not Mean Every Input Was Tested",
+          "paragraphs": [
+            "The UI preventing 81 characters does not replace a function test rejecting an overlong direct call. Asserting “any error” may also mistake a program defect for correct rejection. Expect ValueError, checking messages or more specific conditions where needed.",
+            "Rule tests cannot establish discoverable feedback, a keyboard-completable task or correct real downloads. The next lesson tests the interface, followed by observation of people doing tasks."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "Your slice-three copy, rules.py, pytest 8.4.2 and confirmed spec.md.",
+        "steps": [
+          "Add and run the complete example, explaining invalid, boundary and normal cases.",
+          "Inspect the parameters and assertion shown by a failure, confirming it is not an environment issue.",
+          "Run the full suite and preserve command, version, results and uncovered scenarios."
+        ],
+        "expected": "tests/test_rules_contract.py and actual results covering three-field rules and controlled export.",
+        "check": "Assert valid paths, exception types, 80/81 boundaries and allowed fields. A test count is not a completeness guarantee.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M08-C03-Q01",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "為何每例只替換一個有效基準欄位？",
+          "options": [
+            "避免測太多",
+            "讓測試只看畫面",
+            "較容易定位哪個條件未受保護",
+            "不用再測有效資料"
+          ],
+          "rationales": [
+            "目的是可定位。",
+            "這是直接函式測試。",
+            "控制其他條件有助判斷。",
+            "正常路徑仍需驗證。"
+          ]
+        },
+        "en": {
+          "prompt": "Why replace only one field of a valid baseline per case?",
+          "options": [
+            "To avoid many tests.",
+            "To make tests inspect only the screen.",
+            "To locate the unprotected condition more easily.",
+            "To eliminate valid-data tests."
+          ],
+          "rationales": [
+            "The purpose is diagnosability.",
+            "These tests call functions directly.",
+            "Controlling other conditions helps identify the cause.",
+            "Normal paths still need verification."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C03-Q02",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "80／81 字元案例最直接檢查什麼？",
+          "options": [
+            "正式文件真偽",
+            "規格長度邊界",
+            "使用者滿意度",
+            "登入狀態"
+          ],
+          "rationales": [
+            "不在規則內。",
+            "核對臨界有效與無效。",
+            "需要人的研究。",
+            "沒有身分測試。"
+          ]
+        },
+        "en": {
+          "prompt": "What do the 80/81-character cases directly check?",
+          "options": [
+            "Official document authenticity.",
+            "The specified length boundary.",
+            "User satisfaction.",
+            "Login state."
+          ],
+          "rationales": [
+            "That is outside the rules.",
+            "Check the adjacent valid and invalid limits.",
+            "That needs research with people.",
+            "No identity testing is involved."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C03-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "負向匯出應如何斷言？",
+          "options": [
+            "程式沒有啟動就算通過",
+            "接受任何未預期錯誤",
+            "只檢查畫面標題",
+            "確認預期 ValueError，並核對相關條件"
+          ],
+          "rationales": [
+            "尚未跑到行為。",
+            "可能掩蓋 bug。",
+            "不能保護匯出。",
+            "拒絕方式需符合契約。"
+          ]
+        },
+        "en": {
+          "prompt": "How should negative export be asserted?",
+          "options": [
+            "Count failure to start as passing.",
+            "Accept any unexpected error.",
+            "Check only the page title.",
+            "Expect ValueError and check the relevant conditions."
+          ],
+          "rationales": [
+            "The behavior was not reached.",
+            "That may hide a bug.",
+            "That cannot protect export.",
+            "Rejection must follow the contract."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
