@@ -1,0 +1,488 @@
+# AASE M03-03｜As-Is、To-Be 與 User Flow：如何把工作流程變成真正好用的軟體？
+
+對應教材：[CS Kairos Learn · M03-03](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-03/?utm_source=chatgpt.com)
+
+這一課最重要的觀念是：開發軟體之前，先弄清楚人們原本怎麼完成工作、希望以後怎麼完成，以及過程中發生問題時該怎麼辦。
+
+無論你想開發的是醫院掛號系統、工廠管理平台、電商網站、銀行內部工具，還是 AI Agent，都應該先理解三個概念：
+
+- As-Is（現況流程）：現在這件事是怎麼做的？
+- To-Be（目標流程）：未來希望怎麼做得更好？
+- User Flow（使用者操作流程）：使用者在新系統中，要經過哪些操作、判斷和分支，才能完成任務？
+
+三者的關係可以用一句話表示：
+
+As-Is 幫助我們發現問題，To-Be 幫助我們設計改進，User Flow 幫助我們確認新方法真的走得通。
+
+這也是為什麼開發軟體不能一開始就只問：「我們要用 React、Python，還是什麼 AI 模型？」技術只是實現手段，真正要先確定的是工作本身。
+
+## 一、先從日常生活理解這三個概念
+
+假設你經營一家餐廳，每天早上都必須向食材供應商訂貨。
+
+As-Is：目前的工作方式
+
+店長每天查看冰箱，用紙記錄缺少的食材，再打電話給供應商。對方如果沒接電話，就得稍後再打。
+
+問題：耗時、容易漏訂、沒有完整紀錄。
+
+To-Be：希望改進後的方式
+
+店長打開訂貨系統，系統顯示庫存和建議採購量，店長確認數量後送出訂單，供應商收到通知。
+
+目標：減少重複作業、降低漏訂機率、保留紀錄。
+
+User Flow：實際上要怎麼操作？
+
+店長登入 → 檢查庫存 → 調整訂貨量 → 確認 → 送出。
+
+但是如果食材缺貨、價格變動、網路中斷，或店長臨時取消呢？這些都需要明確的操作路徑。
+
+注意：上面的 To-Be 只是設計假設，不是已經證明會改善績效。真正上線前，還需要驗證資料是否正確、店長是否願意採用，以及新的作法有沒有增加額外負擔。
+
+這就是需求工程（Requirements Engineering）的精神：不要只想像一個漂亮的系統，要了解它能否改善真實工作。
+
+## 二、第一個重要原則：比較之前，先確定起點與終點
+
+這是原始教材特別強調、也最容易被忽略的觀念。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.cs-kairos.com\&sz=32)
+
+CS Kairos Learn
+
+
+
+想像兩個人比較從台北到高雄的交通方式。
+
+甲說：「我開車要四小時。」
+
+乙說：「我搭高鐵只要一個半小時。」
+
+但是甲計算的是從家門口開到目的地，乙只算高鐵列車在軌道上行駛的時間，完全沒算往返車站。
+
+這樣比較公平嗎？當然不公平。
+
+比較工作流程也一樣。
+
+假設醫院要改善病人掛號流程：
+
+| 比較項目 | As-Is         | To-Be         |
+| ---- | ------------- | ------------- |
+| 起點   | 病人決定預約門診      | 病人決定預約門診      |
+| 操作   | 打電話、查詢時間、確認資訊 | 線上選科別、時間、確認資訊 |
+| 終點   | 取得有效掛號結果或取消   | 取得有效掛號結果或取消   |
+| 特殊情況 | 沒有空位、資料錯誤     | 沒有空位、資料錯誤     |
+
+兩邊必須處理同一個任務，才能合理比較時間、成本、錯誤率和完成率。
+
+如果 As-Is 包含電話接通、醫院審核、報到及看診，而 To-Be 只包含點擊「預約」按鈕，那就不是公平比較。
+
+### 定義任務的五個要素
+
+任務定義 = 角色 + 起點 + 終點 + 成功條件 + 範圍
+
+以線上掛號為例
+
+角色（Actor）： 要掛號的病人
+
+起點（Trigger）： 病人想預約某次門診
+
+終點（End State）： 掛號成功取得確認資訊，或取消
+
+成功條件（Success Condition）： 系統確實建立有效預約，病人能確認預約內容
+
+範圍（Scope）： 包含預約操作，不包含後續診斷與治療
+
+這五個要素是實用的任務定義框架，不是某一套強制性的標準。
+
+尤其要注意：使用者看見「成功」訊息，不代表實際業務已成功。 系統還必須有相應證據，例如掛號紀錄確實建立。
+
+## 三、As-Is：不只是記錄步驟，而是弄清楚現實中的工作
+
+As-Is 可以理解為「工作現場的紀錄」。
+
+假設工廠每次設備故障，都要由維修人員處理：
+
+1. 現場作業員發現設備異常。
+2. 打電話通知主管。
+3. 主管聯絡維修部門。
+4. 維修人員到現場判斷。
+5. 維修完成後填寫紙本紀錄。
+6. 主管確認設備可以恢復運轉。
+
+這是一條可能的 As-Is 流程。
+
+但如果只記錄這六個步驟，你仍然不知道很多重要事情。
+
+例如：主管不在怎麼辦？維修人員沒有零件怎麼辦？故障重複發生，誰能查到前次紀錄？設備沒有完成安全確認，是否可能被誤開機？
+
+這些看似枝微末節的情況，其實往往是開發系統的真正理由。
+
+### 怎麼取得可信的 As-Is？
+
+你可以從三種證據逐步建立：
+
+| 證據來源        | 能回答的問題      | 限制           |
+| ----------- | ----------- | ------------ |
+| SOP、表單、既有文件 | 規定上應該怎麼做    | 不代表現場都如此執行   |
+| 訪談工作人員      | 他們認為如何完成工作  | 可能遺漏習慣性操作    |
+| 現場觀察、操作紀錄   | 實際怎麼做、在哪裡卡住 | 需要考量觀察範圍與代表性 |
+
+因此，要把「已觀察到的現況」與「我們推測的現況」分開。
+
+例如：
+
+「工廠通常需要主管簽核才能報修。」
+
+如果沒有訪談、紀錄或制度支持，應標示為待確認假設，不能直接寫成已經核實的事實。
+
+這與英國 GOV.UK 的服務探索（Discovery）方法一致：在投入建置前，先理解使用者的工作、現有制度、限制，以及服務與其他部門的關係。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gov.uk\&sz=32)
+
+GOV.UK
+
+
+
+## 四、To-Be：不是把所有工作自動化，而是重新設計更好的工作方式
+
+假設剛才工廠的維修系統準備引入 AI。
+
+一個直覺想法可能是：
+
+「讓 AI 自動判斷故障、自動安排維修、自動決定是否恢復生產。」
+
+問題在於，這把許多不同性質的責任全部交給 AI。
+
+更合適的 To-Be 可能是：
+
+| 工作   | 人的責任       | 系統或 AI 的責任     |
+| ---- | ---------- | -------------- |
+| 發現故障 | 作業員通報異常    | 記錄異常資訊         |
+| 故障分析 | 維修人員判讀與確認  | AI 提供可能原因與歷史紀錄 |
+| 維修安排 | 主管確認優先順序   | 系統顯示可用人力與零件    |
+| 維修執行 | 維修人員操作     | 系統記錄進度         |
+| 恢復運轉 | 授權人員確認安全條件 | 系統保存確認證據       |
+
+這裡存在三個層次：
+
+第一層：資訊改善。 原本資訊散落在電話、紙本與個人記憶中，現在集中呈現。
+
+第二層：工作改善。 原本需要人工反覆查詢，現在系統能更快提供需要的資料。
+
+第三層：決策改善。 AI 可以協助提出建議，但高風險決策仍由具備權限與責任的人員確認。
+
+因此，設計 To-Be 時可以問：
+
+「哪些工作應該消除？哪些可以簡化？哪些適合自動化？哪些必須保留人工？」
+
+還要問一個問題：原本的步驟是否具有安全、法律或品質上的必要性？
+
+不是每個看似多餘的步驟都應該刪掉。這也是為什麼 To-Be 不能只追求流程最短。
+
+## 五、User Flow：真正把系統操作畫清楚
+
+前面我們談的是工作方式。
+
+現在進一步聚焦到：使用者操作軟體時會遇到什麼？
+
+教材使用的範例是一個「欄位完整性檢查」原型。使用者輸入申請編號、申請人代號及文件類型，系統檢查必要欄位有沒有缺漏，最後產出完整性報告。
+
+這裡特別要區分：
+
+- 完整性（Completeness）：必要欄位是不是都有填？
+- 正確性（Correctness）：所填內容是不是正確？
+- 真實性（Authenticity）：相關資料是否真實可信？
+- 正式受理（Acceptance）：業務是否依規定接受這個案件？
+
+系統檢查「三個欄位都有填寫」，只能證明符合指定的欄位完整性規則，不能直接證明資料正確，也不能代表審核通過。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.cs-kairos.com\&sz=32)
+
+CS Kairos Learn
+
+
+
+### 用流程圖理解
+
+To-Be User Flow：完整性檢查原型
+
+以下將教材的成功路徑與例外處理整合為一張示意圖。
+
+\#chatgpt-mermaid-\_r_tc\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_tc\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_tc\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_tc\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_tc\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_tc\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_tc\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_tc\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_tc\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_tc\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_tc\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_tc\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_tc\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_tc\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_tc\_ p{margin:0;}#chatgpt-mermaid-\_r_tc\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_tc\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_tc\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_tc\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_tc\_ .label text,#chatgpt-mermaid-\_r_tc\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_tc\_ .node rect,#chatgpt-mermaid-\_r_tc\_ .node circle,#chatgpt-mermaid-\_r_tc\_ .node ellipse,#chatgpt-mermaid-\_r_tc\_ .node polygon,#chatgpt-mermaid-\_r_tc\_ .node path{fill:rgb(226, 242, 230);stroke:rgb(107, 198, 127);stroke-width:1px;}#chatgpt-mermaid-\_r_tc\_ .rough-node .label text,#chatgpt-mermaid-\_r_tc\_ .node .label text,#chatgpt-mermaid-\_r_tc\_ .image-shape .label,#chatgpt-mermaid-\_r_tc\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_tc\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_tc\_ .rough-node .label,#chatgpt-mermaid-\_r_tc\_ .node .label,#chatgpt-mermaid-\_r_tc\_ .image-shape .label,#chatgpt-mermaid-\_r_tc\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_tc\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_tc\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_tc\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_tc\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_tc\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_tc\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_tc\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_tc\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_tc\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_tc\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_tc\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_tc\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_tc\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_tc\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_tc\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_tc\_ .icon-shape,#chatgpt-mermaid-\_r_tc\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_tc\_ .icon-shape p,#chatgpt-mermaid-\_r_tc\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_tc\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_tc\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_tc\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_tc\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_tc\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_tc\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_tc\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_tc\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_tc\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_tc\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_tc\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_tc\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_tc\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_tc\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_tc\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_tc\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(237, 250, 242);stroke:rgb(166, 211, 184);stroke-width:1px;}#chatgpt-mermaid-\_r_tc\_ .node rect,#chatgpt-mermaid-\_r_tc\_ .node circle,#chatgpt-mermaid-\_r_tc\_ .node ellipse,#chatgpt-mermaid-\_r_tc\_ .node polygon,#chatgpt-mermaid-\_r_tc\_ .node path{fill:rgb(217, 244, 228);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_tc\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_tc\_ .mermaid-decision .label-container{fill:rgb(237, 250, 242);stroke:rgb(195, 220, 205);stroke-dasharray:2px,2px;}#chatgpt-mermaid-\_r_tc\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_tc\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_tc\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}開始輸入必要欄位是否取消?結束：不產生報告檢查目前輸入欄位完整?提示缺漏並保留已填資料預覽檢查結果是否修改資料?使原檢查結果失效是否確認匯出?匯出完整性報告任務完成是否否是是否否，取消是
+
+這張圖裡最重要的不是框框的形狀，而是菱形中的判斷條件，以及每種結果要去哪裡。
+
+### User Flow 裡經常出現的專有名詞
+
+| 名詞                   | 白話解釋            |
+| -------------------- | --------------- |
+| Actor（行為者）           | 誰正在操作或參與任務      |
+| Trigger（觸發事件）        | 什麼事情讓流程開始       |
+| Action（操作）           | 使用者或系統做了什麼      |
+| Decision（判斷節點）       | 根據條件決定下一步       |
+| Happy Path（成功主路徑）    | 一切符合預期時怎麼完成     |
+| Exception Path（例外路徑） | 發生缺漏或其他異常時怎麼辦   |
+| Recovery Path（回復路徑）  | 出問題後如何回到可繼續的狀態  |
+| End State（結束狀態）      | 成功、取消、失敗或其他明確結果 |
+
+其中，Happy Path 只代表正常情況，不代表系統的全部行為。
+
+假設你設計購物網站：
+
+正常情況是「選商品 → 購物車 → 付款 → 下單成功」。
+
+但付款失敗、庫存不足、折價券過期、使用者放棄結帳等情況，通通不能從流程中消失。
+
+## 六、最值得深入理解的概念：修改資料後，舊結果為什麼必須失效？
+
+這是 M03-03 特別重要的一個設計原則，也是 AI 軟體開發中很常見的錯誤來源。
+
+假設保險公司有一套 AI 報價系統。
+
+使用者先輸入：
+
+第一次試算
+
+保障額度
+
+100 萬元
+
+假設保費
+
+每年 12,000 元
+
+試算結果：已產生
+
+對應原輸入
+
+接著，使用者把保障額度改成 300 萬元。
+
+如果系統的畫面已經顯示 300 萬，但下載的 PDF 仍然是先前 100 萬元的報價內容，會發生什麼問題？
+
+使用者看到的輸入資料與輸出的文件不一致。
+
+這稱為 Stale Result（過期結果） 問題。
+
+解決方式不是單純更新畫面，而是讓每一份結果與產生它的輸入保持一致。
+
+互動練習：模擬資料修改後的狀態
+
+此為教學模擬，沒有真實保費計算或保險業務規則。
+
+保障額度
+
+100 萬元
+
+300 萬元
+
+目前試算狀態
+
+&#x20;有效
+
+目前輸入：100 萬元
+
+上次檢查資料：100 萬元
+
+目前輸入與上次檢查一致，可依此結果操作。
+
+重新檢查複製模擬結果
+
+你可以將這種設計理解成一條約束：
+
+\\[ \text{結果有效} \implies \text{目前輸入與已驗證輸入一致} \\]
+
+實務上不能只依靠一個前端的「已檢查」標記。若資料會在多人或多系統間變更，還需要在後端透過版本號、資料快照或雜湊等方式確認一致性，並且在真正執行操作時再次驗證。
+
+這個原則可以應用到許多產業。
+
+| 產業       | 資料修改後可能發生的問題             | 應採取的設計      |
+| -------- | ------------------------ | ----------- |
+| 銀行       | 客戶修改貸款金額，但報告使用舊資料        | 使舊計算與審核結果失效 |
+| 醫療       | 病人資料更新後，仍顯示舊風險分析         | 標明版本並重新評估   |
+| 電商       | 修改購物車後仍保留舊結帳金額           | 重新計算總價      |
+| 物流       | 收件地址改變，但運費是依舊地址計算        | 重新計算並確認     |
+| AI Agent | 使用者修改任務要求，Agent 卻沿用舊計畫執行 | 重新檢查計畫與執行授權 |
+
+這是從流程設計一路延伸到軟體狀態管理、資料一致性與安全治理的重要連結。
+
+## 七、User Flow、User Journey、System Architecture 到底有什麼不同？
+
+這三種圖常被混在一起，但它們回答的是不同問題。
+
+User Flow｜使用者操作流程
+
+關注一個具體任務：使用者點哪裡、做什麼、遇到問題怎麼回復。
+
+例如：病人如何在掛號網站完成一次預約。
+
+User Journey / Experience Map｜使用者旅程／經驗地圖
+
+關注一段較長的經驗，可能跨越不同時間、人物、場所與服務。
+
+例如：病人從發現不舒服、尋找醫院、掛號、就診，到後續追蹤的整體經驗。
+
+System Architecture｜系統架構
+
+關注技術元件如何協作。
+
+例如：掛號網站如何呼叫 API、資料庫如何儲存預約、身分驗證怎麼運作，以及系統如何防止重複預約。
+
+這裡還可以補充 Swimlane Diagram（泳道流程圖），它會用不同泳道來區分各角色或部門的責任，例如病人、掛號系統、醫院櫃台。
+
+更正式的跨組織作業流程，也可能使用 BPMN（Business Process Model and Notation，企業流程模型與標記法）。
+
+但不需要一開始就學完所有圖表標準。
+
+本課先把「使用者要完成什麼、如何完成、遇到例外怎麼辦」講清楚就夠了。
+
+GOV.UK 的 Experience Map 指南也指出，旅程地圖可以納入使用者在不同時間點的行為、想法、感受與跨服務接觸，不等同於單一系統的操作圖。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.gov.uk\&sz=32)
+
+GOV.UK
+
+
+
+## 八、如何將這些觀念真正用在 AI 協作軟體工程？
+
+最實用的方式，是把分析結果寫成 AI 與人類都能理解的需求文件，例如 `problem.md`。
+
+它不是程式碼，而是未來設計、實作與驗證的依據。
+
+以下回到餐廳訂貨，示範一份簡化版本。
+
+```
+
+# 任務：建立食材訂貨要求
+
+## 角色
+主要使用者：餐廳店長
+交接對象：食材供應商
+
+## 任務邊界
+起點：店長取得需要訂購的食材清單
+終點：訂貨要求已記錄並送出，或取消
+不包含：供應商正式接單、送貨與付款
+
+## As-Is（待訪談確認）
+1. 店長盤點食材
+2. 手寫訂貨清單
+3. 打電話提出訂貨要求
+4. 記錄已提出的要求
+
+## To-Be（待驗證設計）
+1. 選擇食材
+2. 輸入訂購數量
+3. 系統檢查必填資訊
+4. 店長預覽內容
+5. 店長確認送出
+6. 系統記錄送出結果
+
+## 例外與回復路徑
+- 缺漏：提示缺少資訊，保留已填資料
+- 修改：使舊預覽失效，重新檢查
+- 送出失敗：顯示未確認送出，提供安全重試
+- 取消：結束操作，不送出新要求
+
+## 待確認事項
+- 供應商能否接收電子訂單？
+- 重試是否可能造成重複訂貨？
+- 取消後是否保留草稿？
+- 供應商接受訂單如何確認？
+
+```
+
+這份文件最大的價值，在於你不需要一開始就決定前端框架、資料庫或 AI 模型。
+
+你可以先把它交給 AI Coding Agent，例如 OpenCode，要求它：
+
+「請根據 `problem.md`，整理 User Flow、例外情境與可驗收的需求。不要自行假設供應商已經接單，也不要在未確認需求前擴充正式付款功能。」
+
+這會比單純說「幫我寫一個智慧訂貨網站」更容易控制開發範圍與結果。
+
+### 從流程走向實作的完整關係
+
+As-Is
+
+理解目前問題與限制
+
+To-Be
+
+設計更好的工作方式
+
+User Flow
+
+定義操作、判斷與例外路徑
+
+UI / UX
+
+M04：設計易用介面
+
+需求規格與測試
+
+M05 / M08：定義可驗收行為
+
+實作、驗證與改善
+
+架構設計、AI Coding、測試與迭代
+
+其中，流程設計不會直接決定系統的技術架構，但會提供技術架構必須滿足的行為要求。
+
+## 九、學完這一課，如何判斷你真的會用了？
+
+原始 M03-03 的實作要求，可以整理成一項很實用的驗收方式：拿幾個不同的事件情境，沿著流程走一遍，看看有沒有走不通的地方。&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.cs-kairos.com\&sz=32)
+
+CS Kairos Learn
+
+
+
+流程走讀練習（Walkthrough）
+
+1 / 4
+
+必填資訊缺漏
+
+使用者尚未填完全部必要欄位，就要求繼續。
+
+請思考：使用者下一步應該去哪裡？系統應顯示什麼？
+
+上一個查看檢核重點下一個
+
+這裡的四個情境只是一組最小走讀案例，不代表涵蓋所有例外。正式系統仍須依業務風險補充權限不足、資料衝突、外部服務失敗等測試。
+
+如果你的流程遇到某個事件，必須由閱讀者自行發明處理方式，表示需求還沒有定義完整。
+
+## 十、總結：這一課真正要帶走的五件事
+
+1. 先定義同一個任務。 As-Is 與 To-Be 必須具有可比較的角色、起點、終點和範圍。
+2. 現況要有證據。 不要把想像中的工作方式直接當成真實 SOP。
+3. 改善不等於全面自動化。 需要清楚分配人類與系統的責任。
+4. User Flow 不只有成功路徑。 缺漏、修改、取消和失敗後的回復，都要有明確出口。
+5. 流程設計是後續軟體開發的依據。 它會影響介面、規格、測試以及系統所需的控制機制。
+
+最後要記住：
+
+好的流程不是框框最少的流程，而是能讓使用者正確完成工作、發生問題時可以回復，而且責任與結果都清楚的流程。
+
+## 理解檢核：換一個產業，看你能不能獨立應用
+
+假設一家公司準備開發 AI 輔助的員工差旅費報銷系統。
+
+目前員工需要手動整理收據、填 Excel，再寄給財務部門。未來希望員工上傳收據後，由 AI 辨識金額與日期，自動整理報銷草稿，再由員工確認並送交財務審核。
+
+請回答以下四題：
+
+Q1｜請定義這個任務的起點、終點，以及哪些業務不在第一版範圍內。
+
+Q2｜請各寫出一條 As-Is 和 To-Be 流程，並區分人與 AI 的責任。
+
+Q3｜假設 AI 讀取收據金額為 1,500 元，員工修改成 15,000 元。原本的檢查結果應該如何處理？為什麼？
+
+Q4｜AI 無法辨識收據、員工取消申請、送出時網路斷線。請分別設計下一步與回復方式。
+
+提交答案並取得逐題解析
+
+能夠獨立回答這四題，尤其能清楚說明「修改後重查」與「失敗後如何回復」，就掌握了 M03-03 最核心的實務能力。
