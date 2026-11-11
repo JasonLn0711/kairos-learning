@@ -14,7 +14,7 @@
 | WRITE-05、06、08 | 雙語相同 section／block／表格與指令結構，保留課次、原發布、六錨點；新版 1.1.0 與修訂日一致 |
 | FIG-03–06 | 受限四位置 flow／四條件 cards，非法種類、節點數、action 順序與 markup 拒絕；四 SVG 同源與白名單檢查通過，均小於 100000 bytes |
 | Git 操作 | `tests/aase-m0901-replacement.test.ts` 在獨立合成目錄實跑文章 A–D；斷言目標基準、keep 新修改、完整備份、單一原 Commit、暫存未變及只剩預期 status，全數通過 |
-| 全部單元 | `pnpm test` 325／325 通過；舊翻譯與短標題遷移測試改讀本次封存前版，現版由新測試驗證 |
+| 全部單元 | `pnpm test` 初次 325／325 通過；保留遠端其他篇章後整合測試 340／340 通過；舊翻譯與短標題遷移測試改讀本次封存前版，現版由新測試驗證 |
 | 型別 | `pnpm run check`：0 errors、0 warnings（正文成稿與原生圖解元件） |
 | 發布閘門 | `node scripts/check-publication-boundary.mjs` 通過：第二課 fixture、draft／future 隔離、English draft／future routes／search／payload 關閉，finally 重建乾淨輸出 |
 | 發布驗證 | `pnpm run validate:release` 通過；`pnpm audit --audit-level=high` 通過（4 low，無 high）；`git diff --check` 通過 |

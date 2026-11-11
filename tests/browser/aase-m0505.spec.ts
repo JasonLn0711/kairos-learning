@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 const lesson=JSON.parse(readFileSync('content/aase/lessons/aase-m05-c05.json','utf8'));
 const norm=(s:string)=>s.replace(/`/g,'').replace(/^(- |\d+\. )/gm,'').replace(/\s/g,'');
 async function complete(page:Page,lang:'zh'|'en'){
- await expect(page.locator('body')).toContainText('v1.1.0');await expect(page.locator('time[datetime="2026-11-11"]').first()).toBeVisible();
+ await expect(page.locator('body')).toContainText('v1.1.1');await expect(page.locator('time[datetime="2026-11-11"]').first()).toBeVisible();
  for(const s of lesson.text[lang].sections){
   const section=page.locator('h2#'+s.id).locator('..');await expect(section.locator('h2').first()).toHaveText(s.heading);const actual=norm((await section.textContent())!);let cursor=0;
   const tokens=[s.heading,...s.paragraphs];
@@ -17,7 +17,7 @@ for(const lang of ['zh','en'] as const)test(`${lang}: full body, reflow, keyboar
  for(const width of [320,390,768,1280])for(const scale of [1,2]){
   await page.setViewportSize({width,height:1000});await page.evaluate(s=>document.documentElement.style.fontSize=16*s+'px',scale);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   const body=await page.locator('article p').first().evaluate(e=>{const s=getComputedStyle(e);return {font:parseFloat(s.fontSize),line:parseFloat(s.lineHeight)/parseFloat(s.fontSize)};});expect(body.font).toBeGreaterThanOrEqual(16);expect(body.line).toBeGreaterThanOrEqual(1.7);
-  for(const number of [1,2]){const fig=page.locator(`.openspec-diagram[data-figure="${number}"]`);await expect(fig).toBeVisible();const cols=await fig.locator('ol').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);if(width<=390||scale===2)expect(cols).toBe(1);if(number===1&&width===1280&&scale===1)expect(cols).toBe(3);}
+  for(const number of [1,2]){const fig=page.locator(`.openspec-diagram[data-figure="${number}"]`);await expect(fig).toBeVisible();expect(await fig.locator('li').evaluateAll(es=>es.filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>e.textContent))).toEqual([]);const cols=await fig.locator('ol').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);if(width<=390||scale===2)expect(cols).toBe(1);if(number===1&&width===1280&&scale===1)expect(cols).toBe(3);}
   if(scale===1&&(width===390||width===1280))for(const number of [1,2])await page.locator(`.openspec-diagram[data-figure="${number}"]`).screenshot({path:`.local/aase/m0505/${lang}-${number}-${width}.png`});
  }
  await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));await page.setViewportSize({width:320,height:900});
