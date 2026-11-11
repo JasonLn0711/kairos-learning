@@ -8,7 +8,7 @@
 - `image-1.png` 至 `image-5.png`：依附件順序保存五張原圖。
 - `prior-lesson.json`：修改前的正式資料 v1.0.2、revision 3；原發布日 2026-11-05。
 - `SHA256SUMS`：以上七份檔案的 SHA-256。雜湊只證明保存一致。
-- 目前狀態：source preserved、正文與五圖 adopted；本機驗收與正式發布證據見[回執](../../../../releases/2026-11-11-aase-m04-06-replacement.md)。
+- 目前狀態：source preserved、正文與五圖 adopted、validated、published；本機驗收與正式發布證據見[回執](../../../../releases/2026-11-11-aase-m04-06-replacement.md)。
 
 正本由 kairos-learning 持有；本次稀缺資源為逐小節編輯與圖意／瀏覽器驗收時間。Planning 僅在狀態或下一步改變時承接定位、驗證與發布回執，不複製供稿與圖檔。既有其他課次與共用元件的未提交修改保留，發布時需隔離本次範圍。
 
