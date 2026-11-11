@@ -17,6 +17,7 @@
   {:else}<p><InlineText text={p}/></p>{/if}
  {/each}
 {/snippet}
+<div class="rule-testing-section">
 {@render prose(section.paragraphs)}
 {#each section.blocks??[] as block}
  {#if block.kind==='prose'}{@render prose(block.paragraphs)}
@@ -42,6 +43,8 @@
   </figure>
  {:else}<AaseBlocks blocks={[block]} {lang}/>{/if}
 {/each}
+</div>
 <style>
+ .rule-testing-section{min-width:0}.rule-testing-section :global(table){font-size:1rem;line-height:1.8}
  figure{container-type:inline-size;min-width:0;border:1px solid #b9c4ca;border-radius:.8rem;padding:1rem;margin:1.5rem 0;background:#fbfcfd;color:#18252c;overflow-wrap:anywhere}p,li,label,a{font-size:1rem;line-height:1.8}figcaption{margin-bottom:1rem}figcaption strong{font-size:1.15rem}p{margin:.5rem 0 1rem}label{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}input{width:100%;margin:1rem 0;accent-color:#175f91}.ends{display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap}.result{margin:1rem 0;padding:.75rem;background:#f0f6f7;border:1px solid #b9c4ca;border-radius:.5rem}.process,.boundaries{list-style:none;padding:0;display:grid;gap:1rem}.process{grid-template-columns:1fr 1fr;gap:2.8rem 1rem}.process li,.boundaries li{position:relative;min-width:0;border:1px solid #b9c4ca;border-radius:.5rem;padding:1rem;text-align:center;background:white}.process li:nth-child(-n+3){grid-column:1/-1}.process li span{position:absolute;top:calc(100% + .5rem);left:50%}.process .pass{border-color:#16804d;background:#f0f8f3}.process .fail{border-color:#a63939;background:#fff5f5}.boundaries{grid-template-columns:repeat(3,1fr)}a:focus-visible,input:focus-visible{outline:3px solid #175f91;outline-offset:4px}@container(max-width:24rem){.process,.boundaries{grid-template-columns:1fr}.process li{grid-column:1!important}}
 </style>
