@@ -39,7 +39,7 @@ try{
    const href=`/images/aase/m09-04-${n}-${lang}.svg`;const response=await context.request.get(base+href);assert.equal(response.status(),200);assert.deepEqual(await response.body(),readFileSync('site'+href));
    const svg=await context.newPage();await svg.goto(base+href);
    assert.deepEqual(await svg.locator('text').evaluateAll(nodes=>nodes.filter(e=>{const b=e.getBBox(),v=e.ownerSVGElement.viewBox.baseVal;return b.x<0||b.y<0||b.x+b.width>v.width+1||b.y+b.height>v.height+1}).map(e=>e.textContent)),[]);
-   await svg.screenshot({path:`${evidence}/${lang}-svg-${n}.png`,fullPage:true});await svg.close();
+   await svg.setContent(`<html><body style="margin:0"><img src="${base+href}" style="width:1000px;height:auto"></body></html>`);await svg.locator('img').screenshot({path:`${evidence}/${lang}-svg-${n}.png`});await svg.close();
   }
   await context.close();results.push(`${lang}: 200% text, native answer keyboard, local table focus, six source-matched download checks`);
  }
