@@ -64,7 +64,7 @@ TDD is a software development method. Software in almost any industry with expli
 
 | Industry | Required rule | Test to write first |
 | --- | --- | --- |
-| Banking | Reject withdrawals exceeding the balance | With a balance of 100, reject a withdrawal of 150 |
+| Banking | Reject withdrawals exceeding the balance | With a balance of 100 currency units, reject a withdrawal of 150 currency units |
 | Healthcare | Do not ignore a recorded drug allergy | Block or warn about prescribing a flagged drug according to configured policy |
 | E-commerce | Do not complete an order with insufficient stock | With only 2 units in stock, reject or adjust a purchase of 3 |
 | Education | Do not mark an incomplete assessment as passed | Do not produce a completed state while required answers remain blank |
@@ -76,11 +76,11 @@ TDD can turn requirements from a document into tests a computer can run repeated
 
 For the withdrawal rule, first describe Given–When–Then:
 
-Given: The account balance is 100.
+Given: The account balance is 100 currency units.
 
-When: The user attempts to withdraw 150.
+When: The user attempts to withdraw 150 currency units.
 
-Then: Reject the withdrawal, and keep the account balance at 100.
+Then: Reject the withdrawal, and keep the account balance at 100 currency units.
 
 There are two outcomes to test: rejection of the withdrawal and preservation of the original balance.
 
@@ -288,7 +288,7 @@ As the original lesson notes, this exercise covers one document-type rule. Passi
 
 ## applicability｜8. When is TDD most useful?
 
-Prioritize explicit, repeatable rules where errors have a higher cost: monetary calculations, permission decisions, data validation, state transitions, API contracts and regression fixes for observed bugs.
+I would prioritize explicit, repeatable rules where errors have a higher cost: monetary calculations, permission decisions, data validation, state transitions, API contracts and regression fixes for observed bugs.
 
 When exploring a new visual design, user preferences or unclear product requirements, first use prototypes, interviews or exploratory testing to understand the problem. Then automate the behaviors that have been confirmed.
 
