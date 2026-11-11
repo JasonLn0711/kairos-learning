@@ -257,6 +257,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const count=s.id==='analogy'?5:s.id==='walkthrough'?3:0;
         if(figures.length!==(count?1:0)||figures.some(f=>f.kind!==(count===5?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.length!==count||f.items.some(item=>!keys(item,['title','body']))))fail('invalid acceptance evidence figure');
       }
+      if(l.id==='AASE-M09-C02'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
+        const count=s.id==='analogy'?4:s.id==='checklist'?8:0;
+        if(figures.length!==(count?1:0)||figures.some(f=>(f.kind!=='flow'&&f.kind!=='cards')||f.kind!==(s.id==='analogy'?'flow':'cards')||f.items.length!==count||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid handoff figure');
+      }
       for(const b of s.blocks??[]){
         if(b.kind==='prose'){if(!keys(b,['kind','paragraphs'])||!b.paragraphs?.length||!b.paragraphs.every(text))fail('invalid ordered prose');}
         else if(b.kind==='architecture'){assertArchitectureDiagram(b);}
