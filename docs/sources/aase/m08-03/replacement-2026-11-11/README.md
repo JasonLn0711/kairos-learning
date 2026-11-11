@@ -8,7 +8,7 @@
 
 技術依據：2026-11-11 查閱 pytest 官方 parametrize 與 assert 指南，確認堆疊參數化與 pytest.raises 用法。來源連結沿用本課既有 sourceIds。
 
-目前狀態：source preserved；雙語正文、圖解、Python 實測及本機瀏覽器檢查已完成。正式發布狀態與完整驗證見 [發布回執](../../../../releases/2026-11-11-aase-m08-03-replacement.md)。
+目前狀態：source preserved、validated、published；雙語正文、圖解、Python 實測、CI 與正式站五項瀏覽器回讀已完成。正式發布證據與完整驗證見 [發布回執](../../../../releases/2026-11-11-aase-m08-03-replacement.md)。
 
 ## 逐節採用對照
 
@@ -34,4 +34,4 @@
 
 RuleTestingSection 僅於 M08-03 啟用；文字經 Svelte／InlineText 輸出，圖檔路徑由固定課次與數字選取。六 SVG 由正式 JSON 經固定元素與屬性白名單輸出；預設案例匯出不宣稱會隨滑桿改變。無新增套件、任意 HTML 或任意 SVG 資料欄位。
 
-表格驗收修正：共用 ConceptBlocks 的預設 0.9rem／1.65 低於本課正文規範，本課以 .rule-testing-section 限定為 1rem／1.8，保留其他教材的既有樣式；四表字級與行高、320px 局部鍵盤捲動已實測。參考 PNG 未提供滑桿完整上下限，成稿明示金額 0～2000、長度 0～100 的示範範圍；預設999／80與門檻維持原圖。
+字級驗收修正：共用表格的預設 0.9rem／1.65 與程式碼的 0.88rem／1.65 低於本課正文規範，本課以 .rule-testing-section 限定為 1rem／1.8，保留既有淺色配色及其他教材的樣式；四表、十個程式／指令／輸出區塊的字級與行高，以及320px表格、390px程式碼的局部鍵盤捲動均已在正式站實測。參考 PNG 未提供滑桿完整上下限，成稿明示金額 0～2000、長度 0～100 的示範範圍；預設999／80與門檻維持原圖。

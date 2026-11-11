@@ -1,6 +1,6 @@
 # M08-05 供稿保存與抽換對照
 
-狀態：source preserved；正文、雙語成稿及三組圖解已實作，發布驗收進行中。
+狀態：source preserved、validated、published。完整雙語正文與三組圖解已正式部署，兩語正式頁及六份 SVG 已通過回讀。
 
 `original.zh.txt` 逐位元組保存使用者附件，`image-1.png` 至 `image-3.png` 保存三張參考圖；`prior-lesson.json` 保存編輯前教材。`SHA256SUMS` 核對這五份原件。`teaching.zh.md` 是獨立編輯稿，原件不隨編輯覆寫。
 
@@ -21,8 +21,10 @@
 
 2026-11-11 已讀 [GOV.UK 主持式易用性測試](https://www.gov.uk/service-manual/user-research/using-moderated-usability-testing) 的任務設計及主持建議，核對目標明確、可信且不暗示完成路徑，以及必要協助仍須留存的主張；[NN/G 十項啟發式](https://www.nngroup.com/articles/ten-usability-heuristics/)核對系統狀態可見性與預防錯誤。這些指引支持方法，未提供本案例的真人結果。
 
-下一驗證：完成兩語逐節正文與三圖，核對既有錨點、來源到實際頁面全文、四尺寸、200% 文字、無 JavaScript、鍵盤及下載，再接續隔離提交與正式站回讀。原件保存不代表教材抽換或部署完成。
+驗證已完成：兩語逐節正文與三圖、六個既有錨點、正式頁全文順序、四尺寸、200% 文字、無 JavaScript、鍵盤及下載。真人易用性結果與完整輔助科技驗收仍未評估。詳細提交、部署及實測見[發布回執](../../../../releases/2026-11-11-aase-m08-05-replacement.md)。
 
 實際成稿錨點：導言 question；第一節 analogy；第二節 comparison；第三節 workflow；第四節 industry；第五節 observe；第六節 notes；第七節 improve；第八節 misread；第九節 task；第十節 understanding。原 question／analogy／task／observe／notes／misread 六個錨點均保留。英文逐節保留相同情境、表格、條件與證據限制。
 
 呈現差異：圖 1 保留垂直六步與五箭頭；圖 2 桌面欄位／值並列、手機改上下排列，獨立 SVG 逐列上下展開以保留可讀字級；圖 3 維持上方舊版、下方提案及灰色靜態動作標籤。下載 SVG 以同源內容的框與文字呈現設計比較，不提供可操作按鈕。
+
+參考圖的細部視覺差異：圖 2 的「虛構示例」移入圖說並於圖尾重申，窄欄不保留固定右上角徽章；圖 3 以明確狀態文字承接原警告符號的意思，未重製該小型圖示。原始 PNG 仍供逐項比較。

@@ -48,7 +48,7 @@
 
 本次採隔離工作樹`/tmp/kairos-m0802`，保留原工作目錄多篇未提交修改。來源、實作與回執由kairos-learning擁有；沒有提交原工作目錄的無關變更。
 
-正式頁：[/courses/aase/v1/m08/concepts/m08-02/](https://learn.cs-kairos.com/courses/aase/v1/m08/concepts/m08-02/)，[英文頁](https://learn.cs-kairos.com/en/courses/aase/v1/m08/concepts/m08-02/)。提交、推送、CI與正式站回讀尚待完成，不能以本機通過推論上線。
+正式頁：[/courses/aase/v1/m08/concepts/m08-02/](https://learn.cs-kairos.com/courses/aase/v1/m08/concepts/m08-02/)，[英文頁](https://learn.cs-kairos.com/en/courses/aase/v1/m08/concepts/m08-02/)。Git發布、CI部署與正式站逐段回讀均已完成；下節列出實際提交與證據。
 
 待驗：實體裝置、讀者理解與實作接受。原稿影片未提供可核實網址，原文仍保留，正文沒有杜撰影片連結。
 
@@ -59,3 +59,17 @@
 最後核對補上本課四表的1rem／1.7行高，沿用現有表格樣式並將td／th字級及行高加入四尺寸／200%瀏覽器檢查；最終型別0 errors／0 warnings、單元334／334、兩語瀏覽器2／2與validate:release均通過。
 
 第二次整合保留遠端`ed3b044`的M06-03、M06-05、M06-06、M07-01與M08-01等發布。修正歷史M08測試同時讀取M08-01與M08-02的前版；最終單元344／344、型別0 errors／0 warnings、建置、validate:release及兩語瀏覽器2／2通過。本次觸及檔案diff-check通過；遠端M07-05來源對照有既存EOF空行，保留原有紀錄。
+
+## 正式發布與完成核對
+
+來源提交`5621ea0`、教材提交`ad16dc7`、驗證紀錄`2ce3552`；英文貨幣單位與建議語氣修正`ce26c97`。多次整合均保留本地與遠端歷史，未強制推送；最終包含本次教材的發布提交為`978db68`，目標`origin/main`。較早的推送曾因並行更新被non-fast-forward拒絕，整合後重試成功。
+
+本機最後對推送內容執行單元373／373、型別0 errors／0 warnings、發布邊界、validate:release及兩語瀏覽器2／2，均通過。推送期間追加的遠端教材與回執保留原作者內容，本次沒有改寫其供稿或提交原工作目錄的髒檔。
+
+原排隊工作`42992328799`被後續提交取代，沒有把取消當成成功。[實際成功部署42992453184](https://github.com/JasonLn0711/kairos-learning/actions/runs/42992453184)的head為`3ed7e2e`，已用Git祖先關係確認包含`978db68`；工作於2026-11-11 17:09:57 +08:00完成。依賴、稽核、內容、單元、靜態HTML、型別、發布邊界、release、下載雜湊、artifact及Pages deploy均通過。
+
+正式站於2026-11-11 17:10 +08:00實際檢查兩語v1.1.0／原發布2026-11-05／修訂2026-11-11，全部14節正文、四表、六段程式、三圖與三題均依成稿順序通過。四尺寸及200%、正文／表格字級與行高、無JS、局部鍵盤捲動、答案展開、開圖、搜尋、六SVG字框／文字重疊／大小／下載bytes全部通過（兩語2／2，無跳過與flaky）。瀏覽器回讀為HTTP 200；獨立urllib探測曾被403拒絕，沒有以該請求推論網站不可讀。
+
+[機器可讀完成證據](2026-11-11-aase-m08-02-checks.json)保留CI head、祖先關係、時間、實測範圍與六SVG SHA-256；[Python完整輸出](2026-11-11-aase-m08-02-example-results.json)保留兩個固定pytest版本的真實結果。正式瀏覽器完整JSON另存`.local/aase/m0802/production-browser-results.json`，桌面、手機及SVG截圖與本機結果同目錄。
+
+適用規則WRITE-01–11、HTML-01–04、FIG-01／03–06、A11Y-01–03均有上述範圍證據。實機、讀者理解與實作接受仍為not_evaluated；影片來源缺漏已記錄，不擴大為讀者完成、全站改善或全系統／資安驗收。

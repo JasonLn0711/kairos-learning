@@ -1,6 +1,6 @@
 # M09-01 逐章逐小節採用對照
 
-原文 `original.txt`、兩張 PNG 與舊版 v1.0.2 由 SHA256SUMS 保存。中文 `teaching.zh.md` 與英文 `teaching.en.md` 由 `scripts/aase_m0901_content.py` 產生正式 JSON。正文為導言加十節；表格、命令與圖解依原文次序交錯呈現。原發布日 2026-11-05、六個既有錨點與翻譯發布閘門保留；目前 v1.1.0／revision 4，修訂日 2026-11-11。
+原文 `original.txt`、兩張 PNG 與舊版 v1.0.2 由 SHA256SUMS 保存。中文 `teaching.zh.md` 與英文 `teaching.en.md` 由 `scripts/aase_m0901_content.py` 產生正式 JSON。正文為導言加十節；表格、命令與圖解依原文次序交錯呈現。原發布日 2026-11-05、六個既有錨點與翻譯發布閘門保留；目前 v1.1.1／revision 5，修訂日 2026-11-11。
 
 以下以 `/courses/aase/v1/m09/concepts/m09-01/` 為中文基底，英文同路徑前加 `/en`。每列兩語對應同一錨點，英文保留相同案例、條件與十段原始指令。
 
@@ -33,7 +33,7 @@
 
 ## 技術修正與查核
 
-- HEAD：以目前切換的提交解釋一般與 detached 狀態，避免把所有情境都稱為分支最新提交。
+- HEAD：以目前切換的提交解釋一般與 detached 狀態，避免把所有情境都稱為分支最新提交；依 [git-symbolic-ref 官方說明](https://git-scm.com/docs/git-symbolic-ref)核對符號參照與 detached HEAD（2026-11-11 查核）。
 - `--source=HEAD`：來源是 HEAD 指向的版本，不依「昨天」挑選；若預期來源不是 HEAD，須另指定已核對的提交。
 - `restore --staged` 預設來源為 HEAD、單用 restore 預設來源為 index；工作區與 index 可分開指定。[git-restore 官方文件](https://git-scm.com/docs/git-restore)（2026-11-11 查核）。
 - 兩種 Diff 及未追蹤限制依 [git-diff](https://git-scm.com/docs/git-diff)；抵銷共享歷史與新提交依 [git-revert](https://git-scm.com/docs/git-revert)；hard 模式會覆蓋工作區並可能影響阻擋路徑的未追蹤檔案，依 [git-reset](https://git-scm.com/docs/git-reset)（同日查核）。
@@ -48,3 +48,7 @@
 ## 驗收證據入口
 
 `tests/aase-m0901-replacement.test.ts` 驗證來源、舊錨點、表格／指令／題目、非法模型拒絕、發布閘門，並在獨立暫存目錄逐條執行 A–D 指令與四項結果斷言。`tests/browser/aase-m0901.spec.ts` 逐節核對兩語正文、表格、命令、問題／解析、圖解、四尺寸／200% 文字、無 JS、鍵盤、搜尋與四份 SVG。實測與發布層分列於 [發布紀錄](../../../../releases/2026-11-11-aase-m09-01-replacement.md)。
+
+## 正式站指令保真修正（v1.1.1）
+
+v1.1.0 的本機全文驗證通過，正式站回讀時發現 Cloudflare Email Address Obfuscation 把 `learner@example.invalid` 改成保護連結，破壞複製文字及無 JavaScript 的指令。`GitHistorySection.svelte` 以固定 `<!--email_off-->`／`<!--/email_off-->` 註解保護本課輸出；只有編譯器中的固定字面值經 @html 輸出，所有供稿仍以文字跳脫，內容模型不接受 HTML。未變更整站 Cloudflare 設定，命令與兩語正文不變。依 [Cloudflare 官方文件](https://developers.cloudflare.com/waf/tools/scrape-shield/email-address-obfuscation/)（2026-11-11），新增公開 HTML 註解及無 email-protection 節點的回歸驗證。前版 v1.1.0 完整保留於 ff1ad37 及部署 9a39a965 的 Git 歷史。
