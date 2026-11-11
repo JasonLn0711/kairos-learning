@@ -1,6 +1,6 @@
 # M07-05 供稿抽換紀錄
 
-原稿、兩張參考 PNG 與編輯前正式 JSON 逐位元組保存，SHA256SUMS 記錄來源雜湊。狀態：source preserved；雙語正文與兩圖已實作，本機瀏覽器通過；正式發布狀態見[回執](../../../../releases/2026-11-11-aase-m07-05-replacement.md)。正本由 kairos-learning 持有。
+原稿、兩張參考 PNG 與編輯前正式 JSON 逐位元組保存，SHA256SUMS 記錄來源雜湊。狀態：source preserved／validated／published；雙語正文與兩圖已實作，本機與正式站兩語瀏覽器均通過；正式發布證據見[回執](../../../../releases/2026-11-11-aase-m07-05-replacement.md)。正本由 kairos-learning 持有。
 
 | 供稿位置 | 必須採用的教學內容 | 呈現與核對 |
 | --- | --- | --- |

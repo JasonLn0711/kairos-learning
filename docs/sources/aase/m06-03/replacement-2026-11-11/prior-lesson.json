@@ -1,0 +1,496 @@
+{
+  "id": "AASE-M06-C03",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "c4-container",
+    "c4-levels",
+    "streamlit-architecture"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "由Context往內看應用程式與資料儲存，理解C4四個層級，避免把檔案、Docker與架構容器混為一談。",
+      "objectives": [
+        "說明Context、Container、Component、Code四種抽象層級。",
+        "以Container標示本課前端、Python程序與資料位置。",
+        "分開邏輯架構、部署實例與程序內元件。"
+      ],
+      "readingGuide": {
+        "goal": "說明Context、Container、Component、Code四種抽象層級。",
+        "startingPoint": "architecture.md與工作坊reference/，紙筆或文字編輯器即可；不需安裝Docker。",
+        "route": "先看情境與原理，再比較例子，最後擴寫 architecture.md 並用檢核題自查。",
+        "output": "Container草圖與architecture.md文字正本，能對照實際參考程式與資料位置。"
+      },
+      "sections": [
+        {
+          "id": "levels",
+          "heading": "四層是放大視角，不是四台機器",
+          "paragraphs": [
+            "C4以Context、Container、Component、Code逐步放大：外部關係、應用程式與資料儲存、容器內的元件、較低層的程式結構。四層不是固定四層部署，也不要求每個專案都畫到Code。",
+            "官方Container定義包含應用程式與資料儲存，例如伺服器程式、瀏覽器內應用與檔案儲存。這個詞不是Docker專用名稱；同一架構容器可能有多個部署實例，部署細節應另說明。"
+          ],
+          "sourceIds": [
+            "c4-container",
+            "c4-levels"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像由校園一路放大到教室設備",
+          "paragraphs": [
+            "先看學校與師生、外部機構的關係，再看校內教學與行政單位，接著放大某單位的內部分工，最後才看一件設備如何組成。這個比喻只幫忙理解視角，不代表軟體層級與實體建築一一對應。",
+            "若你只想討論資料在哪個程式被處理，Container可能已足夠；若要理解rules.py的責任，再進入程序內元件與程式碼。不需為了湊四層而產生沒有教學用途的圖。"
+          ]
+        },
+        {
+          "id": "containers",
+          "heading": "把實際參考系統拆開",
+          "paragraphs": [
+            "本圖將系統放大為瀏覽器內的Streamlit前端及Python／Streamlit程序。前端接收操作，伺服器處理規則與結果，兩者通訊由Streamlit管理；圖中的關係不是自行建立REST端點的宣稱。",
+            "操作者裝置上的下載資料夾列為系統外的資料位置，因為報告離開應用程式後由操作者管理。本課沒有持久資料庫。圖中未將rules.py畫成Container，因為它由同一Python程序載入；其函式仍需測試。"
+          ],
+          "blocks": [
+            {
+              "kind": "architecture",
+              "level": "container",
+              "caption": "圖 1｜本機收件系統的Container視角",
+              "description": "節點表責任與資料位置，關係列表示操作或資料方向，不是部署數量或封包擷取結果。",
+              "boundary": "本機收件完整性檢核系統",
+              "nodes": [
+                {
+                  "id": "receiver",
+                  "title": "收件人員",
+                  "body": "操作本機介面並管理下載報告。",
+                  "kind": "person",
+                  "inside": false
+                },
+                {
+                  "id": "downloads",
+                  "title": "操作者下載資料夾",
+                  "body": "保存下載JSON；不是本課的持久業務資料庫。",
+                  "kind": "data-store",
+                  "inside": false
+                },
+                {
+                  "id": "frontend",
+                  "title": "瀏覽器內Streamlit前端",
+                  "body": "顯示欄位、接收操作並呈現結果。",
+                  "kind": "container",
+                  "inside": true
+                },
+                {
+                  "id": "python",
+                  "title": "Python／Streamlit程序",
+                  "body": "執行同程序內rules.py，保留工作階段資料，產生報告。",
+                  "kind": "container",
+                  "inside": true
+                }
+              ],
+              "relations": [
+                {
+                  "to": "frontend",
+                  "label": "填寫合成欄位，啟動檢查及下載。",
+                  "from": "receiver"
+                },
+                {
+                  "to": "python",
+                  "label": "由Streamlit管理連線與操作事件；使用HTTP及WebSocket等機制。",
+                  "from": "frontend"
+                },
+                {
+                  "to": "frontend",
+                  "label": "回傳介面更新及可下載的當次報告；由框架管理。",
+                  "from": "python"
+                },
+                {
+                  "to": "downloads",
+                  "label": "使用者啟動下載後，瀏覽器保存JSON到裝置。",
+                  "from": "frontend"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "streamlit-architecture",
+            "c4-container"
+          ]
+        },
+        {
+          "id": "storage",
+          "heading": "區分記憶體狀態與持久儲存",
+          "paragraphs": [
+            "輸入與checked快照在工作階段記憶體，與下載檔的存續方式不同。將資料庫符號移除不代表資料完全不留痕；若未來新增歷史查詢，需重新確認儲存、存取、備份、刪除與維運責任。",
+            "同樣地，兩個瀏覽器分頁有各自的框架工作階段，不等於兩個人已經有正式身分與授權隔離。Session的安全責任會在M06-05處理，不能由架構容器數量推定。"
+          ],
+          "sourceIds": [
+            "streamlit-architecture"
+          ]
+        },
+        {
+          "id": "zoom",
+          "heading": "用四層導覽定位問題",
+          "paragraphs": [
+            "Context問誰與系統互動；Container問哪個應用或儲存負責；Component問容器內如何分工；Code再看函式、類別等實作。各層需要一致名稱與可追溯關係，但不必把所有資訊塞進同一張圖。",
+            "常見誤解是「前端、後端、資料庫就是所有專案固定三層」。本課沒有資料庫，rules.py也不是額外後端。選層級是為了回答問題，不是套用元件清單。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 2｜四層各自適合回答的問題",
+              "description": "卡片是抽象層級導覽，非執行順序或必須新增的四個服務。",
+              "items": [
+                {
+                  "title": "Context",
+                  "body": "收件人員為何使用這個系統？有沒有直接外部依賴？"
+                },
+                {
+                  "title": "Container",
+                  "body": "瀏覽器前端與Python程序各負責什麼？資料放在哪裡？"
+                },
+                {
+                  "title": "Component",
+                  "body": "同一程序內的介面、驗證與匯出如何分工？"
+                },
+                {
+                  "title": "Code",
+                  "body": "具體函式如何檢查空白、限制欄位並產生JSON？"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "讓圖與文字能互相核對",
+          "paragraphs": [
+            "在architecture.md保留節點名稱、責任、主要技術及關係，再註記哪些部署資訊尚未決定。例如綁定127.0.0.1是本機執行設定，不等於正式共用部署；若移到遠端，需重新檢視網路與資料控制。",
+            "請同儕找出圖中的程式、資料位置及兩條相反方向關係，確認沒有把箭頭讀成所有節點依序執行。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Container文字紀錄",
+              "paragraphs": [
+                "將以下合成範例放入 architecture.md，依你的課堂情境修改；這不是實際單位規定或研究結果。"
+              ],
+              "code": "# Container（目前本機原型）\n系統內：瀏覽器內Streamlit前端；Python／Streamlit程序\n程序內：rules.py驗證與匯出函式\n前端 → 程序：框架管理的輸入與操作事件\n程序 → 前端：結果與當次報告\n前端 → 操作者裝置：下載JSON\n持久業務儲存：無；工作階段記憶體與下載檔分開\n部署：本機教學；遠端與多人版尚未設計驗證"
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "architecture.md與工作坊reference/，紙筆或文字編輯器即可；不需安裝Docker。",
+        "steps": [
+          "由Context放大系統，標出前端、Python程序及下載位置，為關係寫用途。",
+          "將rules.py標為程序內元件，明寫沒有持久資料庫，另列記憶體與下載檔。",
+          "用四層問題檢查是否混入不必要細節；將遠端、多人與儲存需求保留為待設計。"
+        ],
+        "expected": "Container草圖與architecture.md文字正本，能對照實際參考程式與資料位置。",
+        "check": "Container不等同Docker、檔案或部署實例；沒有虛構資料庫或正式Session安全。",
+        "cleanup": "保留目前與候選部署的區別，不加入真實內部位址或未公開服務資料。"
+      }
+    },
+    "en": {
+      "summary": "Zoom from Context into applications and data stores, using C4 levels without confusing containers with source files, Docker or deployed instances.",
+      "objectives": [
+        "Explain Context, Container, Component and Code as four abstraction levels.",
+        "Identify the frontend, Python process and data locations at Container level.",
+        "Separate logical architecture, deployment instances and in-process components."
+      ],
+      "readingGuide": {
+        "goal": "Explain Context, Container, Component and Code as four abstraction levels.",
+        "startingPoint": "architecture.md and workshop reference/; paper or a text editor is enough. Docker is not required.",
+        "route": "Read the situation and principles, compare examples, then expand architecture.md and review the checks.",
+        "output": "A Container sketch and matching architecture.md record checked against the actual reference program and data locations."
+      },
+      "sections": [
+        {
+          "id": "levels",
+          "heading": "Four Levels of Zoom, Not Four Machines",
+          "paragraphs": [
+            "C4 moves from Context to Container, Component and Code: external relationships, applications and data stores, components within a container, and lower-level code structure. These are abstraction levels, not four deployment tiers. Not every project needs a Code diagram.",
+            "C4 containers include applications and data stores, such as server applications, browser applications and file storage. The term is not specific to Docker. One architectural container may have several deployed instances; describe deployment separately."
+          ],
+          "sourceIds": [
+            "c4-container",
+            "c4-levels"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Zoom from a Campus into Its Equipment",
+          "paragraphs": [
+            "Begin with a school, its students and external organizations; then examine teaching and administration, responsibilities within one department, and finally the construction of a piece of equipment. This analogy explains changing viewpoints, without mapping software levels directly onto buildings.",
+            "Container level may suffice to discuss where data is processed. To examine rules.py responsibilities, zoom into in-process components and code. Draw another level when it answers a question, rather than producing diagrams just to complete a set."
+          ]
+        },
+        {
+          "id": "containers",
+          "heading": "Separate the Actual Reference System",
+          "paragraphs": [
+            "The diagram zooms into the browser’s Streamlit frontend and the Python/Streamlit process. The frontend receives actions; the server handles rules and results. Streamlit manages communication, so these relationships do not claim that the course created custom REST endpoints.",
+            "The operator’s download folder is outside the application scope because the operator manages reports after download. The course has no persistent database. rules.py is loaded by the same Python process and is not a separate container; its functions still need tests."
+          ],
+          "blocks": [
+            {
+              "kind": "architecture",
+              "level": "container",
+              "caption": "Figure 1 | Container View of the Local Intake System",
+              "description": "Nodes describe responsibilities and data locations. Relationship rows show actions or data direction, not instance counts or captured packets.",
+              "boundary": "Local intake completeness-checking system",
+              "nodes": [
+                {
+                  "id": "receiver",
+                  "title": "Intake worker",
+                  "body": "Operates the local interface and manages downloaded reports.",
+                  "kind": "person",
+                  "inside": false
+                },
+                {
+                  "id": "downloads",
+                  "title": "Operator’s download folder",
+                  "body": "Keeps downloaded JSON; it is not the course’s persistent business database.",
+                  "kind": "data-store",
+                  "inside": false
+                },
+                {
+                  "id": "frontend",
+                  "title": "Streamlit frontend in the browser",
+                  "body": "Displays fields, receives actions and presents results.",
+                  "kind": "container",
+                  "inside": true
+                },
+                {
+                  "id": "python",
+                  "title": "Python/Streamlit process",
+                  "body": "Runs rules.py in the same process, retains session data and produces reports.",
+                  "kind": "container",
+                  "inside": true
+                }
+              ],
+              "relations": [
+                {
+                  "to": "frontend",
+                  "label": "Enter synthetic fields and initiate checking or download.",
+                  "from": "receiver"
+                },
+                {
+                  "to": "python",
+                  "label": "Streamlit manages connections and action events using mechanisms including HTTP and WebSocket.",
+                  "from": "frontend"
+                },
+                {
+                  "to": "frontend",
+                  "label": "The framework returns interface updates and the downloadable current report.",
+                  "from": "python"
+                },
+                {
+                  "to": "downloads",
+                  "label": "After the user initiates download, the browser saves JSON on the device.",
+                  "from": "frontend"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "streamlit-architecture",
+            "c4-container"
+          ]
+        },
+        {
+          "id": "storage",
+          "heading": "Distinguish Memory State from Persistent Storage",
+          "paragraphs": [
+            "Input and the checked snapshot live in session memory, with a different lifecycle from downloaded files. Removing a database symbol does not establish that data leaves no traces. Adding history later requires decisions about storage, access, backup, deletion and operations.",
+            "Two browser tabs can have separate framework sessions without establishing two authenticated people or authorization isolation. M06-05 examines session security; container counts cannot establish it."
+          ],
+          "sourceIds": [
+            "streamlit-architecture"
+          ]
+        },
+        {
+          "id": "zoom",
+          "heading": "Choose the Level That Answers the Question",
+          "paragraphs": [
+            "Context asks who interacts with the system. Container asks which application or store is responsible. Component examines responsibilities within a container. Code examines functions, classes and implementation. Keep names and relationships traceable across levels without cramming everything into one diagram.",
+            "A common mistake is to prescribe frontend, backend and database as three fixed tiers for every project. This course has no database, and rules.py is not another backend. Choose a level to answer a question, then check the actual system."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Questions at Each C4 Level",
+              "description": "These cards guide abstraction levels. They are neither an execution sequence nor four services to add.",
+              "items": [
+                {
+                  "title": "Context",
+                  "body": "Why does the intake worker use this system? Are there direct external dependencies?"
+                },
+                {
+                  "title": "Container",
+                  "body": "What do the browser frontend and Python process do, and where is data located?"
+                },
+                {
+                  "title": "Component",
+                  "body": "How do interface, validation and export responsibilities fit within the same process?"
+                },
+                {
+                  "title": "Code",
+                  "body": "How do specific functions check blanks, limit fields and produce JSON?"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "Cross-check the Diagram and Its Text",
+          "paragraphs": [
+            "Keep node names, responsibilities, main technologies and relationships in architecture.md, then mark undecided deployment details. Binding to 127.0.0.1 is a local execution setting, not a production shared deployment. Moving to a remote host requires revisiting network and data controls.",
+            "Ask a peer to identify the applications, data locations and two opposite-direction relationships. Confirm that arrows are not being read as a sequence in which every node must execute."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Container Text Record",
+              "paragraphs": [
+                "The unchanged Traditional Chinese template lists the frontend and Python process, in-process rules.py, framework input/result directions, downloaded JSON, absent persistent business storage, separate session/download lifecycles and unverified remote/shared deployment. Adapt these fields in architecture.md using synthetic information; they are not organizational rules or research findings."
+              ],
+              "code": "# Container（目前本機原型）\n系統內：瀏覽器內Streamlit前端；Python／Streamlit程序\n程序內：rules.py驗證與匯出函式\n前端 → 程序：框架管理的輸入與操作事件\n程序 → 前端：結果與當次報告\n前端 → 操作者裝置：下載JSON\n持久業務儲存：無；工作階段記憶體與下載檔分開\n部署：本機教學；遠端與多人版尚未設計驗證"
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "architecture.md and workshop reference/; paper or a text editor is enough. Docker is not required.",
+        "steps": [
+          "Zoom into the Context system, identify the frontend, Python process and download location, and label relationship purposes.",
+          "Mark rules.py as in-process responsibility; explicitly record no persistent database and separate memory from downloads.",
+          "Use the four levels to remove unnecessary detail; keep remote, shared-user and storage needs pending design."
+        ],
+        "expected": "A Container sketch and matching architecture.md record checked against the actual reference program and data locations.",
+        "check": "Do not equate a container with Docker, a file or an instance. Invent neither a database nor established session security.",
+        "cleanup": "Keep current and candidate deployments distinct. Include no actual internal addresses or nonpublic service details."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M06-C03-Q01",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "C4的Container最接近什麼？",
+          "options": [
+            "任何Python檔案",
+            "只能是Docker容器",
+            "每一個按鈕",
+            "應用程式或資料儲存，與Docker名稱或實例數不同"
+          ],
+          "rationales": [
+            "檔案不必是獨立應用。",
+            "官方定義不限特定部署工具。",
+            "按鈕是介面元素。",
+            "依架構責任與執行／儲存邊界判斷。"
+          ]
+        },
+        "en": {
+          "prompt": "What best describes a C4 container?",
+          "options": [
+            "Any Python file.",
+            "Only a Docker container.",
+            "Every button.",
+            "An application or data store, distinct from a Docker name or instance count."
+          ],
+          "rationales": [
+            "A file need not be an independent application.",
+            "The definition is not tied to one deployment tool.",
+            "A button is an interface element.",
+            "Use architectural responsibility and execution/storage boundaries."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M06-C03-Q02",
+      "answer": 0,
+      "text": {
+        "zh": {
+          "prompt": "rules.py在本課Container圖應怎麼處理？",
+          "options": [
+            "視為Python程序內的元件或函式責任",
+            "畫成第三台伺服器",
+            "畫成外部資料庫",
+            "因為不是容器就不測試"
+          ],
+          "rationales": [
+            "與實際載入及呼叫方式一致。",
+            "沒有該部署依據。",
+            "它不是持久儲存。",
+            "程序內行為同樣需要測試。"
+          ]
+        },
+        "en": {
+          "prompt": "How should rules.py appear in this course’s Container view?",
+          "options": [
+            "As component or function responsibility within the Python process.",
+            "As a third server.",
+            "As an external database.",
+            "Untested because it is not a container."
+          ],
+          "rationales": [
+            "This matches how it is loaded and called.",
+            "No such deployment is evidenced.",
+            "It is not persistent storage.",
+            "In-process behavior also needs tests."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M06-C03-Q03",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "C4四層代表必須建立四種服務嗎？",
+          "options": [
+            "是，缺一層就不能運作",
+            "否，是逐步放大的抽象視角，依問題選擇",
+            "是，每層一定一台機器",
+            "否，所以任何層可隨意混畫"
+          ],
+          "rationales": [
+            "圖的層級不是執行需求。",
+            "需要何種細節由討論目的決定。",
+            "部署與抽象層級不同。",
+            "各層仍應有一致範圍與名稱。"
+          ]
+        },
+        "en": {
+          "prompt": "Do the four C4 levels require four services?",
+          "options": [
+            "Yes; the system cannot work without every level.",
+            "No; they are progressively closer abstraction views, chosen for the question.",
+            "Yes; each level needs one machine.",
+            "No; levels may therefore be mixed arbitrarily."
+          ],
+          "rationales": [
+            "Diagram levels are not execution requirements.",
+            "Discussion purpose determines the necessary detail.",
+            "Deployment and abstraction levels differ.",
+            "Each level still needs consistent scope and names."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
