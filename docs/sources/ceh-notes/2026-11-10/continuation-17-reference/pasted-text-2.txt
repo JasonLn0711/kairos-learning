@@ -1,0 +1,926 @@
+# CEH M20｜密碼學：從對稱加密到數位簽章
+
+2026 年 11 月 10 日｜第 19–27 題｜概念整合課程
+
+本次最重要的結論是：密碼學不是單純把資料變成亂碼，而是利用不同機制，分別解決資料保密、金鑰建立、身分驗證與資料完整性的問題。
+
+例如，一間銀行要傳送交易資料：
+
+- AES：讓其他人即使截取資料，也無法輕易看懂內容。
+- Diffie–Hellman：讓通訊雙方能建立共同的秘密金鑰。
+- RSA、DSA：可用於數位簽章，證明訊息與持有特定私鑰者有關。
+- Hash：產生資料摘要，協助偵測內容是否遭到修改。
+- VeraCrypt：利用加密技術保護磁碟或加密容器中的資料。
+
+但有一個特別重要的觀念：加密不能自動防止已入侵系統的攻擊者讀取資料；數位簽章也不會自動把訊息加密。
+
+## 一、課程總覽
+
+實收 9 題
+
+M20-R01：3 題
+
+M20-R02：6 題
+
+其中 EC-Q493 與 P1-Q114 為相同考點、不同選項排序的重複題，因此共有 8 個不同題幹。
+
+本課完成後，應能：
+
+1. 理解 Block Cipher、Stream Cipher、Key Size 與 AES 選拔歷史。
+2. 區分磁碟加密、檔案加密、隱藏磁碟區，以及各自能防禦哪些威脅。
+3. 理解對稱加密、非對稱密碼學、Hash、Key Exchange 與 Digital Signature 的不同任務。
+4. 分辨 RSA、DSA、Diffie–Hellman、ElGamal 的特性和限制。
+5. 從題幹找出真正具有鑑別力的證據，而不是僅靠關鍵字猜答案。
+
+### 原始題目答案速覽
+
+| 題號          | 最佳答案                                            | 核心考點        |
+| ----------- | ----------------------------------------------- | ----------- |
+| 19. EC-Q493 | D. Twofish                                      | AES 競賽決選者   |
+| 20. EC-Q024 | D. VeraCrypt †                                  | 隱藏加密磁碟區     |
+| 21. P1-Q114 | B. Twofish                                      | 與第 19 題重複   |
+| 22. EC-Q053 | D. Asymmetric encryption                        | 公私鑰與金鑰分配    |
+| 23. P3-Q056 | C. RSA                                          | 非對稱密碼演算法    |
+| 24. P1-Q085 | C. DSA †                                        | 一次性值與數位簽章   |
+| 25. P2-Q034 | A. RSA †                                        | RSA 加密與簽章用途 |
+| 26. P3-Q071 | B. Integrity, Non-repudiation, Authentication † | 數位簽章安全性質    |
+| 27. EC-Q084 | B. RSA †                                        | RSA 簽章與公鑰驗證 |
+
+† 表示有必要補充的技術條件、歧義或實務限制。表格中的答案是根據本次提供的題幹與選項獨立判斷，並非直接採信或已逐一核對原始題庫的答案欄。
+
+### 整體知識地圖
+
+### 密碼學的四項主要任務
+
+保密性 Confidentiality
+
+讓未授權者看不懂資料
+
+AES、Twofish、RSA 加密
+
+金鑰建立 Key Establishment
+
+讓雙方取得共同使用的金鑰
+
+DH、ECDH、RSA-based schemes
+
+完整性 Integrity
+
+確認資料是否遭更動
+
+Hash、MAC、Digital Signature
+
+身分與來源驗證 Authentication
+
+確認訊息來自受信任的對象
+
+Digital Signature、PKI
+
+注意：Hash 本身不能驗證訊息發送者身分；Digital Signature 也不直接提供內容保密性。不同機制通常需要組合使用。
+
+以下以四個知識單元串起這 9 題。
+
+## 二、核心概念整合
+
+### 單元 1｜對稱式加密：AES 與 Twofish 到底差在哪裡？
+
+對應：19. EC-Q493、21. P1-Q114
+
+#### 1. 白話理解：兩個人使用同一把鑰匙
+
+想像你與同事有一個保險箱。你把文件放進去、上鎖；同事拿到同一把鑰匙，就能開箱。
+
+這就是 Symmetric Encryption（對稱式加密）的核心概念：
+
+加密與解密使用相同的秘密金鑰，或能直接相互推導的秘密金鑰。
+
+兩個人都必須保護這把鑰匙。
+
+#### 2. 正式定義：Block Cipher 與 Key Size
+
+題目出現兩個數字：
+
+- `128-bit block`：演算法每次處理 128 位元，也就是 16 bytes 的資料區塊。
+- `256-bit key`：加密使用的秘密金鑰長度為 256 位元，也就是 32 bytes。
+
+這兩個數字在描述完全不同的性質。
+
+### 區塊長度與金鑰長度
+
+Block Size
+
+128 bits = 16 bytes
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+14
+
+15
+
+16
+
+想成一次放進加密機器的資料份量。
+
+Key Size
+
+256 bits = 32 bytes
+
+想成控制加密轉換的秘密鑰匙長度。
+
+為什麼要分清楚？
+
+因為演算法可以固定一次處理 128 bits，卻允許使用不同長度的金鑰。AES 就有 AES-128、AES-192、AES-256 三種標準金鑰長度，但它們的區塊長度都固定為 128 bits。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+csrc.nist.gov+1
+
+
+
+Block Size 並不等於 Key Size，也不能單靠這兩個數字推斷演算法名稱。
+
+#### 3. 為什麼答案是 Twofish，不是 AES？
+
+這題真正有區辨力的資訊，是 AES 競賽的歷史。
+
+1990 年代，美國 NIST 為了制定取代 DES 的新加密標準，公開徵求並評估候選演算法。
+
+### AES 標準的選拔過程
+
+15 個候選演算法
+
+1998 年進入第一輪評估
+
+5 個決選演算法
+
+MARS
+
+RC6
+
+Serpent
+
+Twofish
+
+Rijndael
+
+Rijndael 獲選為 AES
+
+2000 年宣布選擇；2001 年成為 FIPS 197
+
+依據 NIST AES Development 歷史紀錄。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+CSRC+1
+
+這裡要區分：
+
+- Twofish：參加決選，但沒有獲選為 AES。
+- Rijndael：參加決選，最後獲選為 AES。
+- AES：選拔完成後的標準名稱，並不是另一個與 Rijndael 無關的演算法。
+
+因此，第 19 與第 21 題預期選 Twofish。
+
+不過，題目只說「AES selection process 的 finalist」，而 Rijndael 也是 finalist。因此，若嚴格檢驗題目邏輯，應補上「但未獲選」才足以完全排除 AES 選項。目前的答案是合理的考試預期答案，不代表原題沒有歧義。
+
+#### 4. 四個演算法如何比較？
+
+| 演算法      | 類型            | 區塊長度      | 考試辨識重點          |
+| -------- | ------------- | --------- | --------------- |
+| RC4      | Stream Cipher | 不適用固定區塊長度 | 舊式串流加密          |
+| Blowfish | Block Cipher  | 64 bits   | 舊演算法、不是 AES 決選者 |
+| Twofish  | Block Cipher  | 128 bits  | AES 五個決選者之一     |
+| AES      | Block Cipher  | 128 bits  | Rijndael 獲選後的標準 |
+
+Blowfish 的設計者文件確認它使用 64-bit block；IETF 也早在 RFC 7465 禁止於 TLS 協商 RC4 cipher suites。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.schneier.com\&sz=32)
+
+Schneier on Security+1
+
+
+
+#### 5. 進階：只有 AES-256，是否就能說資料很安全？
+
+不能。
+
+你至少還需要知道使用哪一種 Mode of Operation（運作模式），以及金鑰、初始化值與驗證機制如何管理。
+
+例如，AES-GCM 不只提供加密，也能產生 Authentication Tag，用來驗證資料是否遭到未授權修改；但這必須建立在正確使用 nonce、金鑰等條件之上。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+csrc.nist.gov
+
+
+
+實務上，正確實作、金鑰管理與適當的加密模式，和演算法名稱一樣重要。
+
+### 單元 2｜磁碟加密：VeraCrypt 能防止已入侵的駭客偷資料嗎？
+
+對應：20. EC-Q024
+
+這是本批題目中，最需要區分「題庫邏輯」與「資安事件應變」的一題。
+
+#### 1. 白話理解：鎖起整個房間，不代表房間內的人看不到東西
+
+把檔案加密想成鎖住一個抽屜；把磁碟區加密想成鎖住整個房間。
+
+但是，如果房間的門已經打開，攻擊者也已經進入房間，即使外面有很厲害的鎖，也無法阻止他讀取房間內可存取的文件。
+
+這就是資料加密非常重要的界線：
+
+Encryption at Rest（靜態資料加密）主要保護未解鎖的儲存資料，不能取代受入侵系統的存取控制與事件應變。
+
+#### 2. 三種儲存加密層次
+
+整碟加密 Full Disk Encryption
+
+保護整個磁碟或系統磁碟中的資料，適合因應裝置遺失、遭竊與離線存取。
+
+磁碟區／容器加密 Volume / Container Encryption
+
+把特定分割區或虛擬磁碟做成加密空間；掛載後可以當一般磁碟使用。
+
+檔案加密 File Encryption
+
+保護個別檔案或資料夾；適合選擇性保護，不等同完整磁碟加密。
+
+這是依保護範圍整理的概念圖，不代表三者必須依序部署。分類參考 NIST SP 800-111。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+csrc.nist.gov
+
+#### 3. VeraCrypt 為什麼符合題目？
+
+題目給了三項條件：
+
+第一，要能建立 encrypted containers（加密容器）。
+
+第二，要能加密整個分割區或磁碟區。
+
+第三，還要能建立 hidden volumes（隱藏磁碟區）。
+
+VeraCrypt 同時具有這些功能，其中 Hidden Volume 是最具辨識力的提示。
+
+### VeraCrypt Hidden Volume 概念圖
+
+外層加密磁碟區 Outer Volume
+
+有獨立密碼，存放一般希望受保護的資料。
+
+內層隱藏磁碟區 Hidden Volume
+
+位於外層磁碟區的可用空間內，使用不同的密碼。
+
+這個設計的目的之一是 Plausible Deniability（合理否認性），並非保證絕對無法發現隱藏資料。
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub+1
+
+解鎖外層磁碟區，不代表自動解鎖內層 Hidden Volume。
+
+但需要注意：系統活動紀錄、暫存資料與不同時間點的磁碟快照，都可能洩漏隱藏磁碟區存在的線索；寫入外層磁碟區也可能破壞隱藏磁碟區。這些都是 VeraCrypt 官方文件明確提醒的限制。
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub+1
+
+
+
+#### 4. VeraCrypt 與其他選項
+
+| 工具                    | 主要用途                    | 本題判斷                           |
+| --------------------- | ----------------------- | ------------------------------ |
+| BitLocker             | Windows 磁碟區加密           | 能做整碟加密，但不符合指定 Hidden Volume 特徵 |
+| FileVault             | macOS 啟動磁碟的資料保護         | 不是這題所描述的工具                     |
+| Rohos Disk Encryption | 加密虛擬磁碟、容器及隱藏儲存功能        | 有功能重疊，不能只靠 AES-256 排除          |
+| VeraCrypt             | 磁碟區、加密容器與 Hidden Volume | D，最符合完整特徵組合                    |
+
+Rohos 官方資料也列出 AES-256、加密虛擬磁碟與隱藏功能。因此，題目真正指向 VeraCrypt 的是其特定的巢狀 Hidden Volume 設計，而不是「支援 256-bit AES」。
+
+[image](https://www.google.com/s2/favicons?domain=https://rohos.com\&sz=32)
+
+Rohos+2
+
+
+
+#### 5. 題目最大的問題：伺服器已遭入侵
+
+題目說攻擊者正在外洩病患資料，分析師希望立刻加密已掛載的主要磁碟區，阻止進一步外洩。
+
+這個因果關係不成立。
+
+假設攻擊者已取得能讀取病患資料的系統權限：
+
+- 磁碟區掛載、解鎖後，應用程式與具足夠權限的使用者可以讀到解密後的資料。
+- 攻擊者若掌握相同或更高的權限，也可能讀到資料。
+- 此時新增磁碟加密不會自動終止攻擊者的存取能力。
+- 在受入侵的主機上進行大型加密操作，還可能改變數位鑑識證據。
+
+VeraCrypt 官方也明確指出，攻擊者若取得已掛載磁碟區的電腦，通常可以讀取其中的資料。
+
+[image](https://www.google.com/s2/favicons?domain=https://github.com\&sz=32)
+
+GitHub
+
+
+
+#### 6. 真正的事件應變流程
+
+\#chatgpt-mermaid-\_r_1kb\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_1kb\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1kb\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1kb\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_1kb\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1kb\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_1kb\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_1kb\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_1kb\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_1kb\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_1kb\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_1kb\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1kb\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1kb\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_1kb\_ p{margin:0;}#chatgpt-mermaid-\_r_1kb\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1kb\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1kb\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1kb\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_1kb\_ .label text,#chatgpt-mermaid-\_r_1kb\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1kb\_ .node rect,#chatgpt-mermaid-\_r_1kb\_ .node circle,#chatgpt-mermaid-\_r_1kb\_ .node ellipse,#chatgpt-mermaid-\_r_1kb\_ .node polygon,#chatgpt-mermaid-\_r_1kb\_ .node path{fill:rgb(226, 242, 230);stroke:rgb(107, 198, 127);stroke-width:1px;}#chatgpt-mermaid-\_r_1kb\_ .rough-node .label text,#chatgpt-mermaid-\_r_1kb\_ .node .label text,#chatgpt-mermaid-\_r_1kb\_ .image-shape .label,#chatgpt-mermaid-\_r_1kb\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_1kb\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_1kb\_ .rough-node .label,#chatgpt-mermaid-\_r_1kb\_ .node .label,#chatgpt-mermaid-\_r_1kb\_ .image-shape .label,#chatgpt-mermaid-\_r_1kb\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_1kb\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_1kb\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1kb\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1kb\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_1kb\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_1kb\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1kb\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1kb\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1kb\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_1kb\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1kb\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1kb\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1kb\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_1kb\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1kb\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_1kb\_ .icon-shape,#chatgpt-mermaid-\_r_1kb\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1kb\_ .icon-shape p,#chatgpt-mermaid-\_r_1kb\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_1kb\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_1kb\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1kb\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_1kb\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_1kb\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_1kb\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_1kb\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_1kb\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_1kb\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1kb\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_1kb\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1kb\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_1kb\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_1kb\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_1kb\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_1kb\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(237, 250, 242);stroke:rgb(166, 211, 184);stroke-width:1px;}#chatgpt-mermaid-\_r_1kb\_ .node rect,#chatgpt-mermaid-\_r_1kb\_ .node circle,#chatgpt-mermaid-\_r_1kb\_ .node ellipse,#chatgpt-mermaid-\_r_1kb\_ .node polygon,#chatgpt-mermaid-\_r_1kb\_ .node path{fill:rgb(217, 244, 228);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1kb\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_1kb\_ .mermaid-decision .label-container{fill:rgb(237, 250, 242);stroke:rgb(195, 220, 205);stroke-dasharray:2px,2px;}#chatgpt-mermaid-\_r_1kb\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_1kb\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1kb\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}發現病患資料正在外洩確認受害範圍及持續中的攻擊隔離受害主機、封鎖惡意連線依應變程序保全記憶體、磁碟及日誌證據調查入侵路徑與遭竊的憑證清除威脅、輪替金鑰及重建可信環境部署儲存加密與存取控制等長期防護
+
+實際操作順序會依系統的揮發性證據、外洩速度、服務可用性與事件應變指揮決策調整；不應將這張教學圖視為僵化的鑑識程序。CISA 與其他事件應變機構均強調隔離、保全證據及調查範圍。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.microsoft.com\&sz=32)
+
+Microsoft Learn+1
+
+
+
+#### 7. 進階：XTS-AES 與 AES-GCM 的差別
+
+這也是為什麼不能只問「使用 AES-256 嗎？」
+
+| 運作模式    | 典型用途        | 主要安全性質             |
+| ------- | ----------- | ------------------ |
+| AES-XTS | 磁碟、區塊儲存     | 保密性，不提供資料來源驗證      |
+| AES-GCM | 網路通訊、應用程式資料 | 正確使用時同時提供保密性與完整性驗證 |
+
+NIST SP 800-38E 明確說明 XTS-AES 不是資料認證機制；截至 2026 年 11 月，其 Rev. 1 仍為公開草案，而不是已取代現行正式版本的最終標準。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center+1
+
+
+
+本單元的判斷原則：先確認威脅模型，再選擇加密工具。
+
+如果風險是「筆電被偷」，整碟加密很重要；如果風險是「攻擊者已經進入正在運作的伺服器」，首要問題是阻止未授權存取、遏止外洩與保存證據。
+
+### 單元 3｜非對稱密碼學：兩個陌生人如何安全建立共同金鑰？
+
+對應：22. EC-Q053、23. P3-Q056；延伸至 25、27 題
+
+#### 1. 白話理解：不必先把秘密鑰匙交給對方
+
+假設你要寄一份機密文件給素未謀面的人。
+
+使用對稱加密時，雙方需要先有一把共同的秘密金鑰。但如果你必須透過不安全的網路交付這把金鑰，就可能被攔截。
+
+非對稱密碼學提供了不同的方法：
+
+每個參與者可以有一組彼此對應的金鑰：
+
+- Public Key（公鑰）：可以公開。
+- Private Key（私鑰）：應由持有者秘密保管。
+
+某些非對稱演算法允許任何人使用接收者的公鑰加密資料，只有持有相應私鑰者才能解密。
+
+這種設計能避免直接傳送解密所需的私鑰。
+
+但並非所有非對稱演算法都能加密訊息；有些只能交換金鑰或產生簽章。
+
+#### 2. 對稱、非對稱與 Hash 是不同種類的工具
+
+| 技術                      | 金鑰特徵      | 主要功能              | 代表          |
+| ----------------------- | --------- | ----------------- | ----------- |
+| Symmetric Encryption    | 雙方共用秘密金鑰  | 高效率保護資料           | AES、Twofish |
+| Asymmetric Cryptography | 公鑰與私鑰     | 加密、簽章或金鑰建立，視演算法而定 | RSA、DH、DSA  |
+| Hash Function           | 通常不使用秘密金鑰 | 將資料映射成固定長度摘要      | SHA-256     |
+| MAC                     | 使用共享秘密金鑰  | 訊息完整性與來源認證        | HMAC        |
+
+Hash 有一個很重要的特性：
+
+它不是用來將摘要「解密回原文」，而是用來計算資料的指紋。
+
+例如，對一個 1 GB 的檔案計算 SHA-256，可以得到 256-bit 摘要。如果檔案改變，摘要通常也會改變。
+
+但是攻擊者若能同時替換檔案與旁邊的 Hash 值，單純比較兩者就無法可靠證明原始檔案未遭惡意修改。
+
+因此，Hash 通常要搭配 MAC 或 Digital Signature，才能建立具有金鑰保障的來源驗證。
+
+#### 3. Key Transport 與 Key Agreement 的差別
+
+這是第 22 題背後真正值得理解的重點。
+
+Key Transport（金鑰傳送／傳輸）：一方產生金鑰材料，透過保護機制交付另一方。
+
+Key Agreement（金鑰協議）：雙方各提供部分秘密材料，透過協定算出共同秘密，不必直接傳送該共同秘密。
+
+### 兩種建立共同金鑰的方法
+
+RSA 型金鑰傳送
+
+Alice 產生秘密金鑰 K
+
+使用 Bob 的公鑰保護 K
+
+Bob 以私鑰取得 K
+
+Diffie–Hellman 金鑰協議
+
+Alice、Bob 各有秘密值
+
+交換公開計算值
+
+各自推導共同秘密
+
+這是協定原理的簡化圖。實務上仍需要公鑰認證、安全的金鑰封裝或協定設計、Key Derivation Function 等機制。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center+1
+
+#### Diffie–Hellman 的核心數學
+
+假設雙方事先知道公開參數 \\(p\\) 與 \\(g\\)。
+
+Alice 選秘密值 \\(a\\)，Bob 選秘密值 \\(b\\)。
+
+Alice 傳送：
+
+\\[ A=g^a\bmod p \\]
+
+Bob 傳送：
+
+\\[ B=g^b\bmod p \\]
+
+雙方分別計算：
+
+\\[ K_A=B^a\bmod p \\]
+
+\\[ K_B=A^b\bmod p \\]
+
+由模冪運算的性質：
+
+\\[ K_A=K_B=g^{ab}\bmod p \\]
+
+所以兩人可以得到同一個共同秘密。
+
+這個公式的安全性不是來自「模運算很複雜」而已，而是來自正確選擇群參數、離散對數相關問題的計算困難性，以及安全實作的其他條件。
+
+實際上通常還要再透過 KDF 導出可使用的對稱金鑰。
+
+#### 4. 重大陷阱：Diffie–Hellman 本身不能防止中間人攻擊
+
+如果 Alice 只知道自己收到某個公開值，卻不能確認那個值真的來自 Bob，攻擊者 Eve 就可能攔截與替換交換值。
+
+結果會變成：
+
+\#chatgpt-mermaid-\_r_1lk\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_1lk\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1lk\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1lk\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_1lk\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lk\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_1lk\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_1lk\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_1lk\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_1lk\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_1lk\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_1lk\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lk\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lk\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_1lk\_ p{margin:0;}#chatgpt-mermaid-\_r_1lk\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lk\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lk\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lk\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_1lk\_ .label text,#chatgpt-mermaid-\_r_1lk\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lk\_ .node rect,#chatgpt-mermaid-\_r_1lk\_ .node circle,#chatgpt-mermaid-\_r_1lk\_ .node ellipse,#chatgpt-mermaid-\_r_1lk\_ .node polygon,#chatgpt-mermaid-\_r_1lk\_ .node path{fill:rgb(226, 242, 230);stroke:rgb(107, 198, 127);stroke-width:1px;}#chatgpt-mermaid-\_r_1lk\_ .rough-node .label text,#chatgpt-mermaid-\_r_1lk\_ .node .label text,#chatgpt-mermaid-\_r_1lk\_ .image-shape .label,#chatgpt-mermaid-\_r_1lk\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_1lk\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_1lk\_ .rough-node .label,#chatgpt-mermaid-\_r_1lk\_ .node .label,#chatgpt-mermaid-\_r_1lk\_ .image-shape .label,#chatgpt-mermaid-\_r_1lk\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_1lk\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_1lk\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lk\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lk\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_1lk\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_1lk\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1lk\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1lk\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1lk\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_1lk\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1lk\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lk\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lk\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_1lk\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lk\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_1lk\_ .icon-shape,#chatgpt-mermaid-\_r_1lk\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1lk\_ .icon-shape p,#chatgpt-mermaid-\_r_1lk\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_1lk\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_1lk\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1lk\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_1lk\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_1lk\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_1lk\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_1lk\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_1lk\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_1lk\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lk\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_1lk\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lk\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_1lk\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_1lk\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_1lk\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_1lk\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(237, 250, 242);stroke:rgb(166, 211, 184);stroke-width:1px;}#chatgpt-mermaid-\_r_1lk\_ .node rect,#chatgpt-mermaid-\_r_1lk\_ .node circle,#chatgpt-mermaid-\_r_1lk\_ .node ellipse,#chatgpt-mermaid-\_r_1lk\_ .node polygon,#chatgpt-mermaid-\_r_1lk\_ .node path{fill:rgb(217, 244, 228);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1lk\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_1lk\_ .mermaid-decision .label-container{fill:rgb(237, 250, 242);stroke:rgb(195, 220, 205);stroke-dasharray:2px,2px;}#chatgpt-mermaid-\_r_1lk\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_1lk\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lk\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}AliceEve 攻擊者Bob共同秘密 K1共同秘密 K2
+
+Alice 以為自己在跟 Bob 通訊，Bob 也以為自己在跟 Alice 通訊，但兩人的通訊可能實際經過 Eve 解密與重新加密。
+
+因此，DH 解決共同秘密的建立問題；憑證、數位簽章及經驗證的協定則用來解決對方是否可信的問題。
+
+這也是為什麼 TLS 不只是單獨執行一次 DH 計算。
+
+#### 5. 現代 HTTPS 如何組合各種密碼學技術？
+
+以典型的、使用憑證驗證伺服器並採用 ECDHE 的 TLS 1.3 連線為例：
+
+\#chatgpt-mermaid-\_r_1lr\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_1lr\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1lr\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1lr\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_1lr\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lr\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_1lr\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_1lr\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_1lr\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_1lr\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_1lr\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_1lr\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lr\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lr\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_1lr\_ p{margin:0;}#chatgpt-mermaid-\_r_1lr\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lr\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lr\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lr\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_1lr\_ .label text,#chatgpt-mermaid-\_r_1lr\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lr\_ .node rect,#chatgpt-mermaid-\_r_1lr\_ .node circle,#chatgpt-mermaid-\_r_1lr\_ .node ellipse,#chatgpt-mermaid-\_r_1lr\_ .node polygon,#chatgpt-mermaid-\_r_1lr\_ .node path{fill:rgb(226, 242, 230);stroke:rgb(107, 198, 127);stroke-width:1px;}#chatgpt-mermaid-\_r_1lr\_ .rough-node .label text,#chatgpt-mermaid-\_r_1lr\_ .node .label text,#chatgpt-mermaid-\_r_1lr\_ .image-shape .label,#chatgpt-mermaid-\_r_1lr\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_1lr\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_1lr\_ .rough-node .label,#chatgpt-mermaid-\_r_1lr\_ .node .label,#chatgpt-mermaid-\_r_1lr\_ .image-shape .label,#chatgpt-mermaid-\_r_1lr\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_1lr\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_1lr\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lr\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lr\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_1lr\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_1lr\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1lr\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1lr\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1lr\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_1lr\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1lr\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lr\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lr\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_1lr\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1lr\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_1lr\_ .icon-shape,#chatgpt-mermaid-\_r_1lr\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1lr\_ .icon-shape p,#chatgpt-mermaid-\_r_1lr\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_1lr\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_1lr\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1lr\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_1lr\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_1lr\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_1lr\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_1lr\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_1lr\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_1lr\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lr\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_1lr\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1lr\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_1lr\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_1lr\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_1lr\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_1lr\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(237, 250, 242);stroke:rgb(166, 211, 184);stroke-width:1px;}#chatgpt-mermaid-\_r_1lr\_ .node rect,#chatgpt-mermaid-\_r_1lr\_ .node circle,#chatgpt-mermaid-\_r_1lr\_ .node ellipse,#chatgpt-mermaid-\_r_1lr\_ .node polygon,#chatgpt-mermaid-\_r_1lr\_ .node path{fill:rgb(217, 244, 228);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1lr\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_1lr\_ .mermaid-decision .label-container{fill:rgb(237, 250, 242);stroke:rgb(195, 220, 205);stroke-dasharray:2px,2px;}#chatgpt-mermaid-\_r_1lr\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_1lr\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1lr\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}Client 與 Server 協商 TLS以 ECDHE 建立共同秘密驗證伺服器身分與交握訊息驗證成功？連線失敗以 HKDF 導出流量保護金鑰使用 AES-GCM 或其他 AEAD加密應用資料否是
+
+這張圖簡化了 TLS 1.3 的多個交握步驟，並非封包的精確傳輸先後順序。
+
+重點是多種密碼學機制互補，而不是互相取代。TLS 1.3 已移除傳統 Static RSA Key Exchange，但 RSA 仍可在適當配置下用於身分驗證的數位簽章。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\&sz=32)
+
+RFC Editor
+
+
+
+#### 6. 回到第 22、23 題
+
+EC-Q053：D. Asymmetric encryption
+
+題目希望利用非對稱密碼學，協助雙方安全分配或建立金鑰。
+
+其他選項：
+
+- Disk encryption：保護儲存資料，不是用來建立通訊雙方的共同金鑰。
+- Symmetric encryption：用既有秘密金鑰加密效率很高，但沒有自行解決首次建立共同秘密的問題。
+- Hash functions：用來計算摘要，不能單靠 Hash 建立安全的雙方金鑰交換。
+
+更精確地說，題目應問 Asymmetric Cryptography / Public-Key Key Establishment，而不是把所有非對稱金鑰建立機制統稱為 encryption。
+
+P3-Q056：C. RSA
+
+四個選項中，AES、DES、Blowfish 都是對稱加密；RSA 是公鑰密碼演算法。
+
+這題不需要背誦所有演算法，只要先分辨「單一秘密金鑰」與「公私鑰機制」，就能排除三個錯誤選項。
+
+### 單元 4｜數位簽章：如何證明交易沒有被竄改？
+
+對應：24. P1-Q085、25. P2-Q034、26. P3-Q071、27. EC-Q084
+
+#### 1. 白話理解：加密信封與簽名是兩回事
+
+假設銀行要送出一份交易確認書。
+
+如果擔心別人偷看，就把確認書放進加密信封。
+
+如果擔心別人偽造銀行的確認書，就需要能夠驗證來源的數位簽章。
+
+兩者目的不同：
+
+- Encryption：讓未授權的人看不懂。
+- Digital Signature：讓驗證者能檢查訊息是否被修改，以及是否由對應私鑰簽署。
+
+數位簽章不是把手寫簽名照片貼上去，而是利用密碼學演算法產生一組可驗證的資料。
+
+#### 2. 數位簽章的實際流程
+
+### 銀行交易簽署與驗證流程
+
+發送端：Signing
+
+交易資料 M
+
+計算 Hash(M)
+
+使用私鑰簽署
+
+產生 Signature
+
+接收端：Verification
+
+收到 M 與 Signature
+
+重新計算 Hash(M)
+
+以可信公鑰驗證簽章
+
+通過／失敗
+
+圖示是概念性流程；真正的 RSA-PSS、DSA 等簽章方案會依標準進行編碼與數學運算，不是單純把 Hash「用私鑰加密」。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\&sz=32)
+
+RFC Editor+1
+
+這個流程還有一個重要前提：
+
+接收者必須先確定用來驗證的公鑰，確實屬於他認為的簽署者。
+
+若攻擊者能把公鑰目錄中的銀行公鑰換成自己的公鑰，他就可能以自己的私鑰簽署偽造訊息，再讓使用者拿被替換的公鑰驗證。
+
+數學驗證可以通過，但身分結論是錯的。
+
+這是 Public Key Infrastructure（PKI）、憑證與信任鏈的重要性。
+
+#### 3. 數位簽章提供哪些安全性質？
+
+| 安全性質                  | 意義           | 限制                |
+| --------------------- | ------------ | ----------------- |
+| Integrity 完整性         | 偵測簽署後的資料變動   | 不代表訊息原本的內容就是正確的   |
+| Authentication 來源認證   | 驗證訊息與相應私鑰的關係 | 公鑰必須可靠綁定到身分       |
+| Non-repudiation 不可否認性 | 提供簽署歸屬的密碼學證據 | 證據強度受私鑰保管、憑證及程序影響 |
+| Confidentiality 保密性   | 簽章本身不提供      | 需要另外加密            |
+
+NIST FIPS 186-5 將數位簽章的資料完整性、簽署者認證與不可否認性列為重要用途。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+但在銀行交易或法律證據情境中，不能只因為 Signature 驗證成功，就推論當事人本人一定親自操作或同意該交易。
+
+例如，私鑰可能遭竊、簽章服務可能遭到濫用，或操作人員可能根本未經授權。
+
+#### 4. RSA、DSA、Diffie–Hellman、ElGamal 怎麼分？
+
+| 演算法            | 主要用途                   | 最具鑑別力的特性                                      |
+| -------------- | ---------------------- | --------------------------------------------- |
+| RSA            | 公鑰加密、數位簽章；亦可用於特定金鑰建立方案 | RSA 模數 \\(n\\)、公私指數及對應簽章／加密方案                 |
+| DSA            | 數位簽章                   | \\(p,q,g\\) 群參數、簽章 \\((r,s)\\)、一次性秘密值 \\(k\\) |
+| Diffie–Hellman | 金鑰協議                   | 雙方交換公開值並推導共同秘密                                |
+| ElGamal        | 加密及簽章演算法家族             | 離散對數型運算與每次操作使用的秘密隨機值                          |
+
+注意：RSA 與 DSA 都屬於非對稱密碼學，但 DSA 並不是 RSA 的另一種加密模式。
+
+#### DSA：每次簽章都會涉及特殊的 \\(k\\)
+
+第 24 題的主要線索是：
+
+> 每次簽章使用新的隨機值，並在公開群參數定義的子群內進行模運算。
+
+傳統 DSA 的簽章運算依賴：
+
+- 公開參數 \\(p,q,g\\)
+- 私鑰 \\(x\\)
+- 公鑰 \\(y\\)
+- 針對簽章產生的秘密值 \\(k\\)
+
+使用 \\(k\\) 及私鑰計算簽章的兩個部分 \\((r,s)\\)。
+
+關鍵是：如果 \\(k\\) 被重複使用、洩漏或產生過程有可利用的偏差，可能導致私鑰遭到推算。
+
+這也是為什麼隨機數產生品質是數位簽章安全的重要環節。
+
+但需要補充兩個重要事實：
+
+第一，ElGamal 簽章也使用一次性秘密值，所以「有隨機數」不是 DSA 的唯一特徵。
+
+第二，RFC 6979 定義了 Deterministic DSA / ECDSA，能安全地從私鑰與訊息摘要推導 \\(k\\)，不必每次都依賴新產生的外部隨機數。相同訊息在相同私鑰下可能產生相同簽章，因此不能說所有安全 DSA 實作都必須每次取得真正新的隨機輸入。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\&sz=32)
+
+RFC Editor
+
+
+
+更重要的是，NIST FIPS 186-5 已不再核准 DSA 用來產生新的簽章，只保留既有 DSA 簽章的驗證用途。新系統在對應 NIST 標準的情境下，可考慮 RSA、ECDSA、EdDSA 等方案。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+CSRC
+
+
+
+因此第 24 題：
+
+P1-Q085：C. DSA
+
+DSA 最吻合題目描述的群參數與傳統簽章機制。
+
+RSA 是另一種簽章家族；DH 主要用於金鑰協議；ElGamal 在數學特徵上存在重疊，但 DSA 的特定子群參數設計使它成為較合理的預期答案。
+
+#### RSA：同一種數學基礎可以支援不同密碼學服務
+
+RSA 的基本結構有公鑰與私鑰，並使用模冪運算。
+
+以簡化的 RSA 數學原型表示：
+
+\\[ c=m^e\bmod n \\]
+
+\\[ m=c^d\bmod n \\]
+
+這展示 RSA 公私指數之間的數學對應，但這不是可以直接部署的安全加密程式。
+
+實際應使用經過安全設計的 RSA 方案，例如：
+
+- RSAES-OAEP：公鑰加密。
+- RSASSA-PSS：數位簽章。
+
+這兩種方案有不同目的與編碼要求。RFC 8017 分別定義其運作方式。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.rfc-editor.org\&sz=32)
+
+RFC Editor
+
+
+
+至於金鑰建立，NIST SP 800-56B Rev. 2 也涵蓋以 RSA 為基礎的金鑰傳送及協議方案。因此，不能一概說 RSA 在任何情況下都與金鑰建立無關。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+但這不代表一組 RSA 金鑰應當同時混用於加密、簽章及所有其他用途。實際設計須遵守金鑰用途分離、協定要求及安全生命週期管理。
+
+#### 5. 回到第 25 題：為什麼選 RSA？
+
+P2-Q034：A. RSA
+
+題目描述：
+
+1. 對交易資料計算 Hash。
+2. 以私鑰簽署。
+3. 用公鑰驗證。
+4. 文件宣稱演算法支援加密、數位簽章及金鑰建立。
+
+題庫顯然想考 RSA 的多用途特性。
+
+但前面三個步驟只是一般數位簽章流程，DSA、ECDSA 等也可以符合。最後一項描述才是試圖區分答案的條件。
+
+嚴格而言，題目需要指定實際的簽章方案或 RSA 金鑰參數，才能明確識別；它也不應把不同 RSA-based schemes 說成單一演算法自然同時完成所有功能。
+
+所以，A 是最符合出題意圖的答案，但題幹無法構成完整的技術鑑別。
+
+#### 6. 回到第 26 題：不可否認性是否絕對成立？
+
+P3-Q071：B. Integrity, Non-repudiation, and Authentication
+
+這是數位簽章典型考點。
+
+A 的 Confidentiality、Availability 不是數位簽章直接提供的組合；C 的 Encryption、Privacy 混淆加密與簽章；D 的 Speed、Efficiency 不是其主要安全目標。
+
+但必須記得：
+
+不可否認性是有條件的證據保障，不是任何法律爭議下都不可推翻的絕對結論。
+
+例如，HSM 金鑰保管、憑證管理、時間戳記、簽章操作紀錄及授權程序，都會影響簽章能支持何種歸屬結論。
+
+#### 7. 回到第 27 題：模冪運算能直接判斷是 RSA 嗎？
+
+EC-Q084：B. RSA（考試預期答案）
+
+這題的問題比第 25 題更明顯。
+
+題幹提到：
+
+- 私鑰簽署、公鑰驗證。
+- 公鑰保存在目錄中。
+- 使用 Modular Exponentiation（模冪運算）。
+- 可能遭受 Man-in-the-Middle Attack。
+
+然而 DSA 與 ElGamal 類型的簽章也涉及模冪運算。私鑰簽署與公鑰驗證更是一般公鑰簽章的共同性質。
+
+所以，這些條件不足以唯一鑑定 RSA。
+
+如果希望能夠明確判定 RSA，應提供更獨特的資訊，例如 RSA 模數 \\(n=pq\\)、公開指數 \\(e\\)，或明確的 RSA-PSS 簽章格式與方案識別。
+
+另外，題目將中間人攻擊歸因於「演算法的金鑰結構」，也過度簡化。
+
+真正需要檢查的是：公鑰目錄能不能被竄改？驗證者是否確實驗證公鑰與銀行身分之間的可信關係？
+
+這才是對支付系統有直接防禦價值的問題。
+
+## 三、從九題提煉出的五項重要判斷
+
+| 容易犯的錯誤                                 | 更精確的判斷                     |
+| -------------------------------------- | -------------------------- |
+| 128-bit block + 256-bit key 就是 Twofish | AES 也可能符合，必須找額外鑑別資訊        |
+| 有 AES-256 就能防止資料外洩                     | 必須先確認磁碟是否已掛載、主機是否遭控制       |
+| 非對稱加密都可以交換金鑰與簽章                        | 需分辨各演算法及具體方案支援的功能          |
+| 私鑰簽章、公開金鑰驗證就代表 RSA                     | DSA、ECDSA、ElGamal 簽章也有相關機制 |
+| 數位簽章通過就代表本人操作                          | 還要確認公鑰身分、私鑰保管及授權流程         |
+
+考試時，可以採用一個簡單的推理流程：
+
+\#chatgpt-mermaid-\_r_1nh\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;fill:rgb(13, 13, 13);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_1nh\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1nh\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_1nh\_ .error-icon{fill:rgb(243, 243, 243);}#chatgpt-mermaid-\_r_1nh\_ .error-text{fill:rgb(13, 13, 13);stroke:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1nh\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_1nh\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_1nh\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_1nh\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_1nh\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_1nh\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_1nh\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1nh\_ .marker.cross{stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1nh\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:16px;}#chatgpt-mermaid-\_r_1nh\_ p{margin:0;}#chatgpt-mermaid-\_r_1nh\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1nh\_ .cluster-label text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1nh\_ .cluster-label span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1nh\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_1nh\_ .label text,#chatgpt-mermaid-\_r_1nh\_ span{fill:rgb(13, 13, 13);color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1nh\_ .node rect,#chatgpt-mermaid-\_r_1nh\_ .node circle,#chatgpt-mermaid-\_r_1nh\_ .node ellipse,#chatgpt-mermaid-\_r_1nh\_ .node polygon,#chatgpt-mermaid-\_r_1nh\_ .node path{fill:rgb(226, 242, 230);stroke:rgb(107, 198, 127);stroke-width:1px;}#chatgpt-mermaid-\_r_1nh\_ .rough-node .label text,#chatgpt-mermaid-\_r_1nh\_ .node .label text,#chatgpt-mermaid-\_r_1nh\_ .image-shape .label,#chatgpt-mermaid-\_r_1nh\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_1nh\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_1nh\_ .rough-node .label,#chatgpt-mermaid-\_r_1nh\_ .node .label,#chatgpt-mermaid-\_r_1nh\_ .image-shape .label,#chatgpt-mermaid-\_r_1nh\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_1nh\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_1nh\_ .root .anchor path{fill:rgb(143, 143, 143)!important;stroke-width:0;stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1nh\_ .arrowheadPath{fill:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1nh\_ .edgePath .path{stroke:rgb(143, 143, 143);stroke-width:1px;}#chatgpt-mermaid-\_r_1nh\_ .flowchart-link{stroke:rgb(143, 143, 143);fill:none;}#chatgpt-mermaid-\_r_1nh\_ .edgeLabel{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1nh\_ .edgeLabel p{background-color:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1nh\_ .edgeLabel rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1nh\_ .labelBkg{background-color:rgba(252, 252, 252, 0.5);}#chatgpt-mermaid-\_r_1nh\_ .cluster rect{fill:rgb(243, 243, 243);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1nh\_ .cluster text{fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1nh\_ .cluster span{color:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1nh\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;font-size:12px;background:rgb(243, 243, 243);border:1px solid rgba(0, 0, 0, 0.1);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_1nh\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(13, 13, 13);}#chatgpt-mermaid-\_r_1nh\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_1nh\_ .icon-shape,#chatgpt-mermaid-\_r_1nh\_ .image-shape{background-color:rgb(252, 252, 252);text-align:center;}#chatgpt-mermaid-\_r_1nh\_ .icon-shape p,#chatgpt-mermaid-\_r_1nh\_ .image-shape p{background-color:rgb(252, 252, 252);padding:2px;}#chatgpt-mermaid-\_r_1nh\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_1nh\_ .image-shape .label rect{opacity:0.5;background-color:rgb(252, 252, 252);fill:rgb(252, 252, 252);}#chatgpt-mermaid-\_r_1nh\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_1nh\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_1nh\_ .node .neo-node{stroke:rgb(107, 198, 127);}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_1nh\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_1nh\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].node .neo-line path{stroke:rgb(107, 198, 127);filter:none;}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_1nh\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_1nh\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1nh\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_1nh\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_1nh\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_1nh\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(0, 105, 42);}#chatgpt-mermaid-\_r_1nh\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_1nh\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_1nh\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(237, 250, 242);stroke:rgb(166, 211, 184);stroke-width:1px;}#chatgpt-mermaid-\_r_1nh\_ .node rect,#chatgpt-mermaid-\_r_1nh\_ .node circle,#chatgpt-mermaid-\_r_1nh\_ .node ellipse,#chatgpt-mermaid-\_r_1nh\_ .node polygon,#chatgpt-mermaid-\_r_1nh\_ .node path{fill:rgb(217, 244, 228);stroke:rgba(0, 0, 0, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_1nh\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_1nh\_ .mermaid-decision .label-container{fill:rgb(237, 250, 242);stroke:rgb(195, 220, 205);stroke-dasharray:2px,2px;}#chatgpt-mermaid-\_r_1nh\_ .edgePaths .flowchart-link{stroke:rgb(143, 143, 143);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_1nh\_ .marker{fill:rgb(143, 143, 143);stroke:rgb(143, 143, 143);}#chatgpt-mermaid-\_r_1nh\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;}讀取題幹先辨識主要安全目標判斷是加密、金鑰建立、Hash或簽章找出最有鑑別力的技術條件逐一排除不相容的選項證據足以唯一判定？選出最佳答案選考試預期答案，並標註歧義是否
+
+這比記住「看到某個詞就選某個字母」更有用，因為即使考題換了情境、改了選項排序，你仍然有一套推理方法。
+
+## 四、主動回憶卡 Active Recall Flashcards
+
+以下 7 張卡片涵蓋本次 9 題的核心知識。請先自己回答，再點擊「顯示答案」。
+
+卡片 1 / 7 · 題號 19、21
+
+AES 與 Twofish 都支援 128-bit block 和 256-bit key，應該如何區分？
+
+先在心中作答，確認能說明原因。
+
+顯示答案
+
+卡片 2 / 7 · 題號 20
+
+為什麼已掛載的加密磁碟，仍可能被控制伺服器的攻擊者讀取？
+
+先在心中作答，確認能說明原因。
+
+顯示答案
+
+卡片 3 / 7 · 題號 22、23
+
+對稱加密、非對稱密碼學與 Hash 各解決什麼問題？
+
+先在心中作答，確認能說明原因。
+
+顯示答案
+
+卡片 4 / 7 · 題號 22、25
+
+Key Transport 與 Diffie–Hellman Key Agreement 的核心差別是什麼？
+
+先在心中作答，確認能說明原因。
+
+顯示答案
+
+卡片 5 / 7 · 題號 24
+
+DSA 簽章為什麼需要特別保護一次性值 k？
+
+先在心中作答，確認能說明原因。
+
+顯示答案
+
+卡片 6 / 7 · 題號 26、27
+
+數位簽章驗證成功，是否代表簽署者本人一定親自操作？
+
+先在心中作答，確認能說明原因。
+
+顯示答案
+
+卡片 7 / 7 · 題號 23、24、25、27
+
+如何從技術證據區分 RSA、DSA、DH 與 ElGamal？
+
+先在心中作答，確認能說明原因。
+
+顯示答案
+
+### 建議的間隔複習安排
+
+先採用以下起始間隔，再按答題表現調整：
+
+| 階段     | 建議日期  | 練習方法                |
+| ------ | ----- | ------------------- |
+| Day 0  | 11/10 | 完成本課情境測驗            |
+| Day 1  | 11/11 | 不看教材，主動回答卡片         |
+| Day 3  | 11/13 | 混合複習 AES、RSA、DSA、DH |
+| Day 7  | 11/17 | 加入新的變形選擇題           |
+| Day 14 | 11/24 | 以實務案例檢查理解           |
+| Day 30 | 12/10 | 長期保持與弱點重測           |
+
+這些是可執行的初始設定，不是每個人都適用的固定「遺忘曲線公式」。間隔學習與 Practice Testing 的有效性有研究支持，但最佳間隔會隨保留目標及個人表現而改變。
+
+[image](https://www.google.com/s2/favicons?domain=https://pubmed.ncbi.nlm.nih.gov\&sz=32)
+
+PubMed+1
+
+
+
+建議以三種表現調整：
+
+- 能答對並解釋原因：延長下一次複習間隔。
+- 猜對或理由不完整：視為尚未熟練，維持短間隔。
+- 答錯或混淆概念：重新理解錯誤原因，隔天再次測試，並加入新的變形題。
+
+比起每天重新閱讀全部內容，優先練習「不看答案也能解釋」的能力。
+
+## 五、理解檢核：五道新情境題
+
+本階段不提供答案。請先作答並說明判斷依據。
+
+## 情境應用測驗
+
+0 / 5 已作答
+
+1\. 題目 1｜演算法識別
+
+工程師發現一套加密演算法使用 128-bit block、256-bit key，並曾進入 AES 競賽最後五強。有同事立刻斷言它一定是 Twofish。這個推論是否成立？
+
+A. 成立，只有 Twofish 符合這些條件
+
+B. 不成立，因為只有 AES 支援這些條件
+
+C. 證據不足，應進一步檢查演算法識別資訊
+
+D. 應判斷為 RC4
+
+2\. 題目 2｜受入侵主機的加密防護
+
+某醫院資料庫使用全磁碟加密，但系統目前已解鎖運作。攻擊者利用取得的系統權限持續讀取病患資料。下列哪種應對方向最合理？
+
+A. 把磁碟金鑰從 128-bit 改為 256-bit 即可中止外洩
+
+B. 依事件應變程序隔離威脅、保全證據並處理遭入侵的存取權限
+
+C. 將資料移至另一個已掛載的加密容器即可
+
+D. 只要重新計算所有檔案的 Hash 即可防止竊取
+
+3\. 題目 3｜DH 與中間人攻擊
+
+Alice 與 Bob 使用 Diffie–Hellman 成功建立共同秘密，但沒有驗證交換的公開值是否來自對方。請說明攻擊者可能如何利用這個缺口，以及可以加入哪一類機制修補。
+
+4\. 題目 4｜數位簽章與身分驗證
+
+一家銀行的 RSA-PSS 交易簽章通過驗證，但驗證用的公鑰來自一個可能遭竄改的公開目錄。能否立即認定交易由該銀行授權？請說明原因，並指出簽章是否能保護交易內容不被偷看。
+
+5\. 題目 5｜DSA 私鑰安全
+
+某舊系統的 DSA 簽章服務，因隨機數產生器故障，對兩筆不同交易重複使用同一個 k。請解釋可能的安全後果，並說明依據 NIST FIPS 186-5，是否應繼續使用 DSA 產生新的簽章。
+
+提交五題答案並批改&#x20;
+
+本次課程的核心能力目標，不是只記住 Twofish、VeraCrypt、RSA、DSA 等名稱，而是看到新的系統情境時，能先辨認要保護的安全性質，再推理哪種密碼學機制真正有用、哪些必要條件尚未成立。
+
+下一步是完成上面的五道情境題；批改時應特別檢查能否區分「數學上驗證成功」與「系統安全目標確實達成」。
