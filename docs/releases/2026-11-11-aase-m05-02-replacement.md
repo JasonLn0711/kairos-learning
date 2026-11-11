@@ -38,14 +38,20 @@
 
 全課英文回歸：60 通過、3 個其他頁面的 768px 閱讀排版斷言未過（M02-02、M02-03、M03-01）。這三頁的內容與圖解未在本次修改；不擴張本次修訂去修復。最終整合 M05-05 後，M05 與共用框架回歸 7 通過、1 個其他頁面閱讀排版斷言未過（M05-05，320px／200%，proposal.md 與 tasks.md 標籤），M05-02 專用雙語測試 2 通過。[機器可讀紀錄](2026-11-11-aase-m05-02-checks.json)保留範圍與失敗訊息。
 
-工作坊純規則測試：reference 22 通過、validation slice 23 通過。Streamlit UI 測試在本隔離環境因缺少 `streamlit` 無法收集；未改動工作坊或其套件，這不影響本次靜態文章驗證。
+工作坊純規則測試：reference 22 通過、validation slice 23 通過。Streamlit UI 測試在本隔離環境因缺少 `streamlit` 無法收集（一次跨目錄收集另遇同名 test_rules 匯入衝突，純規則已改為逐目錄執行通過）；未改動工作坊或其套件，這不影響本次靜態文章驗證。
 
 本機證據：隔離工作樹 `.local/aase/m0502/`，含結果 JSON、雙語五圖手機／桌面截圖與十張 SVG 截圖。正式站採 `AASE_BASE_URL=https://learn.cs-kairos.com` 執行相同測試，結果另存後更新本紀錄。
 
 ## 發布與界線
 
-發布前基準：Pages run 42987132405，commit `f05f044f31d22fc6e11ec7463041277fd6df2568` 成功。隔離工作樹 `/tmp/kairos-aase-m0502` 從最新遠端建立；原主工作目錄的其他章節 dirty work 保留，沒有一併提交。
+發布前最近成功基準：Pages run 42988941849，commit `8564c51f528ca63f8cc4936bbb9f5f074ea73a0d`。隔離工作樹 `/tmp/kairos-aase-m0502` 從最新遠端建立；原主工作目錄的其他章節 dirty work 保留，沒有一併提交。
 
-來源提交 `f7e90cd`，教材與五圖提交 `219ccff`。遠端合併保留 M05-01／03／04／05 的內容與元件，原工作目錄保留。Pages run 與正式回讀：待完成。本紀錄的本機通過不代表正式站已更新。
+來源提交 `f7e90cd`，教材與五圖提交 `219ccff`。遠端合併保留 M05-01／03／04／05 的內容與元件，原工作目錄保留。本次發布 commit `3c1f378573016a166d6ae420ffcce8482e7180cd` 已推送 `origin main`，推送後 fetch 確認 divergence `0 0`。
+
+[Pages run 42989406500](https://github.com/JasonLn0711/kairos-learning/actions/runs/42989406500) 成功，部署完成時間為 2026-11-11 16:45:45（Asia/Taipei）。CI 的內容、319 個單元測試、共用 HTML 契約、型別、真正 draft／future 發布閘門、靜態資產與下載校驗均通過。
+
+正式站 `AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0502.config.ts`：2 通過（23.8 秒）。兩語 v1.1.0 全文、三表、三段 code、五圖節點、三題四選項與所有解析逐項回讀；四寬度／200% 文字／無 JavaScript／鍵盤操作通過。十張實際 HTTPS SVG 與本機逐位元組相等，文字邊界與遮蓋檢查通過。正式手機圖 1 與英文桌面圖 4 已另行目視回讀。
+
+最後紀錄提交僅更新本篇來源與驗證回執，使用 `[skip ci]`；正式部署仍對應上述教材 commit，沒有再改動產品內容。
 
 未執行實體手機、螢幕閱讀器完整驗收或真人學習成效測試；文章中的 50 人／2 秒是需求示範，沒有執行負載測試，也沒有宣稱產品達標或符合完整 WCAG。

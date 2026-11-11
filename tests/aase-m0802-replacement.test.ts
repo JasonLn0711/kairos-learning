@@ -25,6 +25,10 @@ test('TDD figures reject unreviewed kinds, counts, placement and markup fields',
  for(const mutate of [(f:any)=>f.items.pop(),(f:any)=>f.kind='cards',(f:any)=>f.html='<script>',(f:any)=>f.items[0].path='M0 0']){
   const ls=structuredClone(all),l=ls.find((l:any)=>l.id===lesson.id)!;for(const lang of ['zh','en']){const f=l.text[lang].sections.find((s:any)=>s.id==='analogy').blocks.find((b:any)=>b.kind==='flow');mutate(f);}assert.throws(()=>build(ls));
  }
+ const ls=structuredClone(all),l=ls.find((l:any)=>l.id===lesson.id)!;
+ for(const lang of ['zh','en']){const from=l.text[lang].sections.find((s:any)=>s.id==='analogy'),to=l.text[lang].sections.find((s:any)=>s.id==='cycle');const index=from.blocks.findIndex((b:any)=>b.kind==='flow');to.blocks.push(from.blocks.splice(index,1)[0]);}
+ assert.throws(()=>build(ls));
+
 });
 test('source hashes, adopted body and six constrained exports are synchronized',()=>{
  execFileSync('sha256sum',['-c','SHA256SUMS'],{cwd:'docs/sources/aase/m08-02/replacement-2026-11-11'});

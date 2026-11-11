@@ -51,3 +51,9 @@
 正式頁：[/courses/aase/v1/m08/concepts/m08-02/](https://learn.cs-kairos.com/courses/aase/v1/m08/concepts/m08-02/)，[英文頁](https://learn.cs-kairos.com/en/courses/aase/v1/m08/concepts/m08-02/)。提交、推送、CI與正式站回讀尚待完成，不能以本機通過推論上線。
 
 待驗：實體裝置、讀者理解與實作接受。原稿影片未提供可核實網址，原文仍保留，正文沒有杜撰影片連結。
+
+## 整合驗證
+
+本次依保留雙方歷史的流程整合遠端`48498a4`，保留M06-02、M06-04、M07-02、M07-05與其他既有發布。共用元件分派、模型驗證、歷史測試及內容指南的衝突均保留雙方用途。整合時型別檢查抓到TDD分派誤插於段落區而未定義block，已移回blocks迴圈；修正後型別0 errors／0 warnings、單元334／334、發布邊界、validate:release與兩語瀏覽器2／2通過。
+
+最後核對補上本課四表的1rem／1.7行高，沿用現有表格樣式並將td／th字級及行高加入四尺寸／200%瀏覽器檢查；最終型別0 errors／0 warnings、單元334／334、兩語瀏覽器2／2與validate:release均通過。
