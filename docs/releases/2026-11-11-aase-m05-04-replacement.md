@@ -21,3 +21,11 @@ HTML-01–04、FIG-01–06、A11Y-01–03：語意標題、表格、程式碼、
 瀏覽器初輪在發布邊界重建期間讀到暫時英文關閉頁，不作驗收；後續順序重測。正文列表初輪發現尚未套用既有AaseProse，已加上本課渲染分支，保持其他課次不變。最終瀏覽器、靜態發布檢查、Git與正式頁回讀結果待後續實測追加。
 
 待驗：實體手機、完整螢幕閱讀器及真人理解；瀏覽器與測試不代表學員已完成或正式環境四欄變更已接受。
+
+## 最終本機驗收
+
+Linux／Playwright Chromium，中英文各一項整合檢查通過（2 passed，5.8s）：逐節全文與順序、六／五列兩表、三段程式碼、三題答案、320／390／768／1280 CSS px及200%字級、無JS、頁面無水平溢出、圖中文字至少16px／行高1.8、Tab／Shift+Tab／Enter／Space、局部捲動、搜尋、SVG文字viewBox邊界／互相重疊／下載bytes及工作坊ZIP皆已核對。目視中文390、英文1280及中文SVG截圖，五節點、四箭頭及決策強調符合附圖。截圖與JSON結果在隔離工作樹 `.local/aase/m0504/`。
+
+來源提交d054ab1、教材與驗證提交7b8c708。以origin/main建立隔離工作樹，原工作樹既有修改未攜入；9c68c12合併保留並行發布。合併後311／311單元及型別零錯誤／警告，正式建置與validate:release通過。發布邊界已於本次內容上驗證草稿、未來日期、翻譯與英文課程閘門；沒有改動發布規則。發布前最近成功run為42987098978（de7ce8d），並行run 42987132405當時仍執行中。
+
+可重現：`pnpm test`、`pnpm run check`、`node scripts/check-publication-boundary.mjs`（與全測／瀏覽器依序執行）、`pnpm run validate:release`、`pnpm exec playwright test --config playwright.aase-m0504.config.ts`。正式站回讀加 `AASE_BASE_URL=https://learn.cs-kairos.com`。
