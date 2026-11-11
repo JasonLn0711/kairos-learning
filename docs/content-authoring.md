@@ -644,6 +644,14 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 
 單元為`tests/m05-06.test.ts`，瀏覽器為`node scripts/check-m05-06-browser.mjs`，正式站設定`M05_06_BASE_URL=https://learn.cs-kairos.com`；`node scripts/check-m05-06-svg.mjs`核對六圖字框與重疊。同期修改於隔離工作樹驗收，保留原工作目錄。
 
+## AASE M04-01 醫院情境與四圖抽換（2026-11-11）
+
+v1.2.0／revision 6 以新供稿取代餐廳版本；[逐小節來源對照](sources/aase/m04-01/replacement-2026-11-11/source-map.md)保留原文、四PNG、前版、雙語成稿、正規化與雜湊。十二個section承接導言、十節及銜接；舊section錨點與Q04–Q06保留，新實作題Q07沿原生參考解析。三表、六行業、心智模型／回饋／錯誤預防、易用性三面向及完整AI指令進入正式正文。
+
+四圖位置為analogy／three-lenses／quality／case，全部使用受限cards資料，節點數3／4／5／2。HciPerspectivesDiagram 將醫院三列、概念交會、目標與同層UI／HCI的分層流程、修改前後雙欄重排；僅圖3有三個閱讀箭頭，UI與HCI之間沒有箭頭。HTML、搜尋與八份SVG由同一正式JSON提供。normalize-source.py --check、aase_m0401_content.py --check與aase_m0401_svg.py --check分別檢查來源正規化、正文、下載同步。
+
+單元與瀏覽器仍用 tests/aase-m0401-replacement.test.ts、playwright.aase-m0401.config.ts；本機獨立連接埠4297，正式站指定AASE_BASE_URL。[回執](releases/2026-11-11-aase-m04-01-replacement.md)記錄實際驗證、發布與待驗界線，歷史五圖回執保留原結果。
+
 ## CEH 考古題知識筆記 — 2026-11-10
 
 `content/ceh-notes/YYYY-MM-DD.json` 維護同一天的單一筆記；`parts` 按供稿順序延續，不替同日每份供稿新增日期頁。原稿、原圖與採用對照留在 `docs/sources/ceh-notes/YYYY-MM-DD/part-NN/`；正文保留完整小節，來源與編輯補充分開記錄。`expectedParts` 只記錄使用者預期數量，頁面顯示實際已發布部分數量；不得把尚未提供部分寫成已完成。追加內容保留原發布日、日期網址及既有錨點，增加revision與revisedOn。
@@ -673,3 +681,11 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 [2026-11-11來源及逐節對照](sources/aase/m04-02/replacement-2026-11-11/README.md)保存八章供稿、五張原圖、舊版及編輯差異。修改完整中英稿或`figures.json`後執行`scripts/aase_m0402_content.py`與`scripts/aase_m0402_svg.py`（皆支援`--check`）。正式資料保留六個既有錨點，新增各小節；三個物流問題使用原生開放檢核與編輯參考答案，不提供送答服務。
 
 `TaskAnalysisDiagram.svelte`沿既有cards／flow承接五種固定版型：goal六節點、plans六／五節點、methods五階段、walkthrough三條件。`aase.ts`限制位置、種類、數量及欄位；不接受HTML、任意SVG或外部圖片路徑。HTA分解與流程順序分開，二分支手機重排不相接。文字、搜尋與十份受審核SVG同源。驗收用`tests/aase-m0402-replacement.test.ts`與`playwright.aase-m0402.config.ts`；正式站設定`AASE_BASE_URL`。結果見[回執](releases/2026-11-11-aase-m04-02-replacement.md)。
+
+## AASE M03-05 十節新供稿與六圖（2026-11-11）
+
+v1.2.0／revision 5 的[來源對照](sources/aase/m03-05/replacement-2026-11-11/source-map.md)保存完整原文、六張PNG、待換前版與雙語稿。原十節、導言與分母界線成為十二section，舊十一錨點、原發布日與翻譯閘門保留；五個原開放問題搭配Q08–Q12參考解析，qa=[]。`normalize-source.py --check`核對原文與明列正規化；`aase_m0305_content.py --check`核對雙語稿、圖解及正式JSON。
+
+SuccessEvidenceDiagram沿受限cards／flow，revision 5限定evidence-chain／metrics／measure／assumptions／trace／understanding節點數6／3／4／4／4／7，只有第一圖為flow。第二圖是三個平行角色，第六圖使用主張區與六列dl。`successMetrics`固定四瑕疵兩良品，檢查整數邊界；兩個range與全部阻擋按鈕只計算合成資料，無JS停用互動並保留預設及公式。十二個SVG由`aase_m0305_svg.py`從正式模型產生，`--check`比對位元組，下載固定預設。
+
+單元與瀏覽器入口仍為`tests/aase-m0305-replacement.test.ts`、`playwright.aase-m0305.config.ts`。正式站設定AASE_BASE_URL。驗證範圍含完整正文與順序、四尺寸／200%、鍵盤／無JS、兩滑桿、全部阻擋、搜尋、十二SVG邊界／重疊／下載；實際結果與待驗事項見[發布回執](releases/2026-11-11-aase-m03-05-replacement.md)。
