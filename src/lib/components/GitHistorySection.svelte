@@ -14,6 +14,8 @@
   {:else}<p>{@render inline(p)}</p>{/if}
  {/each}
 {/snippet}
+<!-- Fixed comments preserve copyable synthetic email commands through Cloudflare. -->
+{@html '<!--email_off-->'}
 {@render prose(section.paragraphs)}
 {#each section.blocks??[] as block}
  {#if block.kind==='prose'}{@render prose(block.paragraphs)}
@@ -30,6 +32,7 @@
  </figure>
  {:else}<AaseBlocks blocks={[block]} {lang}/>{/if}
 {/each}
+{@html '<!--/email_off-->'}
 <style>
  .git-figure{margin:1.5rem 0;padding:1rem;border:1px solid #c6ced3;border-radius:.9rem;background:#fbfcfd;min-width:0;font-size:1rem;line-height:1.8;overflow-wrap:anywhere}
  figcaption{margin-bottom:1rem}ol,ul{list-style:none;margin:0;padding:0}li{min-width:0}.place{text-align:center;padding:1rem;border:1px solid transparent;border-radius:.7rem}.staging{background:#ecf3f8;border-color:#b6d1e8}.local{background:#ebf4f0;border-color:#b1d7c8}.place strong{font-weight:500}.place p{margin:.25rem 0 0}.transition{display:flex;justify-content:center;align-items:center;gap:.5rem;margin:.55rem 0;color:#4b5861;font-size:1rem}.transition svg{width:1.1rem;height:1.5rem;flex:none;fill:none;stroke:currentColor;stroke-width:2}.conditions{display:grid;gap:.6rem}.conditions li{display:flex;align-items:baseline;gap:.7rem}.conditions li>span{color:#17633c}.explanation{margin:1rem 0}.git-figure a{font-size:1rem}

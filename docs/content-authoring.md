@@ -860,6 +860,8 @@ v1.1.0／revision 4 的[來源與逐小節對照](sources/aase/m09-02/replacemen
 
 ## AASE M09-01 Git、Diff、Commit 與還原（2026-11-11）
 
-M09-01 v1.1.0 由[完整雙語稿與逐小節對照](sources/aase/m09-01/replacement-2026-11-11/source-map.md)產生，保存十節、五表、十段指令及三題四選項。`python3 scripts/aase_m0901_content.py --check` 核對同步；既有六錨點及原發布日保留。`GitHistorySection.svelte` 承接本課正文順序與受限四位置 flow／四條件 cards；文字跳脫，只有固定裝飾 SVG 箭頭。aase.ts 限定圖位置、節點數、種類、欄位及 add／commit／push 標籤順序；並列條件不接箭頭。`python3 scripts/aase_m0901_svg.py --check` 由同源模型核對四份受審核 SVG。
+M09-01 v1.1.1 由[完整雙語稿與逐小節對照](sources/aase/m09-01/replacement-2026-11-11/source-map.md)產生，保存十節、五表、十段指令及三題四選項。`python3 scripts/aase_m0901_content.py --check` 核對同步；既有六錨點及原發布日保留。`GitHistorySection.svelte` 承接本課正文順序與受限四位置 flow／四條件 cards；文字跳脫，只有固定裝飾 SVG 箭頭。aase.ts 限定圖位置、節點數、種類、欄位及 add／commit／push 標籤順序；並列條件不接箭頭。`python3 scripts/aase_m0901_svg.py --check` 由同源模型核對四份受審核 SVG。
 
 `tests/aase-m0901-replacement.test.ts` 實跑 A–D 合成 Git 練習；`playwright.aase-m0901.config.ts` 驗證兩語全文、四尺寸、200%、無JS、鍵盤、搜尋與下載。正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`。結果與限制見[本次回執](releases/2026-11-11-aase-m09-01-replacement.md)。
+
+M09-01 的固定 email_off 註解僅保護合成指令，避免正式站 CDN 變更 `learner@example.invalid`。內容欄位仍全部跳脫；本機及正式站皆檢查原始命令、註解與無保護連結。
