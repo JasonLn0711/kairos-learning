@@ -199,6 +199,8 @@ def main():
     reviewed.append(('veracrypt-hidden-requirements','VeraCrypt — Hidden-volume security requirements','https://veracrypt.io/en/Security%20Requirements%20for%20Hidden%20Volumes.html'))
     for id,title,url in reviewed:
         if not any(s['id']==id for s in n['sources']):n['sources'].append({'id':id,'title':title,'url':url,'checkedOn':'2026-11-10'})
+    from ceh_note_continuation import adopt_continuation
+    adopt_continuation(n)
     output=json.dumps(n,ensure_ascii=False,indent=2)+'\n'
     if '--check' in sys.argv:
         assert path.read_text(encoding='utf-8')==output,'Reconstructed section differs from reviewed paired source'

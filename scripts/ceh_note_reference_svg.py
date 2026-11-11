@@ -14,6 +14,9 @@ def render_reference(b,lang):
     spec=SPECS[b['name']]
     assert len(b['items'])==spec['count']
     assert all(set(i)=={'title','body'} for i in b['items'])
+    if spec['layout'].startswith('continuation-'):
+        from ceh_note_continuation_svg import render_continuation
+        return render_continuation(b,lang,spec)
     out=[]
     def text(value,x,y,width,size=18,bold=False,center=False):
         for paragraph in value.split('\n'):

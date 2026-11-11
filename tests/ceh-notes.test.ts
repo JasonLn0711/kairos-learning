@@ -75,7 +75,7 @@ test('the reconstructed CIA chapter retains all seven supplied subsections, exam
 });
 test('all three supplied parts retain their reference sets, mechanisms and mixed exercises',()=>{
  assert.deepEqual(original.parts.map(p=>p.number),[1,2,3]);
- assert.deepEqual(original.parts.map(p=>p.text.zh.sections.length),[10,9,9]);
+ assert.deepEqual(original.parts.map(p=>p.text.zh.sections.length),[10,16,16]);
  const expected=[['EC-Q001','P1-Q003','P3-Q113','EC-Q054','P3-Q124','EC-Q166','EC-Q189','EC-Q331','EC-Q476'],['EC-Q535','P3-Q110','P1-Q063','P3-Q086','P3-Q088','EC-Q284','EC-Q032','P3-Q074','P3-Q121'],['EC-Q493','EC-Q024','P1-Q114','EC-Q053','P3-Q056','P1-Q085','P2-Q034','P3-Q071','EC-Q084']];
  for(const lang of ['zh','en'] as const)for(const [index,p] of original.parts.entries()){
   const blocks=p.text[lang].sections.flatMap(s=>s.body),text=blocks.flatMap(noteBodyText).join(' ');
@@ -97,4 +97,30 @@ test('a hidden later part cannot leak while another part remains public',()=>{
  const c=createNotesCatalog([n],today);
  assert.deepEqual(c.notes[0].parts.map(p=>p.number),[1]);
  assert.ok(!JSON.stringify(c).includes('HIDDEN_'));
+});
+
+test('all seventeen continuation references preserve fixed relationships, source links and bilingual text',async()=>{
+ const {noteDiagramSpecs,noteReferenceImage}=await import('../src/lib/note-diagrams.ts');
+ const refs=JSON.parse(readFileSync('docs/sources/ceh-notes/2026-11-10/continuation-17-reference/reference-diagrams.json','utf8'));
+ assert.deepEqual(refs.map((r:any)=>r.reference),Array.from({length:17},(_,i)=>i+1));
+ for(const r of refs){
+  const spec=(noteDiagramSpecs as any)[r.text.zh.name];
+  if(spec.rows){
+   assert.deepEqual(spec.rows.flat().sort((a:number,b:number)=>a-b),Array.from({length:spec.count},(_,i)=>i));
+   for(const [a,b] of spec.edges){assert.ok(a>=0&&a<spec.count&&b>=0&&b<spec.count&&a!==b);}
+  }
+  for(const lang of ['zh','en'] as const){
+   const actual=original.parts[r.part-1].text[lang].sections.flatMap(s=>s.body).find(b=>b.kind==='diagram'&&b.name===r.text[lang].name);
+   assert.deepEqual(actual,r.text[lang]);
+   assert.ok(noteReferenceImage(original.date,r.text[lang].name)?.endsWith(`/continuation-17-reference/image-${r.reference}.png`));
+   const mutated=fixture();
+   const block=mutated.parts[r.part-1].text[lang].sections.flatMap(s=>s.body).find(b=>b.kind==='diagram'&&b.name===r.text[lang].name)!;
+   (block as any).edges=[[0,1,'injected']];
+   assert.throws(()=>createNotesCatalog([mutated],today));
+  }
+ }
+ assert.deepEqual((noteDiagramSpecs.soc as any).edges.slice(-3),[[4,5,'optional'],[4,6,''],[5,6,'']]);
+ assert.deepEqual((noteDiagramSpecs.mitm as any).edges,[[0,1,'K1','both'],[1,2,'K2','both']]);
+ assert.equal(noteDiagramSpecs.storage.layout,'continuation-parallel');
+ assert.equal(noteDiagramSpecs.hidden.layout,'continuation-nested');
 });

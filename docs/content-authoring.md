@@ -667,3 +667,11 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 三份正文由 `scripts/reconstruct-ceh-notes.py` 與 `ceh_note_part1.py`／`ceh_note_part2.py`／`ceh_note_part3.py` 重建；`--check` 與 `scripts/audit-ceh-note-adoption.py --check` 已納入 validate:release，驗證同步、原附件雜湊及明確逐標題採用映射。原始資料不可由生成結果覆寫。
 
 驗收順序：單元／型別 → SSR 圖解 fixture → 發布邊界與最終 production build → validate:release → 新 preview／完整頁面瀏覽器。SSR fixture 或 SvelteKit sync 會刷新生成檔，不可與 production build 並行，也不可在最終建置後執行而沿用舊 preview；完整頁面檢查同時核對 HTML／client bootstrap 識別碼。
+
+### 11/10 續篇來源版本與 17 張圖 — 2026-11-11
+
+兩份續篇與 17 張圖沿用同一日期頁，v1.2.0 保留既有較新完整稿及錨點，再接續本批完整供稿版。來源／逐段雙語／採用對照見 [continuation-17-reference](sources/ceh-notes/2026-11-10/continuation-17-reference/source-map.md)。661 筆來源單位的實際正文由 `ceh_note_continuation.py` 採用；`check-ceh-continuation-source.py --check` 已加入 release gate，核對原始 bytes、正規化、來源範圍及真正正文，不以單純字數或圖名代替完整性。
+
+17 個固定圖名與版型登記在 `note-diagram-specs.json`。`NoteContinuationDiagram` 使用 HTML 節點、容器重排及經量測的 SVG 連線，連線端點／條件固定於受審核 spec，內容仍只允許 title／body 文字。平行保護範圍、巢狀卷與 16／32 位元組格各有專用結構；CA／網站／瀏覽器序列區分事先簽發與連線內往返。沒有 JS 時節點及具名關係文字直接可讀。`ceh_note_continuation_svg.py` 序列化同源文字，沿既有 allowlist 及每圖小於 100000 bytes 的邊界。
+
+本批原始回憶問題各七個、情境題各五題；附件未附翻面答案，保留來源界線；情境題依供稿先不提供答案鍵。`check-ceh-continuation-diagrams.mjs` 檢查 SSR／無 JS、四尺寸／200% 及 34 份匯出；`check-ceh-continuation-graphs.mjs` 檢查真正頁面的量測端點。最終頁面與發布證據見 [本輪回執](releases/2026-11-11-ceh-continuation-17.md)。
