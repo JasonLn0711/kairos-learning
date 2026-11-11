@@ -50,7 +50,7 @@ def figures(lang):
  ('slice-notes.md','恢復到原本內容'),('keep.txt','新修改還在'),('slice-notes.backup.md','備份仍存在'),('Commit','原本紀錄仍可查詢')]if zh else[
  ('slice-notes.md','Restored to its original content'),('keep.txt','New edits remain'),('slice-notes.backup.md','Backup still exists'),('Commit','Original history is still available')])]
 
-lesson=json.loads((P/'previous-lesson.json').read_text());lesson.update(revision=4,contentVersion='1.1.0',date='2026-11-11')
+lesson=json.loads((P/'previous-lesson.json').read_text());lesson.update(revision=5,contentVersion='1.1.1',date='2026-11-11')
 zh=(P/'teaching.zh.md').read_text();codes=re.findall(r'```\n(.*?)\n```',zh,re.S);assert len(codes)==10
 for lang in ['zh','en']:lesson['text'][lang]['sections']=parse((P/f'teaching.{lang}.md').read_text(),lang,codes,figures(lang))
 questions=[

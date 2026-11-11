@@ -156,7 +156,7 @@ Check three things:
 
 These checks support functional quality and may reduce accidental export of additional data. They do not replace access control or a complete security test program.
 
-Use json.loads() to parse the report and assert its structure and values. The workshop report has a status field and a data object; the three-field restriction applies to data, not to the entire outer JSON object.
+Use json.loads() to parse the report and assert its structure and values. The workshop report has status, scope and data fields. The three-approved-field restriction applies to the application data inside data; the outer object retains the status and teaching-scope explanation.
 
 ## 8. Why Passing Tests Do Not Establish Complete Correctness
 
