@@ -1,10 +1,10 @@
 {
   "id": "AASE-M08-C06",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "owasp-authorization",
     "owasp-threat-model",
@@ -14,7 +14,7 @@
   "qa": [],
   "text": {
     "zh": {
-      "summary": "以無效輸入、額外欄位及過期結果建立負向驗證，將已測原型行為與尚未實作的多人安全分開。",
+      "summary": "從 ATM、報告匯出與過期狀態理解負向測試，以可執行 Python 範例及回歸紀錄界定安全證據。",
       "objectives": [
         "從規格與風險推導負向情境。",
         "記錄拒絕、修正及回歸證據。",
@@ -28,119 +28,594 @@
       },
       "sections": [
         {
-          "id": "negative",
-          "heading": "除了能做什麼，也驗證何時必須拒絕",
+          "id": "intro",
+          "heading": "用白話理解負向測試與回歸證據",
           "paragraphs": [
-            "正向情境證明一筆有效資料能完成，負向情境則檢查系統面對不應接受的輸入或操作，是否拒絕且不造成錯誤結果。每個案例先說明保護哪個要求，再選擇能觀察它的層次。",
-            "本課已有缺漏不能匯出、額外欄位不進報告、輸入變更使舊結果失效。這些是具體的資料完整性與輸出邊界測試，不等於已完成所有資安測試或正式風險評估。"
-          ]
-        },
-        {
-          "id": "analogy",
-          "heading": "像檢查門禁，也確認不該放行的情況",
-          "paragraphs": [
-            "只測持證者能進門，不能證明失效證件或無權訪客會被拒絕。拒絕的條件、發生位置及留下的結果都需要明確。",
-            "軟體的畫面隱藏按鈕只限制一條操作路徑，資料或匯出函式也要驗證。多人授權則必須有真實身分與資源關係，不能用畫面上的 A、B 文字假裝已建立隔離。"
-          ]
-        },
-        {
-          "id": "matrix",
-          "heading": "把風險轉成可執行案例",
-          "paragraphs": [
-            "缺漏直接呼叫 export_report 應拋出 ValueError；額外欄位輸入後，下載 data 仍只含三個允許鍵；完整後清空欄位，成功與下載應消失。",
-            "下表最後一列是多人版的候選驗收。單人原型沒有帳號與資料庫，先記未實作，不能執行一份與系統無關的假授權函式就宣告通過。"
+            "這一課最重要的觀念是："
           ],
           "blocks": [
             {
-              "kind": "table",
-              "caption": "表 1｜原型可驗與多人版待實作",
-              "headers": [
-                "風險情境",
-                "預期拒絕或保護",
-                "證據與狀態"
-              ],
-              "rows": [
-                [
-                  "空白／錯誤型別／超長匯出",
-                  "拒絕完整報告",
-                  "規則例外測試"
-                ],
-                [
-                  "輸入含額外 debug_note",
-                  "報告不包含額外鍵",
-                  "JSON 內容與允許欄位核對"
-                ],
-                [
-                  "已完整後清空必要欄",
-                  "舊成功與下載失效",
-                  "AppTest＋真實瀏覽器"
-                ],
-                [
-                  "A 嘗試讀取 B 未授權資料",
-                  "資料存取處拒絕且不回傳內容",
-                  "本原型未實作；多人版另驗"
-                ]
+              "kind": "prose",
+              "paragraphs": [
+                "一個系統不只要在使用者做對事情時能夠正常運作，也要在使用者做錯事情、輸入異常資料，甚至有人試圖越權操作時，能夠正確拒絕，而且不造成新的問題。",
+                "例如：",
+                "- 銀行系統能正常轉帳，不代表它能阻止未授權轉帳。\n- 醫院系統能查詢病歷，不代表它會阻止員工查看無權存取的病歷。\n- AI 系統能產生正確報告，不代表它不會洩漏額外輸入的敏感資料。\n- 資安漏洞修好了，不代表修補程式沒有破壞其他正常功能。",
+                "這就是本課的核心：負向測試（Negative Testing）＋回歸測試（Regression Testing）＋可核對的證據（Evidence）。",
+                "本課以本機單人「資料檢核與報告匯出系統」說明負向測試與回歸證據。多人授權保留為未實作、未驗證的後續需求。"
               ]
             }
           ]
         },
         {
-          "id": "regression",
-          "heading": "修正後驗原案例，也驗原有功能",
+          "id": "negative",
+          "heading": "一、先搞懂：正向測試與負向測試差在哪裡？",
           "paragraphs": [
-            "若負向案例失敗，先保留重現條件與觀察，定位根因後做最小修正。重跑原失敗案例，再跑受影響的正常與負向情境，確認修正沒有讓有效報告也無法產生。",
-            "回歸證據要包含相同版本、環境與案例。只寫「已修復」或只提供一張成功截圖，無法確認原錯誤是否消失；缺少測試時，先補可失敗的斷言。"
+            "假設你開了一間銀行，設計了一套 ATM 提款系統。"
           ],
           "blocks": [
             {
+              "kind": "prose",
+              "paragraphs": [
+                "### 正向測試（Positive Testing）"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "你想知道正常客戶能不能順利領錢。",
+                "> 插入有效提款卡 → 輸入正確密碼 → 帳戶餘額足夠 → 領取 3,000 元 → 成功。",
+                "這項測試通過，代表系統在這個正常情境下可以使用。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 負向測試（Negative Testing）"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "接著，你要確認系統遇到不合理的要求時會怎麼處理。"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 1",
+              "headers": [
+                "測試情境",
+                "你期待系統怎麼做"
+              ],
+              "rows": [
+                [
+                  "密碼輸入錯誤",
+                  "拒絕提款"
+                ],
+                [
+                  "帳戶只有 1,000 元，要求領取 5,000 元",
+                  "拒絕提款"
+                ],
+                [
+                  "提款金額輸入負數",
+                  "拒絕異常金額"
+                ],
+                [
+                  "已登出的客戶要求提款",
+                  "拒絕操作"
+                ],
+                [
+                  "A 客戶試圖存取 B 客戶帳戶",
+                  "拒絕未授權存取"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些負向測試的目的，不是故意讓系統故障，而是確認：",
+                "系統碰到不該成功的事情時，能不能以預期、安全、可控制的方式處理？",
+                "注意，拒絕不一定代表程式當機或顯示錯誤。好的拒絕應當讓交易停止、不產生不當副作用，並提供適當訊息。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "二、怎麼把「風險」變成真正可以測試的事情？",
+          "paragraphs": [
+            "資安測試不是漫無目的地輸入奇怪資料，而是從「我要保護什麼」開始。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "可以用下面這套流程理解："
+              ]
+            },
+            {
               "kind": "flow",
-              "caption": "圖 1｜負向案例的回歸鏈",
-              "description": "從要求到修正再驗證，未涵蓋控制維持獨立待辦。",
+              "caption": "圖 1｜從風險到回歸證據",
+              "description": "向下箭頭表示五個工作的先後順序；最後一格是回歸與交接工作，不代表測試已通過。",
               "items": [
                 {
-                  "title": "要求與風險",
-                  "body": "指出何種資料或操作應被拒絕。"
+                  "title": "1. 需求與風險",
+                  "body": "什麼事情絕對不能發生？"
                 },
                 {
-                  "title": "可重現失敗",
-                  "body": "保存輸入、動作、預期及實際結果。"
+                  "title": "2. 設計負向情境",
+                  "body": "故意提供不合法輸入、錯誤狀態或未授權操作"
                 },
                 {
-                  "title": "局部修正",
-                  "body": "處理根因，保留其他工作。"
+                  "title": "3. 執行測試並留下證據",
+                  "body": "比較預期結果與實際結果"
                 },
                 {
-                  "title": "回歸證據",
-                  "body": "原案例通過，再驗受影響正反情境。"
+                  "title": "4. 定位問題與修正",
+                  "body": "找出根因，進行最小必要修改"
+                },
+                {
+                  "title": "5. 回歸測試與交接",
+                  "body": "重測原本問題與相關正常功能，留下版本及結果"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這套流程可以對應到 OWASP 的威脅建模（Threat Modeling）思路：我們在做什麼、可能發生什麼問題、如何處理，以及如何確認處理得夠好。",
+                "例如，醫院的要求是「只有獲得授權的人可以查閱特定病歷」。",
+                "我們就能推導出負向測試：讓沒有授權的醫護人員嘗試讀取病歷，確認系統在資料存取時拒絕，而且不洩漏病歷內容。",
+                "這樣的測試才有清楚的目的與驗收標準。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-threat-model"
+          ]
+        },
+        {
+          "id": "matrix",
+          "heading": "三、教材的三個核心案例",
+          "paragraphs": [
+            "教材使用一個「資料檢核與報告匯出系統」作為示範。這三種負向情境，剛好代表三種不同的保護目標。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 案例一：必要資料沒有填完，系統不能匯出完整報告"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "假設一家保險公司要用系統產生理賠報告。",
+                "必須填寫被保險人、事故日期、理賠金額。",
+                "如果缺少理賠金額，系統卻產生一份標記為「完整」的報告，就有可能造成後續作業錯誤。",
+                "所以我們要測試：",
+                "- 正常：資料完整，允許匯出。\n- 異常：必要欄位空白，拒絕匯出。\n- 異常：日期欄輸入錯誤資料型態，拒絕或要求修正。\n- 異常：輸入超過規格允許長度，安全拒絕。",
+                "尤其要注意：不只是畫面上的匯出按鈕不能按，直接呼叫匯出函式時，也必須拒絕。",
+                "為什麼？因為按鈕只是其中一條操作途徑。如果底層函式仍然允許匯出，就沒有真正守住資料規則。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 案例二：系統收到額外欄位，不能把不該輸出的資料帶出去"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "假設一家物流公司有一個出貨 API，合法輸出只有三個欄位："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 1",
+              "paragraphs": [
+                "依本節說明執行或判讀。"
+              ],
+              "code": "{\n  \"order_id\": \"A001\",\n  \"product\": \"筆記型電腦\",\n  \"quantity\": 2\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "但輸入資料裡面多了一個："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 2",
+              "paragraphs": [
+                "依本節說明執行或判讀。"
+              ],
+              "code": "{\n  \"order_id\": \"A001\",\n  \"product\": \"筆記型電腦\",\n  \"quantity\": 2,\n  \"debug_note\": \"內部測試紀錄\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果程式只是把所有收到的欄位直接轉成報告，就可能連 `debug_note` 一起輸出。",
+                "這時候我們應該採取一種叫做 Allowlist（允許清單） 的做法。",
+                "意思是：報告明確只允許 `order_id`、`product`、`quantity` 三個欄位，其餘欄位不進入輸出。",
+                "測試時就要檢查產生的 JSON 是否只有這三個鍵，而不是只檢查報告能否成功建立。",
+                "這樣的測試能證明輸出欄位受到約束，但不能直接證明系統的日誌、資料庫或其他出口都沒有洩漏資料。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 案例三：資料已經改變，舊的成功結果不能繼續有效"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這個案例比較容易被忽略。",
+                "假設你在電商平台結帳：",
+                "1. 購物車有兩件商品。\n2. 系統計算總金額 2,000 元。\n3. 畫面顯示「訂單檢查完成」。\n4. 你把其中一件商品刪掉。\n5. 系統卻仍然保留舊的 2,000 元結帳結果。",
+                "這就是一種過期狀態（Stale State） 問題。",
+                "放到教材的報告系統，就是使用者原本把欄位填完整，系統顯示成功並提供下載；之後使用者把必要欄位清空，但畫面仍保留「成功」和舊的下載按鈕。",
+                "正確設計應該讓舊的結果失效，要求重新檢查；後端也不能接受不再符合規格的資料。",
+                "這裡要測試的不只是輸入是否合法，而是狀態改變後，系統是否重新判斷原本的結果還能不能使用。"
               ]
             }
           ]
         },
         {
           "id": "future",
-          "heading": "多人授權的測試必須等控制真的存在",
+          "heading": "四、為什麼「畫面上看不到」不代表真正安全？",
           "paragraphs": [
-            "未來若擴為十人使用，需先定義身分、角色、資料所有權與共享例外，再在資料存取處檢查授權。負向測試要使用真實測試身分及隔離合成資料，驗證 A 不能讀到未授權的 B 資料。",
-            "這是另外的需求與架構工作，不在本機單人原型內偷加。先記下候選 Given／When／Then、實作負責人與驗收範圍；目前狀態保持未實作、未驗證。"
+            "這是這一課最值得深入理解的安全觀念。"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "多人版候選驗收",
+              "kind": "prose",
               "paragraphs": [
-                "放入待確認需求，不宣稱已執行或正式單位規定。"
+                "假設公司內部有兩個員工：小明與小華。",
+                "小明登入之後，畫面只顯示自己的報告。工程師認為已經完成權限隔離。",
+                "但小明可能直接要求後端 API 讀取小華的報告："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 3",
+              "paragraphs": [
+                "依本節說明執行或判讀。"
               ],
-              "code": "Given 測試使用者 A 已驗證身分，且未獲授權讀取 B 的合成紀錄\nWhen A 透過資料存取入口請求該紀錄\nThen 系統拒絕且不回傳紀錄內容\n狀態：本機原型未實作此控制，待多人版確認及驗證"
+              "code": "GET /api/reports/102"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果後端只檢查「小明有沒有登入」，卻沒有檢查「小明有沒有權限讀取 102 號報告」，那麼即使畫面上完全沒有小華的資料，仍可能發生越權存取。",
+                "這就是為什麼必須分清楚："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 2",
+              "headers": [
+                "觀念",
+                "白話解釋"
+              ],
+              "rows": [
+                [
+                  "Authentication（身分驗證）",
+                  "你是誰？"
+                ],
+                [
+                  "Authorization（授權）",
+                  "你可以做什麼？"
+                ],
+                [
+                  "Access Control（存取控制）",
+                  "系統如何實際執行這些權限限制？"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "在安全的多人系統裡，授權必須在可信任的伺服器端或資料存取邊界執行，而不能只靠瀏覽器隱藏按鈕。OWASP 也建議採取預設拒絕（Deny by Default），並對每次受保護的存取請求進行適當的授權檢查。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 把需求寫成 Given／When／Then"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 4",
+              "paragraphs": [
+                "依本節說明執行或判讀。"
+              ],
+              "code": "Given：\n使用者 A 已登入，\n但未獲授權讀取使用者 B 的報告。\n\nWhen：\nA 透過 API 請求 B 的報告。\n\nThen：\n伺服器拒絕存取，\n不回傳 B 的報告內容，\n也不產生未授權的資料變更。"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這樣我們就把抽象的「權限要安全」，變成可執行、可觀察的測試。",
+                "不過教材特別強調：目前示範的是本機單人原型，還沒有真正的帳號、多人身分與資料庫隔離。",
+                "因此，多人授權測試應標記為「未實作、未驗證」，不能寫個假函式模擬 A 和 B，就宣稱正式的存取控制已經通過測試。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization"
+          ]
+        },
+        {
+          "id": "regression",
+          "heading": "五、回歸測試：修好一個問題，為什麼還需要重新測試？",
+          "paragraphs": [
+            "Regression Testing 的白話意思是："
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "確認這一次的修改，沒有讓原本正常的功能退步。",
+                "例如，一家餐廳的線上訂餐系統發現優惠券可以重複使用。",
+                "工程師修好這個問題之後，不能只確認「同一張優惠券不能重複使用」。",
+                "還要確認：",
+                "- 合法優惠券仍然可以使用一次。\n- 沒有優惠券的客戶仍然可以結帳。\n- 金額計算依然正確。\n- 原本的折扣與付款流程沒有被意外破壞。",
+                "換句話說，修正之後至少要重新測試兩件事：",
+                "第一，原本失敗的負向情境現在通過了嗎？",
+                "第二，原本正常的功能還能正常使用嗎？",
+                "這就是負向測試與回歸測試之間的關係。",
+                "一個常見錯誤是為了讓測試通過，乾脆放寬規則或刪除失敗的測試。這樣並沒有真正解決問題，只是讓檢查工具不再發出警告。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "testing",
+          "heading": "六、實際寫程式時，怎麼做這些測試？",
+          "paragraphs": [
+            "以 Python 為例，你可以用 `pytest` 建立可重複執行的自動化測試。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "先看一個簡化的報告函式："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 5",
+              "paragraphs": [
+                "依本節說明執行或判讀。"
+              ],
+              "code": "# report.py\nALLOWED = (\"customer\", \"date\", \"amount\")\n\n\ndef export_report(data):\n    for key in ALLOWED:\n        value = data.get(key)\n        if not isinstance(value, str) or not value.strip():\n            raise ValueError(f\"{key} 無效\")\n    return {key: data[key] for key in ALLOWED}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這段程式只有兩個重點：必要欄位必須有有效字串；輸出只能包含允許的三個欄位。",
+                "接著寫測試："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 6",
+              "paragraphs": [
+                "依本節說明執行或判讀。"
+              ],
+              "code": "# test_report.py\nimport pytest\nfrom report import export_report\n\n\ndef test_missing_amount():\n    data = {\"customer\": \"A\", \"date\": \"2026-11-11\", \"amount\": \"\"}\n    with pytest.raises(ValueError):\n        export_report(data)\n\n\ndef test_extra_field():\n    data = {\n        \"customer\": \"A\", \"date\": \"2026-11-11\", \"amount\": \"100\",\n        \"debug_note\": \"PRIVATE\",\n    }\n    result = export_report(data)\n    assert set(result) == {\"customer\", \"date\", \"amount\"}\n    assert \"debug_note\" not in result\n\n\ndef test_valid_report():\n    data = {\"customer\": \"A\", \"date\": \"2026-11-11\", \"amount\": \"100\"}\n    assert export_report(data) == data"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "將以上兩個檔案存入同一個空資料夾，在虛擬環境安裝 `pytest` 後執行："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "程式與指令 7",
+              "paragraphs": [
+                "依本節說明執行或判讀。"
+              ],
+              "code": "python -m venv .venv\nsource .venv/bin/activate\npython -m pip install pytest\npython -m pytest -q"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這三個測試分別確認缺漏被拒絕、額外欄位不輸出，以及正常報告仍然可用。",
+                "`pytest.raises(ValueError)` 的意思是：我們預期函式會主動拋出指定錯誤。如果沒有拋出，這個測試反而失敗。",
+                "以上是獨立的簡化教學示範，僅檢查非空字串與輸出允許清單；它與工作坊第三切片的欄位及完整規格不同。日期字串尚未驗證日曆格式，金額尚未驗證數字格式，也未涵蓋長度上限、過期 UI 狀態、檔案寫入副作用或真正的帳號授權。前三個核心案例中，這段程式只示範前兩個；過期結果仍須在 UI 狀態層另測。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 不同問題，要在哪一層測試？"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 3",
+              "headers": [
+                "測試層次",
+                "主要檢查什麼"
+              ],
+              "rows": [
+                [
+                  "單元測試（Unit Test）",
+                  "函式是否正確拒絕不合法輸入"
+                ],
+                [
+                  "API／整合測試",
+                  "系統是否在資料存取時真正執行規則與權限"
+                ],
+                [
+                  "介面測試（UI Test）",
+                  "資料變更後，成功狀態與下載操作是否更新"
+                ],
+                [
+                  "端到端測試（E2E Test）",
+                  "從使用者操作到後端處理的完整路徑是否符合預期"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "教材的 Streamlit 系統可以使用 `AppTest` 模擬畫面上的操作與狀態變化，再搭配實際瀏覽器測試確認真實互動。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "pytest-assert",
+            "streamlit-apptest-151"
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "七、什麼叫做「回歸證據」？",
+          "paragraphs": [
+            "想像你是一位主管，工程師向你報告："
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "> 昨天發現的問題已經修好了。",
+                "你可能會追問：修了哪一版？測試了什麼？原本的問題是否真的消失？其他功能有沒有受到影響？",
+                "所以工程師不能只有一句「修好了」，而應該留下可核對的紀錄。",
+                "以下是範例格式，不是已執行的測試結果："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 4",
+              "headers": [
+                "證據欄位",
+                "紀錄內容示例"
+              ],
+              "rows": [
+                [
+                  "風險編號",
+                  "RISK-03"
+                ],
+                [
+                  "測試案例",
+                  "NEG-03：修改必要欄位後，舊下載結果失效"
+                ],
+                [
+                  "預期結果",
+                  "舊成功狀態和下載操作失效"
+                ],
+                [
+                  "測試方式",
+                  "AppTest＋瀏覽器"
+                ],
+                [
+                  "實際結果",
+                  "執行後填入"
+                ],
+                [
+                  "程式版本",
+                  "Git Commit Hash"
+                ],
+                [
+                  "測試環境",
+                  "Python、套件版本、作業系統"
+                ],
+                [
+                  "回歸測試",
+                  "記錄原案例及受影響正常案例結果"
+                ],
+                [
+                  "未驗證事項",
+                  "多人授權、真實部署安全性"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "有了這些資料，其他工程師就能知道當時怎麼測試、測試的是哪個版本，以及哪些保護還沒有證據。",
+                "這不等於數學上證明系統絕對安全，而是建立一組可重現、可稽核的品質證據。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "八、跨產業延伸：同一套方法可以用在哪裡？",
+          "paragraphs": [
+            "這些例子背後是同一個原理：系統要同時證明「應該允許的能完成」與「應該禁止的被阻止」，而且每次修改都不能破壞既有保護。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 5",
+              "headers": [
+                "產業",
+                "負向測試",
+                "修正後的回歸測試"
+              ],
+              "rows": [
+                [
+                  "金融",
+                  "非帳戶持有人嘗試提款",
+                  "合法提款仍然成功"
+                ],
+                [
+                  "醫療",
+                  "未授權人員嘗試讀取病歷",
+                  "有授權的醫護人員仍能讀取"
+                ],
+                [
+                  "電商",
+                  "重複套用同一張限用一次的折價券",
+                  "合法折價券依然可用"
+                ],
+                [
+                  "物流",
+                  "出貨報告含額外內部欄位",
+                  "合法出貨資料仍完整輸出"
+                ],
+                [
+                  "教育",
+                  "學生嘗試修改其他學生的成績",
+                  "教師仍能依授權更新成績"
+                ],
+                [
+                  "AI Agent",
+                  "Agent 嘗試執行超出授權範圍的工具操作",
+                  "合法工具呼叫仍正常完成"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "要注意，通過這些測試只代表特定情境已經驗證。其他尚未測試的漏洞、部署設定、依賴套件或操作環境風險，仍須另外評估。"
+              ]
             }
           ]
         },
         {
           "id": "close",
-          "heading": "保留可交接的限制與下一步",
+          "heading": "九、理解檢核：一個整合情境",
           "paragraphs": [
-            "將測試命令、結果、失敗與修正連結到 spec；另外列出尚未實作的身分、授權、持久儲存及組織部署需求。它們不會因完整性測試通過而自動完成。",
-            "M09 會把這些證據放入 README、版本與展示。你應能說明目前原型已保護哪些行為，也能明確指出哪些要求仍需下一個設計與實作階段。"
+            "假設某學校正在開發一套成績查詢系統。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "目前系統只有簡單的成績查詢畫面，未來要讓 30 位老師共同使用。每位老師原則上只能查閱自己有權限管理的學生資料。",
+                "有一天，工程師發現：老師 A 雖然看不到老師 B 的學生名單，卻可以透過修改 API 請求中的 `student_id`，讀取老師 B 管理的學生資料。",
+                "可在頁末「理解檢核」逐題展開參考解析；展開答案不會提交作答或記錄學習完成。",
+                "本課最重要的結論： 資安驗證不是讓所有測試都顯示綠燈，而是用可靠的測試證據，清楚說明系統已經守住哪些邊界、哪些修正沒有造成退步，以及哪些安全需求仍未完成。"
+              ]
+            }
           ]
         }
       ],
@@ -157,7 +632,7 @@
       }
     },
     "en": {
-      "summary": "Verify invalid input, extra fields and stale results through negative cases, separating tested prototype behavior from unimplemented multiuser security.",
+      "summary": "Understand negative testing through ATMs, report exports and stale state, then bound security evidence with runnable Python and regression records.",
       "objectives": [
         "Derive negative scenarios from requirements and risks.",
         "Record rejection, repair and regression evidence.",
@@ -171,119 +646,594 @@
       },
       "sections": [
         {
-          "id": "negative",
-          "heading": "Check When the System Must Reject",
+          "id": "intro",
+          "heading": "Understanding Negative Testing and Regression Evidence",
           "paragraphs": [
-            "A positive case shows one valid record completing a task. Negative cases check rejection of input or actions that should not be accepted, without producing an incorrect result. Identify the protected requirement before selecting an observation layer.",
-            "This course already rejects incomplete exports, excludes extra report fields and invalidates old results on input change. These specific integrity/output-boundary tests do not establish completion of all security testing or a formal risk assessment."
-          ]
-        },
-        {
-          "id": "analogy",
-          "heading": "Test Access That Should Be Denied Too",
-          "paragraphs": [
-            "A valid pass opening a door does not establish rejection of expired passes or unauthorized visitors. Define denial conditions, enforcement locations and observable outcomes.",
-            "Hiding a button restricts one interface path; data/export functions need validation too. Multiuser authorization needs actual identities and resource relationships. Displaying A/B labels does not implement isolation."
-          ]
-        },
-        {
-          "id": "matrix",
-          "heading": "Turn Risks into Executable Cases",
-          "paragraphs": [
-            "A direct export_report call with missing data must raise ValueError. Extra input fields must not expand the three allowlisted data keys. After a complete record’s required field is cleared, success and download must disappear.",
-            "The final table row is candidate acceptance for a shared version. The single-user prototype has no accounts or database: record that control as unimplemented. An unrelated fake authorization function cannot establish its success."
+            "The central idea of this lesson is:"
           ],
           "blocks": [
             {
-              "kind": "table",
-              "caption": "Table 1 | Verifiable Prototype Behavior and Pending Shared Controls",
-              "headers": [
-                "Risk scenario",
-                "Expected rejection/protection",
-                "Evidence and status"
-              ],
-              "rows": [
-                [
-                  "Blank, wrong-type or overlong export input",
-                  "Reject a complete report.",
-                  "Rule exception tests."
-                ],
-                [
-                  "Input includes extra debug_note",
-                  "Exclude the extra key from the report.",
-                  "JSON and allowlisted-field checks."
-                ],
-                [
-                  "Clear a required field after completion",
-                  "Invalidate old success and download.",
-                  "AppTest + real browser."
-                ],
-                [
-                  "A requests B’s data without permission",
-                  "Reject at data access without returning content.",
-                  "Unimplemented in this prototype; verify separately for a shared version."
-                ]
+              "kind": "prose",
+              "paragraphs": [
+                "A system must work when users do the right thing, and must also refuse invalid input, incorrect operations and attempts to exceed permissions in a controlled way, without creating new problems.",
+                "For example:",
+                "- A bank system that transfers money successfully may still allow unauthorized transfers.\n- A hospital system that retrieves records may still let staff read records they have no permission to access.\n- An AI system that generates a correct report may still leak sensitive extra input.\n- A vulnerability repair may break a previously working feature.",
+                "This lesson brings together Negative Testing, Regression Testing and verifiable Evidence.",
+                "The examples use a local, single-user data-validation and report-export system. Multiuser authorization remains a separate requirement that is not implemented and unverified."
               ]
             }
           ]
         },
         {
-          "id": "regression",
-          "heading": "Retest the Original Fault and Existing Features",
+          "id": "negative",
+          "heading": "1. Positive and Negative Tests",
           "paragraphs": [
-            "If a negative case fails, preserve reproduction conditions and observations, locate the cause and apply a minimal repair. Rerun the original failing case and affected normal/negative scenarios, checking that valid reports still work.",
-            "Regression evidence identifies the same version, environment and cases. “Fixed” or a success screenshot alone does not establish removal of the original fault. Where coverage is missing, first add assertions that can detect failure."
+            "Imagine opening a bank and designing its ATM withdrawal system."
           ],
           "blocks": [
             {
+              "kind": "prose",
+              "paragraphs": [
+                "### Positive Testing"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "You want to know whether an ordinary customer can withdraw money successfully.",
+                "> Insert a valid card → enter the correct PIN → sufficient balance → withdraw 3,000 → success.",
+                "A passing test establishes that the system works for this particular normal scenario."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Negative Testing"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Next, check how the system handles requests that should not succeed."
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 1",
+              "headers": [
+                "Test scenario",
+                "Expected behavior"
+              ],
+              "rows": [
+                [
+                  "Incorrect PIN",
+                  "Refuse withdrawal"
+                ],
+                [
+                  "Balance of 1,000; requested withdrawal of 5,000",
+                  "Refuse withdrawal"
+                ],
+                [
+                  "Negative withdrawal amount",
+                  "Reject the invalid amount"
+                ],
+                [
+                  "Logged-out customer requests a withdrawal",
+                  "Reject the operation"
+                ],
+                [
+                  "Customer A attempts to access customer B's account",
+                  "Deny unauthorized access"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The purpose of these tests is to check this question:",
+                "Does the system handle operations that should fail predictably, safely and under control?",
+                "Rejection does not require a crash or an error page. A good rejection stops the transaction, avoids unauthorized side effects and provides an appropriate message."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "2. Turning Risks into Testable Scenarios",
+          "paragraphs": [
+            "Security testing starts by identifying what you need to protect. Randomly entering unusual data does not establish a useful acceptance criterion."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Use this process:"
+              ]
+            },
+            {
               "kind": "flow",
-              "caption": "Figure 1 | Regression Evidence for a Negative Case",
-              "description": "Follow requirements through repair and verification. Uncovered controls remain separate pending work.",
+              "caption": "Figure 1 | From Risk to Regression Evidence",
+              "description": "Downward arrows show the order of five activities. The final box represents regression and handoff work, not a passing test result.",
               "items": [
                 {
-                  "title": "Requirement and risk",
-                  "body": "Identify data or actions that must be rejected."
+                  "title": "1. Requirements and risks",
+                  "body": "What must never happen?"
                 },
                 {
-                  "title": "Reproducible failure",
-                  "body": "Retain input, action, expectation and actual result."
+                  "title": "2. Design negative scenarios",
+                  "body": "Supply invalid input, incorrect state or unauthorized operations"
                 },
                 {
-                  "title": "Local repair",
-                  "body": "Address the cause while preserving other work."
+                  "title": "3. Execute tests and retain evidence",
+                  "body": "Compare expected and actual results"
                 },
                 {
-                  "title": "Regression evidence",
-                  "body": "Pass the original case, then affected positive/negative scenarios."
+                  "title": "4. Locate and repair the problem",
+                  "body": "Find the cause and make the smallest necessary change"
+                },
+                {
+                  "title": "5. Regression tests and handoff",
+                  "body": "Retest the original issue and related normal behavior; retain the version and results"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This corresponds to the threat-modeling questions discussed by OWASP: what are we building, what can go wrong, how will we address it, and how will we know the response is sufficient?",
+                "For example, a hospital requires that only authorized people can read a particular record.",
+                "Derive a negative test: an unauthorized healthcare worker attempts to read the record. Confirm denial at data access and confirm that no record content is disclosed.",
+                "That gives the test a clear purpose and an observable acceptance criterion."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-threat-model"
+          ]
+        },
+        {
+          "id": "matrix",
+          "heading": "3. Three Core Cases",
+          "paragraphs": [
+            "The teaching system validates data and exports reports. Its three negative scenarios illustrate three different protection goals."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Case 1: Missing Required Data Must Prevent a Complete Report"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose an insurer generates a claim report.",
+                "The insured person, incident date and claim amount are required.",
+                "If the amount is missing but the system labels the report complete, later processing may be incorrect.",
+                "Test these conditions:",
+                "- Normal: complete data permits export.\n- Invalid: a required field is blank, so export is refused.\n- Invalid: a date field receives the wrong data type, so the system refuses it or requests correction.\n- Invalid: input exceeds the specified length, so the system rejects it safely.",
+                "Disabling the export button is only one check. A direct call to the export function must also refuse invalid data.",
+                "The button is one route into the system. If the underlying function still permits export, the data rule is not enforced at that boundary."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Case 2: Extra Input Fields Must Not Escape through Output"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose a logistics API allows only three output fields:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and Commands 1",
+              "paragraphs": [
+                "Run or interpret this example as described in this section."
+              ],
+              "code": "{\n  \"order_id\": \"A001\",\n  \"product\": \"筆記型電腦\",\n  \"quantity\": 2\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The input also contains an extra field:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and Commands 2",
+              "paragraphs": [
+                "Run or interpret this example as described in this section."
+              ],
+              "code": "{\n  \"order_id\": \"A001\",\n  \"product\": \"筆記型電腦\",\n  \"quantity\": 2,\n  \"debug_note\": \"內部測試紀錄\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "If the program copies every received field into a report, debug_note may be exported too. The sample product means laptop; debug_note contains an internal test note.",
+                "Use an Allowlist.",
+                "Explicitly permit only order_id, product and quantity in the output. Other input fields do not enter that output.",
+                "The test should compare the exact set of JSON keys with those three names. Checking only that a report was created does not check its output contract.",
+                "This establishes constrained output fields for that scenario. It does not establish that logs, databases or other output channels cannot leak data."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Case 3: Changed Data Must Invalidate an Old Success"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This case is easy to overlook.",
+                "Imagine checking out at an online store:",
+                "1. The cart contains two items.\n2. The system calculates a total of 2,000.\n3. The interface shows that the order check is complete.\n4. You remove one item.\n5. The system still retains the old 2,000 checkout result.",
+                "This is a Stale State problem.",
+                "In the report system, a user first completes all required fields and obtains a success message and download. The user then clears a required field, but the old success and download remain visible.",
+                "The correct behavior invalidates that old result and requires another check. The backend must also reject data that no longer meets the specification.",
+                "This case tests whether a state change causes the system to reassess the validity of its previous result, as well as whether an input is valid in isolation."
               ]
             }
           ]
         },
         {
           "id": "future",
-          "heading": "Authorization Tests Need Implemented Controls",
+          "heading": "4. Why Hidden Interface Elements Do Not Establish Security",
           "paragraphs": [
-            "A future ten-user version first needs defined identities, roles, data ownership and sharing exceptions, followed by authorization enforcement at data access. Negative tests should use actual test identities and isolated synthetic records to verify that A cannot read unauthorized B data.",
-            "That is separate requirements/architecture work, not a feature to add silently to this local single-user prototype. Record candidate Given/When/Then, an implementation owner and acceptance scope; current status remains not implemented and unverified."
+            "This is a key security idea in this lesson."
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "Candidate Shared-version Acceptance",
+              "kind": "prose",
               "paragraphs": [
-                "Keep this among requirements awaiting confirmation, not executed findings or official policy. The unchanged scenario says: Given authenticated test user A lacks permission for B’s synthetic record, When A requests it through data access, Then deny without returning content. This local prototype has not implemented the control; shared-version confirmation and verification remain pending."
+                "Consider two employees, Ming and Hua.",
+                "After Ming signs in, the interface lists only Ming's reports. The engineer assumes report isolation is complete.",
+                "Ming might instead request Hua's report directly through the backend API:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and Commands 3",
+              "paragraphs": [
+                "Run or interpret this example as described in this section."
               ],
-              "code": "Given 測試使用者 A 已驗證身分，且未獲授權讀取 B 的合成紀錄\nWhen A 透過資料存取入口請求該紀錄\nThen 系統拒絕且不回傳紀錄內容\n狀態：本機原型未實作此控制，待多人版確認及驗證"
+              "code": "GET /api/reports/102"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "If the backend checks only whether Ming is signed in, without checking permission to read report 102, unauthorized access remains possible even though Hua's report never appears in Ming's interface.",
+                "Distinguish these terms:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 2",
+              "headers": [
+                "Concept",
+                "Plain-language question"
+              ],
+              "rows": [
+                [
+                  "Authentication",
+                  "Who are you?"
+                ],
+                [
+                  "Authorization",
+                  "What are you allowed to do?"
+                ],
+                [
+                  "Access Control",
+                  "How does the system enforce those permissions?"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A secure multiuser system enforces authorization on a trusted server or at the data-access boundary. Hiding a browser button does not enforce that rule. OWASP recommends Deny by Default and appropriate permission checks on every protected request."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Writing Given / When / Then"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and Commands 4",
+              "paragraphs": [
+                "Run or interpret this example as described in this section."
+              ],
+              "code": "Given：\n使用者 A 已登入，\n但未獲授權讀取使用者 B 的報告。\n\nWhen：\nA 透過 API 請求 B 的報告。\n\nThen：\n伺服器拒絕存取，\n不回傳 B 的報告內容，\n也不產生未授權的資料變更。"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The candidate scenario above means: Given authenticated A lacks permission to read B's report, When A requests it through the API, Then the server denies access, returns no report content and makes no unauthorized changes. It turns an abstract security requirement into an executable, observable test.",
+                "The current teaching prototype is local and single-user. It has no real accounts, multiple-user identities or database isolation.",
+                "Record multiuser authorization as not implemented and unverified. A fake function that merely simulates labels A and B cannot establish that production access control passed."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-authorization"
+          ]
+        },
+        {
+          "id": "regression",
+          "heading": "5. Regression Testing after a Repair",
+          "paragraphs": [
+            "Regression Testing means:"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Check whether a modification has broken behavior that previously worked.",
+                "Suppose a restaurant's ordering system incorrectly allows repeated use of a single-use coupon.",
+                "After fixing that defect, checking that repeated use is blocked is only the first part.",
+                "Also check:",
+                "- A valid coupon can still be used once.\n- A customer without a coupon can still check out.\n- Amount calculations remain correct.\n- Existing discount and payment flows still work.",
+                "After a repair, answer two questions:",
+                "Does the original failing negative scenario now pass?",
+                "Do the affected normal features still work?",
+                "This is the relationship between negative and regression tests.",
+                "Weakening the rule or deleting a failing test merely to obtain a passing result leaves the original problem unresolved and removes the warning."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "testing",
+          "heading": "6. Writing the Tests",
+          "paragraphs": [
+            "Python's pytest can run repeatable automated tests."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Start with a simplified report function:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and Commands 5",
+              "paragraphs": [
+                "Run or interpret this example as described in this section."
+              ],
+              "code": "# report.py\nALLOWED = (\"customer\", \"date\", \"amount\")\n\n\ndef export_report(data):\n    for key in ALLOWED:\n        value = data.get(key)\n        if not isinstance(value, str) or not value.strip():\n            raise ValueError(f\"{key} 無效\")\n    return {key: data[key] for key in ALLOWED}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "It checks two rules: required fields contain nonempty strings, and output contains only the three allowlisted fields.",
+                "Then write the tests:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and Commands 6",
+              "paragraphs": [
+                "Run or interpret this example as described in this section."
+              ],
+              "code": "# test_report.py\nimport pytest\nfrom report import export_report\n\n\ndef test_missing_amount():\n    data = {\"customer\": \"A\", \"date\": \"2026-11-11\", \"amount\": \"\"}\n    with pytest.raises(ValueError):\n        export_report(data)\n\n\ndef test_extra_field():\n    data = {\n        \"customer\": \"A\", \"date\": \"2026-11-11\", \"amount\": \"100\",\n        \"debug_note\": \"PRIVATE\",\n    }\n    result = export_report(data)\n    assert set(result) == {\"customer\", \"date\", \"amount\"}\n    assert \"debug_note\" not in result\n\n\ndef test_valid_report():\n    data = {\"customer\": \"A\", \"date\": \"2026-11-11\", \"amount\": \"100\"}\n    assert export_report(data) == data"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Save both files in the same empty directory. Create a virtual environment, install pytest and run:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Code and Commands 7",
+              "paragraphs": [
+                "Run or interpret this example as described in this section."
+              ],
+              "code": "python -m venv .venv\nsource .venv/bin/activate\npython -m pip install pytest\npython -m pytest -q"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These three tests check rejection of missing data, exclusion of an extra field and preservation of normal report output.",
+                "pytest.raises(ValueError) means that this particular exception is expected. If the function returns without raising it, the test fails.",
+                "This is an independent, simplified teaching example that checks only nonempty strings and an output allowlist. Its fields and full specification differ from workshop slice three. It does not validate calendar dates, numeric amounts, length limits, stale UI state, file-write side effects or real account authorization. Of the three core cases, this code illustrates the first two only; stale results require a separate UI-state test."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Choosing the Test Layer"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 3",
+              "headers": [
+                "Test layer",
+                "Main observation"
+              ],
+              "rows": [
+                [
+                  "Unit Test",
+                  "A function correctly rejects invalid input"
+                ],
+                [
+                  "API / Integration Test",
+                  "Rules and permissions are enforced at actual data access"
+                ],
+                [
+                  "UI Test",
+                  "Changing data updates success and download state"
+                ],
+                [
+                  "E2E Test",
+                  "The complete path from user action to backend behavior meets expectations"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "For the Streamlit teaching application, AppTest simulates interface actions and state changes. Pair it with actual browser tests to check real interaction."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "pytest-assert",
+            "streamlit-apptest-151"
+          ]
+        },
+        {
+          "id": "evidence",
+          "heading": "7. What Counts as Regression Evidence?",
+          "paragraphs": [
+            "Imagine an engineer reports a repair to a manager:"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "> Yesterday's problem has been fixed.",
+                "The manager needs to know which version changed, what was tested, whether the original problem disappeared and whether other behavior was affected.",
+                "Keep a verifiable record, rather than only a statement that the repair is complete.",
+                "The following is a template, not an executed test result:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 4",
+              "headers": [
+                "Evidence field",
+                "Example record"
+              ],
+              "rows": [
+                [
+                  "Risk ID",
+                  "RISK-03"
+                ],
+                [
+                  "Test case",
+                  "NEG-03: changing a required field invalidates the old download"
+                ],
+                [
+                  "Expected result",
+                  "Old success and download are invalidated"
+                ],
+                [
+                  "Method",
+                  "AppTest + browser"
+                ],
+                [
+                  "Actual result",
+                  "Fill in after execution"
+                ],
+                [
+                  "Code version",
+                  "Git Commit Hash"
+                ],
+                [
+                  "Environment",
+                  "Python, package versions and operating system"
+                ],
+                [
+                  "Regression tests",
+                  "Original case and affected normal-case results"
+                ],
+                [
+                  "Unverified scope",
+                  "Multiuser authorization and real deployment security"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This lets another engineer identify how the system was tested, which version was tested and which protections still lack evidence.",
+                "It establishes reproducible, auditable quality evidence. It does not mathematically prove absolute system security."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "8. Applying the Method across Industries",
+          "paragraphs": [
+            "The shared principle is to establish both that permitted work completes and that prohibited work is blocked, while preserving existing protections after each change."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 5",
+              "headers": [
+                "Industry",
+                "Negative test",
+                "Regression check after repair"
+              ],
+              "rows": [
+                [
+                  "Finance",
+                  "A non-owner attempts a withdrawal",
+                  "Authorized withdrawals still succeed"
+                ],
+                [
+                  "Healthcare",
+                  "Unauthorized staff attempt to read a record",
+                  "Authorized clinicians can still read it"
+                ],
+                [
+                  "E-commerce",
+                  "A single-use coupon is applied repeatedly",
+                  "A valid coupon still works"
+                ],
+                [
+                  "Logistics",
+                  "A shipment report contains extra internal fields",
+                  "Valid shipment data is fully exported"
+                ],
+                [
+                  "Education",
+                  "A student attempts to alter another student's grades",
+                  "Teachers can still update grades within their permissions"
+                ],
+                [
+                  "AI Agent",
+                  "An agent attempts a tool operation outside its authority",
+                  "Authorized tool calls still complete"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Passing these tests establishes only the tested scenarios. Untested vulnerabilities, deployment configuration, dependencies and operational-environment risks need their own evaluation."
+              ]
             }
           ]
         },
         {
           "id": "close",
-          "heading": "Retain Limits and Next Steps for Handoff",
+          "heading": "9. An Integrated Understanding Check",
           "paragraphs": [
-            "Link test commands, results, failures and repairs to spec. Separately list absent identity, authorization, persistence and organizational-deployment needs. Completeness tests passing do not implement them.",
-            "M09 places evidence into README, versions and demonstrations. Explain both the prototype behavior already protected and requirements needing another design/implementation stage."
+            "A school is building a grade-query system."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "It currently has a simple query interface, and is intended eventually to serve 30 teachers. Each teacher should access only the student records they are authorized to manage.",
+                "An engineer discovers that teacher A cannot see B's student list in the interface, but can read B's student data by changing student_id in an API request.",
+                "Use the Understanding Checks below to reveal reference explanations. Opening an answer does not submit a response or record learning completion.",
+                "The main contribution of security verification is reliable test evidence that states which boundaries were checked, which repairs preserved existing behavior and which security requirements remain incomplete."
+              ]
+            }
           ]
         }
       ],
@@ -302,109 +1252,105 @@
   },
   "checks": [
     {
-      "id": "AASE-M08-C06-Q01",
+      "id": "AASE-M08-C06-Q04",
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "額外 debug_note 不出現在報告，最直接證明什麼？",
+          "prompt": "後端越權的根本原因可能是什麼？",
           "options": [
-            "全部資安風險解決",
-            "該情境的輸出欄位受到約束",
-            "多人隔離完成",
-            "所有資料已安全刪除"
+            "畫面設計不夠美觀",
+            "後端沒有正確檢查資源授權",
+            "資料庫查詢速度不夠快",
+            "使用者沒有重新整理畫面"
           ],
           "rationales": [
-            "範圍過度擴張。",
-            "結論與實際案例相符。",
-            "與身分授權不同。",
-            "沒有刪除證據。"
+            "外觀不能執行資源授權。",
+            "登入後仍須核對該身分對特定資源的權限。",
+            "效能無法解釋缺少授權檢查。",
+            "重新整理不能補上可信任邊界的控制。"
           ]
         },
         "en": {
-          "prompt": "What does debug_note being absent from a report directly establish?",
+          "prompt": "What is the likely root cause of the unauthorized backend access?",
           "options": [
-            "Every security risk is resolved.",
-            "Output fields are constrained in that scenario.",
-            "Multiuser isolation is complete.",
-            "All data was securely deleted."
+            "The interface is not attractive enough",
+            "The backend does not correctly enforce resource authorization",
+            "The database query is too slow",
+            "The user did not refresh the page"
           ],
           "rationales": [
-            "That exceeds the evidence.",
-            "The conclusion matches the executed case.",
-            "Identity/authorization is a different concern.",
-            "There is no deletion evidence."
+            "Appearance does not enforce resource authorization.",
+            "After sign-in, check that identity’s permission for the specific resource.",
+            "Performance does not explain the missing authorization check.",
+            "Refreshing cannot add a missing trusted-boundary control."
           ]
         }
       }
     },
     {
-      "id": "AASE-M08-C06-Q02",
+      "id": "AASE-M08-C06-Q05",
       "answer": 2,
       "text": {
         "zh": {
-          "prompt": "本機沒有帳號與資料庫，授權測試應如何標記？",
+          "prompt": "修復漏洞後，最合理的測試方式是什麼？",
           "options": [
-            "預設通過",
-            "用假 A／B 文字宣告通過",
-            "未實作，記候選需求與後續驗證",
-            "不需列出此限制"
+            "只確認 A 看不到 B 的資料",
+            "只確認系統可以正常登入",
+            "確認未授權存取被拒絕，且合法查詢仍可執行",
+            "直接刪除原本的測試"
           ],
           "rationales": [
-            "控制不存在。",
-            "無法驗證真實存取。",
-            "清楚保留能力邊界。",
-            "接手者仍需知道。"
+            "畫面隱藏不能驗證直接 API 路徑。",
+            "身分驗證通過不代表授權正確。",
+            "同時重測原負向案例與受影響的正向功能。",
+            "刪測試會失去偵測原問題的能力。"
           ]
         },
         "en": {
-          "prompt": "With no accounts or database in this prototype, how should authorization testing be recorded?",
+          "prompt": "Which test approach is appropriate after the repair?",
           "options": [
-            "Assume it passed.",
-            "Declare success using A/B text labels.",
-            "Not implemented; record candidate requirements and later verification.",
-            "Omit the limitation."
+            "Only check that A cannot see B’s data in the interface",
+            "Only check that sign-in works",
+            "Confirm unauthorized access is denied and legitimate queries still work",
+            "Delete the original tests"
           ],
           "rationales": [
-            "The control does not exist.",
-            "That does not test actual access.",
-            "This preserves capability boundaries.",
-            "Successors still need to know."
+            "Hidden UI does not verify the direct API path.",
+            "Authentication passing does not establish correct authorization.",
+            "Retest the original negative case and affected positive behavior.",
+            "Deleting tests removes detection of the original defect."
           ]
         }
       }
     },
     {
-      "id": "AASE-M08-C06-Q03",
-      "answer": 3,
+      "id": "AASE-M08-C06-Q06",
+      "answer": 1,
       "text": {
         "zh": {
-          "prompt": "修好負向情境後，還需做什麼？",
+          "prompt": "目前沒有真正的登入與授權功能，該怎麼記錄驗收狀態？",
           "options": [
-            "刪掉失敗證據",
-            "只看成功截圖",
-            "放寬規格",
-            "重跑原案例及受影響正反測試，保存版本與結果"
+            "預設通過",
+            "標記未實作、未驗證，保留後續驗收需求",
+            "用假帳號測試後宣告正式安全"
           ],
           "rationales": [
-            "會遺失回歸依據。",
-            "不能涵蓋原錯誤。",
-            "須經明確需求決策。",
-            "確認修正與既有行為。"
+            "控制不存在，無法驗證為通過。",
+            "清楚保留實作及真實測試身分／資源關係的下一個驗收閘門。",
+            "假的帳號標籤無法證明正式存取控制。"
           ]
         },
         "en": {
-          "prompt": "After repairing a negative scenario, what else is needed?",
+          "prompt": "How should acceptance be recorded without real sign-in and authorization?",
           "options": [
-            "Delete failure evidence.",
-            "Inspect only a success screenshot.",
-            "Relax the specification.",
-            "Rerun the original and affected positive/negative tests, keeping versions and results."
+            "Assume a pass",
+            "Mark not implemented and unverified; retain later acceptance requirements",
+            "Declare production security after testing fake accounts"
           ],
           "rationales": [
-            "That removes regression evidence.",
-            "That cannot cover the original fault.",
-            "That requires an explicit requirements decision.",
-            "Confirm both repair and existing behavior."
+            "An absent control cannot pass verification.",
+            "Retain implementation and verification with actual test identities and resource relationships as the next gate.",
+            "Fake account labels cannot establish production access control."
           ]
         }
       }
