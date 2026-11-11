@@ -654,3 +654,35 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 `WorkflowExercises.svelte` 的兩種固定教學互動分別是圖 4（資料修改使舊結果失效，重新檢查後才可輸出）與圖 7（四情境走讀）。控制項使用原生 radio／button，無 JavaScript 時停用並保留靜態範例及可展開的全部案例。它們沒有真實保費計算、業務提交、評分或學習進度紀錄；後端一致性及正式業務規則仍須由真實系統另外驗證。
 
 維護時跑兩個產生器的 `--check`、`pnpm run validate:content`、單元與型別、publication-boundary、release，再跑 `playwright.aase-m0303.config.ts`、既有 AASE 雙語及 CEH 共用版型回歸。圖解／互動變更須核對四尺寸、200% 文字、鍵盤、無 JavaScript、搜尋、SVG 幾何與位元組；正式站同套件以 `AASE_BASE_URL` 回讀。[驗收與發布紀錄](releases/2026-11-11-aase-m03-03-replacement.md)。
+
+## CEH 考古題知識筆記 — 2026-11-10
+
+`content/ceh-notes/YYYY-MM-DD.json` 維護同一天的單一筆記；`parts` 按供稿順序延續，不替同日每份供稿新增日期頁。原稿、原圖與採用對照留在 `docs/sources/ceh-notes/YYYY-MM-DD/part-NN/`；正文保留完整小節，來源與編輯補充分開記錄。`expectedParts` 只記錄使用者預期數量，頁面顯示實際已發布部分數量；不得把尚未提供部分寫成已完成。追加內容保留原發布日、日期網址及既有錨點，增加revision與revisedOn。
+
+`src/lib/ceh-notes.ts` 驗證唯一日期、有效日期、雙語結構、部分編號、`pN-`錨點、HTTPS來源與受限區塊，拒絕額外markup欄位。整篇及各部分共用 `isPublic` 的status／publishedOn閘門；只將過閘資料送至日期頁、清單、搜尋與sitemap。發布邊界腳本檢查整篇及同日部分的draft／future標記不進入實際HTML／JSON／JS。未提供原題全文時，保留供稿題號及參考答案，不宣稱已核對題庫正解。
+
+正文沿用SourceBody的段落、清單及可鍵盤捲動表格。`NoteFigure`承接四節點向下workflow與三欄平行CIA；`NoteRecall`承接三張卡，無JavaScript可閱讀三卡與原生答案；`NoteChecks`保留供稿三選項並提供本頁逐項回饋，不儲存、不外送或宣稱學習完成。圖示的節點、文字、搜尋與SVG共用正式JSON；`python3 scripts/ceh_notes_svg.py --check` 已納入validate:release，輸出固定allowlist且每圖小於100000bytes。新領域圖需先擴充契約，禁止以任意HTML／SVG繞過。
+
+維護檢查：`tests/ceh-notes.test.ts` 與 `node scripts/check-ceh-notes-browser.mjs`；後者檢查雙語全文、四尺寸／200%、無JS、鍵盤、回憶卡與情境檢核、六SVG文字邊界與下載。設定 `CEH_NOTES_BASE_URL=https://learn.cs-kairos.com` 可回讀正式站。首次供稿採用與視覺差異見[來源對照](sources/ceh-notes/2026-11-10/part-01/source-map.md)，實測與發布見[回執](releases/2026-11-10-ceh-notes-part-01.md)。
+
+### 三份新供稿重製契約
+
+新供稿、原版與逐小節追溯見[重製來源](sources/ceh-notes/2026-11-10/reconstruction/source-map.md)，本輪實測與發布證據見[重製回執](releases/2026-11-10-ceh-notes-reconstruction.md)。`contentVersion` 是三段語意版本，`revision` 保留內部計數；遷移基準與歷史顯示分開記錄，保留原發布日。
+
+`diagram` 區塊只接受 `kind/name/caption/description/items`，每個 item 僅含 title/body。`src/lib/note-diagram-specs.json` 共用固定圖名、節點數與版型：overview 3、encryption 3、defense 5、hats 3、roe 5、testing 5、decision 4、hash 2、compare 2、tls 10。NoteDiagram 以 HTML、容器查詢與固定 SVG 圖示／箭頭呈現；CIA 仍沿 NoteFigure 三欄平行卡。TLS 固定兩端與訊息方向，虛線表示伺服器回覆，並非加密狀態；本機計算／驗證不加成網路傳送箭頭。模型拒絕任意圖形標記及額外欄位，HTML／搜尋／SVG 共用文字。
+
+回憶卡支援 1–12 張，各卡須有問題、題號參考與至少一段參考答案；新供稿分別需要 8／6 張。檢核維持 3 或 4 選項，解析數與選項數相同，答案索引不能越界。未提供題文或答案的部分須保留來源界線；開放題不新增無服務支援的提交／批改承諾。
+
+`scripts/ceh_note_reference_svg.py` 由現有 `ceh_notes_svg.py` 呼叫，沿固定元素／屬性 allowlist 與 100000 bytes 上限；不要手改生成 SVG。`node scripts/check-note-reference-diagrams.mjs` 建立獨立 SSR fixture，驗 11 張參考圖的雙語文字、四尺寸／200%、無 JS、下載與 SVG 字框／重疊。它不修改 canonical 內容或解鎖草稿，不能代替完整文章或正式站驗收。完整頁面的 `check-ceh-notes-browser.mjs` 依目前已接入圖名檢查下載與搜尋；現行驗收涵蓋三部分全文、17 張回憶卡及所有檢核組與 30 份 SVG。
+
+三份正文由 `scripts/reconstruct-ceh-notes.py` 與 `ceh_note_part1.py`／`ceh_note_part2.py`／`ceh_note_part3.py` 重建；`--check` 與 `scripts/audit-ceh-note-adoption.py --check` 已納入 validate:release，驗證同步、原附件雜湊及明確逐標題採用映射。原始資料不可由生成結果覆寫。
+
+驗收順序：單元／型別 → SSR 圖解 fixture → 發布邊界與最終 production build → validate:release → 新 preview／完整頁面瀏覽器。SSR fixture 或 SvelteKit sync 會刷新生成檔，不可與 production build 並行，也不可在最終建置後執行而沿用舊 preview；完整頁面檢查同時核對 HTML／client bootstrap 識別碼。
+
+## AASE M03-05 十節新供稿與六圖（2026-11-11）
+
+v1.2.0／revision 5 的[來源對照](sources/aase/m03-05/replacement-2026-11-11/source-map.md)保存完整原文、六張PNG、待換前版與雙語稿。原十節、導言與分母界線成為十二section，舊十一錨點、原發布日與翻譯閘門保留；五個原開放問題搭配Q08–Q12參考解析，qa=[]。`normalize-source.py --check`核對原文與明列正規化；`aase_m0305_content.py --check`核對雙語稿、圖解及正式JSON。
+
+SuccessEvidenceDiagram沿受限cards／flow，revision 5限定evidence-chain／metrics／measure／assumptions／trace／understanding節點數6／3／4／4／4／7，只有第一圖為flow。第二圖是三個平行角色，第六圖使用主張區與六列dl。`successMetrics`固定四瑕疵兩良品，檢查整數邊界；兩個range與全部阻擋按鈕只計算合成資料，無JS停用互動並保留預設及公式。十二個SVG由`aase_m0305_svg.py`從正式模型產生，`--check`比對位元組，下載固定預設。
+
+單元與瀏覽器入口仍為`tests/aase-m0305-replacement.test.ts`、`playwright.aase-m0305.config.ts`。正式站設定AASE_BASE_URL。驗證範圍含完整正文與順序、四尺寸／200%、鍵盤／無JS、兩滑桿、全部阻擋、搜尋、十二SVG邊界／重疊／下載；實際結果與待驗事項見[發布回執](releases/2026-11-11-aase-m03-05-replacement.md)。

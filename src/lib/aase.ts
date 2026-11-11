@@ -116,11 +116,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         else if(figures.length)fail('invalid MVP scope figure');
       }
       if(l.id==='AASE-M03-C05'&&l.revision>=4){
-        const expected:Record<string,number>={'evidence-chain':6,metrics:2,measure:4,analogy:2,trace:5};
+        const expected:Record<string,number>=l.revision>=5?{'evidence-chain':6,metrics:3,measure:4,assumptions:4,trace:4,understanding:7}:{'evidence-chain':6,metrics:2,measure:4,analogy:2,trace:5};
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
-        if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='evidence-chain'?'flow':'cards'))fail('invalid success evidence figure');}
+        if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='evidence-chain'?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body'])))fail('invalid success evidence figure');}
         else if(figures.length)fail('invalid success evidence figure');
-        if(s.id==='measure'){const f=figures[0];if(!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items[0].body!=='3 / 4'||f.items[1].body!=='75%')fail('invalid blocking default');}
+        if(s.id==='measure'){const f=figures[0];if(!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items[0].body!=='3 / 4'||(l.revision>=5?(f.items[1].body!=='0 / 2'||f.items[2].body!=='75%'||f.items[3].body!=='100%'):f.items[1].body!=='75%'))fail('invalid blocking default');}
       }
       if(l.id==='AASE-M03-C02'&&l.revision>=4){
         const expected:Record<string,number>={roadmap:5,evidence:4,conflict:2};
