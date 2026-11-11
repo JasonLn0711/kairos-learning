@@ -55,6 +55,7 @@ for lang in ['zh','en']:
  lesson['text'][lang]['sections']=sections
  # Keep workshop runnable checks alongside the expanded output-contract explanation.
  prior=json.loads((P/'prior-lesson.json').read_text())['text'][lang]['sections'][3]['blocks'][0]
+ prior['code']=prior['code'].replace('    result = json.loads(export_report(record))','    original = record.copy()\n    result = json.loads(export_report(record))').replace('    assert record["application_id"] == " SYN-001 "','    assert record == original')
  sections[6]['blocks'].append(prior)
  last=sections[-1]
  # Questions remain in visible teaching, with separately disclosed reference reasoning.
