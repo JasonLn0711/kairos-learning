@@ -144,7 +144,7 @@ test('M06 English preserves Chinese architecture, graph identities, code and ans
 test('M07 English preserves Chinese slices, executable examples, sources and answer keys',()=>{
  let codeCount=0;
  for(let n=1;n<=7;n++){
-  const before=read(`docs/sources/aase/m07-en/aase-m07-c0${n}.before.json`),l=n===7?read('docs/sources/aase/m07-07/replacement-2026-11-11/prior-lesson.json'):n===3?read('docs/sources/aase/m07-03/replacement-2026-11-11/previous-lesson.json'):n===1?read('docs/sources/aase/m07-01/replacement-2026-11-11/previous-lesson.json'):n===5?read('docs/sources/aase/m07-05/replacement-2026-11-11/previous-lesson.json'):n===2?read('docs/sources/aase/m07-02/replacement-2026-11-11/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
+  const before=read(`docs/sources/aase/m07-en/aase-m07-c0${n}.before.json`),l=n===6?read('docs/sources/aase/m07-06/replacement-2026-11-11/prior-lesson.json'):n===7?read('docs/sources/aase/m07-07/replacement-2026-11-11/prior-lesson.json'):n===3?read('docs/sources/aase/m07-03/replacement-2026-11-11/previous-lesson.json'):n===1?read('docs/sources/aase/m07-01/replacement-2026-11-11/previous-lesson.json'):n===5?read('docs/sources/aase/m07-05/replacement-2026-11-11/previous-lesson.json'):n===2?read('docs/sources/aase/m07-02/replacement-2026-11-11/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
   assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}
@@ -171,7 +171,7 @@ test('M08 English preserves Chinese verification layers, executable examples and
 test('M09 English preserves Chinese handoff, Git examples and actual assessment boundaries',()=>{
  let codeCount=0;
  for(let n=1;n<=4;n++){
-  const before=read(`docs/sources/aase/m09-en/aase-m09-c0${n}.before.json`),l=n===2?read('docs/sources/aase/m09-02/replacement-2026-11-11/prior-lesson.json'):n===3?read('docs/sources/aase/m09-03/replacement-2026-11-11/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
+  const before=read(`docs/sources/aase/m09-en/aase-m09-c0${n}.before.json`),l=n===1?read('docs/sources/aase/m09-01/replacement-2026-11-11/previous-lesson.json'):n===2?read('docs/sources/aase/m09-02/replacement-2026-11-11/prior-lesson.json'):n===3?read('docs/sources/aase/m09-03/replacement-2026-11-11/prior-lesson.json'):lessons.find(x=>x.id===before.id)!;
   assert.deepEqual(l.text.zh,before.text.zh);assert.deepEqual(l.sourceIds,before.sourceIds);assert.deepEqual(l.qa,before.qa);assert.equal(l.publishedOn,before.publishedOn);
   assert.equal(l.contentVersion,'1.0.2');assert.equal(l.revision,before.revision+2);assert.equal(l.date,'2026-11-05');
   for(const [i,q] of l.checks.entries()){assert.equal(q.id,before.checks[i].id);assert.equal(q.answer,before.checks[i].answer);assert.deepEqual(q.text.zh,before.checks[i].text.zh);}

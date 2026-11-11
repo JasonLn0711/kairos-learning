@@ -1,0 +1,456 @@
+# M09-01｜Git、Diff、Commit 與還原：讓每一次修改都有紀錄，也能安全救回來
+
+這一節的主題是 Git、Diff、Commit 與 Restore（還原），屬於 AASE 課程的「M09 版本控制、交付與持續改善」。
+
+你提供的網址將 `m09-01` 放在 `m04` 路徑下；實際教材位於 [M09-01 正確教材頁面](https://learn.cs-kairos.com/courses/aase/v1/m09/concepts/m09-01/?utm_source=chatgpt.com)。
+
+[image](https://www.google.com/s2/favicons?domain=https://learn.cs-kairos.com\&sz=32)
+
+CS Kairos Learn
+
+
+
+## 一、先用一句白話理解
+
+Git 就像一套專門管理工作修改歷史的系統。它不只是幫你記住做過什麼，更讓你知道誰改了什麼、為什麼改，以及出問題時怎麼恢復。
+
+想像你正在撰寫一份重要報告：
+
+星期一完成第一版，星期二修改數據，星期三增加圖表，星期四發現星期二的某個數據改錯了。
+
+如果沒有版本控制，你可能必須尋找：
+
+- `報告_最終版.docx`
+- `報告_最終版2.docx`
+- `報告_真的最終版.docx`
+- `報告_最後修改版.docx`
+
+但有了 Git，你可以找到星期二的修改紀錄，比較錯在哪裡，再決定要恢復哪些部分。
+
+最重要的是：你可以只復原錯誤的部分，而不必犧牲星期三、星期四其他正確的工作。
+
+這就是本節真正想教你的工程能力：讓每次修改都能被檢查、被理解、被追溯，必要時還能安全復原。
+
+## 二、Git 的四個重要位置：理解整套系統的關鍵
+
+Git 最容易讓初學者困惑的地方，是「修改」、「暫存」、「提交」、「發布」其實是四件不同的事情。
+
+想像你是一位出版社編輯，正在編輯一本書。
+
+1\. 工作區（Working Directory）
+
+你正在修改的草稿
+
+git add：挑選本次要歸檔的內容
+
+2\. 暫存區（Staging Area / Index）
+
+已選定、準備封存的修改
+
+git commit：正式建立版本紀錄
+
+3\. 本機儲存庫（Local Repository）
+
+已封存、可以追溯的版本歷史
+
+git push：將提交送往遠端
+
+4\. 遠端儲存庫（Remote Repository）
+
+例如 GitHub 上的共享版本紀錄
+
+推送到遠端不代表已部署，也不代表測試或驗收通過。
+
+### 1. 工作區：正在修改的草稿
+
+你在 VS Code 裡修改程式，就是改變工作區的檔案。
+
+可能修改三個檔案，其中只有一個已經完成，另外兩個還是半成品。
+
+Git 不會因為你按了儲存，就自動建立 Commit。
+
+### 2. 暫存區：這次到底要交哪些修改？
+
+假設你同時在做兩件事：
+
+A：修正訂單總額計算錯誤。
+
+B：開發會員登入功能。
+
+訂單總額已經修好了，但會員登入只寫到一半。
+
+你應該只把 A 放進暫存區，提交 A，不要把 B 一起封存。
+
+這就是 `git add` 的作用。
+
+### 3. Commit：留下正式版本紀錄
+
+Commit 是 Git 儲存當次暫存內容的版本快照（Snapshot），包含提交者、時間、訊息及歷史關係。
+
+你可以把它理解成：
+
+「在這個時間點，我正式確認這些內容是一個有意義的修改版本。」
+
+每個 Commit 會有識別碼，方便之後尋找、比較與引用。
+
+### 4. Push：分享版本，不等於產品上線
+
+即使你已經 Commit，紀錄通常仍只在自己的電腦。
+
+執行 `git push` 後，才會將適用的本機提交送往設定的遠端儲存庫。
+
+但 GitHub 上有新程式，不代表網站已更新。是否正式部署（Deployment），取決於另外的發布流程。
+
+## 三、Diff：先看清楚改了什麼
+
+Diff 是 Difference 的縮寫，意思是「差異」。
+
+想像一間醫院正在修訂標準作業程序（SOP）。
+
+原版：
+
+> 手術前，護理師必須核對患者姓名。
+
+新版：
+
+> 手術前，護理師必須核對患者姓名、出生日期及手術部位。
+
+Diff 就能指出這次新增了哪些要求。
+
+在 Git 裡，常會看到類似這樣的內容：
+
+```
+- 手術前，護理師必須核對患者姓名。
++ 手術前，護理師必須核對患者姓名、出生日期及手術部位。
+```
+
+`-` 代表舊版本移除的內容，`+` 代表新版本增加的內容。
+
+這很重要，因為你不應只問「現在的程式能不能跑」，還應問「這次究竟改動了哪些地方，有沒有不相關的變動」。
+
+### 兩個最容易混淆的 Diff
+
+| 指令                   | 在比較什麼？                   |
+| -------------------- | ------------------------ |
+| `git diff`           | 工作區相對於暫存區，還沒暫存的修改        |
+| `git diff --cached`  | 暫存區相對於目前提交（HEAD），準備提交的修改 |
+| `git status --short` | 各檔案目前是修改、暫存，還是尚未追蹤       |
+
+這裡的 `HEAD`，一般可先理解為「目前分支最新的 Commit」。
+
+有個容易忽略的細節：新建立、尚未被追蹤的檔案，不一定會出現在一般 `git diff` 裡。
+
+因此，不可以因為 `git diff` 沒有輸出，就斷定完全沒有任何新檔案或變更。要搭配 `git status` 檢查。
+
+[image](https://www.google.com/s2/favicons?domain=https://git-scm.com\&sz=32)
+
+git-diff Documentation+1
+
+
+
+## 四、Commit：一次提交，最好只完成一個明確目的
+
+假設你請 AI Coding Agent 幫忙開發一個電商系統。
+
+它完成了以下修改：
+
+| 修改內容        | 是否適合同一個 Commit？ |
+| ----------- | --------------- |
+| 修正商品金額計算公式  | 適合              |
+| 增加金額計算的自動測試 | 適合              |
+| 順便修改登入頁面的顏色 | 不適合             |
+| 順便修改資料庫連線設定 | 不適合，需另行確認       |
+
+前兩項屬於同一個目的：修正金額計算錯誤。
+
+後兩項與這個目的不直接相關，應該拆開處理。
+
+一個好的 Commit 訊息，例如：
+
+```
+git commit -m "fix: 修正訂單折扣計算錯誤"
+```
+
+比較不好的訊息：
+
+```
+git commit -m "更新"
+```
+
+因為過了三個月，別人看到「更新」根本不知道你更新了什麼。
+
+更成熟的方式，是讓 Commit 可以對應到需求或規格，例如 `REQ-003：修正折扣計算`，並保留相關測試紀錄。
+
+Commit 是歷史證據，不是品質證明。 你做了提交，不代表程式沒有問題。
+
+## 五、Restore：只救回需要恢復的部分
+
+這是整篇教材最值得練習的地方。
+
+假設你在律師事務所，同時修改兩份文件：
+
+`contract.txt` 是今天不小心改錯的合約條款。
+
+`case-notes.txt` 是另一位同事今天新增的重要案件分析。
+
+你想把合約條款回復到昨天的版本，但不能影響案件分析。
+
+正確的思考方法是：
+
+「我要恢復哪個檔案？從哪個歷史版本恢復？目前還有哪些修改必須保留？」
+
+在 Git 中，假設這兩個檔案都有已提交的基準版本，你已確認目標檔案的修改可以捨棄，並先備份，就可以使用：
+
+```
+git restore --source=HEAD --worktree -- contract.txt
+```
+
+這行指令可以拆成四部分：
+
+| 語法                | 白話意思                |
+| ----------------- | ------------------- |
+| `git restore`     | 我要還原內容              |
+| `--source=HEAD`   | 使用最新 Commit 的內容當作來源 |
+| `--worktree`      | 只修改工作區的檔案           |
+| `-- contract.txt` | 只針對這個指定路徑           |
+
+`--` 是分隔符號，告訴 Git 後面是檔案路徑，而非指令選項。
+
+這個指令不會主動修改 `case-notes.txt`，也不會清除既有的 Commit 歷史；但是它會覆蓋 `contract.txt` 在工作區的現有內容，因此一定要先檢查及保護尚未保存的修改。
+
+如果 `contract.txt` 內同時有你希望保留的其他修改，就不應直接整份覆蓋。可以先備份，再考慮使用 `git restore -p` 逐段選擇。
+
+[image](https://www.google.com/s2/favicons?domain=https://git-scm.com\&sz=32)
+
+git-restore Documentation
+
+
+
+### Restore、Revert、Reset 不一樣
+
+| 指令                     | 主要用途                 | 注意事項                |
+| ---------------------- | -------------------- | ------------------- |
+| `git restore`          | 還原指定檔案或修改            | 可能覆蓋尚未提交的內容         |
+| `git restore --staged` | 取消暫存，不刪除工作區修改        | 適合不小心 `git add` 後使用 |
+| `git revert`           | 以新 Commit 抵銷先前某次提交   | 適合已分享歷史的協作情境        |
+| `git reset --hard`     | 將目前分支、暫存區及工作區重設到指定提交 | 可能造成工作遺失，不能隨意使用     |
+
+對初學者而言，先學會查看 `status`、`diff`，再做指定路徑的 Restore，比直接使用強制重設安全得多。
+
+## 六、實際操作：10 分鐘完成一次 Git 練習
+
+這裡按照教材精神，建立完全獨立的練習資料夾，不接觸正式專案，也不使用真實個資。
+
+以下命令適用於 Linux、macOS 或 Windows 的 WSL Bash 終端機。
+
+### 步驟 A：建立自己的練習儲存庫
+
+```
+mkdir git-lab
+cd git-lab
+
+git init
+
+git config user.name "AASE Learner"
+git config user.email "learner@example.invalid"
+```
+
+`git init` 是建立 Git 儲存庫。
+
+後面兩個 `git config` 則是在這個練習專案裡設定提交署名，而不是修改所有專案的全域設定。
+
+接著建立三個檔案：
+
+```
+printf ".venv/\n__pycache__/\n.pytest_cache/\n.env\n" > .gitignore
+
+printf "切片一：三欄輸入及未檢核預覽\n" > slice-notes.md
+
+printf "其他工作：原始紀錄\n" > keep.txt
+```
+
+其中 `.gitignore` 是告訴 Git 哪些符合規則的未追蹤檔案不應被納入一般版本管理。
+
+### 步驟 B：第一次正式提交
+
+```
+git status --short
+
+git add .gitignore slice-notes.md keep.txt
+
+git diff --cached
+
+git commit -m "建立合成切片紀錄基準"
+
+git log -1 --oneline
+```
+
+執行後，你會建立第一個 Commit。
+
+`git log -1 --oneline` 能顯示最新一筆提交的簡短識別碼與訊息。
+
+這個版本，就是後面練習要恢復的基準。
+
+### 步驟 C：模擬同時做兩項修改
+
+```
+printf "誤加：完整報告已完成\n" >> slice-notes.md
+
+printf "其他工作：尚待完成\n" >> keep.txt
+
+git status --short
+
+git diff -- slice-notes.md keep.txt
+
+git diff --cached -- slice-notes.md keep.txt
+```
+
+現在兩個檔案都被修改了，但尚未暫存。
+
+目標是把 `slice-notes.md` 恢復到原版，同時保留 `keep.txt` 的新內容。
+
+### 步驟 D：先備份，再局部恢復
+
+```
+cp slice-notes.md slice-notes.backup.md
+
+git restore --source=HEAD --worktree -- slice-notes.md
+
+git status --short
+
+git diff -- slice-notes.md
+
+git diff -- keep.txt
+```
+
+預期驗收結果
+
+`slice-notes.md` 恢復到原本內容
+
+`keep.txt` 的新修改還在
+
+`slice-notes.backup.md` 備份仍存在
+
+原本的 Commit 紀錄仍可查詢
+
+這就是一次成功的局部還原（Selective Restoration）。
+
+要注意，備份檔目前仍是未追蹤檔案；如果後來使用 `git add .`，它也可能被納入暫存，因此提交前仍應逐項審查。
+
+## 七、跨產業應用：這套觀念並不只適用於程式設計
+
+[7 Reasons Exa is the Fastest Web Search API for Developers](https://images.openai.com/static-rsc-4/bfgUR5hvsNpKDcEm6qXRxPF4KgcCdK53FG8v3Ya_KL4M5M_RLVKC5imOSGwueoMsBw-Iz88HJmIWh0g4fmvXCabcCk-jp3JYT6JuD4gVaDwSL9ZbCbq5irEkLz6z4K3nTg_3nYqoU7MWdcy0h4bvpuFGx1wki5ZJsCvLvp-tzZA?purpose=inline)
+
+軟體工程：AI Agent 修改程式
+
+AI Agent 一次修改 20 個檔案。工程師先看 Diff，檢查是否改到不相關的權限設定，確認測試之後，再建立對應功能的 Commit。
+
+[How to Read Architectural Drawings: Symbols, Scales & Plans](https://images.openai.com/static-rsc-4/85N1aAy-awgear8YByXQ5VECbhE8QVdGOQr20sGfeH2nMbIaHd6IzDzUnUerFu1RxVjSg3zUW4v3T8LP9QKF671QHDbIhP2Xo1-r00b5IuAMnRLa40kyAHjPvi4iyKagvvK0HOtdkFShhspx-KANiDCwtPLPsOb0avJsHrxBAIU?purpose=inline)
+
+建築工程：設計變更管理
+
+結構工程師修改材料規格，透過可追溯的版本紀錄，確認修改理由、核准版本與受影響的設計文件，避免施工單位使用錯誤版本。
+
+[Gazillions](https://images.openai.com/static-rsc-4/kzuQ3HJRbUYzkUGyl-vFPDrCcz3JXpFBaFVwu5niQPWRkj6RH1p1LTcIfncYrfsU325xhWvw6TdFJ4zQAlQlG7ugjDgdkHfUx15z-u2acg6SEcZDPK2w0K6U7TugpAEFQI72sNTIH963A2ScAXov9si7rpIpUh9lErwqJf34w98?purpose=inline)
+
+科學研究：實驗可重現性
+
+研究團隊調整資料前處理程式與模型參數。透過 Commit，能確認每次實驗對應哪個程式版本，降低混用不同實驗設定的風險。
+
+要注意，以上是將版本控制的思維應用於不同產業，不代表所有文件都適合直接放進 Git。
+
+Git 特別適合程式、Markdown、JSON 等文字型檔案；Word、圖片及大型二進位資料，可能需要搭配其他版本或文件管理工具。
+
+## 八、最容易犯的三個錯誤
+
+### 錯誤一：以為 Git 已經幫你保存所有東西
+
+Git 只會保存實際納入 Commit 的內容。尚未追蹤、尚未暫存、未正式提交的修改，不能假設都受到保護。
+
+### 錯誤二：把密碼提交後，再用 .gitignore 隱藏
+
+假設你不小心把 API Key 放進 `.env` 並提交。
+
+後來才在 `.gitignore` 加入：
+
+```
+.env
+```
+
+這不會自動從既有 Git 歷史清除已提交的金鑰。
+
+如果金鑰可能已經暴露，還需要撤銷或輪替金鑰、檢查暴露範圍，並依專案流程處理歷史及相關副本。
+
+[image](https://www.google.com/s2/favicons?domain=https://git-scm.com\&sz=32)
+
+Recording Changes to the Repository
+
+
+
+### 錯誤三：直接讓 AI Agent 自行重設所有修改
+
+如果你交代 AI Agent「有問題就把 Git 恢復乾淨」，它可能採用過度廣泛的還原方式，導致你尚未提交的工作遺失。
+
+比較安全的工作規則是：
+
+> 每次變更先顯示 Diff，明確說明要保留與還原的檔案；涉及覆蓋工作區、重寫歷史或刪除內容時，必須確認影響範圍。
+
+這不只是一個 Git 指令問題，而是 AI Agent 工作流程中的權限與責任邊界。
+
+## 九、整節重點整理
+
+| 觀念                | 最重要的記憶               |
+| ----------------- | -------------------- |
+| Git               | 管理專案的版本與修改歷史         |
+| Working Directory | 目前正在編輯的檔案            |
+| Staging Area      | 挑選下一次 Commit 的內容     |
+| Diff              | 比較版本或狀態之間的差異         |
+| Commit            | 保存一次有意義的版本快照         |
+| HEAD              | 通常指目前分支最新的提交         |
+| Restore           | 從指定來源還原指定檔案或修改       |
+| Push              | 將本機提交傳送到遠端，不等於部署     |
+| .gitignore        | 忽略特定未追蹤檔案，不能消除既有歷史秘密 |
+
+你真正應該建立的習慣是：
+
+確認需求 → 修改 → 檢查 Diff → 測試 → 選擇暫存內容 → Commit → 驗證交付
+
+這個流程能讓個人開發、團隊協作與 AI Agent 自動修改都變得更容易審查和接手。
+
+## 十、理解檢核
+
+以下三題先自己判斷，不直接公布答案。
+
+1\. 你修改了三個程式檔，只想提交其中一個已完成的功能。應該怎麼做？
+
+A. 直接 git add . 並 Commit
+
+B. 檢查 Diff，只暫存與該功能相關的修改
+
+C. 直接 Push，Git 會自行選擇
+
+D. 先刪除其他檔案
+
+2\. 已經 Commit 之後，是否代表正式網站上線？
+
+A. 是，Commit 就是部署
+
+B. 不是，提交、推送、部署與驗收是不同狀態
+
+C. 只要有 GitHub 就一定上線
+
+D. 只要測試通過就一定上線
+
+3\. 你想恢復 A 檔案，但 B 檔案有尚未提交的重要工作。最佳做法是？
+
+A. git reset --hard，全部清除
+
+B. 直接刪除 A 和 B
+
+C. 先查看狀態與 Diff、保護現況，再指定來源及 A 的路徑進行還原
+
+D. 不用確認直接覆蓋整個專案
+
+提交答案並查看解析
+
+下一步建議是實際完成上面的 `git-lab` 練習。能夠在不影響 `keep.txt` 的前提下，正確恢復 `slice-notes.md`，才算真正掌握這一節最核心的能力。
