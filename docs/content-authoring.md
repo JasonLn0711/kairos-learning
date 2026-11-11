@@ -818,6 +818,12 @@ AASE-M06-C05 v1.1.0 保留原日期、URL 與六個舊錨點，導言及八節�
 
 正式 JSON 同源產生 HTML／搜尋／十四份 SVG；`python3 scripts/aase_m0603_svg.py --check`核對衍生檔。`tests/aase-m0603-replacement.test.ts`檢查原件／版本／錨點／三選項、範例執行及非法資料拒絕；`playwright.aase-m0603.config.ts`核對全文、四尺寸／200%／無JS、鍵盤、SVG字框及下載。正式站設定 `AASE_BASE_URL=https://learn.cs-kairos.com`。實際檢查與發布狀態見[回執](releases/2026-11-11-aase-m06-03-replacement.md)。
 
+## AASE M06-01｜流程與架構完整抽換（2026-11-11）
+
+本課v1.1.0使用既有sections／prose／step／table／cards／flow；兩語各導言加八節、三表、兩Python範例、三題三選項。`FlowArchitectureDiagram.svelte`依本課固定五圖呈現餐廳時序、三個平行接收者、完整性是／否與重查回圈、Streamlit主機內同程序／規則／狀態、C4逐層縮放；窄版保留關係文字及分組，下載SVG共用正式JSON。驗證器限定本課revision>=4的位置、種類、節點數5／5／7／6／4及欄位。
+
+維護`python3 scripts/aase_m0601_content.py --check`、`python3 scripts/aase_m0601_svg.py --check`、`tests/aase-m0601-replacement.test.ts`及`playwright.aase-m0601.config.ts`；正式站設定AASE_BASE_URL。完整供稿、舊版、圖意差異及逐小節採用在[來源對照](sources/aase/m06-01/replacement-2026-11-11/source-map.md)，本輪各層證據在[回執](releases/2026-11-11-aase-m06-01-replacement.md)。
+
 ## AASE M07-06 審查 Diff、工具紀錄與決策（2026-11-11）
 
 本課 v1.1.0 的[逐節對照](sources/aase/m07-06/replacement-2026-11-11/source-map.md)保留原稿、五張 PNG、前版、完整中英稿與雜湊。`aase_m0706_content.py` 將十節、六表（包含圖3）、十一段程式／輸出與三道開放題編譯為正式 JSON，`--check` 核對同步。六個既有錨點、原發布日與路由保留；三道新題使用 Q04–Q06，答案沿原生收合，qa=[]。
