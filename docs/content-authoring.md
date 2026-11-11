@@ -643,3 +643,11 @@ v1.1.0／revision 4 保留原發布日與六個舊錨點，導言及十節完整
 CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整雙語。來源見[逐節對照](sources/m05-06/source-map.md)，發布證據見[回執](releases/2026-11-09-m05-06.md)。`scripts/m05_06_content.py --check`核對正式JSON與六份sanitizer SVG；`ScanEvidenceDiagram.svelte`承接paths共同主機＋兩平行面、gates五節點四連線、result四列合成結果。`scan-evidence-diagrams.ts`限制身份、固定路徑、種類、節點數與欄位。正文／搜尋／下載同源，不提供掃描或批改服務。
 
 單元為`tests/m05-06.test.ts`，瀏覽器為`node scripts/check-m05-06-browser.mjs`，正式站設定`M05_06_BASE_URL=https://learn.cs-kairos.com`；`node scripts/check-m05-06-svg.mjs`核對六圖字框與重疊。同期修改於隔離工作樹驗收，保留原工作目錄。
+
+## AASE M04-01 醫院情境與四圖抽換（2026-11-11）
+
+v1.2.0／revision 6 以新供稿取代餐廳版本；[逐小節來源對照](sources/aase/m04-01/replacement-2026-11-11/source-map.md)保留原文、四PNG、前版、雙語成稿、正規化與雜湊。十二個section承接導言、十節及銜接；舊section錨點與Q04–Q06保留，新實作題Q07沿原生參考解析。三表、六行業、心智模型／回饋／錯誤預防、易用性三面向及完整AI指令進入正式正文。
+
+四圖位置為analogy／three-lenses／quality／case，全部使用受限cards資料，節點數3／4／5／2。HciPerspectivesDiagram 將醫院三列、概念交會、目標與同層UI／HCI的分層流程、修改前後雙欄重排；僅圖3有三個閱讀箭頭，UI與HCI之間沒有箭頭。HTML、搜尋與八份SVG由同一正式JSON提供。normalize-source.py --check、aase_m0401_content.py --check與aase_m0401_svg.py --check分別檢查來源正規化、正文、下載同步。
+
+單元與瀏覽器仍用 tests/aase-m0401-replacement.test.ts、playwright.aase-m0401.config.ts；本機獨立連接埠4297，正式站指定AASE_BASE_URL。[回執](releases/2026-11-11-aase-m04-01-replacement.md)記錄實際驗證、發布與待驗界線，歷史五圖回執保留原結果。
