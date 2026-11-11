@@ -760,6 +760,14 @@ v1.1.1／revision 5 保留原發布日與六個既有 section 錨點；[來源�
 
 OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
 
+## AASE M07-05 預覽與匯出供稿抽換（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六錨點；[來源對照](sources/aase/m07-05/replacement-2026-11-11/source-map.md)保存原文、兩PNG、前版與完整雙語JSON稿。`aase_m0705_content.py --check`核對十二節、三表、兩圖及四開放題；qa維持空陣列。
+
+PreviewExportDiagram只在M07-05啟用固定四項表單與七節點條件流程。資料修改分支返回檢查，與未變分支保持平行。瀏覽器示範的checkedPreviewReport在匯出邊界檢查三個字串／80字元／快照比對並只輸出允許鍵；工作坊原函式與呼叫端責任另在正文說明。無JS保留靜態例，停用控制項。四個SVG由`aase_m0705_svg.py`以同份資料及固定元素／屬性白名單產生，不接收任意標記。兩產生器都支援--check。
+
+單元為tests/aase-m0705-replacement.test.ts，瀏覽器為playwright.aase-m0705.config.ts；正式站指定AASE_BASE_URL。全文、四尺寸／200%、鍵盤、無JS、JSON下載、SVG與搜尋檢查及正式發布證據見[回執](releases/2026-11-11-aase-m07-05-replacement.md)。
+
 
 ## AASE M06-02｜C4 System Context 供稿抽換
 
