@@ -126,6 +126,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='analogy'?'flow':'cards'))fail('invalid tool evidence figure');}
         else if(figures.length)fail('invalid tool evidence figure');
       }
+      if(l.id==='AASE-M04-C02'&&l.revision>=4){
+        const expected:Record<string,number[]>={goal:[6],plans:[6,5],methods:[5],walkthrough:[3]};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(s.id==='methods'?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid task analysis figure');
+      }
       if(l.id==='AASE-M04-C01'){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected=l.revision>=6?(s.id==='analogy'?[3]:s.id==='three-lenses'?[4]:s.id==='quality'?[5]:s.id==='case'?[2]:[]):s.id==='case'?[4,3]:s.id==='quality'?[2]:s.id==='record'?[5]:s.id==='task-analysis'?[6]:[];

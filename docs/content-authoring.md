@@ -683,6 +683,12 @@ v1.2.0／revision 5 依十節供稿完整抽換。六圖依序為 analogy flow 5
 
 AaseProse 承接既有文字段落、清單、固定 h3、小節引用及 InlineText HTTPS 連結；四名詞保留 comparison 錨點。雙語七表與 code 對齊，英文逐欄解讀共用 problem.md。新 Q05–Q08 為物流開放題；原生參考解析不建立作答／學習狀態。前版、完整供稿、六圖及來源核對見[來源對照](sources/aase/m03-04/replacement-2026-11-11/source-map.md)，驗證與發布狀態見[回執](releases/2026-11-11-aase-m03-04-six-figures.md)。
 
+## AASE M04-02｜任務分析與條件回復
+
+[2026-11-11來源及逐節對照](sources/aase/m04-02/replacement-2026-11-11/README.md)保存八章供稿、五張原圖、舊版及編輯差異。修改完整中英稿或`figures.json`後執行`scripts/aase_m0402_content.py`與`scripts/aase_m0402_svg.py`（皆支援`--check`）。正式資料保留六個既有錨點，新增各小節；三個物流問題使用原生開放檢核與編輯參考答案，不提供送答服務。
+
+`TaskAnalysisDiagram.svelte`沿既有cards／flow承接五種固定版型：goal六節點、plans六／五節點、methods五階段、walkthrough三條件。`aase.ts`限制位置、種類、數量及欄位；不接受HTML、任意SVG或外部圖片路徑。HTA分解與流程順序分開，二分支手機重排不相接。文字、搜尋與十份受審核SVG同源。驗收用`tests/aase-m0402-replacement.test.ts`與`playwright.aase-m0402.config.ts`；正式站設定`AASE_BASE_URL`。結果見[回執](releases/2026-11-11-aase-m04-02-replacement.md)。
+
 ## AASE M03-05 十節新供稿與六圖（2026-11-11）
 
 v1.2.0／revision 5 的[來源對照](sources/aase/m03-05/replacement-2026-11-11/source-map.md)保存完整原文、六張PNG、待換前版與雙語稿。原十節、導言與分母界線成為十二section，舊十一錨點、原發布日與翻譯閘門保留；五個原開放問題搭配Q08–Q12參考解析，qa=[]。`normalize-source.py --check`核對原文與明列正規化；`aase_m0305_content.py --check`核對雙語稿、圖解及正式JSON。
