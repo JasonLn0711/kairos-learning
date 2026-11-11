@@ -35,6 +35,7 @@ for(const lang of ['zh','en'] as const)test(`${lang}: full source, five diagram 
   await page.setViewportSize({width,height:900});await page.evaluate(s=>document.documentElement.style.setProperty('font-size',s*100+'%','important'),scale);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth),`${width}/${scale}`).toBeLessThanOrEqual(width);
   const bad=await page.locator('article p,article li:not(:has(> svg.arrow)),article figcaption,article td,article th,article pre').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1)}).map(e=>e.textContent?.slice(0,100)));expect(bad,`${width}/${scale}`).toEqual([]);
+  if(width===320&&scale===2){expect(await page.locator('[data-figure="4"] .node p').evaluateAll(es=>es.every(e=>e.clientWidth>=4*parseFloat(getComputedStyle(e).fontSize)))).toBe(true);}
   if(width===320&&scale===2)await page.locator('[data-figure="4"]').screenshot({path:`.local/aase/m0601/${lang}-4-320-200.png`});
   const peers=page.locator('[data-figure="2"] .receivers');
   const columns=await peers.evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);
