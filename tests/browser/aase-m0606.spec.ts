@@ -16,6 +16,7 @@ for(const lang of ['zh','en']){
    }
   }
   await expect(page.locator('[data-tls-figure]')).toHaveCount(3);
+  expect(await page.locator('[data-tls-figure] p').evaluateAll(ps=>ps.every(p=>{const s=getComputedStyle(p);return parseFloat(s.fontSize)>=16&&parseFloat(s.lineHeight)/parseFloat(s.fontSize)>=1.7;}))).toBeTruthy();
   const search=await request.get('/search-index.json');expect(search.ok()).toBeTruthy();
   const entry=(await search.json()).find((e:any)=>e.id===lesson.id&&e.lang===lang);expect(entry).toBeTruthy();
   for(const section of lesson.text[lang].sections)expect(entry.text).toContain(section.heading);
@@ -29,6 +30,9 @@ for(const lang of ['zh','en']){
   await page.setViewportSize({width:390,height:900});
   await page.addStyleTag({content:'html{font-size:200% !important}'});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  const region=page.locator('h2#overview').locator('..').getByRole('region').first();await region.focus();await page.keyboard.press('ArrowRight');
+  await expect.poll(()=>region.evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);
+  await page.keyboard.press('Shift+Tab');expect(await page.locator(':focus').count()).toBe(1);
   for(let n=1;n<=3;n++){
    const asset=`/images/aase/m06-06-${n}-${lang}.svg`;
    const response=await request.get(asset);expect(response.ok()).toBeTruthy();
