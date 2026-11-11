@@ -6,6 +6,8 @@ async function body(page:Page,lang:'zh'|'en'){
  for(const s of lesson.text[lang].sections){
   const section=page.locator('h2#'+s.id).locator('..');await expect(section).toBeVisible();
   const actual=normalize(await section.innerText());
+  const ordered=[...s.paragraphs,...(s.blocks??[]).flatMap((b:any)=>b.kind==='prose'?b.paragraphs:b.kind==='step'?[...b.paragraphs,b.code??'']:b.kind==='table'?[b.caption,...b.headers,...b.rows.flat()]:[b.caption,...b.items.flatMap((i:any)=>b.kind==='flow'?[i.title,i.body]:[i.title]),b.description])];
+  let cursor=0;for(const value of ordered){const token=normalize(value);if(!token)continue;const at=actual.indexOf(token,cursor);expect(at,`${s.id}: ordered ${token.slice(0,60)}`).toBeGreaterThanOrEqual(cursor);cursor=at+token.length;}
   for(const p of s.paragraphs)expect(actual).toContain(normalize(p));
   for(const b of s.blocks??[]){
    if(b.kind==='table'){const table=section.getByRole('table',{name:b.caption,exact:true});await expect(table.locator('th')).toHaveText(b.headers);await expect(table.locator('td')).toHaveText(b.rows.flat());}
