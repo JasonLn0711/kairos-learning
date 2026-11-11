@@ -7,7 +7,7 @@ const read=(p:string)=>JSON.parse(readFileSync(p,'utf8'));
 const lesson=read('content/aase/lessons/aase-m08-c06.json');
 const root='docs/sources/aase/m08-06/replacement-2026-11-11/';
 const catalog=(l:any)=>createAaseCatalog(read('content/aase/course.json'),[l],read('content/aase/sources.json'),'2026-11-11',read('content/aase/course.en.json'));
-test('M08-06 retains publication, anchors, all supplied subsections and 4/4/3 choices',()=>{
+test('M08-06 retains publication, anchors, tables, code and 4/4/3 choices',()=>{
  const prior=read(root+'previous/lesson.json');
  assert.equal(lesson.publishedOn,prior.publishedOn);assert.equal(lesson.contentVersion,'1.1.0');
  for(const lang of ['zh','en']){
