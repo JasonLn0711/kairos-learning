@@ -29,3 +29,13 @@ Linux／Playwright Chromium，中英文各一項整合檢查通過（2 passed，
 來源提交d054ab1、教材與驗證提交7b8c708。以origin/main建立隔離工作樹，原工作樹既有修改未攜入；9c68c12合併保留並行發布。合併後311／311單元及型別零錯誤／警告，正式建置與validate:release通過。發布邊界已於本次內容上驗證草稿、未來日期、翻譯與英文課程閘門；沒有改動發布規則。發布前最近成功run為42987098978（de7ce8d），並行run 42987132405當時仍執行中。
 
 可重現：`pnpm test`、`pnpm run check`、`node scripts/check-publication-boundary.mjs`（與全測／瀏覽器依序執行）、`pnpm run validate:release`、`pnpm exec playwright test --config playwright.aase-m0504.config.ts`。正式站回讀加 `AASE_BASE_URL=https://learn.cs-kairos.com`。
+
+## 正式發布與回讀
+
+[d2dcf9e](https://github.com/JasonLn0711/kairos-learning/commit/d2dcf9ed2b365c5538706366863885604a2f016f)保留並行M03-03回執後推送main，fetch確認0 0。[GitHub Pages run 42987636523](https://github.com/JasonLn0711/kairos-learning/actions/runs/42987636523)所有品質閘門與部署成功。
+
+2026-11-11 16:33（Asia/Taipei），`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0504.config.ts`正式站中英2／2通過（13.2s）。[繁體中文](https://learn.cs-kairos.com/courses/aase/v1/m05/concepts/m05-04/)與[English](https://learn.cs-kairos.com/en/courses/aase/v1/m05/concepts/m05-04/)均實際回讀v1.1.0、逐節全文／順序、兩表、三段程式碼、開放題答案、四尺寸／200%、無JS、鍵盤焦點與局部捲動、搜尋與SVG；兩份正式SVG的下載bytes與提交逐檔相同，文字邊界與重疊均通過。工作坊ZIP與checksum亦維持一致。
+
+機器可讀的[正式站測試摘要](2026-11-11-aase-m05-04-checks.json)保留實測時間、版本、部署commit與兩語結果；詳細截圖／trace／原始JSON在隔離工作樹 `.local/aase/m0504/`。供稿與圖片最後以cmp回比附件，均完全一致。
+
+來源保存、全文採用、圖解設計、驗證、推送與正式站回讀已完成。實體手機、完整螢幕閱讀器及真人理解仍是獨立待驗層；沒有將本次發布寫成第四欄實作或學員通過。原工作樹無關修改保留，未納入本次提交。

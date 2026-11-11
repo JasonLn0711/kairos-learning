@@ -12,7 +12,7 @@ def render(f,n,lang):
    for line in wrap(paragraph,width):
     out.append(f'<text x="{x}" y="{y}" font-size="20" font-weight="{700 if bold else 400}">{escape(line)}</text>');y+=36
   return y
- def box(item,x,y,w,fill='#ffffff',center=False):
+ def box(item,x,y,w,fill='#ffffff'):
   index=len(out);out.append('');end=text(item['title'],x+20,y+36,(w-40)/22,True)+8;end=text(item['body'],x+20,end,(w-40)/22)+12
   out[index]=f'<rect x="{x}" y="{y}" width="{w}" height="{end-y}" rx="14" fill="{fill}" stroke="#647681"/>'
   return end
