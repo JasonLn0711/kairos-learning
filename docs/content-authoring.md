@@ -883,3 +883,11 @@ M09-01 v1.1.0 由[完整雙語稿與逐小節對照](sources/aase/m09-01/replace
 v1.1.0／revision 4 以[完整供稿與對照](sources/aase/m09-04/replacement-2026-11-11/README.md)抽換九個正文區段，保留原發布日、網址與六個舊錨點；中英保留三種遷移案例、兩表及原三題三選項（Q04–Q06）。前版與三張 PNG 完整封存。`aase_m0904_content.py --check`核對雙語稿，`aase_m0904_svg.py --check`核對六份同源受審核 SVG。
 
 TechnologyChangeDiagram 使用可搜尋 HTML：兩欄平行對照、六步五箭頭流程、五層無箭頭責任列。窄版保留分組與順序；aase.ts限制三圖的位置、種類、節點數2／6／5及文字欄位。`tests/aase-m0904-replacement.test.ts`檢查身份、兩語表格、答案及非法關係拒絕；`node scripts/check-aase-m0904-browser.mjs`檢查全文、四尺寸、200%、無JS、鍵盤與下載，正式站使用AASE_BASE_URL。歷史遷移測試核對封存前版，本次由新測試承接。部署證據見本次發布回執。
+
+## AASE M07-04 資料檢核完整供稿（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六個既有錨點，十節完整雙語、四表、六 code 與三個原開放問題由 `scripts/aase_m0704_content.py` 生成；`--check` 核對正式 JSON。來源、四 PNG、前版及逐小節採用見[來源對照](sources/aase/m07-04/replacement-2026-11-11/README.md)。
+
+四圖共用 figures.json，節點數 4／3／3／4；第一圖為條件分支、第二圖為三欄文字模擬、第三圖為平行責任、第四圖為事件流程。`DataValidationDiagram.svelte` 限本課固定位置與數量，HTML 可搜尋並依容器重排；輸入變更清除舊結果，80／81 的 Unicode code point 與 Python 空白語義由 `validation-demo.ts` 對照測試。無 JS 保留預設資料與規則並停用操作，不保存輸入、提交作答或記錄學習進度。`aase_m0704_svg.py` 以同源資料輸出八份受限 SVG；圖二下載固定為尚未檢查的靜態預設。
+
+單元為 `tests/aase-m0704-replacement.test.ts`，瀏覽器為 `playwright.aase-m0704.config.ts`，正式站指定 `AASE_BASE_URL`。修復後原稿範例與補充矩陣在來源目錄用 `python3 -m pytest -q` 驗證；沒有改動工作坊與 ZIP。實際驗證與發布見[本次回執](releases/2026-11-11-aase-m07-04-replacement.md)。
