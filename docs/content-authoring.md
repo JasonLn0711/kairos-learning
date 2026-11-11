@@ -378,7 +378,7 @@ AASE 四篇資料升為 v1.0.1，對齊 CEH 的 `id`、`revision`、`contentVers
 
 AASE章節正文可使用受限`architecture`區塊，外層教材欄位及CEH版型不變。`AaseBlocks`只將新區塊交給`ArchitectureDiagram`，原flow／cards／table／step仍交給未修改的ConceptBlocks；CEH資料型別、驗證與渲染器不放寬。
 
-正式模型與驗證在src/lib/architecture-diagram.ts：level限定context／container；caption、description、boundary為文字；nodes為2–8個唯一id／title／body／kind／inside；relations為1–12條from／to／label。kind限定person、software-system、container、data-store；拒絕多餘欄位、未知端點、自連、重複及未連結節點。Context恰有一個系統內software-system，每條關係都連到該主系統；Container內只接受應用容器或資料儲存，不以檔名自動視為服務。
+正式模型與驗證在src/lib/architecture-diagram.ts：level限定context／container；caption、description、boundary為文字；nodes為2–8個唯一id／title／body／kind／inside；relations為1–12條from／to／label。kind限定person、software-system、container、data-store；拒絕多餘欄位、未知端點、自連、重複及未連結節點。Context恰有一個系統內software-system，每個外部節點都須直接連到該主系統；在此條件下允許外部節點間的補充關係（例如M06-02郵件服務→顧客）；Container內只接受應用容器或資料儲存，不以檔名自動視為服務。
 
 HTML按系統範圍分組節點，再呈現可讀的方向關係列；容器查詢重排雙欄與箭頭，文字與搜尋由同一資料產生。沒有任意HTML／SVG、座標、事件或圖片路徑，也沒有新增SVG匯出。圖例需明說系統範圍不代表安全信任邊界，關係列不表示時序。標籤元件支持zh／en，該批AASE正文僅已確認繁中；後續英譯由雙語契約逐篇開放，不因元件有英文標籤就產生路由。
 
@@ -767,3 +767,12 @@ v1.1.0／revision 4 保留原發布日與六錨點；[來源對照](sources/aase
 PreviewExportDiagram只在M07-05啟用固定四項表單與七節點條件流程。資料修改分支返回檢查，與未變分支保持平行。瀏覽器示範的checkedPreviewReport在匯出邊界檢查三個字串／80字元／快照比對並只輸出允許鍵；工作坊原函式與呼叫端責任另在正文說明。無JS保留靜態例，停用控制項。四個SVG由`aase_m0705_svg.py`以同份資料及固定元素／屬性白名單產生，不接收任意標記。兩產生器都支援--check。
 
 單元為tests/aase-m0705-replacement.test.ts，瀏覽器為playwright.aase-m0705.config.ts；正式站指定AASE_BASE_URL。全文、四尺寸／200%、鍵盤、無JS、JSON下載、SVG與搜尋檢查及正式發布證據見[回執](releases/2026-11-11-aase-m07-05-replacement.md)。
+
+
+## AASE M06-02｜C4 System Context 供稿抽換
+
+v1.1.0／revision 4保留原發布日與六個既有章節錨點。完整導言及九節、五表、四圖、七節architecture.md與三題原問題，見[逐節來源對照](sources/aase/m06-02/replacement-2026-11-11/source-map.md)。兩語的文件範本可翻譯自然語言，其他可執行code維持逐字核對。Q04–Q06沿用原生details，前兩題三選項保留，不提供批改或學習完成狀態。
+
+SystemContextLessonDiagram復用ArchitectureDiagram與受限cards；四張圖的HTML、搜尋與八份SVG來自正式模型。模型保留每個外部節點與主系統直接相連的條件，允許已連結節點間的補充關係，以保留銀行範例SES→Customer。圖像版面差異、作者及CC BY 4.0授權見來源對照。
+
+維護使用`python3 scripts/aase_m0602_content.py --check`、`python3 scripts/aase_m0602_svg.py --check`、`tests/aase-m0602-replacement.test.ts`與`playwright.aase-m0602.config.ts`，正式站以AASE_BASE_URL指定。[驗證與發布回執](releases/2026-11-11-aase-m06-02-replacement.md)分開記錄本機、正式站與未驗事項。
