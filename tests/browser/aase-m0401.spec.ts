@@ -1,11 +1,11 @@
 import {test,expect,type Page} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 const lesson=JSON.parse(readFileSync('content/aase/lessons/aase-m04-c01.json','utf8'));
-const layouts=[1,2,3,4,5];
+const layouts=[1,2,3,4];
 async function completeBody(page:Page,lang:'zh'|'en'){
  for(const s of lesson.text[lang].sections){
   const section=page.locator('h2#'+s.id).locator('..');await expect(section.locator('h2').first()).toHaveText(s.heading);
-  for(const p of s.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));
+  for(const p of s.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(> |- |\d+\. )/,''));
   const actual=(await section.textContent())!.replace(/\s/g,'');let cursor=0;
   const tokens=[s.heading,...s.paragraphs];
   for(const b of s.blocks??[]){
@@ -13,31 +13,31 @@ async function completeBody(page:Page,lang:'zh'|'en'){
    else if(b.kind==='step')tokens.push(b.heading,...b.paragraphs,...(b.code?[b.code]:[]));
    else if(b.kind==='table')tokens.push(b.caption,...b.headers,...b.rows.flat());
    else if(b.kind==='cards'||b.kind==='flow'){
-    tokens.push(b.caption);if(s.id==='record')tokens.push(b.description);
+    tokens.push(b.caption);
     if(s.id!=='measure')tokens.push(...b.items.flatMap((i:any)=>[i.title,...i.body.split('\n\n')]));
-    if(s.id!=='record')tokens.push(b.description);
+    tokens.push(b.description);
    }
   }
-  for(const value of tokens){const token=(/^(- |\d+\. )/.test(value)?value.replace(/^(- |\d+\. )/gm,''):value).replace(/\s/g,'');const found=actual.indexOf(token,cursor);expect(found,`${lang}/${s.id}: ordered ${value.slice(0,45)}`).toBeGreaterThanOrEqual(cursor);cursor=found+token.length;}
+  for(const value of tokens){const token=(/^(> |- |\d+\. )/.test(value)?value.replace(/^(> |- |\d+\. )/gm,''):value).replace(/\s/g,'');const found=actual.indexOf(token,cursor);expect(found,`${lang}/${s.id}: ordered ${value.slice(0,45)}`).toBeGreaterThanOrEqual(cursor);cursor=found+token.length;}
   for(const b of s.blocks??[]){
-   if(b.kind==='prose'){for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));}
-   if(b.kind==='step'){await expect(section.getByRole('heading',{level:3,name:b.heading,exact:true})).toHaveText(b.heading);for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));if(b.code)await expect(section.getByRole('heading',{level:3,name:b.heading,exact:true}).locator('..').locator('code')).toHaveText(b.code);}
-   if(b.kind==='cards'||b.kind==='flow'){for(const i of b.items){if(s.id==='measure')continue;await expect(section).toContainText(i.title);for(const p of i.body.split("\n\n"))for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(- |\d+\. )/,''));}await expect(section).toContainText(b.description);}
+   if(b.kind==='prose'){for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(> |- |\d+\. )/,''));}
+   if(b.kind==='step'){await expect(section.getByRole('heading',{level:3,name:b.heading,exact:true})).toHaveText(b.heading);for(const p of b.paragraphs)for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(> |- |\d+\. )/,''));if(b.code)await expect(section.getByRole('heading',{level:3,name:b.heading,exact:true}).locator('..').locator('code')).toHaveText(b.code);}
+   if(b.kind==='cards'||b.kind==='flow'){for(const i of b.items){if(s.id==='measure')continue;await expect(section).toContainText(i.title);for(const p of i.body.split("\n\n"))for(const line of p.split('\n'))await expect(section).toContainText(line.replace(/^(> |- |\d+\. )/,''));}await expect(section).toContainText(b.description);}
    if(b.kind==='table'){const table=section.getByRole('table',{name:b.caption});await expect(table.locator('th')).toHaveText(b.headers);await expect(table.locator('td')).toHaveText(b.rows.flat());}
   }
  }
- for(const q of lesson.text[lang].openChecks??[]){const section=page.locator('#'+q.id).locator('..');await expect(section.locator('h3')).toHaveText(q.prompt);await expect(section.locator('details p')).toHaveText(q.answer);}
+ for(const q of lesson.text[lang].openChecks??[]){const section=page.locator('#'+q.id).locator('..');await expect(section.locator('h3')).toHaveText(q.prompt.split('\n')[0]);if(q.prompt.includes('\n'))await expect(section.locator(':scope > ol > li')).toHaveText(q.prompt.split('\n').slice(1));await expect(section.locator('details p')).toHaveText(q.answer);}
 }
-for(const lang of ['zh','en'] as const)test(`${lang}: full source, five diagram relationships, exports, keyboard, reflow and no JavaScript`,async({page,browser,baseURL,request})=>{
- const path=`${lang==='en'?'/en':''}/courses/aase/v1/m04/concepts/m04-01/`;const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.1');await completeBody(page,lang);await expect(page.locator('h1')).toContainText('M04-01');await expect(page.locator('a[href="'+`${lang==='en'?'/en':''}/courses/aase/v1/m04/concepts/m04-02/`+'"]')).not.toHaveCount(0);await expect(page.locator('.hci-diagram')).toHaveCount(5);const firstLink=page.locator('.hci-diagram a').first();await firstLink.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');await expect(firstLink).toBeFocused();expect(await firstLink.evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
+for(const lang of ['zh','en'] as const)test(`${lang}: full source, four diagram relationships, exports, keyboard, reflow and no JavaScript`,async({page,browser,baseURL,request})=>{
+ const path=`${lang==='en'?'/en':''}/courses/aase/v1/m04/concepts/m04-01/`;const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.2.0');await completeBody(page,lang);await expect(page.locator('h1')).toContainText('M04-01');await expect(page.locator('a[href="'+`${lang==='en'?'/en':''}/courses/aase/v1/m04/concepts/m04-02/`+'"]')).not.toHaveCount(0);await expect(page.locator('.hci-diagram')).toHaveCount(4);const firstLink=page.locator('.hci-diagram a').first();await firstLink.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');await expect(firstLink).toBeFocused();expect(await firstLink.evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
  for(const q of lesson.text[lang].openChecks){const section=page.locator('#'+q.id).locator('..');const answer=section.locator('details');await expect(answer).not.toHaveAttribute('open','');await answer.locator('summary').focus();await page.keyboard.press('Enter');await expect(answer).toHaveAttribute('open','');await expect(answer).toContainText(q.answer[0]);expect(await answer.locator('summary').evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');await page.keyboard.press('Space');await expect(answer).not.toHaveAttribute('open','');}
  for(const width of [320,390,768,1280])for(const scale of [1,2]){
   await page.setViewportSize({width,height:900});await page.evaluate(s=>document.documentElement.style.setProperty('font-size',s*100+'%','important'),scale);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth),`${width}/${scale}`).toBeLessThanOrEqual(width);
   const bad=await page.locator('article p,article li:not(:has(> svg.arrow)),article figcaption').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1)}).map(e=>e.textContent?.slice(0,100)));expect(bad,`${width}/${scale}`).toEqual([]);
   const columns=await page.locator('.hci-diagram.comparison ul').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);if(width<=390||scale===2)expect(columns).toBe(1);if(width===1280&&scale===1)expect(columns).toBe(2);
-  await expect(page.locator('.hci-diagram .arrow')).toHaveCount(8);
-  const flowColumns=await page.locator('.hci-diagram.flow ol').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);if(width<=390||scale===2)expect(flowColumns).toBe(1);if(width===1280&&scale===1)expect(flowColumns).toBe(4);
+  await expect(page.locator('.hci-diagram .arrow')).toHaveCount(3);
+  const journeyColumns=await page.locator('.hci-diagram.journey ul').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);if(width<=390||scale===2)expect(journeyColumns).toBe(1);if(width===1280&&scale===1)expect(journeyColumns).toBe(2);
   await expect(page.locator('.hci-diagram.lenses .arrow')).toHaveCount(0);
   if(scale===1&&(width===390||width===1280))for(const layout of layouts)await page.locator('[data-figure="'+layout+'"]').screenshot({path:`.local/aase/m0401/${lang}-${layout}-${width}.png`});
  }
@@ -47,7 +47,7 @@ for(const lang of ['zh','en'] as const)test(`${lang}: full source, five diagram 
  for(const layout of layouts){const href=`/images/aase/m04-01-${layout}-${lang}.svg`;const link=page.locator('a[href="'+href+'"]');await expect(link).toHaveCount(1);await link.focus();const popupPromise=page.waitForEvent('popup');await page.keyboard.press('Enter');const popup=await popupPromise;await popup.waitForLoadState();await popup.evaluate(()=>document.fonts.ready);expect(new URL(popup.url()).pathname).toBe(href);
   const bounds=await popup.locator('text').evaluateAll(es=>es.map(e=>{const t=e as SVGGraphicsElement;const b=t.getBBox();const v=t.ownerSVGElement!.viewBox.baseVal;return {text:e.textContent,x:b.x,y:b.y,right:b.x+b.width,bottom:b.y+b.height,width:v.width,height:v.height};}).filter(b=>b.x<0||b.y<0||b.right>b.width||b.bottom>b.height));expect(bounds).toEqual([]);
   const overlaps=await popup.locator('text').evaluateAll(es=>{const boxes=es.map(e=>({text:e.textContent,b:(e as SVGGraphicsElement).getBBox()}));return boxes.flatMap((a,i)=>boxes.slice(i+1).filter(c=>a.b.x<c.b.x+c.b.width&&c.b.x<a.b.x+a.b.width&&a.b.y<c.b.y+c.b.height&&c.b.y<a.b.y+a.b.height).map(c=>[a.text,c.text]));});expect(overlaps).toEqual([]);await popup.screenshot({path:`.local/aase/m0401/${lang}-${layout}-svg.png`});await popup.close();const response=await request.get(href);expect(response.status()).toBe(200);const body=await response.body();expect(body.length).toBeLessThan(100000);expect(body).toEqual(readFileSync('site'+href));}
- const context=await browser.newContext({baseURL,javaScriptEnabled:false,viewport:{width:320,height:900}});try{const p=await context.newPage();await p.goto(path);await completeBody(p,lang);await expect(p.locator('.hci-diagram')).toHaveCount(5);const summary=p.locator('#checks').locator('..').locator('summary').first();await summary.press('Enter');await expect(summary.locator('..')).toHaveAttribute('open','');expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);}finally{await context.close();}
+ const context=await browser.newContext({baseURL,javaScriptEnabled:false,viewport:{width:320,height:900}});try{const p=await context.newPage();await p.goto(path);await completeBody(p,lang);await expect(p.locator('.hci-diagram')).toHaveCount(4);const summary=p.locator('#checks').locator('..').locator('summary').first();await summary.press('Enter');await expect(summary.locator('..')).toHaveAttribute('open','');expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);}finally{await context.close();}
  for(const href of ['/downloads/aase/aase-v1-workshop.zip','/downloads/aase/SHA256SUMS.txt']){const r=await request.get(href);expect(r.status()).toBe(200);expect(await r.body()).toEqual(readFileSync('site'+href));}
  expect(errors).toEqual([]);
 });

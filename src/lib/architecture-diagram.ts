@@ -18,12 +18,12 @@ export function assertArchitectureDiagram(value:unknown):asserts value is Archit
   if(node.inside&&node.kind==='person'||d.level==='context'&&node.kind!=='person'&&node.kind!=='software-system'||d.level==='context'&&node.inside&&node.kind!=='software-system'||d.level==='container'&&node.inside&&node.kind!=='container'&&node.kind!=='data-store')fail();
  }
  if(!inside||!outside||d.level==='context'&&inside!==1)fail();
- const seen=new Set<string>(),connected=new Set<string>();
+ const seen=new Set<string>(),connected=new Set<string>(),direct=new Set<string>();
  for(const r of relations){
   if(!object(r)||!keys(r,['from','to','label'])||!id(r.from)||!id(r.to)||!text(r.label)||!ids.has(r.from as string)||!ids.has(r.to as string)||r.from===r.to)fail();
-  const edge=r as {from:string;to:string;label:string};if(d.level==='context'&&!insideIds.has(edge.from)&&!insideIds.has(edge.to))fail();const key=JSON.stringify([edge.from,edge.to,edge.label]);if(seen.has(key))fail();seen.add(key);connected.add(edge.from);connected.add(edge.to);
+  const edge=r as {from:string;to:string;label:string};if(insideIds.has(edge.from))direct.add(edge.to);if(insideIds.has(edge.to))direct.add(edge.from);const key=JSON.stringify([edge.from,edge.to,edge.label]);if(seen.has(key))fail();seen.add(key);connected.add(edge.from);connected.add(edge.to);
  }
- if(connected.size!==ids.size)fail();
+ if(connected.size!==ids.size||d.level==='context'&&nodes.some(n=>{const node=n as ArchitectureNode;return !node.inside&&!direct.has(node.id);}))fail();
 }
 export function architectureDiagramText(d:ArchitectureDiagramModel,lang:'zh'|'en'='zh'):string[]{
  const l=architectureDiagramLabels[lang];
