@@ -737,6 +737,11 @@ AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.jso
 
 檢查入口為`tests/aase-m0404-replacement.test.ts`與`playwright.aase-m0404.config.ts`；正式站設定`AASE_BASE_URL`。來源、原版、逐節採用、圖意差異與實測／發布結果見[本次回執](releases/2026-11-11-aase-m04-04-replacement.md)。
 
+## AASE M05-03 完整驗收供稿（2026-11-11）
+
+v1.1.0／revision 6保留原發布日與舊章節錨點；[來源對照](sources/aase/m05-03/replacement-2026-11-11/source-map.md)保存原稿、三PNG與前版。兩語八節、三表、三份完整原碼、四選項Q02與開放Q03進入正式正文，qa=[]。scripts/aase_m0503_content.py由雙語稿產生JSON；scripts/aase_m0503_svg.py由同一JSON產生六SVG，兩者--check核對同步。
+
+AcceptanceDiagram只承接本課固定三圖：mechanism flow三節點、examples cards四平行情境、tests flow五層；aase.ts限制位置、種類、數量及欄位。HTML自然換行，圖2無箭頭，其他箭頭表示情境推進／追溯關係，無任意標記。tests/aase-m0503-replacement.test.ts驗原碼、歷史、閘門與無效圖解；playwright.aase-m0503.config.ts驗完整雙語、四尺寸與200%、無JS、鍵盤、搜尋及SVG邊界／下載位元組。正式站指定AASE_BASE_URL；實測與發布見[回執](releases/2026-11-11-aase-m05-03-replacement.md)。
 ## AASE M05-04 SDD 五步變更（2026-11-11）
 
 供稿、前版、單圖與[逐小節對照](sources/aase/m05-04/replacement-2026-11-11/source-map.md)由本repo保存。v1.1.0保留原發布日及六個既有錨點，完整雙語承接七節、六列影響表、五列人機分工、兩段候選情境、Markdown範本與三題開放檢核。第四欄仍為候選，三欄工作坊參考程式未改。
@@ -748,6 +753,12 @@ AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.jso
 v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有段落錨點。`scripts/aase_m0501_content.py` 由完整成稿生成 JSON，`--check` 核對同步；三張表、R-01～R-04／T-01～T-04、Agent 任務、BDD 情境與三題原始理解檢核在正文呈現。既有三題為補充檢核，供稿三題沿原生答案展開，不建立提交或評分服務。兩語保留相同中文 spec.md 程式碼，英文有完整條款解讀。
 
 `PromptSpecDiagram.svelte` 使用既有 flow 資料模型，五節點維持參考圖的直向閱讀順序，Verification 獨立框線，回修說明明示回到適當階段；手機換行而不縮小整張圖。驗證器限制此課五節點與受限文字欄位。`scripts/aase_m0501_svg.py` 沿受審核流程 exporter 產生兩份 SVG，大小均低於 100000 bytes；HTML、搜尋與匯出同源。檢查用 `tests/aase-m0501-replacement.test.ts`、`playwright.aase-m0501.config.ts`；正式站以 `AASE_BASE_URL` 指定。詳見[逐節對照](sources/aase/m05-01/replacement-2026-11-11/source-map.md)與[驗收回執](releases/2026-11-11-aase-m05-01-replacement.md)。
+
+## AASE M05-05｜OpenSpec 與輕量 Markdown（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
+
+OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
 
 ## AASE M06-04｜Browser、HTTP、API 與資料流
 
