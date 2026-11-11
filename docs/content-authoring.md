@@ -769,6 +769,10 @@ SystemContextLessonDiagram復用ArchitectureDiagram與受限cards；四張圖的
 
 維護使用`python3 scripts/aase_m0602_content.py --check`、`python3 scripts/aase_m0602_svg.py --check`、`tests/aase-m0602-replacement.test.ts`與`playwright.aase-m0602.config.ts`，正式站以AASE_BASE_URL指定。[驗證與發布回執](releases/2026-11-11-aase-m06-02-replacement.md)分開記錄本機、正式站與未驗事項。
 
+## AASE M07-02 規格與工作契約（2026-11-11）
+
+v1.1.0 的[完整來源與逐節對照](sources/aase/m07-02/replacement-2026-11-11/source-map.md)保留十節供稿、兩張 PNG 及前版。`scripts/aase_m0702_content.py --check` 核對完整雙語正文、七表與四個開放檢核；原任務 code 保持一致，英文附逐項解讀。TaskContractDiagram 使用五步 flow／兩情境 cards，`aase.ts` 限定位置、關係與數量。四份 SVG 由既有文字序列化器同源產生，`scripts/aase_m0702_svg.py --check` 核對同步；頁面維持可選取 HTML、無 JS 正文與原生答案收合。單元入口為 `tests/aase-m0702-replacement.test.ts`，瀏覽器入口為 `playwright.aase-m0702.config.ts`，正式站指定 `AASE_BASE_URL`。[回執](releases/2026-11-11-aase-m07-02-replacement.md)記錄本次實測及發布層次。
+
 ## AASE M06-01｜流程與架構完整抽換（2026-11-11）
 
 本課v1.1.0使用既有sections／prose／step／table／cards／flow；兩語各導言加八節、三表、兩Python範例、三題三選項。`FlowArchitectureDiagram.svelte`依本課固定五圖呈現餐廳時序、三個平行接收者、完整性是／否與重查回圈、Streamlit主機內同程序／規則／狀態、C4逐層縮放；窄版保留關係文字及分組，下載SVG共用正式JSON。驗證器限定本課revision>=4的位置、種類、節點數5／5／7／6／4及欄位。
