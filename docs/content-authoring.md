@@ -736,3 +736,9 @@ InformationHierarchyDiagram 由受限 cards／flow 承接包含、樹狀、比�
 AASE-M04-C04 v1.1.0由`aase_m0404_content.py`將完整中英成稿及figures.json轉入正式正文；`--check`比對同步。五組既有flow／cards依序為5／4／11／2／2項，只有需求至交付為flow。WireframeDiagram保留四畫面的2×2／窄版重排、十一條起點／事件／終點關係、上傳分支比較與兩張任務卡；不把條件出口畫成必經步驟。驗證器限制課次、位置、種類、節點數、欄位與轉換端點形狀。十個固定白名單SVG由`aase_m0404_svg.py`同源生成，各小於100000 bytes；下載排版差異記在來源對照。三個供稿開放題沿原生參考答案；qa=[]，不提供提交或AI批改。
 
 檢查入口為`tests/aase-m0404-replacement.test.ts`與`playwright.aase-m0404.config.ts`；正式站設定`AASE_BASE_URL`。來源、原版、逐節採用、圖意差異與實測／發布結果見[本次回執](releases/2026-11-11-aase-m04-04-replacement.md)。
+
+## AASE M05-05｜OpenSpec 與輕量 Markdown（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
+
+OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
