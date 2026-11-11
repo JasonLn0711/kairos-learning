@@ -19,7 +19,7 @@ for(const lang of ['zh','en'] as const)test(`${lang}: full body, seven figures, 
  for(const width of [320,390,768,1280])for(const scale of [1,2]){
   await page.setViewportSize({width,height:900});await page.evaluate(s=>document.documentElement.style.setProperty('font-size',s*100+'%','important'),scale);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-  const bad=await page.locator('article p,article figcaption,.c4-views li,.c4-views dt,.c4-views dd').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1)}).map(e=>e.textContent?.slice(0,80)));expect(bad,`${width}/${scale}`).toEqual([]);
+  const bad=await page.locator('article p,article figcaption,article .code-region code,article th,article td,.c4-views li,.c4-views dt,.c4-views dd').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||(!e.closest('.code-region')&&e.scrollWidth>e.clientWidth+1))}).map(e=>e.textContent?.slice(0,80)));expect(bad,`${width}/${scale}`).toEqual([]);
   const columns=await page.locator('.replicas').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length);if(width<=390||scale===2)expect(columns).toBe(1);if(width===1280&&scale===1)expect(columns).toBe(3);
   if(scale===1&&(width===390||width===1280))for(let n=1;n<=7;n++)await page.locator(`[data-figure="${n}"]`).screenshot({path:`.local/aase/m0603/${lang}-${n}-${width}.png`});
  }
