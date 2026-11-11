@@ -9,7 +9,7 @@ async function body(page:Page,lang:'zh'|'en'){
   for(const b of s.blocks??[]){
    if(b.kind==='prose')ordered.push(...b.paragraphs);
    else if(b.kind==='step')ordered.push(b.heading,...b.paragraphs,...(b.code?[b.code]:[]));
-   else if(b.kind==='table'){ordered.push(b.caption,...b.headers,...b.rows.flat());await expect(section.getByRole('table',{name:b.caption}).locator('td')).toHaveText(b.rows.flat());}
+   else if(b.kind==='table'){ordered.push(b.caption,...b.headers,...b.rows.flat());await expect(section.getByRole('table',{name:b.caption,exact:true}).locator('td')).toHaveText(b.rows.flat());}
    else{
     ordered.push(b.caption);
     if(b.kind==='architecture'){
@@ -27,7 +27,7 @@ for(const lang of ['zh','en'] as const)test(lang+': full text, responsive diagra
  const path=`${lang==='en'?'/en':''}/courses/aase/v1/m06/concepts/m06-02/`;const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(path);await body(page,lang);await expect(page.locator('.article-metadata')).toContainText('v1.1.0');await expect(page.locator('.context-figure')).toHaveCount(4);
  for(const width of [320,390,768,1280])for(const scale of [1,2]){
   await page.setViewportSize({width,height:900});await page.evaluate(s=>document.documentElement.style.setProperty('font-size',s*100+'%','important'),scale);expect(await page.evaluate(()=>document.documentElement.scrollWidth),`${width}/${scale}`).toBeLessThanOrEqual(width);
-  const bad=await page.locator('article p,article li,article figcaption').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1)}).map(e=>e.textContent?.slice(0,60)));expect(bad,`${width}/${scale}`).toEqual([]);
+  const bad=await page.locator('article p,article li,article figcaption,article th,article td').evaluateAll(es=>es.filter(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&(parseFloat(s.fontSize)<16||parseFloat(s.lineHeight)/parseFloat(s.fontSize)<1.7||e.scrollWidth>e.clientWidth+1)}).map(e=>e.textContent?.slice(0,60)));expect(bad,`${width}/${scale}`).toEqual([]);
   if(scale===1&&(width===390||width===1280))for(const n of [1,2,3,4])await page.locator('[data-figure="'+n+'"]').screenshot({path:`.local/aase/m0602/${lang}-${n}-${width}.png`});
  }
  await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));await page.setViewportSize({width:320,height:900});

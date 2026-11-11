@@ -43,7 +43,7 @@ for lang in ['zh','en']:
    if line.startswith('|'):
     rows=[]
     while i<len(lines) and lines[i].strip().startswith('|'):rows.append([x.strip() for x in lines[i].strip().strip('|').split('|')]);i+=1
-    blocks.append(dict(kind='table',caption=('表｜'+heading if lang=='zh' else 'Table | '+heading)+('：關係標籤' if lang=='zh' else ': relationship labels') if n==4 else ('表｜' if lang=='zh' else 'Table | ')+heading,headers=rows[0],rows=rows[2:]));continue
+    blocks.append(dict(kind='table',caption=(('表｜' if lang=='zh' else 'Table | ')+heading+('：關係標籤' if lang=='zh' else ': relationship labels') if n==4 and any(b['kind']=='table' for b in blocks) else ('表｜' if lang=='zh' else 'Table | ')+heading),headers=rows[0],rows=rows[2:]));continue
    paragraph=[]
    while i<len(lines) and lines[i].strip() and not lines[i].startswith(('### ','@figure','```','|')):paragraph.append(lines[i]);i+=1
    value='\n'.join(paragraph)

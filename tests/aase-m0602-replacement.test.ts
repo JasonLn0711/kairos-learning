@@ -25,6 +25,6 @@ test('banking retains email-to-customer without admitting disconnected external 
  for(const lang of ['zh','en']){
   const f=lesson.text[lang].sections.find((s:any)=>s.id==='banking').blocks[0];assertArchitectureDiagram(f);assert.equal(f.nodes.length,4);assert.equal(f.relations.length,4);assert.ok(f.relations.some((r:any)=>r.from==='email'&&r.to==='customer'));
   const disconnected=structuredClone(f);disconnected.relations=disconnected.relations.filter((r:any)=>!(r.from==='banking'&&r.to==='email'));assert.throws(()=>assertArchitectureDiagram(disconnected));
-  const injected=structuredClone(f);injected.nodes[0].markup='<script/>';assert.throws(()=>assertArchitectureDiagram(injected));
+  const injected=structuredClone(f);Object.assign(injected.nodes[0],{markup:'<script/>'});assert.throws(()=>assertArchitectureDiagram(injected));
  }
 });
