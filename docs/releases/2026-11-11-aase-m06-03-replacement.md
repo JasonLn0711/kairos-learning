@@ -25,7 +25,7 @@
 
 瀏覽器入口 `pnpm exec playwright test --config playwright.aase-m0603.config.ts`，兩語2項通過。測試內容逐項核對，不以測試數量代表內容完整性。截圖及完整報告位於隔離工作樹忽略目錄 `.local/aase/m0603/`；`zh/en-N-390.png`、`zh/en-N-1280.png`、`zh/en-N-svg.png`，比較圖為 `zh/en-N-comparison.png`。初測發現320px／200%文字的巢狀框過窄，已減少窄欄內距並重測通過。
 
-發布前閘門：`pnpm run validate:content`通過、`pnpm test`317／317通過、`pnpm run check`零錯誤／警告、`python3 -m unittest discover -s scripts -p test_validation_html.py`6／6通過、`node scripts/check-publication-boundary.mjs`通過並重建乾淨產物、`pnpm run validate:release`通過、MATLAB保留下載檔校驗通過、`git diff --check`通過。`pnpm audit --audit-level=high`通過，現有4項low層級套件提醒未在本次教材修改升級處理。
+發布前閘門：`pnpm run validate:content`通過、`pnpm test`324／324通過（已整合 M05-02、M05-05 及 M06-02）、`pnpm run check`零錯誤／警告、`python3 -m unittest discover -s scripts -p test_validation_html.py`6／6通過、`node scripts/check-publication-boundary.mjs`通過並重建乾淨產物、`pnpm run validate:release`通過、MATLAB保留下載檔校驗通過、`git diff --check`通過。`pnpm audit --audit-level=high`通過，現有4項low層級套件提醒未在本次教材修改升級處理。
 
 正式站發布及回讀待補。
 

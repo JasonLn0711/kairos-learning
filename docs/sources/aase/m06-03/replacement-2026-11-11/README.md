@@ -48,6 +48,8 @@
 
 2026-11-11 查核 [C4 Container](https://c4model.com/diagrams/container)、[四層選擇](https://c4model.com/diagrams)、[Deployment](https://c4model.com/diagrams/deployment)、[Streamlit 架構](https://docs.streamlit.io/develop/concepts/architecture/architecture)、[Session State API](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state)及[生命週期說明](https://docs.streamlit.io/develop/concepts/architecture/session-state)。它們支持術語與框架界線；本地架構另以 `resources/aase/reference/app.py`、`rules.py` 核對 import、session_state 及 download_button。這不是本次啟動或驗收 Streamlit 服務的證據。
 
+- 原稿「應用程式或資料儲存的執行邊界」在正文表達為架構邊界，依 C4 官方的 application／data store 定義，避免把每個資料儲存一律等同獨立 OS 程序。
+- Session State 的關閉／重載與伺服器故障行為依官方生命週期說明具體化；這是文件查核，並非本輪實測失效情境。
 - 原稿單行 `validate_order` 無法直接執行，正文恢復正確縮排，原判斷順序及行為保留；另補三個合成案例 assert，原件不改寫。
 - 四層中的函式示例補明「入門示例，不是完整 Code Diagram」，不把單個函式宣稱為完整圖。
 - 原稿 architecture.md 每個欄位及狀態完整保留，同行附英文，兩語共用同一份程式區塊，符合 code 不變的雙語契約。英文解說及表格完整翻譯。
