@@ -904,10 +904,12 @@ v1.1.0／revision 4 保留原發布日與六個舊錨點。[來源對照](source
 
 ## AASE M08-04 AppTest 完整供稿（2026-11-11）
 
-AASE-M08-C04 v1.1.1／revision 5 保留原發布日、路徑及六個舊錨點；`run` 錨點位於啟動命令的 h3。供稿導言及九節、三個實作步驟、四表、五段程式／指令與三道四選題完整雙語進入正文。[來源對照](sources/aase/m08-04/replacement-2026-11-11/source-map.md)保存原稿、三 PNG、前版、成稿及修正。`aase_m0804_content.py --check`核對稿件、共享程式與JSON；可執行程式在 `resources/aase/examples/m08-04/`，隨既有工作坊ZIP發布。
+AASE-M08-C04 v1.1.2／revision 6 保留原發布日、路徑及六個舊錨點；`run` 錨點位於啟動命令的 h3。供稿導言及九節、三個實作步驟、四表、五段程式／指令與三道四選題完整雙語進入正文。[來源對照](sources/aase/m08-04/replacement-2026-11-11/source-map.md)保存原稿、三 PNG、前版、成稿及修正。`aase_m0804_content.py --check`核對稿件、共享程式與JSON；可執行程式在 `resources/aase/examples/m08-04/`，隨既有工作坊ZIP發布。
 
 `AppTestDiagram.svelte`以受限ConceptVisual呈現三步流程、三個含欄位值的相繼狀態、五項無箭頭語法清單。HTML文字可搜尋、原生重排，六SVG由`aase_m0804_svg.py`同源生成並限制元素與屬性。`aase.ts`拒絕錯誤位置、關係、節點數及額外標記欄位。題目保留原有概念ID，依供稿順序為Q01／Q03／Q02，答案B／C／D；參考解析沿原生details，不建立虛假提交或學習紀錄。
 
 單元為`tests/aase-m0804-replacement.test.ts`；瀏覽器為`playwright.aase-m0804.config.ts`，正式站指定`AASE_BASE_URL`。全文順序、四尺寸／200%、無JS、鍵盤、搜尋、SVG文字邊界／重疊與下載bytes由同一檢查承接。AppTest固定1.51.0實測；啟動本課app於127.0.0.1:8584後，可執行`node scripts/check-aase-m0804-example.mjs`核對真實下載及三階段；各層結果見[發布回執](releases/2026-11-11-aase-m08-04-replacement.md)。
 
 M08-04的v1.1.0先完成正式發布；v1.1.1保存該發布版後補正200%根字級加正文的頁首換行。品牌white-space沿既有樣式由nowrap改normal，沒有縮字或隱藏內容；四尺寸正文放大及實際雜湊版工作坊下載由本課瀏覽器檢查保護。舊裸下載網址可能沿用CDN快取，驗收走現有AaseWorkshop的sha256連結。
+
+M08-04 v1.1.2再將跳至內容連結的固定-100px隱藏改為依自身高度transform，焦點時顯示；瀏覽器檢查覆蓋兩語四尺寸／兩字級的隱藏邊界及Tab→Enter→正文焦點。v1.1.1的正式發布與截圖發現保留在同一回執，不重寫前版。

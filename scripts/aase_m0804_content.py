@@ -70,7 +70,7 @@ def parse(raw, lang, figures):
 
 def main():
     lesson = json.loads((SOURCE/'previous-lesson.json').read_text())
-    lesson.update(revision=5, contentVersion='1.1.1', date='2026-11-11')
+    lesson.update(revision=6, contentVersion='1.1.2', date='2026-11-11')
     figures = json.loads((SOURCE/'figures.json').read_text())
     for lang in ['zh','en']:
         t = lesson['text'][lang]
