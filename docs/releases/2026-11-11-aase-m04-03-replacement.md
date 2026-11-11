@@ -1,0 +1,40 @@
+# AASE M04-03｜資訊架構與視覺優先序完整抽換
+
+本次依使用者完整供稿及六張隨文圖抽換 AASE-M04-C03。正式內容 revision 4／v1.1.0，修訂日 2026-11-11，原發布日 2026-11-05 保留。來源、正文、圖解與驗證由 kairos-learning 持有；其他課次的未提交修改留在原工作樹。
+
+[原稿、六 PNG、前版與逐節採用](../sources/aase/m04-03/replacement-2026-11-11/source-map.md)保存來源與改動理由。兩語各有導言及九節、三表（3／5／6 列）、六張圖及完整六節 wireframe-notes.md 模板。原六個錨點保留；三題全新四選項檢核使用 Q04–Q06，答案 B／C／D，參考解析不儲存作答或宣告學習完成。
+
+## 實作與圖意
+
+- InformationHierarchyDiagram 沿既有 Svelte／HTML／CSS，僅工作流程出現四支方向箭頭；IA 保留巢狀包含，網站地圖保留首頁四平行分支及八個更深層子頁，A/B 平行比較，四狀態以 dl 對照。
+- 手機重排保留節點和意義，圖 5 的桌面示例內仍保留 2／3 並排，手機示例為 1／2／3／4。文字直接可讀、選取、搜尋；模擬動作沒有假按鈕控制。
+- aase.ts 固定課次、版型、節點數 3／5／2／4／2／5、欄位白名單及樹狀深度；sitemapGroups 拒絕孤立、過深或不合法縮排。
+- aase_m0403_content.py 從完整雙語稿、figures.json 與 questions.json 產生 JSON。aase_m0403_svg.py 從正式 JSON 產生 12 份固定元素／屬性白名單 SVG，單圖 1,839–5,981 bytes。搜尋沿同一正文資料。
+
+## 規則與驗收
+
+| 規則 | 範圍與方法 | 本次狀態 |
+| --- | --- | --- |
+| WRITE-01–06、08–11 | 原稿逐章逐小節、比喻、八項服務、兩組分類、四狀態、五方法、六行業、兩研究方法、模板與三題；雙語深度與形狀；版本日期 | 完成來源／成稿逐節閱讀及對照；詳見 source-map |
+| HTML-01–04 | 全文逐區塊順序、320／390／768／1280、200% 文字、局部表格／程式碼捲動、無 JS | 最終整合後兩語通過，包含圖 5 版型修正 |
+| FIG-01–06 | 六種關係、同源搜尋與 12 SVG、文字框及重疊、下載位元組 | 最終兩語通過；兩語六圖的手機與桌面共 24 張截圖已逐張檢視 |
+| A11Y-01–03 | 語意結構、原生答案收合、Tab／Shift+Tab／Enter／Space、可見焦點、可鍵盤局部捲動 | 最終通過；屬本頁檢查，非全站無障礙認證 |
+| INT-01 | 無新增參數互動或運算 | 不適用；圖為可閱讀的靜態教材 |
+
+初輪驗證修正了小節內條列與選項擠在標題的問題。既有英文／短標題歷史測試改以本次保存的前版檢查原遷移，不讓歷史等值檢查阻擋已授權抽換；本次正文另有獨立測試。
+
+## 最終命令與發布證據
+
+- 原件：`sha256sum -c SHA256SUMS`（來源目錄）八件通過。
+- 生成器：`python3 scripts/aase_m0403_content.py --check`；`python3 scripts/aase_m0403_svg.py --check`。
+- 新測試：`tests/aase-m0403-replacement.test.ts`；瀏覽器：`pnpm exec playwright test --config playwright.aase-m0403.config.ts`。本機證據：隔離工作樹 `.local/aase/m0403/`；正式站以 `AASE_BASE_URL=https://learn.cs-kairos.com` 指定。
+- 整合遠端後全套單元 299／299 通過；型別檢查 0 errors／0 warnings。publication-boundary 最終通過草稿、未來日期與英文入口關閉，並重建乾淨正式輸出。
+- 最終 `pnpm run validate:content`、`pnpm run validate:release`、`git diff --check` 通過；最終瀏覽器兩語 2／2 通過。`pnpm audit --audit-level=high` 通過，現有 4 low；共用 HTML 六個 Python 測試及六份 MATLAB ZIP 雜湊均通過。
+- 原始來源提交 `9779ade`、教材實作 `73bf11f`、保留雙方歷史的整合 `e642b97`。保留同期 M03-05／M04-01／M04-02／M04-06 與 CEH 更新；衝突解決後重新執行上述驗證。
+- Git 推送、遠端一致性、Pages 工作流程及正式站全文／12 圖回讀：待完成。
+
+尚未進行實際學員、輔助科技或實體手機驗收；教材中的設計候選與靜態草圖不等於真實使用者測試成果。發布也不代表理解或課程完成。
+
+最終本機日誌留在 `/tmp/kairos-m0403-tests.log`、`/tmp/kairos-m0403-check.log`、`/tmp/kairos-m0403-final-boundary.log`、`/tmp/kairos-m0403-final-release.log`、`/tmp/kairos-m0403-final-browser.log`。瀏覽器結構化結果在隔離工作樹 `.local/aase/m0403/results.json`，截圖與 trace 同目錄；正式站驗收會更新該結果。
+
+第二次推送前因遠端新增 M04-06 而遇到 non-fast-forward，已保留雙方內容再整合；型別 0 errors／0 warnings，299 個單元測試通過。共用來源、渲染器與歷史快照測試保留各課次已授權的更新。

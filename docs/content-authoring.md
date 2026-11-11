@@ -706,6 +706,14 @@ SuccessEvidenceDiagram沿受限cards／flow，revision 5限定evidence-chain／m
 
 單元與瀏覽器入口仍為`tests/aase-m0305-replacement.test.ts`、`playwright.aase-m0305.config.ts`。正式站設定AASE_BASE_URL。驗證範圍含完整正文與順序、四尺寸／200%、鍵盤／無JS、兩滑桿、全部阻擋、搜尋、十二SVG邊界／重疊／下載；實際結果與待驗事項見[發布回執](releases/2026-11-11-aase-m03-05-replacement.md)。
 
+## AASE M04-03 完整供稿與六圖（2026-11-11）
+
+AASE-M04-C03 v1.1.0／revision 4 保留原發布日與六個舊錨點。完整來源、六張 PNG、前版及逐節採用在[來源對照](sources/aase/m04-03/replacement-2026-11-11/source-map.md)；兩語各導言及九節、三表、六圖、完整 wireframe-notes.md 模板，三題四選項使用 Q04–Q06 與既有原生參考解析。qa=[]，沒有作答儲存或理解完成主張。
+
+InformationHierarchyDiagram 由受限 cards／flow 承接包含、樹狀、比較、狀態對照、版型與流程；節點數 3／5／2／4／2／5，只有最後五步為 flow。sitemapGroups 解析兩空格子層級，aase.ts 核對完整八個子頁的父子關係；HTML、搜尋、12 份獨立 SVG 同源，固定 SVG 元素及屬性白名單。
+
+`python3 scripts/aase_m0403_content.py --check` 與 `python3 scripts/aase_m0403_svg.py --check` 核對生成一致；單元為 `tests/aase-m0403-replacement.test.ts`，瀏覽器為 `playwright.aase-m0403.config.ts`，正式站使用 `AASE_BASE_URL=https://learn.cs-kairos.com`。全文順序、四尺寸／200%、無 JS、鍵盤、搜尋與圖檔幾何／下載驗證見[發布回執](releases/2026-11-11-aase-m04-03-replacement.md)。
+
 ## AASE M04-06 完整供稿與復原圖解（2026-11-11）
 
 完整雙語稿、五參考圖與前版見[來源目錄](sources/aase/m04-06/replacement-2026-11-11/README.md)。以 `python3 scripts/aase_m0406_content.py` 生成正文，`python3 scripts/aase_m0406_svg.py` 生成十份SVG，兩者支援 `--check`。RecoveryDiagram僅在本課revision≥4承接五個cards圖，節點數2／2／3／7／5；驗證器限制種類、欄位與數量。圖4為可聚焦摘要連結的靜態定義清單，圖5為替代條件分支，不是線性流程。

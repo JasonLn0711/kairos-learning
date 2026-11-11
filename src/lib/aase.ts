@@ -1,3 +1,4 @@
+import {sitemapGroups} from './information-hierarchy.ts';
 import {aaseConceptTitle} from './aase-labels.ts';
 import {assertArchitectureDiagram,architectureDiagramText,type ArchitectureDiagramModel} from './architecture-diagram.ts';
 import {parseQA} from './qa-markdown.ts';
@@ -146,6 +147,12 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==(s.id==='analogy'?'flow':'cards')||f.items.length!==expected[s.id]||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid wireframe figure');
         if(s.id==='transitions'&&figures.some(f=>(f.kind==='cards'||f.kind==='flow')&&f.items.some(item=>item.title.split(' → ').length!==2)))fail('invalid wireframe endpoints');
+      }
+      if(l.id==='AASE-M04-C03'&&l.revision>=4){
+        const expected:Record<string,number>={structure:3,navigation:5,compare:2,groups:4,order:2,workflow:5};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='workflow'?'flow':'cards')||f.items.some(item=>!keys(item,['title','body'])||/[<>]/.test(item.title+item.body))))fail('invalid information hierarchy figure');
+        if(s.id==='navigation'){const f=figures[0];if(f?.kind==='cards'){const counts=f.items.slice(1).map(item=>sitemapGroups(item.body).map(g=>g.children.length));if(JSON.stringify(counts)!=='[[3,0,0],[0,0,0,0],[0,0,0,0,0,0],[2,3,0]]')fail('invalid sitemap relationships');}}
       }
       if(l.id==='AASE-M04-C01'){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
