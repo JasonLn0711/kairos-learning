@@ -22,6 +22,8 @@ try{
   }
   for(const q of lesson.checks)for(const text of [q.text[lang].prompt,...q.text[lang].options])assert.ok(body.includes(norm(text)));
   assert.equal(await page.locator('figure[data-figure]').count(),3);
+  assert.ok(await page.locator('table').evaluateAll(nodes=>nodes.every(e=>{const s=getComputedStyle(e);return parseFloat(s.fontSize)>=16&&parseFloat(s.lineHeight)/parseFloat(s.fontSize)>=1.7})));
+
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:1000});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${lang}/${width} overflow`);
