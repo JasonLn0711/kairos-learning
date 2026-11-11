@@ -43,11 +43,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
       for(const [j,c] of m.concepts.entries())if(c.id!==original.concepts[j].id||![c.title,c.objective,c.practice,c.assessment].every(text))fail('English concept mismatch');
     }
   }
-  // Text may change language; IDs, code, array order and graph structure may not.
-  const sameShape=(a:unknown,b:unknown,key=''):boolean=>{
-    if(typeof a==='string')return text(b)&&(!['id','kind','level','from','to','code','tone'].includes(key)||a===b);
-    if(Array.isArray(a))return Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>key==='sourceIds'?v===b[i]:sameShape(v,b[i]));
-    if(a&&typeof a==='object')return Boolean(b&&typeof b==='object'&&!Array.isArray(b)&&Object.keys(a).sort().join('|')===Object.keys(b).sort().join('|')&&Object.entries(a).every(([k,v])=>sameShape(v,(b as Record<string,unknown>)[k],k)));
+  // IDs, executable code and graph structure match; M06-02’s prose architecture.md template is translated.
+  const sameShape=(a:unknown,b:unknown,key='',translatedTemplate=false):boolean=>{
+    if(typeof a==='string')return text(b)&&(!['id','kind','level','from','to','code','tone'].includes(key)||a===b||key==='code'&&translatedTemplate&&a.startsWith('# System Context — ')&&String(b).startsWith('# System Context — '));
+    if(Array.isArray(a))return Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>key==='sourceIds'?v===b[i]:sameShape(v,b[i],'',translatedTemplate));
+    if(a&&typeof a==='object')return Boolean(b&&typeof b==='object'&&!Array.isArray(b)&&Object.keys(a).sort().join('|')===Object.keys(b).sort().join('|')&&Object.entries(a).every(([k,v])=>sameShape(v,(b as Record<string,unknown>)[k],k,translatedTemplate)));
     return a===b;
   };
   const sourceIds=new Set(sources.map(s=>s.id));
@@ -58,7 +58,7 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
     const en=l.translations?.en;
     if(l.translations&&Object.keys(l.translations).some(k=>k!=='en'))fail('unsupported translation gate');
     if(Boolean(l.text.en)!==Boolean(en)||en&&(!keys(en,['status','publishedOn'])||!english||!['draft','published'].includes(en.status)||!day(en.publishedOn)||en.publishedOn<l.publishedOn))fail('invalid English publication gate');
-    if(l.text.en&&!sameShape(l.text.zh,l.text.en))fail('English teaching structure differs');
+    if(l.text.en&&!sameShape(l.text.zh,l.text.en,'',l.id==='AASE-M06-C02'))fail('English teaching structure differs');
     for(const lang of Object.keys(l.text) as Locale[]){
     const t=l.text[lang]!;
     if(!t||!t.readingGuide||!(['goal','startingPoint','route','output'] as const).every(k=>text(t.readingGuide[k]))||!Array.isArray(l.qa))fail('incomplete lesson fields');
@@ -81,6 +81,7 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='examples'?'cards':'flow')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid acceptance figure');
       }
+      if(l.id==='AASE-M07-C02'&&l.revision>=4){const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');const expected=s.id==='contract'?5:s.id==='review'?2:0;const f=figures[0];if(figures.length!==(expected?1:0)||expected&&(!f||(f.kind!=='flow'&&f.kind!=='cards')||f.items.length!==expected||f.kind!==(s.id==='contract'?'flow':'cards')))fail('invalid task contract figure');}
       if(l.id==='AASE-M07-C01'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected:Record<string,number[]>={analogy:[8],layers:[3],commands:[5,2]};
