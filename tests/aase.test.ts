@@ -44,7 +44,7 @@ test('only published AASE routes exist; pending neighbors land on directory anch
 });
 test('historic AASE CEH-field migration retains original teaching, examples and answer keys',()=>{
  for(const current of lessons.filter(l=>['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id))){
-  const l:AaseLesson=current.id==='AASE-M05-C03'?read('docs/sources/aase/m05-03/replacement-2026-11-11/prior-lesson.json'):current.id==='AASE-M03-C01'?read('docs/sources/aase/m03-01/replacement-2026-11-07/previous.json'):current.id==='AASE-M01-C01'?read('docs/sources/aase/m01-01/replacement-2026-11-06/previous-v1.0.3.json'):current;
+  const l:AaseLesson=current.id==='AASE-M05-C03'?read('docs/sources/aase/m05-03/replacement-2026-11-11/prior-lesson.json'):current.id==='AASE-M04-C05'?read('docs/sources/aase/m04-05/replacement-2026-11-11/previous/aase-m04-c05.json'):current.id==='AASE-M03-C01'?read('docs/sources/aase/m03-01/replacement-2026-11-07/previous.json'):current.id==='AASE-M01-C01'?read('docs/sources/aase/m01-01/replacement-2026-11-06/previous-v1.0.3.json'):current;
   const old=read('docs/sources/aase/layout-2026-11-05/'+l.id.toLowerCase()+'.json');
   assert.equal(l.publishedOn,old.publishedOn);assert.equal(l.date,'2026-11-05');const secondPatch=['AASE-M01-C01','AASE-M03-C01','AASE-M04-C05','AASE-M05-C03'].includes(l.id);const patch=['AASE-M03-C01','AASE-M05-C03'].includes(l.id)?3:secondPatch?2:1;assert.equal(l.contentVersion,`1.0.${patch+1}`);assert.equal(l.revision,old.revision+patch+1);
   assert.equal(l.text.zh.summary,old.summary);assert.deepEqual(l.text.zh.objectives,old.objectives);assert.deepEqual(l.text.zh.exercise,old.exercise);assert.deepEqual(l.qa,[]);
