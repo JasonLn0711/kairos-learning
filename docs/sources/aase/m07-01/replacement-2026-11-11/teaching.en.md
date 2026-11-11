@@ -491,6 +491,6 @@ A. Yes
 
 B. No; actually run the tests and inspect the results
 
-Reference explanations: B for all three questions. Setup and startup support G1/G2; venv mainly separates packages; a pytest version check does not establish passing tests.
+After making your judgment, expand the three reference explanations in the understanding-check area. This does not submit answers or record learning progress.
 
 M07-02, “Constrain Agent work with a specification,” continues with limiting edits to specified files, following requirements and supplying verifiable outcomes after environment preparation.

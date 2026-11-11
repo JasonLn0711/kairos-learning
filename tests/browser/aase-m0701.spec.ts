@@ -36,3 +36,11 @@ for(const lang of ['zh','en'] as const)test(`${lang}: full body, four figures, k
  await expect(page.locator('.next-links')).toContainText('M07-02');expect(errors).toEqual([]);
  const context=await browser.newContext({baseURL,javaScriptEnabled:false,viewport:{width:320,height:900}});try{const p=await context.newPage();await p.goto(path);await body(p,lang);await expect(p.locator('.environment-diagram')).toHaveCount(4);expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);const summary=p.locator('#AASE-M07-C01-Q04').locator('..').locator('summary');await summary.click();await expect(summary.locator('..')).toHaveAttribute('open','');}finally{await context.close();}
 });
+
+test('local starter actually renders its declared unimplemented features',async({page})=>{
+ test.skip(Boolean(process.env.AASE_BASE_URL),'Static production hosting does not execute Python.');
+ await page.goto('http://127.0.0.1:8531');
+ await expect(page.getByRole('heading',{name:'合成收件資料檢核｜起始骨架'})).toBeVisible();
+ await expect(page.getByText('目前尚未實作完整性檢核或報告匯出。只使用合成資料。')).toBeVisible();
+ await expect(page.getByRole('button',{name:/下載|export/i})).toHaveCount(0);
+});
