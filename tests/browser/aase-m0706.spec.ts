@@ -35,6 +35,9 @@ for(const lang of ['zh','en']){
   await expect(page.locator('[data-agent-review-figure]')).toHaveCount(5);await page.keyboard.press('Tab');expect(await page.locator(':focus').count()).toBe(1);
   for(const q of lesson.text[lang].openChecks){const summary=page.locator(`[id="${q.id}"]`).locator('..').locator('summary');await summary.focus();await page.keyboard.press('Enter');await expect(summary.locator('..')).toHaveAttribute('open','');for(const a of q.answer)expect(normalized(await summary.locator('..').innerText())).toContain(normalized(a));await page.keyboard.press('Space');await expect(summary.locator('..')).not.toHaveAttribute('open','');}
   const region=page.locator('.code-region').first();await region.focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');await expect(region).toBeFocused();
+  await page.setViewportSize({width:320,height:900});
+  const table=page.locator('[data-agent-review-figure="3"] .table-scroll');await table.focus();await page.keyboard.press('ArrowRight');await expect.poll(()=>table.evaluate(e=>e.scrollLeft)).toBeGreaterThan(0);
+  const link=page.locator('[data-agent-review-figure="1"] a');await link.focus();await expect(link).toBeFocused();const opened=context.waitForEvent('page');await page.keyboard.press('Enter');const popup=await opened;await popup.waitForLoadState();expect(popup.url()).toContain(`/images/aase/m07-06-1-${lang}.svg`);await popup.close();
   await context.close();
  });
 }
