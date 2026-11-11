@@ -643,3 +643,14 @@ v1.1.0／revision 4 保留原發布日與六個舊錨點，導言及十節完整
 CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整雙語。來源見[逐節對照](sources/m05-06/source-map.md)，發布證據見[回執](releases/2026-11-09-m05-06.md)。`scripts/m05_06_content.py --check`核對正式JSON與六份sanitizer SVG；`ScanEvidenceDiagram.svelte`承接paths共同主機＋兩平行面、gates五節點四連線、result四列合成結果。`scan-evidence-diagrams.ts`限制身份、固定路徑、種類、節點數與欄位。正文／搜尋／下載同源，不提供掃描或批改服務。
 
 單元為`tests/m05-06.test.ts`，瀏覽器為`node scripts/check-m05-06-browser.mjs`，正式站設定`M05_06_BASE_URL=https://learn.cs-kairos.com`；`node scripts/check-m05-06-svg.mjs`核對六圖字框與重疊。同期修改於隔離工作樹驗收，保留原工作目錄。
+
+
+## AASE M03-03｜As-Is、To-Be 與 User Flow 完整供稿（2026-11-11）
+
+`content/aase/lessons/aase-m03-c03.json` 保留 URL、原發布日、實際 Q&A 及六個既有錨點，升為 v1.1.0。原稿、七張參考圖與前版位於 [來源紀錄](sources/aase/m03-03/replacement-2026-11-11/README.md)，十節及小節、五表、原樣 problem.md、四題開放檢核依 [逐節對照](sources/aase/m03-03/replacement-2026-11-11/source-map.md)維護。
+
+`teaching.{zh,en}.md` 與 `figures.json` 由 `scripts/aase_m0303_content.py` 產生正式教材。兩語共用原稿的程式碼；英文在 code 前完整解釋工作表內容。五張靜態圖沿用受限 cards／flow 模型，節點數、kind 與允許欄位由 AASE 驗證器約束；`WorkflowDiagram.svelte` 負責 HTML 重排，`scripts/aase_m0303_svg.py` 由相同正式資料產生十張 SVG。圖 2 的 12 節點與 14 明列出口取代跨版面繞線，保留每條條件與回復關係；圖 6 的 UI/UX 與規格／測試始終為平行工作。
+
+`WorkflowExercises.svelte` 的兩種固定教學互動分別是圖 4（資料修改使舊結果失效，重新檢查後才可輸出）與圖 7（四情境走讀）。控制項使用原生 radio／button，無 JavaScript 時停用並保留靜態範例及可展開的全部案例。它們沒有真實保費計算、業務提交、評分或學習進度紀錄；後端一致性及正式業務規則仍須由真實系統另外驗證。
+
+維護時跑兩個產生器的 `--check`、`pnpm run validate:content`、單元與型別、publication-boundary、release，再跑 `playwright.aase-m0303.config.ts`、既有 AASE 雙語及 CEH 共用版型回歸。圖解／互動變更須核對四尺寸、200% 文字、鍵盤、無 JavaScript、搜尋、SVG 幾何與位元組；正式站同套件以 `AASE_BASE_URL` 回讀。[驗收與發布紀錄](releases/2026-11-11-aase-m03-03-replacement.md)。

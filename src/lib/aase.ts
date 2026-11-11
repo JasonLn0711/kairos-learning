@@ -101,6 +101,14 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id][i]||f.kind!==(['workflow','connection'].includes(s.id)||s.id==='documents'&&i===1?'flow':'cards')))fail('invalid problem statement figure');
       }
+      if(l.id==='AASE-M03-C03'&&l.revision>=4){
+        const expected:Record<string,number>={analogy:3,flow:12,'stale-result':3,layers:3,record:6};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id]||f.kind!==(s.id==='analogy'?'flow':'cards')||f.items.some(i=>!keys(i,['title','body']))))fail('invalid workflow figure');
+        const demos=(s.blocks??[]).filter(b=>b.kind==='step'&&b.id?.startsWith('workflow-'));
+        const demo=s.id==='stale-result'?'workflow-stale':s.id==='walkthrough'?'workflow-walkthrough':null;
+        if(demos.length!==(demo?1:0)||demos.some(b=>b.kind!=='step'||b.id!==demo||b.code!==undefined))fail('invalid workflow exercise');
+      }
       if(l.id==='AASE-M03-C04'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected:Record<string,number>={analogy:4,workflow:5};
