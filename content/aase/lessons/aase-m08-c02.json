@@ -1,10 +1,10 @@
 {
   "id": "AASE-M08-C02",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "agile-tdd",
     "pytest-assert",
@@ -13,7 +13,7 @@
   "qa": [],
   "text": {
     "zh": {
-      "summary": "先讓測試抓到缺漏仍匯出的錯誤，再做最小修正，最後在相同行為下整理程式。",
+      "summary": "先定義可驗證的正確行為，實作 Red、Green、Refactor，並核對 AI 協作與品質證據的界線。",
       "objectives": [
         "區分預期需求失敗與環境失敗。",
         "操作 Red、Green、Refactor 的小步循環。",
@@ -28,114 +28,866 @@
       "sections": [
         {
           "id": "cycle",
-          "heading": "讓一項要求先成為可失敗的測試",
+          "heading": "先定義正確，再讓程式達到要求",
           "paragraphs": [
-            "測試驅動開發（TDD）先把一項要求寫成測試，執行後確認它因缺少該行為而失敗，再寫足夠的程式讓它通過，最後整理內部結構。Red、Green、Refactor 是回饋循環，不是三份成果狀態貼紙。",
-            "本篇在獨立 tdd-lab/ 練習「文件類型缺漏不得產生完整報告」這一小條要求。它不是整份 reference 解答，尚未涵蓋另兩欄、長度、欄位白名單與介面。不要用此練習取代完整程式。"
+            "這一節最重要的觀念是：不要等程式全部寫完才檢查有沒有問題，而是先定義什麼叫「正確」，再讓程式逐步達到要求。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "TDD（Test-Driven Development，測試驅動開發）的核心流程只有三步："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "1. Red（紅燈）： 先寫測試，證明目前程式還做不到某項要求。\n2. Green（綠燈）： 用最少的修改，讓測試通過。\n3. Refactor（重構）： 在不改變既有行為的前提下，把程式整理得更清楚、更容易維護。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "接著再挑下一個要求，重複這三個步驟。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這種開發方法把需求、程式實作與驗證連接起來。"
+              ]
+            }
           ]
         },
         {
           "id": "analogy",
-          "heading": "像先用量具確認缺口，再修到合格",
+          "heading": "一、先用一張圖理解 TDD",
           "paragraphs": [
-            "量具要能分辨不合格與合格；若不合格材料也過關，就先修正量測方法。把測試跑紅的目的，是確認回饋確實連到你要保護的行為。",
-            "語法錯誤、找不到 pytest 或測試未被收集，都不是此處要觀察的缺漏匯出失敗。先看失敗訊息，再決定修程式、測試或環境。"
+            "你可以把 TDD 想成「先決定怎麼驗收，再開始施工」。"
           ],
           "blocks": [
             {
+              "kind": "prose",
+              "paragraphs": [
+                "例如，你請裝潢師傅製作一扇自動門。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "傳統的做法可能是：師傅先安裝整套系統，完成後才測試能不能正常開門。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "TDD 的思考方式則是："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "- Red：先規定「有人靠近時，門必須自動開啟」，並設計測試。現有系統做不到。\n- Green：先完成感測器與開門功能，讓測試通過。\n- Refactor：把感測器和控制器的程式整理好，再測試一次，確定門仍然正常開啟。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "之後再處理「有人站在門口時不能關門」、「停電後如何復原」等下一批要求。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "關鍵是每次只處理一個明確、可驗證的小目標，而不是一開始就把整個系統寫完。"
+              ]
+            },
+            {
               "kind": "flow",
-              "caption": "圖 1｜TDD 的小步回饋",
-              "description": "每次只推進目前要求，完成後再選下一個情境。",
+              "caption": "圖 1｜TDD 的小步循環",
+              "description": "箭頭表示下一個開發步驟；完成重構後選下一個小要求，再回到 Red。每輪保留可驗證結果。",
               "items": [
                 {
-                  "title": "Red",
-                  "body": "測試因缺少預期行為而失敗。"
+                  "title": "1. Red",
+                  "body": "先寫測試，確認要求尚未滿足"
                 },
                 {
-                  "title": "Green",
-                  "body": "最小修改使相同測試通過。"
+                  "title": "2. Green",
+                  "body": "最小修正，讓相同測試通過"
                 },
                 {
-                  "title": "Refactor",
-                  "body": "維持行為，改善命名或結構後再測。"
+                  "title": "3. Refactor",
+                  "body": "整理內部結構，重新跑測試"
                 }
               ]
             }
           ]
         },
         {
-          "id": "red-stage",
-          "heading": "Red：先確認錯誤能被抓到",
+          "id": "red-meaning",
+          "heading": "二、為什麼要先讓測試失敗？這不是很奇怪嗎？",
           "paragraphs": [
-            "在獨立目錄建立 export_gate.py，放入以下故意缺少驗證的起點；再建立 test_export_gate.py。這份起點是人工練習，不是目前公開 reference 的缺陷。",
-            "執行 python -m pytest -q，負向情境應因沒有拋出 ValueError 而失敗，正常資料案例通過。請保留輸出與原因，不能只把紅色畫面當作達成 TDD。"
+            "這是 TDD 最容易讓初學者困惑的地方。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "一般人會想：「我不是應該努力讓程式成功嗎？為什麼還要故意讓它失敗？」"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "因為 Red 的目的不是製造錯誤，而是確認測試真的有能力發現錯誤。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "假設你製造了一台能夠自動辨識不良品的機器。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "你把一件明顯不良的產品送進去，機器卻判定合格。這就證明目前檢驗能力不足。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果你從來沒有拿不良品測試，只拿合格品去測，即使每次都顯示「通過」，也不能證明這台機器有能力辨識不良品。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "軟體測試也是這個道理。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 但要注意：不是所有紅燈都有意義"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表1｜判讀測試失敗",
+              "headers": [
+                "測試結果",
+                "代表什麼？"
+              ],
+              "rows": [
+                [
+                  "缺少必要資料，程式卻允許匯出",
+                  "正確的 Red：抓到需求缺失"
+                ],
+                [
+                  "找不到 `pytest` 套件",
+                  "環境問題，不是業務規則失敗"
+                ],
+                [
+                  "Python 程式語法錯誤",
+                  "程式無法正常執行"
+                ],
+                [
+                  "系統顯示找不到任何測試",
+                  "根本沒有執行有效測試"
+                ],
+                [
+                  "測試原本就通過",
+                  "需要確認功能是否早已存在，或測試沒有檢查到真正的要求"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Red 必須是「因為目前程式不符合預期行為而失敗」，而不是隨便出現一個錯誤就算成功。 這也是原教材特別強調的要求。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "三、TDD 可以用在哪些產業？",
+          "paragraphs": [
+            "TDD 是軟體開發方法，但幾乎所有包含「明確規則」的產業軟體，都能用它來開發或驗證功能。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表2｜產業規則與測試",
+              "headers": [
+                "產業",
+                "必須符合的規則",
+                "可以先寫的測試"
+              ],
+              "rows": [
+                [
+                  "銀行",
+                  "餘額不足不能提款",
+                  "餘額 100 元，提款 150 元，必須拒絕"
+                ],
+                [
+                  "醫療",
+                  "已記錄的藥物過敏不能被忽略",
+                  "開立被標記過敏的藥物時，系統必須依設定阻擋或警示"
+                ],
+                [
+                  "電商",
+                  "庫存不足不能完成訂單",
+                  "只剩 2 件，購買 3 件，系統必須拒絕或調整"
+                ],
+                [
+                  "教育",
+                  "未完成的測驗不能標記合格",
+                  "必答題尚有空白時，不能產生完成狀態"
+                ],
+                [
+                  "政府行政",
+                  "缺少必要文件不能結案",
+                  "缺少簽署文件時，不能標記審查完成"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些都是 Business Rules（業務規則）。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "TDD 的好處之一，就是能把原本寫在需求文件裡的要求，變成可以由電腦反覆執行的測試。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "例如銀行提款的要求，可以先用 Given–When–Then 描述："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Given（已知）：帳戶餘額是 100 元。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "When（當）：使用者嘗試提款 150 元。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Then（那麼）：系統必須拒絕提款，且帳戶餘額仍然是 100 元。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這裡有兩個要測的結果：提款被拒絕，以及原本的餘額沒有被改變。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "當我們把這兩個要求寫成自動化測試，就能開始進行 TDD。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "requirement",
+          "heading": "四、實際操作：從錯誤程式走到正確程式",
+          "paragraphs": [
+            "接下來按照原教材的「文件匯出」例子，用 Python 演練完整的 Red、Green、Refactor。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### 需求是什麼？"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "我們正在開發一套文件報告產生系統。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "它有一項規則："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "> 如果「文件類型」（`document_type`）缺漏或無效，就不能產生標示為 `complete` 的報告。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "例如，文件類型是「合成申請表」，系統可以產生報告。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "但文件類型是空字串、只有空格、`None` 或數字，就應該拒絕。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "red-stage",
+          "heading": "第一階段：Red，先寫測試",
+          "paragraphs": [
+            "假設現有程式是："
           ],
           "blocks": [
             {
               "kind": "step",
               "heading": "export_gate.py｜練習起點",
               "paragraphs": [
-                "只放在新建 tdd-lab/，不覆蓋原型 rules.py。"
+                "兩個檔案置於同一個獨立 tdd-lab/ 目錄。"
               ],
               "code": "def build_report(record):\n    return {\"status\": \"complete\", \"data\": dict(record)}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "注意，這段程式完全沒有檢查文件類型。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "只要有人要求產生報告，它就回答 `complete`。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "因此我們先寫一個測試檔案 `test_export_gate.py`："
+              ]
             },
             {
               "kind": "step",
               "heading": "test_export_gate.py｜固定驗收行為",
               "paragraphs": [
-                "兩個檔案放在同一目錄，用已安裝 pytest 的 Python 執行。"
+                "兩個檔案置於同一個獨立 tdd-lab/ 目錄。"
               ],
               "code": "import pytest\nfrom export_gate import build_report\n\n\n@pytest.mark.parametrize(\"value\", [\"\", \"   \", None, 42])\ndef test_missing_document_cannot_be_complete(value):\n    with pytest.raises(ValueError, match=\"缺少文件類型\"):\n        build_report({\"document_type\": value})\n\n\ndef test_valid_document_matches_contract():\n    result = build_report({\"document_type\": \"合成申請表\"})\n    assert result == {\"status\": \"complete\", \"data\": {\"document_type\": \"合成申請表\"}}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這裡有三個需要理解的專業術語。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`pytest` 是 Python 的自動化測試工具。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`@pytest.mark.parametrize` 稱為參數化測試（Parameterized Testing），意思是同一個測試可以套用多組資料，不必重複寫四次程式。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`pytest.raises(ValueError)` 則表示：「我預期這段程式應該拋出 `ValueError` 這種例外（Exception），而且訊息要符合指定內容。」"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果程式沒有拋出這個例外，測試就會失敗。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "執行："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "執行測試",
+              "paragraphs": [
+                "兩個檔案置於同一個獨立 tdd-lab/ 目錄。"
+              ],
+              "code": "python -m pytest -q"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這時會發現四個無效輸入都沒有被拒絕，所以四項測試失敗；正常文件的測試則通過。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這才是我們想觀察的 Red。"
+              ]
             }
           ]
         },
         {
           "id": "green-stage",
-          "heading": "Green：修正行為，維持原測試",
+          "heading": "第二階段：Green，修改最少的程式",
           "paragraphs": [
-            "將 export_gate.py 改成以下版本，再執行同一命令。輸入不是字串或去除首尾空白後為空，就拒絕產生完整報告；有效文字先去除首尾空白。",
-            "不要刪掉負向測試或把預期改成一律完整。測試通過後仍只證明這幾組輸入，還需要下一篇補足三欄與邊界。"
+            "現在知道錯誤在哪裡了：缺少輸入檢查。"
           ],
           "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "我們只要加上必要的判斷即可。"
+              ]
+            },
             {
               "kind": "step",
               "heading": "export_gate.py｜最小修正",
               "paragraphs": [
-                "保留原測試，觀察負向案例是否由失敗轉成通過。"
+                "兩個檔案置於同一個獨立 tdd-lab/ 目錄。"
               ],
               "code": "def build_report(record):\n    value = record.get(\"document_type\")\n    if not isinstance(value, str) or not value.strip():\n        raise ValueError(\"缺少文件類型\")\n    return {\"status\": \"complete\", \"data\": {**record, \"document_type\": value.strip()}}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這段程式的意思是："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "首先取得文件類型，然後判斷它是不是文字，以及去掉首尾空白後是否還有內容。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果不合格，就用 `raise ValueError(...)` 告訴呼叫端：「輸入資料不符合要求。」"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果合格，就回傳完整報告。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這時再次執行完全相同的測試。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "四個無效案例應該被正確拒絕，而有效案例仍然可以成功產生報告。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這就是 Green。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "特別要注意，Green 不是修改測試標準讓自己過關，而是修正程式，讓原本的驗收標準得到滿足。"
+              ]
             }
           ]
         },
         {
           "id": "refactor-stage",
-          "heading": "Refactor：讓行為保持、結構更清楚",
+          "heading": "第三階段：Refactor，整理而不改變行為",
           "paragraphs": [
-            "以下把文件類型的正規化與錯誤處理抽成具名函式，外部 build_report 介面及結果保持原樣。這只是本練習的整理方式；若目前程式已清楚，也可以先不增加抽象層。",
-            "重跑相同測試，再增加缺鍵、首尾空白與原資料不變的案例，檢查這次整理是否意外改變行為。增加新的業務要求應另外開始下一輪，不藏在重構中。"
+            "雖然程式通過了測試，但我們可能發現，文件類型驗證邏輯以後會被其他功能重複使用。"
           ],
           "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "所以可以把它獨立出來。"
+              ]
+            },
             {
               "kind": "step",
               "heading": "export_gate.py｜整理後版本",
               "paragraphs": [
-                "每次只改一個小範圍，保留對外契約。"
+                "兩個檔案置於同一個獨立 tdd-lab/ 目錄。"
               ],
               "code": "def require_document_type(value):\n    if not isinstance(value, str) or not value.strip():\n        raise ValueError(\"缺少文件類型\")\n    return value.strip()\n\n\ndef build_report(record):\n    document_type = require_document_type(record.get(\"document_type\"))\n    return {\"status\": \"complete\", \"data\": {**record, \"document_type\": document_type}}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這個版本把原本混在一起的兩種責任分開了。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`require_document_type()` 專門負責驗證文件類型。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`build_report()` 專門負責組合報告。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "未來其他功能如果需要檢查文件類型，也可以重用驗證函式。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "但要特別注意：Refactor 不應偷偷改變原本對外的行為，也不等於一定要抽取函式。 如果程式已經夠清楚，過度拆分反而可能讓程式更難理解。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "修改完成後，再次執行測試，確認整理程式沒有破壞既有功能。"
+              ]
             }
           ]
         },
         {
           "id": "evidence",
-          "heading": "留下三個階段的證據",
+          "heading": "實際執行結果與證據範圍",
           "paragraphs": [
-            "紀錄測試內容、Red 的預期失敗、Green 的相同測試通過，以及 Refactor 後的回歸結果。若 Agent 一次提供整包答案，仍要核對它是否真的執行過這些步驟，不能由最終程式倒推開發過程。",
-            "此處是單一規則的練習。整合回三欄原型前，依原 spec 與完整測試核對，不將局部成功寫成全系統或資安完成。"
+            "供稿回報：在獨立 Python 環境中，Red 為 4 項失敗／1 項通過；Green 為 5 項全部通過；Refactor 加入三項測試後為 8 項全部通過。下圖呈現這組回報，不代表讀者已完成實作。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "重構階段另外加入「缺少欄位鍵」、「移除首尾空白」、「不修改原輸入資料」三項測試。供稿回報的執行環境為 pytest 9.0.2，與原教材指定的 8.4.2 不同。本次重現結果與環境另記於版本驗收紀錄，不將來源回報當成本次實測。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "本版另以 Python 3.11.15，分別在 pytest 8.4.2 與 9.0.2 的獨立環境實跑正文程式：Red 都是 4 失敗／1 通過；Green 與 Refactor 在原五項測試皆為 5 通過，加入三項回歸案例後兩版本皆為 8 通過。這能區分測試集合增加與重構保留行為，仍只涵蓋本例的文件類型規則。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這三個階段留下的證據，能回答不同問題："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Red 證明我們的測試可以抓到特定錯誤；Green 證明程式已修正這個錯誤；Refactor 則確認我們整理程式後，已測試的功能仍然正確。"
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 2｜三階段測試結果（供稿回報）",
+              "description": "三欄比較不同階段的結果，不表示同一測試集合：重構階段另加缺鍵、移除首尾空白與不修改輸入三項測試。供稿環境 pytest 9.0.2；原教材 8.4.2。",
+              "items": [
+                {
+                  "title": "Red",
+                  "body": "4 失敗／1 通過"
+                },
+                {
+                  "title": "Green",
+                  "body": "5 全部通過"
+                },
+                {
+                  "title": "Refactor",
+                  "body": "8 全部通過"
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "補充三項回歸測試",
+              "paragraphs": [
+                "加到同一份 test_export_gate.py，使用 Green 與 Refactor 版本各跑一次，以區分測試擴充與重構結果。"
+              ],
+              "code": "def test_missing_key_is_rejected():\n    with pytest.raises(ValueError, match=\"缺少文件類型\"):\n        build_report({})\n\n\ndef test_surrounding_whitespace_is_trimmed():\n    result = build_report({\"document_type\": \"  合成申請表  \"})\n    assert result[\"data\"][\"document_type\"] == \"合成申請表\"\n\n\ndef test_input_is_not_modified():\n    record = {\"document_type\": \"  合成申請表  \"}\n    before = dict(record)\n    result = build_report(record)\n    assert record == before\n    assert result[\"data\"] is not record"
+            }
+          ]
+        },
+        {
+          "id": "comparison",
+          "heading": "五、TDD 與一般測試最大的不同",
+          "paragraphs": [
+            "一般測試與 TDD 並不是兩種互相排斥的工具。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "它們的主要差別，是測試在開發過程中扮演什麼角色。"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表3｜開發流程比較",
+              "headers": [
+                "比較",
+                "先寫程式再測試",
+                "TDD"
+              ],
+              "rows": [
+                [
+                  "起點",
+                  "先思考怎麼實作",
+                  "先思考預期行為"
+                ],
+                [
+                  "測試時間",
+                  "常在實作後",
+                  "實作前先寫一個測試"
+                ],
+                [
+                  "發現缺陷",
+                  "可能等功能完成才發現",
+                  "每個小循環立即回饋"
+                ],
+                [
+                  "設計方式",
+                  "程式架構可能先定型",
+                  "讓需求與測試逐步影響設計"
+                ],
+                [
+                  "重構",
+                  "依靠既有測試與審查",
+                  "每輪以已通過的測試保護重構"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "但不能因此推論 TDD 一定比所有其他開發流程更快、錯誤更少。效果取決於測試品質、開發者能力、系統類型與維護成本。Agile Alliance 對實證成效也保留了一定程度的審慎態度。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "agent-workflow",
+          "heading": "六、TDD 與 AI Coding Agent 有什麼關係？",
+          "paragraphs": [
+            "當我們開始使用 AI Agent 寫程式時，TDD 特別值得掌握。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "因為 AI 很擅長快速產生程式碼，但產生程式碼不代表完成了需求驗證。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果只告訴 Agent："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "「幫我做一個報告產生功能。」"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "它可能產生一套看起來正常的程式，但漏掉文件類型驗證。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "改用 TDD，可以把協作方式調整為："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "1. 人定義要求與驗收條件\n2. Agent 撰寫測試，執行並展示預期失敗\n3. Agent 修改實作，再執行相同測試\n4. 確認測試結果，重構並再次驗證"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "你可以要求 AI Coding Agent："
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "> 依照需求規格，先挑選一項最小可驗證行為，建立 pytest 測試。先執行並說明預期的失敗原因，不要在這個階段修改測試來迎合現有程式。接著進行最小修正，保留相同測試的通過結果。最後進行必要的重構、執行回歸測試，並報告哪些要求已驗證、哪些仍未驗證。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這樣有助於把 AI 產出轉換成可審查的實作過程。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "但還要防範一個問題：如果同一個 Agent 同時誤解了需求、寫錯測試、又寫出剛好通過錯誤測試的程式，TDD 仍然無法保證結果正確。因此，重要驗收條件仍應由人員或獨立驗證機制確認。"
+              ]
+            },
+            {
+              "kind": "flow",
+              "caption": "圖 3｜人與 Agent 的 TDD 協作",
+              "description": "向下箭頭表示協作順序；驗收條件由人員或獨立機制確認。這是工作流程示意，不是已執行紀錄。",
+              "items": [
+                {
+                  "title": "人定義要求與驗收條件",
+                  "body": "先選出一項最小、可驗證的行為"
+                },
+                {
+                  "title": "Agent 撰寫測試，執行並展示預期失敗",
+                  "body": "核對失敗是否來自需求行為"
+                },
+                {
+                  "title": "Agent 修改實作，再執行相同測試",
+                  "body": "保留原本的驗收要求"
+                },
+                {
+                  "title": "確認測試結果，重構並再次驗證",
+                  "body": "回報已驗證與未驗證的要求"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "quality",
+          "heading": "七、測試全部通過，代表軟體品質沒有問題嗎？",
+          "paragraphs": [
+            "不代表。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "例如，我們剛才已確認文件類型驗證正確，但尚未驗證："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表4｜品質驗證範圍",
+              "headers": [
+                "驗證層次",
+                "還需要回答的問題"
+              ],
+              "rows": [
+                [
+                  "單元測試（Unit Test）",
+                  "各項欄位與業務規則是否正確？"
+                ],
+                [
+                  "整合測試（Integration Test）",
+                  "文件處理與資料庫整合是否正常？"
+                ],
+                [
+                  "端對端測試（End-to-End Test）",
+                  "使用者能否從上傳一路完成匯出？"
+                ],
+                [
+                  "安全測試（Security Test）",
+                  "使用者能否讀取不屬於自己的文件？"
+                ],
+                [
+                  "易用性測試（Usability Test）",
+                  "使用者是否理解錯誤訊息、知道怎麼修正？"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "因此，TDD 是建立品質證據的工具，但不是整個品質保證體系。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "原教材也特別指出：這次練習只涵蓋一項文件類型規則，不能因為這項測試通過，就宣稱整個軟體、所有欄位或資安控制已經完成。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "applicability",
+          "heading": "八、什麼時候最值得使用 TDD？",
+          "paragraphs": [
+            "我會優先將 TDD 用在規則明確、可以重複執行、錯誤代價較高的功能上，例如金額計算、權限判斷、資料驗證、狀態轉移、API 契約，以及已經發生過的 Bug 修復。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "如果是在探索全新的視覺設計、使用者偏好或尚不清楚的產品需求，通常需要先透過原型、訪談或探索式測試理解問題，再把已確認的行為轉成自動化測試。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "TDD 擅長回答「我們有沒有正確實作這項要求」，但不會自動回答「這項要求本身是不是對的」。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這正好能與前面學過的需求工程、Given–When–Then 和規格驅動開發（SDD）連起來。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "九、理解檢核與實作目標",
+          "paragraphs": [
+            "先嘗試回答下方三題，再展開參考解析自行核對。實作目標：能獨立選出一項需求，先寫出真正因需求缺失而失敗的測試，再完成最小修正與重構，保留三階段實際證據。"
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "本練習只驗證文件類型，另兩欄、長度、輸出白名單及介面仍依原型規格另行驗收。請在獨立 tdd-lab/ 練習，保留工作坊 reference 的 rules.py。"
+              ]
+            }
           ]
         }
       ],
       "exercise": {
-        "environment": "獨立 tdd-lab/、已安裝 pytest 8.4.2 的 Python；不修改工作坊參考解答。",
+        "environment": "獨立 tdd-lab/、Python 與 pytest 8.4.2；供稿另回報 9.0.2，實跑時記錄所用版本。",
         "steps": [
           "依序建立起點與測試，執行 python -m pytest -q，保存缺少例外的失敗。",
           "使用最小修正版本重跑相同測試，再使用整理版本重跑。",
@@ -147,7 +899,7 @@
       }
     },
     "en": {
-      "summary": "First make tests detect export despite missing data, then make a minimal repair and refactor while preserving behavior.",
+      "summary": "Define verifiable behavior, practice Red, Green and Refactor, and review AI collaboration and quality-evidence boundaries.",
       "objectives": [
         "Distinguish expected requirement failures from environment failures.",
         "Run a small Red, Green, Refactor cycle.",
@@ -162,114 +914,866 @@
       "sections": [
         {
           "id": "cycle",
-          "heading": "Make One Requirement a Test That Can Fail",
+          "heading": "Define correctness, then make the program meet it",
           "paragraphs": [
-            "Test-driven development (TDD) expresses one requirement in a test, runs it to confirm failure from missing behavior, adds enough code to pass, then improves internal structure. Red, Green and Refactor form a feedback cycle, not three status stickers.",
-            "In separate tdd-lab/, practice one rule: missing document type must not produce a complete report. This is not the reference solution; it omits the other two fields, length, output allowlisting and interface. Do not replace the complete program with this exercise."
+            "Define what “correct” means before implementing everything, then let the program meet those requirements step by step."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "TDD (Test-Driven Development) has three core steps:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "1. Red: Write a test first and show that the program cannot yet meet a requirement.\n2. Green: Make the smallest change needed to pass the test.\n3. Refactor: Improve clarity and maintainability while preserving existing behavior."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Choose the next requirement and repeat those three steps."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This development method connects requirements, implementation and verification."
+              ]
+            }
           ]
         },
         {
           "id": "analogy",
-          "heading": "Use a Gauge to Find the Gap Before Repair",
+          "heading": "1. Understand TDD through an automatic door",
           "paragraphs": [
-            "A gauge must distinguish acceptable from unacceptable material. If defective material passes, improve the measurement. Running a test red checks whether its feedback detects the behavior you intend to protect.",
-            "Syntax errors, missing pytest and uncollected tests are not the missing-data export failure sought here. Read the failure before choosing to repair code, tests or environment."
+            "Think of TDD as deciding how to accept the work before starting construction."
           ],
           "blocks": [
             {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose you ask a contractor to build an automatic door."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A conventional approach might install the entire system first, then test whether the door opens normally."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A TDD approach proceeds as follows:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "- Red: Specify “the door must open when someone approaches” and design a test. The current system cannot do it.\n- Green: Implement the sensor and opening function so the test passes.\n- Refactor: Organize the sensor and controller code, then test again to confirm the door still opens correctly."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Next, handle requirements such as “do not close while someone is in the doorway” and “recover after a power outage.”"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Work on one small, explicit, verifiable goal at a time rather than implementing the entire system at the outset."
+              ]
+            },
+            {
               "kind": "flow",
-              "caption": "Figure 1 | Small TDD Feedback Steps",
-              "description": "Advance only the current requirement, then select another scenario.",
+              "caption": "Figure 1 | The small TDD cycle",
+              "description": "Arrows show the next development step. After refactoring, select the next small requirement and return to Red. Retain verifiable results each time.",
               "items": [
                 {
-                  "title": "Red",
-                  "body": "The test fails because expected behavior is absent."
+                  "title": "1. Red",
+                  "body": "Write a test and confirm the requirement is unmet"
                 },
                 {
-                  "title": "Green",
-                  "body": "A minimal change makes the same test pass."
+                  "title": "2. Green",
+                  "body": "Make a minimal repair so the same tests pass"
                 },
                 {
-                  "title": "Refactor",
-                  "body": "Preserve behavior, improve naming/structure and test again."
+                  "title": "3. Refactor",
+                  "body": "Organize internal structure and rerun tests"
                 }
               ]
             }
           ]
         },
         {
-          "id": "red-stage",
-          "heading": "Red: Confirm Detection of the Fault",
+          "id": "red-meaning",
+          "heading": "2. Why make a test fail first?",
           "paragraphs": [
-            "Create export_gate.py in a separate directory with the deliberately unvalidated starting code, then create test_export_gate.py. This is an injected exercise, not a defect in the public reference.",
-            "Run python -m pytest -q. Negative cases should fail because no ValueError is raised, while valid data passes. Preserve output and reasons; a red screen alone does not establish useful TDD feedback."
+            "Beginners often find this part of TDD confusing."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "You may wonder: “Shouldn’t I try to make the program succeed? Why deliberately make it fail?”"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Red checks whether the test can actually detect a fault."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Imagine building a machine that automatically identifies defective products."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "You feed it an obviously defective product, but it marks the item acceptable. Its inspection capability is inadequate."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "If you only test acceptable products and never use a defective one, repeated “pass” results cannot establish that the machine detects defects."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The same reasoning applies to software tests."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### Not every red result is meaningful"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 1 | Interpret test failures",
+              "headers": [
+                "Test result",
+                "Meaning"
+              ],
+              "rows": [
+                [
+                  "Required data is missing, but the program allows export",
+                  "Useful Red: the test detects a missing requirement"
+                ],
+                [
+                  "The `pytest` package cannot be found",
+                  "Environment problem, not a business-rule failure"
+                ],
+                [
+                  "Python syntax error",
+                  "The program cannot execute normally"
+                ],
+                [
+                  "No tests were found",
+                  "No effective test was executed"
+                ],
+                [
+                  "The test already passes",
+                  "Check whether the feature exists already or the test misses the real requirement"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Red must fail because the program does not meet the expected behavior. An arbitrary error does not establish that feedback; the original lesson makes this requirement explicit."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "3. Which industries can use TDD?",
+          "paragraphs": [
+            "TDD is a software development method. Software in almost any industry with explicit rules can use it to develop or verify features."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 2 | Industry rules and tests",
+              "headers": [
+                "Industry",
+                "Required rule",
+                "Test to write first"
+              ],
+              "rows": [
+                [
+                  "Banking",
+                  "Reject withdrawals exceeding the balance",
+                  "With a balance of 100, reject a withdrawal of 150"
+                ],
+                [
+                  "Healthcare",
+                  "Do not ignore a recorded drug allergy",
+                  "Block or warn about prescribing a flagged drug according to configured policy"
+                ],
+                [
+                  "E-commerce",
+                  "Do not complete an order with insufficient stock",
+                  "With only 2 units in stock, reject or adjust a purchase of 3"
+                ],
+                [
+                  "Education",
+                  "Do not mark an incomplete assessment as passed",
+                  "Do not produce a completed state while required answers remain blank"
+                ],
+                [
+                  "Public administration",
+                  "Do not close a case missing required documents",
+                  "Do not mark review complete without a signed document"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These are business rules."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "TDD can turn requirements from a document into tests a computer can run repeatedly."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "For the withdrawal rule, first describe Given–When–Then:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Given: The account balance is 100."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "When: The user attempts to withdraw 150."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Then: Reject the withdrawal, and keep the account balance at 100."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "There are two outcomes to test: rejection of the withdrawal and preservation of the original balance."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Once those two requirements are automated, the TDD cycle can begin."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "requirement",
+          "heading": "4. Practice: from faulty code to correct code",
+          "paragraphs": [
+            "Use the original lesson’s document-export example to practice a complete Red, Green, Refactor cycle in Python."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "### What is the requirement?"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "We are developing a document-report generator."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "It has this rule:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "> If `document_type` is missing or invalid, the generator must not produce a report marked `complete`."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "For example, a document type of “合成申請表” (synthetic application form) allows report generation."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Reject an empty string, whitespace-only text, `None`, or a number."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "red-stage",
+          "heading": "Stage 1: Red — write the tests first",
+          "paragraphs": [
+            "Suppose the current implementation is:"
           ],
           "blocks": [
             {
               "kind": "step",
-              "heading": "export_gate.py | Exercise Starting Point",
+              "heading": "export_gate.py | Starting point",
               "paragraphs": [
-                "Use only a new tdd-lab/; preserve the prototype’s rules.py."
+                "Keep both files in the same separate tdd-lab/ directory."
               ],
               "code": "def build_report(record):\n    return {\"status\": \"complete\", \"data\": dict(record)}"
             },
             {
-              "kind": "step",
-              "heading": "test_export_gate.py | Fix the Acceptance Behavior",
+              "kind": "prose",
               "paragraphs": [
-                "Put both files in the same directory and run with Python containing pytest. The expected exception text means “missing document type”; the valid synthetic label and exact output are retained."
+                "This code never checks the document type."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Whenever someone requests a report, it responds with `complete`."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Write a test file named `test_export_gate.py` first:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "test_export_gate.py | Acceptance behavior",
+              "paragraphs": [
+                "Keep both files in the same separate tdd-lab/ directory."
               ],
               "code": "import pytest\nfrom export_gate import build_report\n\n\n@pytest.mark.parametrize(\"value\", [\"\", \"   \", None, 42])\ndef test_missing_document_cannot_be_complete(value):\n    with pytest.raises(ValueError, match=\"缺少文件類型\"):\n        build_report({\"document_type\": value})\n\n\ndef test_valid_document_matches_contract():\n    result = build_report({\"document_type\": \"合成申請表\"})\n    assert result == {\"status\": \"complete\", \"data\": {\"document_type\": \"合成申請表\"}}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Three technical terms need explanation here."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`pytest` is a Python tool for automated testing."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`@pytest.mark.parametrize` enables parameterized testing: one test runs with several inputs without writing the same test four times."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`pytest.raises(ValueError)` means “this code is expected to raise a `ValueError` exception, and its message must match the specified content.”"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "If no such exception is raised, the test fails."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Run:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Run the tests",
+              "paragraphs": [
+                "Keep both files in the same separate tdd-lab/ directory."
+              ],
+              "code": "python -m pytest -q"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "All four invalid inputs are accepted, so four tests fail. The valid-document test passes."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This is the Red feedback we want to observe."
+              ]
             }
           ]
         },
         {
           "id": "green-stage",
-          "heading": "Green: Repair Behavior, Keep the Tests",
+          "heading": "Stage 2: Green — make the smallest repair",
           "paragraphs": [
-            "Replace export_gate.py with this version and run the same command. Reject non-string values and text empty after trimming, and trim valid document text before output.",
-            "Keep negative tests and their expectations rather than accepting every input as complete. Passing covers these inputs only; the next lesson adds the three-field rules and boundaries."
+            "The cause is now known: input validation is missing."
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "export_gate.py | Minimal Repair",
+              "kind": "prose",
               "paragraphs": [
-                "Keep the original tests and observe negative cases changing from failure to pass."
+                "Add only the necessary condition."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "export_gate.py | Minimal repair",
+              "paragraphs": [
+                "Keep both files in the same separate tdd-lab/ directory."
               ],
               "code": "def build_report(record):\n    value = record.get(\"document_type\")\n    if not isinstance(value, str) or not value.strip():\n        raise ValueError(\"缺少文件類型\")\n    return {\"status\": \"complete\", \"data\": {**record, \"document_type\": value.strip()}}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Here is what the code does:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Get the document type, check that it is text, then check that content remains after trimming surrounding whitespace."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "For invalid input, use `raise ValueError(...)` to tell the caller that the data does not meet the requirement."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "For valid input, return a complete report."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Run exactly the same tests again."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The four invalid cases should now be rejected correctly, while valid data still produces a report."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This is Green."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Repair the implementation to meet the original acceptance standard; do not change that standard merely to obtain a pass."
+              ]
             }
           ]
         },
         {
           "id": "refactor-stage",
-          "heading": "Refactor: Keep Behavior and Clarify Structure",
+          "heading": "Stage 3: Refactor — organize without changing behavior",
           "paragraphs": [
-            "This version extracts document-type normalization and error handling into a named function, preserving build_report’s external interface and results. It is one way to organize this exercise; no extra abstraction is necessary if the existing code is already clear.",
-            "Rerun the same tests, then add missing-key, surrounding-whitespace and unchanged-input cases to check for unintended behavior changes. A new business requirement starts another cycle rather than hiding within refactoring."
+            "The tests pass, but document-type validation might later be needed by other functions."
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "export_gate.py | Refactored Version",
+              "kind": "prose",
               "paragraphs": [
-                "Change one small area at a time, preserving the external contract."
+                "We can extract it into a function."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "export_gate.py | Refactored version",
+              "paragraphs": [
+                "Keep both files in the same separate tdd-lab/ directory."
               ],
               "code": "def require_document_type(value):\n    if not isinstance(value, str) or not value.strip():\n        raise ValueError(\"缺少文件類型\")\n    return value.strip()\n\n\ndef build_report(record):\n    document_type = require_document_type(record.get(\"document_type\"))\n    return {\"status\": \"complete\", \"data\": {**record, \"document_type\": document_type}}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This version separates two responsibilities that were previously mixed together."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`require_document_type()` validates the document type."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`build_report()` assembles the report."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Other functions could reuse the validator if they need the same check later."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Refactoring must preserve externally observable behavior, and it does not require function extraction. Excessive splitting can make already-clear code harder to understand."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "After editing, rerun the tests to check that the reorganization has preserved existing functionality."
+              ]
             }
           ]
         },
         {
           "id": "evidence",
-          "heading": "Retain Evidence from All Three Stages",
+          "heading": "Execution results and evidence boundaries",
           "paragraphs": [
-            "Record test contents, expected Red failures, the same tests passing at Green and regression results after Refactor. If an Agent supplies a finished package, check whether these steps actually ran; final code cannot establish its development history.",
-            "This exercise covers one rule. Before integration with the three-field prototype, check original spec and full tests. Local success does not establish the whole system or completed security."
+            "The supplied source reports a run in a separate Python environment: Red had 4 failures and 1 pass; Green passed all 5 tests; Refactor passed all 8 after three tests were added. The figure represents that report, not completion of the reader’s exercise."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The refactoring stage added tests for a missing field key, trimming surrounding whitespace and preserving the original input. The source reports pytest 9.0.2, differing from the original lesson’s 8.4.2. This revision’s reproduction and environment are recorded separately in the release evidence; a source report is not a current measurement."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This revision separately ran the published code using Python 3.11.15 in isolated pytest 8.4.2 and 9.0.2 environments. Both produced 4 failures and 1 pass at Red. Green and Refactor each passed the original 5 tests, and both passed 8 after the three regression cases were added. This distinguishes test-set expansion from behavior-preserving refactoring; coverage remains limited to this example’s document-type rule."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Evidence from these stages answers different questions:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Red shows that tests detect a specific fault; Green shows that the implementation fixes it; Refactor checks that the tested behavior still works after reorganization."
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Three-stage test results (source report)",
+              "description": "These columns compare stages, not identical test sets: Refactor adds missing-key, trimming and input-preservation tests. Source environment: pytest 9.0.2; original lesson: 8.4.2.",
+              "items": [
+                {
+                  "title": "Red",
+                  "body": "4 failed / 1 passed"
+                },
+                {
+                  "title": "Green",
+                  "body": "5 passed"
+                },
+                {
+                  "title": "Refactor",
+                  "body": "8 passed"
+                }
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Three additional regression tests",
+              "paragraphs": [
+                "Append to test_export_gate.py and run against both Green and Refactor to distinguish test expansion from refactoring."
+              ],
+              "code": "def test_missing_key_is_rejected():\n    with pytest.raises(ValueError, match=\"缺少文件類型\"):\n        build_report({})\n\n\ndef test_surrounding_whitespace_is_trimmed():\n    result = build_report({\"document_type\": \"  合成申請表  \"})\n    assert result[\"data\"][\"document_type\"] == \"合成申請表\"\n\n\ndef test_input_is_not_modified():\n    record = {\"document_type\": \"  合成申請表  \"}\n    before = dict(record)\n    result = build_report(record)\n    assert record == before\n    assert result[\"data\"] is not record"
+            }
+          ]
+        },
+        {
+          "id": "comparison",
+          "heading": "5. How does TDD differ from testing afterward?",
+          "paragraphs": [
+            "Conventional testing and TDD are not mutually exclusive tools."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Their main difference is the role tests play during development."
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 3 | Development process comparison",
+              "headers": [
+                "Aspect",
+                "Implement, then test",
+                "TDD"
+              ],
+              "rows": [
+                [
+                  "Starting point",
+                  "Consider implementation first",
+                  "Consider expected behavior first"
+                ],
+                [
+                  "Test timing",
+                  "Often after implementation",
+                  "Write a test before implementation"
+                ],
+                [
+                  "Defect discovery",
+                  "May wait until the feature is complete",
+                  "Immediate feedback in each small cycle"
+                ],
+                [
+                  "Design",
+                  "Architecture may be fixed first",
+                  "Requirements and tests progressively inform design"
+                ],
+                [
+                  "Refactoring",
+                  "Use existing tests and review",
+                  "Protect each refactoring step with passing tests"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This comparison does not establish that TDD is always faster or produces fewer defects than every other process. Outcomes depend on test quality, developer capability, system type and maintenance cost. Agile Alliance also treats empirical outcomes with caution."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "agent-workflow",
+          "heading": "6. How does TDD support AI Coding Agents?",
+          "paragraphs": [
+            "TDD is useful to understand when using an AI Agent to write code."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "AI can generate code quickly, but generation alone does not verify requirements."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Suppose the only instruction is:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "“Build a report-generation feature.”"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The Agent may produce apparently normal code while omitting document-type validation."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "With TDD, structure collaboration as follows:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "1. A person defines requirements and acceptance criteria.\n2. The Agent writes tests, executes them and shows the expected failure.\n3. The Agent repairs implementation and reruns the same tests.\n4. Confirm results, refactor and verify again."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "You can give an AI Coding Agent this instruction:"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "> From the requirements specification, select one smallest verifiable behavior and create a pytest test. Run it first and explain the expected reason for failure. Do not change the test at this stage to accommodate existing code. Then make the smallest repair and retain the same tests’ passing results. Finally, refactor where necessary, run regression tests and report which requirements have been verified and which remain unverified."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This makes the implementation process behind AI output reviewable."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A remaining risk is that the same Agent may misunderstand the requirement, write an incorrect test and produce code that passes that incorrect test. TDD cannot guarantee correctness in that situation. People or independent verification should confirm important acceptance criteria."
+              ]
+            },
+            {
+              "kind": "flow",
+              "caption": "Figure 3 | TDD collaboration between person and Agent",
+              "description": "Downward arrows show collaboration order. People or an independent mechanism confirm acceptance criteria. This is a workflow illustration, not an execution record.",
+              "items": [
+                {
+                  "title": "Person defines requirements and acceptance",
+                  "body": "Select one smallest verifiable behavior"
+                },
+                {
+                  "title": "Agent writes and runs tests, showing expected failure",
+                  "body": "Check that the failure concerns required behavior"
+                },
+                {
+                  "title": "Agent repairs implementation and reruns the same tests",
+                  "body": "Preserve the original acceptance requirement"
+                },
+                {
+                  "title": "Confirm results, refactor and verify again",
+                  "body": "Report verified and unverified requirements"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "quality",
+          "heading": "7. Do passing tests establish overall software quality?",
+          "paragraphs": [
+            "No."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "For example, document-type validation may be confirmed while the following remain unverified:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 4 | Quality verification scope",
+              "headers": [
+                "Verification layer",
+                "Question still to answer"
+              ],
+              "rows": [
+                [
+                  "Unit test",
+                  "Are individual fields and business rules correct?"
+                ],
+                [
+                  "Integration test",
+                  "Does document processing integrate correctly with the database?"
+                ],
+                [
+                  "End-to-end test",
+                  "Can a user proceed from upload through export?"
+                ],
+                [
+                  "Security test",
+                  "Can a user read documents owned by someone else?"
+                ],
+                [
+                  "Usability test",
+                  "Do users understand the error message and know how to fix it?"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "TDD contributes quality evidence within a broader quality-assurance process."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "As the original lesson notes, this exercise covers one document-type rule. Passing it cannot establish completion of the whole application, every field or security controls."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "applicability",
+          "heading": "8. When is TDD most useful?",
+          "paragraphs": [
+            "Prioritize explicit, repeatable rules where errors have a higher cost: monetary calculations, permission decisions, data validation, state transitions, API contracts and regression fixes for observed bugs."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "When exploring a new visual design, user preferences or unclear product requirements, first use prototypes, interviews or exploratory testing to understand the problem. Then automate the behaviors that have been confirmed."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "TDD helps answer “Did we implement this requirement correctly?” It does not automatically answer “Is the requirement itself right?”"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This connects TDD with the earlier topics of requirements engineering, Given–When–Then and specification-driven development (SDD)."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "9. Understanding checks and practice goal",
+          "paragraphs": [
+            "Attempt the three questions below before opening their reference explanations. Practice goal: independently select a requirement, write a test that genuinely fails because required behavior is missing, make a minimal repair, refactor and retain actual evidence from all three stages."
+          ],
+          "blocks": [
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This exercise verifies document type only. The other two fields, length, output allowlisting and interface require separate acceptance against the prototype specification. Practice in a separate tdd-lab/ and preserve the workshop reference rules.py."
+              ]
+            }
           ]
         }
       ],
       "exercise": {
-        "environment": "A separate tdd-lab/ and Python with pytest 8.4.2 installed; preserve the workshop reference solution.",
+        "environment": "A separate tdd-lab/, Python and pytest 8.4.2; the source reports 9.0.2 separately. Record the version actually run.",
         "steps": [
           "Create the starting code and tests, run python -m pytest -q and preserve missing-exception failures.",
           "Run the same tests with the minimal repair and then with the refactored version.",
@@ -284,108 +1788,96 @@
   "checks": [
     {
       "id": "AASE-M08-C02-Q01",
-      "answer": 2,
+      "answer": 1,
       "text": {
         "zh": {
-          "prompt": "哪種失敗最符合這次 Red 的目的？",
+          "prompt": "你正在開發提款系統，寫好測試後，執行時顯示「找不到 pytest」。這算是符合 TDD 要求的 Red 嗎？",
           "options": [
-            "找不到 pytest",
-            "測試檔語法錯誤",
-            "缺漏資料沒有拋出預期例外",
-            "沒有收集到測試"
+            "算，因為測試失敗了",
+            "不算，因為還沒有真正測到提款規則",
+            "算，只要把錯誤紀錄下來即可"
           ],
           "rationales": [
-            "先修環境。",
-            "先修測試。",
-            "回饋確實抓到要求缺失。",
-            "尚未驗證任何行為。"
+            "環境錯誤尚未測到需求。",
+            "先讓測試能執行，才能觀察提款規則的失敗。",
+            "保留錯誤有助修復環境，但不構成行為驗證。"
           ]
         },
         "en": {
-          "prompt": "Which failure fits the purpose of this Red stage?",
+          "prompt": "You wrote a withdrawal test, but execution reports “pytest not found.” Does this count as the required Red?",
           "options": [
-            "pytest is unavailable.",
-            "The test file has a syntax error.",
-            "Missing data does not raise the expected exception.",
-            "No tests were collected."
+            "Yes, because the test failed",
+            "No, the withdrawal rule has not actually been tested",
+            "Yes, provided the error is recorded"
           ],
           "rationales": [
-            "Repair the environment first.",
-            "Repair the test first.",
-            "The feedback detects the missing requirement.",
-            "No behavior was tested."
+            "An environment error has not tested the requirement.",
+            "Make the tests executable before observing a withdrawal-rule failure.",
+            "Recording the error helps repair the environment but does not verify behavior."
           ]
         }
       }
     },
     {
       "id": "AASE-M08-C02-Q02",
-      "answer": 0,
+      "answer": 1,
       "text": {
         "zh": {
-          "prompt": "Green 階段應優先怎麼做？",
+          "prompt": "Agent 為了讓測試從 Red 變成 Green，直接把原本會失敗的測試刪除。這算成功嗎？",
           "options": [
-            "讓目前測試通過的最小修正",
-            "改預期為一律成功",
-            "重寫整個網站",
-            "刪除失敗案例"
+            "算，只要最後全部顯示通過",
+            "不算，因為失去了驗收要求的保護",
+            "算，因為減少測試能提高效能"
           ],
           "rationales": [
-            "保持回饋短且聚焦。",
-            "會接受錯誤行為。",
-            "增加無關變動。",
-            "失去驗收保護。"
+            "綠燈可能只是刪掉了需求。",
+            "Green 要讓原本的驗收測試通過。",
+            "測試效能不能代替保留必要驗收。"
           ]
         },
         "en": {
-          "prompt": "What should Green prioritize?",
+          "prompt": "An Agent deletes the failing test to move from Red to Green. Is this success?",
           "options": [
-            "The smallest repair that passes the current tests.",
-            "Change expectations to universal success.",
-            "Rewrite the website.",
-            "Delete failing cases."
+            "Yes, as long as everything remaining passes",
+            "No, the acceptance requirement loses its protection",
+            "Yes, fewer tests improve performance"
           ],
           "rationales": [
-            "Keep feedback short and focused.",
-            "That accepts faulty behavior.",
-            "That adds unrelated changes.",
-            "That removes acceptance protection."
+            "A pass may simply reflect deletion of the requirement.",
+            "Green must pass the original acceptance tests.",
+            "Test performance does not replace necessary acceptance."
           ]
         }
       }
     },
     {
       "id": "AASE-M08-C02-Q03",
-      "answer": 3,
+      "answer": 2,
       "text": {
         "zh": {
-          "prompt": "哪個改動可歸入本篇重構？",
+          "prompt": "程式已通過測試，現在只是把重複的驗證程式抽成函式，原本輸入輸出不變。這比較符合哪個階段？",
           "options": [
-            "新增正式登入",
-            "刪除必填規則",
-            "改為所有資料完整",
-            "保留輸入輸出契約，抽出具名驗證函式"
+            "Red",
+            "Green",
+            "Refactor"
           ],
           "rationales": [
-            "是新功能。",
-            "改變行為。",
-            "改變要求。",
-            "結構改變而行為保持。"
+            "Red 先觀察需求行為失敗。",
+            "Green 修正程式使測試通過。",
+            "整理結構且保持輸入輸出，並重跑測試，符合 Refactor。"
           ]
         },
         "en": {
-          "prompt": "Which change is refactoring in this exercise?",
+          "prompt": "Tests pass. Duplicate validation is extracted into a function while input/output stays the same. Which stage does this fit?",
           "options": [
-            "Add official login.",
-            "Remove the required-field rule.",
-            "Mark all data complete.",
-            "Extract a named validation function while keeping the input/output contract."
+            "Red",
+            "Green",
+            "Refactor"
           ],
           "rationales": [
-            "That is a new feature.",
-            "That changes behavior.",
-            "That changes requirements.",
-            "Structure changes while behavior remains."
+            "Red first observes a required-behavior failure.",
+            "Green repairs code to pass the tests.",
+            "Organizing structure while preserving input/output and rerunning tests fits Refactor."
           ]
         }
       }
