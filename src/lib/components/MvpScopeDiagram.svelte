@@ -1,6 +1,8 @@
 <script lang="ts">
  import type {ConceptVisual} from '$lib/concepts';
- let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3|4|5|6;lang:'zh'|'en'}=$props();
+ let {diagram,lang}:{diagram:ConceptVisual;number:1|2;lang:'zh'|'en'}=$props();
+ // Validated graph shapes select layouts without changing the shared caller’s legacy hint.
+ const number=$derived(diagram.kind==='flow'&&diagram.items.length===5?1:diagram.items.length);
 </script>
 <figure class="mvp-diagram" class:states={number===3} class:decision={number===5} class:stale={number===4} class:sequence={diagram.kind==='flow'} data-figure={number}>
  <figcaption><strong>{diagram.caption}</strong></figcaption>
