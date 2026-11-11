@@ -10,7 +10,7 @@ test('M07-06 preserved manuscripts compile to complete bilingual teaching and ex
   const blocks=t.sections.flatMap((s:any)=>s.blocks??[]);
   const figures=blocks.filter((b:any)=>/^(圖|Figure) /.test(b.caption??''));
   assert.deepEqual(figures.map((b:any)=>b.kind),['cards','flow','table','flow','cards']);
-  assert.equal(figures[0].items.length,3);assert.equal(figures[3].items.length,5);assert.equal(figures[4].items.length,6);
+  assert.equal(figures[0].items.length,4);assert.equal(figures[3].items.length,5);assert.equal(figures[4].items.length,6);
   assert.equal(blocks.filter((b:any)=>b.code).length,11);
   for(const id of ['review','analogy','diff','evidence','decision','record'])assert.ok(t.sections.some((s:any)=>s.id===id));
  }

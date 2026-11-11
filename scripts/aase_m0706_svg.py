@@ -19,8 +19,8 @@ def render(f,number,lang):
     def arrow(y1,y2):out.append(f'<path d="M530 {y1}V{y2}m-7-7 7 7 7-7" fill="none" stroke="#59666e" stroke-width="2"/>')
     y=text(f['caption'],36,40,44,True)+20
     if number==1:
-        y=max(box(item,36+i*336,y,316)for i,item in enumerate(f['items']));arrow(y+10,y+46);y+=66
-        y=box(dict(title='人的審查與決策'if lang=='zh'else'Human review and decision',body='接受／要求修正／延後'if lang=='zh'else'Accept / Revise / Defer'),36,y,988)+24
+        y=max(box(item,36+i*336,y,316)for i,item in enumerate(f['items'][:3]));arrow(y+10,y+46);y+=66
+        y=box(f['items'][3],36,y,988)+24
     elif number==3:
         for row in [f['headers']]+f['rows']:
             y=max(box(dict(title=a if row==f['headers']else'',body=''if row==f['headers']else a),36+i*336,y,316)for i,a in enumerate(row))+12

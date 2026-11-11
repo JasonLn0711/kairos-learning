@@ -11,9 +11,9 @@
  {:else if number===5}
   <dl>{#each diagram.items as item}<div class:decision={item.title.startsWith('決策')||item.title.startsWith('Decision')}><dt>{item.title}</dt><dd>{item.body}</dd></div>{/each}</dl>
  {:else if number===1}
-  <ul class="inputs">{#each diagram.items as item}<li><strong>{item.title}</strong><p>{item.body}</p></li>{/each}</ul>
+  <ul class="inputs">{#each diagram.items.slice(0,3) as item}<li><strong>{item.title}</strong><p>{item.body}</p></li>{/each}</ul>
   <div class="aggregation" aria-hidden="true">↓</div>
-  <div class="reviewer"><strong>{lang==='zh'?'人的審查與決策':'Human review and decision'}</strong><p>{lang==='zh'?'接受／要求修正／延後':'Accept / Revise / Defer'}</p></div>
+  <div class="reviewer"><strong>{diagram.items[3].title}</strong><p>{diagram.items[3].body}</p></div>
  {:else}
   <ol class:git={number===2}>{#each diagram.items as item,i}<li><span class="number" aria-hidden="true">{i+1}</span><div><strong>{item.title}</strong><p>{item.body}</p></div>{#if i<diagram.items.length-1}<span class="connector" aria-hidden="true">↓</span>{/if}</li>{/each}</ol>
  {/if}

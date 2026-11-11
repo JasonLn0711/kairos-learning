@@ -28,7 +28,6 @@ for(const lang of ['zh','en']){
    const asset=`/images/aase/m07-06-${n}-${lang}.svg`;const response=await request.get(asset);expect(response.ok()).toBeTruthy();expect(await response.body()).toEqual(readFileSync(`site${asset}`));
    await page.goto(asset);
    expect(await page.locator('svg').evaluate(svg=>{const v=(svg as unknown as SVGSVGElement).viewBox.baseVal;const boxes=Array.from(svg.querySelectorAll('text')).filter(x=>x.textContent?.trim()).map(el=>el.getBBox());return boxes.every(b=>b.x>=0&&b.y>=0&&b.x+b.width<=v.width&&b.y+b.height<=v.height)&&boxes.every((a,i)=>boxes.slice(i+1).every(b=>a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y));})).toBeTruthy();
-   await page.screenshot({path:`.local/aase/m0706/${lang}-svg${n}.png`,fullPage:true});
   }
  });
  test(`${lang} no-JavaScript text, keyboard and reference answers`,async({browser})=>{
