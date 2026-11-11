@@ -1,10 +1,10 @@
 {
   "id": "AASE-M07-C07",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "pytest-usage",
     "git-diff",
@@ -28,114 +28,458 @@
       },
       "sections": [
         {
-          "id": "bug",
-          "heading": "從「下載怪怪的」寫出可重現情境",
-          "paragraphs": [
-            "先記錄使用哪份程式、工作目錄、版本、輸入及步驟。例如「三欄完整→檢查→清空文件類型→提交變更，仍出現下載」就指出了狀態轉換及不符規格的觀察。",
-            "這是要驗證的故障情境，不表示目前教師 reference 存在該錯誤。若自己的專案無法重現，保留環境與結果，別先改一大批程式碰運氣。"
-          ]
-        },
-        {
           "id": "analogy",
-          "heading": "像修理前先找到哪個開關失效",
+          "heading": "一、這一章到底在教什麼？",
           "paragraphs": [
-            "房間沒亮可能是燈泡、開關或供電問題。先確認條件再測局部，才能避免把整間配線換掉卻沒有解決原因。",
-            "軟體也先分層：命令找不到套件是環境，測試找不到 app.py 是測試設定，資料變更後仍用舊結果才可能是功能狀態問題。各層要有對應證據。"
-          ]
-        },
-        {
-          "id": "loop",
-          "heading": "一次只驗證一個修復假設",
-          "paragraphs": [
-            "先讓測試抓住預期錯誤，再做最小修正，確認原失敗轉為通過，最後跑會受影響的既有情境。測試若只因語法或 import 失敗，先修正測試環境，不能當作需求已被測到。",
-            "舊報告問題可從回呼是否清狀態、顯示條件是否比對快照、匯出端是否重新驗證逐一檢查。不要同時更換框架、資料模型與頁面設計，否則難以知道哪個變更有效。"
+            "核心觀念：程式出問題時，不要急著重寫，而是先搞清楚「什麼條件下出錯、為什麼出錯」，再用最小的修改解決，並證明沒有破壞其他功能。",
+            "想像你是一位汽車維修技師。 客人告訴你：「我的車怪怪的。」 你會直接把引擎拆掉重裝嗎？當然不會。 你會先詢問什麼時候發生、觀察是否可以重現，接著檢查電瓶、啟動馬達、供油或感測器，再根據證據修理。",
+            "軟體工程也是一樣。 尤其是 AI Coding Agent，當你告訴它「這個程式壞掉了，幫我修」，它可能同時修改十幾個檔案、重構程式架構，甚至順手更換套件。結果原本只有一個小問題，卻產生更多問題。",
+            "所以這一章要學會一套有證據的修復流程："
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "圖 1｜帶證據的小步修復",
-              "description": "每一步都可回到觀察；沒有重現或測試結果時，狀態保留待確認。",
+              "caption": "圖 1｜六階段的證據修復流程",
+              "description": "依 01–06 的閱讀順序理解各項責任；第 06 項在需要復原時執行，並非每次修復都要撤銷變更。",
               "items": [
                 {
-                  "title": "重現",
-                  "body": "固定輸入、操作、版本與預期。"
+                  "title": "重現問題",
+                  "body": "證明問題確實存在"
+                },
+                {
+                  "title": "定位原因",
+                  "body": "辨別故障發生在哪一層"
                 },
                 {
                   "title": "固定失敗",
-                  "body": "加入會抓住該行為的回歸測試。"
+                  "body": "用測試抓住錯誤"
                 },
                 {
                   "title": "最小修正",
-                  "body": "只改目前假設需要的範圍。"
+                  "body": "只修改必要部分"
                 },
                 {
-                  "title": "驗證與審查",
-                  "body": "跑原案例及受影響測試，核對 Diff。"
+                  "title": "重新驗證",
+                  "body": "確認修好了且沒弄壞其他功能"
+                },
+                {
+                  "title": "安全復原",
+                  "body": "必要時回復變更，留下證據"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這就是本章教材強調的「先重現、再縮小、用測試固定問題、最後小步修復」。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bug",
+          "heading": "二、什麼叫「重現問題」？",
+          "paragraphs": [
+            "假設你開發一套銀行徵信資料檢查系統。 使用者填寫三個欄位：客戶名稱、統一編號、文件種類。全部填妥後，系統顯示「檢查通過」，並允許下載報告。",
+            "但是使用者把「文件種類」刪掉之後，畫面居然仍然顯示「檢查通過」，還可以下載之前的報告。 這就是本章教材所使用的「舊報告沒有失效」問題。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 2｜模擬操作：觀察舊報告失效問題",
+              "description": "操作方式：先按「執行資料檢查」，接著清空「文件種類」。比較有 Bug 與已修復兩種模式：前者仍保留舊成功與下載，後者使結果失效。此為簡化的本機互動示意，並非真實銀行系統。",
+              "items": [
+                {
+                  "title": "選擇模擬模式",
+                  "body": "有 Bug｜已修復"
+                },
+                {
+                  "title": "客戶名稱",
+                  "body": "甲公司"
+                },
+                {
+                  "title": "統一編號",
+                  "body": "12345678"
+                },
+                {
+                  "title": "文件種類",
+                  "body": "財務報表"
+                },
+                {
+                  "title": "執行資料檢查",
+                  "body": "檢查通過後顯示合成報告下載"
+                },
+                {
+                  "title": "檢查結果",
+                  "body": "尚無有效檢查結果，不能匯出報告。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這個例子真正的問題不是「下載按鈕顏色不對」，而是： 系統把舊資料的檢查結果，錯誤地當成目前資料的檢查結果。",
+                "這叫做 Stale State（過期狀態），也可以理解為「舊狀態沒有正確失效」。 即使目前程式執行完全沒有當機，系統仍然可能提供錯誤結果。這類錯誤比單純的程式當機更容易被忽視。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "failure-layers",
+          "heading": "三、除錯第一件事：確認是哪一種錯誤",
+          "paragraphs": [
+            "程式壞掉，不代表一定是程式邏輯有問題。 本章特別強調分辨三種不同層次的故障："
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1",
+              "headers": [
+                "錯誤類型",
+                "白話解釋",
+                "可能的處理"
+              ],
+              "rows": [
+                [
+                  "Environment Error（環境錯誤）",
+                  "工具、套件或執行環境沒準備好",
+                  "檢查安裝、版本、路徑"
+                ],
+                [
+                  "Test Error（測試設定錯誤）",
+                  "測試本身無法正確執行",
+                  "檢查測試設定、匯入、測試資料"
+                ],
+                [
+                  "Functional Regression（功能回歸）",
+                  "原本應該正常的功能，修改後壞掉了",
+                  "重現功能錯誤並找到根因"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "例如你在測試 Python 專案時："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "情境 A：測試套件不存在",
+              "paragraphs": [
+                "`No module named pytest`"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這通常是執行環境問題，不能據此判斷表單功能壞掉。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "情境 B：測試找不到程式",
+              "paragraphs": [
+                "`ModuleNotFoundError: No module named 'app'`"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "先檢查專案結構、執行目錄、Python 匯入路徑等因素。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "情境 C：測試成功執行，但斷言失敗",
+              "paragraphs": [
+                "`AssertionError: stale report still visible`"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這時才有直接證據顯示預期行為與實際行為不一致，應追查功能邏輯，同時核對斷言是否正確表達需求。",
+                "最重要的區別是：測試執行失敗，不等於測試成功發現功能錯誤。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "loop",
+          "heading": "四、怎麼把模糊問題變成可修復問題？",
+          "paragraphs": [
+            "專業工程師會使用 Minimal Reproducible Example（最小可重現案例）。 意思是：找出最少需要哪些條件與操作，才能穩定讓錯誤再次發生。",
+            "以本章的舊報告問題為例："
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 2",
+              "headers": [
+                "階段",
+                "要做什麼"
+              ],
+              "rows": [
+                [
+                  "Given（前提）",
+                  "三個欄位都已填寫，並完成資料檢查"
+                ],
+                [
+                  "When（動作）",
+                  "使用者把文件種類清空"
+                ],
+                [
+                  "Then（預期）",
+                  "舊檢查結果應失效，不可匯出完整報告"
+                ],
+                [
+                  "Actual（實際）",
+                  "畫面仍顯示成功，舊下載功能還存在"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這四列比「下載怪怪的」更有價值。 因為現在你知道了故障的起點、觸發動作、正確行為和錯誤行為，也能交給另一位工程師或 AI Agent 重演。"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "為什麼要讓測試先失敗？",
+              "paragraphs": [
+                "這個觀念叫 Regression Test（回歸測試）：建立一個測試，避免已修好的問題將來再出現。"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "以本章的 Python 專案為例，可以先執行："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例與命令",
+              "paragraphs": [
+                "在指定的練習副本中檢查；先確認執行目錄與環境。"
+              ],
+              "code": "python -m pytest -q tests/test_app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這會執行指定的介面測試檔案；`-q` 是簡潔輸出模式。`pytest` 的官方文件也支援使用 `python -m pytest` 執行測試。",
+                "修復順序應該是："
+              ]
+            },
+            {
+              "kind": "flow",
+              "caption": "圖 3｜先固定失敗，再修正及驗證",
+              "description": "箭頭表示修復驗證順序，不代表已執行或通過。Regression 在這裡指修復後再檢查受影響的既有功能。",
+              "items": [
+                {
+                  "title": "Red",
+                  "body": "證明測試抓到故障"
+                },
+                {
+                  "title": "Green",
+                  "body": "最小修正後通過"
+                },
+                {
+                  "title": "Regression",
+                  "body": "確認其他功能正常"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這與 Test-Driven Development（測試驅動開發）的 Red–Green 思路相近，但這裡的重點是先用測試固定既有故障，再修復，而非完整實施所有 TDD 開發步驟。",
+                "另一個容易忽略的陷阱：如果你故意把程式弄壞，測試卻還是綠燈，代表測試可能根本沒有涵蓋這個錯誤。不能把「測試通過」誤認成「功能一定正確」。",
+                "Streamlit 的 `AppTest` 可以模擬應用程式、修改輸入值並檢查畫面結果，適合本章的這類介面測試。修改 widget 值後，需明確呼叫 `run()` 重新執行，再檢查結果。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "pytest-usage",
+            "streamlit-apptest"
+          ]
+        },
+        {
+          "id": "snapshot",
+          "heading": "五、找到原因後，怎麼修才安全？",
+          "paragraphs": [
+            "以舊報告為例，根本問題是「目前輸入」與「過去已驗證的輸入」沒有正確區分。 可以使用三道防護：",
+            "1. 輸入變更時讓舊結果失效： 使用者修改欄位後，舊報告不再視為有效。\n2. 顯示前確認資料一致： 畫面呈現成功訊息或下載按鈕之前，確認目前輸入與已檢查的資料相符。\n3. 匯出時再次驗證： 即使畫面出了問題，後端仍不能讓無效資料通過匯出檢查。",
+            "下面是簡化的 Python 邏輯示範，不是教材原始碼："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "範例與命令",
+              "paragraphs": [
+                "在指定的練習副本中檢查；先確認執行目錄與環境。"
+              ],
+              "code": "def valid(form):\n    required = (\"name\", \"tax_id\", \"doc_type\")\n    return all(str(form.get(k, \"\")).strip() for k in required)\n\n\ndef check(form):\n    if not valid(form):\n        return None\n    return {\"snapshot\": form.copy()}\n\n\ndef can_export(form, result):\n    return (\n        result is not None\n        and form == result[\"snapshot\"]\n        and valid(form)\n    )\n\n\ndef test_changed_input_cannot_export():\n    form = {\n        \"name\": \"甲公司\",\n        \"tax_id\": \"12345678\",\n        \"doc_type\": \"財務報表\",\n    }\n    result = check(form)\n    assert can_export(form, result)\n    form[\"doc_type\"] = \"\"\n    assert not can_export(form, result)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這段程式的重要設計是 `snapshot`（快照）。 你可以把快照想成：「這張報告當初究竟根據哪一份資料做出來？」 如果使用者改了輸入，那就不能繼續拿以前的結果當作最新結果。",
+                "此處 `form.copy()` 適用於這個僅有字串的簡化範例；若資料有巢狀結構，需要適當的深層複製、不可變資料或版本識別機制。實務上還要驗證真正的業務規則，而非只檢查欄位有沒有值。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "六、跨產業案例：同一個原理可以用在哪裡？",
+          "paragraphs": [
+            "以下五個假設案例，用來比較輸入變更與結果失效的關係。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 3",
+              "headers": [
+                "產業",
+                "錯誤情境",
+                "正確的設計"
+              ],
+              "rows": [
+                [
+                  "醫療",
+                  "醫師修改處方劑量後，列印的仍是舊處方",
+                  "處方內容變更後，舊確認狀態失效，簽署前重新核對"
+                ],
+                [
+                  "電商",
+                  "客戶修改數量後，付款仍使用舊金額",
+                  "結帳前重新計算，並核對目前購物車版本"
+                ],
+                [
+                  "物流",
+                  "地址修改後，系統仍下載舊地址標籤",
+                  "標籤與目前訂單版本綁定，異動後重產"
+                ],
+                [
+                  "教育",
+                  "教師修改成績後，成績單仍顯示舊分數",
+                  "成績版本變更後重新計算及匯出"
+                ],
+                [
+                  "科學研究",
+                  "研究人員換了資料集，圖表卻仍沿用上一版的分析",
+                  "結果記錄資料版本、參數及運算版本，變更時重新計算"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些都是假設案例，但背後有相同的系統設計原理： 只要結果依賴某份輸入，輸入改變時，就必須重新判斷結果是否仍然有效。",
+                "這也與 Cache Invalidation（快取失效）、資料一致性（Data Consistency）及版本控制有密切關係。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "restore",
+          "heading": "七、復原（Recovery）不是把所有修改全部刪掉",
+          "paragraphs": [
+            "假設 AI Agent 修改了 `app.py`，造成下載錯誤。 可是另一位工程師也在同一個檔案裡改善了鍵盤操作。 如果你直接把整份檔案恢復成昨天的版本，就會連其他人的改善一起刪掉。",
+            "所以復原要看「變更範圍」，而不只是檔名。 可以先觀察："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "範例與命令",
+              "paragraphs": [
+                "在指定的練習副本中檢查；先確認執行目錄與環境。"
+              ],
+              "code": "git status --short\ngit diff -- app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "確認哪些部分改變。如果已備份現況，且 `HEAD` 確實是要參考的版本，可以視情況使用："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "範例與命令",
+              "paragraphs": [
+                "在指定的練習副本中檢查；先確認執行目錄與環境。"
+              ],
+              "code": "git restore -p --source=HEAD -- app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "其中 `-p` 是互動式選擇修改區塊，讓你逐段確認是否回復，而不是不加區分地覆蓋整份檔案。但被選中的區塊仍可能丟失未保存修改，且跨區塊變更不一定能安全拆分，務必先備份與審查。",
+                "本章不鼓勵把 `git reset --hard` 或全專案 `git restore .` 當成萬用修復方法，因為它們可能破壞無關工作。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "git-diff",
+            "git-restore"
+          ]
+        },
+        {
+          "id": "agent-task",
+          "heading": "八、與 AI Coding Agent 協作時，該如何下指令？",
+          "paragraphs": [
+            "與其說「幫我把這個 Bug 修好」，你可以提供以下明確的任務內容："
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 4｜Agent 除錯指令範本",
+              "description": "四段是同一任務的範圍與驗收條件；複製文字後仍需由 Agent 實際執行並提供證據。",
+              "items": [
+                {
+                  "title": "任務",
+                  "body": "修復輸入變更後舊報告仍可下載的問題。"
+                },
+                {
+                  "title": "工作規則",
+                  "body": "先重現、先補失敗測試、只修改必要邏輯、保留無關修改。"
+                },
+                {
+                  "title": "完成條件",
+                  "body": "舊報告不能再使用；原失敗測試轉為通過；受影響的其他測試通過；提供實際命令與結果。"
+                },
+                {
+                  "title": "禁止事項",
+                  "body": "未經確認的大規模重構、刪除其他修改、將未執行的測試宣稱為通過。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這樣做的本質，是把 AI Agent 從「想怎麼修就怎麼修」轉變成「在明確範圍內提出可驗證的修復」。"
               ]
             }
           ]
         },
         {
           "id": "controlled-fault",
-          "heading": "在自己的專案做一個受控練習",
+          "heading": "九、本章實作的真正驗收標準",
           "paragraphs": [
-            "先保留程式副本及現有 Diff，在自己的第三切片練習副本製造「舊報告仍可見」：暫時移除輸入的 on_change 失效回呼，將顯示條件改成只檢查 checked 是否存在，預覽與匯出也故意使用舊 checked。這是一個合成故障，完成練習後需修回，不能留在正常作品。",
-            "重新執行完整後清空欄位的 AppTest，應在「不該再有成功訊息或下載」處失敗。修回快照失效、目前值比較及匯出目前資料後，同一測試應通過，再跑 reference 的整組規則與介面測試。若人工錯誤仍通過，先補足斷言，不以綠燈當作正確保證。"
-          ],
-          "blocks": [
-            {
-              "kind": "step",
-              "heading": "定位原有介面測試",
-              "paragraphs": [
-                "在自己的第三切片練習副本執行；不要修改公開教師解答。"
-              ],
-              "code": "python -m pytest -q tests/test_app.py\npython -m pytest -q"
-            }
-          ]
-        },
-        {
-          "id": "restore",
-          "heading": "復原前先辨識要保留什麼",
-          "paragraphs": [
-            "復原不是丟掉整個工作目錄。先保留尚未提交的修改、新檔與測試結果，再確認已知良好版本及欲回復路徑；若一個檔案混有其他工作，應分段修回或從副本取回本次部分。",
-            "Git restore 可從指定來源回復工作區或暫存區，可能覆蓋內容；預設來源也隨選項不同。操作前要說明來源、目的位置及路徑。本課不提供對整個專案一鍵強制重設的捷徑。"
-          ],
-          "blocks": [
-            {
-              "kind": "table",
-              "caption": "表 1｜三種不同的復原決策",
-              "headers": [
-                "情況",
-                "處理方向",
-                "完成檢查"
-              ],
-              "rows": [
-                [
-                  "本次一小段邏輯錯誤",
-                  "局部修回並保留其他段落",
-                  "原失敗測試與 Diff"
-                ],
-                [
-                  "新功能尚未完成",
-                  "保留分支或副本，恢復已知可用行為",
-                  "啟動及核心情境"
-                ],
-                [
-                  "依賴安裝失敗",
-                  "先確認環境與版本",
-                  "安裝及版本輸出；功能仍待驗"
-                ]
-              ]
-            }
+            "依照原教材，你應在自己的練習副本中，刻意製造舊報告未失效的錯誤，讓測試抓到它，再修回正常狀態。這是受控的合成故障練習，不代表教師提供的參考程式本來就有這個 Bug。",
+            "最後需要留下 `debugging-notes.md`，其中應包括故障條件、重現步驟、失敗證據、根本原因、修正內容、測試結果，以及尚未驗證的範圍。",
+            "這些紀錄讓下一位工程師、下一個 AI Agent，甚至幾個月後的你，都能知道當初發生什麼事，以及為何採取這個修正方式。"
           ]
         },
         {
           "id": "handoff",
-          "heading": "修好後保留為什麼與沒涵蓋什麼",
+          "heading": "十、理解檢核",
           "paragraphs": [
-            "記錄故障條件、原失敗、修正理由、通過結果與未驗範圍。修復一個本機表單問題不會同時完成多人授權或正式部署；把需要後續處理的事項留給下一個明確任務。",
-            "M08 會擴展規則、介面、易用性與安全驗證，M09 再整理版本與交接。M07 的收束是三次可操作切片，加上能核對的修改與驗收紀錄。"
+            "先自行回答三題，再展開參考解析核對理由。參考解析不提交作答，也不記錄學習完成。",
+            "這一章最值得記住的一句話是： 「修好」不是程式不再報錯，而是你有證據證明：原問題已解決、其他功能未受破壞，而且需要復原時不會誤刪其他工作。"
           ]
         }
       ],
@@ -166,114 +510,458 @@
       },
       "sections": [
         {
-          "id": "bug",
-          "heading": "Turn “The Download Is Odd” into a Reproducible Scenario",
-          "paragraphs": [
-            "Record the program copy, directory, version, input and steps. For example: fill three fields → check → clear document type → commit the change → download remains visible. This identifies both the state transition and the observation violating spec.",
-            "This is a fault scenario to investigate, not a claim that the current teacher reference contains it. If your project does not reproduce it, preserve the environment and result instead of changing large amounts of code speculatively."
-          ]
-        },
-        {
           "id": "analogy",
-          "heading": "Locate the Failed Switch Before Rewiring",
+          "heading": "1. What does this chapter teach?",
           "paragraphs": [
-            "A dark room may have a failed bulb, switch or power supply. Establish conditions and test locally before replacing all wiring without identifying the cause.",
-            "Software investigation also separates layers: an unavailable package is an environment issue; tests unable to locate app.py have a configuration issue; stale results after input changes may indicate functional state behavior. Each needs corresponding evidence."
-          ]
-        },
-        {
-          "id": "loop",
-          "heading": "Test One Repair Hypothesis at a Time",
-          "paragraphs": [
-            "First make a test detect the expected failure, then apply a minimal repair, confirm the original failure becomes a pass and run affected existing scenarios. A syntax/import failure needs environment or test correction; it does not establish requirement coverage.",
-            "For stale reports, inspect the invalidation callback, snapshot equality in the display condition and revalidation at export one by one. Changing framework, data model and page design together obscures which change works."
+            "When software behaves incorrectly, establish the conditions and cause, make the smallest necessary repair, and gather evidence that affected features still work.",
+            "Imagine that you repair cars. A customer says, “My car seems strange.” Would you immediately dismantle and rebuild the engine? You would first ask when the problem occurs, see whether you can reproduce it, and inspect the battery, starter motor, fuel supply or sensors before repairing the part supported by the evidence.",
+            "Software investigation follows the same reasoning. Given “This program is broken; fix it,” an AI Coding Agent may change a dozen files, restructure the application or replace dependencies. An initially small fault can then acquire additional causes and make the repair harder to evaluate.",
+            "This chapter develops an evidence-based repair process:"
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "Figure 1 | Incremental Repair with Evidence",
-              "description": "Return to observations at each step. Without reproduction or test results, keep the issue unconfirmed.",
+              "caption": "Figure 1 | Six responsibilities in evidence-based repair",
+              "description": "Read responsibilities in order 01–06. Step 06 applies when recovery is needed; every repair does not require reverting changes.",
               "items": [
                 {
-                  "title": "Reproduce",
-                  "body": "Fix input, actions, version and expectations."
+                  "title": "Reproduce the fault",
+                  "body": "Establish that the fault exists"
+                },
+                {
+                  "title": "Locate the cause",
+                  "body": "Identify the failure layer"
                 },
                 {
                   "title": "Capture failure",
-                  "body": "Add a regression test that detects this behavior."
+                  "body": "Make a test detect the fault"
                 },
                 {
                   "title": "Minimal repair",
-                  "body": "Change only what the current hypothesis needs."
+                  "body": "Change only necessary logic"
                 },
                 {
-                  "title": "Verify and review",
-                  "body": "Run the original case and affected tests; inspect the diff."
+                  "title": "Verify again",
+                  "body": "Check the repair and affected features"
+                },
+                {
+                  "title": "Recover safely",
+                  "body": "If needed, restore scoped changes and retain evidence"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Reproduce the fault, narrow the cause, capture the behavior with a test and repair it in small steps. Retain evidence and recover only the necessary changes if the repair needs to be reversed."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bug",
+          "heading": "2. What does reproducing a fault mean?",
+          "paragraphs": [
+            "Suppose you build a bank credit-document checking system with three fields: customer name, business tax ID and document type. Once all three are complete and checked, the screen says “Check passed” and allows a report download.",
+            "The user then clears the document type. The screen still says “Check passed” and still offers the previous report. This is the stale-report scenario used in this chapter."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Simulate stale-report invalidation",
+              "description": "First select “Check data”, then clear “Document type”. Compare Bug and Fixed modes: Bug keeps the old success and download, while Fixed invalidates the result. This is a simplified local interaction, not a real banking system.",
+              "items": [
+                {
+                  "title": "Simulation mode",
+                  "body": "Bug｜Fixed"
+                },
+                {
+                  "title": "Customer name",
+                  "body": "甲公司"
+                },
+                {
+                  "title": "Business tax ID",
+                  "body": "12345678"
+                },
+                {
+                  "title": "Document type",
+                  "body": "財務報表"
+                },
+                {
+                  "title": "Check data",
+                  "body": "Offer a synthetic report download after a successful check"
+                },
+                {
+                  "title": "Check result",
+                  "body": "No valid check result; report export is unavailable."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The underlying fault concerns the relationship between input and result: the system treats a result checked against earlier data as valid for the current data. This is Stale State, meaning that old state has not been invalidated correctly.",
+                "An application can produce incorrect results without crashing. Such faults are easy to miss when testing only for successful execution."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "failure-layers",
+          "heading": "3. First identify the failure layer",
+          "paragraphs": [
+            "A broken command does not by itself establish a fault in application logic. Distinguish three layers:"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1",
+              "headers": [
+                "Failure type",
+                "Plain explanation",
+                "Initial investigation"
+              ],
+              "rows": [
+                [
+                  "Environment Error",
+                  "Tools, packages or the runtime are not ready",
+                  "Check installation, versions and paths"
+                ],
+                [
+                  "Test Error",
+                  "The test cannot execute correctly",
+                  "Check configuration, imports and fixtures"
+                ],
+                [
+                  "Functional Regression",
+                  "A feature that should work no longer behaves as required",
+                  "Reproduce the behavior and locate the cause"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Consider three Python test outcomes."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Scenario A: the testing package is unavailable",
+              "paragraphs": [
+                "`No module named pytest`"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This usually points to the execution environment. It does not establish a fault in the form's behavior."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Scenario B: the test cannot import the application",
+              "paragraphs": [
+                "`ModuleNotFoundError: No module named 'app'`"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Inspect the project structure, working directory and Python import path before drawing conclusions about functionality."
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Scenario C: the test executes and an assertion fails",
+              "paragraphs": [
+                "`AssertionError: stale report still visible`"
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This provides direct evidence that an expected behavior and the observed behavior differ. Investigate application state and logic while also reviewing whether the assertion expresses the requirement correctly.",
+                "A test failing to execute and an executed test detecting incorrect behavior provide different evidence."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "loop",
+          "heading": "4. Turn a vague symptom into a repairable problem",
+          "paragraphs": [
+            "A Minimal Reproducible Example identifies the smallest set of conditions and actions that reliably produces a fault again.",
+            "For the stale-report scenario, write down all four parts:"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 2",
+              "headers": [
+                "Stage",
+                "Required detail"
+              ],
+              "rows": [
+                [
+                  "Given",
+                  "All three fields are filled and the data has been checked"
+                ],
+                [
+                  "When",
+                  "The user clears the document type"
+                ],
+                [
+                  "Then",
+                  "The previous result becomes invalid and a complete report cannot be exported"
+                ],
+                [
+                  "Actual",
+                  "The success message and old download remain available"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This record identifies the starting state, triggering action, expected behavior and observed fault. Another engineer or AI Agent can replay it, unlike the vague report “The download is odd.”"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Why should the test fail before repair?",
+              "paragraphs": [
+                "A Regression Test captures the behavior so that a repaired fault can be detected if it returns."
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "In this chapter's Python project, run the interface test file:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example and command",
+              "paragraphs": [
+                "Check in the designated practice copy; confirm directory and environment first."
+              ],
+              "code": "python -m pytest -q tests/test_app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The command selects the interface tests; `-q` requests concise output. The pytest documentation supports invocation through `python -m pytest`.",
+                "Use this repair order:"
+              ]
+            },
+            {
+              "kind": "flow",
+              "caption": "Figure 3 | Capture failure, repair and verify",
+              "description": "Arrows show repair verification order, not completed or passed execution. Regression here means checking affected existing features after repair.",
+              "items": [
+                {
+                  "title": "Red",
+                  "body": "Prove that the test detects the fault"
+                },
+                {
+                  "title": "Green",
+                  "body": "Pass after a minimal repair"
+                },
+                {
+                  "title": "Regression",
+                  "body": "Check that other features still work"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This resembles the Red–Green reasoning of Test-Driven Development. Here the specific task is to capture an existing fault before repairing it; this sequence alone does not establish that a complete TDD process has been applied.",
+                "If you deliberately introduce the stale-report fault and tests remain green, they may not cover that behavior. Inspect and improve the assertions before treating a passing suite as evidence for the repair.",
+                "Streamlit's `AppTest` can simulate an application, modify widget values and inspect displayed results for this type of interface test. After changing widget values, explicitly run the application again with `run()` before checking the resulting state."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "pytest-usage",
+            "streamlit-apptest"
+          ]
+        },
+        {
+          "id": "snapshot",
+          "heading": "5. How can the cause be repaired safely?",
+          "paragraphs": [
+            "The stale-report fault arises when current input is not distinguished from the input that was previously checked. Use three protections:",
+            "1. Invalidate old results when input changes. Editing a field makes the earlier report unavailable as a current result.\n2. Check consistency before display. Before showing success or download controls, compare current input with the checked data.\n3. Validate again at export. The export boundary must reject invalid data even if the display layer behaves incorrectly.",
+            "The following simplified Python example illustrates the logic; it is not the workshop's original application source:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Example and command",
+              "paragraphs": [
+                "Check in the designated practice copy; confirm directory and environment first."
+              ],
+              "code": "def valid(form):\n    required = (\"name\", \"tax_id\", \"doc_type\")\n    return all(str(form.get(k, \"\")).strip() for k in required)\n\n\ndef check(form):\n    if not valid(form):\n        return None\n    return {\"snapshot\": form.copy()}\n\n\ndef can_export(form, result):\n    return (\n        result is not None\n        and form == result[\"snapshot\"]\n        and valid(form)\n    )\n\n\ndef test_changed_input_cannot_export():\n    form = {\n        \"name\": \"甲公司\",\n        \"tax_id\": \"12345678\",\n        \"doc_type\": \"財務報表\",\n    }\n    result = check(form)\n    assert can_export(form, result)\n    form[\"doc_type\"] = \"\"\n    assert not can_export(form, result)"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The key design is a `snapshot`: a record of the input that produced the report. If the user changes the input, the earlier result cannot continue to stand for the current data.",
+                "Here `form.copy()` is appropriate for a simplified form containing only strings. Nested structures require suitable deep copying, immutable data or version identifiers. A real implementation must also validate business rules beyond the presence of field values."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "industries",
+          "heading": "6. Where does the same principle apply?",
+          "paragraphs": [
+            "The following five hypothetical scenarios compare input changes and result invalidation."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 3",
+              "headers": [
+                "Industry",
+                "Fault scenario",
+                "Appropriate design"
+              ],
+              "rows": [
+                [
+                  "Healthcare",
+                  "A prescription prints the previous dose after the doctor edits it",
+                  "Invalidate the old confirmation and review the current prescription before signing"
+                ],
+                [
+                  "E-commerce",
+                  "Payment uses an old amount after the customer changes quantity",
+                  "Recalculate before checkout and compare the current cart version"
+                ],
+                [
+                  "Logistics",
+                  "An address change still permits downloading an old shipping label",
+                  "Bind the label to the current order version and regenerate after changes"
+                ],
+                [
+                  "Education",
+                  "A transcript retains old scores after a teacher updates grades",
+                  "Recalculate and export against the updated grade version"
+                ],
+                [
+                  "Scientific research",
+                  "A chart reuses an earlier analysis after the dataset changes",
+                  "Record dataset, parameter and computation versions and recalculate after changes"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These are hypothetical examples illustrating one shared design rule: when a result depends on input, an input change requires reassessing whether that result is still valid.",
+                "This connects to Cache Invalidation, Data Consistency and version control. The specific invalidation mechanism depends on what inputs the result actually depends on."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "restore",
+          "heading": "7. Recover changes while preserving other work",
+          "paragraphs": [
+            "Suppose an AI Agent changes `app.py` and breaks downloads. Another engineer has improved keyboard interaction in the same file. Restoring the entire file to yesterday's version would also remove that improvement.",
+            "Identify the scope of the changes you intend to recover. Begin by inspecting the working state:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Example and command",
+              "paragraphs": [
+                "Check in the designated practice copy; confirm directory and environment first."
+              ],
+              "code": "git status --short\ngit diff -- app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "After backing up the current state and confirming that `HEAD` is the intended reference, you may select individual change hunks:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "Example and command",
+              "paragraphs": [
+                "Check in the designated practice copy; confirm directory and environment first."
+              ],
+              "code": "git restore -p --source=HEAD -- app.py"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "`-p` selects patch mode so you can review hunks individually. Selected hunks may still discard unsaved edits, and changes spanning several hunks may not be separable safely. Back up and inspect the dependencies between changes first.",
+                "Whole-project `git reset --hard` or `git restore .` can destroy unrelated work. Choose a recovery scope supported by the diff and then verify the resulting behavior."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "git-diff",
+            "git-restore"
+          ]
+        },
+        {
+          "id": "agent-task",
+          "heading": "8. Give the AI Coding Agent a verifiable task",
+          "paragraphs": [
+            "Provide the observed fault, working rules, completion conditions and scope restrictions in the task:"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 4 | Agent debugging task template",
+              "description": "These four parts define one task and its acceptance conditions. Copying them still requires the Agent to execute the work and supply evidence.",
+              "items": [
+                {
+                  "title": "Task",
+                  "body": "Repair the fault that allows an old report to be downloaded after input changes."
+                },
+                {
+                  "title": "Working rules",
+                  "body": "Reproduce first, add a failing test, change only necessary logic and preserve unrelated edits."
+                },
+                {
+                  "title": "Completion conditions",
+                  "body": "The old report is unavailable; the original failing test passes; affected existing tests pass; provide actual commands and results."
+                },
+                {
+                  "title": "Restrictions",
+                  "body": "No unconfirmed large refactoring, removal of unrelated changes or claims that unexecuted tests passed."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "A bounded task makes the Agent's proposed repair reviewable. Its completion claim must be supported by actual commands and observed results."
               ]
             }
           ]
         },
         {
           "id": "controlled-fault",
-          "heading": "Perform a Controlled Exercise in Your Own Copy",
+          "heading": "9. What evidence completes the practice?",
           "paragraphs": [
-            "Preserve code and existing diffs first. In your slice-three practice copy, deliberately keep a stale report visible: temporarily remove input on_change invalidation callbacks, make the display condition check only for the existence of checked, and deliberately preview/export old checked data. This is a synthetic fault to repair after practice; keep it out of the normal project.",
-            "Rerun the complete-then-clear AppTest. It should fail where success or download should have disappeared. Restore invalidation, current-value comparison and export of current data; the same test should pass, followed by the full reference rule/interface suite. If the deliberately faulty behavior still passes, strengthen assertions instead of treating green as correctness."
-          ],
-          "blocks": [
-            {
-              "kind": "step",
-              "heading": "Locate the Existing Interface Test",
-              "paragraphs": [
-                "Run in your own slice-three practice copy; preserve the public teacher solution."
-              ],
-              "code": "python -m pytest -q tests/test_app.py\npython -m pytest -q"
-            }
-          ]
-        },
-        {
-          "id": "restore",
-          "heading": "Identify What to Preserve Before Recovery",
-          "paragraphs": [
-            "Recovery does not mean discarding the whole working directory. Preserve uncommitted edits, new files and test results; identify the known-good source and paths to recover. If a file contains other work, repair selected sections or retrieve only your task’s portion from a copy.",
-            "Git restore can replace working-tree or staged content from a selected source and may overwrite data. Its default source changes with options. Identify source, destination and paths before running it; this course offers no one-click whole-project forced reset."
-          ],
-          "blocks": [
-            {
-              "kind": "table",
-              "caption": "Table 1 | Three Different Recovery Decisions",
-              "headers": [
-                "Situation",
-                "Response",
-                "Completion check"
-              ],
-              "rows": [
-                [
-                  "A small logic error in this task",
-                  "Repair locally, preserving other sections.",
-                  "Original failing test and diff."
-                ],
-                [
-                  "An unfinished feature",
-                  "Preserve a branch/copy and recover known-working behavior.",
-                  "Startup and core scenarios."
-                ],
-                [
-                  "Dependency installation failure",
-                  "Check environment and versions first.",
-                  "Installation/version output; features remain unverified."
-                ]
-              ]
-            }
+            "In your own practice copy, deliberately introduce the stale-report fault, demonstrate that a test detects it, then repair it. This is a controlled synthetic exercise; it does not imply that the teacher's reference application originally contained this bug.",
+            "Retain `debugging-notes.md` with the fault conditions, reproduction steps, failure evidence, root cause, repair, test results and unverified scope.",
+            "That record lets another engineer, the next AI Agent or your future self understand what happened and why the repair was chosen. Keep the injected fault out of the normal working application."
           ]
         },
         {
           "id": "handoff",
-          "heading": "Retain Why It Was Fixed and What Remains Unchecked",
+          "heading": "10. Check your understanding",
           "paragraphs": [
-            "Record fault conditions, original failure, repair rationale, passing results and unverified scope. Repairing a local form does not complete multiuser authorization or production deployment. Put remaining responsibilities into a separate explicit task.",
-            "M08 broadens rule, interface, usability and security verification; M09 organizes versions and handoff. M07 concludes with three operable slices and verifiable change/acceptance records."
+            "Answer the three questions yourself, then expand the reference explanations to compare your reasoning. Reading an explanation does not submit an answer or record learning completion.",
+            "A repair needs evidence that the original problem is resolved, affected features continue to work and any necessary recovery preserves unrelated work."
           ]
         }
       ],
@@ -292,109 +980,97 @@
   },
   "checks": [
     {
-      "id": "AASE-M07-C07-Q01",
-      "answer": 2,
-      "text": {
-        "zh": {
-          "prompt": "找不到 pytest 與舊結果未失效，應如何看待？",
-          "options": [
-            "都是同一個 UI bug",
-            "都先重寫框架",
-            "分別定位環境與功能層次",
-            "都可直接標通過"
-          ],
-          "rationales": [
-            "失敗層次不同。",
-            "會增加不必要變更。",
-            "先依證據定位原因。",
-            "沒有驗證依據。"
-          ]
-        },
-        "en": {
-          "prompt": "How should unavailable pytest and missing stale-result invalidation be investigated?",
-          "options": [
-            "Both are the same UI bug.",
-            "Rewrite the framework for both.",
-            "Locate environment and functional layers separately.",
-            "Mark both passed directly."
-          ],
-          "rationales": [
-            "They fail at different layers.",
-            "That adds unnecessary changes.",
-            "Use evidence to locate the cause first.",
-            "There is no verification basis."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M07-C07-Q02",
+      "id": "AASE-M07-C07-Q04",
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "人工讓舊 checked 報告繼續顯示後，回歸測試仍綠，代表什麼？",
+          "prompt": "問題 1： 一個電商系統修改商品數量後，仍顯示舊價格。你會先要求 AI Agent 做什麼？",
           "options": [
-            "功能更可靠",
-            "至少該測試未抓住此規格差距，應補斷言",
-            "不需要介面測試",
-            "直接刪除規格"
+            "重寫整個結帳系統",
+            "建立可重現的操作步驟與預期結果",
+            "先更換前端框架"
           ],
           "rationales": [
-            "已知錯誤未被抓到。",
-            "檢查涵蓋行為再改善測試。",
-            "應改善而非放棄。",
-            "不能迎合錯誤行為改規格。"
+            "先建立故障證據，才能決定必要修正範圍。",
+            "可重演步驟與預期結果讓 Agent 有明確的調查起點。",
+            "更換框架沒有解釋目前的狀態錯誤。"
           ]
         },
         "en": {
-          "prompt": "After deliberately keeping old checked reports visible, regression tests remain green. What follows?",
+          "prompt": "Question 1: An e-commerce system still shows the old price after product quantity changes. What should you first ask the AI Agent to do?",
           "options": [
-            "The feature is more reliable.",
-            "At least this test misses the specified gap; improve its assertions.",
-            "Interface tests are unnecessary.",
-            "Delete the specification."
+            "Rewrite the entire checkout system",
+            "Establish reproducible steps and the expected result",
+            "Replace the frontend framework"
           ],
           "rationales": [
-            "A known fault was missed.",
-            "Review covered behavior and improve detection.",
-            "Improve rather than abandon testing.",
-            "Do not change requirements to accommodate a fault."
+            "Establish failure evidence before choosing repair scope.",
+            "Reproducible steps and an expected result give the Agent a concrete investigation starting point.",
+            "Replacing the framework does not explain the current state fault."
           ]
         }
       }
     },
     {
-      "id": "AASE-M07-C07-Q03",
-      "answer": 2,
+      "id": "AASE-M07-C07-Q05",
+      "answer": 1,
       "text": {
         "zh": {
-          "prompt": "同一檔案混有其他人的修改，復原時應怎麼做？",
+          "prompt": "問題 2： 你故意讓程式保留過期報告，但原有測試仍全部通過，這代表什麼？",
           "options": [
-            "整份丟掉",
-            "只保留 Agent 的修改",
-            "先保留現況，再局部回復本次範圍並驗證",
-            "只改完成摘要"
+            "程式沒有問題",
+            "測試可能沒檢查到這項錯誤行為",
+            "應該直接刪除相關測試"
           ],
           "rationales": [
-            "會遺失無關工作。",
-            "無權任意丟棄他人內容。",
-            "來源與範圍清楚才能安全復原。",
-            "沒有修正實際行為。"
+            "已知故障仍存在，通過不能證明此行為正確。",
+            "先檢查斷言與涵蓋範圍，再補足測試。",
+            "保留測試並改善偵測能力。"
           ]
         },
         "en": {
-          "prompt": "A file also contains another person’s edits. How should you restore it?",
+          "prompt": "Question 2: You deliberately retain stale reports, but all existing tests still pass. What does this indicate?",
           "options": [
-            "Discard the entire file.",
-            "Keep only Agent edits.",
-            "Preserve the current state, recover only this task’s scope and verify.",
-            "Change only the completion summary."
+            "The application has no fault",
+            "The tests may not check this incorrect behavior",
+            "The relevant tests should be deleted immediately"
           ],
           "rationales": [
-            "That loses unrelated work.",
-            "You cannot arbitrarily discard others’ content.",
-            "Clear source and scope support safe recovery.",
-            "That does not repair behavior."
+            "The known fault remains; a pass does not establish correctness of this behavior.",
+            "Review assertions and coverage, then strengthen detection.",
+            "Retain tests and improve their ability to detect the fault."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M07-C07-Q06",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "問題 3： AI Agent 的修正與同事的新功能混在同一檔案，你發現 Agent 的修改有問題，應如何處理？",
+          "options": [
+            "直接恢復整個專案到上個版本",
+            "保存現況，辨識並局部回復問題修改，再重新驗證",
+            "保留所有修改，不必處理"
+          ],
+          "rationales": [
+            "整個專案復原會移除無關工作。",
+            "保存現況、辨識變更範圍並局部復原，再驗證受影響功能。",
+            "已知故障需要調查與修復。"
+          ]
+        },
+        "en": {
+          "prompt": "Question 3: An Agent's repair shares a file with a colleague's new feature. The Agent's change is faulty. What should you do?",
+          "options": [
+            "Restore the entire project to the previous version",
+            "Preserve the current state, identify and locally recover the faulty change, then verify again",
+            "Keep every change without further action"
+          ],
+          "rationales": [
+            "Whole-project recovery can remove unrelated work.",
+            "Preserve the state, identify the change scope, recover locally and verify affected features.",
+            "A known fault requires investigation and repair."
           ]
         }
       }
