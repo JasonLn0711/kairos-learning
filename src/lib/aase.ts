@@ -67,6 +67,16 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
     if(new Set(t.sections.map(s=>s.id)).size!==t.sections.length)fail('duplicate section');
     for(const s of t.sections){
       if(!/^[a-z][a-z0-9-]*$/.test(s.id)||!text(s.heading)||['discussion','objectives','practice','checks','sources'].includes(s.id)||s.id.startsWith('qa-')||!s.paragraphs.length||s.paragraphs.some(p=>!text(p))||(s.sourceIds??[]).some(id=>!l.sourceIds.includes(id)))fail('invalid section');
+      if(l.id==='AASE-M07-C03'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=['slice','behavior'].includes(s.id)?'cards':s.id==='roadmap'?'flow':undefined;
+        if(figures.length!==(expected?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==expected||f.items.length!==(s.id==='behavior'?3:4)||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid vertical slice figure');
+        const figure=figures[0];
+        if(figure&&(figure.kind==='cards'||figure.kind==='flow')){
+          if(s.id==='slice'&&figure.items.some(item=>item.body.split('\n').length!==3))fail('invalid vertical slice layers');
+          if(s.id==='behavior'&&figure.items.map(item=>item.body).join('|')!==`SYN-001|DEMO-A|${lang==='zh'?'（空白）':'(blank)'}`)fail('invalid vertical slice defaults');
+        }
+      }
       if(l.id==='AASE-M07-C05'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const count=s.id==='risk'?4:s.id==='workflow'?7:0;
@@ -235,6 +245,17 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected:Record<string,number[]>={analogy:[4],definition:[4],restaurant:[3,5,4],containers:[6],record:[4]};
         if(figures.length!==(expected[s.id]?.length??0)||figures.some((f,i)=>f.kind!=='cards'||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[s.id][i]||f.items.some(item=>!keys(item,['title','body']))))fail('invalid C4 views figure');
+      }
+      if(l.id==='AASE-M07-C07'&&l.revision>=4){
+        const expected:Record<string,number>={analogy:6,bug:6,loop:3,'agent-task':4};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(['analogy','loop'].includes(s.id)?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid debugging figure');
+        if(s.id==='bug'&&figures.some(f=>(f.kind==='cards'||f.kind==='flow')&&(f.items[0].body.split('｜').length!==2||f.items[0].body.split('｜').some(v=>!v.trim()))))fail('invalid debugging mode labels');
+      }
+      if(l.id==='AASE-M09-C03'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const count=s.id==='analogy'?5:s.id==='walkthrough'?3:0;
+        if(figures.length!==(count?1:0)||figures.some(f=>f.kind!==(count===5?'flow':'cards')||!keys(f,['kind','caption','description','items'])||f.items.length!==count||f.items.some(item=>!keys(item,['title','body']))))fail('invalid acceptance evidence figure');
       }
       if(l.id==='AASE-M09-C02'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
