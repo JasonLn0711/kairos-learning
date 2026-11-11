@@ -13,16 +13,16 @@
 | 來源及前版保存 | 完成；來源目錄 SHA256SUMS，原附件逐位元組比對。 |
 | 內容與型別 | validate:content 通過；svelte-check 0 errors／0 warnings。 |
 | 新增本課單元 | 2／2 通過；含錯誤節點數、錯誤 flow 種類及 markup 拒絕。 |
-| 全庫測試 | 合併前 327／327、合併後 339／339 通過。舊版保存測試核對 prior-lesson.json；與 boundary 同時執行的中間結果作廢。 |
+| 全庫測試 | 最終推送整合版 373／373 通過。舊版保存測試核對 prior-lesson.json；與 boundary 同時執行的中間結果作廢。 |
 | 發布邊界 | 通過；第二篇、草稿／未來日期及英文課程閘門檢查完成，測資已還原、正式輸出重建。 |
 | 靜態 release | 通過；pnpm run validate:release exit 0。 |
 | 瀏覽器全文／四尺寸／200%／無 JS／鍵盤／搜尋 | 中英 2／2 通過；playwright.aase-m0903.config.ts，完整結果與截圖位於隔離工作樹 .local/aase/m0903/。 |
 | 四 SVG／下載 | 四檔 --check 同步通過，瀏覽器無字框溢出／重疊，下載位元組與正本一致。 |
-| 正式發布／回讀 | 待完成驗證、提交、推送及 Pages；不以本機結果代填。 |
+| 正式發布／回讀 | 完成；Pages run 42992453184 success，正式站中英瀏覽器 2／2 通過。 |
 
 ## 所有權與範圍
 
-本次稀缺資源是逐節編輯、瀏覽器驗收及串行 Pages 發布容量；原工作樹的其他章節修改不納入提交。使用 origin/main 隔離工作樹 `/tmp/kairos-m0903`，保留遠端與本機歷史。Planning 只承接 locator、驗證、發布與下一關，完整供稿與實測詳情留本 repo。下一關為完成正式頁面／四圖回讀；真人閱讀接受、實體手機與完整輔助科技驗收另列待驗，不推定學員理解或生產系統可用。
+本次稀缺資源是逐節編輯、瀏覽器驗收及串行 Pages 發布容量；原工作樹的其他章節修改不納入提交。使用 origin/main 隔離工作樹 `/tmp/kairos-m0903`，保留遠端與本機歷史。Planning 只承接 locator、驗證、發布與下一關，完整供稿與實測詳情留本 repo。正式頁面／四圖回讀已完成；下一關為選擇性的人類閱讀接受；真人閱讀接受、實體手機與完整輔助科技驗收另列待驗，不推定學員理解或生產系統可用。
 
 人工檢視：繁中圖 1 手機、圖 2 桌面、英文圖 2 手機、英文圖 1 SVG 已檢視，分組、第四關強調、箭頭方向及完整三情境可讀。原圖與 HTML 差異為增加圖說、下載連結與可換行文字；SVG 保留相同節點，另以框線區隔三情境。
 
@@ -33,3 +33,15 @@
 HTML-02 補驗實際發現共用表格為 14.4px、程式碼 14.08px，低於本次教材內文 16px 門檻。新增僅本課生效的 table／pre 1rem、1.8 行高，瀏覽器檢查擴及四表與兩個 code 區塊。原紅燈保留在 m0903-font-red.log；修正後重跑四尺寸及200%驗收。
 
 初次 v1.1.0 已隨整合提交 8d198bbc53e287d8133e4fb900aabcd6f71c6376 部署（run 42991845369 success）；後續字級補驗修正依 WRITE-06 提升 patch 為 v1.1.1／revision 5，正式完成以此修正版回讀為準。
+
+## 正式發布與回讀
+
+- 來源保存提交 `6849f8d`；完整正文／圖解提交 `5694c21`；字級修正 `f9fdfac`。中間整合使用 merge 保留歷史，未使用 force push。
+- 完整抽換推送 `507cadafb9fdc643f1c7ee566b150a6f4c069b41`，字級修正版推送 `52c2c249b515c8f953d9c34f260f330526a9c0d8`；兩次推送後 fetch 均觀察到 `0 0`。遠端後續繼續加入其他教材，因此不將該時間點的同步狀態描述為永久不變。
+- 初次／修正版的直接工作因較新整合工作而取消；實際成功部署為包含修正版的後代 `3ed7e2e1ee0765c5c976d0cfb7b5b5ee4d45f87d`，[Pages run 42992453184](https://github.com/JasonLn0711/kairos-learning/actions/runs/42992453184)。已檢查祖先關係與本課 JSON／元件／圖檔無變更。
+- [繁中正式頁](https://learn.cs-kairos.com/courses/aase/v1/m09/concepts/m09-03/)與[英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m09/concepts/m09-03/)均回讀 v1.1.1。`AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0903.config.ts`：2 passed，14.4 秒。
+- 正式檢查逐段核對 11 個 section 與區塊順序、四表、兩個 code、三個原開放問題及參考答案；同時驗兩圖、四尺寸／200%、無 JS、原生五條清單、下載 Enter 與 Tab／Shift+Tab、可捲動區 ArrowRight、答案 Enter／Space、搜尋與四份 SVG 位元組、字框及重疊。
+- 正式版表格／程式碼至少 16px、行高 1.8；200% 根字級測試亦通過。兩圖保持可選取 HTML，獨立 SVG 皆小於 100000 bytes。目視檢查正式站中英手機／桌面與 SVG 截圖，節點順序、分組及完整文字與本機一致。
+- 可機讀摘要為[checks.json](2026-11-11-aase-m09-03-checks.json)。完整瀏覽器結果、截圖、初始字級紅燈與 CI metadata 保存在原工作樹 `.local/aase/m0903/`；此目錄忽略且不部署。
+
+未執行實體手機、完整輔助科技認證或真人教學接受；本站驗收只證明本課閱讀與下載行為，不能代填學員理解、正式理賠／招募系統驗收或企業上線。
