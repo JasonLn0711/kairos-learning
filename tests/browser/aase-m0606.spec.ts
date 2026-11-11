@@ -16,6 +16,10 @@ for(const lang of ['zh','en']){
    }
   }
   await expect(page.locator('[data-tls-figure]')).toHaveCount(3);
+  const search=await request.get('/search-index.json');expect(search.ok()).toBeTruthy();
+  const entry=(await search.json()).find((e:any)=>e.id===lesson.id&&e.lang===lang);expect(entry).toBeTruthy();
+  for(const section of lesson.text[lang].sections)expect(entry.text).toContain(section.heading);
+  for(const figure of lesson.text[lang].sections.flatMap((s:any)=>s.blocks??[]).filter((b:any)=>['cards','flow'].includes(b.kind)))for(const item of figure.items){expect(entry.text).toContain(item.title);for(const part of item.body.split('\n→ '))expect(entry.text).toContain(part);}
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
@@ -30,7 +34,7 @@ for(const lang of ['zh','en']){
    const response=await request.get(asset);expect(response.ok()).toBeTruthy();
    expect(await response.body()).toEqual(readFileSync(`site${asset}`));
    const svgPage=await page.context().newPage();await svgPage.setContent(await response.text());
-   expect(await svgPage.locator('svg').evaluate(svg=>{const v=(svg as SVGSVGElement).viewBox.baseVal;return [...svg.querySelectorAll('text')].every(t=>{const b=t.getBBox();return b.x>=0&&b.y>=0&&b.x+b.width<=v.width&&b.y+b.height<=v.height;});})).toBeTruthy();await svgPage.close();
+   expect(await svgPage.locator('svg').evaluate(svg=>{const v=(svg as SVGSVGElement).viewBox.baseVal;const boxes=[...svg.querySelectorAll('text')].map(t=>t.getBBox());return boxes.every(b=>b.x>=0&&b.y>=0&&b.x+b.width<=v.width&&b.y+b.height<=v.height)&&boxes.every((a,i)=>boxes.slice(i+1).every(b=>Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x)<=1||Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y)<=1));})).toBeTruthy();await svgPage.close();
   }
  });
  test(`${lang} no-JavaScript reading and keyboard`,async({browser})=>{
