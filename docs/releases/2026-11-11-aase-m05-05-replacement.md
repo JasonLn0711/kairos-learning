@@ -52,3 +52,5 @@
 執行平台 Linux x86_64、Node v22.23.4、pnpm 10.34.9、Playwright Chromium headless；正式 CI 依 repo 使用 Node 24。`pnpm audit --audit-level=high` 通過（4 low）；靜態 HTML contract 6/6 通過。
 
 原工作目錄的無關髒檔未改動；沒有合併或提交那些未完成修改。網站、來源與詳細驗證由 kairos-learning 擁有。實機與讀者理解保留待驗，沒有推定學員完成。
+
+第二次整合保留遠端 PR #104／`4c38e0d` 的 M05-01，merge commit `f4cd73c`。整合後歷史測試的英語取樣也改回已保存前版，最終 `pnpm test` 315/315、型別 0 errors／0 warnings、兩語 browser 2/2（含 v1.1.0／修訂日期）、publication-boundary 與 validate:release 通過。M05-01 原始供稿有既存 EOF 空行，整合差異檢查曾指出；本次觸及檔案的 `git diff --check` 通過，沒有為此改寫其他課原稿。

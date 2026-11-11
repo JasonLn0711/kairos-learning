@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 const lesson=JSON.parse(readFileSync('content/aase/lessons/aase-m05-c05.json','utf8'));
 const norm=(s:string)=>s.replace(/`/g,'').replace(/^(- |\d+\. )/gm,'').replace(/\s/g,'');
 async function complete(page:Page,lang:'zh'|'en'){
+ await expect(page.locator('body')).toContainText('v1.1.0');await expect(page.locator('time[datetime="2026-11-11"]').first()).toBeVisible();
  for(const s of lesson.text[lang].sections){
   const section=page.locator('h2#'+s.id).locator('..');await expect(section.locator('h2').first()).toHaveText(s.heading);const actual=norm((await section.textContent())!);let cursor=0;
   const tokens=[s.heading,...s.paragraphs];
