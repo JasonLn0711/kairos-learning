@@ -1,0 +1,350 @@
+{
+  "id": "AASE-M06-C01",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "c4-context",
+    "c4-container",
+    "streamlit-architecture"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "用操作流程回答使用者如何完成任務，再用架構回答軟體由什麼組成、資料如何移動及誰負責控制。",
+      "objectives": [
+        "分開User Flow的操作順序與架構的結構關係。",
+        "指出瀏覽器、Python程序、程序內規則及下載檔的不同位置。",
+        "為架構假設標記依據、邊界與仍需驗證的問題。"
+      ],
+      "readingGuide": {
+        "goal": "分開User Flow的操作順序與架構的結構關係。",
+        "startingPoint": "problem.md、wireframe-notes.md及工作坊reference/；可只閱讀與畫圖，不需啟動程式。",
+        "route": "先看情境與原理，再比較例子，最後擴寫 architecture.md 並用檢核題自查。",
+        "output": "architecture.md能與User Flow互相對照，又清楚分開操作順序與軟體結構。"
+      },
+      "sections": [
+        {
+          "id": "questions",
+          "heading": "一個流程，還有另一組問題",
+          "paragraphs": [
+            "M03與M04的User Flow描述填寫、檢查、補件、預覽及匯出，幫你理解使用者如何前進或回復。系統架構則描述軟體單位、資料儲存、外部依賴與通訊關係，讓你知道這些操作在哪裡發生。",
+            "同一條操作流程可以由不同架構支援：單人本機程式、多人網站或外部API整合，都可能提供類似表單。但資料保存、權限、錯誤處理與維運責任不同，不能由按鈕相似就推定同樣安全或可部署。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像旅客路線與車站設施圖",
+          "paragraphs": [
+            "旅客路線說明進站、買票、驗票與到月台，設施圖則說明票機、閘門、供電與維修區的位置和連接。路線能指出卡在哪一步，卻不會自動交代票機資料由哪裡處理。",
+            "收件程式也需要這兩種視角。畫出「按檢查→結果」後，還要問：結果在哪個程序計算？是否送到外部模型？資料是否存下來？誰能讀取匯出的檔案？"
+          ]
+        },
+        {
+          "id": "compare",
+          "heading": "同一件事放在不同視角中",
+          "paragraphs": [
+            "C4官方將Context與Container分別用來看外部關係及系統內的高層結構。本課先用這兩層，不把按鈕、頁籤或操作步驟當成軟體容器。",
+            "例如rules.py在本課由同一個Python程序呼叫，並不是因為有獨立檔名就成為獨立服務。架構圖中的邊要有目的或資料，還需分辨它表示結構關係，還是某次操作的實際時序。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜同一收件任務的兩種視角",
+              "description": "卡片並列不同問題；兩者互相核對，不是只能選一種文件。",
+              "items": [
+                {
+                  "title": "操作流程",
+                  "body": "收件者輸入→檢查→缺件補填→重查→預覽與匯出；關心條件與回復。"
+                },
+                {
+                  "title": "系統架構",
+                  "body": "瀏覽器與Python／Streamlit程序互動，程序內規則驗證，當次JSON下載到操作者裝置；關心責任與資料去向。"
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "c4-context",
+            "c4-container"
+          ]
+        },
+        {
+          "id": "runtime",
+          "heading": "先核對正在使用的參考專案",
+          "paragraphs": [
+            "本課參考程式以Streamlit執行，瀏覽器呈現介面，Python程序處理規則與匯出。Streamlit文件說明其用戶端／伺服器架構與WebSocket連線；本課沒有自行設計的REST端點，也沒有在執行時呼叫模型判斷欄位完整性。",
+            "沒有持久資料庫不等於沒有資料位置：輸入及檢查快照在工作階段記憶體，下載檔留在操作者裝置。關閉頁面、重新連線或刪除下載檔是不同事件；不能用「本機」二字代替資料生命週期說明。"
+          ],
+          "sourceIds": [
+            "streamlit-architecture"
+          ]
+        },
+        {
+          "id": "trace",
+          "heading": "讓操作能追到處理位置",
+          "paragraphs": [
+            "用一筆缺少文件類型的合成資料，先在User Flow指出缺件回復，再在架構標記瀏覽器輸入、程序驗證與結果回傳。若架構圖出現資料庫或AI服務，請確認有實際依賴，或明寫它是未採用的候選，而非把常見元件全部加進來。",
+            "這種紙上追蹤可找出需要查核的地方，不等於封包擷取、正式安全測試或實際部署證據。你仍需檢查程式與環境；不確定的通訊與保存方式先註記，下一篇再確定系統範圍。"
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "把不同視角留在不同段落",
+          "paragraphs": [
+            "常見誤解是「畫了User Flow就已經有架構」。請將兩者放到各自檔案或段落，用相同任務與規則相互連結；當需求變成十人共用時，操作可能只改一點，架構責任卻可能大幅增加。",
+            "下面是本課目前參考架構的簡短核對表，不表示正式多人版已實作。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "架構與流程的分欄紀錄",
+              "paragraphs": [
+                "將以下合成範例放入 architecture.md，依你的課堂情境修改；這不是實際單位規定或研究結果。"
+              ],
+              "code": "# 操作與結構（合成原型）\n操作：填寫 → 檢查 → 修正 → 預覽 → 匯出\n瀏覽器：顯示欄位、操作與結果\nPython／Streamlit程序：執行檢核與報告產生\nrules.py：同程序內的函式，不是獨立服務\n資料位置：工作階段記憶體；下載檔在操作者裝置\n沒有：持久資料庫、模型API、正式登入與多人授權\n待確認：共用版的角色、保存、隔離與維運要求"
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "problem.md、wireframe-notes.md及工作坊reference/；可只閱讀與畫圖，不需啟動程式。",
+        "steps": [
+          "將既有User Flow寫在左欄，右欄列出每步涉及的瀏覽器、程序、規則與資料位置。",
+          "核對reference/app.py及rules.py，將未見依據的外部服務標為待確認或移除。",
+          "在architecture.md寫下目前結構及至少一項共用版仍需重新設計的責任。"
+        ],
+        "expected": "architecture.md能與User Flow互相對照，又清楚分開操作順序與軟體結構。",
+        "check": "不把畫面步驟當容器，不虛構資料庫或REST API；能指出下載檔與記憶體資料不同。",
+        "cleanup": "保留合成標記、依據與待確認事項；不複製真實業務架構或秘密。"
+      }
+    },
+    "en": {
+      "summary": "Use a user flow to explain task completion, then architecture to explain software structure, data movement and control responsibilities.",
+      "objectives": [
+        "Separate User Flow action order from architectural structure.",
+        "Locate the browser, Python process, in-process rules and downloaded files separately.",
+        "Label architectural assumptions with evidence, boundaries and unresolved questions."
+      ],
+      "readingGuide": {
+        "goal": "Separate User Flow action order from architectural structure.",
+        "startingPoint": "problem.md, wireframe-notes.md and workshop reference/ files. Reading and drawing are sufficient; no program startup is required.",
+        "route": "Read the situation and principles, compare examples, then expand architecture.md and use the checks to review your understanding.",
+        "output": "architecture.md connected to the User Flow while clearly separating action order from software structure."
+      },
+      "sections": [
+        {
+          "id": "questions",
+          "heading": "A Flow Leaves Another Set of Questions",
+          "paragraphs": [
+            "M03/M04 User Flows describe entry, checking, correction, preview and export so you can understand progress and recovery. Architecture describes software units, stores, external dependencies and communication, locating where those actions occur.",
+            "A local program, shared website and external API integration can support similar forms. They differ in retention, permissions, errors and operations. Similar buttons do not establish equivalent security or deployment readiness."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Like a Passenger Route and a Station Facilities Plan",
+          "paragraphs": [
+            "A passenger route explains entry, ticket purchase, validation and platform access. A facilities plan shows connections among machines, gates, power and maintenance areas. The route can locate a difficult step without explaining where ticket data is processed.",
+            "Intake software needs both perspectives. After drawing check → result, ask which process computes it, whether an external model receives data, whether anything is stored and who can read downloaded files."
+          ]
+        },
+        {
+          "id": "compare",
+          "heading": "Examine One Task Through Different Perspectives",
+          "paragraphs": [
+            "C4 Context covers external relationships; Container covers high-level internal structure. Start with these levels rather than treating buttons, tabs or action steps as software containers.",
+            "Here, rules.py is called inside one Python process. A separate filename does not make a service. Label architecture relationships with purpose or data and distinguish structure from the timing of one operation."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Two Perspectives on One Intake Task",
+              "description": "The cards compare questions. Cross-check both documents rather than choosing only one.",
+              "items": [
+                {
+                  "title": "User flow",
+                  "body": "Entry → check → correct omissions → recheck → preview/export, focusing on conditions and recovery."
+                },
+                {
+                  "title": "Architecture",
+                  "body": "Browser interaction with Python/Streamlit, in-process validation and current JSON downloaded to the operator’s device, focusing on responsibilities and destinations."
+                }
+              ]
+            }
+          ],
+          "sourceIds": [
+            "c4-context",
+            "c4-container"
+          ]
+        },
+        {
+          "id": "runtime",
+          "heading": "Check the Reference Project Actually in Use",
+          "paragraphs": [
+            "The reference runs through Streamlit: the browser presents the interface, while Python handles rules and export. Streamlit documents client/server architecture and WebSocket communication. This course builds no custom REST endpoint and calls no runtime model to judge completeness.",
+            "No persistent database does not mean no data locations. Input and checked snapshots exist in session memory; downloads remain on the operator’s device. Closing a page, reconnecting and deleting a downloaded file are different events. “Local” alone is not a data-lifecycle explanation."
+          ],
+          "sourceIds": [
+            "streamlit-architecture"
+          ]
+        },
+        {
+          "id": "trace",
+          "heading": "Trace Actions to Processing Locations",
+          "paragraphs": [
+            "For synthetic data missing document type, locate recovery in the User Flow, then browser input, process validation and returned results in the architecture. Check any database or AI-service dependency against evidence, or label it an unadopted candidate rather than adding familiar components automatically.",
+            "Tabletop tracing identifies questions; it is not packet capture, formal security testing or deployment evidence. Inspect code and environment too, noting unknown communication/retention details before the next lesson defines system scope."
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "Keep the Perspectives in Separate Sections",
+          "paragraphs": [
+            "A User Flow is not a complete architecture. Put them in separate files or sections and connect the same task/rules. Sharing with ten people may change actions slightly while greatly increasing architectural responsibilities.",
+            "This short reference-architecture checklist does not describe an implemented production shared version."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Separate Flow and Structure Records",
+              "paragraphs": [
+                "The original Traditional Chinese template records actions, browser responsibility, Python/Streamlit processing, in-process rules.py, session/download locations, absent database/model/login/authorization and pending shared-version responsibilities. Adapt it in architecture.md using synthetic material, not actual organizational rules or research."
+              ],
+              "code": "# 操作與結構（合成原型）\n操作：填寫 → 檢查 → 修正 → 預覽 → 匯出\n瀏覽器：顯示欄位、操作與結果\nPython／Streamlit程序：執行檢核與報告產生\nrules.py：同程序內的函式，不是獨立服務\n資料位置：工作階段記憶體；下載檔在操作者裝置\n沒有：持久資料庫、模型API、正式登入與多人授權\n待確認：共用版的角色、保存、隔離與維運要求"
+            }
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "problem.md, wireframe-notes.md and workshop reference/ files. Reading and drawing are sufficient; no program startup is required.",
+        "steps": [
+          "Put the User Flow in one column and the browser, process, rules and data locations for each step in another.",
+          "Inspect reference/app.py and rules.py. Mark unsupported external services as unknown or remove them.",
+          "Write current structure and at least one shared-version responsibility needing redesign in architecture.md."
+        ],
+        "expected": "architecture.md connected to the User Flow while clearly separating action order from software structure.",
+        "check": "Do not treat screens as containers or invent databases/REST APIs. Distinguish downloads from memory data.",
+        "cleanup": "Keep synthetic labels, evidence and unknowns. Copy no actual business architecture or secrets."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M06-C01-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "User Flow最直接回答哪個問題？",
+          "options": [
+            "資料庫由誰備份",
+            "使用者如何檢查、修正並完成任務",
+            "TLS在哪裡終結",
+            "Python程序部署幾份"
+          ],
+          "rationales": [
+            "這是資料與維運設計。",
+            "操作條件與回復是流程的重點。",
+            "這是傳輸與部署設計。",
+            "這是部署與容量設計。"
+          ]
+        },
+        "en": {
+          "prompt": "What does a User Flow answer most directly?",
+          "options": [
+            "Who backs up the database.",
+            "How users check, correct and complete a task.",
+            "Where TLS terminates.",
+            "How many Python instances are deployed."
+          ],
+          "rationales": [
+            "This concerns data and operations design.",
+            "Action conditions and recovery are central to flows.",
+            "This concerns transport and deployment design.",
+            "This concerns deployment and capacity."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M06-C01-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "參考專案有rules.py，代表它一定是獨立服務嗎？",
+          "options": [
+            "是，每個檔案都是服務",
+            "是，只要能import就是API伺服器",
+            "否，需看執行邊界；本課是同一程序內函式",
+            "否，所以不用測試"
+          ],
+          "rationales": [
+            "檔案分割不等於程序或服務邊界。",
+            "import是程式內使用方式，不代表網路服務。",
+            "架構要依實際執行方式判斷。",
+            "程序內規則仍需驗證。"
+          ]
+        },
+        "en": {
+          "prompt": "Does the presence of rules.py make it an independent service?",
+          "options": [
+            "Yes, every file is a service.",
+            "Yes, anything importable is an API server.",
+            "No; inspect execution boundaries. Here it contains in-process functions.",
+            "No, so it needs no tests."
+          ],
+          "rationales": [
+            "File separation is not a process/service boundary.",
+            "Importing code does not make it a network service.",
+            "Architecture follows actual execution.",
+            "In-process rules still need verification."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M06-C01-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "沒有資料庫，可以推定什麼？",
+          "options": [
+            "完全沒有資料需要管理",
+            "關閉頁面會刪除所有下載檔",
+            "已達成多人隔離",
+            "只能說沒有該持久儲存；記憶體與下載檔仍有生命週期"
+          ],
+          "rationales": [
+            "資料還可能在其他位置。",
+            "下載檔通常由操作者裝置管理。",
+            "沒有資料庫不代表授權存在。",
+            "需要逐一說明資料位置與責任。"
+          ]
+        },
+        "en": {
+          "prompt": "What follows from having no database?",
+          "options": [
+            "There is no data to manage.",
+            "Closing the page deletes every download.",
+            "Shared-user isolation is established.",
+            "That persistent store is absent; memory and downloaded files still have lifecycles."
+          ],
+          "rationales": [
+            "Data may exist elsewhere.",
+            "The operator’s device generally manages downloads.",
+            "No database does not create authorization.",
+            "Identify each location and its responsibilities."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
