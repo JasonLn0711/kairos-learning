@@ -17,7 +17,7 @@ async function completeBody(page:Page,lang:'zh'|'en'){
  for(const q of lesson.text[lang].openChecks){await expect(page.locator('#'+q.id).locator('..').locator('details p')).toHaveText(q.answer);}
 }
 for(const lang of ['zh','en']as const)test(`${lang}: complete text, figures, exports and reading access`,async({page,browser,baseURL,request})=>{
- const path=`${lang==='en'?'/en':''}/courses/aase/v1/m09/concepts/m09-03/`;await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.0');await completeBody(page,lang);
+ const path=`${lang==='en'?'/en':''}/courses/aase/v1/m09/concepts/m09-03/`;await page.goto(path);await expect(page.locator('.article-metadata')).toContainText('v1.1.0');await completeBody(page,lang);await expect(page.locator('#demo').locator('..').locator('ul li')).toHaveCount(5);
  await expect(page.locator('.acceptance-evidence')).toHaveCount(2);await expect(page.locator('.acceptance-evidence .arrow')).toHaveCount(4);
  for(const width of [320,390,768,1280])for(const scale of [1,2]){
   await page.setViewportSize({width,height:1000});await page.evaluate(s=>document.documentElement.style.fontSize=`${s*100}%`,scale);
@@ -37,5 +37,5 @@ for(const lang of ['zh','en']as const)test(`${lang}: complete text, figures, exp
   await p.screenshot({path:`.local/aase/m0903/${lang}-${n}-svg.png`});await p.close();
  }
  const search=await(await request.get('/search-index.json')).json();const entry=search.find((x:any)=>x.id===lesson.id&&x.lang===lang);for(const s of lesson.text[lang].sections)for(const p of s.paragraphs)expect(entry.text).toContain(p);
- const context=await browser.newContext({baseURL,javaScriptEnabled:false,viewport:{width:320,height:900}});const p=await context.newPage();await p.goto(path);await completeBody(p,lang);const summary=p.locator('#AASE-M09-C03-Q04').locator('..').locator('summary');await summary.press('Enter');await expect(summary.locator('..')).toHaveAttribute('open','');await summary.press('Space');await expect(summary.locator('..')).not.toHaveAttribute('open');expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);await context.close();
+ const context=await browser.newContext({baseURL,javaScriptEnabled:false,viewport:{width:320,height:900}});const p=await context.newPage();await p.goto(path);await completeBody(p,lang);await expect(p.locator('#demo').locator('..').locator('ul li')).toHaveCount(5);const summary=p.locator('#AASE-M09-C03-Q04').locator('..').locator('summary');await summary.press('Enter');await expect(summary.locator('..')).toHaveAttribute('open','');await summary.press('Space');await expect(summary.locator('..')).not.toHaveAttribute('open');expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);await context.close();
 });
