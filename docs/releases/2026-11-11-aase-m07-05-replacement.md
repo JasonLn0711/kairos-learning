@@ -57,11 +57,11 @@ pnpm run validate:release
 pnpm exec playwright test --config playwright.aase-m0705.config.ts
 ```
 
-初輪單元319／319通過；新增模型拒絕案例並合併遠端後325／325通過。型別0錯誤0警告，內容與產生器同步通過。共享HTML驗證6／6通過；audit為四個low，沒有high／critical。瀏覽器本機2／2通過。合併後發布邊界、release與瀏覽器2／2均通過。期間另一次validate:content碰到boundary暫時fixture，待fixture清除後重跑已通過。
+初輪單元319／319通過；新增模型拒絕案例並合併遠端後325／325通過；續合併M07-02後328／328通過。型別0錯誤0警告，內容與產生器同步通過。共享HTML驗證6／6通過；audit為四個low，沒有high／critical。瀏覽器本機2／2通過。合併後發布邊界、release與瀏覽器2／2均通過。期間另一次validate:content碰到boundary暫時fixture，待fixture清除後重跑已通過。
 
 ## Git、部署與回讀
 
-本次來源提交87152a1、實作提交e14c565；同步時保留遠端M05-02、M06-02等同期提交。共用AaseLesson維持遠端SpecificationDiagram／SystemContextLessonDiagram及本次PreviewExportDiagram；歷史快照測試同時保留各章原版。來源與實作分開，無force-push。
+本次來源提交87152a1、實作提交e14c565；同步時保留遠端M05-02、M06-02等同期提交。共用AaseLesson維持遠端SpecificationDiagram／SystemContextLessonDiagram／M07-02渲染及本次PreviewExportDiagram；歷史快照測試同時保留各章原版。來源與實作分開，無force-push。
 
 部署前最近查得成功Pages執行：[42989406500](https://github.com/JasonLn0711/kairos-learning/actions/runs/42989406500)，來源3c1f378573016a166d6ae420ffcce8482e7180cd。後續616a293部署執行42989840968也已確認成功，作為本次發布前的較新恢復定位。
 
