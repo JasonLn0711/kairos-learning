@@ -1,15 +1,16 @@
 {
   "id": "AASE-M08-C01",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "pytest-usage",
     "streamlit-apptest-151",
     "govuk-usability",
-    "owasp-authorization"
+    "owasp-authorization",
+    "nasa-verification-validation"
   ],
   "qa": [],
   "text": {
@@ -29,123 +30,342 @@
       "sections": [
         {
           "id": "claim",
-          "heading": "讓「完成」有可核對的意思",
+          "heading": "M08-01｜能執行，不代表已驗證：如何證明軟體真的完成了？",
           "paragraphs": [
-            "本機程式可以啟動，只說明某個環境能跑到入口。資料缺漏時是否拒絕匯出、使用者是否看懂錯誤、不同承辦人是否隔離，都還需要各自的驗證。先把「系統完成了」拆成具體主張，才知道要蒐集什麼證據。",
-            "M07 留下三次切片與 Diff；M08 要回答這些變更如何支持 spec.md。未執行的步驟寫待驗，失敗保留實際結果，不能用 Agent 的完成摘要替代操作或測試輸出。"
+            "這一節最重要的觀念是：",
+            "「程式能跑」只代表它可以執行；「程式完成」則需要證據，證明它在指定條件下符合需求。",
+            "舉例來說，你請 AI 幫你開發一套醫院掛號系統。AI 告訴你：「已經完成，網站可以正常開啟。」",
+            "但這並不能證明病人真的能順利掛號、醫師不會重複預約、病歷不會被其他病人看到。",
+            "本節要學的，就是如何從「相信程式能用」，進步到「拿出可以核對的證據」。"
           ]
         },
         {
           "id": "analogy",
-          "heading": "像車輛能發動，還要檢查不同使用條件",
+          "heading": "一、先用汽車理解：發得動，不等於安全可靠",
           "paragraphs": [
-            "引擎發動、煞車有效、駕駛能看懂儀表，各有不同的檢查。發動成功不能替煞車測試背書，一次試駕也無法證明所有道路條件都安全。",
-            "軟體同樣需要分層證據。測試的價值在於涵蓋哪項行為與條件，不在於報告看起來有多少個綠色勾號。"
+            "假設你買了一輛新車，業務員發動引擎，對你說：「車子完成檢查了，可以放心上路。」",
+            "你應該會有疑問：",
+            "- 引擎能啟動，但煞車有效嗎？\n- 煞車正常，但下雨天會打滑嗎？\n- 車輛正常行駛，但發生撞擊時能保護乘客嗎？\n- 所有零件正常，駕駛是否看得懂儀表板？",
+            "這些都是不同的問題，必須用不同方式驗證。",
+            "軟體也是一樣。",
+            "AI 幫你產生一千行程式碼，沒有發生錯誤，網站也能打開，不代表程式符合你的需求。",
+            "這就帶出本節第一個核心觀念：",
+            "每一種品質主張，都要有對應的驗證證據。不能用一種測試通過，代替其他測試。"
           ]
         },
         {
           "id": "layers",
-          "heading": "依問題選擇驗證方式",
+          "heading": "二、軟體品質要從五個面向檢查",
           "paragraphs": [
-            "規則測試直接呼叫 validate、export_report，能快速檢查不合法資料。AppTest 檢查 Streamlit 的輸入與顯示狀態；真實瀏覽器再驗鍵盤與下載內容。",
-            "同儕任務觀察則檢查人如何理解與完成流程。多人授權需要已實作的身分、資源與資料存取控制；本課單人原型沒有這些控制，不能用其他測試的通過來補足。"
+            "這是整堂課最值得記住的架構。"
           ],
           "blocks": [
             {
               "kind": "cards",
-              "caption": "圖 1｜品質證據的不同視角",
-              "description": "這些是互補的驗證視角，平行卡片不表示先後或相互取代。",
+              "caption": "圖 1｜需求規格與五個互補驗證面向",
+              "description": "箭頭表示從規格選擇對應的驗證問題；五個面向互補，不表示測試先後，也不能相互取代。",
               "items": [
                 {
-                  "title": "規則",
-                  "body": "直接輸入正常、缺漏與邊界資料。"
+                  "title": "需求規格（Specification）",
+                  "body": "先說清楚：軟體應該做到什麼？"
                 },
                 {
-                  "title": "介面與瀏覽器",
-                  "body": "核對提示、狀態、鍵盤及下載位元組。"
+                  "title": "01 啟動驗證",
+                  "body": "程式能不能運行？"
                 },
                 {
-                  "title": "使用者任務",
-                  "body": "觀察找路、修正與完成，不只問喜不喜歡。"
+                  "title": "02 規則驗證",
+                  "body": "計算和判斷對不對？"
                 },
                 {
-                  "title": "安全邊界",
-                  "body": "確認已實作控制；沒有控制時先記未實作。"
+                  "title": "03 介面驗證",
+                  "body": "操作、提示和輸出正確嗎？"
+                },
+                {
+                  "title": "04 任務驗證",
+                  "body": "真人能完成工作嗎？"
+                },
+                {
+                  "title": "05 安全驗證",
+                  "body": "不應該發生的事情，系統有沒有阻止？"
                 }
               ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "五個面向是互補關係，不代表必須照圖示順序測試，也不能相互取代。",
+                "### 第一層：啟動驗證（Smoke Test）",
+                "這是最基本的檢查。",
+                "例如，你開發了一家餐廳的線上訂位系統，測試人員打開網頁，發現：",
+                "- 網站正常顯示。\n- 伺服器沒有當機。\n- 可以看到日期及訂位按鈕。",
+                "可以說：「系統在這個測試環境成功啟動。」",
+                "但不能說：「訂位系統已經完成。」",
+                "因為你還不知道，兩個客人同時預訂最後一個位置時，會不會重複訂位。",
+                "### 第二層：規則驗證（Business Rule Testing）",
+                "這一層檢查的是業務邏輯。",
+                "以網路購物為例：",
+                "假設規格寫著：「訂單金額滿 1,000 元，運費免費。」",
+                "測試人員就必須驗證："
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 1｜免運門檻的邊界值",
+              "headers": [
+                "購物金額",
+                "預期運費"
+              ],
+              "rows": [
+                [
+                  "999 元",
+                  "依規定收運費"
+                ],
+                [
+                  "1,000 元",
+                  "免費"
+                ],
+                [
+                  "1,001 元",
+                  "免費"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "為什麼特別測 999、1,000、1,001？",
+                "因為這是邊界值測試（Boundary Value Testing）。",
+                "錯誤經常發生在條件交界處。例如工程師把「大於或等於 1,000」寫成「大於 1,000」，剛好購買 1,000 元的客人就被收取運費。",
+                "這些規則測試可以用 `pytest` 等工具自動執行，但測試的好壞取決於案例是否真正涵蓋重要需求，而不是通過了多少題。",
+                "### 第三層：介面驗證（UI Testing）",
+                "即使後端計算正確，前端也可能出錯。",
+                "例如銀行轉帳系統：",
+                "後端正確判斷餘額不足，拒絕轉帳；但前端卻顯示「轉帳成功」。",
+                "這就是後端規則正確、介面行為錯誤的典型例子。",
+                "因此要檢查：使用者看見什麼訊息、按鈕何時可以使用、資料修改後畫面是否同步更新，以及下載檔案的內容是否正確。",
+                "教材提到的 Streamlit AppTest，可以模擬 Streamlit 應用程式的互動、檢查介面元件狀態。不過，AppTest 測到下載按鈕存在，不等於真實瀏覽器的下載流程及檔案內容已通過驗證。",
+                "### 第四層：使用者任務驗證（Task-based Usability Testing）",
+                "這層最容易被技術人員忽略。",
+                "假設你設計了一套醫院掛號系統，所有程式測試都通過。",
+                "但你請一位第一次使用系統的病人完成掛號，發現他不知道：",
+                "- 要先選科別還是醫師。\n- 為什麼掛號按鈕無法點擊。\n- 掛號完成後，在哪裡查詢結果。",
+                "這些問題不一定是程式 Bug，而是易用性（Usability）問題。",
+                "因此，任務測試不是問使用者「這套系統好不好看」，而是指定一個真實目標，觀察他能不能完成、在哪裡卡住、是否需要別人協助。",
+                "GOV.UK 的使用者研究指引也強調透過觀察實際任務理解使用障礙。",
+                "### 第五層：安全驗證（Security Testing）",
+                "假設你做了一套學生學習平台。",
+                "學生 A 登入後，可以看到自己的成績。這代表正常功能可能運作了。",
+                "但是，如果 A 只要修改網址中的學生編號，就能看到學生 B 的成績，代表系統存在授權控制問題。",
+                "這裡需要分清楚兩個專有名詞：",
+                "- Authentication（身分驗證）：確認你是誰，例如登入帳號。\n- Authorization（授權）：確認你有沒有權限看這筆資料。",
+                "通過登入檢查，不代表有權限查看每一筆資料。OWASP 建議以最小權限、預設拒絕，以及針對每次請求檢查授權等方式建立控制。",
+                "而且，不能只是「測試沒有被攻破」就宣稱完全安全。必須說明測試過哪些情境、哪些防護已實作、哪些風險仍然待驗。"
+              ]
             }
+          ],
+          "sourceIds": [
+            "pytest-usage",
+            "streamlit-apptest-151",
+            "govuk-usability",
+            "owasp-authorization"
           ]
         },
         {
           "id": "matrix",
-          "heading": "把每條驗收連到最小證據",
+          "heading": "三、最重要的思考方式：主張、證據、限制",
           "paragraphs": [
-            "先從 spec.md 取一條「缺漏不得產生完整報告」，至少需要匯出函式拒絕缺漏的結果，以及畫面不提供完整下載的觀察。若主張中文下載可讀，還要讀實際檔案，不能只看元件存在。",
-            "紀錄中保留版本或提交、環境、命令、輸入、預期、觀察及限制。同一測試在別的階段或別的版本通過，不會自動證明目前這份程式。"
+            "以「發票自動記帳系統」為例。",
+            "假設工程師報告：「發票功能已經完成。」",
+            "這句話太模糊了。",
+            "你應該拆成可以驗證的具體主張。",
+            "範例證據矩陣（以下均是假設情境，不是實際測試結果）"
           ],
           "blocks": [
             {
               "kind": "table",
-              "caption": "表 1｜證據要對得上主張",
+              "caption": "表 2｜假設情境的證據矩陣",
               "headers": [
-                "主張",
-                "適合證據",
-                "仍未證明"
+                "完成主張",
+                "應該提供的證據",
+                "不能據此證明"
               ],
               "rows": [
                 [
-                  "本機骨架可啟動",
-                  "啟動輸出與瀏覽器畫面",
-                  "規則與匯出正確"
+                  "系統可以啟動",
+                  "啟動紀錄、畫面",
+                  "金額計算正確"
                 ],
                 [
-                  "缺漏不能匯出",
-                  "規則例外測試及介面負向情境",
-                  "所有安全風險已解決"
+                  "發票金額正確",
+                  "對照已知答案的規則測試",
+                  "介面沒有錯誤"
                 ],
                 [
-                  "下載內容符合約定",
-                  "真實檔案的 JSON 與允許欄位核對",
-                  "正式受理資格"
+                  "遺漏欄位不能記帳",
+                  "缺漏資料被拒絕的測試",
+                  "所有異常均已涵蓋"
                 ],
                 [
-                  "使用者能自行補正",
-                  "具任務的同儕觀察",
-                  "所有使用者皆容易操作"
+                  "使用者能修正錯誤",
+                  "實際操作的任務紀錄",
+                  "所有人都容易操作"
                 ],
                 [
-                  "承辦人無法讀他人資料",
-                  "已實作授權的跨身分負向測試",
-                  "單人原型目前尚無此證據"
+                  "他人不能讀取發票",
+                  "跨帳號存取遭拒的測試",
+                  "所有安全風險均不存在"
                 ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這張表非常重要，因為它讓系統品質從「個人感覺」變成「可以審查的證據」。",
+                "我們可以進一步把它濃縮成一個原則：",
+                "完成主張 → 對應規格 → 驗證方法 → 實際結果 → 尚未涵蓋的範圍。"
               ]
             }
           ]
         },
         {
           "id": "record",
-          "heading": "用證據表取代模糊狀態",
+          "heading": "四、把課程觀念轉換成實際開發流程",
           "paragraphs": [
-            "例如「pytest 通過」還需指出在哪個目錄、執行哪組測試；「同儕試用完成」要有任務及實際觀察。若同儕尚未來試用，先備妥任務，不填入想像結果。",
-            "以下工作表由學員填寫；空白欄與待驗狀態是用來保留真實邊界，不代表測試已完成。"
+            "教材使用 `spec.md`、測試結果，以及 `verification-notes.md` 來管理驗證紀錄。",
+            "假設我們正在開發一套文件上傳系統。",
+            "### 步驟一：先寫明確的驗收規格",
+            "不要只寫：",
+            "「使用者可以上傳文件。」",
+            "應該改成：",
+            "「當必要欄位缺漏時，系統必須顯示缺漏原因，不得產生完整報告。」",
+            "這樣才知道要測什麼。",
+            "### 步驟二：設計正常及異常情境",
+            "使用 Given–When–Then：",
+            "- Given：使用者上傳的文件缺少身分識別欄位。\n- When：使用者按下「匯出報告」。\n- Then：系統拒絕匯出，並提示缺漏欄位。",
+            "接著，再補上完整資料、空白資料、格式錯誤、過期資料等情境。",
+            "### 步驟三：執行測試並記下實際結果",
+            "不要只記「通過」。",
+            "至少記錄：",
+            "- 測試的程式版本（Commit）。\n- 使用的環境。\n- 輸入資料與預期結果。\n- 真正觀察到的輸出。\n- 測試狀態。",
+            "這樣其他人才能重新執行並核對。",
+            "### 步驟四：誠實區分三種狀態"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "驗證紀錄欄位",
+              "kind": "cards",
+              "caption": "圖 2｜通過、失敗與待驗",
+              "description": "三列是不同證據狀態，沒有先後關係。通過只支持已測版本與條件；沒有執行或證據不足均保留待驗。",
+              "items": [
+                {
+                  "title": "✓ 通過（Pass）",
+                  "body": "已執行，結果符合預期，但只適用於已測試的版本及條件。"
+                },
+                {
+                  "title": "× 失敗（Fail）",
+                  "body": "已執行，但觀察結果不符合預期，應保留失敗證據。"
+                },
+                {
+                  "title": "○ 待驗（Not Tested）",
+                  "body": "沒有執行，或缺少足夠證據，不能自行假設通過。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
               "paragraphs": [
-                "另建 verification-notes.md，以自己的實際結果填寫。"
+                "### 步驟五：建立驗證紀錄",
+                "你可以在 `verification-notes.md` 中，留下這樣的紀錄："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "verification-notes.md",
+              "paragraphs": [
+                "示例尚未執行；實際結果與狀態必須在測試後更新。"
               ],
-              "code": "版本／提交與環境：\n對應規格與主張：\n驗證層次及命令／任務：\n輸入與預期：\n實際觀察與退出結果：\n通過／失敗／未執行：\n未涵蓋條件與下一步："
+              "code": "# 驗證紀錄\n\n## 驗收項目\n必要欄位缺漏時，不得匯出完整報告。\n\n## 測試環境\n版本：commit abc123（示例）\n環境：本機測試環境\n\n## 測試輸入\n缺少身分識別欄位的合成文件。\n\n## 預期結果\n系統拒絕匯出，顯示缺漏原因。\n\n## 實際結果\n待執行測試後填寫。\n\n## 狀態\n待驗\n\n## 下一步\n執行規則測試、介面測試，\n並以真實瀏覽器確認下載行為。"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這份紀錄最有價值的地方，不是文件寫得漂亮，而是不論誰接手，都能知道目前已經證明什麼、還缺少什麼證據。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "collaboration",
+          "heading": "五、為什麼 AI Coding 特別需要這套方法？",
+          "paragraphs": [
+            "傳統軟體開發中，工程師可能親自編寫每一行程式，對其邏輯有一定程度的掌握。",
+            "但使用 AI Coding Agent 時，你可能只下達一段需求：",
+            "「請幫我完成發票辨識、金額核算及資料匯出功能。」",
+            "Agent 很快就修改十幾個檔案，並回答：",
+            "> Implementation completed. All tests passed.",
+            "這不等於你的需求已經驗證完成。",
+            "至少有四種可能：",
+            "1. Agent 只測試自己新增的功能，沒有測試既有功能是否壞掉。\n2. 測試案例由 Agent 自己編寫，但測試沒有涵蓋真正的業務需求。\n3. 測試只使用理想資料，沒有檢查異常、邊界與惡意輸入。\n4. 測試在 Agent 的開發環境通過，正式環境卻存在不同設定與權限。",
+            "所以 AI 協作開發真正值得建立的是："
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 3｜AI 協作的驗收流程",
+              "description": "箭頭表示工作與證據的承接順序；最後仍須依實際證據決定驗收、修正或保留待驗。圖示本身不是驗收結果。",
+              "items": [
+                {
+                  "title": "人類定義需求與驗收標準",
+                  "body": "把完成條件寫入規格。"
+                },
+                {
+                  "title": "AI Agent 實作程式與測試",
+                  "body": "依規格實作，涵蓋既有功能、異常與邊界。"
+                },
+                {
+                  "title": "工具與真人蒐集驗證證據",
+                  "body": "保留版本、環境、輸入、預期與實際結果。"
+                },
+                {
+                  "title": "依據證據決定是否驗收、修正或保留待驗",
+                  "body": "僅在證據支持的範圍作完成主張。"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這也是 M08-01 與前面 M05（規格驅動開發）及 M07（AI Coding Agent 協作）的關鍵連結：",
+                "Spec 決定什麼叫完成；Agent 負責實作；Verification 負責提出可以檢查的完成證據。"
+              ]
             }
           ]
         },
         {
           "id": "misread",
-          "heading": "通過的範圍保持原樣",
+          "heading": "六、再補一個進階觀念：Verification 與 Validation",
           "paragraphs": [
-            "「測試全綠，所以安全」漏掉了未實作或未測試的控制；「使用者說不錯，所以規則正確」也缺少資料行為證據。把不同層次相互連結，同時保留各自限制。",
-            "接下來先用 TDD 練習可失敗的回饋，再深入規則、介面、任務與安全案例。課程閱讀與測驗答案不會被自動記成學員實作通過。"
+            "這兩個詞容易混淆。",
+            "Verification（符合規格的驗證）：我們是否把規格要求的東西做對了？",
+            "Validation（需求適切性的確認）：我們做出來的東西，是否真的滿足使用情境與使用者需求？",
+            "例如物流公司開發路線規劃系統：",
+            "系統依照規格，找出距離最短的路線。演算法測試全部通過，這是符合規格的證據。",
+            "但實際司機發現，最短路線經常有大型貨車無法通行的巷道。",
+            "因此，即使 Verification 通過，Validation 仍然可能失敗。",
+            "這不表示前面的測試毫無價值，而是說明原始需求可能沒有涵蓋真正重要的使用條件。",
+            "這個觀念能幫助我們避免一個重大陷阱：把錯誤的規格實作得非常完美。"
+          ],
+          "sourceIds": [
+            "nasa-verification-validation"
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "七、理解檢核：換你判斷",
+          "paragraphs": [
+            "最後記住一句話：",
+            "測試不是為了證明自己做得很好，而是為了清楚知道哪些事情已被證明、哪些事情還不能保證。",
+            "實作上，最值得養成的習慣，就是每次 AI Agent 說「完成了」，你都要求它指出：完成了哪一條需求？用什麼方式驗證？證據在哪裡？還有哪些沒有測試？"
           ]
         }
       ],
@@ -177,123 +397,342 @@
       "sections": [
         {
           "id": "claim",
-          "heading": "Give “Complete” a Verifiable Meaning",
+          "heading": "M08-01 | Running is not verified: how do we prove software is complete?",
           "paragraphs": [
-            "A local program starting shows that an environment can execute an entry point. Rejection of incomplete exports, understandable errors and isolation between staff require separate verification. Break “the system is complete” into specific claims to identify the evidence needed.",
-            "M07 produced three slices and diffs; M08 connects those changes to spec.md. Mark unexecuted steps pending and preserve failures. An Agent’s completion summary cannot replace operations or test output."
+            "The central idea is:",
+            "“Runs” means the program can execute. “Complete” requires evidence that it meets requirements under specified conditions.",
+            "Suppose you ask AI to develop a hospital appointment system. It reports: “Complete. The website opens normally.”",
+            "That does not establish that patients can book appointments, doctors cannot be double-booked, or other patients cannot see their records.",
+            "This lesson explains how to move from trusting that software works to providing evidence someone else can check."
           ]
         },
         {
           "id": "analogy",
-          "heading": "A Vehicle Starting Does Not Test Every Condition",
+          "heading": "1. A car that starts still needs safety checks",
           "paragraphs": [
-            "Engine startup, working brakes and readable instruments need different checks. A running engine cannot stand in for a brake test, and one drive does not establish safety on every road.",
-            "Software likewise needs evidence at different layers. Judge tests by the behavior and conditions covered rather than the number of green marks in a report."
+            "Suppose a salesperson starts your new car and says: “The inspection is complete. It is safe to drive.”",
+            "You still need answers:",
+            "- The engine starts, but do the brakes work?\n- The brakes work, but will the car skid in rain?\n- It drives normally, but will it protect passengers in a collision?\n- The parts work, but can the driver understand the dashboard?",
+            "These are different questions and require different checks.",
+            "Software needs the same distinction.",
+            "AI may generate a thousand lines of code without an error and produce a website that opens. This does not establish that the software meets your requirements.",
+            "The resulting principle is:",
+            "Each quality claim needs corresponding verification evidence. Passing one kind of test cannot substitute for another."
           ]
         },
         {
           "id": "layers",
-          "heading": "Choose Verification for the Question",
+          "heading": "2. Check software quality from five perspectives",
           "paragraphs": [
-            "Rule tests call validate and export_report directly to check invalid data quickly. AppTest checks Streamlit input/display states; a real browser separately checks keyboard operation and downloaded content.",
-            "Peer task observation examines how people understand and complete the flow. Multiuser authorization requires implemented identity, resource and data-access controls. This single-user prototype lacks them; passing other tests cannot fill that gap."
+            "Use the following structure to choose evidence."
           ],
           "blocks": [
             {
               "kind": "cards",
-              "caption": "Figure 1 | Different Views of Quality Evidence",
-              "description": "These complementary views are parallel cards, not a sequence or substitutes for one another.",
+              "caption": "Figure 1 | Specification and five complementary verification perspectives",
+              "description": "The arrow connects the specification to relevant verification questions. The five perspectives complement one another; they are neither a testing sequence nor substitutes.",
               "items": [
                 {
-                  "title": "Rules",
-                  "body": "Provide valid, missing and boundary inputs directly."
+                  "title": "Specification",
+                  "body": "First state what the software should do."
                 },
                 {
-                  "title": "Interface and browser",
-                  "body": "Check feedback, states, keyboard operation and download bytes."
+                  "title": "01 Startup verification",
+                  "body": "Can the program run?"
                 },
                 {
-                  "title": "User tasks",
-                  "body": "Observe navigation, correction and completion, beyond stated preferences."
+                  "title": "02 Rule verification",
+                  "body": "Are calculations and decisions correct?"
                 },
                 {
-                  "title": "Security boundaries",
-                  "body": "Check implemented controls; record absent controls as unimplemented."
+                  "title": "03 Interface verification",
+                  "body": "Are operations, messages and outputs correct?"
+                },
+                {
+                  "title": "04 Task verification",
+                  "body": "Can a person complete their work?"
+                },
+                {
+                  "title": "05 Security verification",
+                  "body": "Does the system prevent prohibited behavior?"
                 }
               ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The five perspectives complement one another. Their displayed order is not a mandatory testing sequence, and none substitutes for the others.",
+                "### Perspective 1: startup verification (Smoke Test)",
+                "This checks basic startup behavior.",
+                "For example, a tester opens a restaurant reservation website and observes:",
+                "- The website displays normally.\n- The server has not crashed.\n- A date selector and reservation button are visible.",
+                "You can report: “The system started successfully in this test environment.”",
+                "You cannot yet report: “The reservation system is complete.”",
+                "You still do not know whether two customers simultaneously booking the last available place can create a duplicate reservation.",
+                "### Perspective 2: business rule testing",
+                "This checks business logic.",
+                "Consider online shopping.",
+                "The specification says: “Orders of at least NT$1,000 qualify for free shipping.”",
+                "The tester must check:"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 1 | Free-shipping boundary values",
+              "headers": [
+                "Purchase amount",
+                "Expected shipping charge"
+              ],
+              "rows": [
+                [
+                  "NT$999",
+                  "Charge according to the shipping policy"
+                ],
+                [
+                  "NT$1,000",
+                  "Free"
+                ],
+                [
+                  "NT$1,001",
+                  "Free"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Why test 999, 1,000 and 1,001 specifically?",
+                "This is boundary value testing.",
+                "Errors often occur at condition boundaries. If an engineer writes “greater than 1,000” instead of “greater than or equal to 1,000,” a customer spending exactly 1,000 is incorrectly charged shipping.",
+                "Tools such as `pytest` can automate these rule tests. Their value depends on whether the cases cover important requirements, rather than the number of passing cases.",
+                "### Perspective 3: interface verification (UI Testing)",
+                "The frontend can be wrong even when backend calculations are correct.",
+                "Consider a bank transfer system.",
+                "The backend correctly detects insufficient funds and rejects a transfer, while the frontend displays “Transfer successful.”",
+                "Here, the backend rule is correct and the interface behavior is wrong.",
+                "Check what messages users see, when buttons are enabled, whether the display updates after data changes, and whether downloaded files contain the right data.",
+                "Streamlit AppTest can simulate app interactions and inspect interface element states. Finding a download button with AppTest does not establish that a real browser download and its file contents have been verified.",
+                "### Perspective 4: task-based usability testing",
+                "Technical testing can leave this perspective unexamined.",
+                "Suppose every program test for a hospital appointment system passes.",
+                "A first-time patient tries to book an appointment but does not know:",
+                "- Whether to select the department or doctor first.\n- Why the booking button is disabled.\n- Where to find the result after booking.",
+                "These may be usability problems rather than program bugs.",
+                "Assign a real goal and observe whether the user completes it, where they become stuck, and whether they need help. Asking whether the system looks attractive does not provide this evidence.",
+                "GOV.UK user research guidance likewise uses observation of actual tasks to identify usability barriers.",
+                "### Perspective 5: security testing",
+                "Suppose you build a student learning platform.",
+                "Student A signs in and sees their own grades. Normal functionality may be working.",
+                "If changing the student identifier in the URL lets A read student B’s grades, the system has an authorization control problem.",
+                "Distinguish these two terms:",
+                "- Authentication establishes who you are, for example through account sign-in.\n- Authorization establishes whether you may access a particular record.",
+                "Passing a sign-in check does not grant access to every record. OWASP recommends least privilege, denial by default, and permission checks on every request.",
+                "A test that did not break a system does not prove complete security. State the scenarios tested, protections implemented, and risks still awaiting verification."
+              ]
             }
+          ],
+          "sourceIds": [
+            "pytest-usage",
+            "streamlit-apptest-151",
+            "govuk-usability",
+            "owasp-authorization"
           ]
         },
         {
           "id": "matrix",
-          "heading": "Connect Each Acceptance Criterion to Needed Evidence",
+          "heading": "3. Claims, evidence and limits",
           "paragraphs": [
-            "For “incomplete data cannot produce a complete report” in spec.md, obtain at least a rejecting export-function result and an interface observation showing no complete download. To claim Chinese downloads are readable, inspect an actual file rather than only the component’s presence.",
-            "Retain version/commit, environment, command, input, expectation, observation and limits. A test passing at another stage or version does not automatically establish the current program’s behavior."
+            "Consider an automated invoice bookkeeping system.",
+            "An engineer reports: “The invoice feature is complete.”",
+            "That statement is too vague to verify.",
+            "Break it into concrete, testable claims.",
+            "Example evidence matrix: every entry below is hypothetical, not an actual test result."
           ],
           "blocks": [
             {
               "kind": "table",
-              "caption": "Table 1 | Match Evidence to the Claim",
+              "caption": "Table 2 | Hypothetical evidence matrix",
               "headers": [
-                "Claim",
-                "Relevant evidence",
-                "Still not established"
+                "Completion claim",
+                "Evidence to provide",
+                "What it does not establish"
               ],
               "rows": [
                 [
-                  "The local skeleton starts.",
-                  "Startup output and browser screen.",
-                  "Correct rules and export."
+                  "The system starts",
+                  "Startup logs and display",
+                  "Correct amount calculations"
                 ],
                 [
-                  "Incomplete input cannot be exported.",
-                  "Rule exception tests and negative interface scenarios.",
-                  "Resolution of every security risk."
+                  "Invoice amounts are correct",
+                  "Rule tests against known answers",
+                  "An error-free interface"
                 ],
                 [
-                  "Download content meets the contract.",
-                  "Actual JSON file and allowlisted fields.",
-                  "Official intake eligibility."
+                  "Missing fields prevent bookkeeping",
+                  "Tests rejecting incomplete data",
+                  "Coverage of every abnormal case"
                 ],
                 [
-                  "A user can correct omissions independently.",
-                  "Peer observation with a task.",
-                  "Ease of use for every user."
+                  "Users can correct errors",
+                  "Observed task records",
+                  "Ease of use for everyone"
                 ],
                 [
-                  "Staff cannot read others’ unauthorized data.",
-                  "Cross-identity negative tests of implemented authorization.",
-                  "This single-user prototype currently has no such evidence."
+                  "Others cannot read invoices",
+                  "Tests rejecting cross-account access",
+                  "Absence of every security risk"
                 ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This matrix makes quality claims reviewable through evidence rather than personal impressions.",
+                "Apply this chain to each claim:",
+                "Completion claim → corresponding specification → verification method → actual result → scope not yet covered."
               ]
             }
           ]
         },
         {
           "id": "record",
-          "heading": "Replace Vague Status with an Evidence Record",
+          "heading": "4. Turn the concepts into a development workflow",
           "paragraphs": [
-            "“pytest passed” still needs a working directory and test selection. “Peer trial completed” needs a task and actual observations. Prepare tasks before a peer arrives, without filling in imagined outcomes.",
-            "Learners fill the worksheet below. Blank fields and pending status preserve the actual evidence boundary; they do not mean testing is complete."
+            "Use `spec.md`, test results and `verification-notes.md` to manage verification records.",
+            "Suppose you are developing a document upload system.",
+            "### Step 1: write explicit acceptance criteria",
+            "A broad statement is:",
+            "“Users can upload documents.”",
+            "Make the acceptance behavior explicit:",
+            "“When required fields are missing, the system must explain what is missing and must not generate a complete report.”",
+            "This tells you what to test.",
+            "### Step 2: design normal and abnormal scenarios",
+            "Use Given–When–Then:",
+            "- Given: an uploaded document lacks an identity field.\n- When: the user selects “Export report.”\n- Then: the system rejects the export and identifies the missing field.",
+            "Add cases for complete data, blank data, malformed data and expired data.",
+            "### Step 3: run tests and record actual results",
+            "A “Pass” label alone is insufficient.",
+            "Record at least:",
+            "- The program version (commit).\n- The environment used.\n- Input data and expected results.\n- The output actually observed.\n- Test status.",
+            "These details let someone else rerun the test and check the result.",
+            "### Step 4: distinguish three evidence states"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "Verification Record Fields",
+              "kind": "cards",
+              "caption": "Figure 2 | Pass, Fail and Not Tested",
+              "description": "These rows are evidence states, not a sequence. A pass applies only to the tested version and conditions; absent execution or insufficient evidence remains Not Tested.",
+              "items": [
+                {
+                  "title": "✓ Pass",
+                  "body": "Executed and matched expectations, only for the tested version and conditions."
+                },
+                {
+                  "title": "× Fail",
+                  "body": "Executed but observed results did not match expectations. Preserve failure evidence."
+                },
+                {
+                  "title": "○ Not Tested",
+                  "body": "Not executed, or evidence is insufficient. Do not assume a pass."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
               "paragraphs": [
-                "Create verification-notes.md from actual results. The unchanged Traditional Chinese template records version/commit/environment, specification/claim, verification layer/command/task, input/expectation, observation/exit, pass/fail/unexecuted status and uncovered conditions/next steps."
+                "### Step 5: create the verification record",
+                "You can use this example in `verification-notes.md`:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "verification-notes.md",
+              "paragraphs": [
+                "This example has not been executed. Update actual results and status after testing."
               ],
-              "code": "版本／提交與環境：\n對應規格與主張：\n驗證層次及命令／任務：\n輸入與預期：\n實際觀察與退出結果：\n通過／失敗／未執行：\n未涵蓋條件與下一步："
+              "code": "# 驗證紀錄\n\n## 驗收項目\n必要欄位缺漏時，不得匯出完整報告。\n\n## 測試環境\n版本：commit abc123（示例）\n環境：本機測試環境\n\n## 測試輸入\n缺少身分識別欄位的合成文件。\n\n## 預期結果\n系統拒絕匯出，顯示缺漏原因。\n\n## 實際結果\n待執行測試後填寫。\n\n## 狀態\n待驗\n\n## 下一步\n執行規則測試、介面測試，\n並以真實瀏覽器確認下載行為。"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This record lets the next person identify what has been established and what evidence is still missing."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "collaboration",
+          "heading": "5. Why AI Coding needs this discipline",
+          "paragraphs": [
+            "In traditional software development, an engineer may write every line and have some direct understanding of its logic.",
+            "With an AI Coding Agent, you might provide only this request:",
+            "“Implement invoice recognition, amount calculations and data export.”",
+            "The Agent quickly changes a dozen files and replies:",
+            "> Implementation completed. All tests passed.",
+            "This does not establish that your requirements have been verified.",
+            "At least four gaps are possible:",
+            "1. The Agent tested new functionality without checking whether existing features broke.\n2. The Agent wrote tests that do not cover the actual business requirements.\n3. Tests use ideal data and omit abnormal, boundary and malicious inputs.\n4. Tests pass in the Agent’s development environment, while production has different settings or permissions.",
+            "Establish the following collaboration workflow:"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 3 | Acceptance in AI collaboration",
+              "description": "Arrows show how work and evidence pass between responsibilities. Actual evidence determines acceptance, correction or pending verification; the diagram is not an acceptance result.",
+              "items": [
+                {
+                  "title": "Humans define requirements and acceptance criteria",
+                  "body": "Write completion conditions into the specification."
+                },
+                {
+                  "title": "AI Agent implements code and tests",
+                  "body": "Follow the specification and cover existing behavior, abnormal inputs and boundaries."
+                },
+                {
+                  "title": "Tools and people collect verification evidence",
+                  "body": "Retain version, environment, inputs, expected results and actual results."
+                },
+                {
+                  "title": "Use evidence to accept, correct or retain Not Tested",
+                  "body": "Limit completion claims to what the evidence supports."
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This links M08-01 to M05 (specification-driven development) and M07 (AI Coding Agent collaboration):",
+                "The Spec defines completion; the Agent implements; Verification provides inspectable evidence for the completion claim."
+              ]
             }
           ]
         },
         {
           "id": "misread",
-          "heading": "Keep a Pass Within Its Tested Scope",
+          "heading": "6. Verification and Validation",
           "paragraphs": [
-            "“All tests are green, so it is secure” ignores absent or untested controls. “Users liked it, so rules are correct” lacks data-behavior evidence. Connect layers while keeping their distinct limits.",
-            "The following lessons begin with TDD feedback capable of detecting failure, then examine rules, interface, tasks and security. Reading lessons or answer explanations does not automatically record a learner’s practical acceptance."
+            "These terms address different questions.",
+            "Verification asks: have we implemented the specified requirements correctly?",
+            "Validation asks: does what we built meet the needs of users in their actual context?",
+            "Consider a logistics route planning system.",
+            "It finds the shortest route exactly as specified, and every algorithm test passes. This provides evidence of conformance to the specification.",
+            "Drivers then discover that the shortest routes often include alleys too narrow for large trucks.",
+            "Verification can therefore pass while Validation fails.",
+            "The earlier tests still have value. The original requirements may have omitted important conditions of use.",
+            "Check actual needs to avoid implementing an unsuitable specification perfectly."
+          ],
+          "sourceIds": [
+            "nasa-verification-validation"
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "7. Check your understanding",
+          "paragraphs": [
+            "Keep this purpose in mind:",
+            "Testing establishes what evidence supports and what remains uncertain.",
+            "Whenever an AI Agent reports “complete,” ask: which requirement is complete, how was it verified, where is the evidence, and what has not been tested?"
           ]
         }
       ],
@@ -312,109 +751,97 @@
   },
   "checks": [
     {
-      "id": "AASE-M08-C01-Q01",
+      "id": "AASE-M08-C01-Q04",
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "骨架成功啟動，最直接證明什麼？",
+          "prompt": "某 AI Agent 宣稱：「pytest 共有 120 個測試，全部通過。」目前最合理的結論是什麼？",
           "options": [
-            "所有規則正確",
-            "該環境能執行該入口",
-            "多人授權完成",
-            "使用者不會卡住"
+            "系統已經符合所有需求",
+            "已執行的 120 項測試符合各自預期，其他需求仍須確認",
+            "系統已經沒有安全漏洞"
           ],
           "rationales": [
-            "還需規則測試。",
-            "結論限於觀察到的啟動。",
-            "原型尚無此控制。",
-            "需觀察實際任務。"
+            "測試數量沒有證明所有需求均有對應案例。",
+            "通過支持已執行的案例；需求涵蓋與其他品質面向仍須核對。",
+            "測試通過不能證明所有安全風險不存在。"
           ]
         },
         "en": {
-          "prompt": "What does successful skeleton startup most directly establish?",
+          "prompt": "An AI Agent reports: “All 120 pytest tests passed.” What is the most reasonable conclusion?",
           "options": [
-            "Every rule is correct.",
-            "That environment can execute that entry point.",
-            "Multiuser authorization is complete.",
-            "Users cannot get stuck."
+            "The system meets every requirement",
+            "The 120 executed tests matched their expectations; other requirements still need checking",
+            "The system has no security vulnerabilities"
           ],
           "rationales": [
-            "Rules still need tests.",
-            "Limit the conclusion to observed startup.",
-            "The prototype has no such control.",
-            "Observe actual tasks."
+            "The number of tests does not establish coverage of every requirement.",
+            "Passing supports the executed cases; requirement coverage and other quality perspectives still need checking.",
+            "Passing tests does not establish the absence of every security risk."
           ]
         }
       }
     },
     {
-      "id": "AASE-M08-C01-Q02",
+      "id": "AASE-M08-C01-Q05",
       "answer": 2,
       "text": {
         "zh": {
-          "prompt": "AppTest 出現下載元件，可以直接宣稱什麼？",
+          "prompt": "某學校網站能正確計算學生成績，但學生修改網址後能讀取別人的成績。這最直接屬於哪一類問題？",
           "options": [
-            "檔案位元組一定正確",
-            "全部使用者都懂",
-            "該模擬情境呈現下載元件，實際檔案另驗",
-            "正式資料可公開"
+            "介面美觀問題",
+            "系統啟動問題",
+            "授權與存取控制問題"
           ],
           "rationales": [
-            "元件狀態不等於內容。",
-            "沒有人的觀察。",
-            "依工具覆蓋範圍陳述。",
-            "與元件測試無關。"
+            "問題在於取得無權讀取的資料，與美觀無關。",
+            "系統已啟動；啟動證據無法建立資料隔離。",
+            "每次資料請求仍須檢查使用者是否有權讀取該筆成績。"
           ]
         },
         "en": {
-          "prompt": "What does an AppTest download component directly establish?",
+          "prompt": "A school website calculates grades correctly, but a student changes the URL and reads someone else’s grades. What kind of problem is this most directly?",
           "options": [
-            "The actual file bytes must be correct.",
-            "Every user understands it.",
-            "The simulated scenario presents that component; verify the actual file separately.",
-            "Production data may be made public."
+            "Interface appearance",
+            "System startup",
+            "Authorization and access control"
           ],
           "rationales": [
-            "Component state is not file content.",
-            "No person was observed.",
-            "Describe the tool’s actual coverage.",
-            "That is unrelated to component testing."
+            "The problem is access to unauthorized data, not appearance.",
+            "The system has started; startup evidence cannot establish data isolation.",
+            "Each request must still check permission to read that grade record."
           ]
         }
       }
     },
     {
-      "id": "AASE-M08-C01-Q03",
-      "answer": 3,
+      "id": "AASE-M08-C01-Q06",
+      "answer": 1,
       "text": {
         "zh": {
-          "prompt": "同儕尚未試用，紀錄該怎麼寫？",
+          "prompt": "同事尚未試用新系統，但開發者認為操作流程應該很直覺。驗證紀錄該如何標示？",
           "options": [
-            "預設順利完成",
-            "補一份理想觀察",
-            "複製教師測試當同儕結果",
-            "任務已準備，真人觀察未執行"
+            "通過，因為設計看起來合理",
+            "待驗，並安排真人任務測試",
+            "失敗，因為沒有測試"
           ],
           "rationales": [
-            "沒有實際依據。",
-            "會混淆設計與觀察。",
-            "驗證層次不同。",
-            "如實保留狀態。"
+            "設計推測不能代替真人任務證據。",
+            "尚未執行，保留待驗並安排具體任務觀察。",
+            "失敗需要已執行且結果不符預期的證據。"
           ]
         },
         "en": {
-          "prompt": "A peer has not tried the app. What should the record say?",
+          "prompt": "A colleague has not tried a new system, but its developer believes the workflow is intuitive. How should the verification record label it?",
           "options": [
-            "Assume smooth completion.",
-            "Supply an ideal observation.",
-            "Copy teacher tests as peer results.",
-            "Tasks prepared; human observation not performed."
+            "Pass, because the design looks reasonable",
+            "Not Tested, and arrange a real user task test",
+            "Fail, because no test was run"
           ],
           "rationales": [
-            "There is no actual evidence.",
-            "That confuses design with observation.",
-            "Those are different verification layers.",
-            "This preserves the actual status."
+            "A design assumption cannot replace evidence from a real user task.",
+            "Execution is pending; retain Not Tested and arrange observation of a specific task.",
+            "Fail requires an executed test whose result did not match expectations."
           ]
         }
       }
