@@ -12,7 +12,11 @@
  <div class="endpoints"><strong>{endpoints[0]}</strong><span class="connector"><span>{item.body}</span><svg aria-hidden="true" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M0 10H97m-8-7 8 7-8 7"/></svg></span><strong>{endpoints[1]}</strong></div>
  {:else}
  <strong class="title">{item.title}</strong>
- {#each item.body.split('\n\n') as part,j}<p class:action={number===2&&j===item.body.split('\n\n').length-2} class:failure={number===4&&j===item.body.split('\n\n').length-1}>{part}</p>{/each}
+ {#each item.body.split('\n\n') as part,j}
+ {#if number===4}<div class="upload-path" class:branch={i===1&&j>0} class:failure={j===item.body.split('\n\n').length-1}>
+ {#each part.split(/ → | ⇢ /) as node,k}<span class="upload-node">{node}</span>{#if k<part.split(/ → | ⇢ /).length-1}<span class="upload-arrow" aria-hidden="true">{part.includes(' ⇢ ')?'⇢':'→'}</span>{/if}{/each}
+ </div>{:else}<p class:action={number===2&&j===item.body.split('\n\n').length-2}>{part}</p>{/if}
+ {/each}
  {#if number===1&&i<diagram.items.length-1}<svg class="next" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2v19m-7-7 7 7 7-7"/></svg>{/if}
  {/if}
  </li>
@@ -22,5 +26,6 @@
 </figure>
 <style>
  figure{container-type:inline-size;padding:1rem;margin:1.5rem 0;border:1px solid #d5dce0;border-radius:1rem;background:#fbfcfd;color:#18252c;min-width:0}figcaption,p,li,strong,a{font-size:1rem;line-height:1.8;overflow-wrap:anywhere}figcaption p{margin:.5rem 0 1rem}ul,ol{list-style:none;display:grid;gap:1rem;padding:0;margin:0}li{min-width:0;position:relative;padding:1rem;border:1px solid #d5dce0;border-radius:.8rem;margin:0}p{margin:.6rem 0;white-space:pre-line}.title{display:block}.states ul{grid-template-columns:repeat(2,minmax(0,1fr))}.states .title{padding-bottom:.8rem;border-bottom:1px solid #e4e7e9}.action{background:#eee;padding:.5rem;text-align:center;border-radius:.4rem}.comparison li+li{border-color:#77a88c}.failure{border-left:3px dashed #a32929;padding-left:.7rem}.next{display:block;width:24px;height:24px;margin:.8rem auto -2.5rem;position:relative;z-index:1;fill:none;stroke:#65757c;stroke-width:1.7}ol{gap:2.5rem}ol li{text-align:center}.transitions li{background:#edf9f1;border-color:#bddac9}.endpoints{display:grid;grid-template-columns:minmax(0,1fr) minmax(6rem,1fr) minmax(0,1fr);gap:1rem;align-items:center}.connector{text-align:center;font-size:1rem;line-height:1.8}.connector svg{display:block;width:100%;height:20px;stroke:#65757c;stroke-width:1.5;fill:none}a:focus-visible{outline:3px solid #b15840;outline-offset:4px}
- @container(max-width:35rem){.states ul{grid-template-columns:1fr}.endpoints{grid-template-columns:1fr;text-align:center}.connector svg{width:24px;height:24px;transform:rotate(90deg);margin:auto}.endpoints{gap:.4rem}li{padding:.7rem}}
+ .upload-path{display:flex;gap:.5rem;align-items:center;margin:1rem 0}.upload-node{flex:1;min-width:0;padding:.5rem;border:1px solid #655ab0;border-radius:.5rem;text-align:center;background:#f5f3ff}.upload-arrow{flex:none;color:#403489}.upload-path.failure{border-left:0;padding-left:0}.upload-path.failure .upload-node:last-child{border:2px dashed #a32929;background:#fff3f1}.upload-path.branch{margin-left:25%;padding-left:1rem;border-left:2px solid #655ab0}.upload-path.branch.failure{border-left:2px solid #655ab0;padding-left:1rem}
+ @container(max-width:35rem){.upload-path{flex-direction:column}.upload-node{align-self:stretch}.upload-arrow{transform:rotate(90deg)}.upload-path.branch{margin-left:1rem}.states ul{grid-template-columns:1fr}.endpoints{grid-template-columns:1fr;text-align:center}.connector svg{width:24px;height:24px;transform:rotate(90deg);margin:auto}.endpoints{gap:.4rem}li{padding:.7rem}}
 </style>
