@@ -49,8 +49,24 @@
 
 ## 整合與正式站
 
-待完成：遠端歷史整合後重驗、提交／推送、Pages 部署與正式站同套件回讀。本文先記錄已有證據，不將本機通過當成已發布。
+完成內容部署與正式站讀回。最終整合主線提交為 `5241d8091216ffbf62071f5a8791c5074d15f0a3`，保留本次來源／實作／修正與所有同期主線歷史；推送後 fetch 確認 divergence 為 `0 0`。較早幾次非 fast-forward 推送已以 fetch＋merge 處理，沒有 force push。
+
+- 最終提交的本機檢查：309／309 單元測試、型別 0 errors／0 warnings、建置、`validate:release`、本篇雙語瀏覽器 2／2 全部通過。共用教材元件以主線新版為基礎增加 M03-03，逐一確認其他元件分派沒有遺漏或重複。
+- [Pages run 42986713205](https://github.com/JasonLn0711/kairos-learning/actions/runs/42986713205) 成功，包含 audit、內容、單元、共用 HTML、型別、完整 publication-boundary、release、下載雜湊及正式部署。
+- `AASE_BASE_URL=https://learn.cs-kairos.com pnpm exec playwright test --config playwright.aase-m0303.config.ts --output .local/aase/m0303/production/browser`：正式站 2／2 通過，26.3 秒；無 skipped、flaky 或 unexpected。實測 UTC 開始時間為 2026-11-11T08:27:03.206Z（臺灣 16:27:03）。
+- [中文正式頁](https://learn.cs-kairos.com/courses/aase/v1/m03/concepts/m03-03/)／[英文正式頁](https://learn.cs-kairos.com/en/courses/aase/v1/m03/concepts/m03-03/) 顯示 v1.1.0；逐段正文、每格表格、原樣 code、圖模型、四題解析與搜尋均比對通過。舊三題片段與 14 個有向出口有效；radio、重查、真實剪貼簿讀寫、複製失敗退化、走讀切換與邊界、鍵盤焦點、原生 details、局部捲動均實測。四尺寸、200% 文字與無 JavaScript 通過，十個 SVG HTTP 200、位元組等於本機，文字不越界或互相重疊。
+- [機器可讀回執](2026-11-11-aase-m03-03-checks.json) 列出圖檔大小與 SHA256、檢查範圍、時間、部署及剩餘界線；本機／正式站 JSON、截圖與日誌分開保留在 `.local/aase/m0303/local-final/` 與 `production/`。
+
+| 完成要求 | 權威證據 | 結果 |
+| --- | --- | --- |
+| 原稿、七圖、前版保存 | 原附件逐位元比對、SHA256SUMS、前版 Git blob | 通過 |
+| 十節與子節完整抽換 | 逐節／子節 source-map、雙語正式 JSON、全文到正式頁比對 | 通過 |
+| 七張隨文圖設計 | 五張原生 HTML 圖、兩互動、桌面／手機截圖、十 SVG 與原圖差異紀錄 | 通過 |
+| 雙語、版本、既有入口 | sameShape、原發布日、v1.1.0、六章錨點與三題片段檢查 | 通過 |
+| 閱讀、操作與退化 | 正式站兩語四尺寸／200%、鍵盤、無 JavaScript、剪貼簿及下載測試 | 通過 |
+| 保留歷史與正式發布 | 非破壞 merge、主線推送、`0 0`、Pages 成功與正式站回讀 | 通過 |
+| 詳實紀錄與發現入口 | 原稿／工作稿／前版、子節對照、內容契約、來源索引、本回執 | 通過 |
 
 ## 待驗事項
 
-真人學習理解、真實裝置與螢幕閱讀器接受度、實際保費計算、業務效率改善、後端版本一致性及正式業務受理均未評估。下一關是正式站讀回；完成後保留上述真人／業務邊界。
+真人學習理解、真實裝置與螢幕閱讀器接受度、實際保費計算、業務效率改善、後端版本一致性及正式業務受理均未評估。正式站讀回已完成；後續真人／業務驗證由各自的授權與證據另行啟動。
