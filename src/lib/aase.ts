@@ -82,6 +82,12 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const count=s.id==='risk'?4:s.id==='workflow'?7:0;
         if(figures.length!==(count?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==(s.id==='risk'?'cards':'flow')||f.items.length!==count||!keys(f,['kind','caption','description','items'])||f.items.some(i=>!keys(i,['title','body']))))fail('invalid preview export figure');
       }
+      if(l.id==='AASE-M09-C01'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='analogy'?'flow':s.id==='lab'?'cards':undefined;
+        if(figures.length!==(expected?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==expected||f.items.length!==4||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body'])||/[<>]/.test(item.title+item.body))))fail('invalid Git history figure');
+        if(s.id==='analogy'){const f=figures[0];if(f?.kind==='flow'&&f.items.some((item,i)=>item.body.split('\n').length!==(i<3?2:1)||i<3&&!item.body.split('\n')[1].startsWith(['git add','git commit','git push'][i])))fail('invalid Git transition labels');}
+      }
       if(l.id==='AASE-M05-C04'&&l.revision>=4){
         const figures=(s.blocks??[]).filter(b=>b.kind==='flow'||b.kind==='cards');
         if(figures.length!==(s.id==='loop'?1:0)||figures.some(f=>f.kind!=='flow'||f.items.length!==5||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid SDD change figure');
