@@ -667,3 +667,10 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 三份正文由 `scripts/reconstruct-ceh-notes.py` 與 `ceh_note_part1.py`／`ceh_note_part2.py`／`ceh_note_part3.py` 重建；`--check` 與 `scripts/audit-ceh-note-adoption.py --check` 已納入 validate:release，驗證同步、原附件雜湊及明確逐標題採用映射。原始資料不可由生成結果覆寫。
 
 驗收順序：單元／型別 → SSR 圖解 fixture → 發布邊界與最終 production build → validate:release → 新 preview／完整頁面瀏覽器。SSR fixture 或 SvelteKit sync 會刷新生成檔，不可與 production build 並行，也不可在最終建置後執行而沿用舊 preview；完整頁面檢查同時核對 HTML／client bootstrap 識別碼。
+
+
+### AASE M03-04 六圖抽換（2026-11-11）
+
+v1.2.0／revision 5 依十節供稿完整抽換。六圖依序為 analogy flow 5、workflow cards 2、scope cards 3、constraints cards 4、change cards 5、decision flow 6；aase.ts 保留前版規則並驗證新版本的種類／數量。MvpScopeDiagram 使用可搜尋 HTML；變更的兩條替代分支位於共同群組，再到同一決策角色。窄版仍保留分支群組，不產生是 → 否的流程箭頭。SVG 由 aase_m0304_svg.py 同源生成，單份 <100000 bytes。
+
+AaseProse 承接既有文字段落、清單、固定 h3、小節引用及 InlineText HTTPS 連結；四名詞保留 comparison 錨點。雙語七表與 code 對齊，英文逐欄解讀共用 problem.md。新 Q05–Q08 為物流開放題；原生參考解析不建立作答／學習狀態。前版、完整供稿、六圖及來源核對見[來源對照](sources/aase/m03-04/replacement-2026-11-11/source-map.md)，驗證與發布狀態見[回執](releases/2026-11-11-aase-m03-04-six-figures.md)。
