@@ -1,0 +1,419 @@
+{
+  "id": "AASE-M08-C06",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "owasp-authorization",
+    "owasp-threat-model",
+    "pytest-assert",
+    "streamlit-apptest-151"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "以無效輸入、額外欄位及過期結果建立負向驗證，將已測原型行為與尚未實作的多人安全分開。",
+      "objectives": [
+        "從規格與風險推導負向情境。",
+        "記錄拒絕、修正及回歸證據。",
+        "把未實作授權明確列為待實作與待驗。"
+      ],
+      "readingGuide": {
+        "goal": "從規格與風險推導負向情境。",
+        "startingPoint": "第三切片與測試、spec.md、驗證紀錄，以及多人版尚未實作事項。",
+        "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
+        "output": "一份風險—案例—結果對照及獨立的未實作安全需求清單。"
+      },
+      "sections": [
+        {
+          "id": "negative",
+          "heading": "除了能做什麼，也驗證何時必須拒絕",
+          "paragraphs": [
+            "正向情境證明一筆有效資料能完成，負向情境則檢查系統面對不應接受的輸入或操作，是否拒絕且不造成錯誤結果。每個案例先說明保護哪個要求，再選擇能觀察它的層次。",
+            "本課已有缺漏不能匯出、額外欄位不進報告、輸入變更使舊結果失效。這些是具體的資料完整性與輸出邊界測試，不等於已完成所有資安測試或正式風險評估。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像檢查門禁，也確認不該放行的情況",
+          "paragraphs": [
+            "只測持證者能進門，不能證明失效證件或無權訪客會被拒絕。拒絕的條件、發生位置及留下的結果都需要明確。",
+            "軟體的畫面隱藏按鈕只限制一條操作路徑，資料或匯出函式也要驗證。多人授權則必須有真實身分與資源關係，不能用畫面上的 A、B 文字假裝已建立隔離。"
+          ]
+        },
+        {
+          "id": "matrix",
+          "heading": "把風險轉成可執行案例",
+          "paragraphs": [
+            "缺漏直接呼叫 export_report 應拋出 ValueError；額外欄位輸入後，下載 data 仍只含三個允許鍵；完整後清空欄位，成功與下載應消失。",
+            "下表最後一列是多人版的候選驗收。單人原型沒有帳號與資料庫，先記未實作，不能執行一份與系統無關的假授權函式就宣告通過。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜原型可驗與多人版待實作",
+              "headers": [
+                "風險情境",
+                "預期拒絕或保護",
+                "證據與狀態"
+              ],
+              "rows": [
+                [
+                  "空白／錯誤型別／超長匯出",
+                  "拒絕完整報告",
+                  "規則例外測試"
+                ],
+                [
+                  "輸入含額外 debug_note",
+                  "報告不包含額外鍵",
+                  "JSON 內容與允許欄位核對"
+                ],
+                [
+                  "已完整後清空必要欄",
+                  "舊成功與下載失效",
+                  "AppTest＋真實瀏覽器"
+                ],
+                [
+                  "A 嘗試讀取 B 未授權資料",
+                  "資料存取處拒絕且不回傳內容",
+                  "本原型未實作；多人版另驗"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "regression",
+          "heading": "修正後驗原案例，也驗原有功能",
+          "paragraphs": [
+            "若負向案例失敗，先保留重現條件與觀察，定位根因後做最小修正。重跑原失敗案例，再跑受影響的正常與負向情境，確認修正沒有讓有效報告也無法產生。",
+            "回歸證據要包含相同版本、環境與案例。只寫「已修復」或只提供一張成功截圖，無法確認原錯誤是否消失；缺少測試時，先補可失敗的斷言。"
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "圖 1｜負向案例的回歸鏈",
+              "description": "從要求到修正再驗證，未涵蓋控制維持獨立待辦。",
+              "items": [
+                {
+                  "title": "要求與風險",
+                  "body": "指出何種資料或操作應被拒絕。"
+                },
+                {
+                  "title": "可重現失敗",
+                  "body": "保存輸入、動作、預期及實際結果。"
+                },
+                {
+                  "title": "局部修正",
+                  "body": "處理根因，保留其他工作。"
+                },
+                {
+                  "title": "回歸證據",
+                  "body": "原案例通過，再驗受影響正反情境。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "future",
+          "heading": "多人授權的測試必須等控制真的存在",
+          "paragraphs": [
+            "未來若擴為十人使用，需先定義身分、角色、資料所有權與共享例外，再在資料存取處檢查授權。負向測試要使用真實測試身分及隔離合成資料，驗證 A 不能讀到未授權的 B 資料。",
+            "這是另外的需求與架構工作，不在本機單人原型內偷加。先記下候選 Given／When／Then、實作負責人與驗收範圍；目前狀態保持未實作、未驗證。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "多人版候選驗收",
+              "paragraphs": [
+                "放入待確認需求，不宣稱已執行或正式單位規定。"
+              ],
+              "code": "Given 測試使用者 A 已驗證身分，且未獲授權讀取 B 的合成紀錄\nWhen A 透過資料存取入口請求該紀錄\nThen 系統拒絕且不回傳紀錄內容\n狀態：本機原型未實作此控制，待多人版確認及驗證"
+            }
+          ]
+        },
+        {
+          "id": "close",
+          "heading": "保留可交接的限制與下一步",
+          "paragraphs": [
+            "將測試命令、結果、失敗與修正連結到 spec；另外列出尚未實作的身分、授權、持久儲存及組織部署需求。它們不會因完整性測試通過而自動完成。",
+            "M09 會把這些證據放入 README、版本與展示。你應能說明目前原型已保護哪些行為，也能明確指出哪些要求仍需下一個設計與實作階段。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "第三切片與測試、spec.md、驗證紀錄，以及多人版尚未實作事項。",
+        "steps": [
+          "執行缺漏匯出、額外欄位與完整後變更三類負向情境，保留真實結果。",
+          "選一個失敗案例，若有則定位、修正並重跑原案例及受影響測試；沒有則如實記錄通過範圍。",
+          "寫一條未授權讀取的候選驗收，標明本原型未實作，不填假通過。"
+        ],
+        "expected": "一份風險—案例—結果對照及獨立的未實作安全需求清單。",
+        "check": "可測拒絕有實際證據；多人授權保持未實作，沒有以 UI 隱藏或假函式替代控制。",
+        "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
+      }
+    },
+    "en": {
+      "summary": "Verify invalid input, extra fields and stale results through negative cases, separating tested prototype behavior from unimplemented multiuser security.",
+      "objectives": [
+        "Derive negative scenarios from requirements and risks.",
+        "Record rejection, repair and regression evidence.",
+        "List absent authorization explicitly as not implemented and unverified."
+      ],
+      "readingGuide": {
+        "goal": "Derive negative scenarios from requirements and risks.",
+        "startingPoint": "The third slice and tests, spec.md, verification records and unimplemented shared-version requirements.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "A risk–case–result mapping with a separate list of unimplemented security requirements."
+      },
+      "sections": [
+        {
+          "id": "negative",
+          "heading": "Check When the System Must Reject",
+          "paragraphs": [
+            "A positive case shows one valid record completing a task. Negative cases check rejection of input or actions that should not be accepted, without producing an incorrect result. Identify the protected requirement before selecting an observation layer.",
+            "This course already rejects incomplete exports, excludes extra report fields and invalidates old results on input change. These specific integrity/output-boundary tests do not establish completion of all security testing or a formal risk assessment."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "Test Access That Should Be Denied Too",
+          "paragraphs": [
+            "A valid pass opening a door does not establish rejection of expired passes or unauthorized visitors. Define denial conditions, enforcement locations and observable outcomes.",
+            "Hiding a button restricts one interface path; data/export functions need validation too. Multiuser authorization needs actual identities and resource relationships. Displaying A/B labels does not implement isolation."
+          ]
+        },
+        {
+          "id": "matrix",
+          "heading": "Turn Risks into Executable Cases",
+          "paragraphs": [
+            "A direct export_report call with missing data must raise ValueError. Extra input fields must not expand the three allowlisted data keys. After a complete record’s required field is cleared, success and download must disappear.",
+            "The final table row is candidate acceptance for a shared version. The single-user prototype has no accounts or database: record that control as unimplemented. An unrelated fake authorization function cannot establish its success."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Verifiable Prototype Behavior and Pending Shared Controls",
+              "headers": [
+                "Risk scenario",
+                "Expected rejection/protection",
+                "Evidence and status"
+              ],
+              "rows": [
+                [
+                  "Blank, wrong-type or overlong export input",
+                  "Reject a complete report.",
+                  "Rule exception tests."
+                ],
+                [
+                  "Input includes extra debug_note",
+                  "Exclude the extra key from the report.",
+                  "JSON and allowlisted-field checks."
+                ],
+                [
+                  "Clear a required field after completion",
+                  "Invalidate old success and download.",
+                  "AppTest + real browser."
+                ],
+                [
+                  "A requests B’s data without permission",
+                  "Reject at data access without returning content.",
+                  "Unimplemented in this prototype; verify separately for a shared version."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "regression",
+          "heading": "Retest the Original Fault and Existing Features",
+          "paragraphs": [
+            "If a negative case fails, preserve reproduction conditions and observations, locate the cause and apply a minimal repair. Rerun the original failing case and affected normal/negative scenarios, checking that valid reports still work.",
+            "Regression evidence identifies the same version, environment and cases. “Fixed” or a success screenshot alone does not establish removal of the original fault. Where coverage is missing, first add assertions that can detect failure."
+          ],
+          "blocks": [
+            {
+              "kind": "flow",
+              "caption": "Figure 1 | Regression Evidence for a Negative Case",
+              "description": "Follow requirements through repair and verification. Uncovered controls remain separate pending work.",
+              "items": [
+                {
+                  "title": "Requirement and risk",
+                  "body": "Identify data or actions that must be rejected."
+                },
+                {
+                  "title": "Reproducible failure",
+                  "body": "Retain input, action, expectation and actual result."
+                },
+                {
+                  "title": "Local repair",
+                  "body": "Address the cause while preserving other work."
+                },
+                {
+                  "title": "Regression evidence",
+                  "body": "Pass the original case, then affected positive/negative scenarios."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "future",
+          "heading": "Authorization Tests Need Implemented Controls",
+          "paragraphs": [
+            "A future ten-user version first needs defined identities, roles, data ownership and sharing exceptions, followed by authorization enforcement at data access. Negative tests should use actual test identities and isolated synthetic records to verify that A cannot read unauthorized B data.",
+            "That is separate requirements/architecture work, not a feature to add silently to this local single-user prototype. Record candidate Given/When/Then, an implementation owner and acceptance scope; current status remains not implemented and unverified."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Candidate Shared-version Acceptance",
+              "paragraphs": [
+                "Keep this among requirements awaiting confirmation, not executed findings or official policy. The unchanged scenario says: Given authenticated test user A lacks permission for B’s synthetic record, When A requests it through data access, Then deny without returning content. This local prototype has not implemented the control; shared-version confirmation and verification remain pending."
+              ],
+              "code": "Given 測試使用者 A 已驗證身分，且未獲授權讀取 B 的合成紀錄\nWhen A 透過資料存取入口請求該紀錄\nThen 系統拒絕且不回傳紀錄內容\n狀態：本機原型未實作此控制，待多人版確認及驗證"
+            }
+          ]
+        },
+        {
+          "id": "close",
+          "heading": "Retain Limits and Next Steps for Handoff",
+          "paragraphs": [
+            "Link test commands, results, failures and repairs to spec. Separately list absent identity, authorization, persistence and organizational-deployment needs. Completeness tests passing do not implement them.",
+            "M09 places evidence into README, versions and demonstrations. Explain both the prototype behavior already protected and requirements needing another design/implementation stage."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "The third slice and tests, spec.md, verification records and unimplemented shared-version requirements.",
+        "steps": [
+          "Run negative scenarios for incomplete export, extra fields and input change after completeness; retain real results.",
+          "If a case fails, locate and repair it, then rerun that case and affected tests. If none fail, accurately record the passing scope.",
+          "Write candidate unauthorized-read acceptance, marking it unimplemented in this prototype without a fabricated pass."
+        ],
+        "expected": "A risk–case–result mapping with a separate list of unimplemented security requirements.",
+        "check": "Executable rejection claims have actual evidence. Multiuser authorization remains unimplemented; hidden UI or fake functions cannot substitute for controls.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M08-C06-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "額外 debug_note 不出現在報告，最直接證明什麼？",
+          "options": [
+            "全部資安風險解決",
+            "該情境的輸出欄位受到約束",
+            "多人隔離完成",
+            "所有資料已安全刪除"
+          ],
+          "rationales": [
+            "範圍過度擴張。",
+            "結論與實際案例相符。",
+            "與身分授權不同。",
+            "沒有刪除證據。"
+          ]
+        },
+        "en": {
+          "prompt": "What does debug_note being absent from a report directly establish?",
+          "options": [
+            "Every security risk is resolved.",
+            "Output fields are constrained in that scenario.",
+            "Multiuser isolation is complete.",
+            "All data was securely deleted."
+          ],
+          "rationales": [
+            "That exceeds the evidence.",
+            "The conclusion matches the executed case.",
+            "Identity/authorization is a different concern.",
+            "There is no deletion evidence."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C06-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "本機沒有帳號與資料庫，授權測試應如何標記？",
+          "options": [
+            "預設通過",
+            "用假 A／B 文字宣告通過",
+            "未實作，記候選需求與後續驗證",
+            "不需列出此限制"
+          ],
+          "rationales": [
+            "控制不存在。",
+            "無法驗證真實存取。",
+            "清楚保留能力邊界。",
+            "接手者仍需知道。"
+          ]
+        },
+        "en": {
+          "prompt": "With no accounts or database in this prototype, how should authorization testing be recorded?",
+          "options": [
+            "Assume it passed.",
+            "Declare success using A/B text labels.",
+            "Not implemented; record candidate requirements and later verification.",
+            "Omit the limitation."
+          ],
+          "rationales": [
+            "The control does not exist.",
+            "That does not test actual access.",
+            "This preserves capability boundaries.",
+            "Successors still need to know."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C06-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "修好負向情境後，還需做什麼？",
+          "options": [
+            "刪掉失敗證據",
+            "只看成功截圖",
+            "放寬規格",
+            "重跑原案例及受影響正反測試，保存版本與結果"
+          ],
+          "rationales": [
+            "會遺失回歸依據。",
+            "不能涵蓋原錯誤。",
+            "須經明確需求決策。",
+            "確認修正與既有行為。"
+          ]
+        },
+        "en": {
+          "prompt": "After repairing a negative scenario, what else is needed?",
+          "options": [
+            "Delete failure evidence.",
+            "Inspect only a success screenshot.",
+            "Relax the specification.",
+            "Rerun the original and affected positive/negative tests, keeping versions and results."
+          ],
+          "rationales": [
+            "That removes regression evidence.",
+            "That cannot cover the original fault.",
+            "That requires an explicit requirements decision.",
+            "Confirm both repair and existing behavior."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}

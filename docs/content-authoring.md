@@ -818,6 +818,24 @@ AASE-M06-C05 v1.1.0 保留原日期、URL 與六個舊錨點，導言及八節�
 
 正式 JSON 同源產生 HTML／搜尋／十四份 SVG；`python3 scripts/aase_m0603_svg.py --check`核對衍生檔。`tests/aase-m0603-replacement.test.ts`檢查原件／版本／錨點／三選項、範例執行及非法資料拒絕；`playwright.aase-m0603.config.ts`核對全文、四尺寸／200%／無JS、鍵盤、SVG字框及下載。正式站設定 `AASE_BASE_URL=https://learn.cs-kairos.com`。實際檢查與發布狀態見[回執](releases/2026-11-11-aase-m06-03-replacement.md)。
 
+## AASE M06-01｜流程與架構完整抽換（2026-11-11）
+
+本課v1.1.0使用既有sections／prose／step／table／cards／flow；兩語各導言加八節、三表、兩Python範例、三題三選項。`FlowArchitectureDiagram.svelte`依本課固定五圖呈現餐廳時序、三個平行接收者、完整性是／否與重查回圈、Streamlit主機內同程序／規則／狀態、C4逐層縮放；窄版保留關係文字及分組，下載SVG共用正式JSON。驗證器限定本課revision>=4的位置、種類、節點數5／5／7／6／4及欄位。
+
+維護`python3 scripts/aase_m0601_content.py --check`、`python3 scripts/aase_m0601_svg.py --check`、`tests/aase-m0601-replacement.test.ts`及`playwright.aase-m0601.config.ts`；正式站設定AASE_BASE_URL。完整供稿、舊版、圖意差異及逐小節採用在[來源對照](sources/aase/m06-01/replacement-2026-11-11/source-map.md)，本輪各層證據在[回執](releases/2026-11-11-aase-m06-01-replacement.md)。
+
+## AASE M08-06｜資安負向情境與回歸證據（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六錨點；導言及原九節、五表、七個 code 區塊、三題 4／4／3 選項完整雙語抽換。原稿、參考圖、前版、逐小節採用與截斷程式的修正見[來源紀錄](sources/aase/m08-06/replacement-2026-11-11/README.md)。`aase_m0806_content.py --check`核對成稿及正式 JSON；`aase_m0806_svg.py --check`核對兩語 SVG。五步垂直 flow 由 RegressionEvidenceDiagram 呈現，最後淡綠，aase.ts 限制一圖五節點及文字欄位。單元 tests/aase-m0806-replacement.test.ts；瀏覽器 playwright.aase-m0806.config.ts。獨立 pytest 三例只驗非空字串與允許欄位，多人授權保持未實作、未驗證。實測及正式站回讀見[回執](releases/2026-11-11-aase-m08-06-replacement.md)。
+
+## AASE M07-03｜第一個表單切片（2026-11-11）
+
+AASE-M07-C03 v1.1.0／revision 4 的八節雙語全文、五產業表、六術語表、七列驗收表及三題開放問題，依[供稿與對照](sources/aase/m07-03/replacement-2026-11-11/source-map.md)抽換；原六錨點與原發布日保留，qa=[]。完整 app.py 保留可選取程式碼，原稿黏合換行修復另記技術查核。
+
+VerticalSliceDiagram 只接本課 slice 四節點 cards 及 roadmap 四節點 flow；VerticalSliceForm 接 behavior 三節點 cards，欄位標籤與預設值來自正式模型，輸入與未檢核預覽只在記憶體中。網頁每次 input 清除舊結果；Python 範例 on_change 在變更提交時清除，正文明示差異。無 JS 保留預設欄位與靜態解說並停用控制。圖 1 比較平行分層；圖 3 使用編號呈現課程階段，沒有自動業務判定。
+
+六份受限 SVG 由 `python3 scripts/aase_m0703_svg.py` 從同一模型匯出，`--check` 核對同步；圖 2 固定為預設狀態。單元 `tests/aase-m0703-replacement.test.ts`、Python `scripts/test_aase_m0703.py` 與瀏覽器 `playwright.aase-m0703.config.ts` 分別檢查資料／閘門、真實 Streamlit rerun、全文／四尺寸／200%／無 JS／鍵盤／SVG。正式站指定 `AASE_BASE_URL`；實際結果見[回執](releases/2026-11-11-aase-m07-03-replacement.md)。
+
 ## AASE M07-04 資料檢核完整供稿（2026-11-11）
 
 v1.1.0／revision 4 保留原發布日與六個既有錨點，十節完整雙語、四表、六 code 與三個原開放問題由 `scripts/aase_m0704_content.py` 生成；`--check` 核對正式 JSON。來源、四 PNG、前版及逐小節採用見[來源對照](sources/aase/m07-04/replacement-2026-11-11/README.md)。
