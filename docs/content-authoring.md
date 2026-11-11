@@ -759,3 +759,11 @@ v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有�
 v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
 
 OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
+
+## AASE M08-02｜TDD 完整供稿與三圖（2026-11-11）
+
+v1.1.0／revision 4 保留原發布日與六個舊錨點。[來源對照](sources/aase/m08-02/replacement-2026-11-11/source-map.md)保存原稿、三PNG、前版與雙語採用稿；`scripts/aase_m0802_content.py --check`核對正式JSON，`scripts/aase_m0802_svg.py --check`核對六份受限SVG。完整導言、九節、自動門／檢驗機／提款GWT、四表、三階段程式、三補測、AI提示與三題均進正文。
+
+`TddDiagram.svelte`只呈現本課flow 3／cards 3／flow 4，`aase.ts`限制位置、種類、節點與欄位。循環的回返、平行結果與協作順序各自保留；正文、搜尋及匯出同源，無JS仍可閱讀。圖2保留來源環境差異，本版另以兩個pytest版本實跑，區分測試集合擴充與重構。
+
+單元`tests/aase-m0802-replacement.test.ts`、瀏覽器`playwright.aase-m0802.config.ts`；正式站設定`AASE_BASE_URL`。範例用`python3 scripts/check-aase-m0802-example.py /absolute/path/to/venv/bin/python`核對五個階段／測試集合組合，結果記於忽略的`.local/aase/m0802/`。[回執](releases/2026-11-11-aase-m08-02-replacement.md)記錄規則、驗證及發布；原稿未附可核實影片網址，沒有新增推測連結。
