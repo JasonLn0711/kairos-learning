@@ -113,7 +113,7 @@ Each field has six invalid values to examine:
 | --- | --- |
 | "" | No text |
 | "   " | Only spaces |
-| "\\t\\n" | Only tab and newline whitespace |
+| "\t\n" | Only tab and newline whitespace |
 | None | No valid value |
 | 42 | A number instead of text |
 | "x" * 81 | More than the allowed length |

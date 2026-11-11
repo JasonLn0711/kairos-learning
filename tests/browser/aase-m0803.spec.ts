@@ -5,7 +5,7 @@ const norm=(s:string)=>s.replace(/`/g,'').replace(/^\s*(?:[-*]|\d+\.)\s+/gm,'').
 for(const lang of ['zh','en']){
  const path=`${lang==='en'?'/en':''}/courses/aase/v1/m08/concepts/m08-03/`;
  test(`${lang} full body, responsive diagrams, controls and downloads`,async({page,request})=>{
-  await page.goto(path);await expect(page.locator('[data-rule-testing-figure]')).toHaveCount(3);
+  await page.goto(path);await expect(page.locator('[data-rule-testing-figure]')).toHaveCount(3);expect(await page.locator('[data-rule-testing-figure] p').first().evaluate(e=>{const s=getComputedStyle(e);return parseFloat(s.fontSize)>=16&&parseFloat(s.lineHeight)/parseFloat(s.fontSize)>=1.7;})).toBeTruthy();
   for(const section of lesson.text[lang].sections){
    const node=page.locator(`h2#${section.id}`).locator('..');
    const text=norm(await node.innerText());
@@ -20,6 +20,7 @@ for(const lang of ['zh','en']){
   const amount=page.locator('#delivery-amount');await amount.focus();await page.keyboard.press('ArrowRight');await expect(amount).toHaveValue('1000');await expect(page.locator('[data-rule-testing-figure="2"] .result')).toContainText('NT$ 0');await page.keyboard.press('Home');await expect(amount).toHaveValue('0');await page.keyboard.press('End');await expect(amount).toHaveValue('2000');
   const length=page.locator('#rule-length');await length.focus();await page.keyboard.press('ArrowRight');await expect(length).toHaveValue('81');await expect(page.locator('[data-rule-testing-figure="3"] .result')).toContainText(lang==='zh'?'超過':'Exceeds');await page.keyboard.press('ArrowLeft');await expect(length).toHaveValue('80');await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');await expect(length).toBeFocused();
   await page.setViewportSize({width:390,height:900});await page.addStyleTag({content:'html{font-size:200% !important}'});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  await page.screenshot({path:`.local/aase/m0803/${lang}-390-200.png`,fullPage:true});
   for(let n=1;n<=3;n++){const asset=`/images/aase/m08-03-${n}-${lang}.svg`;const r=await request.get(asset);expect(r.ok()).toBeTruthy();expect(await r.body()).toEqual(readFileSync(`site${asset}`));}
   const summary=page.locator('summary').first();await summary.focus();await page.keyboard.press('Enter');await expect(summary.locator('..')).toHaveAttribute('open','');
  });
