@@ -759,3 +759,11 @@ v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有�
 v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
 
 OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
+
+## AASE M07-03｜第一個表單切片（2026-11-11）
+
+AASE-M07-C03 v1.1.0／revision 4 的八節雙語全文、五產業表、六術語表、七列驗收表及三題開放問題，依[供稿與對照](sources/aase/m07-03/replacement-2026-11-11/source-map.md)抽換；原六錨點與原發布日保留，qa=[]。完整 app.py 保留可選取程式碼，原稿黏合換行修復另記技術查核。
+
+VerticalSliceDiagram 只接本課 slice 四節點 cards 及 roadmap 四節點 flow；VerticalSliceForm 接 behavior 三節點 cards，欄位標籤與預設值來自正式模型，輸入與未檢核預覽只在記憶體中。網頁每次 input 清除舊結果；Python 範例 on_change 在變更提交時清除，正文明示差異。無 JS 保留預設欄位與靜態解說並停用控制。圖 1 比較平行分層；圖 3 使用編號呈現課程階段，沒有自動業務判定。
+
+六份受限 SVG 由 `python3 scripts/aase_m0703_svg.py` 從同一模型匯出，`--check` 核對同步；圖 2 固定為預設狀態。單元 `tests/aase-m0703-replacement.test.ts`、Python `scripts/test_aase_m0703.py` 與瀏覽器 `playwright.aase-m0703.config.ts` 分別檢查資料／閘門、真實 Streamlit rerun、全文／四尺寸／200%／無 JS／鍵盤／SVG。正式站指定 `AASE_BASE_URL`；實際結果見[回執](releases/2026-11-11-aase-m07-03-replacement.md)。
