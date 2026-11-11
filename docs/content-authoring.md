@@ -759,3 +759,11 @@ v1.1.0 依供稿抽換九節雙語正文，保留原發布日期與六個既有�
 v1.1.0／revision 4 保留原發布日與六個既有 section 錨點；[來源對照](sources/aase/m05-05/replacement-2026-11-11/source-map.md)持有原稿、兩 PNG、前版、完整雙語成稿、逐段修正與十三小節對照。`scripts/aase_m0505_content.py --check` 核對九節正文、四表、七段文件範例與四道新開放題 Q04–Q07；qa=[]。兩語示例 code bytes 一致，中文原始範例保存在原件。
 
 OpenSpecDiagram 僅接本課兩張 flow：三命令三節點與五步循環五節點。HTML、搜尋及下載 SVG 取自正式 lesson；`scripts/aase_m0505_svg.py --check` 核對四個固定匯出。下載圖與頁面各自重排／固定版面，工具指令、文件格式、行為驗證與封存界線分開解釋。單元檢查為 `tests/aase-m0505-replacement.test.ts`；瀏覽器以 `playwright.aase-m0505.config.ts` 核對全文次序、四尺寸／200%、鍵盤／無JS、搜尋、SVG 幾何與下載 bytes，正式站設定 AASE_BASE_URL。[回執](releases/2026-11-11-aase-m05-05-replacement.md)記錄實際結果與發布閘門。
+
+## AASE M07-07 完整抽換（2026-11-11）
+
+M07-07 v1.1.0 的[來源、前版與逐節對照](sources/aase/m07-07/replacement-2026-11-11/source-map.md)保存十節供稿、四張 PNG、完整雙語與三道新檢核。`scripts/aase_m0707_content.py --check` 核對正式 JSON，`scripts/aase_m0707_svg.py --check` 核對八份受審核 SVG。四圖依序為六階段 flow、六項表單 cards、三階段 flow、四段範本 cards；模型限定課次／位置／種類／數量與欄位。
+
+`DebuggingDiagram.svelte` 使用同源可搜尋 HTML、容器重排與固定下載路徑。`stale-report.ts` 對照 Bug 的舊快照存在與 Fixed 的完整性／快照一致性，編輯時另使舊結果失效；下載僅為標記 simulation=true 的本機合成文字。無 JS 控制停用，保留預設三欄與完整靜態比較；範本可手動選字。原發布日、路徑、六個舊錨點及雙語閘門保持；新 Q04–Q06 三選項與原生參考解析不建立作答或學習狀態。
+
+本課單元入口 `tests/aase-m0707-replacement.test.ts`，瀏覽器入口 `playwright.aase-m0707.config.ts`；正式站指定 `AASE_BASE_URL=https://learn.cs-kairos.com`。驗證／發布分層與具體結果見[發布回執](releases/2026-11-11-aase-m07-07-replacement.md)。
