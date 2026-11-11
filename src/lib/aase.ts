@@ -137,6 +137,12 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         const expected=s.id==='recovery'?[2,2,3]:s.id==='access'?[7]:s.id==='state-transitions'?[5]:[];
         if(figures.length!==expected.length||figures.some((f,i)=>f.kind!=='cards'||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[i]||f.items.some(item=>!keys(item,['title','body']))))fail('invalid recovery figure');
       }
+      if(l.id==='AASE-M04-C04'&&l.revision>=4){
+        const expected:Record<string,number>={analogy:5,states:4,transitions:11,annotation:2,walkthrough:2};
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        if(figures.length!==(expected[s.id]?1:0)||figures.some(f=>(f.kind!=='cards'&&f.kind!=='flow')||f.kind!==(s.id==='analogy'?'flow':'cards')||f.items.length!==expected[s.id]||!keys(f,['kind','caption','description','items'])||f.items.some(item=>!keys(item,['title','body']))))fail('invalid wireframe figure');
+        if(s.id==='transitions'&&figures.some(f=>(f.kind==='cards'||f.kind==='flow')&&f.items.some(item=>item.title.split(' → ').length!==2)))fail('invalid wireframe endpoints');
+      }
       if(l.id==='AASE-M04-C03'&&l.revision>=4){
         const expected:Record<string,number>={structure:3,navigation:5,compare:2,groups:4,order:2,workflow:5};
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
