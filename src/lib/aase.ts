@@ -126,6 +126,11 @@ export function createAaseCatalog(course:AaseCourse,lessons:AaseLesson[],sources
         if(expected[s.id]){const f=figures[0];if(figures.length!==1||!f||(f.kind!=='cards'&&f.kind!=='flow')||f.items.length!==expected[s.id]||f.kind!==(s.id==='analogy'?'flow':'cards'))fail('invalid tool evidence figure');}
         else if(figures.length)fail('invalid tool evidence figure');
       }
+      if(l.id==='AASE-M06-C01'&&l.revision>=4){
+        const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
+        const expected=s.id==='analogy'?[5,5]:s.id==='runtime'?[7,6]:s.id==='c4'?[4]:[];
+        if(figures.length!==expected.length||figures.some((f,i)=>(f.kind!=='cards'&&f.kind!=='flow')||!keys(f,['kind','caption','description','items'])||f.items.length!==expected[i]||f.kind!==(s.id==='analogy'&&i===0?'flow':'cards')||f.items.some(item=>!keys(item,['title','body']))))fail('invalid flow architecture figure');
+      }
       if(l.id==='AASE-M04-C01'){
         const figures=(s.blocks??[]).filter(b=>b.kind==='cards'||b.kind==='flow');
         const expected=s.id==='case'?[4,3]:s.id==='quality'?[2]:s.id==='record'?[5]:s.id==='task-analysis'?[6]:[];
