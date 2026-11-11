@@ -1,13 +1,15 @@
 {
   "id": "AASE-M06-C04",
   "status": "published",
-  "revision": 3,
-  "contentVersion": "1.0.2",
+  "revision": 4,
+  "contentVersion": "1.1.0",
   "publishedOn": "2026-11-05",
-  "date": "2026-11-05",
+  "date": "2026-11-11",
   "sourceIds": [
     "mdn-http",
-    "streamlit-architecture"
+    "streamlit-architecture",
+    "mdn-http-status",
+    "owasp-input-validation"
   ],
   "qa": [],
   "text": {
@@ -26,53 +28,105 @@
       },
       "sections": [
         {
-          "id": "roles",
-          "heading": "介面點擊後，還有資料交換",
+          "id": "introduction",
+          "heading": "從按鈕追到真正完成的結果",
           "paragraphs": [
-            "Browser（瀏覽器）呈現頁面、執行用戶端程式並與伺服器通訊。HTTP是Web常用的請求／回應協定；API（Application Programming Interface，應用程式介面）是軟體互動契約，不一定走網路，也不一定是REST。",
-            "例如rules.py中的函式可供同程序程式呼叫；若另外設計HTTP API，才需定義端點、方法、輸入、回應與錯誤。本課沒有自行建立/api/check，不能因為看到檢查按鈕就推定存在這個網址。"
-          ],
-          "sourceIds": [
-            "mdn-http"
+            "這一章最重要的觀念是：你在網頁上按下一個按鈕，並不代表電腦只做了一件事。背後可能發生資料傳送、程式執行、驗證、資料庫存取，以及結果回傳等一連串動作。\n\n學會這章，你就能開始看懂網站背後的運作方式，也能判斷 AI Coding Agent 畫出來的系統架構是否合理。"
           ]
         },
         {
           "id": "analogy",
-          "heading": "像窗口、傳遞方式與服務約定",
+          "heading": "一、先從生活例子理解：網路訂餐",
           "paragraphs": [
-            "瀏覽器像使用者面前的窗口，HTTP像窗口與處理單位交換訊息的方式，API則說明哪些請求可被接受、要給什麼資料、會回什麼。這個比喻只幫忙分工，實際系統可能有多種協定與中介。",
-            "按鈕只是觸發點；想理解資料去向，要追輸入、通訊、處理、結果及保存。畫面顯示一個綠色完成訊息，無法單獨說明伺服器是否真的拒絕不完整匯出。"
-          ]
-        },
-        {
-          "id": "http",
-          "heading": "一般HTTP請求要讀哪些部分",
-          "paragraphs": [
-            "MDN的HTTP概覽說明用戶端送出請求、伺服器產生回應；方法、目標、標頭及可能的本文共同傳達意圖。回應包含狀態碼、標頭與可能的內容。HTTP本身無狀態，應用程式可透過額外機制維持工作階段。",
-            "HTTP 200通常表示該HTTP請求成功處理，不能直接推論欄位完整、正式受理或授權正確。業務結果與安全規則要看契約及實際內容；網路成功也不等於使用者已收到或理解最終報告。"
+            "想像你在手機上使用餐廳訂餐網站。\n\n你選好一份牛肉麵，按下「送出訂單」。\n\n畫面上只有一個按鈕，但背後至少存在以下幾個工作："
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "圖 1｜一次資料檢查的概念追蹤",
-              "description": "這是教學分析順序，非Streamlit封包格式；不指定不存在的REST端點。",
+              "caption": "圖 1｜一次網頁操作的概念流程",
+              "description": "箭頭表示本例的概念處理順序；實作架構與通訊需另行確認。",
               "items": [
                 {
-                  "title": "目前輸入",
-                  "body": "辨識本次合成欄位及使用者要求，避免沿用舊快照。"
+                  "title": "1. 使用者操作",
+                  "body": "選擇牛肉麵，按下送出"
                 },
                 {
-                  "title": "通訊與處理",
-                  "body": "確認由哪個機制傳送、在哪個程序驗證，不能只信任介面限制。"
+                  "title": "2. Browser（瀏覽器）",
+                  "body": "收集品項、數量、桌號等資料"
                 },
                 {
-                  "title": "回應與狀態",
-                  "body": "區分傳輸或框架成功、業務缺漏與技術失敗。"
+                  "title": "3. HTTP／其他通訊機制",
+                  "body": "把資料送往處理訂單的系統"
                 },
                 {
-                  "title": "預覽與下載",
-                  "body": "結果對應目前輸入；下載後另有裝置保存責任。"
+                  "title": "4. Server（伺服器）",
+                  "body": "確認商品、價格、庫存與訂購權限"
+                },
+                {
+                  "title": "5. 資料儲存與業務處理",
+                  "body": "建立訂單、儲存結果"
+                },
+                {
+                  "title": "6. 回傳結果",
+                  "body": "畫面顯示訂單成立，或提示失敗原因"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這張是典型網站的概念資料流，不是每個網站都完全相同的實作架構。\n\n關鍵在於：使用者看到的介面，只是整個系統的一部分。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "roles",
+          "heading": "二、Browser、HTTP、API 到底有什麼不同？",
+          "paragraphs": [
+            "我們用餐廳來比喻。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜網站角色與餐廳類比",
+              "headers": [
+                "名詞",
+                "白話理解",
+                "餐廳類比"
+              ],
+              "rows": [
+                [
+                  "Browser 瀏覽器",
+                  "讓使用者操作網站、顯示結果的軟體",
+                  "點餐平板"
+                ],
+                [
+                  "HTTP",
+                  "用戶端與伺服器交換請求與回應的通訊協定",
+                  "傳遞點餐單的通訊規則"
+                ],
+                [
+                  "API",
+                  "規定軟體可以要求什麼服務，以及如何交換資料的介面契約",
+                  "餐廳接受訂單的規格"
+                ],
+                [
+                  "Server 伺服器",
+                  "接收請求、執行程式及產生回應",
+                  "廚房與訂單處理系統"
+                ],
+                [
+                  "Database 資料庫",
+                  "儲存及查詢資料",
+                  "訂單與庫存紀錄"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "注意兩個容易混淆的地方。\n\n第一，HTTP 與 API 不一樣。HTTP 是通訊協定，API 是介面契約。一個 API 可以透過 HTTP 提供服務，也可以只是 Python 程式裡供其他程式呼叫的函式。\n\n第二，API 不一定是 REST API。REST 是一種 Web API 架構風格，並非所有 API 都採用 REST。\n\n這也符合 MDN 對 HTTP 的定義：HTTP 主要透過用戶端送出 request（請求），伺服器產生 response（回應）來交換資訊。"
               ]
             }
           ],
@@ -81,11 +135,228 @@
           ]
         },
         {
-          "id": "streamlit",
-          "heading": "對照Streamlit，而非套用假想端點",
+          "id": "http",
+          "heading": "三、HTTP：電腦如何寄出一張「數位訂單」？",
           "paragraphs": [
-            "Streamlit官方架構文件說明前端與伺服器的HTTP及WebSocket使用；WebSocket可維持雙向連線以傳遞更新與工作階段互動。本課沿框架機制，不把每次按鈕操作都改說成向自訂REST API送一次POST。",
-            "Python程序內呼叫validate與export_report是另一層關係。圖可以標「框架管理的事件與結果」，需要更細資料時，再在自己的合成環境用瀏覽器開發工具確認，不編造未擷取的封包或回應範例。"
+            "一次 HTTP 通訊，通常可以分成 Request 和 Response。\n\n### 1. Request（請求）\n\n假設我們自己設計了一個訂餐 API。\n\n以下網址與內容均為假想教學範例，並非教材中實際存在的端點。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "HTTP 請求範例",
+              "paragraphs": [
+                "假想教學訊息，並非本站端點。"
+              ],
+              "code": "POST /api/orders HTTP/1.1\nHost: restaurant.example\nContent-Type: application/json\n\n{\n  \"item\": \"beef_noodles\",\n  \"quantity\": 2\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "你可以把這份訊息拆成四個部分：\n\n- Method：`POST`，表示這次請求的操作意圖。\n- Path：`/api/orders`，要操作的資源或服務位置。\n- Headers：例如 `Content-Type`，告訴對方資料的格式。\n- Body：真正送出的資料，例如品項和數量。\n\n這些部分共同構成一個 HTTP 請求。\n\n### 2. Response（回應）\n\n伺服器收到請求後，可能回傳："
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "HTTP 回應範例",
+              "paragraphs": [
+                "假想教學訊息，並非本站端點。"
+              ],
+              "code": "HTTP/1.1 201 Created\nContent-Type: application/json\n\n{\n  \"order_id\": \"A1024\",\n  \"status\": \"accepted\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這代表伺服器依照設計好的 API 契約，回報已建立訂單資源。\n\n但「訂單建立」和「餐點已經煮好」仍然是兩件不同的事。\n\n### 常見 HTTP Method"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 2｜常見 HTTP Method",
+              "headers": [
+                "Method",
+                "常見用途",
+                "例子"
+              ],
+              "rows": [
+                [
+                  "GET",
+                  "取得資源",
+                  "查詢訂單"
+                ],
+                [
+                  "POST",
+                  "提交資料、請求處理",
+                  "建立訂單"
+                ],
+                [
+                  "PUT",
+                  "建立或完整取代指定資源",
+                  "更新整份訂單資料"
+                ],
+                [
+                  "PATCH",
+                  "部分修改資源",
+                  "修改送餐備註"
+                ],
+                [
+                  "DELETE",
+                  "刪除資源",
+                  "刪除草稿訂單"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這些是常見語意，不代表伺服器會自動遵守業務規則。真正允許哪些操作，還是由 API 設計及伺服器實作決定。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mdn-http"
+          ]
+        },
+        {
+          "id": "outcomes",
+          "heading": "四、為什麼 HTTP 200 不等於任務成功？",
+          "paragraphs": [
+            "這是本章最值得記住的核心觀念。\n\n假設醫院網站允許病患上傳檢驗報告。\n\n系統收到上傳請求後，回傳："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "業務驗證失敗的回應",
+              "paragraphs": [
+                "假想教學訊息，並非本站端點。"
+              ],
+              "code": "HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n  \"success\": false,\n  \"error\": \"missing_patient_id\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "HTTP 狀態是 `200 OK`，但內容卻是 `success: false`。\n\n為什麼？\n\n因為這個假想 API 把請求處理成功與業務驗證失敗分開表達。實務上，也可以依 API 契約使用適當的 4xx 狀態碼，例如 `422 Unprocessable Content`。\n\n所以我們應該把成功拆成三個層次："
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 2｜分別核對三層結果",
+              "description": "三列是不同的判讀責任，通過其中一層不保證其餘層成立。",
+              "items": [
+                {
+                  "title": "第一層：通訊結果",
+                  "body": "請求有沒有成功送達並獲得預期回應？HTTP 狀態是什麼？"
+                },
+                {
+                  "title": "第二層：業務結果",
+                  "body": "內容是否符合規則？例如資料齊全、庫存足夠、符合受理條件。"
+                },
+                {
+                  "title": "第三層：使用者任務完成",
+                  "body": "訂單真的成立、報告能正確下載，或使用者確實取得需要的結果了嗎？"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這三層不是彼此保證成立的關係。\n\n### 常見 HTTP 狀態碼"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "表 3｜常見 HTTP 狀態碼",
+              "headers": [
+                "狀態碼",
+                "白話意思"
+              ],
+              "rows": [
+                [
+                  "200 OK",
+                  "這次 HTTP 請求成功"
+                ],
+                [
+                  "201 Created",
+                  "成功建立資源"
+                ],
+                [
+                  "400 Bad Request",
+                  "請求本身有問題"
+                ],
+                [
+                  "401 Unauthorized",
+                  "缺少有效的身分驗證"
+                ],
+                [
+                  "403 Forbidden",
+                  "沒有權限存取"
+                ],
+                [
+                  "404 Not Found",
+                  "找不到指定資源"
+                ],
+                [
+                  "500 Internal Server Error",
+                  "伺服器發生內部錯誤"
+                ],
+                [
+                  "503 Service Unavailable",
+                  "服務目前無法處理請求"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "來源：[MDN HTTP 回應狀態碼](https://developer.mozilla.org/zh-TW/docs/Web/HTTP/Reference/Status?utm_source=chatgpt.com)。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mdn-http-status"
+          ]
+        },
+        {
+          "id": "streamlit",
+          "heading": "五、不是每個按鈕都會呼叫 REST API：認識 Streamlit",
+          "paragraphs": [
+            "教材特別強調這個觀念。\n\n有些人看到網頁上的「檢查」按鈕，就想當然認為：\n\n「按下這個按鈕，一定會送出 `POST /api/check`。」\n\n這個推論可能完全錯誤。\n\n例如使用 Python 的 Streamlit 製作網頁："
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Streamlit 姓名檢查範例",
+              "paragraphs": [
+                "僅檢查姓名是否非空；不包含正式身分驗證與授權。"
+              ],
+              "code": "import streamlit as st\n\n\ndef validate(name):\n    return bool(name.strip())\n\n\nname = st.text_input(\"姓名\")\nif st.button(\"檢查\"):\n    if validate(name):\n        st.success(\"資料完整\")\n    else:\n        st.error(\"請填寫姓名\")"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "這段程式並沒有自行定義 `/api/check` 這個 REST API。\n\nStreamlit 由框架管理瀏覽器和 Python 伺服器之間的互動。它使用包含 HTTP 與 WebSocket 在內的通訊機制，WebSocket 提供持續的雙向連線，使伺服器可以把更新推送給瀏覽器。\n\n\n\n\n因此，應該這樣理解："
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "圖 3｜自訂 HTTP API 與 Streamlit 的概念對照",
+              "description": "兩條獨立路徑均為概念示意；實際請求、WebSocket 訊息與其他連線，需由文件、原始碼或封包確認。validate() 是程序內呼叫，不是此圖宣稱存在的 HTTP 端點。",
+              "items": [
+                {
+                  "title": "傳統自訂 HTTP API 的概念",
+                  "body": "Browser → HTTP API → Backend → Response"
+                },
+                {
+                  "title": "Streamlit 的概念",
+                  "body": "Browser → Streamlit 框架通訊 → Python 程序 → validate()"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "兩者均為概念示意。實際使用哪些請求、WebSocket 訊息及其他連線，必須根據框架文件、原始碼或實際封包確認。\n\n你需要分清楚「程式內部的函式呼叫」與「跨網路的 API 呼叫」。\n\n例如 Python 的 `validate()` 可能只是同一個程序中的函式呼叫，根本不需要經過 HTTP。\n\n若要在本機試做，請使用已安裝 Python 與 Streamlit 的環境，將程式保存為 `app.py`，執行 `streamlit run app.py`。先留空姓名並按「檢查」，預期看到「請填寫姓名」；再輸入合成姓名並重試，預期看到「資料完整」。結束後用 Ctrl+C 停止本機伺服器。這些介面結果只證明本範例的姓名檢查，不代表存在 REST 端點或已完成正式授權。"
+              ]
+            }
           ],
           "sourceIds": [
             "streamlit-architecture"
@@ -93,28 +364,152 @@
         },
         {
           "id": "validation",
-          "heading": "每個邊界都要問誰重新檢查",
+          "heading": "六、資料在哪裡被檢查，才是系統安全的關鍵",
           "paragraphs": [
-            "使用者介面的max_chars有助輸入，但程式端仍需檢查型別、空白與長度；匯出函式也要驗證目前資料，而不是只信任畫面曾顯示完整。相同規則在不同入口的責任要明確。",
-            "修改輸入後，應知道哪個快照失效、哪個預覽或下載出口不再可用。重跑畫面與重新授權是不同問題；本原型沒有正式多人存取控制，不用這段流程宣稱授權已完成。"
+            "現在換成銀行的徵信報告系統。\n\n使用者在畫面填寫企業統一編號，前端限制必須輸入八個數字。\n\n但如果系統只在瀏覽器檢查，可能存在漏洞。\n\n因為瀏覽器是使用者可以控制的環境。使用者可能透過其他程式或工具繞過前端限制，直接提交不符合規則的資料。\n\n我們需要考慮多個檢查位置："
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 4｜驗證責任的邊界",
+              "headers": [
+                "邊界",
+                "必須檢查什麼"
+              ],
+              "rows": [
+                [
+                  "Browser",
+                  "提醒使用者格式錯誤，改善操作體驗"
+                ],
+                [
+                  "Server",
+                  "重新檢查格式、型別、長度、業務條件和權限"
+                ],
+                [
+                  "資料庫",
+                  "透過適當限制維持資料一致性"
+                ],
+                [
+                  "匯出功能",
+                  "再確認目前資料有效，而且使用者有權匯出"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "尤其要注意舊資料（stale data）。\n\n假設使用者輸入一筆完整資料，按下檢查後獲得成功訊息。接著他又刪除了必填欄位，但原本的「下載報告」按鈕仍然能使用。\n\n如果後端只相信「之前曾經驗證成功」，就可能把不完整的資料匯出。\n\n正確做法是讓修改後的資料使舊驗證結果失效，必要時在匯出入口再次驗證目前資料。\n\n這個設計原則常稱為 Never Trust the Client（不要直接信任用戶端）。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-input-validation"
+          ]
+        },
+        {
+          "id": "applications",
+          "heading": "七、跨產業應用：相同觀念，不同業務",
+          "paragraphs": [
+            "同一套資料流與結果驗證方法，可以套用到不同產業的工作。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 5｜跨產業結果驗證",
+              "headers": [
+                "產業",
+                "使用者操作",
+                "真正需要驗證的業務結果"
+              ],
+              "rows": [
+                [
+                  "電商",
+                  "按下結帳",
+                  "付款、庫存、訂單狀態是否一致"
+                ],
+                [
+                  "醫療",
+                  "上傳報告",
+                  "檔案是否有效、患者是否正確、是否有權存取"
+                ],
+                [
+                  "金融",
+                  "匯出徵信報告",
+                  "必填資料是否完整、是否通過權限檢查"
+                ],
+                [
+                  "教育",
+                  "繳交作業",
+                  "伺服器是否保存正確版本，是否在期限內"
+                ],
+                [
+                  "製造",
+                  "提交設備維修申請",
+                  "工單是否建立，設備編號是否有效"
+                ],
+                [
+                  "AI Agent",
+                  "執行外部工具",
+                  "工具呼叫是否授權、結果是否真實完成"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "AI Agent 也是同樣的道理。\n\n即使工具回傳 `200 OK`，也不能直接推論付款完成、檔案產生成功，或外部操作已達到預期效果。必須檢查工具回應的實際內容，必要時再查詢結果狀態。"
+              ]
+            }
           ]
         },
         {
           "id": "record",
-          "heading": "區分文件推理與實際觀察",
+          "heading": "八、實務練習：自己追蹤一次網頁資料流",
           "paragraphs": [
-            "常見誤解是「Network分頁看到成功，就證明整個任務通過」。觀察應記錄你看的是哪個資源、連線或資料交換，並核對業務與下載結果；不要把網路紀錄中的憑證、cookie或真實資料公開。",
-            "沒有啟動原型時，可以先完成文件追蹤，將協定細節標為文件依據或待觀察。這與實際抓到請求不同，紀錄中要保留證據層次。"
+            "如果你使用 Chrome 或 Edge，可以開啟自己控制的本機測試網站，按 `F12` 進入 Developer Tools（開發者工具）。\n\n切換到 `Network` 分頁，然後操作網頁。\n\n範例介面示意；實際瀏覽器畫面可能不同。"
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "資料流追蹤紀錄",
-              "paragraphs": [
-                "將以下合成範例放入 architecture.md，依你的課堂情境修改；這不是實際單位規定或研究結果。"
+              "kind": "table",
+              "caption": "圖 4｜Developer Tools：Network 模擬紀錄",
+              "headers": [
+                "Name",
+                "Status",
+                "Type"
               ],
-              "code": "# 本課資料流（合成）\n輸入：三個目前欄位與操作事件\n用戶端：瀏覽器內Streamlit前端\n通訊：由Streamlit管理HTTP／WebSocket等機制\n處理：Python程序呼叫驗證及匯出函式\n結果：缺漏回饋，或當次JSON預覽與下載\n保存：工作階段記憶體；下載檔另由操作者管理\n未建立：自訂/api/check或REST後端\n證據：文件與程式核對；未擷取的通訊保持待觀察"
+              "rows": [
+                [
+                  "orders",
+                  "200",
+                  "fetch"
+                ],
+                [
+                  "session",
+                  "101",
+                  "websocket"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "僅作說明的模擬紀錄，不是從教材網站擷取的封包。\n\n在 Network 裡，你要學習觀察四件事：\n\n1. Headers：請求送去哪裡？使用什麼 Method？回傳什麼狀態碼？\n2. Payload：如果有請求本文，送出了哪些資料？\n3. Response：伺服器回傳什麼結果？\n4. WS / Messages：如果使用 WebSocket，有哪些實際可觀察的訊息？\n\n最重要的是不要把「我認為應該如此」當成「我實際觀察到了」。\n\n觀察時請使用合成測試資料，不要公開 Cookie、Token、個人資料或其他敏感內容。\n\n模擬紀錄中的 `101` 示意 HTTP/1.1 WebSocket 協定升級，不表示應用任務成功；不同部署或協定版本的握手呈現也可能不同。"
+              ]
             }
+          ]
+        },
+        {
+          "id": "synthesis",
+          "heading": "九、整章重點：你真正要建立的思考方式",
+          "paragraphs": [
+            "可以用以下五個問題檢查任何 Web 系統：\n\n1. 誰發起操作？ 使用者、瀏覽器，還是背景程式？\n2. 資料怎麼走？ HTTP、WebSocket、函式呼叫，還是其他方式？\n3. 誰負責處理？ 哪個伺服器、程序或元件？\n4. 誰負責驗證？ 哪裡重新檢查資料、權限及目前狀態？\n5. 如何證明完成？ 只有 HTTP 成功，還是業務結果與最終產物都已核對？\n\n將這五個問題記錄在 `architecture.md`，就是一份最基本的資料流分析。分開標記文件依據、程式核對與實際觀察，未觀察的細節保留待查。"
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "十、理解檢核",
+          "paragraphs": [
+            "請先嘗試回答文末理解檢核的三題，再展開參考解析。\n\n本章最重要的一句話：網頁顯示成功、通訊成功、業務完成，是三個需要分別驗證的事情。"
           ]
         }
       ],
@@ -145,53 +540,105 @@
       },
       "sections": [
         {
-          "id": "roles",
-          "heading": "A Click Also Involves Data Exchange",
+          "id": "introduction",
+          "heading": "Trace a button to the completed outcome",
           "paragraphs": [
-            "A browser presents pages, executes client-side code and communicates with servers. HTTP is a request/response protocol commonly used on the Web. An API (Application Programming Interface) defines software interaction; it need not use a network or REST.",
-            "For example, functions in rules.py can be called within the same process. A separately designed HTTP API would need endpoints, methods, inputs, responses and errors. This course creates no /api/check endpoint; a check button does not establish that such a URL exists."
-          ],
-          "sourceIds": [
-            "mdn-http"
+            "Clicking one button on a web page can trigger many operations: transferring data, running code, validating inputs, accessing a database and returning a result.\n\nUnderstanding this chain helps you read how websites work and judge whether a system architecture drawn by an AI Coding Agent is reasonable."
           ]
         },
         {
           "id": "analogy",
-          "heading": "A Counter, Message Exchange and Service Agreement",
+          "heading": "1. Start with an everyday example: ordering food online",
           "paragraphs": [
-            "Think of the browser as a service counter, HTTP as a way to exchange messages with a processing office, and the API as an agreement about accepted requests, required data and responses. The analogy separates responsibilities; actual systems can involve multiple protocols and intermediaries.",
-            "A button is just a trigger. Trace input, communication, processing, results and retention to understand destinations. A green completion message alone does not show that server-side code actually rejects incomplete exports."
-          ]
-        },
-        {
-          "id": "http",
-          "heading": "Read the Parts of an HTTP Request",
-          "paragraphs": [
-            "MDN describes a client sending a request and a server producing a response. The method, target, headers and optional body convey the request; the response includes a status code, headers and optional content. HTTP is stateless, while applications can maintain sessions through additional mechanisms.",
-            "HTTP 200 usually indicates successful handling of that HTTP request. It does not establish complete fields, official acceptance or correct authorization. Inspect the contract and content for business and security outcomes; network success also does not establish that the user received or understood the final report."
+            "Imagine using a restaurant website on your phone. You choose beef noodles and press “Submit order”.\n\nBehind that single button are several responsibilities. Follow the information through the six conceptual steps below."
           ],
           "blocks": [
             {
               "kind": "flow",
-              "caption": "Figure 1 | Conceptual Trace of One Data Check",
-              "description": "This is an analysis sequence, not a Streamlit packet format. It specifies no nonexistent REST endpoint.",
+              "caption": "Figure 1 | Conceptual flow of a web action",
+              "description": "Arrows show the conceptual processing order in this example; verify the actual architecture and communication separately.",
               "items": [
                 {
-                  "title": "Current input",
-                  "body": "Identify the current synthetic fields and requested action; avoid reusing a stale snapshot."
+                  "title": "1. User action",
+                  "body": "Choose beef noodles and press submit"
                 },
                 {
-                  "title": "Communication and processing",
-                  "body": "Identify the transport mechanism and validating process; interface limits alone are insufficient."
+                  "title": "2. Browser",
+                  "body": "Collect item, quantity, table number and other data"
                 },
                 {
-                  "title": "Response and status",
-                  "body": "Separate transport/framework success, business omissions and technical failures."
+                  "title": "3. HTTP / other communication",
+                  "body": "Send data to the order-processing system"
                 },
                 {
-                  "title": "Preview and download",
-                  "body": "Match results to current input; downloaded files have separate device-retention responsibilities."
+                  "title": "4. Server",
+                  "body": "Check products, prices, inventory and permission to order"
+                },
+                {
+                  "title": "5. Storage and business processing",
+                  "body": "Create the order and save the result"
+                },
+                {
+                  "title": "6. Return the result",
+                  "body": "Show order acceptance or explain the failure"
                 }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "This is a conceptual data flow for a typical website; actual websites need not implement exactly this architecture. The interface visible to the user is one part of the whole system."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "roles",
+          "heading": "2. How do browsers, HTTP and APIs differ?",
+          "paragraphs": [
+            "Use the restaurant analogy to separate the responsibilities."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Web roles and restaurant analogies",
+              "headers": [
+                "Term",
+                "Plain-language meaning",
+                "Restaurant analogy"
+              ],
+              "rows": [
+                [
+                  "Browser",
+                  "Software for operating a website and displaying results",
+                  "Ordering tablet"
+                ],
+                [
+                  "HTTP",
+                  "A protocol for exchanging requests and responses between client and server",
+                  "Rules for transmitting order slips"
+                ],
+                [
+                  "API",
+                  "An interface contract specifying services software can request and how to exchange data",
+                  "Specification for accepted orders"
+                ],
+                [
+                  "Server",
+                  "Receives requests, executes code and produces responses",
+                  "Kitchen and order-processing system"
+                ],
+                [
+                  "Database",
+                  "Stores and queries data",
+                  "Order and inventory records"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Two distinctions matter. HTTP is a communication protocol; an API is an interface contract. An API can provide a service over HTTP, or it can be a Python function called by another part of a program.\n\nAn API need not be a REST API. REST is an architectural style for Web APIs; many APIs use other approaches.\n\nMDN describes HTTP in terms of a client sending a request and a server producing a response to exchange information."
               ]
             }
           ],
@@ -200,11 +647,228 @@
           ]
         },
         {
-          "id": "streamlit",
-          "heading": "Check Streamlit Instead of Assuming Endpoints",
+          "id": "http",
+          "heading": "3. HTTP: how does a computer send a digital order?",
           "paragraphs": [
-            "Streamlit’s architecture documentation explains HTTP and WebSocket use between frontend and server. WebSocket maintains a two-way connection for updates and session interaction. This course uses framework mechanisms; do not describe every button as a POST to a custom REST API.",
-            "Calling validate and export_report within Python is a different relationship. Label the diagram “framework-managed events and results.” If finer detail is needed, inspect your own synthetic environment with browser developer tools rather than inventing uncaptured packets or responses."
+            "An HTTP exchange generally has a request and a response.\n\n### 1. Request\n\nSuppose we design an ordering API. The following address and content are hypothetical teaching examples, not endpoints implemented by this course."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "HTTP request example",
+              "paragraphs": [
+                "A hypothetical teaching message, not an endpoint on this site."
+              ],
+              "code": "POST /api/orders HTTP/1.1\nHost: restaurant.example\nContent-Type: application/json\n\n{\n  \"item\": \"beef_noodles\",\n  \"quantity\": 2\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Read the message as four parts:\n\n- Method: `POST` expresses the intended operation.\n- Path: `/api/orders` identifies the resource or service location.\n- Headers: `Content-Type`, for example, describes the data format.\n- Body: the actual submitted data, such as the item and quantity.\n\nTogether, these parts form an HTTP request.\n\n### 2. Response\n\nThe server could respond as follows:"
+              ]
+            },
+            {
+              "kind": "step",
+              "heading": "HTTP response example",
+              "paragraphs": [
+                "A hypothetical teaching message, not an endpoint on this site."
+              ],
+              "code": "HTTP/1.1 201 Created\nContent-Type: application/json\n\n{\n  \"order_id\": \"A1024\",\n  \"status\": \"accepted\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Under this API contract, the server reports that an order resource was created. Creating an order does not establish that the food has been cooked.\n\n### Common HTTP methods"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 2 | Common HTTP methods",
+              "headers": [
+                "Method",
+                "Common purpose",
+                "Example"
+              ],
+              "rows": [
+                [
+                  "GET",
+                  "Retrieve a resource",
+                  "Query an order"
+                ],
+                [
+                  "POST",
+                  "Submit data for processing",
+                  "Create an order"
+                ],
+                [
+                  "PUT",
+                  "Create or completely replace a specified resource",
+                  "Replace the full order record"
+                ],
+                [
+                  "PATCH",
+                  "Partially modify a resource",
+                  "Change delivery notes"
+                ],
+                [
+                  "DELETE",
+                  "Delete a resource",
+                  "Delete a draft order"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "These are common semantics. They do not automatically enforce business rules; the API design and server implementation determine which operations are allowed."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mdn-http"
+          ]
+        },
+        {
+          "id": "outcomes",
+          "heading": "4. Why does HTTP 200 not establish task completion?",
+          "paragraphs": [
+            "Suppose a hospital website allows patients to upload test reports. After receiving a request, a hypothetical API returns:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Response with failed business validation",
+              "paragraphs": [
+                "A hypothetical teaching message, not an endpoint on this site."
+              ],
+              "code": "HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n  \"success\": false,\n  \"error\": \"missing_patient_id\"\n}"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The HTTP status is `200 OK`, but the body says `success: false`. This contract distinguishes successful request handling from failed business validation. In practice, an API can instead use an appropriate 4xx status, such as `422 Unprocessable Content`, according to its contract.\n\nCheck success at three levels:"
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 2 | Check three outcome levels separately",
+              "description": "These rows are separate checks; passing one does not guarantee the others.",
+              "items": [
+                {
+                  "title": "Level 1: Communication result",
+                  "body": "Did the request arrive and receive the expected response? What was its HTTP status?"
+                },
+                {
+                  "title": "Level 2: Business result",
+                  "body": "Does the content meet the rules: complete data, enough stock and acceptance conditions?"
+                },
+                {
+                  "title": "Level 3: User task completion",
+                  "body": "Was the order accepted, can the correct report be downloaded, or did the user obtain the required outcome?"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Passing one level does not guarantee the others. An HTTP response alone cannot prove that the requested business outcome or final user task is complete.\n\n### Common HTTP status codes"
+              ]
+            },
+            {
+              "kind": "table",
+              "caption": "Table 3 | Common HTTP status codes",
+              "headers": [
+                "Status",
+                "Plain-language meaning"
+              ],
+              "rows": [
+                [
+                  "200 OK",
+                  "This HTTP request succeeded"
+                ],
+                [
+                  "201 Created",
+                  "A resource was successfully created"
+                ],
+                [
+                  "400 Bad Request",
+                  "There is a problem with the request"
+                ],
+                [
+                  "401 Unauthorized",
+                  "Valid authentication credentials are missing"
+                ],
+                [
+                  "403 Forbidden",
+                  "Access is refused"
+                ],
+                [
+                  "404 Not Found",
+                  "The requested resource was not found"
+                ],
+                [
+                  "500 Internal Server Error",
+                  "An internal server error occurred"
+                ],
+                [
+                  "503 Service Unavailable",
+                  "The service cannot currently handle the request"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The status-code reference is MDN HTTP response status codes. These descriptions concern HTTP semantics; determine the business outcome from the API contract and actual response content."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "mdn-http-status"
+          ]
+        },
+        {
+          "id": "streamlit",
+          "heading": "5. Buttons need not call REST APIs: Streamlit",
+          "paragraphs": [
+            "Seeing a “Check” button does not establish that pressing it sends `POST /api/check`. Consider this Python Streamlit page:"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Streamlit name-check example",
+              "paragraphs": [
+                "This checks only for a nonblank name; it does not implement production authentication or authorization."
+              ],
+              "code": "import streamlit as st\n\n\ndef validate(name):\n    return bool(name.strip())\n\n\nname = st.text_input(\"姓名\")\nif st.button(\"檢查\"):\n    if validate(name):\n        st.success(\"資料完整\")\n    else:\n        st.error(\"請填寫姓名\")"
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The Chinese labels mean “Name”, “Check”, “Data complete” and “Please enter a name”. The code defines no `/api/check` REST endpoint.\n\nStreamlit manages interaction between the browser and the Python server, using mechanisms including HTTP and WebSocket. A WebSocket maintains a two-way connection through which the server can send updates to the browser."
+              ]
+            },
+            {
+              "kind": "cards",
+              "caption": "Figure 3 | Custom HTTP API and Streamlit concepts",
+              "description": "The independent paths are conceptual. Verify actual requests, WebSocket messages and connections from documentation, source or traffic. validate() is an in-process call, not an HTTP endpoint established by this figure.",
+              "items": [
+                {
+                  "title": "Custom HTTP API concept",
+                  "body": "Browser → HTTP API → Backend → Response"
+                },
+                {
+                  "title": "Streamlit concept",
+                  "body": "Browser → Streamlit framework communication → Python process → validate()"
+                }
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Both paths are conceptual. Confirm actual requests, WebSocket messages and other connections using framework documentation, source code or captured traffic.\n\nSeparate in-process function calls from network API calls. Python's `validate()` can run inside the same process without an HTTP request.\n\nTo try this locally, use an environment with Python and Streamlit already installed, save the code as `app.py` and run `streamlit run app.py`. Leave the name blank and press “Check” to see the missing-name message; enter a synthetic name and check again to see the complete-data message. Stop the local server with Ctrl+C when finished. These UI results do not establish a REST endpoint or production authorization."
+              ]
+            }
           ],
           "sourceIds": [
             "streamlit-architecture"
@@ -212,28 +876,152 @@
         },
         {
           "id": "validation",
-          "heading": "Ask Who Rechecks at Each Boundary",
+          "heading": "6. Where data is checked determines the security boundary",
           "paragraphs": [
-            "The interface’s max_chars helps input, but program-side code still checks types, blanks and length. Export must validate current data rather than trusting an earlier complete result. Make rule responsibilities explicit at each entry point.",
-            "After an edit, identify which snapshot is invalid and which preview/download paths become unavailable. Rerendering and reauthorization are separate concerns. This prototype has no formal multiuser access control, so this flow does not demonstrate completed authorization."
+            "Consider a bank credit-report system. The browser requires a company's registration number to contain eight digits. Browser-only validation can still be bypassed: the browser is under the user's control, and another program can submit data that ignores the interface restriction.\n\nCheck responsibilities at several boundaries:"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 4 | Validation boundaries",
+              "headers": [
+                "Boundary",
+                "Required responsibility"
+              ],
+              "rows": [
+                [
+                  "Browser",
+                  "Explain formatting errors and improve the interaction"
+                ],
+                [
+                  "Server",
+                  "Recheck format, type, length, business conditions and permissions"
+                ],
+                [
+                  "Database",
+                  "Maintain consistency through appropriate constraints"
+                ],
+                [
+                  "Export function",
+                  "Confirm that current data is valid and the user may export it"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Pay particular attention to stale data. A user enters a complete record and passes validation, then deletes a required field. If the old download button remains available and the backend trusts the earlier validation result, it may export incomplete data.\n\nEdits must invalidate the earlier result. Revalidate current data at the export entry point when needed, and check access permission there. This follows the principle “Never Trust the Client”: client-side checks help users, while trusted processing must enforce the rules."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "owasp-input-validation"
+          ]
+        },
+        {
+          "id": "applications",
+          "heading": "7. The same ideas across industries",
+          "paragraphs": [
+            "The same data-flow and outcome checks apply to work in different industries."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 5 | Verify outcomes across industries",
+              "headers": [
+                "Industry",
+                "User action",
+                "Business outcome to verify"
+              ],
+              "rows": [
+                [
+                  "E-commerce",
+                  "Press checkout",
+                  "Payment, stock and order state agree"
+                ],
+                [
+                  "Healthcare",
+                  "Upload a report",
+                  "Valid file, correct patient and authorized access"
+                ],
+                [
+                  "Finance",
+                  "Export a credit report",
+                  "Complete required data and passed permission checks"
+                ],
+                [
+                  "Education",
+                  "Submit an assignment",
+                  "The server saved the correct version within the deadline"
+                ],
+                [
+                  "Manufacturing",
+                  "Submit an equipment repair request",
+                  "A work order exists and the equipment ID is valid"
+                ],
+                [
+                  "AI Agent",
+                  "Execute an external tool",
+                  "The call was authorized and its intended result actually completed"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "The same reasoning applies to AI Agents. A tool returning `200 OK` does not prove payment completion, successful file creation or the intended external effect. Inspect its response content and query the resulting state when necessary."
+              ]
+            }
           ]
         },
         {
           "id": "record",
-          "heading": "Separate Document Reasoning from Observation",
+          "heading": "8. Practice: trace one web data flow",
           "paragraphs": [
-            "A successful entry in the Network panel does not establish that the whole task passed. Record which resource, connection or exchange you observed, then check business and download results. Do not publish credentials, cookies or real data from network records.",
-            "Without starting the prototype, you can trace documents and mark protocol detail as documented or awaiting observation. This differs from capturing an actual request; keep those evidence levels in the record."
+            "In Chrome or Edge, open a local test website that you control. Press `F12` to open Developer Tools, select `Network`, then operate the page.\n\nThe example below illustrates an interface; actual browser interfaces can differ. Its entries are simulated, not traffic captured from the teaching website."
           ],
           "blocks": [
             {
-              "kind": "step",
-              "heading": "Data-flow Trace Record",
-              "paragraphs": [
-                "The unchanged Traditional Chinese template records current three-field input and events, the browser frontend, Streamlit-managed HTTP/WebSocket communication, Python validation/export, omission feedback or current JSON, session/download retention, no custom /api/check backend and the difference between document/code review and unobserved traffic. Adapt it in architecture.md with synthetic information."
+              "kind": "table",
+              "caption": "Figure 4 | Developer Tools: simulated Network entries",
+              "headers": [
+                "Name",
+                "Status",
+                "Type"
               ],
-              "code": "# 本課資料流（合成）\n輸入：三個目前欄位與操作事件\n用戶端：瀏覽器內Streamlit前端\n通訊：由Streamlit管理HTTP／WebSocket等機制\n處理：Python程序呼叫驗證及匯出函式\n結果：缺漏回饋，或當次JSON預覽與下載\n保存：工作階段記憶體；下載檔另由操作者管理\n未建立：自訂/api/check或REST後端\n證據：文件與程式核對；未擷取的通訊保持待觀察"
+              "rows": [
+                [
+                  "orders",
+                  "200",
+                  "fetch"
+                ],
+                [
+                  "session",
+                  "101",
+                  "websocket"
+                ]
+              ]
+            },
+            {
+              "kind": "prose",
+              "paragraphs": [
+                "Learn to inspect four things in Network:\n\n1. Headers: where did the request go, which method did it use, and which status came back?\n2. Payload: if a request body exists, what data was submitted?\n3. Response: what result did the server return?\n4. WS / Messages: for a WebSocket, which messages can actually be observed?\n\nKeep expected behavior separate from observed behavior. Use synthetic test data and do not publish Cookies, Tokens, personal data or other sensitive content.\n\nThe simulated `101` illustrates an HTTP/1.1 WebSocket protocol upgrade. It is not an application-task success status, and not every deployment or protocol version will show the same handshake representation."
+              ]
             }
+          ]
+        },
+        {
+          "id": "synthesis",
+          "heading": "9. A way to reason about any Web system",
+          "paragraphs": [
+            "Use five questions to examine a system:\n\n1. Who initiates the action: a user, the browser or a background program?\n2. How does data move: HTTP, WebSocket, function calls or another mechanism?\n3. Who processes it: which server, process or component?\n4. Who validates it: where are current data, permissions and state checked again?\n5. What proves completion: HTTP success alone, or a checked business result and final artifact?\n\nRecord the five answers in `architecture.md` to build a basic data-flow analysis. Label documentation, code inspection and live observations separately; leave unobserved details pending."
+          ]
+        },
+        {
+          "id": "understanding",
+          "heading": "10. Check your understanding",
+          "paragraphs": [
+            "Try the three questions in the understanding-check section before opening their reference explanations. The central lesson is that a success message, successful communication and a completed business outcome each need their own verification."
           ]
         }
       ],
@@ -252,109 +1040,109 @@
   },
   "checks": [
     {
-      "id": "AASE-M06-C04-Q01",
-      "answer": 2,
-      "text": {
-        "zh": {
-          "prompt": "本課有檢查按鈕，能否推定存在/api/check？",
-          "options": [
-            "可以，所有表單都一樣",
-            "可以，Streamlit就是REST框架",
-            "不能，需依實際框架與程式確認，不能編造端點",
-            "不能，所以沒有資料交換"
-          ],
-          "rationales": [
-            "不同系統有不同通訊契約。",
-            "本課沒有自行建立該REST端點。",
-            "名稱與機制要有依據。",
-            "仍可能由框架傳遞事件與結果。"
-          ]
-        },
-        "en": {
-          "prompt": "Does the course’s check button establish an /api/check endpoint?",
-          "options": [
-            "Yes; every form is the same.",
-            "Yes; Streamlit is a REST framework.",
-            "No; inspect the actual framework and code without inventing an endpoint.",
-            "No; therefore no data is exchanged."
-          ],
-          "rationales": [
-            "Communication contracts vary by system.",
-            "The course creates no such REST endpoint.",
-            "Names and mechanisms need evidence.",
-            "The framework can still exchange events and results."
-          ]
-        }
-      }
-    },
-    {
-      "id": "AASE-M06-C04-Q02",
+      "id": "AASE-M06-C04-Q04",
       "answer": 1,
       "text": {
         "zh": {
-          "prompt": "HTTP 200可直接代表哪項結論？",
+          "prompt": "某醫院系統回傳 HTTP 200，但內容寫著「檢驗報告資料不足」。能否認定上傳與審核全部完成？",
           "options": [
-            "資料內容真實",
-            "通常代表該HTTP請求成功處理；業務結果仍看契約與內容",
-            "正式受理完成",
-            "所有使用者都獲正確授權"
+            "可以，200 就是全部成功",
+            "不可以，HTTP 成功與業務結果不同",
+            "可以，只要網頁沒有錯誤",
+            "無法判斷 HTTP 狀態"
           ],
           "rationales": [
-            "不驗證資料真實性。",
-            "協定狀態與業務承諾需要分開。",
-            "不是業務核定證據。",
-            "授權需另外檢查。"
+            "200 只表達 HTTP 層的成功，不能保證全部任務完成。",
+            "業務回應已指出資料不足，還要核對保存與審核狀態。",
+            "畫面未報錯仍不足以證明業務完成。",
+            "題目已提供 HTTP 200；缺的是業務完成證據。"
           ]
         },
         "en": {
-          "prompt": "What can HTTP 200 directly indicate?",
+          "prompt": "A hospital returns HTTP 200 but says “Insufficient test-report data”. Does this establish completed upload and review?",
           "options": [
-            "The data is true.",
-            "Usually successful handling of that HTTP request; inspect the contract and content for business outcomes.",
-            "Official intake acceptance.",
-            "Correct authorization for every user."
+            "Yes; 200 means everything succeeded",
+            "No; HTTP success and the business result differ",
+            "Yes, as long as the page shows no error",
+            "The HTTP status cannot be determined"
           ],
           "rationales": [
-            "It does not verify truth.",
-            "Keep protocol status separate from business commitments.",
-            "It is not acceptance evidence.",
-            "Authorization requires separate checks."
+            "200 describes HTTP success, not completion of every task.",
+            "The business response says data is insufficient; also verify retention and review state.",
+            "An error-free page does not establish the business outcome.",
+            "The question already gives HTTP 200; business-completion evidence is missing."
           ]
         }
       }
     },
     {
-      "id": "AASE-M06-C04-Q03",
-      "answer": 0,
+      "id": "AASE-M06-C04-Q05",
+      "answer": 2,
       "text": {
         "zh": {
-          "prompt": "只在UI限制輸入長度是否足夠？",
+          "prompt": "你看到 Streamlit 頁面有個「檢查」按鈕，可以直接在架構圖畫出 POST /api/check 嗎？",
           "options": [
-            "不夠，處理與匯出入口仍需核對目前資料",
-            "足夠，使用者不可能繞過介面",
-            "足夠，只要按鈕是灰色",
-            "無需任何資料驗證"
+            "可以，所有按鈕都會呼叫 REST API",
+            "可以，因為 Streamlit 使用 Python",
+            "不可以，必須先查明實際通訊與程式呼叫",
+            "不可以，因為 Streamlit 完全不使用網路"
           ],
           "rationales": [
-            "介面與程式端有不同責任。",
-            "不能信任所有輸入必經該介面。",
-            "視覺狀態不等於程式規則。",
-            "會失去完整性保證。"
+            "按鈕可以透過框架互動，不一定呼叫 REST API。",
+            "Python 語言不決定網路介面契約。",
+            "需查框架、原始碼或實際通訊，才能畫出有依據的架構。",
+            "Streamlit 仍使用 HTTP、WebSocket 等網路機制。"
           ]
         },
         "en": {
-          "prompt": "Is limiting input length only in the UI sufficient?",
+          "prompt": "Can a “Check” button on a Streamlit page justify drawing POST /api/check in the architecture?",
           "options": [
-            "No; processing and export entry points must still check current data.",
-            "Yes; users cannot bypass the interface.",
-            "Yes, if the button is gray.",
-            "No data validation is needed."
+            "Yes; all buttons call REST APIs",
+            "Yes, because Streamlit uses Python",
+            "No; confirm actual communication and program calls first",
+            "No; Streamlit never uses a network"
           ],
           "rationales": [
-            "Interface and program-side responsibilities differ.",
-            "Do not assume all inputs passed through that interface.",
-            "Visual state does not enforce program rules.",
-            "That would remove integrity guarantees."
+            "Framework interactions need not call a REST API.",
+            "Using Python does not determine the network interface contract.",
+            "Inspect framework documentation, source or actual traffic before drawing the architecture.",
+            "Streamlit still uses HTTP, WebSocket and other network mechanisms."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M06-C04-Q06",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "使用者已通過資料驗證，後來又修改資料。匯出報告時應如何處理？",
+          "options": [
+            "沿用舊驗證結果",
+            "只要下載按鈕還在就可以",
+            "重新確認目前資料與存取權限",
+            "只檢查 HTTP 是否回傳 200"
+          ],
+          "rationales": [
+            "修改後舊結果可能失效。",
+            "按鈕可見不保證後端能安全匯出。",
+            "確認目前資料有效且有權匯出，避免沿用舊快照。",
+            "HTTP 狀態不保證資料完整與授權正確。"
+          ]
+        },
+        "en": {
+          "prompt": "Data passed validation and the user then edited it. What should happen when exporting the report?",
+          "options": [
+            "Reuse the old validation result",
+            "Allow export if the download button is still there",
+            "Recheck current data and access permission",
+            "Only check for HTTP 200"
+          ],
+          "rationales": [
+            "Editing can invalidate the earlier result.",
+            "A visible button does not establish safe server-side export.",
+            "Check current data and export permission instead of trusting a stale snapshot.",
+            "HTTP status does not guarantee complete data or correct authorization."
           ]
         }
       }
