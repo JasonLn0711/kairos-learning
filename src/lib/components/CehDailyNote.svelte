@@ -20,7 +20,7 @@
     {:else if block.kind==='diagram'}<NoteDiagram diagram={block} date={note.date} part={part.number} {lang}/>
     {:else if block.kind==='recall'}<NoteRecall {block} date={note.date} part={part.number} {lang}/>
     {:else if block.kind==='checks'}<NoteChecks {block} {lang}/>
-    {:else if block.kind==='paragraph'&&block.id}<h4 id={block.id}>{block.text}</h4>
+    {:else if (block.kind==='paragraph'||block.kind==='heading')&&block.id}<h4 id={block.id}>{block.text}</h4>
     {:else}<SourceBody blocks={[block]} {lang}/>{/if}
   {/each}</section>{/each}</section>{/each}</article>
   <section class="sources"><h2 id="note-sources">{zh?'參考來源與查核界線':'References and verification boundaries'}</h2><p>{zh?'以下來源支持觀念解說；題號與參考答案取自本次供稿，尚未核對未提供的原題全文。':'These sources support the concept explanations. Question references and proposed answers come from the supplied notes; the missing original question texts have not been verified.'}</p><ul>{#each note.sources as source}<li><a href={source.url}>{source.title}</a> · {source.checkedOn}</li>{/each}</ul></section>

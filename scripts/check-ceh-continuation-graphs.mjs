@@ -82,6 +82,8 @@ try{
     }
    }
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   assert.equal(await page.locator('h2[id^="p2-cont"],h2[id^="p3-cont"]').count(),0,'Continuation subheadings must stay below the section heading');
+   assert.ok(await page.locator('h4[id^="p2-cont-u"]').count()>7);
    for(const part of [2,3]){
     const id=part===2?'p2-cont-u269':'p3-cont-u336';
     const exercise=page.locator('#'+id).locator('..');
