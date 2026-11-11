@@ -19,6 +19,7 @@ for(const lang of ['zh','en']){
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+   for(let n=1;n<=3;n++)await page.locator(`[data-tls-figure="${n}"]`).screenshot({path:`.local/aase/m0606/${lang}-${width}-figure-${n}.png`});
    await page.screenshot({path:`.local/aase/m0606/${lang}-${width}.png`,fullPage:true});
   }
   await page.setViewportSize({width:390,height:900});
@@ -28,6 +29,8 @@ for(const lang of ['zh','en']){
    const asset=`/images/aase/m06-06-${n}-${lang}.svg`;
    const response=await request.get(asset);expect(response.ok()).toBeTruthy();
    expect(await response.body()).toEqual(readFileSync(`site${asset}`));
+   const svgPage=await page.context().newPage();await svgPage.setContent(await response.text());
+   expect(await svgPage.locator('svg').evaluate(svg=>{const v=(svg as SVGSVGElement).viewBox.baseVal;return [...svg.querySelectorAll('text')].every(t=>{const b=t.getBBox();return b.x>=0&&b.y>=0&&b.x+b.width<=v.width&&b.y+b.height<=v.height;});})).toBeTruthy();await svgPage.close();
   }
  });
  test(`${lang} no-JavaScript reading and keyboard`,async({browser})=>{

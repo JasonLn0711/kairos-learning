@@ -24,8 +24,11 @@ def render(f,n,lang):
   y=max(ends)+36
  else:
   for i,item in enumerate(f['items']):
-   y=box(item,36,y,988,'#f1faf5' if n==2 and i==1 else '#fbfcfd')
-   if i<len(f['items'])-1:arrow(530,y+8);y+=52
+   body,*label=item['body'].split('\n→ ')
+   y=box(dict(title=item['title'],body=body),36,y,988,'#f1faf5' if n==2 and i==1 else '#fbfcfd')
+   if i<len(f['items'])-1:
+    assert len(label)==1
+    arrow(530,y+8);y=text(label[0],36,y+72,44)+20
    else:y+=24
  y=text(f['description'],36,y+12,44)+24
  svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 {y}" role="img" aria-labelledby="title desc" lang="{lang}"><title id="title">{escape(f["caption"])}</title><desc id="desc">{escape(f["description"])}</desc><rect width="1060" height="{y}" fill="#fbfcfd"/><g font-family="Arial, Noto Sans CJK TC, sans-serif" fill="#18252c">'+''.join(out)+'</g></svg>\n'

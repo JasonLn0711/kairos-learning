@@ -8,12 +8,12 @@ lesson.update(revision=4,contentVersion='1.1.0',date='2026-11-11')
 figures={
 'zh':[
 ('圖 1｜TLS 建立瀏覽器與伺服器間的保護','雙向連線符號表示兩端協商，不表示已完成業務授權。四步解說見下文。',[('你的瀏覽器','驗證伺服器憑證與網域身分'),('網站伺服器','提出憑證，參與金鑰交換與受保護通訊')]),
-('圖 2｜TLS 終結後，下一段另行確認','箭頭表示資料傳輸方向；此為假想架構，未驗證正式部署。',[('顧客的瀏覽器','① HTTPS / TLS 加密 → 反向代理'),('反向代理（Reverse Proxy）','例如 Nginx、負載平衡器；TLS 終結點：在這裡解密。② 新的一段連線：需要另外確認保護方式 → 後端'),('後端應用程式','處理會員、訂單及付款邏輯。③ 另一段資料庫連線 → 資料庫'),('資料庫','該段傳輸保護與存取控制需獨立確認')]),
-('圖 3｜沿資料路徑檢查三個信任邊界','箭頭表示示例資料流；A／B／C 為跨界檢查位置，圖線本身不實作控制。',[('不受信任的外部輸入','使用者上傳文件、輸入表單、呼叫 API。↓ 信任邊界 A'),('後端應用程式','驗證輸入型別、格式、大小、身分及操作權限。↓ 信任邊界 B'),('內部敏感資料庫','執行資料存取權限及查詢限制。↓ 信任邊界 C'),('對外匯出與分享','限制可輸出欄位、收件對象及資料範圍')])],
+('圖 2｜TLS 終結後，下一段另行確認','箭頭表示資料傳輸方向；此為假想架構，未驗證正式部署。',[('顧客的瀏覽器','發起網站連線。\n→ ① HTTPS / TLS 加密'),('反向代理（Reverse Proxy）','例如 Nginx、負載平衡器；TLS 終結點：在這裡解密。\n→ ② 新的一段連線：需要另外確認保護方式'),('後端應用程式','處理會員、訂單及付款邏輯。\n→ ③ 另一段資料庫連線'),('資料庫','該段傳輸保護與存取控制需獨立確認')]),
+('圖 3｜沿資料路徑檢查三個信任邊界','箭頭表示示例資料流；A／B／C 為跨界檢查位置，圖線本身不實作控制。',[('不受信任的外部輸入','使用者上傳文件、輸入表單、呼叫 API。\n→ 信任邊界 A'),('後端應用程式','驗證輸入型別、格式、大小、身分及操作權限。\n→ 信任邊界 B'),('內部敏感資料庫','執行資料存取權限及查詢限制。\n→ 信任邊界 C'),('對外匯出與分享','限制可輸出欄位、收件對象及資料範圍')])],
 'en':[
 ('Figure 1 | TLS protects browser-to-server communication','The bidirectional connection represents negotiation between endpoints, not business authorization. Four explanatory steps follow.',[('Your browser','Verifies the certificate and server domain identity'),('Website server','Presents a certificate and participates in key exchange and protected communication')]),
-('Figure 2 | Review each connection after TLS termination','Arrows indicate data transmission in this hypothetical architecture, not a verified production deployment.',[('Customer browser','① HTTPS / TLS encryption → reverse proxy'),('Reverse proxy','For example Nginx or a load balancer. TLS terminates and data is decrypted here. ② Separate connection: protection must be confirmed → backend'),('Backend application','Handles members, orders and payments. ③ Separate database connection → database'),('Database','Verify this connection’s protection and access controls independently')]),
-('Figure 3 | Three trust boundaries along the data path','Arrows show example data flow. A/B/C mark checks across boundaries; drawing them implements no controls.',[('Untrusted external input','Uploaded documents, forms and API calls. ↓ Trust boundary A'),('Backend application','Validate type, format, size, identity and operation permissions. ↓ Trust boundary B'),('Internal sensitive database','Enforce data-access permissions and query restrictions. ↓ Trust boundary C'),('External export and sharing','Restrict output fields, recipients and data scope')])]
+('Figure 2 | Review each connection after TLS termination','Arrows indicate data transmission in this hypothetical architecture, not a verified production deployment.',[('Customer browser','Initiates the website connection.\n→ ① HTTPS / TLS encryption'),('Reverse proxy','For example Nginx or a load balancer. TLS terminates and data is decrypted here.\n→ ② Separate connection: protection must be confirmed'),('Backend application','Handles members, orders and payments.\n→ ③ Separate database connection'),('Database','Verify this connection’s protection and access controls independently')]),
+('Figure 3 | Three trust boundaries along the data path','Arrows show example data flow. A/B/C mark checks across boundaries; drawing them implements no controls.',[('Untrusted external input','Uploaded documents, forms and API calls.\n→ Trust boundary A'),('Backend application','Validate type, format, size, identity and operation permissions.\n→ Trust boundary B'),('Internal sensitive database','Enforce data-access permissions and query restrictions.\n→ Trust boundary C'),('External export and sharing','Restrict output fields, recipients and data scope')])]
 }
 ids=['introduction','overview','channel','hops','secrets','boundaries','integration','record','understanding']
 for lang in ['zh','en']:
@@ -84,7 +84,10 @@ for lang in ['zh','en']:
 # The host contract keeps code byte-identical across locales.
 for zh,en in zip(lesson['text']['zh']['sections'],lesson['text']['en']['sections']):
  for a,b in zip(zh.get('blocks',[]),en.get('blocks',[])):
-  if 'code' in a:b['code']=a['code']
+  if 'code' in a:
+   if a['heading']=='architecture.md':
+    b['paragraphs']=['The template records: (1) single-user local testing on 127.0.0.1, with production TLS and account authorization absent; (2) hypothetical Browser → HTTPS → Reverse Proxy, with proxy-to-backend and backend-to-database protection pending confirmation; (3) boundary A validates input format, length and content and requires production identity/permission checks, boundary B uses a least-privilege database account and restricts unnecessary access, and boundary C rechecks export authorization and excludes disallowed sensitive fields; (4) real keys stay out of source, production secret storage and its owner are named, and revocation, rotation and exposure response are planned; (5) TLS certificates/configuration, proxy/backend protection, database transport, authentication/authorization and log exposure remain unverified; (6) this is design analysis only, with no completed security test. The code below preserves the shared Traditional Chinese template.']
+   b['code']=a['code']
 out=ROOT/'content/aase/lessons/aase-m06-c06.json'
 data=json.dumps(lesson,ensure_ascii=False,indent=2)+'\n'
 if '--check' in sys.argv:assert out.read_text()==data
