@@ -27,3 +27,9 @@ And build strong connection with all other relevant files, docs, and contents.
 ## 驗證範圍
 
 本輪只新增對帳文件與清單，使用文件提交 `[skip ci]`。逐檔 Git blob、ancestor、本機恢復副本、文件連結與 diff whitespace 為本輪檢查；教材實作、型別、建置、瀏覽器與部署未重跑。Planning 檢查結果與最終提交另追加於下方。
+
+## published｜本輪 Git 與驗證回執
+
+Kairos 清單 `386db30`、對帳 `a731a74` 與 Planning 三份控制面文件 `a663d4b8` 已各自推送 `origin HEAD:main`，fetch後兩個隔離發布分支 divergence 均為 `0 0`。原工作目錄保持原版本及 dirty 狀態，未將隔離分支的同步狀態冒稱為原 checkout 已同步。
+
+572份恢復副本逐檔 Git blob 驗證通過；owner 文件相對連結、兩庫 diff check通過。Planning repository：44 grandfathered／0 new warnings；knowledge：186／186通過；11/11 agenda容量 Unknown、metrics過期83天。這些驗證支持版本保全與控制面紀錄，不推定今日產能或教材理解完成。本段另作文件回執提交。
