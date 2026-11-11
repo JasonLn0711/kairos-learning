@@ -846,6 +846,6 @@ M07-07 v1.1.0 的[來源、前版與逐節對照](sources/aase/m07-07/replacemen
 
 ## AASE M09-03｜成果展示與驗收證據（2026-11-11）
 
-完整九節供稿、兩張參考 PNG、前版與逐小節採用見[來源紀錄](sources/aase/m09-03/replacement-2026-11-11/README.md)。v1.1.0 保留原發布日及六個舊錨點；原三題與工作坊具體追溯表作補充，三個新開放問題及編輯解析沿原生收合，qa=[]。
+完整九節供稿、兩張參考 PNG、前版與逐小節採用見[來源紀錄](sources/aase/m09-03/replacement-2026-11-11/README.md)。v1.1.1 保留原發布日及六個舊錨點；原三題與工作坊具體追溯表作補充，三個新開放問題及編輯解析沿原生收合，qa=[]。
 
 `aase_m0903_content.py`由雙語採用稿產生正式 JSON；`aase_m0903_svg.py`同源產生四份受限 SVG。AcceptanceEvidenceDiagram 只接本課五步 flow／三列 cards，HTML 保留垂直閱讀及實際觀察強調，下載不接受任意標記。兩支腳本的 `--check`、`tests/aase-m0903-replacement.test.ts` 與 `playwright.aase-m0903.config.ts` 分別核對同步、資料邊界及實際全文／四尺寸／放大／無 JS／鍵盤／下載。發布狀態以[回執](releases/2026-11-11-aase-m09-03-replacement.md)為準。
