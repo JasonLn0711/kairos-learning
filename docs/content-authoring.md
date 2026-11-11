@@ -674,3 +674,11 @@ CEH26-M05-C06／M05-06由原待編M05-10主題移入指定課次，八節完整�
 v1.2.0／revision 5 依十節供稿完整抽換。六圖依序為 analogy flow 5、workflow cards 2、scope cards 3、constraints cards 4、change cards 5、decision flow 6；aase.ts 保留前版規則並驗證新版本的種類／數量。MvpScopeDiagram 使用可搜尋 HTML；變更的兩條替代分支位於共同群組，再到同一決策角色。窄版仍保留分支群組，不產生是 → 否的流程箭頭。SVG 由 aase_m0304_svg.py 同源生成，單份 <100000 bytes。
 
 AaseProse 承接既有文字段落、清單、固定 h3、小節引用及 InlineText HTTPS 連結；四名詞保留 comparison 錨點。雙語七表與 code 對齊，英文逐欄解讀共用 problem.md。新 Q05–Q08 為物流開放題；原生參考解析不建立作答／學習狀態。前版、完整供稿、六圖及來源核對見[來源對照](sources/aase/m03-04/replacement-2026-11-11/source-map.md)，驗證與發布狀態見[回執](releases/2026-11-11-aase-m03-04-six-figures.md)。
+
+## AASE M03-05 十節新供稿與六圖（2026-11-11）
+
+v1.2.0／revision 5 的[來源對照](sources/aase/m03-05/replacement-2026-11-11/source-map.md)保存完整原文、六張PNG、待換前版與雙語稿。原十節、導言與分母界線成為十二section，舊十一錨點、原發布日與翻譯閘門保留；五個原開放問題搭配Q08–Q12參考解析，qa=[]。`normalize-source.py --check`核對原文與明列正規化；`aase_m0305_content.py --check`核對雙語稿、圖解及正式JSON。
+
+SuccessEvidenceDiagram沿受限cards／flow，revision 5限定evidence-chain／metrics／measure／assumptions／trace／understanding節點數6／3／4／4／4／7，只有第一圖為flow。第二圖是三個平行角色，第六圖使用主張區與六列dl。`successMetrics`固定四瑕疵兩良品，檢查整數邊界；兩個range與全部阻擋按鈕只計算合成資料，無JS停用互動並保留預設及公式。十二個SVG由`aase_m0305_svg.py`從正式模型產生，`--check`比對位元組，下載固定預設。
+
+單元與瀏覽器入口仍為`tests/aase-m0305-replacement.test.ts`、`playwright.aase-m0305.config.ts`。正式站設定AASE_BASE_URL。驗證範圍含完整正文與順序、四尺寸／200%、鍵盤／無JS、兩滑桿、全部阻擋、搜尋、十二SVG邊界／重疊／下載；實際結果與待驗事項見[發布回執](releases/2026-11-11-aase-m03-05-replacement.md)。
