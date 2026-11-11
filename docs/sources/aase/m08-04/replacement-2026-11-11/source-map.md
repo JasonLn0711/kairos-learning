@@ -1,6 +1,6 @@
 # M08-04 供稿抽換紀錄
 
-狀態：source preserved；完整雙語正文與三圖已採用，程式及本機瀏覽器已驗證；正式發布與回讀待完成。
+狀態：source preserved；完整雙語正文與三圖、程式及真實下載已驗證並以v1.1.0發布；200%正文的頁首換行修正v1.1.1已本機驗證，待正式回讀。
 
 正本為本目錄的 pasted-text-1.txt、三張 PNG 與 previous-lesson.json；SHA256SUMS 記錄保存時位元組。原發布日 2026-11-05，stable ID AASE-M08-C04 與既有路徑保留。
 
@@ -50,3 +50,5 @@ HTML／搜尋／SVG同源資料為正式JSON的三個ConceptVisual；資料只�
 2026-11-11讀取[Streamlit 1.51.0 AppTest文件](https://docs.streamlit.io/1.51.0/develop/api-reference/app-testing/st.testing.v1.apptest)：此工具模擬app，元件變更後需明確run()。1.51.0屬性清單沒有獨立download_button API；教材的at.get方式另以固定版本實測，不從新版文件推定舊版能力。Session State回呼清除、下載元件與JSON序列化依本次可執行範例驗證，實際檔案下載另用Chromium檢查；不將元件存在當作檔案交付。
 
 本機實測：Streamlit 1.51.0的三階段pytest通過；移除on_change回呼的副本在第三階段assert not at.success失敗，原程式恢復後通過。真實Streamlit瀏覽器核對缺漏、補正、report.json檔名與完整JSON、再次清空後成功／下載消失及鍵盤。詳細結果與正式頁驗收由[發布回執](../../../../releases/2026-11-11-aase-m08-04-replacement.md)承接。上述是教材與範例驗證，學員理解、實體手機及完整螢幕閱讀器保留獨立待驗狀態。
+
+2026-11-11補正：先前200%根字級檢查未放大固定px正文，增強測試後發現既有頁首品牌nowrap在320px造成352px外溢。將品牌white-space改normal，正文與根字級同時200%後頁面回到320px，另保存頁首截圖。已保存實際發布的published-1.1.0.json與SHA256SUMS；教學正文與圖文保持同一深度，版本修訂為v1.1.1／revision5。工作坊採既有sha256版本化入口；測試直接走該入口及實際鍵盤下載，不以CDN舊裸網址的回應判定新流程。

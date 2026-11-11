@@ -9,7 +9,7 @@ const lesson=read('content/aase/lessons/aase-m08-c04.json');
 const before=read(root+'previous-lesson.json');
 const build=(l:any)=>createAaseCatalog(read('content/aase/course.json'),[l],read('content/aase/sources.json'),'2026-11-11',read('content/aase/course.en.json'));
 test('AppTest replacement preserves source, identity, complete bilingual examples and same-source figures',()=>{
- assert.equal(lesson.revision,before.revision+1);assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.publishedOn,before.publishedOn);assert.deepEqual(lesson.translations,before.translations);assert.deepEqual(lesson.qa,[]);
+ assert.equal(lesson.revision,before.revision+2);assert.equal(lesson.contentVersion,'1.1.1');assert.equal(lesson.publishedOn,before.publishedOn);assert.deepEqual(lesson.translations,before.translations);assert.deepEqual(lesson.qa,[]);
  assert.deepEqual(lesson.checks.map((q:any)=>q.id),['AASE-M08-C04-Q01','AASE-M08-C04-Q03','AASE-M08-C04-Q02']);assert.deepEqual(lesson.checks.map((q:any)=>q.answer),[1,2,3]);
  for(const lang of ['zh','en'] as const){
   const t=lesson.text[lang];assert.equal(t.sections.length,10);const blocks=t.sections.flatMap((s:any)=>s.blocks??[]);
