@@ -1,0 +1,429 @@
+{
+  "id": "AASE-M08-C01",
+  "status": "published",
+  "revision": 3,
+  "contentVersion": "1.0.2",
+  "publishedOn": "2026-11-05",
+  "date": "2026-11-05",
+  "sourceIds": [
+    "pytest-usage",
+    "streamlit-apptest-151",
+    "govuk-usability",
+    "owasp-authorization"
+  ],
+  "qa": [],
+  "text": {
+    "zh": {
+      "summary": "把啟動、規則、介面、任務與安全證據逐項對照主張，清楚說明已驗證與仍待驗的範圍。",
+      "objectives": [
+        "區分服務啟動與需求驗收。",
+        "為品質主張選擇足夠且相關的證據。",
+        "記錄實際結果與尚未執行的驗證。"
+      ],
+      "readingGuide": {
+        "goal": "區分服務啟動與需求驗收。",
+        "startingPoint": "spec.md、三次切片、既有測試結果與可編輯的驗證紀錄。",
+        "route": "先理解情境與原理，再對照工作坊檔案，最後留下可核對的操作與審查紀錄。",
+        "output": "verification-notes.md 能區分已證明、失敗及仍待驗的範圍。"
+      },
+      "sections": [
+        {
+          "id": "claim",
+          "heading": "讓「完成」有可核對的意思",
+          "paragraphs": [
+            "本機程式可以啟動，只說明某個環境能跑到入口。資料缺漏時是否拒絕匯出、使用者是否看懂錯誤、不同承辦人是否隔離，都還需要各自的驗證。先把「系統完成了」拆成具體主張，才知道要蒐集什麼證據。",
+            "M07 留下三次切片與 Diff；M08 要回答這些變更如何支持 spec.md。未執行的步驟寫待驗，失敗保留實際結果，不能用 Agent 的完成摘要替代操作或測試輸出。"
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "像車輛能發動，還要檢查不同使用條件",
+          "paragraphs": [
+            "引擎發動、煞車有效、駕駛能看懂儀表，各有不同的檢查。發動成功不能替煞車測試背書，一次試駕也無法證明所有道路條件都安全。",
+            "軟體同樣需要分層證據。測試的價值在於涵蓋哪項行為與條件，不在於報告看起來有多少個綠色勾號。"
+          ]
+        },
+        {
+          "id": "layers",
+          "heading": "依問題選擇驗證方式",
+          "paragraphs": [
+            "規則測試直接呼叫 validate、export_report，能快速檢查不合法資料。AppTest 檢查 Streamlit 的輸入與顯示狀態；真實瀏覽器再驗鍵盤與下載內容。",
+            "同儕任務觀察則檢查人如何理解與完成流程。多人授權需要已實作的身分、資源與資料存取控制；本課單人原型沒有這些控制，不能用其他測試的通過來補足。"
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "圖 1｜品質證據的不同視角",
+              "description": "這些是互補的驗證視角，平行卡片不表示先後或相互取代。",
+              "items": [
+                {
+                  "title": "規則",
+                  "body": "直接輸入正常、缺漏與邊界資料。"
+                },
+                {
+                  "title": "介面與瀏覽器",
+                  "body": "核對提示、狀態、鍵盤及下載位元組。"
+                },
+                {
+                  "title": "使用者任務",
+                  "body": "觀察找路、修正與完成，不只問喜不喜歡。"
+                },
+                {
+                  "title": "安全邊界",
+                  "body": "確認已實作控制；沒有控制時先記未實作。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "matrix",
+          "heading": "把每條驗收連到最小證據",
+          "paragraphs": [
+            "先從 spec.md 取一條「缺漏不得產生完整報告」，至少需要匯出函式拒絕缺漏的結果，以及畫面不提供完整下載的觀察。若主張中文下載可讀，還要讀實際檔案，不能只看元件存在。",
+            "紀錄中保留版本或提交、環境、命令、輸入、預期、觀察及限制。同一測試在別的階段或別的版本通過，不會自動證明目前這份程式。"
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "表 1｜證據要對得上主張",
+              "headers": [
+                "主張",
+                "適合證據",
+                "仍未證明"
+              ],
+              "rows": [
+                [
+                  "本機骨架可啟動",
+                  "啟動輸出與瀏覽器畫面",
+                  "規則與匯出正確"
+                ],
+                [
+                  "缺漏不能匯出",
+                  "規則例外測試及介面負向情境",
+                  "所有安全風險已解決"
+                ],
+                [
+                  "下載內容符合約定",
+                  "真實檔案的 JSON 與允許欄位核對",
+                  "正式受理資格"
+                ],
+                [
+                  "使用者能自行補正",
+                  "具任務的同儕觀察",
+                  "所有使用者皆容易操作"
+                ],
+                [
+                  "承辦人無法讀他人資料",
+                  "已實作授權的跨身分負向測試",
+                  "單人原型目前尚無此證據"
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "用證據表取代模糊狀態",
+          "paragraphs": [
+            "例如「pytest 通過」還需指出在哪個目錄、執行哪組測試；「同儕試用完成」要有任務及實際觀察。若同儕尚未來試用，先備妥任務，不填入想像結果。",
+            "以下工作表由學員填寫；空白欄與待驗狀態是用來保留真實邊界，不代表測試已完成。"
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "驗證紀錄欄位",
+              "paragraphs": [
+                "另建 verification-notes.md，以自己的實際結果填寫。"
+              ],
+              "code": "版本／提交與環境：\n對應規格與主張：\n驗證層次及命令／任務：\n輸入與預期：\n實際觀察與退出結果：\n通過／失敗／未執行：\n未涵蓋條件與下一步："
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "通過的範圍保持原樣",
+          "paragraphs": [
+            "「測試全綠，所以安全」漏掉了未實作或未測試的控制；「使用者說不錯，所以規則正確」也缺少資料行為證據。把不同層次相互連結，同時保留各自限制。",
+            "接下來先用 TDD 練習可失敗的回饋，再深入規則、介面、任務與安全案例。課程閱讀與測驗答案不會被自動記成學員實作通過。"
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "spec.md、三次切片、既有測試結果與可編輯的驗證紀錄。",
+        "steps": [
+          "挑三條完成主張，分別寫出條件與對應規格。",
+          "將啟動、規則、介面、任務及多人安全證據分欄，填入實際已有結果。",
+          "指出至少一項尚無足夠證據的主張與下一個驗證動作。"
+        ],
+        "expected": "verification-notes.md 能區分已證明、失敗及仍待驗的範圍。",
+        "check": "每項通過都能連到相同程式版本與相關驗證，不把未測量事項推成完成。",
+        "cleanup": "停止本次啟動的服務，保留合成作品、Diff 與實際結果；不要覆蓋其他工作或留下真實資料。"
+      }
+    },
+    "en": {
+      "summary": "Match startup, rule, interface, task and security evidence to specific claims, identifying what is verified and what remains untested.",
+      "objectives": [
+        "Distinguish service startup from requirements acceptance.",
+        "Choose sufficient, relevant evidence for quality claims.",
+        "Record actual results and verification not yet performed."
+      ],
+      "readingGuide": {
+        "goal": "Distinguish service startup from requirements acceptance.",
+        "startingPoint": "spec.md, the three slices, existing test results and an editable verification record.",
+        "route": "Understand the situation and principles, compare the workshop files, then retain verifiable operation and review records.",
+        "output": "verification-notes.md distinguishes demonstrated, failed and still-unverified scope."
+      },
+      "sections": [
+        {
+          "id": "claim",
+          "heading": "Give “Complete” a Verifiable Meaning",
+          "paragraphs": [
+            "A local program starting shows that an environment can execute an entry point. Rejection of incomplete exports, understandable errors and isolation between staff require separate verification. Break “the system is complete” into specific claims to identify the evidence needed.",
+            "M07 produced three slices and diffs; M08 connects those changes to spec.md. Mark unexecuted steps pending and preserve failures. An Agent’s completion summary cannot replace operations or test output."
+          ]
+        },
+        {
+          "id": "analogy",
+          "heading": "A Vehicle Starting Does Not Test Every Condition",
+          "paragraphs": [
+            "Engine startup, working brakes and readable instruments need different checks. A running engine cannot stand in for a brake test, and one drive does not establish safety on every road.",
+            "Software likewise needs evidence at different layers. Judge tests by the behavior and conditions covered rather than the number of green marks in a report."
+          ]
+        },
+        {
+          "id": "layers",
+          "heading": "Choose Verification for the Question",
+          "paragraphs": [
+            "Rule tests call validate and export_report directly to check invalid data quickly. AppTest checks Streamlit input/display states; a real browser separately checks keyboard operation and downloaded content.",
+            "Peer task observation examines how people understand and complete the flow. Multiuser authorization requires implemented identity, resource and data-access controls. This single-user prototype lacks them; passing other tests cannot fill that gap."
+          ],
+          "blocks": [
+            {
+              "kind": "cards",
+              "caption": "Figure 1 | Different Views of Quality Evidence",
+              "description": "These complementary views are parallel cards, not a sequence or substitutes for one another.",
+              "items": [
+                {
+                  "title": "Rules",
+                  "body": "Provide valid, missing and boundary inputs directly."
+                },
+                {
+                  "title": "Interface and browser",
+                  "body": "Check feedback, states, keyboard operation and download bytes."
+                },
+                {
+                  "title": "User tasks",
+                  "body": "Observe navigation, correction and completion, beyond stated preferences."
+                },
+                {
+                  "title": "Security boundaries",
+                  "body": "Check implemented controls; record absent controls as unimplemented."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "matrix",
+          "heading": "Connect Each Acceptance Criterion to Needed Evidence",
+          "paragraphs": [
+            "For “incomplete data cannot produce a complete report” in spec.md, obtain at least a rejecting export-function result and an interface observation showing no complete download. To claim Chinese downloads are readable, inspect an actual file rather than only the component’s presence.",
+            "Retain version/commit, environment, command, input, expectation, observation and limits. A test passing at another stage or version does not automatically establish the current program’s behavior."
+          ],
+          "blocks": [
+            {
+              "kind": "table",
+              "caption": "Table 1 | Match Evidence to the Claim",
+              "headers": [
+                "Claim",
+                "Relevant evidence",
+                "Still not established"
+              ],
+              "rows": [
+                [
+                  "The local skeleton starts.",
+                  "Startup output and browser screen.",
+                  "Correct rules and export."
+                ],
+                [
+                  "Incomplete input cannot be exported.",
+                  "Rule exception tests and negative interface scenarios.",
+                  "Resolution of every security risk."
+                ],
+                [
+                  "Download content meets the contract.",
+                  "Actual JSON file and allowlisted fields.",
+                  "Official intake eligibility."
+                ],
+                [
+                  "A user can correct omissions independently.",
+                  "Peer observation with a task.",
+                  "Ease of use for every user."
+                ],
+                [
+                  "Staff cannot read others’ unauthorized data.",
+                  "Cross-identity negative tests of implemented authorization.",
+                  "This single-user prototype currently has no such evidence."
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "record",
+          "heading": "Replace Vague Status with an Evidence Record",
+          "paragraphs": [
+            "“pytest passed” still needs a working directory and test selection. “Peer trial completed” needs a task and actual observations. Prepare tasks before a peer arrives, without filling in imagined outcomes.",
+            "Learners fill the worksheet below. Blank fields and pending status preserve the actual evidence boundary; they do not mean testing is complete."
+          ],
+          "blocks": [
+            {
+              "kind": "step",
+              "heading": "Verification Record Fields",
+              "paragraphs": [
+                "Create verification-notes.md from actual results. The unchanged Traditional Chinese template records version/commit/environment, specification/claim, verification layer/command/task, input/expectation, observation/exit, pass/fail/unexecuted status and uncovered conditions/next steps."
+              ],
+              "code": "版本／提交與環境：\n對應規格與主張：\n驗證層次及命令／任務：\n輸入與預期：\n實際觀察與退出結果：\n通過／失敗／未執行：\n未涵蓋條件與下一步："
+            }
+          ]
+        },
+        {
+          "id": "misread",
+          "heading": "Keep a Pass Within Its Tested Scope",
+          "paragraphs": [
+            "“All tests are green, so it is secure” ignores absent or untested controls. “Users liked it, so rules are correct” lacks data-behavior evidence. Connect layers while keeping their distinct limits.",
+            "The following lessons begin with TDD feedback capable of detecting failure, then examine rules, interface, tasks and security. Reading lessons or answer explanations does not automatically record a learner’s practical acceptance."
+          ]
+        }
+      ],
+      "exercise": {
+        "environment": "spec.md, the three slices, existing test results and an editable verification record.",
+        "steps": [
+          "Choose three completion claims and specify their conditions and corresponding requirements.",
+          "Separate startup, rule, interface, task and multiuser-security evidence; enter actual existing results.",
+          "Identify at least one insufficiently supported claim and the next verification action."
+        ],
+        "expected": "verification-notes.md distinguishes demonstrated, failed and still-unverified scope.",
+        "check": "Every pass links to the same program version and relevant verification. Do not mark unmeasured matters complete.",
+        "cleanup": "Stop only services you started for this exercise. Keep synthetic work, diffs and actual results; preserve other work and leave no real data."
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "AASE-M08-C01-Q01",
+      "answer": 1,
+      "text": {
+        "zh": {
+          "prompt": "骨架成功啟動，最直接證明什麼？",
+          "options": [
+            "所有規則正確",
+            "該環境能執行該入口",
+            "多人授權完成",
+            "使用者不會卡住"
+          ],
+          "rationales": [
+            "還需規則測試。",
+            "結論限於觀察到的啟動。",
+            "原型尚無此控制。",
+            "需觀察實際任務。"
+          ]
+        },
+        "en": {
+          "prompt": "What does successful skeleton startup most directly establish?",
+          "options": [
+            "Every rule is correct.",
+            "That environment can execute that entry point.",
+            "Multiuser authorization is complete.",
+            "Users cannot get stuck."
+          ],
+          "rationales": [
+            "Rules still need tests.",
+            "Limit the conclusion to observed startup.",
+            "The prototype has no such control.",
+            "Observe actual tasks."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C01-Q02",
+      "answer": 2,
+      "text": {
+        "zh": {
+          "prompt": "AppTest 出現下載元件，可以直接宣稱什麼？",
+          "options": [
+            "檔案位元組一定正確",
+            "全部使用者都懂",
+            "該模擬情境呈現下載元件，實際檔案另驗",
+            "正式資料可公開"
+          ],
+          "rationales": [
+            "元件狀態不等於內容。",
+            "沒有人的觀察。",
+            "依工具覆蓋範圍陳述。",
+            "與元件測試無關。"
+          ]
+        },
+        "en": {
+          "prompt": "What does an AppTest download component directly establish?",
+          "options": [
+            "The actual file bytes must be correct.",
+            "Every user understands it.",
+            "The simulated scenario presents that component; verify the actual file separately.",
+            "Production data may be made public."
+          ],
+          "rationales": [
+            "Component state is not file content.",
+            "No person was observed.",
+            "Describe the tool’s actual coverage.",
+            "That is unrelated to component testing."
+          ]
+        }
+      }
+    },
+    {
+      "id": "AASE-M08-C01-Q03",
+      "answer": 3,
+      "text": {
+        "zh": {
+          "prompt": "同儕尚未試用，紀錄該怎麼寫？",
+          "options": [
+            "預設順利完成",
+            "補一份理想觀察",
+            "複製教師測試當同儕結果",
+            "任務已準備，真人觀察未執行"
+          ],
+          "rationales": [
+            "沒有實際依據。",
+            "會混淆設計與觀察。",
+            "驗證層次不同。",
+            "如實保留狀態。"
+          ]
+        },
+        "en": {
+          "prompt": "A peer has not tried the app. What should the record say?",
+          "options": [
+            "Assume smooth completion.",
+            "Supply an ideal observation.",
+            "Copy teacher tests as peer results.",
+            "Tasks prepared; human observation not performed."
+          ],
+          "rationales": [
+            "There is no actual evidence.",
+            "That confuses design with observation.",
+            "Those are different verification layers.",
+            "This preserves the actual status."
+          ]
+        }
+      }
+    }
+  ],
+  "translations": {
+    "en": {
+      "status": "published",
+      "publishedOn": "2026-11-05"
+    }
+  }
+}
