@@ -927,3 +927,10 @@ M08-04 v1.1.2再將跳至內容連結的固定-100px隱藏改為依自身高度t
 ## CEH C06–C16：授權、ROE 與四圖（2026-11-12）
 
 日期筆記1.4.0／revision 7在C01–C05後接入[導言與十一章完整雙語](sources/ceh-notes/2026-11-10/c06-c16-supplement-2026-11-12/README.md)，保留舊內容與錨點。`ceh_note_c06_c16.py`沿重建腳本接入227區塊、29小節、12表及五道開放問題；無新增評分服務。四圖沿受限spec／既有graph renderer，兩個比較無箭頭，五步圖有四邊，授權決策兩個否定出口均停止。八SVG由正式JSON及白名單serializer衍生。測試`tests/ceh-notes-c06-c16.test.ts`核對真正正文、來源及停止分支；瀏覽器`check-ceh-c06-c16-browser.mjs`驗啟用JS的四尺寸／200%，完整頁沿`check-ceh-notes-browser.mjs`。實測及部署見[回執](releases/2026-11-12-ceh-c06-c16.md)。
+
+
+## CEH M20 八題複習專頁（2026-11-12）
+
+`/ceh-notes/m20-cryptography/`依供稿提供繁體中文正文與英文原題，與同日日期筆記分開。正式內容為`content/ceh-m20-review.json`，受`m20-review.ts`欄位／種類／錨點／圖解驗證及既有isPublic日期閘門約束。單語頁不宣告英文alternate；release檢查僅對此固定路徑允許沒有翻譯。所有既有雙語頁的語言閘門保留。
+
+十圖使用既有NoteDiagram／NoteContinuationDiagram與固定m20名稱、節點數、rows及edges；圖文／搜尋／匯出共用正式JSON。`python3 scripts/m20_review_svg.py --check`核對十份受審核SVG；`tests/m20-review.test.ts`核對完整原題／選項及非法資料拒絕；`node scripts/check-m20-review-browser.mjs`核對四尺寸、200%、無JS、鍵盤、圖檔及搜尋，正式站用`M20_REVIEW_BASE_URL`。來源、編輯差異及逐節對照見[來源紀錄](sources/ceh-m20-review/2026-11-12/README.md)，實測與發布見[回執](releases/2026-11-12-ceh-m20-review.md)。
