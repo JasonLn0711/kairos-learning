@@ -3,13 +3,14 @@ import {noteBodyText} from './ceh-notes.ts';
 import {validateNoteDiagram,type NoteDiagram} from './note-diagrams.ts';
 import type {Source} from './model.ts';
 export const m20ReviewPath='/ceh-notes/m20-cryptography/';
-export type M20Review={title:string;summary:string;status:'draft'|'published';publishedOn:string;contentVersion:string;sections:{id:string;heading:string;body:(NoteProse|NoteDiagram)[]}[];sources:Source[]};
+export type M20Review={title:string;summary:string;status:'draft'|'published';publishedOn:string;revisedOn:string;revision:number;contentVersion:string;sections:{id:string;heading:string;body:(NoteProse|NoteDiagram)[]}[];sources:Source[]};
 export function validateM20Review(value:M20Review):M20Review {
  const fail=():never=>{throw Error('Invalid M20 review content');};
  const filled=(s:unknown)=>typeof s==='string'&&s.trim().length>0;
  const only=(v:object,keys:string[])=>{if(Object.keys(v).some(k=>!keys.includes(k)))fail();};
- only(value,['title','summary','status','publishedOn','contentVersion','sections','sources']);
+ only(value,['title','summary','status','publishedOn','revisedOn','revision','contentVersion','sections','sources']);
  if(!filled(value.title)||!filled(value.summary)||!['draft','published'].includes(value.status)||!/^\d{4}-\d{2}-\d{2}$/.test(value.publishedOn)||!Number.isFinite(Date.parse(value.publishedOn))||new Date(value.publishedOn).toISOString().slice(0,10)!==value.publishedOn||!/^\d+\.\d+\.\d+$/.test(value.contentVersion)||!value.sections.length||!value.sources.length)fail();
+ if(!Number.isInteger(value.revision)||value.revision<1||!/^\d{4}-\d{2}-\d{2}$/.test(value.revisedOn)||!Number.isFinite(Date.parse(value.revisedOn))||new Date(value.revisedOn).toISOString().slice(0,10)!==value.revisedOn||value.revisedOn<value.publishedOn)fail();
  const ids=new Set<string>(['main','m20-sources']),figures=new Set<string>();
  const anchor=(s:string)=>{if(!/^p1-[a-z0-9-]+$/.test(s)||ids.has(s))fail();ids.add(s);};
  for(const section of value.sections){

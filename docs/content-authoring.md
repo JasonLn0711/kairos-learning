@@ -938,3 +938,12 @@ M08-04 v1.1.2再將跳至內容連結的固定-100px隱藏改為依自身高度t
 `/ceh-notes/m20-cryptography/`依供稿提供繁體中文正文與英文原題，與同日日期筆記分開。正式內容為`content/ceh-m20-review.json`，受`m20-review.ts`欄位／種類／錨點／圖解驗證及既有isPublic日期閘門約束。單語頁不宣告英文alternate；release檢查僅對此固定路徑允許沒有翻譯。所有既有雙語頁的語言閘門保留。
 
 十圖使用既有NoteDiagram／NoteContinuationDiagram與固定m20名稱、節點數、rows及edges；圖文／搜尋／匯出共用正式JSON。`python3 scripts/m20_review_svg.py --check`核對十份受審核SVG；`tests/m20-review.test.ts`核對完整原題／選項及非法資料拒絕；`node scripts/check-m20-review-browser.mjs`核對四尺寸、200%、無JS、鍵盤、圖檔及搜尋，正式站用`M20_REVIEW_BASE_URL`。來源、編輯差異及逐節對照見[來源紀錄](sources/ceh-m20-review/2026-11-12/README.md)，實測與發布見[回執](releases/2026-11-12-ceh-m20-review.md)。
+
+
+### M20 四個重要觀念補充（2026-11-12）
+
+M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整精讀，保留原13區段、八題32選項、十圖與原錨點。新增`revision`及`revisedOn`，由既有ArticleMetadata顯示目前版本修訂日；`publishedOn`維持2026-11-12。驗證拒絕非法修訂日期、早於原發布日及非正整數revision；未來發布fixture同步其修訂日期，繼續驗證關閉路由／搜尋／payload。
+
+新`m20gcmflow`沿受限continuation-graph，七節點、五列及七條固定邊，保留密文／Tag並列，驗證通過／失敗是兩個條件結果。接收端以自身持有的key及相同nonce／AAD驗證；箭頭是依賴關係，不表示傳送秘密金鑰。HTML／搜尋／SVG共用正文模型，原PNG另保管；現有`m20_review_svg.py --check`核對完整十一名白名單。
+
+[完整供稿、前版與逐節採納](sources/ceh-m20-review/2026-11-12/four-concepts-supplement/README.md)及[本次發布與驗收](releases/2026-11-12-ceh-m20-four-concepts.md)承接來源、修正與各層證據。四個時間建議只對應供稿的八題；五題包含選項文字出現AES，不是官方配分或五題答案均為AES。兩題理解檢查保留未答狀態，不建立作答提交或學習完成。

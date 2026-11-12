@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 const base=process.env.M20_REVIEW_BASE_URL||'http://127.0.0.1:4256';
 const data=JSON.parse(readFileSync('content/ceh-m20-review.json','utf8'));
+const figureCount=data.sections.flatMap(s=>s.body).filter(b=>b.kind==='diagram').length;
 const clean=s=>s.replace(/\[([^\]]+)\]\(https:\/\/[^)]+\)/g,'$1').replace(/\s+/g,'');
 const specs=JSON.parse(readFileSync('src/lib/note-diagram-specs.json','utf8'));
 const out='.local/m20-review';mkdirSync(out,{recursive:true});
@@ -13,7 +14,7 @@ try{
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});const response=await page.goto(base+'/ceh-notes/m20-cryptography/');assert.equal(response.status(),200);
-   assert.equal(await page.locator('h1').textContent(),data.title);assert.equal(await page.locator('[data-diagram]').count(),10);
+   assert.equal(await page.locator('h1').textContent(),data.title);assert.ok((await page.locator('main').innerText()).includes('v'+data.contentVersion));assert.equal(await page.locator('main time').first().getAttribute('datetime'),data.publishedOn);assert.equal(await page.locator('main time').last().getAttribute('datetime'),data.revisedOn);assert.equal(await page.locator('[data-diagram]').count(),figureCount);
    if(javaScriptEnabled)for(const b of data.sections.flatMap(s=>s.body).filter(b=>b.kind==='diagram')){const count=specs[b.name].edges.length;await page.waitForFunction(({name,count})=>document.querySelectorAll(`[data-diagram="${name}"] .connections path`).length===count,{name:b.name,count});}
    assert.deepEqual(errors,[], 'Page and resource loading errors');
    const rendered=clean(await page.locator('main').innerText());
@@ -23,7 +24,7 @@ try{
    }}
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${width}/${javaScriptEnabled} overflow`);
    assert.equal(await page.locator('a.language').count(),0);assert.equal(await page.locator('link[rel=alternate]').count(),0);
-   checks.push(`Full body and 10 figures, ${width}px, JS=${javaScriptEnabled}`);
+   checks.push(`Full body and ${figureCount} figures, ${width}px, JS=${javaScriptEnabled}`);
    if(javaScriptEnabled&&(width===390||width===1280))for(const figure of await page.locator('[data-diagram]').all())await figure.screenshot({path:`${out}/${await figure.getAttribute('data-diagram')}-${width}.png`});
   }
   await page.setViewportSize({width:320,height:900});await page.evaluate(()=>document.documentElement.style.fontSize='200%');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);checks.push(`200% at 320px, JS=${javaScriptEnabled}`);
@@ -40,6 +41,6 @@ try{
  const index=await ctx.request.get(base+'/search-index.json');assert.ok((await index.text()).includes('CEH-M20-REVIEW'));
  await page.goto(base+'/courses/ceh/v13/m20/hash-encryption-and-signatures/');assert.equal(await page.locator('a[href="/ceh-notes/m20-cryptography/"]').count(),1);
  await page.goto(base+'/ceh-notes/');assert.equal(await page.locator('a[href="/ceh-notes/m20-cryptography/"]').count(),1);
- checks.push('10 SVGs: exact bytes, text bounds; notes index and search discovery');await ctx.close();
+ checks.push(`${figureCount} SVGs: exact bytes, text bounds; notes index and search discovery`);await ctx.close();
  writeFileSync(out+'/result.json',JSON.stringify({base,checks,scope:'Article/browser QA; not learner completion'},null,2)+'\n');console.log(JSON.stringify({passed:checks.length,base}));
 }finally{await browser.close();}

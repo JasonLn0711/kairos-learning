@@ -117,7 +117,7 @@ try {
   const m20Path='content/ceh-m20-review.json',m20Original=readFileSync(m20Path,'utf8');aaseOriginals.set(m20Path,m20Original);
   for(const state of ['draft','future']){
     const review=JSON.parse(m20Original);review.title='M20_CLOSED_FIXTURE_ba91';
-    if(state==='draft')review.status='draft';else review.publishedOn='2099-01-01';
+    if(state==='draft')review.status='draft';else review.publishedOn=review.revisedOn='2099-01-01';
     writeFileSync(m20Path,JSON.stringify(review));
     const result=spawnSync('pnpm',['run','build'],{encoding:'utf8',maxBuffer:8*1024*1024});
     if(result.status!==0)throw Error((result.stdout+result.stderr).slice(-5000));

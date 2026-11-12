@@ -5,8 +5,8 @@ import {validateM20Review,type M20Review} from '../src/lib/m20-review.ts';
 const source=JSON.parse(readFileSync('content/ceh-m20-review.json','utf8')) as M20Review;
 test('complete M20 source, exact original questions, options and ten bounded figures',()=>{
  const n=validateM20Review(structuredClone(source));
- assert.equal(n.sections.length,13);
- const blocks=n.sections.flatMap(s=>s.body);
+ assert.ok(n.sections.length>=13); // The original thirteen sections remain before supplements.
+ const blocks=n.sections.slice(0,13).flatMap(s=>s.body);
  assert.equal(blocks.filter(b=>b.kind==='diagram').length,10);
  assert.equal(blocks.filter(b=>b.kind==='heading').length,27);
  const original=readFileSync('docs/sources/ceh-m20-review/2026-11-12/pasted-text-1.txt','utf8');
@@ -26,6 +26,10 @@ test('reject unsupported markup, duplicate anchors and diagrams, invalid geometr
   (n:M20Review)=>{n.sections[1].id=n.sections[0].id;},
   (n:M20Review)=>{n.sources[0].url='javascript:alert(1)';},
   (n:M20Review)=>{n.publishedOn='2026-02-30';},
+  (n:M20Review)=>{n.revisedOn='2026-02-30';},
+  (n:M20Review)=>{n.revisedOn='2026-11-11';},
+  (n:M20Review)=>{n.revision=0;},
+  (n:M20Review)=>{n.revision=1.5;},
   (n:M20Review)=>{const b=n.sections.flatMap(s=>s.body).find(b=>b.kind==='diagram')!;if(b.kind==='diagram')b.items.pop();},
  ]){const n=structuredClone(source);mutate(n);assert.throws(()=>validateM20Review(n));}
 });

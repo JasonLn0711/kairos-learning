@@ -8,7 +8,7 @@
 <div class="m20-review">
  <p class="lead">{review.summary}</p>
  <p><a href="/courses/ceh/v13/m20/hash-encryption-and-signatures/">延伸閱讀：M20 雜湊、加密與數位簽章</a></p>
- <ArticleMetadata lang="zh" publishedOn={review.publishedOn} revisedOn={review.publishedOn} version={'v'+review.contentVersion} author="CS Kairos"/>
+ <ArticleMetadata lang="zh" publishedOn={review.publishedOn} revisedOn={review.revisedOn} version={'v'+review.contentVersion} author="CS Kairos"/>
  <nav aria-label="本文導覽"><ol>{#each review.sections as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{/each}<li><a href="#m20-sources">參考來源</a></li></ol></nav>
  <article class="prose">{#each review.sections as section}<section><h2 id={section.id}>{section.heading}</h2>{#each section.body as block}
  {#if block.kind==='diagram'}<NoteDiagram diagram={block} date="2026-11-12" part={20} lang="zh"/>

@@ -9,18 +9,19 @@ def render_continuation(b,lang,spec):
    for line in wrap(paragraph,columns):
     out.append(f'<text x="{x}" y="{y}" font-size="{size}" font-weight="{700 if bold else 400}" text-anchor="{"middle" if center else "start"}">{escape(line)}</text>');y+=32
   return y
- def rect(x,y,w,h,fill='#e6f5ec'):
-  return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="{fill}" stroke="#b8d5c5"/>'
+ def rect(x,y,w,h,fill='#e6f5ec',stroke='#b8d5c5'):
+  return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="{fill}" stroke="{stroke}"/>'
  def path(d,dashed=False):out.append(f'<path d="{d}" fill="none" stroke="#77867f" stroke-width="2"'+(' stroke-dasharray="5 4"' if dashed else '')+'/>')
  def card(item,x,y,w):
   start=len(out);columns=max(5,int((w-36)/20));cy=text(item['title'],x+w/2,y+32,columns,20,True,True)
   cy=text(item['body'],x+w/2,cy+6,max(5,int((w-36)/18)),18,False,True)+12
   i=b['items'].index(item);name=b['name'];fill='#e6f5ec'
-  if (name=='authorizationgates' and i in [2,4]) or (name=='transactiontampering' and i==1) or (name=='serviceavailability' and i==1) or (name=='transportprotection' and i<3) or (name=='ssdremapping' and i==2):fill='#fbeeee'
-  elif (name=='itotrisks' and i==0) or (name=='ciaobjectives' and i==0) or (name=='signatureevidence' and i==2) or (name=='riskassessment' and i==2) or (name=='alerttriage' and i==3) or (name=='socgovernance' and i==3) or (name=='incidentcoordination' and i==0):fill='#e9f2fa'
+  if (name=='m20gcmflow' and i==6) or (name=='authorizationgates' and i in [2,4]) or (name=='transactiontampering' and i==1) or (name=='serviceavailability' and i==1) or (name=='transportprotection' and i<3) or (name=='ssdremapping' and i==2):fill='#fbeeee'
+  elif (name=='m20gcmflow' and i<2) or (name=='itotrisks' and i==0) or (name=='ciaobjectives' and i==0) or (name=='signatureevidence' and i==2) or (name=='riskassessment' and i==2) or (name=='alerttriage' and i==3) or (name=='socgovernance' and i==3) or (name=='incidentcoordination' and i==0):fill='#e9f2fa'
   elif (name=='ciaobjectives' and i==2) or (name=='itotrisks' and i==1):fill='#f7f1e9'
-  elif name=='ciaobjectives' and i>2:fill='#f6f7f8'
-  out.insert(start,rect(x,y,w,cy-y,fill));return cy
+  elif (name=='ciaobjectives' and i>2) or (name=='m20gcmflow' and i in [2,3,4]):fill='#f6f7f8'
+  stroke=['#a4c5e1','#a4c5e1','#cbd1d5','#cbd1d5','#cbd1d5','#b8d5c5','#d9a4a4'][i] if name=='m20gcmflow' else '#b8d5c5'
+  out.insert(start,rect(x,y,w,cy-y,fill,stroke));return cy
  def arrow(y,x=450):path(f'M{x} {y}v24m-6-6 6 6 6-6')
  y=text(b['caption'],28,40,40,22,True)+16
  layout=spec['layout'].replace('continuation-','');items=b['items']
