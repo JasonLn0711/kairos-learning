@@ -17,3 +17,13 @@
 ## 驗證與發布
 
 本機檢查及部署狀態見 [發布紀錄](../../../releases/2026-11-12-ceh-m20-review.md)。來源保存、內容實作、瀏覽器驗證與正式部署分別記錄。既有AASE工作樹不納入此次修改。
+
+
+## 四個重要觀念補充｜v1.1.0
+
+[本次來源、前版與完整逐行採納](four-concepts-supplement/README.md)接續AES、AES-GCM、Birthday Bound及Kerckhoffs's Principle的完整供稿與原圖；原13區段／八題32選項保留。首次發布證據維持上方原時點，新版依補充紀錄查核。
+
+
+## 後續補充｜四個重要觀念
+
+[四觀念補充來源](four-concepts-supplement/README.md)保存第二份完整稿與AES-GCM原圖、追加前版本、採納與修正對照；[v1.1.0發布回執](../../../releases/2026-11-12-ceh-m20-four-concepts.md)記錄本次實測。原八題、32選項與十圖保持；本目錄先前的v1.0.0驗收保留原時點。

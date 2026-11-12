@@ -1,0 +1,2001 @@
+{
+  "title": "CEH M20 密碼學｜從零理解到資安工程實務",
+  "sections": [
+    {
+      "id": "p1-introduction",
+      "heading": "導言",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "Cryptography · 8 題精讀 · 白話教學 × 原理推導 × CEH 解題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這份教材涵蓋 CEH M20 密碼學的 8 道題目，涉及 8 個學習觀念（L01–L08）。我們的目標不是單純背出 AES、RSA、Blowfish 的名稱，而是理解：密碼學究竟如何讓一份資料在不可信的環境中，仍然維持我們要求的安全性？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "學完這份內容，你應該能做到三件事："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 考試層次： 從題幹判斷正在考哪一種密碼學概念，辨識關鍵條件，排除錯誤選項。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 工程層次： 理解加密、金鑰交換、雜湊、數位簽章與磁碟加密如何組成真正的安全系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 研究層次： 判斷一個安全主張的威脅模型（Threat Model）、必要前提及反例，而不只是接受教科書結論。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-01",
+      "heading": "一、先建立完整地圖：密碼學其實在解決四個問題",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "假設你是一家半導體公司的資安架構師，公司準備將重要晶片設計檔案存放到伺服器，並提供海外工程團隊遠端存取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你必須回答四個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "核心目標：讓資料在指定威脅下受到保護"
+        },
+        {
+          "kind": "paragraph",
+          "text": "What are we protecting, and against whom?"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20map",
+          "caption": "密碼學的四個問題",
+          "description": "四張卡片是平行檢查面向，閱讀順序不代表時序。",
+          "items": [
+            {
+              "title": "保護什麼？",
+              "body": "機密性、完整性、可用性"
+            },
+            {
+              "title": "如何保護？",
+              "body": "加密、雜湊、驗證、簽章"
+            },
+            {
+              "title": "誰有權使用？",
+              "body": "金鑰、金鑰交換、身分認證"
+            },
+            {
+              "title": "何時可能失效？",
+              "body": "演算法限制、主機入侵、管理錯誤"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這四個問題就是本次所有題目的共同主軸。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先掌握一個最重要的觀念：密碼學不是把資料變成亂碼而已，而是透過數學方法，在特定安全假設下提供可驗證的保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，檔案即使使用 AES-256 加密，只要駭客已控制正在讀取明文的應用程式，仍然可能竊取資料。此時 AES 未必被破解；真正失效的是端點及金鑰使用環境的安全邊界。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也正是本次題目 EC-Q024 值得深入研究的地方。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-02",
+      "heading": "二、L01｜加密到底要保護什麼？先理解 CIA 三要素",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "關聯題目：EC-Q024、P3-Q074"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你把一份價值十億元的晶片設計圖存到電腦裡。你真正擔心的事情，可能不是一件，而是三件："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "別人偷偷把設計圖拿走。",
+            "別人偷偷修改設計圖，讓晶片製造出錯。",
+            "需要設計圖的時候，檔案卻被刪除或系統無法使用。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這三種問題在資安中稱為 CIA Triad。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20cia",
+          "caption": "CIA 三要素",
+          "description": "三項為平行安全目標；加密本身不能阻止刪除資料。",
+          "items": [
+            {
+              "title": "Confidentiality｜機密性",
+              "body": "不該看的人看不到"
+            },
+            {
+              "title": "Integrity｜完整性",
+              "body": "資料沒有遭到未授權修改"
+            },
+            {
+              "title": "Availability｜可用性",
+              "body": "需要的時候能使用"
+            }
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-01",
+          "text": "1. 加密主要解決機密性"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們把文件加密。駭客偷到了檔案，卻沒有金鑰，因此無法有效閱讀裡面的資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是加密最直接的作用。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，假設駭客沒有解密，而是直接把加密檔案刪除？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "加密並不能阻止這件事。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設駭客拿到加密資料後，偷偷改掉部分位元，讓解密後的內容錯誤？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果我們只使用不提供完整性驗證的加密模式，也不能保證會偵測到修改。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此要區分："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "安全需求",
+            "常見對應機制"
+          ],
+          "rows": [
+            [
+              "不讓別人讀取",
+              "Encryption（加密）"
+            ],
+            [
+              "發現資料被修改",
+              "Hash + 可信摘要，或 MAC"
+            ],
+            [
+              "確認資料來自誰",
+              "MAC、Digital Signature（視信任模型而定）"
+            ],
+            [
+              "確保系統持續服務",
+              "備份、備援、復原與可用性架構"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-02",
+          "text": "2. 更深入：為什麼有些加密也能保護完整性？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為今天的密碼學不只存在「純加密」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如 AES-GCM 是一種 Authenticated Encryption with Associated Data（AEAD，具關聯資料的認證加密）機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它除了產生密文，還會產生驗證標籤（Authentication Tag）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接收者解密時，必須檢查標籤。如果密文或被驗證的關聯資料遭到修改，系統通常會拒絕接受結果。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20aead",
+          "caption": "AES-GCM 的簡化工作流程",
+          "description": "箭頭表示輸入與輸出；密文與驗證標籤是兩個並列結果。解密時必須驗證標籤，並遵守同一金鑰下的 nonce 規則。",
+          "items": [
+            {
+              "title": "輸入",
+              "body": "明文 + 金鑰 + Nonce + 關聯資料"
+            },
+            {
+              "title": "AES-GCM",
+              "body": "具關聯資料的認證加密"
+            },
+            {
+              "title": "Ciphertext｜密文",
+              "body": "隱藏明文內容"
+            },
+            {
+              "title": "Authentication Tag｜驗證標籤",
+              "body": "驗證受保護資料的完整性與真實性"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡的 Nonce 是加密時使用、通常不必保密但必須遵守唯一性等規則的參數。重複使用同一金鑰與不應重複的 Nonce，可能嚴重破壞安全性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NIST SP 800-38D 定義了 GCM 的認證加密機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "研究層次的重點： 我們不能只問「使用什麼加密演算法」，還要問「使用什麼 Mode、如何處理金鑰與 Nonce、提供什麼安全保證」。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節來源：[NIST SP 800-38D：GCM](https://csrc.nist.gov/pubs/sp/800/38/d/final)。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-03",
+      "heading": "三、L02｜明文、密文、演算法與金鑰：理解加密的基本模型",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "關聯題目：全部 8 題的共同基礎"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你有一個保險箱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "保險箱的製造方式，就是演算法（Algorithm）；裡面的機密文件，就是明文（Plaintext）；鎖上的保護結果，可以類比為密文（Ciphertext）；真正讓特定人能夠打開保險箱的秘密，就是金鑰（Key）。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-03",
+          "text": "1. 用數學描述"
+        },
+        {
+          "kind": "paragraph",
+          "text": "加密："
+        },
+        {
+          "kind": "paragraph",
+          "text": "C=Eₖ(P)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "解密："
+        },
+        {
+          "kind": "paragraph",
+          "text": "P=Dₖ(C)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "符號",
+            "意義"
+          ],
+          "rows": [
+            [
+              "P",
+              "Plaintext，明文"
+            ],
+            [
+              "C",
+              "Ciphertext，密文"
+            ],
+            [
+              "K",
+              "Key，金鑰"
+            ],
+            [
+              "E",
+              "Encryption，加密操作"
+            ],
+            [
+              "D",
+              "Decryption，解密操作"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個模型非常重要，因為它告訴我們："
+        },
+        {
+          "kind": "paragraph",
+          "text": "加密不是單純把資料隨便打亂，而是一個由金鑰控制、並能在正確條件下還原的數學轉換。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-04",
+          "text": "2. 演算法必須是秘密嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不需要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AES 的規格完全公開。全世界的研究人員都可以檢查它的設計、分析它的安全性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是現代密碼學的重要設計觀念：安全性不應建立在攻擊者不知道演算法的前提上，而應建立在密碼機制及秘密金鑰能抵抗攻擊的能力上。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與 Kerckhoffs's Principle（柯克霍夫原則）一致。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設一家公司的安全系統必須依賴「駭客不知道我們自己設計的加密公式」，一旦公式外洩，整套防護就可能崩潰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "相比之下，標準密碼系統通常允許公開演算法，並由安全的金鑰管理控制存取。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-05",
+          "text": "3. 最關鍵的事情其實是金鑰管理"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一個系統可能使用非常強的 AES-256，卻把金鑰直接寫在程式碼中："
+        },
+        {
+          "kind": "code",
+          "text": "SECRET_KEY = \"company-secret-key\""
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不只是字串長度或格式的問題。如果祕密金鑰或其產生方式被寫在原始碼裡，並隨 Git 儲存庫外洩，攻擊者可能直接取得解密能力。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "更完善的設計需要考慮金鑰的產生、儲存、分配、使用、輪替與撤銷。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "OWASP Cryptographic Storage Cheat Sheet 也特別強調金鑰生命週期管理與威脅模型的重要性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請記住：密碼系統的安全性，不等於加密演算法本身的安全性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節來源：[OWASP：密碼學儲存](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-04",
+      "heading": "四、L03｜對稱式與非對稱式加密：差別其實在金鑰",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "關聯題目：EC-Q032、EC-Q053、P3-Q056"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本次考題的重要核心。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-06",
+          "text": "1. 對稱式加密（Symmetric Encryption）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你和一位工程師各持有同一把鑰匙。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以用它把文件鎖起來，他也能用相同的秘密鑰匙打開。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是對稱式密碼學的基本概念。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20symmetric",
+          "caption": "對稱式加密：共享秘密金鑰",
+          "description": "箭頭只表示 Alice 將密文傳送給 Bob，不表示秘密金鑰也經由此通道傳送。",
+          "items": [
+            {
+              "title": "Alice",
+              "body": "持有 Secret Key K"
+            },
+            {
+              "title": "Bob",
+              "body": "持有相同的 Secret Key K"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "雙方使用相同的秘密金鑰，或能相互推導的對應秘密金鑰；本圖以相同的 K 表示共享秘密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見演算法包括 AES、DES、Blowfish、Twofish。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對稱式加密很適合大量資料處理，例如檔案、資料庫欄位、備份以及通訊流量。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，它遇到一個問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Alice 和 Bob 從來沒有見過面，他們要如何安全地取得同一把秘密金鑰？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果透過不安全的通道直接傳送金鑰，駭客可能把它攔截。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 Key Distribution Problem（金鑰分配問題）。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-07",
+          "text": "2. 非對稱式密碼學（Asymmetric Cryptography）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "非對稱式密碼學使用兩把有數學關聯、角色不同的金鑰："
+        },
+        {
+          "kind": "paragraph",
+          "text": "公鑰（Public Key）可以公布，私鑰（Private Key）必須妥善保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以支援公開金鑰加密的方案為例："
+        },
+        {
+          "kind": "diagram",
+          "name": "m20asymmetric",
+          "caption": "公開金鑰加密的角色與流程",
+          "description": "上排是兩把金鑰的角色，沒有時間先後。下方箭頭是加密、傳送與解密的順序；前提是已驗證 Bob 公鑰的身分。",
+          "items": [
+            {
+              "title": "Public Key｜公鑰",
+              "body": "公布給需要傳送機密訊息的人"
+            },
+            {
+              "title": "Private Key｜私鑰",
+              "body": "由接收者秘密保管"
+            },
+            {
+              "title": "Alice 加密",
+              "body": "使用已驗證的 Bob 公鑰"
+            },
+            {
+              "title": "傳送密文",
+              "body": "將密文傳送給 Bob"
+            },
+            {
+              "title": "Bob 解密",
+              "body": "使用自己的私鑰"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "RSA 就是支援公開金鑰密碼學的重要演算法家族。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不是所有非對稱密碼演算法都具有加密、簽章和金鑰交換的全部功能。必須看具體演算法與協定。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-08",
+          "text": "3. 為什麼還需要確認公鑰的主人？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是比單純背誦「公開金鑰比較方便」更重要的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Alice 想取得 Bob 的公鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "駭客 Mallory 卻在通訊過程中，把 Bob 的公鑰換成自己的公鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Alice 可能以為自己正和 Bob 安全通訊，實際上卻把機密資料交給了 Mallory。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這類攻擊與 Man-in-the-Middle（中間人攻擊）有關。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，公開金鑰密碼學不能自動解決所有身分信任問題。需要合適的憑證驗證、身分認證或其他可信的金鑰驗證機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NIST SP 800-56B Rev.2 涵蓋以 RSA 為基礎的金鑰建立與確認方法，並於 2026 年 1 月獲 NIST 再確認為現行文件。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-09",
+          "text": "4. 真實系統會同時使用兩種密碼技術"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現代安全通訊通常不必在對稱式與非對稱式之間二選一。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見方法是 Hybrid Cryptography（混合式密碼學）："
+        },
+        {
+          "kind": "diagram",
+          "name": "m20hybrid",
+          "caption": "混合式密碼學的兩個階段",
+          "description": "箭頭表示本例的階段順序；實際協定另需規定認證、金鑰衍生與 nonce 管理。",
+          "items": [
+            {
+              "title": "階段一｜建立共享秘密",
+              "body": "利用適當公開金鑰機制、身分驗證與金鑰衍生，建立工作階段對稱金鑰。"
+            },
+            {
+              "title": "階段二｜大量資料加密",
+              "body": "使用已建立的對稱金鑰，以 AES-GCM 等機制保護後續資料。"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "公開金鑰機制協助解決安全建立金鑰的問題，對稱式加密負責有效率地保護資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是現代網路加密協定的重要架構思想。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH 解題關鍵：只要題目問的是金鑰關係，先分清共享秘密與公開／私密金鑰，而不是先看演算法名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節來源：[NIST SP 800-56B Rev.2：RSA 金鑰建立](https://csrc.nist.gov/pubs/sp/800/56/b/r2/final)。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-05",
+      "heading": "五、L04｜雜湊、加密、編碼：三個最容易混淆的概念",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "關聯題目：P3-Q074，支援 EC-Q032、EC-Q053"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們先用三句話建立直覺："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Encoding（編碼） 是為了讓資料方便表示。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Encryption（加密） 是為了讓未授權者無法讀取內容。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Hashing（雜湊） 是為了把資料轉換成摘要，支援完整性檢查等用途。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20transforms",
+          "caption": "編碼、加密與雜湊的不同目的",
+          "description": "三列是平行比較，不是先後執行。箭頭表示各自的資料轉換；雜湊不是設計為可逆的轉換。",
+          "items": [
+            {
+              "title": "Encoding｜編碼",
+              "body": "Hello → SGVsbG8=\nBase64 可依格式還原，不需要保密金鑰。"
+            },
+            {
+              "title": "Encryption｜加密",
+              "body": "明文 → 密文\n需正確金鑰及其他必要參數才能解密。"
+            },
+            {
+              "title": "Hashing｜雜湊",
+              "body": "任意長度資料 → 固定長度摘要\nSHA-256 產生 256-bit 摘要。"
+            }
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-10",
+          "text": "1. 雜湊為什麼可以用來偵測資料被修改？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你將一份醫療研究資料交給其他研究者。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你先計算它的 SHA-256 摘要："
+        },
+        {
+          "kind": "paragraph",
+          "text": "h=H(m)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡 m 代表原始資料，H 是雜湊函數，h 是摘要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接收者收到檔案後，再計算一次摘要："
+        },
+        {
+          "kind": "paragraph",
+          "text": "h'=H(m')"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果兩個摘要不同，就代表接收資料與原始資料不相同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果摘要相同，在使用適當安全雜湊演算法及可信比較值等前提下，我們可以有高度信心認為資料未改變。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "NIST FIPS 180-4 定義安全雜湊演算法及其摘要用途。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-11",
+          "text": "2. 為什麼雜湊不等於身分驗證？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設攻擊者偷換你的檔案，並且順便把旁邊的 SHA-256 摘要也換掉。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "接收者仍然會看到兩個摘要吻合。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這表示："
+        },
+        {
+          "kind": "paragraph",
+          "text": "雜湊可以協助檢查內容是否一致，但如果比較依據本身不可信，並不能證明資料來源可信。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以我們還會使用："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "機制",
+            "特別解決的問題"
+          ],
+          "rows": [
+            [
+              "SHA-256",
+              "產生摘要，支援完整性檢查"
+            ],
+            [
+              "HMAC",
+              "利用共享秘密驗證訊息及其來源是否符合預期"
+            ],
+            [
+              "Digital Signature",
+              "透過私鑰簽署、公鑰驗證，提供可公開驗證的簽署證據"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "NIST FIPS 186-5 定義數位簽章標準及其完整性、簽署者驗證用途。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-12",
+          "text": "3. 研究深度：雜湊的三種安全性"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一個現代密碼學雜湊函數，通常追求三種性質："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "性質",
+            "白話解釋"
+          ],
+          "rows": [
+            [
+              "Preimage Resistance",
+              "給你摘要，很難反推出對應原始資料"
+            ],
+            [
+              "Second Preimage Resistance",
+              "給你一份原始資料，很難找到另一份具有相同摘要的資料"
+            ],
+            [
+              "Collision Resistance",
+              "很難找到任意兩份不同資料，卻具有相同摘要"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡有一個值得思考的差異。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雜湊輸出長度是固定的，但輸入可以很長，因此數學上不同資料具有相同摘要是必然存在的。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們要求的不是「絕對不會碰撞」，而是攻擊者在可行計算資源內極難找到碰撞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以理想的 256-bit 雜湊函數為例，暴力尋找任意碰撞的典型工作量大約是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "2¹²⁸"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這來自 Birthday Bound（生日界限），而不是 2²⁵⁶。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-13",
+          "text": "4. 為什麼密碼不能只用 SHA-256 儲存？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是延伸到工程實務時非常重要的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果使用者密碼很短，攻擊者可以猜測可能的密碼，把每個猜測輸入 SHA-256，再比較摘要。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雜湊函數無法反向解密，不代表攻擊者不能靠猜測找回原始輸入。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此密碼儲存需要專門的 Password Hashing / KDF，例如 Argon2id，搭配獨立 Salt 與適當的成本參數，而不是直接使用快速 SHA-256。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "OWASP Password Storage Cheat Sheet 對此有明確建議。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "到這裡，你已經掌握本次題目約一半的概念範圍：安全目標、金鑰、對稱與非對稱，以及雜湊的差別。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節來源：[NIST FIPS 180-4：安全雜湊](https://csrc.nist.gov/pubs/fips/180-4/upd1/final)；[NIST FIPS 186-5：數位簽章](https://csrc.nist.gov/pubs/fips/186-5/final)；[OWASP：密碼儲存](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-06",
+      "heading": "六、L05｜區塊長度與金鑰長度：兩個完全不同的東西",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "關聯題目：EC-Q284、EC-Q493、P1-Q114"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本次最重要的演算法辨識觀念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設有一家物流公司，每次只能用固定容量的貨櫃運送貨物。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "貨櫃的容量就像 Block Size（區塊長度）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而控制貨櫃鎖頭的金鑰，其規格與安全強度則可以用來類比 Key Size（金鑰長度）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者都可能影響安全，但不是同一個概念。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-14",
+          "text": "1. AES-256 到底代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "很多人以為 AES-256 是每次把 256 bits 資料拿來加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其實不是。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AES-256 的意思是："
+        },
+        {
+          "kind": "diagram",
+          "name": "m20sizes",
+          "caption": "AES 的區塊長度與金鑰長度",
+          "description": "四列列出規格，不以條長模擬安全程度。AES-256 的 256 指金鑰長度，區塊仍是 128 bits。",
+          "items": [
+            {
+              "title": "Block Size｜區塊長度",
+              "body": "128 bits；AES-128、AES-192、AES-256 都相同。"
+            },
+            {
+              "title": "AES-128 的 Key Size",
+              "body": "128 bits"
+            },
+            {
+              "title": "AES-192 的 Key Size",
+              "body": "192 bits"
+            },
+            {
+              "title": "AES-256 的 Key Size",
+              "body": "256 bits"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "根據 NIST FIPS 197（2023 更新版），AES 的區塊長度固定為 128 bits，而金鑰有 128、192、256 bits 三種規格。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-15",
+          "text": "2. 金鑰越長就一定越安全嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在其他條件相同、金鑰均勻隨機且沒有更有效攻擊的理想模型下，金鑰越長，暴力搜尋金鑰所需的工作量通常越大。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，128-bit 金鑰理論上有："
+        },
+        {
+          "kind": "paragraph",
+          "text": "2¹²⁸"
+        },
+        {
+          "kind": "paragraph",
+          "text": "種可能組合。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "256-bit 金鑰則有："
+        },
+        {
+          "kind": "paragraph",
+          "text": "2²⁵⁶"
+        },
+        {
+          "kind": "paragraph",
+          "text": "種可能組合。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是這並不代表只要金鑰長度夠大，系統就不可能遭到攻擊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "金鑰由容易猜測的密碼衍生。",
+            "攻擊者從記憶體取得金鑰。",
+            "加密模式使用錯誤。",
+            "應用程式在解密後洩漏明文。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，「金鑰長度」與「實際安全性」不能直接畫上等號。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-16",
+          "text": "3. 那麼區塊長度為什麼重要？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以 Blowfish 為例，它每次處理 64-bit 區塊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "當系統使用某些加密模式處理大量資料時，區塊長度較短可能導致生日界限（Birthday Bound）相關的安全限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對理想的 64-bit 區塊密碼而言，當處理的區塊數接近："
+        },
+        {
+          "kind": "paragraph",
+          "text": "2³² = 2^(64/2)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "時，某些與區塊碰撞有關的風險會變得顯著；實際可安全處理的資料量仍須依加密模式與協定判斷。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這說明一件事："
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使加大金鑰長度，也不會自動消除區塊長度造成的限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這正是為什麼評估密碼系統時，需要同時考量金鑰長度、區塊長度、加密模式及使用情境。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節來源：[NIST FIPS 197：AES](https://csrc.nist.gov/pubs/fips/197/final)。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-07",
+      "heading": "七、L06｜AES、Blowfish、Twofish、RC4、RSA 究竟差在哪裡？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "關聯題目：EC-Q284、EC-Q493、P1-Q114、P3-Q056"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在我們來建立一張能協助你辨識演算法的地圖。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "演算法",
+            "類型",
+            "區塊長度",
+            "金鑰長度"
+          ],
+          "rows": [
+            [
+              "AES",
+              "對稱區塊",
+              "128 bits",
+              "128／192／256"
+            ],
+            [
+              "Blowfish",
+              "對稱區塊",
+              "64 bits",
+              "32–448"
+            ],
+            [
+              "Twofish",
+              "對稱區塊",
+              "128 bits",
+              "128／192／256"
+            ],
+            [
+              "DES",
+              "對稱區塊",
+              "64 bits",
+              "56-bit 有效金鑰"
+            ],
+            [
+              "RC4",
+              "對稱串流",
+              "不適用固定區塊",
+              "可變"
+            ],
+            [
+              "RSA",
+              "非對稱",
+              "不適用 AES 式區塊分類",
+              "依 RSA 模數與方案而定"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "資料依據：NIST FIPS 197、Blowfish 與 Twofish 設計者文件，以及 IETF RFC 7465。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-17",
+          "text": "1. 為什麼有 Block Cipher 和 Stream Cipher？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你正在加密一部影片。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Block Cipher（區塊密碼）可以理解成一個固定輸入尺寸的密碼運算核心。為了處理大量資料，必須搭配適當的 Mode of Operation（運作模式）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Stream Cipher（串流密碼）則通常產生金鑰串流（Keystream），用來與資料串流組合，完成加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RC4 是歷史上曾被廣泛使用的串流密碼，但因安全性問題，已被禁止用於 TLS。辨識舊演算法不代表推薦它用於新系統，相關規定見 RFC 7465。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-18",
+          "text": "2. 為什麼 Blowfish 與 Twofish 名字那麼像？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者都有 Bruce Schneier 參與設計，但它們不是同一種演算法，也不是把 Blowfish 的金鑰加長就變成 Twofish。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Blowfish 發表於 1993 年，採用 64-bit 區塊及可變金鑰長度。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Twofish 發表於 1998 年，採用 128-bit 區塊，並曾進入 AES 遴選的最後五個候選演算法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Blowfish 的設計者也提醒，若考慮新應用，不應忽略其 64-bit 區塊限制。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-19",
+          "text": "3. 為什麼 AES 不是單一完整的安全系統？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 AES 只是 Block Cipher Primitive（區塊密碼原語）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果要加密網路訊息，可以依情境使用 AES-GCM 等認證加密模式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果要保護磁碟儲存區塊，則可能使用 XTS-AES。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但要特別注意，XTS-AES 用來保護儲存資料的機密性，本身不提供資料或來源的認證。這是 NIST SP 800-38E 明確指出的限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡建立了一個工程原則："
+        },
+        {
+          "kind": "paragraph",
+          "text": "同樣是 AES，不同 Mode 會產生不同的安全性質。因此，演算法名稱相同，不代表保護能力完全相同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節來源：[NIST FIPS 197：AES](https://csrc.nist.gov/pubs/fips/197/final)；[Blowfish 設計者文件](https://www.schneier.com/academic/blowfish/)；[Twofish 設計者文件](https://www.schneier.com/academic/twofish/)；[IETF RFC 7465：TLS 禁用 RC4](https://www.rfc-editor.org/info/rfc7465/)；[NIST SP 800-38E：XTS-AES](https://csrc.nist.gov/pubs/sp/800/38/e/final)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "版本界線：此處 XTS-AES 的性質依 SP 800-38E（2010 final）說明；NIST 頁面另列 2026 年修訂初稿。初稿與現行正式文件分開判讀。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-08",
+      "heading": "八、L07｜AES 的遴選歷史：為什麼這兩題有歧義？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "關聯題目：EC-Q493、P1-Q114"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩題值得特別研究，因為它們涉及重要的科學推理能力：判斷題目提供的條件是否足以支持唯一結論。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-20",
+          "text": "1. AES 是怎麼出現的？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1997 年，NIST 開始尋找新的加密標準，用來取代逐漸不符合安全需求的舊式 DES。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1998 年，NIST 接受了 15 個候選演算法，經過公開研究與評估，選出最後五個決選者。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20finalists",
+          "caption": "AES 遴選的五個決選演算法",
+          "description": "五個演算法為平行候選。Rijndael 最後獲選；只提供 128-bit 區塊、最高 256-bit 金鑰與決選者條件，不能排除多個候選。",
+          "items": [
+            {
+              "title": "MARS",
+              "body": "決選演算法"
+            },
+            {
+              "title": "RC6",
+              "body": "決選演算法"
+            },
+            {
+              "title": "Rijndael",
+              "body": "最終成為 AES 標準的基礎"
+            },
+            {
+              "title": "Serpent",
+              "body": "決選演算法"
+            },
+            {
+              "title": "Twofish",
+              "body": "決選演算法，未獲選為 AES"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "NIST 最後選擇 Rijndael 作為 AES 標準的基礎。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-21",
+          "text": "2. 問題出在哪裡？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本次附件兩道非常相似的題目，描述某演算法具有："
+        },
+        {
+          "kind": "paragraph",
+          "text": "128-bit 區塊、最高 256-bit 金鑰，而且曾經是 AES 遴選的決選者。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是 Twofish 符合這些敘述，後來成為 AES 的 Rijndael 也符合。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，單靠這三個條件，未必能唯一辨識演算法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果題幹再補充「最終沒有被選為 AES」，才能更清楚地區分候選者與最終得主。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是附件原先提出的查證警示。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-22",
+          "text": "3. 這對研究工作有什麼啟發？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這其實就是 Necessary Condition（必要條件）與 Sufficient Condition（充分條件）的差別。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「所有獲得博士學位的人，都必須符合特定畢業要求。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能反過來說："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「符合其中部分畢業要求的人，一定已取得博士學位。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "在密碼學研究中也一樣。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某個演算法符合幾個規格參數，不表示這些參數就是它獨有的特徵。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "做考題時要理解題庫預期的答案；做研究時則必須確認證據真的足以排除其他可能性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節來源：[NIST：AES 遴選報告（2001）](https://csrc.nist.gov/pubs/journal/2001/06/report-on-the-development-of-the-aes/final)。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-09",
+      "heading": "九、L08｜磁碟加密：為什麼電腦已被入侵後，加密可能救不了資料？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "關聯題目：EC-Q024"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本次題目中，最值得從安全工程角度深入思考的一題。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-23",
+          "text": "1. 什麼是 Full Disk Encryption？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設一台筆記型電腦裝有大量機密資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果電腦遺失，沒有加密的磁碟可能被拆下來，在其他電腦上讀取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Full Disk Encryption（全磁碟加密）或磁碟區加密可以降低這類離線資料外洩風險。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "常見工具包括 Windows 的 BitLocker、macOS 的 FileVault，以及提供不同磁碟加密功能的 VeraCrypt。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但加密容器與全磁碟加密並非完全相同的範圍。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-24",
+          "text": "2. 什麼是 Encrypted Container？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以把加密容器想像成一個特殊的保險箱檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "未掛載時，它以加密形式存放在儲存裝置上。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "使用正確憑證掛載後，系統會呈現可讀寫的虛擬磁碟區。授權程式讀取資料時，加密軟體會處理解密。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20mounted",
+          "caption": "加密容器：未掛載與已掛載",
+          "description": "兩張卡片是狀態比較。已掛載不代表磁碟上的全部密文變成明文，而是授權程式經由解密取得可用資料。",
+          "items": [
+            {
+              "title": "未掛載｜Data at Rest",
+              "body": "磁碟中保存密文"
+            },
+            {
+              "title": "已掛載｜Data in Use",
+              "body": "授權程式可取得明文"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是為什麼資料處於 At Rest（靜態儲存）與 In Use（使用中）時，必須採取不同的安全控制。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-25",
+          "text": "3. 假設駭客已經控制伺服器？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在情況完全不同。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "駭客如果已取得足夠權限，可能直接讀取應用程式解密後的資料、監視存取程序，甚至竊取金鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "此時即使磁碟使用強加密，也不能推論駭客一定看不到明文。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VeraCrypt 官方文件也警告，若主機遭惡意程式感染，加密軟體可能無法提供預期的資料保護。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們用一個威脅模型矩陣來看："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "攻擊情境",
+            "磁碟加密的保護能力"
+          ],
+          "rows": [
+            [
+              "電腦遺失、磁碟未解鎖",
+              "通常能有效降低資料外洩風險"
+            ],
+            [
+              "攻擊者偷走未掛載的加密容器",
+              "強加密可提供機密性保護"
+            ],
+            [
+              "攻擊者入侵已登入的主機",
+              "保護能力取決於權限及資料使用狀態"
+            ],
+            [
+              "攻擊者控制可讀取明文的程式",
+              "單靠磁碟加密通常不足"
+            ],
+            [
+              "攻擊者刪除資料",
+              "加密本身不能保證可用性"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-26",
+          "text": "4. 那麼真正的事件應變應該怎麼做？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果資料正在外洩，正確的第一個問題不是「現在該安裝哪套加密軟體」，而是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "攻擊者目前控制了什麼？我們如何在保全證據的同時，阻止更多資料外洩？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這可能涉及網路隔離、存取權限控制、金鑰與憑證處置、鑑識證據保全、惡意程式調查，以及安全復原。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "具體順序取決於事件嚴重程度與證據保全需求，而不是一律立即關機或直接重新加密。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-27",
+          "text": "5. 隱藏磁碟區又是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "VeraCrypt 支援 Hidden Volume（隱藏磁碟區）。簡單來說，可以在既有加密磁碟區的空間中建立另一個隱藏的加密磁碟區。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與一般加密容器有所不同，涉及 Plausible Deniability（合理否認性）的設計概念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但不能將「具有隱藏功能」視為單一產品獨有的特徵。Rohos 也提供隱藏加密分割區及 AES-256 等功能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者具體的隱藏機制不同，必須依功能與威脅模型仔細比較。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本次磁碟加密考題的真正價值，就是理解："
+        },
+        {
+          "kind": "paragraph",
+          "text": "一個工具宣稱能提供加密，不等於它能防止所有型態的資料外洩。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "本節來源：[VeraCrypt：惡意程式安全界線](https://veracrypt.io/en/Malware.html)；[VeraCrypt：隱藏磁碟區](https://veracrypt.io/en/Hidden%20Volume.html)；[Rohos Disk Encryption：產品功能](https://rohos.com/products/rohos-disk-encryption/)。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-10",
+      "heading": "十、把八個觀念濃縮成一張 CEH 解題地圖",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "這是你在做本次考古題之前，應該能夠快速回想的知識。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "題目類型",
+            "先辨識什麼",
+            "核心觀念"
+          ],
+          "rows": [
+            [
+              "安全目標",
+              "Confidentiality / Integrity",
+              "加密與雜湊用途不同"
+            ],
+            [
+              "金鑰分配",
+              "Secure Key Distribution",
+              "公開金鑰機制與身分驗證"
+            ],
+            [
+              "演算法分類",
+              "Symmetric / Asymmetric",
+              "金鑰關係"
+            ],
+            [
+              "單向函數",
+              "One-way / Integrity",
+              "Hashing"
+            ],
+            [
+              "演算法規格",
+              "64-bit / 128-bit Block",
+              "區塊長度"
+            ],
+            [
+              "金鑰規格",
+              "Variable Key Size",
+              "金鑰長度"
+            ],
+            [
+              "歷史背景",
+              "AES Finalist",
+              "候選者與最後得主"
+            ],
+            [
+              "磁碟工具",
+              "Container / Hidden Volume",
+              "功能與威脅模型"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "當你看到長篇英文情境題，先不要把每一個地點、人名、職稱都翻譯完。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如題目可能提到某家位於美國的金融公司、一次資料外洩、某位正在調查的工程師。這些通常是情境背景，不一定是決定答案的關鍵。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正需要注意的可能只有："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`64-bit block`、`variable key length`、`32–448 bits`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "能將題目轉換成可驗證的技術條件，就是提升解題速度的主要方法。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-11",
+      "heading": "十一、實作練習：8 題完整 CEH 原文",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "以下保留附件的 8 題英文題幹與全部 32 個選項，依原順序排列，不預先顯示題庫答案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "請在紙上或自己的筆記選擇答案，並標註不確定處。此頁保留八題原文與選項，提供自我複習；沒有線上送出、批改或學習進度紀錄。題幹歧義見 L07 與 L08，需分別判斷技術條件及題庫可能意圖。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題 1｜EC-Q024"
+        },
+        {
+          "kind": "paragraph",
+          "text": "磁碟加密工具與資料外洩"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Noah, a security analyst at a Seattle-based healthcare provider, is responding to a real-time data breach where attackers accessed patient records stored on a compromised server. During incident response, he must quickly secure sensitive files located on the system’s primary storage to prevent further exfiltration. The data resides in a mounted partition that needs full-volume encryption, but standard file encryption isn’t sufficient. Noah selects a solution that supports encrypted containers, strong key lengths like 256-bit AES, and can conceal secure volumes within standard ones to reduce detection. His goal is to ensure confidentiality while forensic operations continue without disrupting system functionality. Which disk encryption tool should Noah deploy to meet these objectives?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. BitLocker Drive Encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. FileVault"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Rohos Disk Encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. VeraCrypt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對應觀念：L01、L02、L08"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題 2｜EC-Q032"
+        },
+        {
+          "kind": "paragraph",
+          "text": "安全金鑰分配"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Which encryption method supports secure key distribution?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Disk encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Symmetric encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Hash functions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. Asymmetric encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對應觀念：L03、L04"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題 3｜EC-Q053"
+        },
+        {
+          "kind": "paragraph",
+          "text": "通訊雙方的金鑰建立"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A system analyst wants to implement an encryption solution that allows secure key distribution between communicating parties. Which encryption method should the analyst consider?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Disk encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Symmetric encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Hash functions"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. Asymmetric encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對應觀念：L03、L04"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題 4｜P3-Q056"
+        },
+        {
+          "kind": "paragraph",
+          "text": "非對稱加密演算法辨識"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Which of the following is an example of an \"Asymmetric\" encryption algorithm?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. AES"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. DES"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. RSA"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. Blowfish"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對應觀念：L03、L06"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題 5｜P3-Q074"
+        },
+        {
+          "kind": "paragraph",
+          "text": "單向函數與資料完整性"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Which of the following is a \"one-way\" function used to ensure data integrity?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Symmetric Encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Asymmetric Encryption"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Hashing"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. Encoding"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對應觀念：L01、L04"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題 6｜EC-Q284"
+        },
+        {
+          "kind": "paragraph",
+          "text": "64-bit 區塊與可變金鑰"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sarah, an ethical hacker at a San Francisco-based financial firm, is testing the security of their customer database after a recent data exposure incident. Her analysis reveals that the sensitive client information is safeguarded using a symmetric encryption algorithm. She observes that the algorithm processes data in 64-bit blocks and supports a variable key size from 32 to 448 bits. During her penetration test, Sarah intercepts a ciphertext transmission and notes that the encryption was developed as a replacement for DES, an older algorithm. She aims to determine if the algorithm’s flexible key size could be susceptible to brute-force attacks. The algorithm is also noted for its use in secure storage, a critical application for the firm’s data protection. Which symmetric encryption algorithm should Sarah identify as the one used by the firm?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. RC4"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Twofish"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. AES"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. Blowfish"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對應觀念：L05、L06"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題 7｜EC-Q493"
+        },
+        {
+          "kind": "paragraph",
+          "text": "AES 決選者的辨識"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You are Jordan, a cryptographic assessor at Cascade Data in Portland, Oregon, reviewing the protection applied to telemetry logs. Your review finds an algorithm that operates on 128-bit blocks, accepts keys up to 256 bits, and the documentation notes it was one of the finalists in the AES selection process that aimed to replace legacy DES. Which symmetric encryption algorithm should you identify as being used?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. RC4"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. AES"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Blowfish"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. Twofish"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對應觀念：L05、L06、L07"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題 8｜P1-Q114"
+        },
+        {
+          "kind": "paragraph",
+          "text": "相似題：不同的選項順序"
+        },
+        {
+          "kind": "paragraph",
+          "text": "You are Jordan, a cryptographic assessor at Cascade Data in Portland, Oregon, reviewing the protections applied to telemetry logs. Your review finds an algorithm that operates on 128-bit blocks, accepts keys up to 256 bits, and the documentation notes it was one of the finalists in the AES selection process that aimed to replace legacy DES. Which symmetric encryption algorithm should you identify as being used?"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. Blowfish"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Twofish"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. RC4"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. AES"
+        },
+        {
+          "kind": "paragraph",
+          "text": "對應觀念：L05、L06、L07"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題目及選項來自你提供的 CEH M20 精讀附件，保留各題原文與原始選項順序。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-12",
+      "heading": "十二、半天完成的建議節奏",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "附件原先設定約三小時完成，這個配置適合用來避免深入研究反而拖慢考試準備。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "10 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "快速建立知識地圖"
+        },
+        {
+          "kind": "paragraph",
+          "text": "先看 CIA、加密與雜湊、對稱與非對稱的分類"
+        },
+        {
+          "kind": "paragraph",
+          "text": "60 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "精讀 L01–L08"
+        },
+        {
+          "kind": "paragraph",
+          "text": "優先掌握定義、原理、演算法參數與安全邊界"
+        },
+        {
+          "kind": "paragraph",
+          "text": "10 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "休息"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不額外增加學習範圍"
+        },
+        {
+          "kind": "paragraph",
+          "text": "40 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "自行完成 8 題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "每題挑選答案，標註不確定的判斷"
+        },
+        {
+          "kind": "paragraph",
+          "text": "40 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "批改與查證"
+        },
+        {
+          "kind": "paragraph",
+          "text": "核對題庫與標準，確認錯誤的原因"
+        },
+        {
+          "kind": "paragraph",
+          "text": "20 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "重新回答錯題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "驗證是否真正理解，而不是只記住選項字母"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這次不需要再增加新的考古題。先把這 8 題做完，再透過錯誤類型決定要複習哪個觀念。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "完成八題後，保留每題的選項、信心與判斷理由，供後續逐題討論。先處理實際錯誤與題幹歧義，再針對錯誤類型複習；本頁不替代人工教學或正式測驗。"
+        }
+      ]
+    }
+  ],
+  "summary": "CEH M20 密碼學八題精讀：從 CIA、金鑰與雜湊，到 AES 規格、候選演算法辨識及磁碟加密的威脅模型。",
+  "status": "published",
+  "publishedOn": "2026-11-12",
+  "contentVersion": "1.0.0",
+  "sources": [
+    {
+      "id": "aes",
+      "title": "NIST FIPS 197：AES",
+      "url": "https://csrc.nist.gov/pubs/fips/197/final",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "gcm",
+      "title": "NIST SP 800-38D：GCM",
+      "url": "https://csrc.nist.gov/pubs/sp/800/38/d/final",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "rsa",
+      "title": "NIST SP 800-56B Rev.2：RSA 金鑰建立",
+      "url": "https://csrc.nist.gov/pubs/sp/800/56/b/r2/final",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "blowfish",
+      "title": "Blowfish 設計者文件",
+      "url": "https://www.schneier.com/academic/blowfish/",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "twofish",
+      "title": "Twofish 設計者文件",
+      "url": "https://www.schneier.com/academic/twofish/",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "rc4",
+      "title": "IETF RFC 7465：TLS 禁用 RC4",
+      "url": "https://www.rfc-editor.org/info/rfc7465/",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "xts",
+      "title": "NIST SP 800-38E：XTS-AES",
+      "url": "https://csrc.nist.gov/pubs/sp/800/38/e/final",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "malware",
+      "title": "VeraCrypt：惡意程式安全界線",
+      "url": "https://veracrypt.io/en/Malware.html",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "hash",
+      "title": "NIST FIPS 180-4：安全雜湊",
+      "url": "https://csrc.nist.gov/pubs/fips/180-4/upd1/final",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "signatures",
+      "title": "NIST FIPS 186-5：數位簽章",
+      "url": "https://csrc.nist.gov/pubs/fips/186-5/final",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "history",
+      "title": "NIST：AES 遴選報告（2001）",
+      "url": "https://csrc.nist.gov/pubs/journal/2001/06/report-on-the-development-of-the-aes/final",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "hidden",
+      "title": "VeraCrypt：隱藏磁碟區",
+      "url": "https://veracrypt.io/en/Hidden%20Volume.html",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "rohos",
+      "title": "Rohos Disk Encryption：產品功能",
+      "url": "https://rohos.com/products/rohos-disk-encryption/",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "password",
+      "title": "OWASP：密碼儲存",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html",
+      "checkedOn": "2026-11-12"
+    },
+    {
+      "id": "storage",
+      "title": "OWASP：密碼學儲存",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html",
+      "checkedOn": "2026-11-12"
+    }
+  ]
+}
