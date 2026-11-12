@@ -10,7 +10,7 @@ test('source dates retain original content and migrated anchors without duplicat
  assert.deepEqual(historical.parts,before.parts);
  assert.equal(historical.publishedOn,before.publishedOn);
  assert.equal(historical.contentVersion,'1.5.0');
- assert.equal(current.publishedOn,'2026-11-12');assert.equal(current.contentVersion,'1.0.0');
+ assert.equal(current.publishedOn,'2026-11-12');assert.equal(current.contentVersion,'1.1.0');
  for(const lang of ['zh','en']){
   const sections=current.parts[0].text[lang].sections;
   assert.equal(sections.length,21);

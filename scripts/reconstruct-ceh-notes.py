@@ -209,10 +209,32 @@ def main():
     historical, current = regroup_notes(n)
     from ceh_note_controls_risk import adopt_new_material
     adopt_new_material(current)
+    from ceh_note_c30_c38 import adopt_c30_c38
+    adopt_c30_c38(current)
+    current['text']['zh']['summary']='11 月 12 日供稿的 Day 01 知識筆記，依 C01–C38 整理安全基礎、授權、控制、風險管理、SOC、營運持續與治理文件；保留完整案例、判斷練習與既有章節錨點。'
+    current['text']['en']['summary']='Day 01 notes supplied on November 12, covering C01–C38: security foundations, authorization, controls, risk management, SOC operations, business continuity and governance documents, with complete cases, reasoning exercises and existing section anchors retained.'
+    supplement_sources=[
+        ('nist-80061r3','NIST SP 800-61 Rev. 3 — Incident response and CSF 2.0','https://csrc.nist.gov/pubs/sp/800/61/r3/final'),
+        ('nist-nice-structure','NIST SP 800-181 Rev. 1 — NICE Framework structure','https://csrc.nist.gov/pubs/sp/800/181/r1/final'),
+        ('nist-nice-components','NIST NICE Framework Components — authoritative version change log','https://www.nist.gov/itl/applied-cybersecurity/nice/nice-framework-resource-center/current-version/change-logs'),
+        ('nist-80034r1','NIST SP 800-34 Rev. 1 — Contingency planning','https://csrc.nist.gov/pubs/sp/800/34/r1/upd1/final'),
+        ('nist-rto','NIST — Recovery Time Objective','https://csrc.nist.gov/glossary/term/recovery_time_objective'),
+        ('nist-rpo','NIST — Recovery Point Objective','https://csrc.nist.gov/glossary/term/recovery_point_objective'),
+        ('nist-sla','NIST — Service level agreement','https://csrc.nist.gov/glossary/term/service_level_agreement'),
+        ('iso22317','ISO/TS 22317:2021 — Business impact analysis guidance','https://www.iso.org/standard/79000.html'),
+        ('nist-controls-oscal','NIST official OSCAL catalog — PL-4 and PS-6','https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json'),
+        ('google-metrics','Google — Classification metrics and false positive rate','https://developers.google.com/machine-learning/glossary/metrics'),
+        ('us-trade-secret-definition','18 U.S.C. §1839 — Trade secret definitions','https://uscode.house.gov/us/usc/119-124/t18/s1839/'),
+        ('us-trade-secret-exceptions','18 U.S.C. §1833 — Confidential disclosure immunity and limits','https://uscode.house.gov/us/usc/119-124/t18/s1833/'),
+        ('ba-security-baseline','Bankers Association — Information security protection baseline','https://ba.org.tw/memberStandard/details?id=70'),
+        ('owasp-logging','OWASP — Logging Cheat Sheet','https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html')]
+    for source_id,title,url in supplement_sources:
+        if not any(source['id']==source_id for source in current['sources']):
+            current['sources'].append({'id':source_id,'title':title,'url':url,'checkedOn':'2026-11-12'})
     for target, note in [(path, historical), (ROOT/'content/ceh-notes/2026-11-12.json', current)]:
         output=json.dumps(note,ensure_ascii=False,indent=2)+'\n'
         if '--check' in sys.argv:
             assert target.read_text(encoding='utf-8')==output, f'{target.name} differs from reviewed paired source'
         else:target.write_text(output,encoding='utf-8')
-    print('Parts 1–3: paired chapters, examples, tables, reference diagrams, calculations, recall cards and supplied exercises')
+    print('Both dated notes: paired chapters, source-mapped supplements, reference diagrams and supplied exercises')
 if __name__=='__main__':main()

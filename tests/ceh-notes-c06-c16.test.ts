@@ -9,7 +9,7 @@ const read=(name:string)=>JSON.parse(readFileSync(source+name,'utf8'));
 const note=JSON.parse(readFileSync('content/ceh-notes/2026-11-12.json','utf8'));
 const historical=JSON.parse(readFileSync('content/ceh-notes/2026-11-10.json','utf8'));
 test('complete C06–C16 chapters preserve all earlier content and enter both public search records',()=>{
- const before=read('before-note.json');assert.equal(note.contentVersion,'1.0.0');assert.equal(note.revision,1);assert.equal(note.publishedOn,'2026-11-12');assert.equal(historical.publishedOn,before.publishedOn);
+ const before=read('before-note.json');assert.equal(note.contentVersion,'1.1.0');assert.equal(note.revision,2);assert.equal(note.publishedOn,'2026-11-12');assert.equal(historical.publishedOn,before.publishedOn);
  assert.deepEqual(historical.parts.slice(1),before.parts.slice(1));
  const catalog=createNotesCatalog([note],'2026-11-12');
  for(const lang of ['zh','en']){

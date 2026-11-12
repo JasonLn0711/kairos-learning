@@ -673,6 +673,10 @@ v1.2.0／revision 6 以新供稿取代餐廳版本；[逐小節來源對照](sou
 
 風險互動僅接受 L、I 各 1–5 整數，預設 3×5=15；教學門檻明列 1–4／5–9／10–25，序位分數不代表損失倍數。無 JS 保留預設並停用操作，不儲存分數。維護時跑全部單元、來源重現／逐行對照、`check-ceh-day01-diagrams-svg.py` 及 `check-ceh-day01-diagrams-browser.mjs`；完整頁面腳本同時檢查兩日期雙語全文、搜尋、下載與舊書籤。發布結果見當次回執，各檢查只建立其自身範圍的證據。
 
+C30–C38 接入同日第4部分（v1.1.0），前三部分及11/10原日保持不變。完整來源、英譯及採納映射在 [c30-c38-supplement](sources/ceh-notes/2026-11-12/c30-c38-supplement/README.md)，由 `ceh_note_c30_c38.py` 編譯，再由全域重建器採入；`--check` 已納入release gate。
+
+四圖固定名稱／節點數：socgovernance 8、alerttriage 5、incidentcoordination 7、recoverytimeline 3。前三圖沿受限graph；SOC兩分析角色平行，升級及啟動BCP帶條件，SLA／NDA／AUP另成無箭頭治理組。指揮圖僅由指揮者連到六個平行團隊。時間線由 `NoteRecoveryTimeline` 以15／120分鐘的真1:8比例及獨立可換行文字呈現；−15、0、＋120為本教學案例的時間點，沒有新增模擬器或實際復原證據。八份SVG共用雙語模型，沿既有白名單與大小限制。維護檢查為 `check-ceh-soc-diagrams-svg.py`、`check-ceh-soc-diagrams-browser.mjs` 及完整日期頁腳本；長頁截圖另用一般視窗擷取，避免將圖像擷取等待混入內容assertions。
+
 `src/lib/ceh-notes.ts` 驗證唯一日期、有效日期、雙語結構、部分編號、`pN-`錨點、HTTPS來源與受限區塊，拒絕額外markup欄位。整篇及各部分共用 `isPublic` 的status／publishedOn閘門；只將過閘資料送至日期頁、清單、搜尋與sitemap。發布邊界腳本檢查整篇及同日部分的draft／future標記不進入實際HTML／JSON／JS。未提供原題全文時，保留供稿題號及參考答案，不宣稱已核對題庫正解。
 
 正文沿用SourceBody的段落、清單及可鍵盤捲動表格。`NoteFigure`承接四節點向下workflow與三欄平行CIA；`NoteRecall`承接三張卡，無JavaScript可閱讀三卡與原生答案；`NoteChecks`保留供稿三選項並提供本頁逐項回饋，不儲存、不外送或宣稱學習完成。圖示的節點、文字、搜尋與SVG共用正式JSON；`python3 scripts/ceh_notes_svg.py --check` 已納入validate:release，輸出固定allowlist且每圖小於100000bytes。新領域圖需先擴充契約，禁止以任意HTML／SVG繞過。

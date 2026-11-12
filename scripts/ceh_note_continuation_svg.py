@@ -17,7 +17,7 @@ def render_continuation(b,lang,spec):
   cy=text(item['body'],x+w/2,cy+6,max(5,int((w-36)/18)),18,False,True)+12
   i=b['items'].index(item);name=b['name'];fill='#e6f5ec'
   if (name=='authorizationgates' and i in [2,4]) or (name=='transactiontampering' and i==1) or (name=='serviceavailability' and i==1) or (name=='transportprotection' and i<3) or (name=='ssdremapping' and i==2):fill='#fbeeee'
-  elif (name=='itotrisks' and i==0) or (name=='ciaobjectives' and i==0) or (name=='signatureevidence' and i==2) or (name=='riskassessment' and i==2):fill='#e9f2fa'
+  elif (name=='itotrisks' and i==0) or (name=='ciaobjectives' and i==0) or (name=='signatureevidence' and i==2) or (name=='riskassessment' and i==2) or (name=='alerttriage' and i==3) or (name=='socgovernance' and i==3) or (name=='incidentcoordination' and i==0):fill='#e9f2fa'
   elif (name=='ciaobjectives' and i==2) or (name=='itotrisks' and i==1):fill='#f7f1e9'
   elif name=='ciaobjectives' and i>2:fill='#f6f7f8'
   out.insert(start,rect(x,y,w,cy-y,fill));return cy
@@ -26,7 +26,9 @@ def render_continuation(b,lang,spec):
  layout=spec['layout'].replace('continuation-','');items=b['items']
  if layout=='graph':
   boxes={}
-  for row in spec['rows']:
+  for row_index,row in enumerate(spec['rows']):
+   if b['name']=='socgovernance' and row_index==4:
+    y=text('平行治理文件（不是處理步驟）' if lang=='zh' else 'Parallel governance documents (not response steps)',28,y,43,18,True)+16
    count=len(row);w=(816-40*(count-1))/count;ends=[]
    for col,i in enumerate(row):
     x=28+col*(w+40);bottom=card(items[i],x,y,w);boxes[i]=(x,y,w,bottom-y);ends.append(bottom)
@@ -56,7 +58,7 @@ def render_continuation(b,lang,spec):
     lx,ly=(sx+tx)/2,mid-10
    connections.append(f'<path d="{d}" fill="none" stroke="#77867f" stroke-width="2"/>')
    if key:
-    label={'yes':'是' if lang=='zh' else 'Yes','no':'否' if lang=='zh' else 'No','optional':'必要時' if lang=='zh' else 'If needed'}.get(key,key)
+    label={'yes':'是' if lang=='zh' else 'Yes','no':'否' if lang=='zh' else 'No','optional':'必要時' if lang=='zh' else 'If needed','impact':'依影響啟動' if lang=='zh' else 'Per impact'}.get(key,key)
     connections.append(f'<text x="{lx}" y="{ly}" text-anchor="middle" font-size="16">{escape(label)}</text>')
   out=connections+out;y-=50
  elif layout in ('parallel','paired'):

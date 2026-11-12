@@ -34,7 +34,7 @@ test('all nine complete paired chapters enter the note while earlier exam reason
  const note=JSON.parse(readFileSync('content/ceh-notes/2026-11-12.json','utf8'));
  const historical=JSON.parse(readFileSync('content/ceh-notes/2026-11-10.json','utf8'));
  const before=JSON.parse(readFileSync(source+'before-note.json','utf8'));
- assert.equal(note.contentVersion,'1.0.0');assert.equal(note.publishedOn,'2026-11-12');assert.equal(historical.publishedOn,before.publishedOn);
+ assert.equal(note.contentVersion,'1.1.0');assert.equal(note.publishedOn,'2026-11-12');assert.equal(historical.publishedOn,before.publishedOn);
  assert.deepEqual(historical.parts.slice(1),before.parts.slice(1));
  for(const lang of ['zh','en']){
   const adopted=JSON.parse(readFileSync(source+`adopted.${lang}.json`,'utf8'));

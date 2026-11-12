@@ -1,5 +1,6 @@
 <script lang="ts">
   import {noteDiagramSpecs,tlsDirections,noteReferenceImage,type NoteDiagram} from '$lib/note-diagrams';
+  import NoteRecoveryTimeline from './NoteRecoveryTimeline.svelte';
   import NoteDay01Diagram from './NoteDay01Diagram.svelte';
   import NoteContinuationDiagram from './NoteContinuationDiagram.svelte';
   import {noteFigurePath} from '$lib/ceh-notes';
@@ -16,7 +17,9 @@
 </script>
 <figure class="note-diagram" data-diagram={diagram.name}>
   <figcaption>{diagram.caption}</figcaption>
-  {#if layout.startsWith('day01-')}
+  {#if layout==='soc-timeline'}
+    <NoteRecoveryTimeline {diagram} {lang}/>
+  {:else if layout.startsWith('day01-')}
     <NoteDay01Diagram {diagram} {lang}/>
   {:else if layout.startsWith('continuation-')}
     <NoteContinuationDiagram {diagram} {lang}/>
