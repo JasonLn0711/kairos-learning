@@ -31,4 +31,14 @@
 
 ## 發布驗收
 
-待本次main推送、Pages部署及公開HTTPS頁面／圖檔回讀後補上實際回執。
+來源提交 `bbbb6ab` 與教材提交 `73367a8b1ed996df3c953dee8f16606c2f1dd452` 已推送main。[Pages run 43208517528](https://github.com/JasonLn0711/kairos-learning/actions/runs/43208517528)成功，部署來源為後者；push後fetch確認同步 `0 0`。
+
+正式HTTPS站重新執行兩日期全文腳本，雙語全部區塊、完整搜尋、四尺寸／200%、無JS、鍵盤、既有互動、所有目前引用SVG的文字字框／重疊及鍵盤下載bytes均通過。舊C01／C06中英錨點、同頁hash與跨日期client navigation均通過；原11/10三部分保留，新11/12三部分完整呈現。
+
+新13圖正式站416項專項檢查通過：[逐項JSON](2026-11-12-ceh-day01-checks.json)。C01／C06圖解正式站另通過80／64項重排與端點檢查：[逐項JSON](2026-11-12-ceh-day01-moved-checks.json)。風險三等級、鍵盤方向鍵、Enter重設、aria-live、重載預設與無JS停用均經實際瀏覽器驗證。
+
+[公開圖檔與頁面版本紀錄](2026-11-12-ceh-day01-assets.json)保存44份新SVG及18份保留的舊C01／C06圖檔：全部200，實際回應body與本機驗證檔逐bytes相同，附大小及SHA-256。四個日期／語言頁皆200，實際資訊列為11/10 v1.5.0、11/12 v1.0.0，原發布及修訂日期一致。另人工回讀正式英文手機風險互動／防火牆與桌面PDCA畫面。
+
+本機截圖與機器原件保留在 `.local/*-local/`；正式站結果在 `.local/ceh-notes/`、`.local/ceh-day01-diagrams/`、`.local/ceh-c01-c05/`、`.local/ceh-c06-c16/`，重點正式英文畫面在 `.local/ceh-day01-production-view/`。長頁原生裁圖擷取曾等待未完成，改採一般視窗截圖完成重點正式畫面回讀；完整416 assertions與來源／正文／圖檔驗證均已完成。
+
+本次完整供稿保存、雙語正文、日期重整、十三圖與互動、正式部署及公開回讀已完成。真機、完整WCAG認證、個別機構合規審查、付費ISO全文逐條審閱及學習理解仍未驗證。
