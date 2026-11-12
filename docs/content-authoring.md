@@ -917,3 +917,7 @@ M08-04 v1.1.2再將跳至內容連結的固定-100px隱藏改為依自身高度t
 ## CEH C01–C05 產業案例與五圖（2026-11-12）
 
 考古題日期頁1.3.0保留三部分與原題解析，接入[完整九章雙語採用稿](sources/ceh-notes/2026-11-10/c01-c05-replacement-2026-11-12/README.md)。`ceh_note_c01_c05.py`由`reconstruct-ceh-notes.py`呼叫，五圖沿受限spec及既有graph renderer，HTML／搜尋／SVG共用正式JSON。新增圖只接受固定節點與線；無JS仍有端點關係清單。`tests/ceh-notes-c01-c05.test.ts`核對正文與來源，`check-ceh-c01-c05-browser.mjs`另驗啟用JS的四尺寸／200%連線。發布證據見[回執](releases/2026-11-12-ceh-c01-c05.md)。
+
+## CEH C06–C16：授權、ROE 與四圖（2026-11-12）
+
+日期筆記1.4.0／revision 7在C01–C05後接入[導言與十一章完整雙語](sources/ceh-notes/2026-11-10/c06-c16-supplement-2026-11-12/README.md)，保留舊內容與錨點。`ceh_note_c06_c16.py`沿重建腳本接入227區塊、29小節、12表及五道開放問題；無新增評分服務。四圖沿受限spec／既有graph renderer，兩個比較無箭頭，五步圖有四邊，授權決策兩個否定出口均停止。八SVG由正式JSON及白名單serializer衍生。測試`tests/ceh-notes-c06-c16.test.ts`核對真正正文、來源及停止分支；瀏覽器`check-ceh-c06-c16-browser.mjs`驗啟用JS的四尺寸／200%，完整頁沿`check-ceh-notes-browser.mjs`。實測及部署見[回執](releases/2026-11-12-ceh-c06-c16.md)。

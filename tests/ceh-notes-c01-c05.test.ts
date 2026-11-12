@@ -32,7 +32,7 @@ test('supplied files and previous versions remain byte-for-byte intact',()=>{
 test('all nine complete paired chapters enter the note while earlier exam reasoning remains intact',()=>{
  const note=JSON.parse(readFileSync('content/ceh-notes/2026-11-10.json','utf8'));
  const before=JSON.parse(readFileSync(source+'before-note.json','utf8'));
- assert.equal(note.contentVersion,'1.3.0');assert.equal(note.publishedOn,before.publishedOn);
+ assert.equal(note.contentVersion,'1.4.0');assert.equal(note.publishedOn,before.publishedOn);
  assert.deepEqual(note.parts.slice(1),before.parts.slice(1));
  for(const lang of ['zh','en']){
   const adopted=JSON.parse(readFileSync(source+`adopted.${lang}.json`,'utf8'));

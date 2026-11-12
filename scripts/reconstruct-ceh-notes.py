@@ -203,6 +203,8 @@ def main():
     adopt_continuation(n)
     from ceh_note_c01_c05 import adopt_c01_c05
     adopt_c01_c05(n)
+    from ceh_note_c06_c16 import adopt_c06_c16
+    adopt_c06_c16(n)
     output=json.dumps(n,ensure_ascii=False,indent=2)+'\n'
     if '--check' in sys.argv:
         assert path.read_text(encoding='utf-8')==output,'Reconstructed section differs from reviewed paired source'

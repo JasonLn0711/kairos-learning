@@ -9,6 +9,9 @@ export const tlsDirections = ['to-server','to-client','both','to-client','to-cli
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
   if(date!=='2026-11-10')return null;
+  const roeNames=['securityframeworks','itotrisks','validationevidence','authorizationgates'];
+  const roeIndex=roeNames.indexOf(name);
+  if(roeIndex>=0)return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-notes/2026-11-10/c06-c16-supplement-2026-11-12/image-${roeIndex+1}.png`;
   const ciaNames=['ciaobjectives','transactiontampering','serviceavailability','signatureevidence','transportprotection'];
   const ciaIndex=ciaNames.indexOf(name);
   if(ciaIndex>=0)return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-notes/2026-11-10/c01-c05-replacement-2026-11-12/image-${ciaIndex+1}.png`;
