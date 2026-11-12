@@ -42,3 +42,10 @@
 本機截圖與機器原件保留在 `.local/*-local/`；正式站結果在 `.local/ceh-notes/`、`.local/ceh-day01-diagrams/`、`.local/ceh-c01-c05/`、`.local/ceh-c06-c16/`，重點正式英文畫面在 `.local/ceh-day01-production-view/`。長頁原生裁圖擷取曾等待未完成，改採一般視窗截圖完成重點正式畫面回讀；完整416 assertions與來源／正文／圖檔驗證均已完成。
 
 本次完整供稿保存、雙語正文、日期重整、十三圖與互動、正式部署及公開回讀已完成。真機、完整WCAG認證、個別機構合規審查、付費ISO全文逐條審閱及學習理解仍未驗證。
+
+
+## Planning 接續｜2026-11-12
+
+[今日](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W46/days/2026-11-12.md#ceh-day01-c38-2026-11-12) ↔ [W46容量](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W46/weekly-plan.md#ceh-day01-c38-2026-11-12) ↔ [CEH專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-07-ceh-cehp-certification-training.md#ceh-day01-c38-2026-11-12) ↔ [網站專案](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#ceh-day01-c38-2026-11-12) ↔ [整合入口](https://github.com/JasonLn0711/planning-everything-track/blob/main/docs/14-local-integrations.md#ceh-day01-c38-2026-11-12)
+
+Kairos持完整來源、採納、實作與驗證；Planning持日期更正、交付狀態、容量Unknown及下一關。Jason依現行CEH容量啟動閱讀，私人學習證據依現行規則保存；這次關聯只更新文件，不變更教材、部署來源、排程或本人理解狀態。
