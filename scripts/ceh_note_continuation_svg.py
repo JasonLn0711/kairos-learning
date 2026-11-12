@@ -15,7 +15,12 @@ def render_continuation(b,lang,spec):
  def card(item,x,y,w):
   start=len(out);columns=max(5,int((w-36)/20));cy=text(item['title'],x+w/2,y+32,columns,20,True,True)
   cy=text(item['body'],x+w/2,cy+6,max(5,int((w-36)/18)),18,False,True)+12
-  out.insert(start,rect(x,y,w,cy-y));return cy
+  i=b['items'].index(item);name=b['name'];fill='#e6f5ec'
+  if (name=='transactiontampering' and i==1) or (name=='serviceavailability' and i==1) or (name=='transportprotection' and i<3):fill='#fbeeee'
+  elif (name=='ciaobjectives' and i==0) or (name=='signatureevidence' and i==2):fill='#e9f2fa'
+  elif name=='ciaobjectives' and i==2:fill='#f7f1e9'
+  elif name=='ciaobjectives' and i>2:fill='#f6f7f8'
+  out.insert(start,rect(x,y,w,cy-y,fill));return cy
  def arrow(y,x=450):path(f'M{x} {y}v24m-6-6 6 6 6-6')
  y=text(b['caption'],28,40,40,22,True)+16
  layout=spec['layout'].replace('continuation-','');items=b['items']
@@ -30,7 +35,8 @@ def render_continuation(b,lang,spec):
    for i in row:
     x,top,w,h=boxes[i];boxes[i]=(x,top,w,bottom-top)
     for k,entry in enumerate(out):
-     if entry==rect(x,top,w,h):out[k]=rect(x,top,w,bottom-top);break
+     if entry.startswith(f'<rect x="{x}" y="{top}" width="{w}" height="{h}"'):
+      out[k]=entry.replace(f'height="{h}"',f'height="{bottom-top}"',1);break
    y=bottom+88
   connections=[]
   for edge in spec['edges']:

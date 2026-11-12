@@ -913,3 +913,7 @@ AASE-M08-C04 v1.1.2／revision 6 保留原發布日、路徑及六個舊錨點�
 M08-04的v1.1.0先完成正式發布；v1.1.1保存該發布版後補正200%根字級加正文的頁首換行。品牌white-space沿既有樣式由nowrap改normal，沒有縮字或隱藏內容；四尺寸正文放大及實際雜湊版工作坊下載由本課瀏覽器檢查保護。舊裸下載網址可能沿用CDN快取，驗收走現有AaseWorkshop的sha256連結。
 
 M08-04 v1.1.2再將跳至內容連結的固定-100px隱藏改為依自身高度transform，焦點時顯示；瀏覽器檢查覆蓋兩語四尺寸／兩字級的隱藏邊界及Tab→Enter→正文焦點。v1.1.1的正式發布與截圖發現保留在同一回執，不重寫前版。
+
+## CEH C01–C05 產業案例與五圖（2026-11-12）
+
+考古題日期頁1.3.0保留三部分與原題解析，接入[完整九章雙語採用稿](sources/ceh-notes/2026-11-10/c01-c05-replacement-2026-11-12/README.md)。`ceh_note_c01_c05.py`由`reconstruct-ceh-notes.py`呼叫，五圖沿受限spec及既有graph renderer，HTML／搜尋／SVG共用正式JSON。新增圖只接受固定節點與線；無JS仍有端點關係清單。`tests/ceh-notes-c01-c05.test.ts`核對正文與來源，`check-ceh-c01-c05-browser.mjs`另驗啟用JS的四尺寸／200%連線。發布證據見[回執](releases/2026-11-12-ceh-c01-c05.md)。

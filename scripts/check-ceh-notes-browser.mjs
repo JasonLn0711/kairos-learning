@@ -46,6 +46,11 @@ try {
       assert.equal(await page.locator('.daily-note input[type="radio"]').count(),blocksFor(lang).filter(b=>b.kind==='checks').flatMap(b=>b.items).reduce((n,q)=>n+q.options.length,0));
       assert.ok(!await overflow(page),`${lang} ${width} overflow`);
       await page.screenshot({path:`${output}/daily-${lang}-${width}.png`});
+      for(const name of ['ciaobjectives','transactiontampering','serviceavailability','signatureevidence','transportprotection']){
+        const figure=page.locator(`[data-diagram="${name}"]`);
+        await figure.evaluate(el=>el.scrollIntoView({block:'start'}));
+        await page.screenshot({path:`${output}/c01-${name}-${lang}-${width}.png`});
+      }
       if(width===320||width===1280)for(const part of note.parts){
         await page.evaluate(number=>document.getElementById('part-'+number).scrollIntoView({block:'start'}),part.number);
         await page.screenshot({path:`${output}/part-${part.number}-${lang}-${width}.png`});
