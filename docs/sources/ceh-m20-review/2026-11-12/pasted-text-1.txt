@@ -1,0 +1,1026 @@
+# CEH M20 密碼學｜從零理解到資安工程實務
+
+Cryptography · 8 題精讀 · 白話教學 × 原理推導 × CEH 解題
+
+這份教材涵蓋 CEH M20 密碼學的 8 道題目，涉及 8 個學習觀念（L01–L08）。我們的目標不是單純背出 AES、RSA、Blowfish 的名稱，而是理解：密碼學究竟如何讓一份資料在不可信的環境中，仍然維持我們要求的安全性？
+
+學完這份內容，你應該能做到三件事：
+
+1. 考試層次： 從題幹判斷正在考哪一種密碼學概念，辨識關鍵條件，排除錯誤選項。
+2. 工程層次： 理解加密、金鑰交換、雜湊、數位簽章與磁碟加密如何組成真正的安全系統。
+3. 研究層次： 判斷一個安全主張的威脅模型（Threat Model）、必要前提及反例，而不只是接受教科書結論。
+
+## 一、先建立完整地圖：密碼學其實在解決四個問題
+
+假設你是一家半導體公司的資安架構師，公司準備將重要晶片設計檔案存放到伺服器，並提供海外工程團隊遠端存取。
+
+你必須回答四個問題：
+
+核心目標：讓資料在指定威脅下受到保護
+
+What are we protecting, and against whom?
+
+01
+
+保護什麼？
+
+機密性、完整性、可用性
+
+02
+
+如何保護？
+
+加密、雜湊、驗證、簽章
+
+03
+
+誰有權使用？
+
+金鑰、金鑰交換、身分認證
+
+04
+
+何時可能失效？
+
+演算法限制、主機入侵、管理錯誤
+
+這四個問題就是本次所有題目的共同主軸。
+
+先掌握一個最重要的觀念：密碼學不是把資料變成亂碼而已，而是透過數學方法，在特定安全假設下提供可驗證的保護。
+
+例如，檔案即使使用 AES-256 加密，只要駭客已控制正在讀取明文的應用程式，仍然可能竊取資料。此時 AES 未必被破解；真正失效的是端點及金鑰使用環境的安全邊界。
+
+這也正是本次題目 EC-Q024 值得深入研究的地方。
+
+CEH-M20-8題半天精讀-觀念原題作答與查證-2026-11-12(1).md
+
+
+
+## 二、L01｜加密到底要保護什麼？先理解 CIA 三要素
+
+關聯題目：EC-Q024、P3-Q074
+
+假設你把一份價值十億元的晶片設計圖存到電腦裡。你真正擔心的事情，可能不是一件，而是三件：
+
+- 別人偷偷把設計圖拿走。
+- 別人偷偷修改設計圖，讓晶片製造出錯。
+- 需要設計圖的時候，檔案卻被刪除或系統無法使用。
+
+這三種問題在資安中稱為 CIA Triad。
+
+Confidentiality
+
+機密性
+
+不該看的人看不到
+
+Integrity
+
+完整性
+
+資料沒有遭到未授權修改
+
+Availability
+
+可用性
+
+需要的時候能使用
+
+### 1. 加密主要解決機密性
+
+假設我們把文件加密。駭客偷到了檔案，卻沒有金鑰，因此無法有效閱讀裡面的資訊。
+
+這就是加密最直接的作用。
+
+但是，假設駭客沒有解密，而是直接把加密檔案刪除？
+
+加密並不能阻止這件事。
+
+假設駭客拿到加密資料後，偷偷改掉部分位元，讓解密後的內容錯誤？
+
+如果我們只使用不提供完整性驗證的加密模式，也不能保證會偵測到修改。
+
+因此要區分：
+
+| 安全需求     | 常見對應機制                         |
+| -------- | ------------------------------ |
+| 不讓別人讀取   | Encryption（加密）                 |
+| 發現資料被修改  | Hash + 可信摘要，或 MAC              |
+| 確認資料來自誰  | MAC、Digital Signature（視信任模型而定） |
+| 確保系統持續服務 | 備份、備援、復原與可用性架構                 |
+
+### 2. 更深入：為什麼有些加密也能保護完整性？
+
+因為今天的密碼學不只存在「純加密」。
+
+例如 AES-GCM 是一種 Authenticated Encryption with Associated Data（AEAD，具關聯資料的認證加密）機制。
+
+它除了產生密文，還會產生驗證標籤（Authentication Tag）。
+
+接收者解密時，必須檢查標籤。如果密文或被驗證的關聯資料遭到修改，系統通常會拒絕接受結果。
+
+AES-GCM 的簡化工作流程
+
+明文 + 金鑰 + Nonce + 關聯資料
+
+AES-GCM 認證加密
+
+Ciphertext
+
+隱藏內容
+
+Authentication Tag
+
+驗證完整性與真實性
+
+這裡的 Nonce 是加密時使用、通常不必保密但必須遵守唯一性等規則的參數。重複使用同一金鑰與不應重複的 Nonce，可能嚴重破壞安全性。
+
+NIST SP 800-38D 定義了 GCM 的認證加密機制。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+研究層次的重點： 我們不能只問「使用什麼加密演算法」，還要問「使用什麼 Mode、如何處理金鑰與 Nonce、提供什麼安全保證」。
+
+## 三、L02｜明文、密文、演算法與金鑰：理解加密的基本模型
+
+關聯題目：全部 8 題的共同基礎
+
+想像你有一個保險箱。
+
+保險箱的製造方式，就是演算法（Algorithm）；裡面的機密文件，就是明文（Plaintext）；鎖上的保護結果，可以類比為密文（Ciphertext）；真正讓特定人能夠打開保險箱的秘密，就是金鑰（Key）。
+
+### 1. 用數學描述
+
+加密：
+
+\\[ C=E_K(P) \\]
+
+解密：
+
+\\[ P=D_K(C) \\]
+
+其中：
+
+| 符號      | 意義              |
+| ------- | --------------- |
+| \\(P\\) | Plaintext，明文    |
+| \\(C\\) | Ciphertext，密文   |
+| \\(K\\) | Key，金鑰          |
+| \\(E\\) | Encryption，加密操作 |
+| \\(D\\) | Decryption，解密操作 |
+
+這個模型非常重要，因為它告訴我們：
+
+加密不是單純把資料隨便打亂，而是一個由金鑰控制、並能在正確條件下還原的數學轉換。
+
+### 2. 演算法必須是秘密嗎？
+
+不需要。
+
+AES 的規格完全公開。全世界的研究人員都可以檢查它的設計、分析它的安全性。
+
+這就是現代密碼學的重要設計觀念：安全性不應建立在攻擊者不知道演算法的前提上，而應建立在密碼機制及秘密金鑰能抵抗攻擊的能力上。
+
+這與 Kerckhoffs's Principle（柯克霍夫原則）一致。
+
+假設一家公司的安全系統必須依賴「駭客不知道我們自己設計的加密公式」，一旦公式外洩，整套防護就可能崩潰。
+
+相比之下，標準密碼系統通常允許公開演算法，並由安全的金鑰管理控制存取。
+
+### 3. 最關鍵的事情其實是金鑰管理
+
+一個系統可能使用非常強的 AES-256，卻把金鑰直接寫在程式碼中：
+
+```
+SECRET_KEY = "company-secret-key"
+```
+
+這不只是字串長度或格式的問題。如果祕密金鑰或其產生方式被寫在原始碼裡，並隨 Git 儲存庫外洩，攻擊者可能直接取得解密能力。
+
+更完善的設計需要考慮金鑰的產生、儲存、分配、使用、輪替與撤銷。
+
+OWASP Cryptographic Storage Cheat Sheet 也特別強調金鑰生命週期管理與威脅模型的重要性。
+
+[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\&sz=32)
+
+OWASP Cheat Sheet Series
+
+
+
+請記住：密碼系統的安全性，不等於加密演算法本身的安全性。
+
+## 四、L03｜對稱式與非對稱式加密：差別其實在金鑰
+
+關聯題目：EC-Q032、EC-Q053、P3-Q056
+
+這是本次考題的重要核心。
+
+### 1. 對稱式加密（Symmetric Encryption）
+
+想像你和一位工程師各持有同一把鑰匙。
+
+你可以用它把文件鎖起來，他也能用相同的秘密鑰匙打開。
+
+這就是對稱式密碼學的基本概念。
+
+Alice
+
+Secret Key K
+
+密文傳送
+
+Bob
+
+Secret Key K
+
+雙方使用相同的秘密金鑰，或能相互推導的對應秘密金鑰
+
+常見演算法包括 AES、DES、Blowfish、Twofish。
+
+對稱式加密很適合大量資料處理，例如檔案、資料庫欄位、備份以及通訊流量。
+
+但是，它遇到一個問題：
+
+假設 Alice 和 Bob 從來沒有見過面，他們要如何安全地取得同一把秘密金鑰？
+
+如果透過不安全的通道直接傳送金鑰，駭客可能把它攔截。
+
+這就是 Key Distribution Problem（金鑰分配問題）。
+
+### 2. 非對稱式密碼學（Asymmetric Cryptography）
+
+非對稱式密碼學使用兩把有數學關聯、角色不同的金鑰：
+
+公鑰（Public Key）可以公布，私鑰（Private Key）必須妥善保護。
+
+以支援公開金鑰加密的方案為例：
+
+Public Key
+
+公布給需要傳送機密訊息的人
+
+Private Key
+
+由接收者秘密保管
+
+Alice 使用 Bob 的公鑰加密
+
+將密文傳送給 Bob
+
+Bob 使用自己的私鑰解密
+
+RSA 就是支援公開金鑰密碼學的重要演算法家族。
+
+但不是所有非對稱密碼演算法都具有加密、簽章和金鑰交換的全部功能。必須看具體演算法與協定。
+
+### 3. 為什麼還需要確認公鑰的主人？
+
+這是比單純背誦「公開金鑰比較方便」更重要的問題。
+
+假設 Alice 想取得 Bob 的公鑰。
+
+駭客 Mallory 卻在通訊過程中，把 Bob 的公鑰換成自己的公鑰。
+
+Alice 可能以為自己正和 Bob 安全通訊，實際上卻把機密資料交給了 Mallory。
+
+這類攻擊與 Man-in-the-Middle（中間人攻擊）有關。
+
+因此，公開金鑰密碼學不能自動解決所有身分信任問題。需要合適的憑證驗證、身分認證或其他可信的金鑰驗證機制。
+
+NIST SP 800-56B Rev.2 涵蓋以 RSA 為基礎的金鑰建立與確認方法，並於 2026 年 1 月獲 NIST 再確認為現行文件。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+### 4. 真實系統會同時使用兩種密碼技術
+
+現代安全通訊通常不必在對稱式與非對稱式之間二選一。
+
+常見方法是 Hybrid Cryptography（混合式密碼學）：
+
+階段一｜建立共享秘密
+
+利用適當的公開金鑰機制、身分驗證與金鑰衍生程序，建立工作階段所需的對稱金鑰。
+
+階段二｜大量資料加密
+
+使用建立好的對稱金鑰，透過 AES-GCM 等機制保護後續資料。
+
+公開金鑰機制協助解決安全建立金鑰的問題，對稱式加密負責有效率地保護資料。
+
+這是現代網路加密協定的重要架構思想。
+
+CEH 解題關鍵：只要題目問的是金鑰關係，先分清共享秘密與公開／私密金鑰，而不是先看演算法名稱。
+
+## 五、L04｜雜湊、加密、編碼：三個最容易混淆的概念
+
+關聯題目：P3-Q074，支援 EC-Q032、EC-Q053
+
+我們先用三句話建立直覺：
+
+Encoding（編碼） 是為了讓資料方便表示。
+
+Encryption（加密） 是為了讓未授權者無法讀取內容。
+
+Hashing（雜湊） 是為了把資料轉換成摘要，支援完整性檢查等用途。
+
+Encoding
+
+可依格式還原
+
+`Hello`
+
+`SGVsbG8=`
+
+Base64 範例：不需要保密金鑰
+
+Encryption
+
+持有正確金鑰才能解密
+
+明文
+
+密文
+
+透過正確金鑰及其他必要參數還原資料
+
+Hashing
+
+非設計為可逆轉換
+
+任意長度資料
+
+固定長度摘要
+
+例如 SHA-256 產生 256-bit 摘要
+
+### 1. 雜湊為什麼可以用來偵測資料被修改？
+
+假設你將一份醫療研究資料交給其他研究者。
+
+你先計算它的 SHA-256 摘要：
+
+\\[ h=H(m) \\]
+
+這裡 \\(m\\) 代表原始資料，\\(H\\) 是雜湊函數，\\(h\\) 是摘要。
+
+接收者收到檔案後，再計算一次摘要：
+
+\\[ h'=H(m') \\]
+
+如果兩個摘要不同，就代表接收資料與原始資料不相同。
+
+如果摘要相同，在使用適當安全雜湊演算法及可信比較值等前提下，我們可以有高度信心認為資料未改變。
+
+NIST FIPS 180-4 定義安全雜湊演算法及其摘要用途。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+### 2. 為什麼雜湊不等於身分驗證？
+
+假設攻擊者偷換你的檔案，並且順便把旁邊的 SHA-256 摘要也換掉。
+
+接收者仍然會看到兩個摘要吻合。
+
+這表示：
+
+雜湊可以協助檢查內容是否一致，但如果比較依據本身不可信，並不能證明資料來源可信。
+
+所以我們還會使用：
+
+| 機制                | 特別解決的問題                  |
+| ----------------- | ------------------------ |
+| SHA-256           | 產生摘要，支援完整性檢查             |
+| HMAC              | 利用共享秘密驗證訊息及其來源是否符合預期     |
+| Digital Signature | 透過私鑰簽署、公鑰驗證，提供可公開驗證的簽署證據 |
+
+NIST FIPS 186-5 定義數位簽章標準及其完整性、簽署者驗證用途。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+### 3. 研究深度：雜湊的三種安全性
+
+一個現代密碼學雜湊函數，通常追求三種性質：
+
+| 性質                         | 白話解釋                      |
+| -------------------------- | ------------------------- |
+| Preimage Resistance        | 給你摘要，很難反推出對應原始資料          |
+| Second Preimage Resistance | 給你一份原始資料，很難找到另一份具有相同摘要的資料 |
+| Collision Resistance       | 很難找到任意兩份不同資料，卻具有相同摘要      |
+
+這裡有一個值得思考的差異。
+
+雜湊輸出長度是固定的，但輸入可以很長，因此數學上不同資料具有相同摘要是必然存在的。
+
+我們要求的不是「絕對不會碰撞」，而是攻擊者在可行計算資源內極難找到碰撞。
+
+以理想的 256-bit 雜湊函數為例，暴力尋找任意碰撞的典型工作量大約是：
+
+\\[ 2^{128} \\]
+
+這來自 Birthday Bound（生日界限），而不是 \\(2^{256}\\)。
+
+### 4. 為什麼密碼不能只用 SHA-256 儲存？
+
+這是延伸到工程實務時非常重要的問題。
+
+如果使用者密碼很短，攻擊者可以猜測可能的密碼，把每個猜測輸入 SHA-256，再比較摘要。
+
+雜湊函數無法反向解密，不代表攻擊者不能靠猜測找回原始輸入。
+
+因此密碼儲存需要專門的 Password Hashing / KDF，例如 Argon2id，搭配獨立 Salt 與適當的成本參數，而不是直接使用快速 SHA-256。
+
+OWASP Password Storage Cheat Sheet 對此有明確建議。
+
+[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\&sz=32)
+
+OWASP Cheat Sheet Series
+
+
+
+到這裡，你已經掌握本次題目約一半的概念範圍：安全目標、金鑰、對稱與非對稱，以及雜湊的差別。
+
+## 六、L05｜區塊長度與金鑰長度：兩個完全不同的東西
+
+關聯題目：EC-Q284、EC-Q493、P1-Q114
+
+這是本次最重要的演算法辨識觀念。
+
+假設有一家物流公司，每次只能用固定容量的貨櫃運送貨物。
+
+貨櫃的容量就像 Block Size（區塊長度）。
+
+而控制貨櫃鎖頭的金鑰，其規格與安全強度則可以用來類比 Key Size（金鑰長度）。
+
+兩者都可能影響安全，但不是同一個概念。
+
+### 1. AES-256 到底代表什麼？
+
+很多人以為 AES-256 是每次把 256 bits 資料拿來加密。
+
+其實不是。
+
+AES-256 的意思是：
+
+Block Size（區塊長度）
+
+128 bits
+
+AES-128、AES-192、AES-256 都相同
+
+AES-128 的 Key Size
+
+128 bits
+
+AES-192 的 Key Size
+
+192 bits
+
+AES-256 的 Key Size
+
+256 bits
+
+根據 NIST FIPS 197（2023 更新版），AES 的區塊長度固定為 128 bits，而金鑰有 128、192、256 bits 三種規格。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.nist.gov\&sz=32)
+
+NIST
+
+
+
+### 2. 金鑰越長就一定越安全嗎？
+
+在其他條件相同、金鑰均勻隨機且沒有更有效攻擊的理想模型下，金鑰越長，暴力搜尋金鑰所需的工作量通常越大。
+
+例如，128-bit 金鑰理論上有：
+
+\\[ 2^{128} \\]
+
+種可能組合。
+
+256-bit 金鑰則有：
+
+\\[ 2^{256} \\]
+
+種可能組合。
+
+但是這並不代表只要金鑰長度夠大，系統就不可能遭到攻擊。
+
+例如：
+
+- 金鑰由容易猜測的密碼衍生。
+- 攻擊者從記憶體取得金鑰。
+- 加密模式使用錯誤。
+- 應用程式在解密後洩漏明文。
+
+因此，「金鑰長度」與「實際安全性」不能直接畫上等號。
+
+### 3. 那麼區塊長度為什麼重要？
+
+以 Blowfish 為例，它每次處理 64-bit 區塊。
+
+當系統使用某些加密模式處理大量資料時，區塊長度較短可能導致生日界限（Birthday Bound）相關的安全限制。
+
+對理想的 64-bit 區塊密碼而言，當處理的區塊數接近：
+
+\\[ 2^{64/2}=2^{32} \\]
+
+時，某些與區塊碰撞有關的風險會變得顯著；實際可安全處理的資料量仍須依加密模式與協定判斷。
+
+這說明一件事：
+
+即使加大金鑰長度，也不會自動消除區塊長度造成的限制。
+
+這正是為什麼評估密碼系統時，需要同時考量金鑰長度、區塊長度、加密模式及使用情境。
+
+## 七、L06｜AES、Blowfish、Twofish、RC4、RSA 究竟差在哪裡？
+
+關聯題目：EC-Q284、EC-Q493、P1-Q114、P3-Q056
+
+現在我們來建立一張能協助你辨識演算法的地圖。
+
+| 演算法      | 類型   | 區塊長度          | 金鑰長度          |
+| -------- | ---- | ------------- | ------------- |
+| AES      | 對稱區塊 | 128 bits      | 128／192／256   |
+| Blowfish | 對稱區塊 | 64 bits       | 32–448        |
+| Twofish  | 對稱區塊 | 128 bits      | 128／192／256   |
+| DES      | 對稱區塊 | 64 bits       | 56-bit 有效金鑰   |
+| RC4      | 對稱串流 | 不適用固定區塊       | 可變            |
+| RSA      | 非對稱  | 不適用 AES 式區塊分類 | 依 RSA 模數與方案而定 |
+
+資料依據：NIST FIPS 197、Blowfish 與 Twofish 設計者文件，以及 IETF RFC 7465。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.nist.gov\&sz=32)
+
+NIST+2
+
+
+
+### 1. 為什麼有 Block Cipher 和 Stream Cipher？
+
+假設你正在加密一部影片。
+
+Block Cipher（區塊密碼）可以理解成一個固定輸入尺寸的密碼運算核心。為了處理大量資料，必須搭配適當的 Mode of Operation（運作模式）。
+
+Stream Cipher（串流密碼）則通常產生金鑰串流（Keystream），用來與資料串流組合，完成加密。
+
+RC4 是歷史上曾被廣泛使用的串流密碼，但因安全性問題，已被禁止用於 TLS。辨識舊演算法不代表推薦它用於新系統，相關規定見 RFC 7465。
+
+### 2. 為什麼 Blowfish 與 Twofish 名字那麼像？
+
+兩者都有 Bruce Schneier 參與設計，但它們不是同一種演算法，也不是把 Blowfish 的金鑰加長就變成 Twofish。
+
+Blowfish 發表於 1993 年，採用 64-bit 區塊及可變金鑰長度。
+
+Twofish 發表於 1998 年，採用 128-bit 區塊，並曾進入 AES 遴選的最後五個候選演算法。
+
+Blowfish 的設計者也提醒，若考慮新應用，不應忽略其 64-bit 區塊限制。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.schneier.com\&sz=32)
+
+Schneier on Security+1
+
+
+
+### 3. 為什麼 AES 不是單一完整的安全系統？
+
+因為 AES 只是 Block Cipher Primitive（區塊密碼原語）。
+
+如果要加密網路訊息，可以依情境使用 AES-GCM 等認證加密模式。
+
+如果要保護磁碟儲存區塊，則可能使用 XTS-AES。
+
+但要特別注意，XTS-AES 用來保護儲存資料的機密性，本身不提供資料或來源的認證。這是 NIST SP 800-38E 明確指出的限制。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+這裡建立了一個工程原則：
+
+同樣是 AES，不同 Mode 會產生不同的安全性質。因此，演算法名稱相同，不代表保護能力完全相同。
+
+## 八、L07｜AES 的遴選歷史：為什麼這兩題有歧義？
+
+關聯題目：EC-Q493、P1-Q114
+
+這兩題值得特別研究，因為它們涉及重要的科學推理能力：判斷題目提供的條件是否足以支持唯一結論。
+
+### 1. AES 是怎麼出現的？
+
+1997 年，NIST 開始尋找新的加密標準，用來取代逐漸不符合安全需求的舊式 DES。
+
+1998 年，NIST 接受了 15 個候選演算法，經過公開研究與評估，選出最後五個決選者。
+
+AES 遴選的最後五個候選演算法
+
+MARS\
+決選演算法
+
+RC6\
+決選演算法
+
+Rijndael\
+最終成為 AES 標準的基礎
+
+Serpent\
+決選演算法
+
+Twofish\
+決選演算法
+
+歷史資料：NIST, Report on the Development of the Advanced Encryption Standard, 2001
+
+NIST 最後選擇 Rijndael 作為 AES 標準的基礎。
+
+[image](https://www.google.com/s2/favicons?domain=https://csrc.nist.gov\&sz=32)
+
+NIST Computer Security Resource Center
+
+
+
+### 2. 問題出在哪裡？
+
+本次附件兩道非常相似的題目，描述某演算法具有：
+
+128-bit 區塊、最高 256-bit 金鑰，而且曾經是 AES 遴選的決選者。
+
+但是 Twofish 符合這些敘述，後來成為 AES 的 Rijndael 也符合。
+
+因此，單靠這三個條件，未必能唯一辨識演算法。
+
+如果題幹再補充「最終沒有被選為 AES」，才能更清楚地區分候選者與最終得主。
+
+這也是附件原先提出的查證警示。
+
+CEH-M20-8題半天精讀-觀念原題作答與查證-2026-11-12(1).md
+
+
+
+### 3. 這對研究工作有什麼啟發？
+
+這其實就是 Necessary Condition（必要條件）與 Sufficient Condition（充分條件）的差別。
+
+假設我們知道：
+
+「所有獲得博士學位的人，都必須符合特定畢業要求。」
+
+但不能反過來說：
+
+「符合其中部分畢業要求的人，一定已取得博士學位。」
+
+在密碼學研究中也一樣。
+
+某個演算法符合幾個規格參數，不表示這些參數就是它獨有的特徵。
+
+做考題時要理解題庫預期的答案；做研究時則必須確認證據真的足以排除其他可能性。
+
+## 九、L08｜磁碟加密：為什麼電腦已被入侵後，加密可能救不了資料？
+
+關聯題目：EC-Q024
+
+這是本次題目中，最值得從安全工程角度深入思考的一題。
+
+### 1. 什麼是 Full Disk Encryption？
+
+假設一台筆記型電腦裝有大量機密資料。
+
+如果電腦遺失，沒有加密的磁碟可能被拆下來，在其他電腦上讀取。
+
+Full Disk Encryption（全磁碟加密）或磁碟區加密可以降低這類離線資料外洩風險。
+
+常見工具包括 Windows 的 BitLocker、macOS 的 FileVault，以及提供不同磁碟加密功能的 VeraCrypt。
+
+但加密容器與全磁碟加密並非完全相同的範圍。
+
+### 2. 什麼是 Encrypted Container？
+
+你可以把加密容器想像成一個特殊的保險箱檔案。
+
+未掛載時，它以加密形式存放在儲存裝置上。
+
+使用正確憑證掛載後，系統會呈現可讀寫的虛擬磁碟區。授權程式讀取資料時，加密軟體會處理解密。
+
+未掛載
+
+磁碟中保存密文
+
+Data at Rest
+
+已掛載
+
+授權程式可取得明文
+
+Data in Use
+
+這就是為什麼資料處於 At Rest（靜態儲存）與 In Use（使用中）時，必須採取不同的安全控制。
+
+### 3. 假設駭客已經控制伺服器？
+
+現在情況完全不同。
+
+駭客如果已取得足夠權限，可能直接讀取應用程式解密後的資料、監視存取程序，甚至竊取金鑰。
+
+此時即使磁碟使用強加密，也不能推論駭客一定看不到明文。
+
+VeraCrypt 官方文件也警告，若主機遭惡意程式感染，加密軟體可能無法提供預期的資料保護。
+
+[image](https://www.google.com/s2/favicons?domain=https://veracrypt.io\&sz=32)
+
+veracrypt.io
+
+
+
+我們用一個威脅模型矩陣來看：
+
+| 攻擊情境          | 磁碟加密的保護能力        |
+| ------------- | ---------------- |
+| 電腦遺失、磁碟未解鎖    | 通常能有效降低資料外洩風險    |
+| 攻擊者偷走未掛載的加密容器 | 強加密可提供機密性保護      |
+| 攻擊者入侵已登入的主機   | 保護能力取決於權限及資料使用狀態 |
+| 攻擊者控制可讀取明文的程式 | 單靠磁碟加密通常不足       |
+| 攻擊者刪除資料       | 加密本身不能保證可用性      |
+
+### 4. 那麼真正的事件應變應該怎麼做？
+
+如果資料正在外洩，正確的第一個問題不是「現在該安裝哪套加密軟體」，而是：
+
+攻擊者目前控制了什麼？我們如何在保全證據的同時，阻止更多資料外洩？
+
+這可能涉及網路隔離、存取權限控制、金鑰與憑證處置、鑑識證據保全、惡意程式調查，以及安全復原。
+
+具體順序取決於事件嚴重程度與證據保全需求，而不是一律立即關機或直接重新加密。
+
+### 5. 隱藏磁碟區又是什麼？
+
+VeraCrypt 支援 Hidden Volume（隱藏磁碟區）。簡單來說，可以在既有加密磁碟區的空間中建立另一個隱藏的加密磁碟區。
+
+這與一般加密容器有所不同，涉及 Plausible Deniability（合理否認性）的設計概念。
+
+但不能將「具有隱藏功能」視為單一產品獨有的特徵。Rohos 也提供隱藏加密分割區及 AES-256 等功能。
+
+兩者具體的隱藏機制不同，必須依功能與威脅模型仔細比較。
+
+[image](https://www.google.com/s2/favicons?domain=https://veracrypt.io\&sz=32)
+
+veracrypt.io+1
+
+
+
+本次磁碟加密考題的真正價值，就是理解：
+
+一個工具宣稱能提供加密，不等於它能防止所有型態的資料外洩。
+
+## 十、把八個觀念濃縮成一張 CEH 解題地圖
+
+這是你在做本次考古題之前，應該能夠快速回想的知識。
+
+| 題目類型  | 先辨識什麼                       | 核心觀念        |
+| ----- | --------------------------- | ----------- |
+| 安全目標  | Confidentiality / Integrity | 加密與雜湊用途不同   |
+| 金鑰分配  | Secure Key Distribution     | 公開金鑰機制與身分驗證 |
+| 演算法分類 | Symmetric / Asymmetric      | 金鑰關係        |
+| 單向函數  | One-way / Integrity         | Hashing     |
+| 演算法規格 | 64-bit / 128-bit Block      | 區塊長度        |
+| 金鑰規格  | Variable Key Size           | 金鑰長度        |
+| 歷史背景  | AES Finalist                | 候選者與最後得主    |
+| 磁碟工具  | Container / Hidden Volume   | 功能與威脅模型     |
+
+當你看到長篇英文情境題，先不要把每一個地點、人名、職稱都翻譯完。
+
+例如題目可能提到某家位於美國的金融公司、一次資料外洩、某位正在調查的工程師。這些通常是情境背景，不一定是決定答案的關鍵。
+
+真正需要注意的可能只有：
+
+`64-bit block`、`variable key length`、`32–448 bits`。
+
+能將題目轉換成可驗證的技術條件，就是提升解題速度的主要方法。
+
+## 十一、實作練習：8 題完整 CEH 原文
+
+以下保留附件的 8 題英文題幹與全部 32 個選項，依原順序排列，不預先顯示題庫答案。
+
+你可以直接在每題選擇答案，最後統一送出。我會在下一輪依據原題庫答案及已查證的技術資料評分，特別區分真正答錯與題幹本身存在的歧義。
+
+作答進度
+
+允許部分作答，也可以標註不確定
+
+0 / 8
+
+題 1｜EC-Q024
+
+磁碟加密工具與資料外洩
+
+Noah, a security analyst at a Seattle-based healthcare provider, is responding to a real-time data breach where attackers accessed patient records stored on a compromised server. During incident response, he must quickly secure sensitive files located on the system’s primary storage to prevent further exfiltration. The data resides in a mounted partition that needs full-volume encryption, but standard file encryption isn’t sufficient. Noah selects a solution that supports encrypted containers, strong key lengths like 256-bit AES, and can conceal secure volumes within standard ones to reduce detection. His goal is to ensure confidentiality while forensic operations continue without disrupting system functionality. Which disk encryption tool should Noah deploy to meet these objectives?
+
+A. BitLocker Drive Encryption
+
+B. FileVault
+
+C. Rohos Disk Encryption
+
+D. VeraCrypt
+
+這題不確定，需要複習
+
+對應觀念：L01、L02、L08
+
+題 2｜EC-Q032
+
+安全金鑰分配
+
+Which encryption method supports secure key distribution?
+
+A. Disk encryption
+
+B. Symmetric encryption
+
+C. Hash functions
+
+D. Asymmetric encryption
+
+這題不確定，需要複習
+
+對應觀念：L03、L04
+
+題 3｜EC-Q053
+
+通訊雙方的金鑰建立
+
+A system analyst wants to implement an encryption solution that allows secure key distribution between communicating parties. Which encryption method should the analyst consider?
+
+A. Disk encryption
+
+B. Symmetric encryption
+
+C. Hash functions
+
+D. Asymmetric encryption
+
+這題不確定，需要複習
+
+對應觀念：L03、L04
+
+題 4｜P3-Q056
+
+非對稱加密演算法辨識
+
+Which of the following is an example of an "Asymmetric" encryption algorithm?
+
+A. AES
+
+B. DES
+
+C. RSA
+
+D. Blowfish
+
+這題不確定，需要複習
+
+對應觀念：L03、L06
+
+題 5｜P3-Q074
+
+單向函數與資料完整性
+
+Which of the following is a "one-way" function used to ensure data integrity?
+
+A. Symmetric Encryption
+
+B. Asymmetric Encryption
+
+C. Hashing
+
+D. Encoding
+
+這題不確定，需要複習
+
+對應觀念：L01、L04
+
+題 6｜EC-Q284
+
+64-bit 區塊與可變金鑰
+
+Sarah, an ethical hacker at a San Francisco-based financial firm, is testing the security of their customer database after a recent data exposure incident. Her analysis reveals that the sensitive client information is safeguarded using a symmetric encryption algorithm. She observes that the algorithm processes data in 64-bit blocks and supports a variable key size from 32 to 448 bits. During her penetration test, Sarah intercepts a ciphertext transmission and notes that the encryption was developed as a replacement for DES, an older algorithm. She aims to determine if the algorithm’s flexible key size could be susceptible to brute-force attacks. The algorithm is also noted for its use in secure storage, a critical application for the firm’s data protection. Which symmetric encryption algorithm should Sarah identify as the one used by the firm?
+
+A. RC4
+
+B. Twofish
+
+C. AES
+
+D. Blowfish
+
+這題不確定，需要複習
+
+對應觀念：L05、L06
+
+題 7｜EC-Q493
+
+AES 決選者的辨識
+
+You are Jordan, a cryptographic assessor at Cascade Data in Portland, Oregon, reviewing the protection applied to telemetry logs. Your review finds an algorithm that operates on 128-bit blocks, accepts keys up to 256 bits, and the documentation notes it was one of the finalists in the AES selection process that aimed to replace legacy DES. Which symmetric encryption algorithm should you identify as being used?
+
+A. RC4
+
+B. AES
+
+C. Blowfish
+
+D. Twofish
+
+這題不確定，需要複習
+
+對應觀念：L05、L06、L07
+
+題 8｜P1-Q114
+
+相似題：不同的選項順序
+
+You are Jordan, a cryptographic assessor at Cascade Data in Portland, Oregon, reviewing the protections applied to telemetry logs. Your review finds an algorithm that operates on 128-bit blocks, accepts keys up to 256 bits, and the documentation notes it was one of the finalists in the AES selection process that aimed to replace legacy DES. Which symmetric encryption algorithm should you identify as being used?
+
+A. Blowfish
+
+B. Twofish
+
+C. RC4
+
+D. AES
+
+這題不確定，需要複習
+
+對應觀念：L05、L06、L07
+
+已完成 0 題，可送出批改
+
+&#x20;送出答案並批改
+
+題目及選項來自你提供的 CEH M20 精讀附件，保留各題原文與原始選項順序。
+
+CEH-M20-8題半天精讀-觀念原題作答與查證-2026-11-12(1).md
+
+## 十二、半天完成的建議節奏
+
+附件原先設定約三小時完成，這個配置適合用來避免深入研究反而拖慢考試準備。
+
+CEH-M20-8題半天精讀-觀念原題作答與查證-2026-11-12(1).md
+
+
+
+10 分鐘
+
+快速建立知識地圖
+
+先看 CIA、加密與雜湊、對稱與非對稱的分類
+
+60 分鐘
+
+精讀 L01–L08
+
+優先掌握定義、原理、演算法參數與安全邊界
+
+10 分鐘
+
+休息
+
+不額外增加學習範圍
+
+40 分鐘
+
+自行完成 8 題
+
+每題挑選答案，標註不確定的判斷
+
+40 分鐘
+
+批改與查證
+
+核對題庫與標準，確認錯誤的原因
+
+20 分鐘
+
+重新回答錯題
+
+驗證是否真正理解，而不是只記住選項字母
+
+這次不需要再增加新的考古題。先把這 8 題做完，再透過錯誤類型決定要複習哪個觀念。
+
+你可以直接使用上面的測驗送出答案，我們接著進行逐題解析、技術查證，以及針對錯題的深入教學。

@@ -59,8 +59,8 @@ def main():
             # Only actual published pairs may advertise a language switch.
             is_aase = rel.startswith(('courses/aase/v1/', 'en/courses/aase/v1/'))
             counterpart = rel.removeprefix('en/') if rel.startswith('en/') else 'en/' + rel
-            if is_aase and counterpart not in pages:
-                if page.alternates: errors.append(f'{rel}: alternates point to an unavailable AASE translation')
+            if (is_aase or rel == 'ceh-notes/m20-cryptography/index.html') and counterpart not in pages:
+                if page.alternates: errors.append(f'{rel}: alternates point to an unavailable translation')
             else:
                 zh_rel = rel.removeprefix('en/')
                 expected_alternates = {'zh-Hant': 'https://learn.cs-kairos.com/' + zh_rel.removesuffix('index.html'), 'en': 'https://learn.cs-kairos.com/en/' + zh_rel.removesuffix('index.html'), 'x-default': 'https://learn.cs-kairos.com/' + zh_rel.removesuffix('index.html')}

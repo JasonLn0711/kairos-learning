@@ -8,6 +8,8 @@ export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;de
 export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
+  const m20Names=['map','cia','aead','symmetric','asymmetric','hybrid','transforms','sizes','finalists','mounted'].map(n=>'m20'+n);
+  if(date==='2026-11-12'&&m20Names.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-m20-review/2026-11-12/image-${m20Names.indexOf(name)+1}.png`;
   if(!['2026-11-10','2026-11-12'].includes(date))return null;
   const socNames=['socgovernance','alerttriage','incidentcoordination','recoverytimeline'];
   const socIndex=socNames.indexOf(name);
