@@ -1,5 +1,6 @@
 <script lang="ts">
   import {noteDiagramSpecs,tlsDirections,noteReferenceImage,type NoteDiagram} from '$lib/note-diagrams';
+  import NoteDay01Diagram from './NoteDay01Diagram.svelte';
   import NoteContinuationDiagram from './NoteContinuationDiagram.svelte';
   import {noteFigurePath} from '$lib/ceh-notes';
   import type {Locale} from '$lib/model';
@@ -15,7 +16,9 @@
 </script>
 <figure class="note-diagram" data-diagram={diagram.name}>
   <figcaption>{diagram.caption}</figcaption>
-  {#if layout.startsWith('continuation-')}
+  {#if layout.startsWith('day01-')}
+    <NoteDay01Diagram {diagram} {lang}/>
+  {:else if layout.startsWith('continuation-')}
     <NoteContinuationDiagram {diagram} {lang}/>
   {:else if layout==='table'}
     <dl class="roe">{#each diagram.items as item}<div><dt>{item.title}</dt><dd>{item.body}</dd></div>{/each}</dl>

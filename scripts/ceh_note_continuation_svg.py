@@ -16,8 +16,8 @@ def render_continuation(b,lang,spec):
   start=len(out);columns=max(5,int((w-36)/20));cy=text(item['title'],x+w/2,y+32,columns,20,True,True)
   cy=text(item['body'],x+w/2,cy+6,max(5,int((w-36)/18)),18,False,True)+12
   i=b['items'].index(item);name=b['name'];fill='#e6f5ec'
-  if (name=='authorizationgates' and i in [2,4]) or (name=='transactiontampering' and i==1) or (name=='serviceavailability' and i==1) or (name=='transportprotection' and i<3):fill='#fbeeee'
-  elif (name=='itotrisks' and i==0) or (name=='ciaobjectives' and i==0) or (name=='signatureevidence' and i==2):fill='#e9f2fa'
+  if (name=='authorizationgates' and i in [2,4]) or (name=='transactiontampering' and i==1) or (name=='serviceavailability' and i==1) or (name=='transportprotection' and i<3) or (name=='ssdremapping' and i==2):fill='#fbeeee'
+  elif (name=='itotrisks' and i==0) or (name=='ciaobjectives' and i==0) or (name=='signatureevidence' and i==2) or (name=='riskassessment' and i==2):fill='#e9f2fa'
   elif (name=='ciaobjectives' and i==2) or (name=='itotrisks' and i==1):fill='#f7f1e9'
   elif name=='ciaobjectives' and i>2:fill='#f6f7f8'
   out.insert(start,rect(x,y,w,cy-y,fill));return cy

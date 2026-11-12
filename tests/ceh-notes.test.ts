@@ -13,7 +13,7 @@ test('one date owns the supplied part, paired routes, full text search and all n
  for(const lang of ['zh','en'] as const){
   const page=getPage((lang==='en'?'/en':'')+'/ceh-notes/2026-11-10/')!;
   assert.equal(page.dailyNote?.date,today);
-  assert.equal(page.dailyNote?.parts[0].text[lang].sections.length,31);
+  assert.equal(page.dailyNote?.parts[0].text[lang].sections.length,10);
   const text=catalog.searchEntries.find(e=>e.lang===lang)!.text;
   for(const id of ['EC-Q001','P1-Q003','P3-Q113','EC-Q054','P3-Q124','EC-Q166','EC-Q189','EC-Q331','EC-Q476'])assert.ok(text.includes(id));
   for(const keyword of ['192.0.2.10','192.0.2.11','TLS','Non-Repudiation'.toLowerCase()])assert.ok(text.toLowerCase().includes(keyword.toLowerCase()));
@@ -75,7 +75,7 @@ test('the reconstructed CIA chapter retains all seven supplied subsections, exam
 });
 test('all three supplied parts retain their reference sets, mechanisms and mixed exercises',()=>{
  assert.deepEqual(original.parts.map(p=>p.number),[1,2,3]);
- assert.deepEqual(original.parts.map(p=>p.text.zh.sections.length),[31,16,16]);
+ assert.deepEqual(original.parts.map(p=>p.text.zh.sections.length),[10,16,16]);
  const expected=[['EC-Q001','P1-Q003','P3-Q113','EC-Q054','P3-Q124','EC-Q166','EC-Q189','EC-Q331','EC-Q476'],['EC-Q535','P3-Q110','P1-Q063','P3-Q086','P3-Q088','EC-Q284','EC-Q032','P3-Q074','P3-Q121'],['EC-Q493','EC-Q024','P1-Q114','EC-Q053','P3-Q056','P1-Q085','P2-Q034','P3-Q071','EC-Q084']];
  for(const lang of ['zh','en'] as const)for(const [index,p] of original.parts.entries()){
   const blocks=p.text[lang].sections.flatMap(s=>s.body),text=blocks.flatMap(noteBodyText).join(' ');

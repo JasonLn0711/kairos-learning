@@ -205,9 +205,14 @@ def main():
     adopt_c01_c05(n)
     from ceh_note_c06_c16 import adopt_c06_c16
     adopt_c06_c16(n)
-    output=json.dumps(n,ensure_ascii=False,indent=2)+'\n'
-    if '--check' in sys.argv:
-        assert path.read_text(encoding='utf-8')==output,'Reconstructed section differs from reviewed paired source'
-    else:path.write_text(output,encoding='utf-8')
+    from ceh_note_regroup import regroup_notes
+    historical, current = regroup_notes(n)
+    from ceh_note_controls_risk import adopt_new_material
+    adopt_new_material(current)
+    for target, note in [(path, historical), (ROOT/'content/ceh-notes/2026-11-12.json', current)]:
+        output=json.dumps(note,ensure_ascii=False,indent=2)+'\n'
+        if '--check' in sys.argv:
+            assert target.read_text(encoding='utf-8')==output, f'{target.name} differs from reviewed paired source'
+        else:target.write_text(output,encoding='utf-8')
     print('Parts 1–3: paired chapters, examples, tables, reference diagrams, calculations, recall cards and supplied exercises')
 if __name__=='__main__':main()

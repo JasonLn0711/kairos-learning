@@ -14,6 +14,9 @@ def render_reference(b,lang):
     spec=SPECS[b['name']]
     assert len(b['items'])==spec['count']
     assert all(set(i)=={'title','body'} for i in b['items'])
+    if spec['layout'].startswith('day01-'):
+        from ceh_note_day01_svg import render_day01
+        return render_day01(b,lang,spec)
     if spec['layout'].startswith('continuation-'):
         from ceh_note_continuation_svg import render_continuation
         return render_continuation(b,lang,spec)

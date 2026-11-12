@@ -9,7 +9,7 @@ const browser=await chromium.launch({headless:true});const results=[];
 try{
  for(const lang of ['zh','en']){
   const page=await browser.newPage();
-  await page.goto(base+(lang==='en'?'/en':'')+'/ceh-notes/2026-11-10/');
+  await page.goto(base+(lang==='en'?'/en':'')+'/ceh-notes/2026-11-12/');
   for(const width of [320,390,768,1280])for(const zoom of [1,2]){
    await page.setViewportSize({width,height:900});
    await page.evaluate(z=>document.documentElement.style.fontSize=z===2?'200%':'',zoom);

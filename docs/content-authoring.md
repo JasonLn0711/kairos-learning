@@ -667,6 +667,12 @@ v1.2.0／revision 6 以新供稿取代餐廳版本；[逐小節來源對照](sou
 
 `content/ceh-notes/YYYY-MM-DD.json` 維護同一天的單一筆記；`parts` 按供稿順序延續，不替同日每份供稿新增日期頁。原稿、原圖與採用對照留在 `docs/sources/ceh-notes/YYYY-MM-DD/part-NN/`；正文保留完整小節，來源與編輯補充分開記錄。`expectedParts` 只記錄使用者預期數量，頁面顯示實際已發布部分數量；不得把尚未提供部分寫成已完成。追加內容保留原發布日、日期網址及既有錨點，增加revision與revisedOn。
 
+2026-11-12 日期重整：11/10 保留原始三部分，11/12 供稿的 C01–C29 在當日另建三部分。歷史來源目錄與既有 SVG URL 保留；C01–C16 的 `p1-c01-*`／`p1-c06-*` 錨點移入新頁，舊頁限定轉向並附無 JS 導引。`ceh_note_regroup.py` 從採用前快照還原原日，再由 `ceh_note_controls_risk.py` 接入新兩份全文；不可手改生成 JSON 取代來源。
+
+十三張新圖的契約在 `note-diagram-specs.json`：固定名稱／節點數，流程與 SSD 映射沿 continuation graph；三分類軸、四層包含、防火牆政策、PDCA、比例長條與風險互動由 `NoteDay01Diagram` 承接。PDCA 的桌面位置與手機閱讀順序分開維護；SSD 兩頁由 FTL 各自連接；控制項比例固定 37／8／14／34。HTML、搜尋及 SVG 共用 `controls-risk-supplement/diagrams.json` 的雙語文字，匯出仍受白名單及 100000 bytes 限制。
+
+風險互動僅接受 L、I 各 1–5 整數，預設 3×5=15；教學門檻明列 1–4／5–9／10–25，序位分數不代表損失倍數。無 JS 保留預設並停用操作，不儲存分數。維護時跑全部單元、來源重現／逐行對照、`check-ceh-day01-diagrams-svg.py` 及 `check-ceh-day01-diagrams-browser.mjs`；完整頁面腳本同時檢查兩日期雙語全文、搜尋、下載與舊書籤。發布結果見當次回執，各檢查只建立其自身範圍的證據。
+
 `src/lib/ceh-notes.ts` 驗證唯一日期、有效日期、雙語結構、部分編號、`pN-`錨點、HTTPS來源與受限區塊，拒絕額外markup欄位。整篇及各部分共用 `isPublic` 的status／publishedOn閘門；只將過閘資料送至日期頁、清單、搜尋與sitemap。發布邊界腳本檢查整篇及同日部分的draft／future標記不進入實際HTML／JSON／JS。未提供原題全文時，保留供稿題號及參考答案，不宣稱已核對題庫正解。
 
 正文沿用SourceBody的段落、清單及可鍵盤捲動表格。`NoteFigure`承接四節點向下workflow與三欄平行CIA；`NoteRecall`承接三張卡，無JavaScript可閱讀三卡與原生答案；`NoteChecks`保留供稿三選項並提供本頁逐項回饋，不儲存、不外送或宣稱學習完成。圖示的節點、文字、搜尋與SVG共用正式JSON；`python3 scripts/ceh_notes_svg.py --check` 已納入validate:release，輸出固定allowlist且每圖小於100000bytes。新領域圖需先擴充契約，禁止以任意HTML／SVG繞過。

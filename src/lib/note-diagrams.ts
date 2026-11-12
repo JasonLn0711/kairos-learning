@@ -8,7 +8,10 @@ export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;de
 export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
-  if(date!=='2026-11-10')return null;
+  if(!['2026-11-10','2026-11-12'].includes(date))return null;
+  const day01Names=['lifecyclecontrols','controlaxes','defenselayers','firewallpolicy','sanitizationmethods','ssdremapping','sanitizationprogram','standardsmap','riskassessment','riskmatrix','pdcacycle','controlcounts','riskgovernance'];
+  const day01Index=day01Names.indexOf(name);
+  if(date==='2026-11-12'&&day01Index>=0)return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-notes/2026-11-12/controls-risk-supplement/image-${day01Index+1}.png`;
   const roeNames=['securityframeworks','itotrisks','validationevidence','authorizationgates'];
   const roeIndex=roeNames.indexOf(name);
   if(roeIndex>=0)return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-notes/2026-11-10/c06-c16-supplement-2026-11-12/image-${roeIndex+1}.png`;
