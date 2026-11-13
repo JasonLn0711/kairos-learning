@@ -947,3 +947,9 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 新`m20gcmflow`沿受限continuation-graph，七節點、五列及七條固定邊，保留密文／Tag並列，驗證通過／失敗是兩個條件結果。接收端以自身持有的key及相同nonce／AAD驗證；箭頭是依賴關係，不表示傳送秘密金鑰。HTML／搜尋／SVG共用正文模型，原PNG另保管；現有`m20_review_svg.py --check`核對完整十一名白名單。
 
 [完整供稿、前版與逐節採納](sources/ceh-m20-review/2026-11-12/four-concepts-supplement/README.md)及[本次發布與驗收](releases/2026-11-12-ceh-m20-four-concepts.md)承接來源、修正與各層證據。四個時間建議只對應供稿的八題；五題包含選項文字出現AES，不是官方配分或五題答案均為AES。兩題理解檢查保留未答狀態，不建立作答提交或學習完成。
+
+## CEH Day01-B｜密碼學 L01–L12（2026-11-13）
+
+獨立單語頁 `/ceh-notes/day01-b-cryptography/` 使用既有 M20Review／NoteDiagram 模型，完整採用供稿概念與八圖，保留另一篇 M20 八題文章。原文、八PNG、SHA256SUMS、逐行採用與技術修正見[來源紀錄](sources/ceh-day01-b/2026-11-13/README.md)。供稿未附完整13題與52選項，頁面保留題號對照與四道未公布答案的靜態自我檢核。
+
+`python3 scripts/ceh_day01b.py --check` 驗正文／八SVG同源；`tests/ceh-day01b.test.ts` 驗概念範圍、缺件邊界、金鑰平行及簽章／憑證方向。`node scripts/check-day01b-browser.mjs` 驗全文、四尺寸、200%、無JS、鍵盤、SVG下載位元組與字框、搜尋及索引；正式站指定 `DAY01B_BASE_URL=https://learn.cs-kairos.com`。發布閘門同時檢查新頁draft／future的路由、搜尋與payload排除。實測與正式回讀見[回執](releases/2026-11-13-ceh-day01-b.md)。
