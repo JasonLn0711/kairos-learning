@@ -12,6 +12,7 @@ def main():
  figures=json.loads((SOURCE/'figures.json').read_text())
  raw=(SOURCE/'pasted-text-1.txt').read_text()
  text=raw.replace('\\*\\*','**')
+ text=text.replace('博士班需要再理解一個層次：','還需要理解一個重要區別：').replace('為什麼這是博士班需要注意的題幹歧義？','如何判讀題幹歧義？').replace('博士班整合案例','整合案例').replace('這裡有一個重要的研究能力：','判讀題目時，需要做到：')
  # Replace source diagram transcripts with one same-position, searchable figure.
  spans=[('密碼學系統的概念關係','這個架構就是今天的主軸。'),('**對稱式加密**','#### **為什麼需要非對稱式密碼學？**'),('AES-256 的兩個重要參數','依 NIST FIPS 197'),('NIST AES 決選演算法','這段歷史由 NIST'),('基本流程如下：','數位簽章通常支持三種安全目標：'),('**Root CA（信任錨）**','當瀏覽器或其他驗證程式'),('**1. 確認合作方身分**','其中 AES-GCM'),('**總時間：180 分鐘**','建議現在直接進行')]
  for i,(start,end) in enumerate(spans):
@@ -50,7 +51,7 @@ def main():
    current['body'].append({'kind':'list','items':items});continue
   current['body'].append({'kind':'paragraph','text':clean(s)})
  sources=json.loads((SOURCE/'references.json').read_text())
- result={'title':'CEH M20｜密碼學博士班白話精讀：從加密、金鑰管理到數位簽章','summary':'Day01-B · L01–L12：以跨國晶片設計協作案例，理解密碼學機制的用途、前提與失效邊界。','status':'published','publishedOn':'2026-11-13','revisedOn':'2026-11-13','revision':1,'contentVersion':'1.0.0','sections':sections,'sources':sources}
+ result={'title':'CEH M20｜密碼學白話精讀：從加密、金鑰管理到數位簽章','summary':'Day01-B · L01–L12：以跨國晶片設計協作案例，理解密碼學機制的用途、前提與失效邊界。','status':'published','publishedOn':'2026-11-13','revisedOn':'2026-11-13','revision':2,'contentVersion':'1.0.1','sections':sections,'sources':sources}
  assert len(figures)==8
  assert all(any(f'L{i:02d}｜' in b.get('text','') for s in sections for b in s['body']) for i in range(1,13))
  assert sum(b['kind']=='diagram' for s in sections for b in s['body'])==8

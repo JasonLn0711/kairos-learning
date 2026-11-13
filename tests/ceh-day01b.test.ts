@@ -12,6 +12,7 @@ test('Day01-B preserves full concept scope and distinguishes absent original que
  for(const id of ['EC-Q284','EC-Q493','P1-Q114','EC-Q032','EC-Q053','P3-Q056','P3-Q074','EC-Q024','P3-Q121','P1-Q085','P2-Q034','P3-Q071','EC-Q084'])assert.ok(text.includes(id));
  assert.ok(text.includes('未包含完整原題、選項及官方答案'));
  assert.ok(text.includes('RFC 9525'));
+ assert.doesNotMatch(data.title+'\n'+text,/博士|碩士|研究生|研究能力/);
  assert.ok(text.includes('s=k⁻¹(H(m)+xr)'));
  assert.equal(body.filter(b=>b.kind==='paragraph'&&/^Q[1-4]｜/.test(b.text)).length,4);
  assert.ok(!text.includes('提交理解檢核，逐題批改'));
