@@ -29,4 +29,13 @@ CODE-01：`PLAYWRIGHT_CHANNEL=chrome node scripts/check-day02a-csrf-mechanism.mj
 
 HTML-01–04、A11Y-01–03：初次整頁瀏覽器13項通過，四尺寸320／390／768／1280、JS開關、320px 200%、鍵盤及16圖下載／文字幾何核對；八新圖桌面及390px截圖已逐張目視。兩段HTTP下載圖另保留標頭與body間的空白行；最終版加入登出／Port等說明及SVG空白行後，再跑13項整頁檢查全部通過；新增圖解的分組、五箭頭、資料格、HTTP與Token步驟數亦由同一檢查核對。發布回讀依下節補記。PNG來源本身不受公開SVG小於100000 bytes限制；所有產生SVG仍受此限制。
 
-PUB-02：真實draft／future隔離通過，包含本頁路由、搜尋、payload與導覽排除；fixture已還原，正式產物重新建置。最終版完整release、內容驗證、六項HTML契約、三份文件連結與八份來源JSON檢查均通過。PUB-01正式站回讀仍待部署。未把頁面檢查當成讀者已學會、真實交易成功或全站完整無障礙認證。
+PUB-02：真實draft／future隔離通過，包含本頁路由、搜尋、payload與導覽排除；fixture已還原，正式產物重新建置。最終版完整release、內容驗證、六項HTML契約、三份文件連結與八份來源JSON檢查均通過。本機階段PUB-01尚待部署；完成結果見下節。未把頁面檢查當成讀者已學會、真實交易成功或全站完整無障礙認證。
+
+
+## 正式發布與完成驗收
+
+[Pages run 43591142320](https://github.com/JasonLn0711/kairos-learning/actions/runs/43591142320)成功，部署source為`6d470eb7861cbdf27207313bc00977fd2052f7b3`。CI實際通過凍結安裝、high級套件稽核、內容驗證、420／420測試、六項HTML契約、0 errors／0 warnings、真實draft／future隔離、release及六份原教材checksum；411 HTML頁與1034靜態資產驗證通過。部署步驟與source保存在deployment.json。
+
+PUB-01：正式網址 https://learn.cs-kairos.com/ceh-notes/day02-a-reconnaissance/#p1-csrf-browser-intro 已回讀v1.3.0，並確認此新段落錨點可直接定位；全部正文／表格／程式／題目／圖文字與正式模型比對通過。四尺寸、200%、JS開關、鍵盤表格／HTTP／下載均通過；16圖HTTP及下載位元組與來源完全一致，文字未超出viewBox或互相重疊。production-browser.json保存13項正式結果，assets.json保存16圖大小與SHA256。本機八圖桌面／390px及下載SVG均逐張目視；正式站另目視架構、時序的寬／窄版與SameSite表格，保留分組、五方向與12格判斷。
+
+本次要求的新增、重繪、來源與發布已完成。實體裝置、完整無障礙認證及讀者五題作答沒有在此回執中宣稱完成；本機HTTPS實驗只支持其記錄的Chrome／政策條件。後續僅文件回執提交使用[skip ci]，不替換此已驗收網站部署。
