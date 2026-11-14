@@ -19,6 +19,7 @@ try{
    assert.deepEqual(errors,[], 'Page and resource loading errors');
    const rendered=clean(await page.locator('main').innerText());
    assert.doesNotMatch(rendered,/博士|碩士|研究生/,'Public body uses general teaching language');
+   for(const code of await page.locator('article pre').all()){const style=await code.evaluate(el=>{const s=getComputedStyle(el);return {size:parseFloat(s.fontSize),line:parseFloat(s.lineHeight),bg:s.backgroundColor,color:s.color};});assert.ok(style.size>=16&&style.line/style.size>=1.7);assert.equal(style.bg,'rgb(242, 246, 245)');assert.equal(style.color,'rgb(24, 37, 44)');}
    for(const section of data.sections){assert.ok(rendered.includes(clean(section.heading)));for(const b of section.body){
     const texts=b.kind==='diagram'?[b.caption,b.description,...b.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text];
     for(const text of texts)assert.ok(rendered.includes(clean(text)),`Missing: ${text}`);
