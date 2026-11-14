@@ -1,0 +1,186 @@
+[
+  {
+    "kind": "diagram",
+    "name": "m20d2browser",
+    "caption": "圖 9｜瀏覽器仲裁網頁、Cookie 與網路請求",
+    "description": "兩個網頁是平行的執行環境，不能任意互讀資料；Cookie Store 與 Network Stack 同屬瀏覽器管理，並非每個分頁各有獨立網路。箭頭表示請求經瀏覽器仲裁後送往目的地，不代表所有瀏覽器的程序切分。",
+    "items": [
+      {
+        "title": "銀行頁面",
+        "body": "bank.example.com"
+      },
+      {
+        "title": "惡意頁面",
+        "body": "evil.example.net"
+      },
+      {
+        "title": "Browser：執行權限與網路請求的仲裁者",
+        "body": "都需要透過瀏覽器的網路與儲存機制"
+      },
+      {
+        "title": "Cookie Store",
+        "body": "依網域與安全規則管理"
+      },
+      {
+        "title": "Network Stack",
+        "body": "發送 HTTP Request"
+      },
+      {
+        "title": "Destination Server",
+        "body": "接收 Request，驗證身分及是否允許操作"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2session",
+    "caption": "圖 10｜Cookie 與伺服器 Session 分工",
+    "description": "這是傳統伺服器端 Session 的並列分工，不是瀏覽器把帳戶資料存進識別碼；其他 Token 架構見正文。",
+    "items": [
+      {
+        "title": "Browser",
+        "body": "儲存一個識別碼，例如：\nsession=S7x9...\n瀏覽器不一定知道這個識別碼對應誰。"
+      },
+      {
+        "title": "Server",
+        "body": "儲存 Session 紀錄，例如：\nS7x9... → User Alice\n同時管理有效期限、權限及其他狀態。"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2exchange",
+    "caption": "圖 11｜第一次 HTTP 請求與回應",
+    "description": "由 Browser 向 Bank Server 請求登入頁，再由 Bank Server 回傳 HTML。兩段是HTTP/1.1教學表示法，此階段假設尚未建立 Session。",
+    "items": [
+      {
+        "title": "Browser → Bank Server｜HTTP Request",
+        "body": "GET /login HTTP/1.1\nHost: bank.example.com"
+      },
+      {
+        "title": "Bank Server → Browser｜HTTP Response",
+        "body": "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html>登入頁面...</html>"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2cookieheaders",
+    "caption": "圖 12｜Set-Cookie 與 Cookie 的相反方向",
+    "description": "方向以具名起訖為準：回應要求保存 Cookie；後續請求只傳符合規則的名稱和值，不把安全屬性原樣傳回。",
+    "items": [
+      {
+        "title": "Server → Browser",
+        "body": "Set-Cookie：請保存這筆 Cookie"
+      },
+      {
+        "title": "Browser → Server",
+        "body": "Cookie：這次請求附帶符合規則的 Cookie 名稱和值"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2csrfsequence",
+    "caption": "圖 13｜正常登入與 CSRF 誘發請求的時序",
+    "description": "寬版三條虛線是角色生命線，實線箭頭表示五步互動；窄版改為五筆具名起訖，保留方向與順序。Cookie 未直接交給惡意網頁。第4步假設 Cookie 政策允許傳送，第5步由伺服器驗證後接受或拒絕，不代表必然成功。",
+    "items": [
+      {
+        "title": "① 正常登入",
+        "body": "Alice Browser → 銀行 Server"
+      },
+      {
+        "title": "② Set-Cookie",
+        "body": "銀行 Server → Alice Browser"
+      },
+      {
+        "title": "③ 誘發請求",
+        "body": "惡意網頁 → Alice Browser"
+      },
+      {
+        "title": "④ Browser 附 Cookie，請求銀行操作",
+        "body": "Alice Browser → 銀行 Server"
+      },
+      {
+        "title": "⑤ Server 判斷",
+        "body": "銀行 Server → Alice Browser"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2origins",
+    "caption": "圖 14｜Same-Origin 與 Same-Site 比較",
+    "description": "以 https://bank.example.com 為比較對象；現代 Schemeful Site 為 Scheme 加可註冊網域。bank 與 promo 的 Site 都是 https://example.com，但 Origin 不同。",
+    "items": [
+      {
+        "title": "https://bank.example.com",
+        "body": "Origin：相同｜Site：相同"
+      },
+      {
+        "title": "https://promo.example.com",
+        "body": "Origin：不同｜Site：相同"
+      },
+      {
+        "title": "https://evil.example.net",
+        "body": "Origin：不同｜Site：不同"
+      },
+      {
+        "title": "http://bank.example.com",
+        "body": "Origin：不同｜Site：不同"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2samesite",
+    "caption": "圖 15｜Cookie 傳送判斷表",
+    "description": "假設主機、路徑、HTTPS等條件符合，且沒有其他瀏覽器政策阻擋；勾叉表示在明確指定的 SameSite 設定下是否允許附帶 Cookie。未指定屬性時的預設及短暫POST例外，不能套成本表Lax欄。",
+    "items": [
+      {
+        "title": "Same-Site POST",
+        "body": "Strict：允許｜Lax：允許｜None：允許"
+      },
+      {
+        "title": "Cross-Site 頂層 GET",
+        "body": "Strict：不允許｜Lax：允許｜None：允許"
+      },
+      {
+        "title": "Cross-Site 頂層 POST",
+        "body": "Strict：不允許｜Lax：不允許｜None：允許"
+      },
+      {
+        "title": "Cross-Site 圖片 GET",
+        "body": "Strict：不允許｜Lax：不允許｜None：允許"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2csrftoken",
+    "caption": "圖 16｜具有 CSRF Token 防護的請求流程",
+    "description": "五步依序進行；任何必要驗證不符就停止，不會因為只有有效 Session 而執行交易。此為同步器 Token 模式的概念流程，Token不直接證明人的真實意圖。",
+    "items": [
+      {
+        "title": "Alice 開啟銀行轉帳頁面",
+        "body": "Browser 附帶 Session Cookie，Server 確認 Alice 已登入。"
+      },
+      {
+        "title": "Server 提供合法的 CSRF Token",
+        "body": "Token 可以由 Server 隨機產生，並與 Alice 的 Session 建立關聯。"
+      },
+      {
+        "title": "Alice 透過銀行頁面提交轉帳表單",
+        "body": "表單包含轉帳資料和 CSRF Token，Browser 同時依 Cookie 規則傳送 Session Cookie。"
+      },
+      {
+        "title": "Server 逐項驗證",
+        "body": "檢查 Session、使用者權限、CSRF Token、交易內容，以及其他交易安全控制。"
+      },
+      {
+        "title": "所有條件符合才執行",
+        "body": "缺少 CSRF Token 或驗證不符，就拒絕該請求。"
+      }
+    ]
+  }
+]

@@ -8,6 +8,8 @@ export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;de
 export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
+  const csrfNames=['browser','session','exchange','cookieheaders','csrfsequence','origins','samesite','csrftoken'].map(n=>'m20d2'+n);
+  if(date==='2026-11-14'&&csrfNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/csrf-browser/image-${csrfNames.indexOf(name)+1}.png`;
   if(date==='2026-11-14'&&name==='m20d2binding')return 'https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/parameterized-query/image-1.png';
   const fourTopics=['m20d2priority','m20d2sqli','m20d2tree','m20d2csrf'];
   if(date==='2026-11-14'&&fourTopics.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/four-topics/image-${fourTopics.indexOf(name)+1}.png`;
@@ -44,5 +46,8 @@ export function validateNoteDiagram(block:NoteDiagram):void {
   if(!Array.isArray(block.items)||block.items.length!==noteDiagramSpecs[block.name].count)fail();
   if(block.name==='m20d2priority'&&!block.items.every((item,i)=>item.body.startsWith([40,30,15,15][i]+'%｜')&&item.body.split('｜').length===2))fail();
   for(const item of block.items)if(Object.keys(item).sort().join(',')!=='body,title'||![item.title,item.body].every(s=>typeof s==='string'&&s.trim()))fail();
+  if(block.name==='m20d2origins'&&!block.items.every((item,i)=>item.body===['Origin：相同｜Site：相同','Origin：不同｜Site：相同','Origin：不同｜Site：不同','Origin：不同｜Site：不同'][i]))fail();
+  if(block.name==='m20d2samesite'&&!block.items.every((item,i)=>item.body===['Strict：允許｜Lax：允許｜None：允許','Strict：不允許｜Lax：允許｜None：允許','Strict：不允許｜Lax：不允許｜None：允許','Strict：不允許｜Lax：不允許｜None：允許'][i]))fail();
+  if(block.name==='m20d2csrfsequence'&&!block.items.every((item,i)=>item.body===['Alice Browser → 銀行 Server','銀行 Server → Alice Browser','惡意網頁 → Alice Browser','Alice Browser → 銀行 Server','銀行 Server → Alice Browser'][i]))fail();
   if(block.name==='m20d2binding'&&(block.items[0].body!=="SELECT ... WHERE username = '"||block.items[1].body!=="' OR '1'='1"||block.items[4].body!==block.items[1].body||block.items[3].body!=='WHERE username = ?'))fail();
 }

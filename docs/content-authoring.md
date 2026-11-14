@@ -997,3 +997,9 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 [完整供稿與逐節採用](sources/ceh-day02-a/2026-11-14/parameterized-query/README.md)保存原文、PNG、前版及六段程式排版修復。`ceh_day02a_parameterized.py`在Code/Data Separation下方接入八節、四小節、16程式區塊、兩表及兩題；保留舊正文、錨點與原發布日。不同片段的age欄位及完整實驗的username／role前置條件分開標示。
 
 `m20d2binding`限定六項、同一payload及固定SQL片段；NoteDay02Supplement以兩組上下對照呈現，安全組的SQL與參數並列而非先後，手機原生重排。HTML／搜尋／SVG同源，既有serializer限制保留。`check-day02a-parameterized.py`抽取正式片段實跑記憶體SQLite，納入validate:release；單元測試核對舊區塊保留、完整採用及模型拒絕非法圖解。瀏覽器沿原全頁入口驗全文、四尺寸／200%、無JS、鍵盤及八圖下載。各層結果見[本次回執](releases/2026-11-14-ceh-day02-a-parameterized.md)。
+
+### Day02-A 瀏覽器、Session 與 CSRF｜v1.3.0
+
+[供稿及44標題逐節對照](sources/ceh-day02-a/2026-11-14/csrf-browser/README.md)保存十四節、三十小節、八PNG與前版。`ceh_day02a_csrf.py`在既有CSRF核心段之後插入完整教學，沿原發布日及舊正文；原文24程式片段中兩段HTTP由圖11承接，13表中兩表由圖14／15承接，資料與文字完整保留。五題先不提供答案，六項DevTools清單不建立假進度。
+
+`NoteCsrfBrowser`提供受限架構分組、並列分工、HTTP往返、標頭方向、三角色五訊息、兩種固定表格與五步流程；窄欄重排保留角色、順序與資料格。八SVG由`ceh_day02a_csrf_svg.py`同源生成，原有serializer白名單保留。模型拒絕錯誤表格與時序方向，`tests/ceh-day02a-csrf.test.ts`核對來源與舊正文。`check-day02a-csrf-mechanism.mjs`以本機HTTPS／三個測試主機實跑SameSite、HttpOnly、表單防偽、CORS簡單請求與預檢；只改正式範例目的地及fixture Token，不連外部帳戶。瀏覽器沿整頁入口，發布及證據見[回執](releases/2026-11-14-ceh-day02-a-csrf-browser.md)。

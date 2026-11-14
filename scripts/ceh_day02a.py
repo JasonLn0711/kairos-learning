@@ -4,6 +4,7 @@ from pathlib import Path
 from ceh_notes_svg import render
 from ceh_day02a_supplement import adopt_supplement
 from ceh_day02a_parameterized import adopt_parameterized
+from ceh_day02a_csrf import adopt_csrf
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=ROOT/'docs/sources/ceh-day02-a/2026-11-14'
 def save(path,value):
@@ -64,6 +65,7 @@ def main():
  assert len(sections)==14;assert sum(b['kind']=='diagram' for s in sections for b in s['body'])==3
  figures+=adopt_supplement(result,save)
  figures+=adopt_parameterized(result,save)
+ figures+=adopt_csrf(result,save)
  save(ROOT/'content/ceh-day02-a.json',result);save(SOURCE/'line-adoption.json',ledger)
  save(SOURCE/'editorial-replacements.json',replacements)
  for f in figures:save(ROOT/f'site/images/ceh-notes/2026-11-14-part-20-{f["name"]}-zh.svg',render(f,'zh'))

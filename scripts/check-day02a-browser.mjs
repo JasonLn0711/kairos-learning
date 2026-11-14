@@ -22,7 +22,7 @@ try{
    assert.doesNotMatch(rendered,/博士|碩士|研究生/,'Public body uses general teaching language');
    for(const code of await page.locator('article pre').all()){const style=await code.evaluate(el=>{const s=getComputedStyle(el);return {size:parseFloat(s.fontSize),line:parseFloat(s.lineHeight),bg:s.backgroundColor,color:s.color};});assert.ok(style.size>=16&&style.line/style.size>=1.7);assert.equal(style.bg,'rgb(242, 246, 245)');assert.equal(style.color,'rgb(24, 37, 44)');}
    for(const section of data.sections){assert.ok(rendered.includes(clean(section.heading)));for(const b of section.body){
-    const texts=b.kind==='diagram'?[b.caption,b.description,...b.items.flatMap(i=>[i.title,...(b.name==='m20d2priority'?i.body.split('｜'):[i.body])])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text];
+    const texts=b.kind==='diagram'?[b.caption,b.description,...b.items.flatMap(i=>[i.title,...(b.name==='m20d2priority'?i.body.split('｜'):['m20d2origins','m20d2samesite'].includes(b.name)?i.body.split('｜').flatMap(c=>c.split('：')):[i.body])])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:[b.text];
     for(const text of texts)assert.ok(rendered.includes(clean(text)),`Missing: ${text}`);
    }}
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${width}/${javaScriptEnabled} overflow`);
@@ -31,6 +31,10 @@ try{
    const binding=page.locator('[data-diagram="m20d2binding"]');assert.equal(await binding.locator('.binding section').count(),2);assert.equal(await binding.locator('.binding code').count(),4);assert.equal(await binding.locator('.binding-inputs svg').count(),0);
    const inputLayout=await binding.locator('.binding-inputs').evaluate(el=>{const r=el.getBoundingClientRect(),a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {width:r.width,sameRow:Math.abs(a.y-b.y)<1,ordered:a.x<b.x||a.y<b.y};});assert.equal(inputLayout.sameRow,inputLayout.width>576);assert.ok(inputLayout.ordered);
    for(const code of await binding.locator('code').all())assert.ok(await code.evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=16));
+   const architecture=page.locator('[data-diagram="m20d2browser"]');assert.equal(await architecture.locator('.architecture>.parallel>.card').count(),2);assert.equal(await architecture.locator('.browser-group .card').count(),2);
+   const sequence=page.locator('[data-diagram="m20d2csrfsequence"]');assert.equal(await sequence.locator('.sequence li').count(),5);assert.equal(await sequence.locator('.arrow').count(),5);assert.deepEqual(await sequence.locator('.direction').allTextContents(),['Alice Browser → 銀行 Server','銀行 Server → Alice Browser','惡意網頁 → Alice Browser','Alice Browser → 銀行 Server','銀行 Server → Alice Browser']);
+   for(const [name,columns] of [['m20d2origins',3],['m20d2samesite',4]]){const table=page.locator(`[data-diagram="${name}"] table`);assert.equal(await table.locator('tbody tr').count(),4);assert.equal(await table.locator('thead th').count(),columns);assert.equal(await table.locator('tbody td').count(),4*(columns-1));}
+   assert.equal(await page.locator('[data-diagram="m20d2exchange"] pre').count(),2);assert.equal(await page.locator('[data-diagram="m20d2csrftoken"] li').count(),5);
    checks.push(`Full body and ${figureCount} figures, ${width}px, JS=${javaScriptEnabled}`);
    if(javaScriptEnabled&&(width===390||width===1280))for(const figure of await page.locator('[data-diagram]').all())await figure.screenshot({path:`${out}/${await figure.getAttribute('data-diagram')}-${width}.png`});
   }
@@ -38,6 +42,7 @@ try{
   await page.evaluate(()=>document.documentElement.style.fontSize='');
   const table=page.locator('.table-scroll').first();await table.focus();await page.keyboard.press('ArrowRight');assert.equal(await table.evaluate(el=>el===document.activeElement),true);
   await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');assert.equal(await table.evaluate(el=>el===document.activeElement),true);checks.push(`Keyboard table focus, JS=${javaScriptEnabled}`);
+  for(const target of ['[data-diagram="m20d2exchange"] pre','[data-diagram="m20d2samesite"] .comparison']){const region=page.locator(target).first();await region.focus();await page.keyboard.press('ArrowRight');assert.ok(await region.evaluate(el=>el===document.activeElement));}
   await ctx.close();
  }
  const ctx=await browser.newContext();const page=await ctx.newPage();await page.goto(base+'/ceh-notes/day02-a-reconnaissance/');await page.waitForLoadState('networkidle');
