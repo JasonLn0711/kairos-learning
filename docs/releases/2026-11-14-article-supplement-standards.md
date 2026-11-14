@@ -32,3 +32,7 @@
 - 本機原有三項npm→pnpm文字修正保留在`docs/article-audit.md`、`docs/diagram-design-system.md`及`docs/publishing-security.md`；對後兩檔只提交本次新規範hunk，既有修正維持未提交。
 
 下次文章任務從AGENTS及主規範進入，填補充工作表再按當篇範圍驗收。尚待各篇實際套用的項目，不以本次規範文件發布代替。
+
+## Git發布
+
+規範、入口、工作表及本機採納紀錄提交`ddce50b1aaae6e338c1b4bff57e3f769c0fe0de4`已非強制推送至`origin/main`；`git ls-remote`與本機HEAD相同。提交使用`[skip ci]`，只發布規範文件，沒有重跑或替換網站部署。原三項既有命令文字修改仍保持未提交；本回執後續補記此發布結果，沿同一歷史推送。
