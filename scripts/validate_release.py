@@ -59,7 +59,7 @@ def main():
             # Only actual published pairs may advertise a language switch.
             is_aase = rel.startswith(('courses/aase/v1/', 'en/courses/aase/v1/'))
             counterpart = rel.removeprefix('en/') if rel.startswith('en/') else 'en/' + rel
-            if (is_aase or rel in ('ceh-notes/m20-cryptography/index.html', 'ceh-notes/day01-b-cryptography/index.html')) and counterpart not in pages:
+            if (is_aase or rel in ('ceh-notes/m20-cryptography/index.html', 'ceh-notes/day01-b-cryptography/index.html', 'ceh-notes/day02-a-reconnaissance/index.html')) and counterpart not in pages:
                 if page.alternates: errors.append(f'{rel}: alternates point to an unavailable translation')
             else:
                 zh_rel = rel.removeprefix('en/')

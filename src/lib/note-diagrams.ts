@@ -8,6 +8,8 @@ export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;de
 export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
+  const day02Names=['m20d2mail','m20d2tcp','m20d2evidence'];
+  if(date==='2026-11-14'&&day02Names.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/image-${day02Names.indexOf(name)+1}.png`;
   const day01BNames=['m20bmap','m20bkeys','m20bsizes','m20bfinalists','m20bsignature','m20bpki','m20bsystem','m20btime'];
   if(date==='2026-11-13'&&day01BNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day01-b/2026-11-13/image-${day01BNames.indexOf(name)+1}.png`;
   if(date==='2026-11-12'&&name==='m20gcmflow')return 'https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-m20-review/2026-11-12/four-concepts-supplement/image-1.png';

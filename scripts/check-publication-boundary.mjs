@@ -114,7 +114,7 @@ try {
   }
 
 
-  for(const [m20Path,route] of [['content/ceh-m20-review.json','m20-cryptography'],['content/ceh-day01-b.json','day01-b-cryptography']]){
+  for(const [m20Path,route] of [['content/ceh-m20-review.json','m20-cryptography'],['content/ceh-day01-b.json','day01-b-cryptography'],['content/ceh-day02-a.json','day02-a-reconnaissance']]){
   const m20Original=readFileSync(m20Path,'utf8');aaseOriginals.set(m20Path,m20Original);
   for(const state of ['draft','future']){
     const review=JSON.parse(m20Original);review.title='M20_CLOSED_FIXTURE_ba91';

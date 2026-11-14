@@ -953,3 +953,11 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 獨立單語頁 `/ceh-notes/day01-b-cryptography/` 使用既有 M20Review／NoteDiagram 模型，完整採用供稿概念與八圖，保留另一篇 M20 八題文章。原文、八PNG、SHA256SUMS、逐行採用與技術修正見[來源紀錄](sources/ceh-day01-b/2026-11-13/README.md)。供稿未附完整13題與52選項，頁面保留題號對照與四道未公布答案的靜態自我檢核。
 
 `python3 scripts/ceh_day01b.py --check` 驗正文／八SVG同源；`tests/ceh-day01b.test.ts` 驗概念範圍、缺件邊界、金鑰平行及簽章／憑證方向。`node scripts/check-day01b-browser.mjs` 驗全文、四尺寸、200%、無JS、鍵盤、SVG下載位元組與字框、搜尋及索引；正式站指定 `DAY01B_BASE_URL=https://learn.cs-kairos.com`。發布閘門同時檢查新頁draft／future的路由、搜尋與payload排除。實測與正式回讀見[回執](releases/2026-11-13-ceh-day01-b.md)。
+
+## CEH Day02-A｜情報、DNS 與掃描（2026-11-14）
+
+`/ceh-notes/day02-a-reconnaissance/`沿既有單語M20Review／NoteDiagram模型；[完整來源及逐小節對照](sources/ceh-day02-a/2026-11-14/README.md)保存13章23小節、原稿與三PNG。`python3 scripts/ceh_day02a.py --check`核對正式JSON、逐行採用紀錄及三個同源SVG，納入release閘門。23原題未附，保留題號／歧義與五道靜態自檢，不補造原題或答案；公開正文使用一般教學用語。
+
+三圖限定名稱m20d2mail（flow四節點）、m20d2tcp（tcp-handshake三訊息）與m20d2evidence（table六列）。新TCP版型固定Client／Server及三箭頭方向右／左／右，HTML文字換行，手機保留方向文字與箭頭，SVG由同一資料與既有白名單serializer產生。模型拒絕任意標記與節點增減；圖3不接箭頭，授權在主動行動前確認。單語例外只增列本路徑，既有雙語發布門保持。
+
+`tests/ceh-day02a.test.ts`檢查正文與圖解契約；`scripts/check-day02a-browser.mjs`檢查全文、四尺寸／200%、無JS、鍵盤與下載，正式站指定`DAY02A_BASE_URL`，系統瀏覽器可指定`PLAYWRIGHT_CHANNEL=chrome`。發布閘門以真實draft／future建置核對路由、搜尋、payload及索引關閉。各層驗證與部署見[本次回執](releases/2026-11-14-ceh-day02-a.md)。
