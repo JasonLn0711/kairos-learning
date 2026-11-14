@@ -1,0 +1,1616 @@
+[
+  {
+    "line": 3,
+    "source": "**結論：建議依「SQL Injection → RDAP／WHOIS → Directory Traversal ≈ CSRF」的順序學習。** SQL Injection 要理解原理與防禦，其餘三個重點是能快速辨識題目情境、排除錯誤選項。",
+    "anchor": "p1-supp-intro",
+    "treatment": "正文"
+  },
+  {
+    "line": 5,
+    "source": "## **一、重要性排序與學習比例**",
+    "anchor": "p1-supp-priority",
+    "treatment": "正文"
+  },
+  {
+    "line": 7,
+    "source": "我核對了你提供的 CEH Day02-A 共 23 題，以及 EC-Council 的考試範圍。",
+    "anchor": "p1-supp-priority",
+    "treatment": "正文"
+  },
+  {
+    "line": 9,
+    "source": "| 排名 | 觀念                      | 建議時間占比 | 考試定位                       |",
+    "anchor": "p1-supp-priority",
+    "treatment": "重製圖4：完整四欄表與40/30/15/15比例條"
+  },
+  {
+    "line": 10,
+    "source": "| -- | ----------------------- | ------ | -------------------------- |",
+    "anchor": "p1-supp-priority",
+    "treatment": "重製圖4：完整四欄表與40/30/15/15比例條"
+  },
+  {
+    "line": 11,
+    "source": "| 1  | **SQL Injection**       | 40%    | M15 獨立章節，必須深入理解            |",
+    "anchor": "p1-supp-priority",
+    "treatment": "重製圖4：完整四欄表與40/30/15/15比例條"
+  },
+  {
+    "line": 12,
+    "source": "| 2  | **RDAP／WHOIS**          | 30%    | M02 Footprinting，當前題組重複出現  |",
+    "anchor": "p1-supp-priority",
+    "treatment": "重製圖4：完整四欄表與40/30/15/15比例條"
+  },
+  {
+    "line": 13,
+    "source": "| 3  | **Directory Traversal** | 15%    | M14 Web Application，辨識攻擊機制 |",
+    "anchor": "p1-supp-priority",
+    "treatment": "重製圖4：完整四欄表與40/30/15/15比例條"
+  },
+  {
+    "line": 14,
+    "source": "| 3  | **CSRF**                | 15%    | M14 Web Application，辨識攻擊機制 |",
+    "anchor": "p1-supp-priority",
+    "treatment": "重製圖4：完整四欄表與40/30/15/15比例條"
+  },
+  {
+    "line": 16,
+    "source": "這是本次建議教學篇幅，不是 CEH 官方四項考題配分。",
+    "anchor": "p1-supp-priority",
+    "treatment": "正文"
+  },
+  {
+    "line": 18,
+    "source": "依據有兩點：",
+    "anchor": "p1-supp-priority",
+    "treatment": "正文"
+  },
+  {
+    "line": 20,
+    "source": "- **本份 23 題：** WHOIS 出現在 5 題的題幹或選項中，其中 P1-Q050 直接考網域註冊資料；RDAP 本身未出現在原始題目。其餘三項都只在 P3-Q005 出現一次，作為干擾選項。",
+    "anchor": "p1-supp-priority",
+    "treatment": "正文"
+  },
+  {
+    "line": 21,
+    "source": "- **官方考試範圍：** CEH Exam Blueprint v5.0 將 SQL Injection 列為獨立子領域，配置 6 題；Web Application Hacking 整個領域為 14%，但這不是 SQL Injection 單獨的配分。",
+    "anchor": "p1-supp-priority",
+    "treatment": "正文"
+  },
+  {
+    "line": 23,
+    "source": "  [image](https://www.google.com/s2/favicons?domain=https://cert.eccouncil.org\\&sz=32)",
+    "anchor": "p1-supp-priority",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 25,
+    "source": "  cert.eccouncil.org",
+    "anchor": "p1-supp-priority",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 29,
+    "source": "因此 SQL Injection 需要教得較深；RDAP 雖然不是 SQL Injection 等級的獨立攻擊主題，但對你正在練習的 M02 題組有直接價值。",
+    "anchor": "p1-supp-priority",
+    "treatment": "正文"
+  },
+  {
+    "line": 31,
+    "source": "## **二、SQL Injection（SQL 注入）｜40%**",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 33,
+    "source": "CEH M15｜最重要：原理、種類、如何防禦",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 35,
+    "source": "### **1. 白話文：把使用者輸入的「資料」，變成資料庫的「命令」**",
+    "anchor": "p1-supp-sql-01",
+    "treatment": "正文"
+  },
+  {
+    "line": 37,
+    "source": "想像你經營一家銀行。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 39,
+    "source": "銀行櫃員收到一張紙條：",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 41,
+    "source": "「請查詢帳號 12345。」",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 43,
+    "source": "正常情況下，櫃員只會用 12345 查詢資料。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 45,
+    "source": "但如果櫃員把紙條內容直接當作操作指令的一部分，就可能發生問題。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 47,
+    "source": "**SQL Injection 的本質，就是使用者輸入的資料突破了資料與 SQL 指令之間的界線，改變原本的查詢邏輯。**",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 49,
+    "source": "例如網站後端用 Python 建立查詢：",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 51,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 52,
+    "source": "# 不安全的程式設計sql = \"SELECT * FROM users WHERE username = '\" + username + \"'\"",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 53,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 55,
+    "source": "原本預期使用者輸入：",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 57,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 58,
+    "source": "alice",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 59,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 61,
+    "source": "資料庫看到：",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 63,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 64,
+    "source": "SELECT * FROM users WHERE username = 'alice'",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 65,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 67,
+    "source": "這是正常查詢。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 69,
+    "source": "但如果輸入包含 SQL 語法，開發者又直接拼接字串，資料庫就可能把使用者提供的部分內容誤認為查詢指令。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 71,
+    "source": "例如在隔離測試環境中，輸入：",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 73,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 74,
+    "source": "' OR '1'='1",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 75,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 77,
+    "source": "可能讓查詢成為：",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 79,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 80,
+    "source": "SELECT * FROM users",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 81,
+    "source": "WHERE username = '' OR '1'='1'",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 82,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 84,
+    "source": "為什麼危險？",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 86,
+    "source": "因為 `'1'='1'` 永遠成立，查詢條件可能因此被擴大，回傳原本不應取得的紀錄。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 88,
+    "source": "實際效果仍取決於 SQL 結構、資料庫權限及程式如何處理查詢結果；不是所有輸入都能成功利用。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 90,
+    "source": "### **2. SQL Injection 的根本原因**",
+    "anchor": "p1-supp-sql-02",
+    "treatment": "正文"
+  },
+  {
+    "line": 92,
+    "source": "不安全的資料處理流程",
+    "anchor": "p1-supp-sql",
+    "treatment": "重製圖5"
+  },
+  {
+    "line": 94,
+    "source": "使用者輸入（不可信任）",
+    "anchor": "p1-supp-sql",
+    "treatment": "重製圖5"
+  },
+  {
+    "line": 96,
+    "source": "程式直接拼接 SQL 字串",
+    "anchor": "p1-supp-sql",
+    "treatment": "重製圖5"
+  },
+  {
+    "line": 98,
+    "source": "資料可能被解讀為 SQL 語法",
+    "anchor": "p1-supp-sql",
+    "treatment": "重製圖5"
+  },
+  {
+    "line": 100,
+    "source": "查詢條件、操作或回傳結果遭改變",
+    "anchor": "p1-supp-sql",
+    "treatment": "重製圖5"
+  },
+  {
+    "line": 102,
+    "source": "在資訊安全中，這屬於不可信任輸入跨越 **Trust Boundary（信任邊界）**，進入具有更高權限的資料庫操作流程。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 104,
+    "source": "### **3. CEH 必考的 SQL Injection 類型**",
+    "anchor": "p1-supp-sql-03",
+    "treatment": "正文"
+  },
+  {
+    "line": 106,
+    "source": "| 類型                     | 白話解釋                 | 考題關鍵字                    |",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 107,
+    "source": "| ---------------------- | -------------------- | ------------------------ |",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 108,
+    "source": "| In-band SQLi           | 透過同一個通道注入並取得結果       | Error-based、UNION-based  |",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 109,
+    "source": "| Blind／Inferential SQLi | 沒有直接顯示資料，靠應用程式行為間接判斷 | Boolean-based、Time-based |",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 110,
+    "source": "| Out-of-band SQLi       | 利用其他通訊通道取得資訊         | DNS、不同回傳通道               |",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 112,
+    "source": "**In-band：看得到結果**",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 114,
+    "source": "例如資料庫錯誤被直接顯示在網站上，或結果被合併進正常回應。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 116,
+    "source": "**Blind：看不到結果，但可以觀察差異**",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 118,
+    "source": "例如某個測試條件成立時，網站顯示正常頁面；條件不成立時，顯示空結果。即使沒有直接顯示資料庫內容，仍可能逐步推論資料。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 120,
+    "source": "Time-based 則是透過伺服器回應時間的差異進行推論，但延遲也可能來自網路壅塞，不能只憑一次慢回應就認定存在弱點。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 122,
+    "source": "**Out-of-band：走另一個通道**",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 124,
+    "source": "例如在某些資料庫功能與權限允許的條件下，資料庫可以產生額外的 DNS 或其他網路活動，讓測試者透過不同通道觀察結果。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 126,
+    "source": "這些分類可對照 OWASP WSTG-INPV-05。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 128,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://wstg.owasp.org\\&sz=32)",
+    "anchor": "p1-supp-sql",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 130,
+    "source": "OWASP Web Security Testing Guide",
+    "anchor": "p1-supp-sql",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 134,
+    "source": "### **4. 最重要的防禦：Parameterized Query**",
+    "anchor": "p1-supp-sql-04",
+    "treatment": "正文"
+  },
+  {
+    "line": 136,
+    "source": "不要把不可信任資料直接拼接成 SQL 指令。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 138,
+    "source": "改用參數化查詢（Parameterized Query）：",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 140,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 141,
+    "source": "# 使用 Python sqlite3 的安全查詢方式cursor.execute(    \"SELECT * FROM users WHERE username = ?\",    (username,))",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 142,
+    "source": "```",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 144,
+    "source": "差異在哪裡？",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 146,
+    "source": "即使使用者輸入包含 `' OR ...` 等文字，資料庫驅動程式仍會將它作為參數值，而不是把它加入 SQL 的條件語法。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 148,
+    "source": "這叫作 **Code/Data Separation（程式指令與資料分離）**。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 150,
+    "source": "CEH 解題要記得：",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 152,
+    "source": "- Prepared Statement／Parameterized Query：主要防禦方法。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 153,
+    "source": "- Input Validation：重要的輔助防線，但不能取代參數化。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 154,
+    "source": "- Least Privilege：降低資料庫帳號權限，限制被利用後的損害。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 155,
+    "source": "- WAF：可以輔助阻擋部分攻擊，但不是修復程式漏洞的根本方法。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 157,
+    "source": "還有一個較進階的細節：參數化通常適用於資料值；SQL 表格名稱、欄位名稱及排序方向等結構性部分，需要固定映射或 Allowlist，不應任意接受使用者提供的 SQL 片段。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 159,
+    "source": "來源：[OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html?utm_source=chatgpt.com)。",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 161,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\\&sz=32)",
+    "anchor": "p1-supp-sql",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 163,
+    "source": "OWASP Cheat Sheet Series",
+    "anchor": "p1-supp-sql",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 167,
+    "source": "**SQL Injection 的考試判斷句：使用者輸入改變資料庫查詢語意，就要優先想到 SQL Injection；最重要的防禦是參數化查詢。**",
+    "anchor": "p1-supp-sql",
+    "treatment": "正文"
+  },
+  {
+    "line": 169,
+    "source": "## **三、RDAP（Registration Data Access Protocol）｜30%**",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 171,
+    "source": "CEH M02｜重點：WHOIS、RDAP、DNS 的差別",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 173,
+    "source": "### **1. 白話文：RDAP 就是查詢網域登記資料的新式協定**",
+    "anchor": "p1-supp-rdap-01",
+    "treatment": "正文"
+  },
+  {
+    "line": 175,
+    "source": "假設你想調查一家公司的網域：",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 177,
+    "source": "`example.com`",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 179,
+    "source": "你想知道：",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 181,
+    "source": "「這個網域在哪裡註冊？由哪一家註冊商管理？什麼時候建立？什麼時候到期？」",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 183,
+    "source": "過去常使用 WHOIS 查詢。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 185,
+    "source": "現在則有標準化程度更高的 RDAP。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 187,
+    "source": "可以這樣理解：",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 189,
+    "source": "- **WHOIS：** 傳統網域登記資料查詢方式，回應格式較不統一。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 190,
+    "source": "- **RDAP：** 新式註冊資料查詢協定，使用 HTTP(S) 和標準化的 JSON 資料結構。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 192,
+    "source": "### **2. 為什麼需要 RDAP？**",
+    "anchor": "p1-supp-rdap-02",
+    "treatment": "正文"
+  },
+  {
+    "line": 194,
+    "source": "傳統 WHOIS 可能回傳：",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 196,
+    "source": "```",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 197,
+    "source": "Domain Name: EXAMPLE.COM",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 198,
+    "source": "Registrar: Example Registrar",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 199,
+    "source": "Creation Date: 2020-01-01",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 200,
+    "source": "Registry Expiry Date: 2030-01-01",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 201,
+    "source": "```",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 203,
+    "source": "不同伺服器可能使用不同欄位與文字格式。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 205,
+    "source": "如果你要撰寫自動化研究工具，解析起來比較麻煩。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 207,
+    "source": "RDAP 則提供機器容易理解的標準化資料結構。以下為簡化示意：",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 209,
+    "source": "```",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 210,
+    "source": "{",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 211,
+    "source": "  \"ldhName\": \"EXAMPLE.COM\",",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 212,
+    "source": "  \"status\": [\"active\"],",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 213,
+    "source": "  \"events\": [",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 214,
+    "source": "    {",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 215,
+    "source": "      \"eventAction\": \"registration\",",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 216,
+    "source": "      \"eventDate\": \"2020-01-01T00:00:00Z\"",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 217,
+    "source": "    }",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 218,
+    "source": "  ]",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 219,
+    "source": "}",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 220,
+    "source": "```",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 222,
+    "source": "上述是教學用假資料，不是 `example.com` 的即時註冊紀錄。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 224,
+    "source": "RDAP 的主要優點包括標準化格式、國際化支援、權威服務查找，以及依授權提供不同程度的資料存取。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 226,
+    "source": "自 **2025 年 1 月 28 日** 起，RDAP 已成為 ICANN 管轄之通用頂級網域（gTLD）註冊資料的主要正式查詢協定；部分網域仍保留 WHOIS 服務要求。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 228,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://www.icann.org\\&sz=32)",
+    "anchor": "p1-supp-rdap",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 230,
+    "source": "ICANN",
+    "anchor": "p1-supp-rdap",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 234,
+    "source": "### **3. CEH 最容易考錯：RDAP／WHOIS 與 DNS**",
+    "anchor": "p1-supp-rdap-03",
+    "treatment": "正文"
+  },
+  {
+    "line": 236,
+    "source": "| 你想知道的事       | 主要使用       |",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 237,
+    "source": "| ------------ | ---------- |",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 238,
+    "source": "| 網域註冊商是誰？     | WHOIS／RDAP |",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 239,
+    "source": "| 網域註冊與到期資訊？   | WHOIS／RDAP |",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 240,
+    "source": "| 網站對應什麼 IPv4？ | DNS A      |",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 241,
+    "source": "| 郵件應寄往哪個伺服器？  | DNS MX     |",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 242,
+    "source": "| DNS 區域序號是什麼？ | DNS SOA    |",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 244,
+    "source": "要注意，RDAP 的網域註冊回應也可能包含 nameserver 等資料，但它不等同於 DNS 的即時名稱解析服務。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 246,
+    "source": "另外，RDAP 不保證能看到完整的註冊人個資，部分欄位可能依法規或服務政策遮蔽。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 248,
+    "source": "### **4. 對應你的考古題**",
+    "anchor": "p1-supp-rdap-04",
+    "treatment": "正文"
+  },
+  {
+    "line": 250,
+    "source": "P1-Q050 描述一名倫理駭客：",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 252,
+    "source": "> 希望取得組織的網域所有權與可能的聯絡資訊，並且避免直接與目標系統互動。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 254,
+    "source": "這種題目應該優先聯想到 WHOIS／RDAP 所屬的註冊資料查詢領域。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 256,
+    "source": "但如果題目變成：",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 258,
+    "source": "「請找出公司接收郵件的伺服器。」",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 260,
+    "source": "這就應該想到 DNS MX，而不是 WHOIS。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 262,
+    "source": "你可以直接用 [ICANN Lookup](https://lookup.icann.org/en?utm_source=chatgpt.com) 理解 RDAP 的實際使用情境。這是查詢介面，不需要自己執行掃描。",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 264,
+    "source": "**RDAP 的考試判斷句：查網域註冊資料，用 WHOIS／RDAP；查網域名稱與服務紀錄，用 DNS。**",
+    "anchor": "p1-supp-rdap",
+    "treatment": "正文"
+  },
+  {
+    "line": 266,
+    "source": "## **四、Directory Traversal（目錄穿越）｜15%**",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 268,
+    "source": "CEH M14｜重點：`../`、跳出預期目錄、任意檔案存取",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 270,
+    "source": "### **1. 白話文：本來只能看自己的文件，卻能跑到別的資料夾**",
+    "anchor": "p1-supp-path-01",
+    "treatment": "正文"
+  },
+  {
+    "line": 272,
+    "source": "假設有一個企業文件系統。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 274,
+    "source": "正常使用者只能下載：",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 276,
+    "source": "```",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 277,
+    "source": "/srv/app/reports/report.pdf",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 278,
+    "source": "```",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 280,
+    "source": "程式原本設計讓使用者指定 `report.pdf`，然後從 `reports` 資料夾讀取。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 282,
+    "source": "但是，如果程式直接相信使用者提供的路徑，攻擊者可能嘗試指定：",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 284,
+    "source": "```",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 285,
+    "source": "../config/settings.yaml",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 286,
+    "source": "```",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 288,
+    "source": "其中：",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 290,
+    "source": "- `..` 代表上一層目錄。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 291,
+    "source": "- `/` 是路徑分隔符號。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 292,
+    "source": "- `../` 就是往上一層移動。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 294,
+    "source": "檔案目錄示意",
+    "anchor": "p1-supp-path",
+    "treatment": "重製圖6"
+  },
+  {
+    "line": 296,
+    "source": "**/srv/app/**",
+    "anchor": "p1-supp-path",
+    "treatment": "重製圖6"
+  },
+  {
+    "line": 298,
+    "source": "**reports/**",
+    "anchor": "p1-supp-path",
+    "treatment": "重製圖6"
+  },
+  {
+    "line": 300,
+    "source": "report.pdf（預期可下載）",
+    "anchor": "p1-supp-path",
+    "treatment": "重製圖6"
+  },
+  {
+    "line": 302,
+    "source": "**config/**",
+    "anchor": "p1-supp-path",
+    "treatment": "重製圖6"
+  },
+  {
+    "line": 304,
+    "source": "settings.yaml（不應公開）",
+    "anchor": "p1-supp-path",
+    "treatment": "重製圖6"
+  },
+  {
+    "line": 306,
+    "source": "如果程式沒有適當限制路徑，使用者可能透過 `../` 跳出 reports 目錄，讀取其他檔案。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 308,
+    "source": "這就是 Directory Traversal（也稱 Path Traversal）的核心。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 310,
+    "source": "它可能造成機密檔案外洩；具體影響仍取決於程式邏輯、作業系統權限及檔案位置。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 312,
+    "source": "### **2. 如何防禦？**",
+    "anchor": "p1-supp-path-02",
+    "treatment": "正文"
+  },
+  {
+    "line": 314,
+    "source": "最可靠的設計之一，是讓使用者提供文件 ID，而不是直接決定檔案系統路徑。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 316,
+    "source": "例如：",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 318,
+    "source": "```",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 319,
+    "source": "/download?id=123",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 320,
+    "source": "```",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 322,
+    "source": "後端先確認使用者有權取得文件 123，再從內部固定映射找到實際檔案。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 324,
+    "source": "若系統必須接受路徑，就需要正規化與驗證最終路徑、限制在授權的基底目錄內、考慮符號連結（symlink），並限制程式的檔案存取權限。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 326,
+    "source": "參考 [OWASP WSTG-ATHZ-01](https://wstg.owasp.org/stable/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include/?utm_source=chatgpt.com)。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 328,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://wstg.owasp.org\\&sz=32)",
+    "anchor": "p1-supp-path",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 330,
+    "source": "OWASP Web Security Testing Guide",
+    "anchor": "p1-supp-path",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 334,
+    "source": "### **3. 如何區分 robots.txt？**",
+    "anchor": "p1-supp-path-03",
+    "treatment": "正文"
+  },
+  {
+    "line": 336,
+    "source": "這是本份 P3-Q005 的重點。",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 338,
+    "source": "| 情境                         | 概念                  |",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 339,
+    "source": "| -------------------------- | ------------------- |",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 340,
+    "source": "| 在 robots.txt 發現 `/backup/` | 公開路徑線索／資訊蒐集         |",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 341,
+    "source": "| 操縱路徑跳出允許目錄                 | Directory Traversal |",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 342,
+    "source": "| 使用者輸入改變 SQL 查詢             | SQL Injection       |",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 343,
+    "source": "| 誘使已登入使用者發出非預期請求            | CSRF                |",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 345,
+    "source": "**Directory Traversal 的考試判斷句：看到&#x20;**`../`**、跳出允許目錄、讀取不應存取的檔案，就優先想到目錄穿越。**",
+    "anchor": "p1-supp-path",
+    "treatment": "正文"
+  },
+  {
+    "line": 347,
+    "source": "## **五、CSRF（Cross-Site Request Forgery）｜15%**",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 349,
+    "source": "CEH M14｜重點：利用已登入使用者的瀏覽器發出非預期請求",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 351,
+    "source": "### **1. 白話文：不是偷走你的帳號，而是騙你的瀏覽器替攻擊者辦事**",
+    "anchor": "p1-supp-csrf-01",
+    "treatment": "正文"
+  },
+  {
+    "line": 353,
+    "source": "假設 Alice 已登入銀行網站。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 355,
+    "source": "銀行透過 Session Cookie 辨識 Alice。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 357,
+    "source": "這時，Alice 開啟一個惡意網站。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 359,
+    "source": "該網站試圖讓 Alice 的瀏覽器向銀行送出一個修改帳戶設定的請求。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 361,
+    "source": "如果瀏覽器依 Cookie 政策自動附上有效的登入憑證，而且銀行沒有採取足夠的 CSRF 防護，就可能把這個非預期請求當成 Alice 的操作。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 363,
+    "source": "**Alice 已登入銀行網站**",
+    "anchor": "p1-supp-csrf",
+    "treatment": "重製圖7"
+  },
+  {
+    "line": 365,
+    "source": "瀏覽器持有有效的 Session Cookie",
+    "anchor": "p1-supp-csrf",
+    "treatment": "重製圖7"
+  },
+  {
+    "line": 367,
+    "source": "**Alice 開啟惡意網站**",
+    "anchor": "p1-supp-csrf",
+    "treatment": "重製圖7"
+  },
+  {
+    "line": 369,
+    "source": "惡意頁面誘使瀏覽器產生請求",
+    "anchor": "p1-supp-csrf",
+    "treatment": "重製圖7"
+  },
+  {
+    "line": 371,
+    "source": "**瀏覽器向銀行發出請求**",
+    "anchor": "p1-supp-csrf",
+    "treatment": "重製圖7"
+  },
+  {
+    "line": 373,
+    "source": "在特定 Cookie 政策及請求條件下，附上登入憑證",
+    "anchor": "p1-supp-csrf",
+    "treatment": "重製圖7"
+  },
+  {
+    "line": 375,
+    "source": "**銀行未充分驗證請求來源或防偽資訊**",
+    "anchor": "p1-supp-csrf",
+    "treatment": "重製圖7"
+  },
+  {
+    "line": 377,
+    "source": "可能錯誤執行非使用者本意的操作",
+    "anchor": "p1-supp-csrf",
+    "treatment": "重製圖7"
+  },
+  {
+    "line": 379,
+    "source": "CSRF 最重要的概念是：",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 381,
+    "source": "**Authentication（確認登入身分）不等於確認這個操作真的是使用者所發起。**",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 383,
+    "source": "### **2. CSRF 如何防禦？**",
+    "anchor": "p1-supp-csrf-02",
+    "treatment": "正文"
+  },
+  {
+    "line": 385,
+    "source": "| 防禦方式                     | 作用                    |",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 386,
+    "source": "| ------------------------ | --------------------- |",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 387,
+    "source": "| CSRF Token               | 驗證請求具有合法產生的防偽資訊       |",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 388,
+    "source": "| SameSite Cookie          | 限制某些跨網站情境下的 Cookie 傳送 |",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 389,
+    "source": "| Origin／Fetch Metadata 檢查 | 判斷請求來源及跨網站特性          |",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 390,
+    "source": "| 敏感操作重新驗證                 | 提升高風險交易的確認強度          |",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 392,
+    "source": "單純使用 POST 或 HTTPS，都不代表已經防止 CSRF。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 394,
+    "source": "SameSite 可以降低風險，但仍需要視瀏覽器、Cookie 設定與應用程式架構搭配適當的防禦。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 396,
+    "source": "來源：[OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html?utm_source=chatgpt.com)。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 398,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\\&sz=32)",
+    "anchor": "p1-supp-csrf",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 400,
+    "source": "OWASP Cheat Sheet Series",
+    "anchor": "p1-supp-csrf",
+    "treatment": "移除匯出來源卡與favicon，原稿保留"
+  },
+  {
+    "line": 404,
+    "source": "### **3. CSRF 跟 XSS 不同**",
+    "anchor": "p1-supp-csrf-03",
+    "treatment": "正文"
+  },
+  {
+    "line": 406,
+    "source": "這是後續 M14 題組很值得預先釐清的差異。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 408,
+    "source": "- **XSS（Cross-Site Scripting）：** 不可信任內容被當成網頁腳本執行。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 409,
+    "source": "- **CSRF：** 誘使使用者的瀏覽器發出他不打算執行的已驗證請求。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 411,
+    "source": "兩者可能互相影響，但不是同一種弱點。",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 413,
+    "source": "**CSRF 的考試判斷句：看到「使用者已登入」、「惡意網站」、「瀏覽器代替使用者送出非預期請求」，就優先想到 CSRF。**",
+    "anchor": "p1-supp-csrf",
+    "treatment": "正文"
+  },
+  {
+    "line": 415,
+    "source": "## **六、考前最後整理：四種概念一張表**",
+    "anchor": "p1-supp-recap",
+    "treatment": "正文"
+  },
+  {
+    "line": 417,
+    "source": "| 觀念                  | 核心問題         | 快速辨識                      |",
+    "anchor": "p1-supp-recap",
+    "treatment": "正文"
+  },
+  {
+    "line": 418,
+    "source": "| ------------------- | ------------ | ------------------------- |",
+    "anchor": "p1-supp-recap",
+    "treatment": "正文"
+  },
+  {
+    "line": 419,
+    "source": "| SQL Injection       | 資料變成資料庫指令    | SQL 語法、查詢邏輯改變             |",
+    "anchor": "p1-supp-recap",
+    "treatment": "正文"
+  },
+  {
+    "line": 420,
+    "source": "| RDAP                | 如何取得網域登記資訊   | Registrar、Registrant、註冊日期 |",
+    "anchor": "p1-supp-recap",
+    "treatment": "正文"
+  },
+  {
+    "line": 421,
+    "source": "| Directory Traversal | 如何突破檔案路徑限制   | `../`、任意檔案讀取              |",
+    "anchor": "p1-supp-recap",
+    "treatment": "正文"
+  },
+  {
+    "line": 422,
+    "source": "| CSRF                | 如何偽造使用者的操作請求 | 已登入、Cookie、非預期操作          |",
+    "anchor": "p1-supp-recap",
+    "treatment": "正文"
+  },
+  {
+    "line": 424,
+    "source": "你的 Day02-A 第 16 題（P3-Q005）尤其值得記住：**發現 robots.txt 暴露的路徑，不等於已經使用 Directory Traversal、SQL Injection 或 CSRF。** 題目要的是辨識實際發生了什麼行為，而非只看系統是否有敏感資訊。",
+    "anchor": "p1-supp-recap",
+    "treatment": "正文"
+  },
+  {
+    "line": 426,
+    "source": "## **七、理解檢核（先不公布答案）**",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 428,
+    "source": "題目 1｜資料庫安全",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 430,
+    "source": "某網站把使用者輸入直接拼接進 SQL 指令，使查詢條件遭到改變。最重要的程式層防禦是什麼？",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 432,
+    "source": "A. WAF",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 434,
+    "source": "B. Parameterized Query",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 436,
+    "source": "C. HTTPS",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 438,
+    "source": "D. robots.txt",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 440,
+    "source": "題目 2｜資訊蒐集",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 442,
+    "source": "資安分析師想取得某網域的註冊商及註冊日期。最適合查詢的資訊來源是什麼？",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 444,
+    "source": "A. DNS MX",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 446,
+    "source": "B. Nmap SYN Scan",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 448,
+    "source": "C. RDAP／WHOIS",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 450,
+    "source": "D. ICMP Echo",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 452,
+    "source": "題目 3｜網頁攻擊辨識",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 454,
+    "source": "某下載服務允許使用者提供相對路徑，攻擊者以 ../ 跳出原本允許的資料夾。這是什麼？",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 456,
+    "source": "A. CSRF",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 458,
+    "source": "B. SQL Injection",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 460,
+    "source": "C. Directory Traversal",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 462,
+    "source": "D. DNS Spoofing",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 464,
+    "source": "題目 4｜瀏覽器安全",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 466,
+    "source": "一名已登入網站的使用者，被惡意頁面誘使瀏覽器發送修改帳戶設定的請求。網站缺少防偽機制。這最符合哪種攻擊？",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 468,
+    "source": "A. CSRF",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 470,
+    "source": "B. SQL Injection",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 472,
+    "source": "C. RDAP Enumeration",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 474,
+    "source": "D. Directory Traversal",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 476,
+    "source": "提交 4 題答案並批改",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  },
+  {
+    "line": 478,
+    "source": "**學習完成標準：** 看到題幹，能在 10–15 秒內辨識概念，並用一句話說明為什麼其他三種不適用。SQL Injection 額外要求能解釋為什麼 Parameterized Query 比手動過濾特殊字元更可靠。",
+    "anchor": "p1-supp-checks",
+    "treatment": "正文"
+  }
+]
