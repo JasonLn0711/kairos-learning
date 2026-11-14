@@ -16,7 +16,7 @@
 
 ## 開發與檢查
 
-使用 Node.js 24；安裝以 lockfile 為準。
+使用 Node.js 24、`package.json` 固定的 pnpm 版本，以及可由 `python3` 呼叫的 Python 3.12 以上；安裝以 lockfile 為準。既有教材產生器使用 Python 3.12 的 f-string 語法，執行前確認 `python3 --version`，避免選到 macOS 較舊的系統 Python。
 
 ```sh
 pnpm install --frozen-lockfile

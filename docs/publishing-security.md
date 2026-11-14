@@ -4,7 +4,7 @@ Follow AGENTS.md and the current task for Git and publication authorization. Rev
 
 ## Release checks
 
-Use Node.js 24 and `npm ci`. Run the commands in the [README](../README.md). Both PR and production workflows validate content, tests, types, audit at high severity, the actual unpublished-content boundary, legacy MATLAB and the static output. Download checks run against the existing `SHA256SUMS` and cover six ZIP files. The PR workflow uploads the complete `build/` artifact for a local static preview; production uploads it to Pages only after checks pass.
+Use Node.js 24, the pnpm version pinned in `package.json`, and Python 3.12 or newer available as `python3`; verify `python3 --version` before running the Python-backed checks. Install with `pnpm install --frozen-lockfile`. Run the commands in the [README](../README.md). Both PR and production workflows validate content, tests, types, audit at high severity, the actual unpublished-content boundary, legacy MATLAB and the static output. Download checks run against the existing `SHA256SUMS` and cover six ZIP files. The PR workflow uploads the complete `build/` artifact for a local static preview; production uploads it to Pages only after checks pass.
 
 `validate_release.py` checks local destinations and anchors, duplicate IDs, language pairs, canonical, hashed CSP, static-asset byte equality and selected credential patterns. This targeted scan is useful evidence, not a claim of exhaustive secret detection. No `.env`, source map or `.git` files belong in the deployment.
 

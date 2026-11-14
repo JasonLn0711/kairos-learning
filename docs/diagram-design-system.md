@@ -37,7 +37,7 @@
 
 ## SVG 與驗收
 
-- HTML、搜尋文字、SVG 下載共用正式資料，不手改生成 SVG。完成變更後執行 `npm run generate:perspective-diagrams`。
+- HTML、搜尋文字、SVG 下載共用正式資料，不手改生成 SVG。完成變更後執行 `pnpm run generate:perspective-diagrams`。
 - 獨立 SVG 保留桌面幾何配置、相同資料格及虛線語意，包含 viewBox、title、desc；每檔小於 100000 bytes。換行由匯出器依卡片寬度計算，驗證文字在 viewBox 內且沒有互相遮蓋。
 - 在 320、390、768、1280 CSS px 檢查中英文；另驗 200% 文字與關閉 JavaScript。目視桌面與手機截圖，逐一確認格數、數值、箭頭、分層與釋放狀態。
 - 真正以 Tab／Shift+Tab／Enter 驗證下載與焦點；Space 僅在有對應控制時驗收。鍵盤可捲動程式碼與寬表格。

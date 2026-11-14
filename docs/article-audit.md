@@ -20,7 +20,7 @@
 
 ## 重跑與證據所有權
 
-`npm run audit:articles` 會輸出 `.local/article-audit/viewport-summary.md`、`results.json` 與 `interaction-results.json`，保留此人工校閱摘要及下一關，不覆寫它們。每次將機器結果核對後再更新本文件。
+`pnpm run audit:articles` 會輸出 `.local/article-audit/viewport-summary.md`、`results.json` 與 `interaction-results.json`，保留此人工校閱摘要及下一關，不覆寫它們。每次將機器結果核對後再更新本文件。
 
 [整合與發布回執](releases/2026-11-01-perspectives-standards.md)連到專欄瀏覽器證據、共同規範、Planning 日誌及容量；本機初篩與全站人工驗收分列。
 
