@@ -72,6 +72,7 @@ def adopt_supplement(result,save):
  old=body[pos];insert=[]
  for item,key in zip(old['items'],['path','sql','csrf']):insert+=[dict(kind='list',items=[item])]+groups[key]
  body[pos:pos+1]=insert+groups['recap']
+ groups['checks'].insert(1,dict(kind='paragraph',text='以下四題是本次補充供稿另附的概念自檢，與前面的五道整合情境題、未附完整原文的23道題庫題目分開。原文的「不新增題量」指不補造那23道原題；此處不增加官方題庫題數，也不宣稱讀者已完成作答。'))
  byid['p1-section-13']['body']+=groups['checks']
  result['revision']=3;result['contentVersion']='1.1.0'
  result['summary']+=' 補充 RDAP、SQL Injection、Directory Traversal 與 CSRF 的辨識、原理與防禦。'
