@@ -1,6 +1,6 @@
 # CEH Day02-A 來源與採用紀錄
 
-使用者於2026-11-14指定建立 learn.cs-kairos.com 新頁，完整保存本目錄 pasted-text-1.txt 與三張原始PNG。正式頁為 `/ceh-notes/day02-a-reconnaissance/`，繁體中文單語，v1.0.0。保留既有 Day01-B 與 M20 專頁。
+使用者於2026-11-14指定建立 learn.cs-kairos.com 新頁，完整保存本目錄 pasted-text-1.txt 與三張原始PNG。正式頁為 `/ceh-notes/day02-a-reconnaissance/`，繁體中文單語，初版v1.0.0，目前v1.0.1。保留既有 Day01-B 與 M20 專頁。
 
 依使用者補充「內文中，無需寫到『博士班』等字」，公開標題與正文不使用學位／讀者程度標籤。原稿首行標題採一般教學用語「CEH Day02-A｜情報蒐集、DNS 與網路掃描白話精讀」，去除讀者學位定位；技術推理深度保留。下列13章依原順序進入正式正文，各小節完整採用。`line-adoption.json`保留每個非空來源行（首行標題由此處對照）、所屬錨點及處理；`editorial-replacements.json`記錄逐字替換。空白與Markdown格式正規化不改變語意。
 
@@ -38,3 +38,5 @@
 - 圖3：六列兩欄對照、沒有箭頭；手機每列標題與問題上下重排，保持配對。補充授權必須在測試前確認，避免把第六列誤解成最後才授權。
 
 原PNG僅作來源封存，公開頁面不載入其大圖；三個下載SVG均須小於100000 bytes。版本、正式測試及發布證據由[本次回執](../../../releases/2026-11-14-ceh-day02-a.md)承接。
+
+正式站v1.0.0回讀發現Cloudflare改寫虛構教學信箱，v1.0.1以固定email_off註解保護本頁正文；前版存於published-v1.0.0.json，原稿及三PNG不變。詳見發布回執。

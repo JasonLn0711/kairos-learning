@@ -10,12 +10,14 @@
  <p><a href="/courses/ceh/v13/m20/hash-encryption-and-signatures/">延伸閱讀：M20 雜湊、加密與數位簽章</a></p>
  <ArticleMetadata lang="zh" publishedOn={review.publishedOn} revisedOn={review.revisedOn} version={'v'+review.contentVersion} author="CS Kairos"/>
  <nav aria-label="本文導覽"><ol>{#each review.sections as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{/each}<li><a href="#m20-sources">參考來源</a></li></ol></nav>
+ {#if review.publishedOn==='2026-11-14'}{@html '<!--email_off-->'}{/if}
  <article class="prose">{#each review.sections as section}<section><h2 id={section.id}>{section.heading}</h2>{#each section.body as block}
  {#if block.kind==='diagram'}<NoteDiagram diagram={block} date={review.publishedOn} part={20} lang="zh"/>
  {:else if block.kind==='heading'}<h3 id={block.id}>{block.text}</h3>
  {:else if block.kind==='code'}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to local horizontal scrolling.) --><pre tabindex="0" role="region" aria-label="可捲動程式碼範例"><code>{block.text}</code></pre>
  {:else}<SourceBody blocks={[block]} lang="zh"/>{/if}
  {/each}</section>{/each}</article>
+ {#if review.publishedOn==='2026-11-14'}{@html '<!--/email_off-->'}{/if}
  <section><h2 id="m20-sources">參考來源與查核界線</h2><p>{review.publishedOn==='2026-11-14'?'本次供稿提供 K01–K13 教學與題號對照，未附完整23題題幹及選項；以下一手來源支持技術解說。':review.publishedOn==='2026-11-13'?'本次供稿提供觀念解說與題號對照，未附完整13題題幹及52個選項；以下一手來源支持技術解說。':'英文題幹、題號及選項來自本次供稿；以下一手來源支持技術解說。'}題庫預期答案未另附，不將編輯判斷稱為官方答案。本文提供閱讀與自我複習，學習完成與考試準備度須另外評估。</p><ul>{#each review.sources as source}<li><a href={source.url}>{source.title}</a> · 查核：{source.checkedOn}</li>{/each}</ul></section>
 </div>
 <style>

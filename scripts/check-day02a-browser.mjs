@@ -13,10 +13,11 @@ try{
   const ctx=await browser.newContext({javaScriptEnabled,acceptDownloads:true});const page=await ctx.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
   for(const width of [320,390,768,1280]){
-   await page.setViewportSize({width,height:900});const response=await page.goto(base+'/ceh-notes/day02-a-reconnaissance/');assert.equal(response.status(),200);
+   await page.setViewportSize({width,height:900});const response=await page.goto(base+'/ceh-notes/day02-a-reconnaissance/');await page.waitForLoadState('networkidle');assert.equal(response.status(),200);
    assert.equal(await page.locator('h1').textContent(),data.title);assert.ok((await page.locator('main').innerText()).includes('v'+data.contentVersion));assert.equal(await page.locator('main time').first().getAttribute('datetime'),data.publishedOn);assert.equal(await page.locator('main time').last().getAttribute('datetime'),data.revisedOn);assert.equal(await page.locator('[data-diagram]').count(),figureCount);
    if(javaScriptEnabled)for(const b of data.sections.flatMap(s=>s.body).filter(b=>b.kind==='diagram')){if(!specs[b.name].edges)continue;const count=specs[b.name].edges.length;await page.waitForFunction(({name,count})=>document.querySelectorAll(`[data-diagram="${name}"] .connections path`).length===count,{name:b.name,count});}
    assert.deepEqual(errors,[], 'Page and resource loading errors');
+   assert.equal(await page.locator('a.__cf_email__, a[href*="email-protection"]').count(),0,'Synthetic teaching address stays selectable without email obfuscation');
    const rendered=clean(await page.locator('main').innerText());
    assert.doesNotMatch(rendered,/博士|碩士|研究生/,'Public body uses general teaching language');
    for(const code of await page.locator('article pre').all()){const style=await code.evaluate(el=>{const s=getComputedStyle(el);return {size:parseFloat(s.fontSize),line:parseFloat(s.lineHeight),bg:s.backgroundColor,color:s.color};});assert.ok(style.size>=16&&style.line/style.size>=1.7);assert.equal(style.bg,'rgb(242, 246, 245)');assert.equal(style.color,'rgb(24, 37, 44)');}
