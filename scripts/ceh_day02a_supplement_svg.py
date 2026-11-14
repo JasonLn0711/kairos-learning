@@ -33,6 +33,31 @@ def render_supplement(b,lang,spec):
    if i==4:out.append(f'<path d="M10 11v-1a2 2 0 0 1 4 0v1m-5 0h6v6H9v-6Z" transform="translate({x} {y})" fill="none" stroke="#657079" stroke-width="1.4"/>')
    y=text(item['title'],x+36,y+22,32,20,True)
    y=text(item['body'],x+36,y+2,32)+18
+ elif spec['layout']=='day02-binding':
+  y=text('不安全：把資料拼接進 SQL 指令文字',28,y,41,20,True)+18
+  for item in b['items'][:2]:
+   y=text(item['title'],42,y,39,17)+6
+   out.append(rect(36,y-24,min(816,(len(item['body'])+1)*12),36,'#f2f6f5'))
+   out.append('<g font-family="ui-monospace, Consolas, monospace">')
+   y=text(item['body'],42,y,39,19)+22;out.append('</g>')
+   out.append(f'<path d="M42 {y}H858" stroke="#e1e5e8"/>');y+=28
+  out.append(f'<path d="M450 {y}v22m-6-6 6 6 6-6" fill="none" stroke="#b52323" stroke-width="2"/>');y+=58
+  out.append('<g fill="#b52323">')
+  y=text(b['items'][2]['title'],450,y,39,20,True,True);out.append('</g>')
+  y=text(b['items'][2]['body'],450,y+8,39,18,False,True)+24
+  out.append(f'<path d="M28 {y}H872" stroke="#d8dce0"/>');y+=46
+  y=text('安全：SQL 結構與參數值分開傳遞',28,y,41,20,True)+26
+  tops=[]
+  for x,item in zip([42,472],b['items'][3:5]):
+   cy=text(item['title'],x,y,19,17)+6
+   out.append(rect(x-6,cy-24,min(386,(len(item['body'])+1)*12),36,'#f2f6f5'))
+   out.append('<g font-family="ui-monospace, Consolas, monospace">')
+   cy=text(item['body'],x,cy,19,19)+18;out.append('</g>');tops.append(cy)
+  y=max(tops)+20
+  out.append(f'<path d="M450 {y}v22m-6-6 6 6 6-6" fill="none" stroke="#006b39" stroke-width="2"/>');y+=56
+  out.append('<g fill="#006b39">')
+  y=text(b['items'][5]['title'],450,y,39,20,True,True);out.append('</g>')
+  y=text(b['items'][5]['body'],450,y+8,39,18,False,True)+10
  else:
   assert spec['layout']=='day02-boxflow'
   for i,item in enumerate(b['items']):

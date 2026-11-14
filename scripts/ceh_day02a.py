@@ -3,6 +3,7 @@ import json,re,sys,hashlib
 from pathlib import Path
 from ceh_notes_svg import render
 from ceh_day02a_supplement import adopt_supplement
+from ceh_day02a_parameterized import adopt_parameterized
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=ROOT/'docs/sources/ceh-day02-a/2026-11-14'
 def save(path,value):
@@ -62,8 +63,9 @@ def main():
  result=dict(title='CEH Day02-A｜情報蒐集、DNS 與網路掃描白話精讀',summary='K01–K13：從授權、OSINT 與 DNS，到 TCP、Nmap 與密碼學複習，練習辨認每一項證據能支持的結論。',status='published',publishedOn='2026-11-14',revisedOn='2026-11-14',revision=2,contentVersion='1.0.1',sections=sections,sources=json.loads((SOURCE/'references.json').read_text()))
  assert len(sections)==14;assert sum(b['kind']=='diagram' for s in sections for b in s['body'])==3
  figures+=adopt_supplement(result,save)
+ figures+=adopt_parameterized(result,save)
  save(ROOT/'content/ceh-day02-a.json',result);save(SOURCE/'line-adoption.json',ledger)
  save(SOURCE/'editorial-replacements.json',replacements)
  for f in figures:save(ROOT/f'site/images/ceh-notes/2026-11-14-part-20-{f["name"]}-zh.svg',render(f,'zh'))
- print(f'Day02-A: {len(sections)-1} chapters, {n} subsections, {len(ledger)} nonempty source lines, 7 figures')
+ print(f'Day02-A: {len(sections)-1} chapters, {n} original subsections, {len(ledger)} original source lines, {len(figures)} figures')
 if __name__=='__main__':main()

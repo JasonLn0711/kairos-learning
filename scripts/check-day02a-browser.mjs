@@ -28,6 +28,9 @@ try{
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${width}/${javaScriptEnabled} overflow`);
    assert.equal(await page.locator('a.language').count(),0);assert.equal(await page.locator('link[rel=alternate]').count(),0);
    const portions=await page.locator('[data-diagram="m20d2priority"] .ratio .part').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().width));assert.equal(portions.length,4);const total=portions.reduce((a,b)=>a+b,0);for(const [i,w] of portions.entries())assert.ok(Math.abs(w/total-[.4,.3,.15,.15][i])<.01,'Rendered proportional bar');
+   const binding=page.locator('[data-diagram="m20d2binding"]');assert.equal(await binding.locator('.binding section').count(),2);assert.equal(await binding.locator('.binding code').count(),4);assert.equal(await binding.locator('.binding-inputs svg').count(),0);
+   const inputLayout=await binding.locator('.binding-inputs').evaluate(el=>{const r=el.getBoundingClientRect(),a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {width:r.width,sameRow:Math.abs(a.y-b.y)<1,ordered:a.x<b.x||a.y<b.y};});assert.equal(inputLayout.sameRow,inputLayout.width>576);assert.ok(inputLayout.ordered);
+   for(const code of await binding.locator('code').all())assert.ok(await code.evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=16));
    checks.push(`Full body and ${figureCount} figures, ${width}px, JS=${javaScriptEnabled}`);
    if(javaScriptEnabled&&(width===390||width===1280))for(const figure of await page.locator('[data-diagram]').all())await figure.screenshot({path:`${out}/${await figure.getAttribute('data-diagram')}-${width}.png`});
   }

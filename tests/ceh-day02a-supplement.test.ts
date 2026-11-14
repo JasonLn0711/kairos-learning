@@ -8,7 +8,7 @@ const data=JSON.parse(readFileSync('content/ceh-day02-a.json','utf8')) as M20Rev
 const base='docs/sources/ceh-day02-a/2026-11-14/four-topics/';
 const previous=JSON.parse(readFileSync(base+'published-v1.0.1.json','utf8')) as M20Review;
 test('Four-topic insertion preserves original prose, anchors and contextual positions',()=>{
- validateM20Review(data);assert.equal(data.contentVersion,'1.1.0');assert.equal(data.publishedOn,previous.publishedOn);
+ validateM20Review(data);assert.ok(data.revision>=3);assert.equal(data.publishedOn,previous.publishedOn);
  assert.deepEqual(data.sections.map(s=>s.id),previous.sections.map(s=>s.id));
  for(const old of previous.sections){const current=data.sections.find(s=>s.id===old.id)!;
   for(const b of old.body){if(b.kind==='list')for(const item of b.items)assert.ok(current.body.some(n=>n.kind==='list'&&n.items.includes(item)));else assert.ok(current.body.some(n=>JSON.stringify(n)===JSON.stringify(b)),JSON.stringify(b));}}

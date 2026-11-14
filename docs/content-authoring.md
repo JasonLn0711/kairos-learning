@@ -991,3 +991,9 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 [供稿與逐小節對照](sources/ceh-day02-a/2026-11-14/four-topics/README.md)保存補充7節／14小節及四PNG。`ceh_day02a_supplement.py`由原產生器接入：優先順序下方放40／30／15／15配置，RDAP放WHOIS下方／DNS之前，三種Web弱點精讀分別置於其原定義之下，四道新題接原五題之後；舊13章、錨點、原發布日與全文保留。
 
 新圖限定priority四節點（固定weights／ranks、比例字串驗證）、boxflow四節點（後兩個框）、tree五節點（根與兩個平行目錄），由NoteDay02Supplement呈現可搜尋HTML，固定白名單serializer匯出；不接受任意標記或外部圖形資料。四新圖加原三圖由既有`ceh_day02a.py --check`核對；`check-day02a-sql-example.py`以記憶體SQLite實跑正式片段，`tests/ceh-day02a-supplement.test.ts`檢查舊內容保留、相對位置、比例與來源。全頁瀏覽器入口仍為`check-day02a-browser.mjs`，正式站指定DAY02A_BASE_URL；實際發布見[回執](releases/2026-11-14-ceh-day02-a-four-topics.md)。
+
+### Day02-A 參數化查詢精讀｜v1.2.0
+
+[完整供稿與逐節採用](sources/ceh-day02-a/2026-11-14/parameterized-query/README.md)保存原文、PNG、前版及六段程式排版修復。`ceh_day02a_parameterized.py`在Code/Data Separation下方接入八節、四小節、16程式區塊、兩表及兩題；保留舊正文、錨點與原發布日。不同片段的age欄位及完整實驗的username／role前置條件分開標示。
+
+`m20d2binding`限定六項、同一payload及固定SQL片段；NoteDay02Supplement以兩組上下對照呈現，安全組的SQL與參數並列而非先後，手機原生重排。HTML／搜尋／SVG同源，既有serializer限制保留。`check-day02a-parameterized.py`抽取正式片段實跑記憶體SQLite，納入validate:release；單元測試核對舊區塊保留、完整採用及模型拒絕非法圖解。瀏覽器沿原全頁入口驗全文、四尺寸／200%、無JS、鍵盤及八圖下載。各層結果見[本次回執](releases/2026-11-14-ceh-day02-a-parameterized.md)。
