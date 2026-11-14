@@ -2,6 +2,30 @@
 
 Each public lesson should help a reader make one defensible technical judgment. Start with the problem, explain its mechanism and limits, work through an original example, then give a safe task with an observable expected result.
 
+<a id="contextual-supplement-workflow"></a>
+## 同頁補充的共用實作流程
+
+依[共同規範 WRITE-12–15、CODE-01、PUB-01–02](article-standards.md#contextual-supplement)與[補充工作表](article-writing-template.md#supplement-checklist)辦理。下列是跨文章的流程；本檔各課次紀錄保留其實際模型及歷史驗收，不用今天的單語頁例外放寬既有雙語教材。
+
+| 階段 | 實作方式 | 本次應留下的證據 |
+| --- | --- | --- |
+| 1. 鎖定範圍 | 確認目標文章、網址、語言、原發布日、當前版號及本次供稿；檢查 Git／遠端與既有變動。 | 原稿、原圖、前版、完整檔案清單及缺件；保存目錄與雜湊。 |
+| 2. 逐節採用 | 列到小節、分支、表格、程式與題目；先完成來源到正文對照，再修正技術錯誤與排版。 | 來源位置、採用錨點、保留內容、實質修正理由及一手依據；自由改寫另核對教學深度。 |
+| 3. 定位補充 | 以原定義／原理解說為插入點；必要時只拆分共同清單，維持原項目與順序。 | 插入位置與舊內容保留的核對；新增題與原題分開計數。 |
+| 4. 選用模型 | 沿用文章正式模型、元件、來源及搜尋路徑；缺能力時補受限欄位／版型與驗證。 | 固定名稱、位置、節點／資料格／關係、語言契約及非法資料拒絕；不存任意標記。 |
+| 5. 同源生成 | 從正式採用內容生成 HTML、搜尋及下載 SVG；來源不改寫成圖解摘要，生成檔不手修。 | 產生器的 `--check` 或等效同步檢查；原圖連結與每個公開教學圖檔大小。 |
+| 6. 驗教學機制 | 對承接主要結論的程式，以正式片段及隔離假資料驗正常和關鍵邊界情境。 | 命令、環境、預期／實際輸出與適用條件；假資料實跑不外推成真實系統測試。 |
+| 7. 驗整頁 | 比對完整模型與實際文字，檢查插入順序、題幹／選項、無 JS、四尺寸、200%、鍵盤、圖意與下載。 | 全文核對、計算樣式、截圖／目視結果、比例量測、SVG 幾何與位元組。 |
+| 8. 驗公開版 | 完成適用的現有閘門，依已獲授權發布；回讀確切公開版本與資產，記錄修正及重驗。 | source SHA、run／attempt／結果、URL、公開版號、全文與下載結果、尚待驗事項。 |
+
+來源對照可沿用既有 README／source-map／逐行紀錄，不要求每篇重造同一組檔名。逐行紀錄及段落數可幫助找漏項，仍須核對實際語意與正文；補充新增的編輯說明須與原稿來源分清。既有錨點、原稿及原發布日保持可追溯，補充範圍及版號依 WRITE-06 更新。
+
+比例與目錄等新圖的搜尋文字須含必要數值、名稱、層級與條件；排版拆開百分比與說明時，全文核對依語意欄位比對，不要求不存在的視覺分隔字元，也不能因此跳過文字欄位。程式碼必須維持可選取、換行與語法內容，不能為了測試通過把格式錯誤留給讀者。
+
+題庫查證資料不足時，以供稿轉述及缺件說明承接，仍查核技術機制。單語文章不宣告不存在的翻譯頁；既有雙語文章補充兩語的相同深度、數值、條件與答案揭露方式，維持原語言發布閘門。
+
+可重用實例：Day02-A 的[來源與逐節對照](sources/ceh-day02-a/2026-11-14/four-topics/README.md)、[產生器](../scripts/ceh_day02a.py)、[補充採用](../scripts/ceh_day02a_supplement.py)、[SQLite 片段實跑](../scripts/check-day02a-sql-example.py)、[相對位置與保留檢查](../tests/ceh-day02a-supplement.test.ts)、[整頁瀏覽器驗收](../scripts/check-day02a-browser.mjs)及[正式回執](releases/2026-11-14-ceh-day02-a-four-topics.md)。其他文章使用其自己的模型、固定資料與測試入口，不直接套用本案例的題數、比例、日期或圖名。
+
 ## Canonical fields
 
 Edit one `content/lessons/<id>.json` object. `src/lib/model.ts` defines the types and `src/lib/validate.ts` checks the content before deployment.
