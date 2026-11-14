@@ -29,3 +29,19 @@
 發布前補充：`node scripts/check-publication-boundary.mjs`通過，包含本頁新內容在draft／future情境的真實建置排除（路由、索引、搜尋與payload），fixture已還原，輸出重建為正式狀態。既有Cloudflare固定email_off保護保留，避免虛構信箱再次被改寫；新增內容使用受限文字模型，沒有接受任意HTML。
 
 發布前再補明題數界線：原五道整合情境題、本次四道概念自檢與未附全文的23道題庫題目分開，不把新增自檢稱為新增官方題目。因而取消尚未部署的首輪run `43581095930`，以含此說明的相同初版v1.1.0重新發布；原正文與檢核題均保留。
+
+## 正式發布與最終驗收
+
+[Pages run 43581215004](https://github.com/JasonLn0711/kairos-learning/actions/runs/43581215004)成功，正式source為`383aac490ca14c6b4965d415102a1aa6aed37c4f`。安裝／high級稽核／內容驗證／415項測試／6項HTML契約／型別檢查／draft與future真實建置隔離／release與SQLite片段實跑／既有下載checksum／Pages部署均成功。CI實際記錄`tests415／pass415`、`0 errors and 0 warnings`、`411 HTML pages／1025 static assets`，部署步驟見同名前綴deployment.json。
+
+正式頁：https://learn.cs-kairos.com/ceh-notes/day02-a-reconnaissance/
+
+`DAY02A_BASE_URL=https://learn.cs-kairos.com PLAYWRIGHT_CHANNEL=chrome node scripts/check-day02a-browser.mjs`：13項全部通過，見同名前綴production.json。按正式模型逐項核對原13章與完整補充文字、表格、程式片段、原五題與新四題／16選項、七圖；頁面顯示v1.1.0與原發布／修訂日，沒有博士／碩士／研究生定位，虛構信箱未被Cloudflare改寫。
+
+四尺寸320／390／768／1280px在JS開／關皆通過全文與無整頁水平溢出，320px 200%字級、原生表格鍵盤焦點、比例條實際40／30／15／15寬度、淺底深字16px／1.8程式碼、七SVG鍵盤下載與HTTP200、位元組與本機相同、文字viewBox邊界與文字互斥、索引與搜尋均核對。正式站四新圖的桌面／手機截圖逐張目視，比例、層級與流程無誤；截圖在忽略目錄`.local/day02a/`。
+
+新四SVG大小依圖4–7為3732／2243／2670／2335 bytes，均小於100000 bytes，路徑與SHA見同名前綴assets.json。正式下載與本機逐一比對；原三圖保持原位元組。SQLite正式片段結果另保存為同名前綴sql-example.json，僅支持該假資料與查詢示例，不代表真實系統驗證。
+
+來源與逐節對照提交`c2e06767`、正文／四圖與驗證`747d5b5c`、本機紀錄`85f7afae`、題數界線`383aac49`分別保留。全程沿既有main非強制推送；原工作樹三份`article-audit.md`／`diagram-design-system.md`／`publishing-security.md`修改未納入本次提交。
+
+WRITE-09–11、HTML-01–04、FIG-01–06與A11Y對照、實測及發布證據如上。本次頁面補充與圖解已完成；完整23題原題未提供，故WHOIS5題等頻次未獨立重算。實體裝置、完整WCAG認證、使用者作答與理解狀態未驗，不以部署或瀏覽器通過替代。
