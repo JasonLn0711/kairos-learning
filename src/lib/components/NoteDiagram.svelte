@@ -1,5 +1,6 @@
 <script lang="ts">
   import {noteDiagramSpecs,tlsDirections,noteReferenceImage,type NoteDiagram} from '$lib/note-diagrams';
+  import NoteDay02Supplement from './NoteDay02Supplement.svelte';
   import NoteTcpHandshake from './NoteTcpHandshake.svelte';
   import NoteRecoveryTimeline from './NoteRecoveryTimeline.svelte';
   import NoteDay01Diagram from './NoteDay01Diagram.svelte';
@@ -18,7 +19,9 @@
 </script>
 <figure class="note-diagram" data-diagram={diagram.name}>
   <figcaption>{diagram.caption}</figcaption>
-  {#if layout==='tcp-handshake'}
+  {#if layout.startsWith('day02-')}
+    <NoteDay02Supplement {diagram}/>
+  {:else if layout==='tcp-handshake'}
     <NoteTcpHandshake {diagram}/>
   {:else if layout==='soc-timeline'}
     <NoteRecoveryTimeline {diagram} {lang}/>

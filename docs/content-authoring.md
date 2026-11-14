@@ -961,3 +961,9 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 三圖限定名稱m20d2mail（flow四節點）、m20d2tcp（tcp-handshake三訊息）與m20d2evidence（table六列）。新TCP版型固定Client／Server及三箭頭方向右／左／右，HTML文字換行，手機保留方向文字與箭頭，SVG由同一資料與既有白名單serializer產生。模型拒絕任意標記與節點增減；圖3不接箭頭，授權在主動行動前確認。單語例外只增列本路徑，既有雙語發布門保持。
 
 `tests/ceh-day02a.test.ts`檢查正文與圖解契約；`scripts/check-day02a-browser.mjs`檢查全文、四尺寸／200%、無JS、鍵盤與下載，正式站指定`DAY02A_BASE_URL`，系統瀏覽器可指定`PLAYWRIGHT_CHANNEL=chrome`。發布閘門以真實draft／future建置核對路由、搜尋、payload及索引關閉。各層驗證與部署見[本次回執](releases/2026-11-14-ceh-day02-a.md)。
+
+### Day02-A 四重點補充｜v1.1.0
+
+[供稿與逐小節對照](sources/ceh-day02-a/2026-11-14/four-topics/README.md)保存補充7節／14小節及四PNG。`ceh_day02a_supplement.py`由原產生器接入：優先順序下方放40／30／15／15配置，RDAP放WHOIS下方／DNS之前，三種Web弱點精讀分別置於其原定義之下，四道新題接原五題之後；舊13章、錨點、原發布日與全文保留。
+
+新圖限定priority四節點（固定weights／ranks、比例字串驗證）、boxflow四節點（後兩個框）、tree五節點（根與兩個平行目錄），由NoteDay02Supplement呈現可搜尋HTML，固定白名單serializer匯出；不接受任意標記或外部圖形資料。四新圖加原三圖由既有`ceh_day02a.py --check`核對；`check-day02a-sql-example.py`以記憶體SQLite實跑正式片段，`tests/ceh-day02a-supplement.test.ts`檢查舊內容保留、相對位置、比例與來源。全頁瀏覽器入口仍為`check-day02a-browser.mjs`，正式站指定DAY02A_BASE_URL；實際發布見[回執](releases/2026-11-14-ceh-day02-a-four-topics.md)。

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {validateM20Review,type M20Review} from '../src/lib/m20-review.ts';
 import {noteBodyText} from '../src/lib/ceh-notes.ts';
-import {validateNoteDiagram,noteDiagramSpecs} from '../src/lib/note-diagrams.ts';
+import {validateNoteDiagram,noteDiagramSpecs,type NoteDiagram} from '../src/lib/note-diagrams.ts';
 const data=JSON.parse(readFileSync('content/ceh-day02-a.json','utf8')) as M20Review;
 test('Day02-A retains 13 chapters, protocol examples, seven ambiguities and five unanswered checks',()=>{
  validateM20Review(data);assert.equal(data.sections.length,14);
@@ -18,7 +18,7 @@ test('Day02-A retains 13 chapters, protocol examples, seven ambiguities and five
  for(const entry of ledger)assert.equal(raw[entry.line-1],entry.source);
 });
 test('Day02-A diagram contracts reject injected markup and missing nodes; TCP preserves direction',()=>{
- const figures=data.sections.flatMap(s=>s.body).filter(b=>b.kind==='diagram');assert.equal(figures.length,3);
+ const figures=data.sections.flatMap(s=>s.body).filter((b):b is NoteDiagram=>b.kind==='diagram'&&['m20d2mail','m20d2tcp','m20d2evidence'].includes(b.name));assert.equal(figures.length,3);
  assert.equal(noteDiagramSpecs.m20d2tcp.layout,'tcp-handshake');assert.equal(noteDiagramSpecs.m20d2evidence.layout,'table');
  assert.deepEqual(figures[1].items.map(i=>i.body.split('：')[0]),['Client → Server','Server → Client','Client → Server']);
  for(const f of figures){validateNoteDiagram(f);assert.throws(()=>validateNoteDiagram({...f,items:f.items.slice(1)}));assert.throws(()=>validateNoteDiagram({...f,svg:'<script/>'} as never));assert.ok(readFileSync(`site/images/ceh-notes/2026-11-14-part-20-${f.name}-zh.svg`).length<100000);}

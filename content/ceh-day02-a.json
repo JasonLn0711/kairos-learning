@@ -1,11 +1,11 @@
 {
   "title": "CEH Day02-A｜情報蒐集、DNS 與網路掃描白話精讀",
-  "summary": "K01–K13：從授權、OSINT 與 DNS，到 TCP、Nmap 與密碼學複習，練習辨認每一項證據能支持的結論。",
+  "summary": "K01–K13：從授權、OSINT 與 DNS，到 TCP、Nmap 與密碼學複習，練習辨認每一項證據能支持的結論。 補充 RDAP、SQL Injection、Directory Traversal 與 CSRF 的辨識、原理與防禦。",
   "status": "published",
   "publishedOn": "2026-11-14",
   "revisedOn": "2026-11-14",
-  "revision": 2,
-  "contentVersion": "1.0.1",
+  "revision": 3,
+  "contentVersion": "1.1.0",
   "sections": [
     {
       "id": "p1-introduction",
@@ -158,6 +158,67 @@
         {
           "kind": "paragraph",
           "text": "這個排序是依本份題目的觀念密度與理解依賴關係安排，不是官方 CEH 考試配分統計。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-intro",
+          "text": "四個觀念的補充精讀與閱讀順序"
+        },
+        {
+          "kind": "paragraph",
+          "text": "結論：建議依「SQL Injection → RDAP／WHOIS → Directory Traversal ≈ CSRF」的順序學習。 SQL Injection 要理解原理與防禦，其餘三個重點是能快速辨識題目情境、排除錯誤選項。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-priority",
+          "text": "一、重要性排序與學習比例"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以下排序綜合供稿對 Day02-A 題組的描述，以及 CEH Exam Blueprint v5.0；本次未附完整23題，無法獨立重算題幹與選項的出現次數。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2priority",
+          "caption": "圖 4｜四個觀念的建議學習比例",
+          "description": "建議閱讀順序：SQL Injection → RDAP／WHOIS → Directory Traversal ≈ CSRF。40／30／15／15 是本次教學時間與篇幅配置，不是 CEH 官方考題配分。",
+          "items": [
+            {
+              "title": "SQL Injection",
+              "body": "40%｜M15 獨立章節，深入理解原理與防禦"
+            },
+            {
+              "title": "RDAP／WHOIS",
+              "body": "30%｜M02 Footprinting，承接本頁網域註冊查詢"
+            },
+            {
+              "title": "Directory Traversal",
+              "body": "15%｜M14 Web Application，辨識路徑越界機制"
+            },
+            {
+              "title": "CSRF",
+              "body": "15%｜M14 Web Application，辨識非預期請求機制"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是本次建議教學篇幅，不是 CEH 官方四項考題配分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "依據有兩點："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "供稿記載的23題統計：WHOIS 出現在5題的題幹或選項，其中 P1-Q050 考網域註冊資料，RDAP 未出現在原題；其餘三項各在 P3-Q005 作為干擾選項出現1次。這些次數與題目轉述未附完整原題佐證，本文保留為供稿記載，不宣稱本次已逐題核對。",
+            "官方考試範圍： CEH Exam Blueprint v5.0 將 SQL Injection 列為獨立子領域，配置 6 題；Web Application Hacking 整個領域為14%，涵蓋 Web Servers、Web Applications 與 SQL Injection 三個子領域，並非 SQL Injection 單獨的配分。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此 SQL Injection 需要教得較深；RDAP 雖然不是 SQL Injection 等級的獨立攻擊主題，但對你正在練習的 M02 題組有直接價值。"
         }
       ]
     },
@@ -542,6 +603,175 @@
         {
           "kind": "paragraph",
           "text": "考試看到 WHOIS，不要因此誤認為它是 DNS 紀錄類型；兩者處理的問題完全不同。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-rdap",
+          "text": "三、RDAP（Registration Data Access Protocol）｜30%"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH M02｜重點：WHOIS、RDAP、DNS 的差別"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-rdap-01",
+          "text": "RDAP｜1. 白話文：RDAP 就是查詢網域登記資料的新式協定"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設你想調查一家公司的網域："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`example.com`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你想知道："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個網域在哪裡註冊？由哪一家註冊商管理？什麼時候建立？什麼時候到期？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "過去常使用 WHOIS 查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在則有標準化程度更高的 RDAP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以這樣理解："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "WHOIS： 傳統網域登記資料查詢方式，回應格式較不統一。",
+            "RDAP： 新式註冊資料查詢協定，使用 HTTP 的查詢語意與標準化 JSON 回應，正式服務使用 HTTPS 保護傳輸。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-rdap-02",
+          "text": "RDAP｜2. 為什麼需要 RDAP？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳統 WHOIS 可能回傳："
+        },
+        {
+          "kind": "code",
+          "text": "Domain Name: EXAMPLE.COM\nRegistrar: Example Registrar\nCreation Date: 2020-01-01\nRegistry Expiry Date: 2030-01-01"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不同伺服器可能使用不同欄位與文字格式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果你要撰寫自動化研究工具，解析起來比較麻煩。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP 則提供機器容易理解的標準化資料結構。以下為簡化欄位節選示意，不是完整的合規 RDAP 回應："
+        },
+        {
+          "kind": "code",
+          "text": "{\n  \"ldhName\": \"EXAMPLE.COM\",\n  \"status\": [\"active\"],\n  \"events\": [\n    {\n      \"eventAction\": \"registration\",\n      \"eventDate\": \"2020-01-01T00:00:00Z\"\n    }\n  ]\n}"
+        },
+        {
+          "kind": "paragraph",
+          "text": "上述是教學用假資料，不是 `example.com` 的即時註冊紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP 的主要優點包括標準化格式、國際化支援、權威服務查找，以及依授權提供不同程度的資料存取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "自 2025 年 1 月 28 日 起，RDAP 已成為 ICANN 管轄之通用頂級網域（gTLD）註冊資料的主要正式查詢協定；部分網域仍保留 WHOIS 服務要求。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-rdap-03",
+          "text": "RDAP｜3. CEH 最容易考錯：RDAP／WHOIS 與 DNS"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "你想知道的事",
+            "主要使用"
+          ],
+          "rows": [
+            [
+              "網域註冊商是誰？",
+              "WHOIS／RDAP"
+            ],
+            [
+              "網域註冊與到期資訊？",
+              "WHOIS／RDAP"
+            ],
+            [
+              "網站對應什麼 IPv4？",
+              "DNS A"
+            ],
+            [
+              "郵件應寄往哪個伺服器？",
+              "DNS MX"
+            ],
+            [
+              "DNS 區域序號是什麼？",
+              "DNS SOA"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "要注意，RDAP 的網域註冊回應也可能包含 nameserver 等資料，但它不等同於 DNS 的即時名稱解析服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "另外，RDAP 不保證能看到完整的註冊人個資，部分欄位可能依法規或服務政策遮蔽。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-rdap-04",
+          "text": "RDAP｜4. 對應你的考古題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "供稿對 P1-Q050 的情境轉述如下（本次未附原題全文）："
+        },
+        {
+          "kind": "paragraph",
+          "text": "希望取得組織的網域所有權與可能的聯絡資訊，並且避免直接與目標系統互動。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種題目應該優先聯想到 WHOIS／RDAP 所屬的註冊資料查詢領域。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但如果題目變成："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請找出公司接收郵件的伺服器。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就應該想到 DNS MX，而不是 WHOIS。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你可以直接用 [ICANN Lookup](https://lookup.icann.org/en) 理解 RDAP 的實際使用情境。這是查詢介面，不需要自己執行掃描。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RDAP 的考試判斷句：查網域註冊資料，用 WHOIS／RDAP；查網域名稱與服務紀錄，用 DNS。"
         },
         {
           "kind": "heading",
@@ -945,10 +1175,595 @@
         {
           "kind": "list",
           "items": [
-            "Directory Traversal： 利用路徑處理問題，存取原本不允許的位置。",
-            "SQL Injection： 利用未妥善處理的輸入，干預資料庫查詢。",
+            "Directory Traversal： 利用路徑處理問題，存取原本不允許的位置。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-path",
+          "text": "四、Directory Traversal（目錄穿越）｜15%"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH M14｜重點：`../`、跳出預期目錄、任意檔案存取"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-path-01",
+          "text": "Directory Traversal｜1. 白話文：本來只能看自己的文件，卻能跑到別的資料夾"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設有一個企業文件系統。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "正常使用者只能下載："
+        },
+        {
+          "kind": "code",
+          "text": "/srv/app/reports/report.pdf"
+        },
+        {
+          "kind": "paragraph",
+          "text": "程式原本設計讓使用者指定 `report.pdf`，然後從 `reports` 資料夾讀取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，如果程式直接相信使用者提供的路徑，攻擊者可能嘗試指定："
+        },
+        {
+          "kind": "code",
+          "text": "../config/settings.yaml"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`..` 代表上一層目錄。",
+            "`/` 是路徑分隔符號。",
+            "`../` 就是往上一層移動。"
+          ]
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2tree",
+          "caption": "圖 6｜檔案目錄與授權範圍",
+          "description": "reports 與 config 同在 /srv/app/ 下，是平行目錄。未妥善限制路徑時，../config/settings.yaml 可能跳出 reports；實際存取仍受程式邏輯與檔案權限限制。",
+          "items": [
+            {
+              "title": "/srv/app/",
+              "body": "應用程式目錄"
+            },
+            {
+              "title": "reports/",
+              "body": "預期的下載範圍"
+            },
+            {
+              "title": "report.pdf",
+              "body": "預期可下載"
+            },
+            {
+              "title": "config/",
+              "body": "與 reports 同層的設定目錄"
+            },
+            {
+              "title": "settings.yaml",
+              "body": "不應公開"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果程式沒有適當限制路徑，使用者可能透過 `../` 跳出 reports 目錄，讀取其他檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是 Directory Traversal（也稱 Path Traversal）的核心。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能造成機密檔案外洩；具體影響仍取決於程式邏輯、作業系統權限及檔案位置。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-path-02",
+          "text": "Directory Traversal｜2. 如何防禦？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "最可靠的設計之一，是讓使用者提供文件 ID，而不是直接決定檔案系統路徑。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "code",
+          "text": "/download?id=123"
+        },
+        {
+          "kind": "paragraph",
+          "text": "後端先確認使用者有權取得文件 123，再從內部固定映射找到實際檔案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若系統必須接受路徑，就需要正規化與驗證最終路徑、限制在授權的基底目錄內、考慮符號連結（symlink），並限制程式的檔案存取權限。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "參考 [OWASP WSTG-ATHZ-01](https://wstg.owasp.org/stable/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include/)。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-path-03",
+          "text": "Directory Traversal｜3. 如何區分 robots.txt？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "供稿將這個區分對應到 P3-Q005；以下依實際行為說明概念，原題全文未附。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "情境",
+            "概念"
+          ],
+          "rows": [
+            [
+              "在 robots.txt 發現 `/backup/`",
+              "公開路徑線索／資訊蒐集"
+            ],
+            [
+              "操縱路徑跳出允許目錄",
+              "Directory Traversal"
+            ],
+            [
+              "使用者輸入改變 SQL 查詢",
+              "SQL Injection"
+            ],
+            [
+              "誘使已登入使用者發出非預期請求",
+              "CSRF"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Directory Traversal 的考試判斷句：看到 `../`、跳出允許目錄、讀取不應存取的檔案，就優先想到目錄穿越。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "SQL Injection： 利用未妥善處理的輸入，干預資料庫查詢。"
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-sql",
+          "text": "二、SQL Injection（SQL 注入）｜40%"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH M15｜最重要：原理、種類、如何防禦"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-sql-01",
+          "text": "SQL Injection｜1. 白話文：把使用者輸入的「資料」，變成資料庫的「命令」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你經營一家銀行。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "銀行櫃員收到一張紙條："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「請查詢帳號 12345。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "正常情況下，櫃員只會用 12345 查詢資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但如果櫃員把紙條內容直接當作操作指令的一部分，就可能發生問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SQL Injection 的本質，就是使用者輸入的資料突破了資料與 SQL 指令之間的界線，改變原本的查詢邏輯。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如網站後端用 Python 建立查詢："
+        },
+        {
+          "kind": "code",
+          "text": "# 不安全的程式設計：以下為查詢片段\nsql = \"SELECT * FROM users WHERE username = '\" + username + \"'\""
+        },
+        {
+          "kind": "paragraph",
+          "text": "原本預期使用者輸入："
+        },
+        {
+          "kind": "code",
+          "text": "alice"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資料庫看到："
+        },
+        {
+          "kind": "code",
+          "text": "SELECT * FROM users WHERE username = 'alice'"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是正常查詢。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但如果輸入包含 SQL 語法，開發者又直接拼接字串，資料庫就可能把使用者提供的部分內容誤認為查詢指令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如在隔離測試環境中，輸入："
+        },
+        {
+          "kind": "code",
+          "text": "' OR '1'='1"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可能讓查詢成為："
+        },
+        {
+          "kind": "code",
+          "text": "SELECT * FROM users\nWHERE username = '' OR '1'='1'"
+        },
+        {
+          "kind": "paragraph",
+          "text": "為什麼危險？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為 `'1'='1'` 永遠成立，查詢條件可能因此被擴大，回傳原本不應取得的紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實際效果仍取決於 SQL 結構、資料庫權限及程式如何處理查詢結果；不是所有輸入都能成功利用。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-sql-02",
+          "text": "SQL Injection｜2. SQL Injection 的根本原因"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2sqli",
+          "caption": "圖 5｜不安全的資料處理流程",
+          "description": "箭頭呈現不可信任輸入如何影響 SQL 查詢；框線標出資料跨成語法及查詢結果改變的後果。",
+          "items": [
+            {
+              "title": "使用者輸入（不可信任）",
+              "body": "輸入原本應該只作為資料值"
+            },
+            {
+              "title": "程式直接拼接 SQL 字串",
+              "body": "沒有將程式指令與資料分離"
+            },
+            {
+              "title": "資料可能被解讀為 SQL 語法",
+              "body": "突破資料與查詢指令之間的界線"
+            },
+            {
+              "title": "查詢條件、操作或回傳結果遭改變",
+              "body": "實際影響仍取決於查詢結構、權限與程式處理"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "在資訊安全中，這屬於不可信任輸入跨越 Trust Boundary（信任邊界），進入具有更高權限的資料庫操作流程。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-sql-03",
+          "text": "SQL Injection｜3. CEH 必考的 SQL Injection 類型"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "類型",
+            "白話解釋",
+            "考題關鍵字"
+          ],
+          "rows": [
+            [
+              "In-band SQLi",
+              "透過同一個通道注入並取得結果",
+              "Error-based、UNION-based"
+            ],
+            [
+              "Blind／Inferential SQLi",
+              "沒有直接顯示資料，靠應用程式行為間接判斷",
+              "Boolean-based、Time-based"
+            ],
+            [
+              "Out-of-band SQLi",
+              "利用其他通訊通道取得資訊",
+              "DNS、不同回傳通道"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "In-band：看得到結果"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如資料庫錯誤被直接顯示在網站上，或結果被合併進正常回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Blind：看不到結果，但可以觀察差異"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如某個測試條件成立時，網站顯示正常頁面；條件不成立時，顯示空結果。即使沒有直接顯示資料庫內容，仍可能逐步推論資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Time-based 則是透過伺服器回應時間的差異進行推論，但延遲也可能來自網路壅塞，不能只憑一次慢回應就認定存在弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Out-of-band：走另一個通道"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如在某些資料庫功能與權限允許的條件下，資料庫可以產生額外的 DNS 或其他網路活動，讓測試者透過不同通道觀察結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些分類可對照 OWASP WSTG-INPV-05。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-sql-04",
+          "text": "SQL Injection｜4. 最重要的防禦：Parameterized Query"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不要把不可信任資料直接拼接成 SQL 指令。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "改用參數化查詢（Parameterized Query）："
+        },
+        {
+          "kind": "code",
+          "text": "# 使用 Python sqlite3 的參數化查詢片段\ncursor.execute(\n    \"SELECT * FROM users WHERE username = ?\",\n    (username,),\n)"
+        },
+        {
+          "kind": "paragraph",
+          "text": "差異在哪裡？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使使用者輸入包含 `' OR ...` 等文字，資料庫驅動程式仍會將它作為參數值，而不是把它加入 SQL 的條件語法。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這叫作 Code/Data Separation（程式指令與資料分離）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH 解題要記得："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Prepared Statement／Parameterized Query：主要防禦方法。",
+            "Input Validation：重要的輔助防線，但不能取代參數化。",
+            "Least Privilege：降低資料庫帳號權限，限制被利用後的損害。",
+            "WAF：可以輔助阻擋部分攻擊，但不是修復程式漏洞的根本方法。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "還有一個較進階的細節：參數化通常適用於資料值；SQL 表格名稱、欄位名稱及排序方向等結構性部分，需要固定映射或 Allowlist，不應任意接受使用者提供的 SQL 片段。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "來源：[OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SQL Injection 的考試判斷句：使用者輸入改變資料庫查詢語意，就要優先想到 SQL Injection；最重要的防禦是參數化查詢。"
+        },
+        {
+          "kind": "list",
+          "items": [
             "CSRF： 誘使已登入的使用者瀏覽器發出非預期請求。"
           ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-csrf",
+          "text": "五、CSRF（Cross-Site Request Forgery）｜15%"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CEH M14｜重點：利用已登入使用者的瀏覽器發出非預期請求"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-csrf-01",
+          "text": "CSRF｜1. 白話文：不是偷走你的帳號，而是騙你的瀏覽器替攻擊者辦事"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Alice 已登入銀行網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "銀行透過 Session Cookie 辨識 Alice。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時，Alice 開啟一個惡意網站。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "該網站試圖讓 Alice 的瀏覽器向銀行送出一個修改帳戶設定的請求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果瀏覽器依 Cookie 政策自動附上有效的登入憑證，而且銀行沒有採取足夠的 CSRF 防護，就可能把這個非預期請求當成 Alice 的操作。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2csrf",
+          "caption": "圖 7｜瀏覽器如何被誘使發出非預期請求",
+          "description": "箭頭是此假設情境的時間順序；登入 Cookie 是否附上仍依 Cookie 政策與請求條件，操作是否執行則取決於網站防護。",
+          "items": [
+            {
+              "title": "Alice 已登入銀行網站",
+              "body": "瀏覽器持有有效的 Session Cookie"
+            },
+            {
+              "title": "Alice 開啟惡意網站",
+              "body": "惡意頁面誘使瀏覽器產生請求"
+            },
+            {
+              "title": "瀏覽器向銀行發出請求",
+              "body": "在特定 Cookie 政策及請求條件下，附上登入憑證"
+            },
+            {
+              "title": "銀行未充分驗證請求來源或防偽資訊",
+              "body": "可能錯誤執行非使用者本意的操作"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "CSRF 最重要的概念是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "Authentication（確認登入身分）不等於確認這個操作真的是使用者所發起。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-csrf-02",
+          "text": "CSRF｜2. CSRF 如何防禦？"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "防禦方式",
+            "作用"
+          ],
+          "rows": [
+            [
+              "CSRF Token",
+              "驗證請求具有合法產生的防偽資訊"
+            ],
+            [
+              "SameSite Cookie",
+              "限制某些跨網站情境下的 Cookie 傳送"
+            ],
+            [
+              "Origin／Fetch Metadata 檢查",
+              "判斷請求來源及跨網站特性"
+            ],
+            [
+              "敏感操作重新驗證",
+              "提升高風險交易的確認強度"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "單純使用 POST 或 HTTPS，都不代表已經防止 CSRF。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SameSite 可以降低風險，但仍需要視瀏覽器、Cookie 設定與應用程式架構搭配適當的防禦。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "來源：[OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-csrf-03",
+          "text": "CSRF｜3. CSRF 跟 XSS 不同"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是後續 M14 題組很值得預先釐清的差異。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "XSS（Cross-Site Scripting）： 不可信任內容被當成網頁腳本執行。",
+            "CSRF： 誘使使用者的瀏覽器發出他不打算執行的已驗證請求。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "兩者可能互相影響，但不是同一種弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "CSRF 的考試判斷句：看到「使用者已登入」、「惡意網站」、「瀏覽器代替使用者送出非預期請求」，就優先想到 CSRF。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-recap",
+          "text": "六、考前最後整理：四種概念一張表"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "觀念",
+            "核心問題",
+            "快速辨識"
+          ],
+          "rows": [
+            [
+              "SQL Injection",
+              "資料變成資料庫指令",
+              "SQL 語法、查詢邏輯改變"
+            ],
+            [
+              "RDAP",
+              "如何取得網域登記資訊",
+              "Registrar、Registrant、註冊日期"
+            ],
+            [
+              "Directory Traversal",
+              "如何突破檔案路徑限制",
+              "`../`、任意檔案讀取"
+            ],
+            [
+              "CSRF",
+              "如何偽造使用者的操作請求",
+              "已登入、Cookie、非預期操作"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "依供稿所述，Day02-A 第16題（P3-Q005）的觀念尤其值得記住：發現 robots.txt 暴露的路徑，不等於已經使用 Directory Traversal、SQL Injection 或 CSRF。 題目要的是辨識實際發生了什麼行為，而非只看系統是否有敏感資訊。"
         },
         {
           "kind": "paragraph",
@@ -1771,6 +2586,115 @@
         {
           "kind": "paragraph",
           "text": "若另持有原題庫，完成理解檢核後可進行對應的 23 題閉卷練習；本頁不新增題量或記錄學習完成。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-supp-checks",
+          "text": "七、理解檢核（先不公布答案）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題目 1｜資料庫安全"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某網站把使用者輸入直接拼接進 SQL 指令，使查詢條件遭到改變。最重要的程式層防禦是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. WAF"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Parameterized Query"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. HTTPS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. robots.txt"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題目 2｜資訊蒐集"
+        },
+        {
+          "kind": "paragraph",
+          "text": "資安分析師想取得某網域的註冊商及註冊日期。最適合查詢的資訊來源是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. DNS MX"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. Nmap SYN Scan"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. RDAP／WHOIS"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. ICMP Echo"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題目 3｜網頁攻擊辨識"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某下載服務允許使用者提供相對路徑，攻擊者以 ../ 跳出原本允許的資料夾。這是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. CSRF"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. SQL Injection"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. Directory Traversal"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. DNS Spoofing"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題目 4｜瀏覽器安全"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一名已登入網站的使用者，被惡意頁面誘使瀏覽器發送修改帳戶設定的請求。網站缺少防偽機制。這最符合哪種攻擊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "A. CSRF"
+        },
+        {
+          "kind": "paragraph",
+          "text": "B. SQL Injection"
+        },
+        {
+          "kind": "paragraph",
+          "text": "C. RDAP Enumeration"
+        },
+        {
+          "kind": "paragraph",
+          "text": "D. Directory Traversal"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這四題供靜態自我檢核，先不公布答案；本頁不提供送出、批改或學習進度紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "自我檢核目標： 看到題幹，能在 10–15 秒內辨識概念，並用一句話說明為什麼其他三種不適用。SQL Injection 額外要求能解釋為什麼 Parameterized Query 比手動過濾特殊字元更可靠。"
         }
       ]
     }
@@ -1834,6 +2758,48 @@
       "id": "key",
       "title": "NIST SP 800-57 Part 1 Rev. 5：金鑰管理",
       "url": "https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final",
+      "checkedOn": "2026-11-14"
+    },
+    {
+      "id": "ceh-blueprint-v5",
+      "title": "EC-Council CEH Exam Blueprint v5.0：Web Application Hacking與SQL Injection",
+      "url": "https://cert.eccouncil.org/wp-content/uploads/2024/04/CEH-Exam-Blueprint-v5.pdf",
+      "checkedOn": "2026-11-14"
+    },
+    {
+      "id": "sql-prevention",
+      "title": "OWASP SQL Injection Prevention Cheat Sheet",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html",
+      "checkedOn": "2026-11-14"
+    },
+    {
+      "id": "wstg-sql",
+      "title": "OWASP WSTG v4.2：SQL Injection",
+      "url": "https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection/",
+      "checkedOn": "2026-11-14"
+    },
+    {
+      "id": "wstg-path",
+      "title": "OWASP WSTG v4.2：Directory Traversal／File Include",
+      "url": "https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include/",
+      "checkedOn": "2026-11-14"
+    },
+    {
+      "id": "csrf-prevention",
+      "title": "OWASP CSRF Prevention Cheat Sheet",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html",
+      "checkedOn": "2026-11-14"
+    },
+    {
+      "id": "rdap-json",
+      "title": "RFC 9083：RDAP JSON Responses",
+      "url": "https://www.rfc-editor.org/rfc/rfc9083.html",
+      "checkedOn": "2026-11-14"
+    },
+    {
+      "id": "python-sqlite",
+      "title": "Python sqlite3：參數綁定",
+      "url": "https://docs.python.org/3/library/sqlite3.html",
       "checkedOn": "2026-11-14"
     }
   ]

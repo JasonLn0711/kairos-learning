@@ -14,6 +14,9 @@ def render_reference(b,lang):
     spec=SPECS[b['name']]
     assert len(b['items'])==spec['count']
     assert all(set(i)=={'title','body'} for i in b['items'])
+    if spec['layout'].startswith('day02-'):
+        from ceh_day02a_supplement_svg import render_supplement
+        return render_supplement(b,lang,spec)
     if spec['layout']=='soc-timeline':
         from ceh_note_recovery_svg import render_recovery_timeline
         return render_recovery_timeline(b,lang)
