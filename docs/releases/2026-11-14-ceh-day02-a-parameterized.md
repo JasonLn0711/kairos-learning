@@ -18,4 +18,13 @@ Day02-A由v1.1.0升為v1.2.0／revision 4，原發布日2026-11-14保留。八�
 - HTML-01–04、FIG-03–07、A11Y-01–03：全頁瀏覽器13項通過，320／390／768／1280、JS開關、320px 200%、鍵盤表格與下載、八SVG位元組／文字邊界／重疊、搜尋及索引。桌面及390px圖8截圖已目視，保留分組、箭頭與相同輸入。
 - 本機證據在忽略的`.local/day02a/`，測試輸出另存本次工作日誌；上述是頁面及程式驗證，不是讀者已理解或完成課程的證據。
 
-PUB-02：真實draft／future隔離建置通過，涵蓋本頁路由、搜尋、payload與導覽；測試來源已還原，正式產物已重新建置。內容驗證、六項HTML契約、文件連結與SVG結構檢查通過。完整release於還原後再跑通過，包含新舊SQLite片段、正式JSON與SVG同步。PUB-01正式回讀仍待部署。
+PUB-02：真實draft／future隔離建置通過，涵蓋本頁路由、搜尋、payload與導覽；測試來源已還原，正式產物已重新建置。內容驗證、六項HTML契約、文件連結與SVG結構檢查通過。完整release於還原後再跑通過，包含新舊SQLite片段、正式JSON與SVG同步。本機階段PUB-01尚待部署；正式結果見下節。
+
+
+## 正式發布及回讀
+
+[Pages run 43585561978](https://github.com/JasonLn0711/kairos-learning/actions/runs/43585561978)成功，部署source為`d00404b411e99321753833fab2ae09560366cb98`。CI實際通過凍結安裝、high級套件稽核、內容驗證、418／418測試、六項HTML契約、0 errors／0 warnings、真實draft／future隔離、完整release及六份原教材checksum；411 HTML頁及1026靜態資產驗證通過。部署回應保存在同名前綴deployment.json。
+
+PUB-01：正式網址 https://learn.cs-kairos.com/ceh-notes/day02-a-reconnaissance/ 已回讀v1.2.0；全頁所有正式模型區塊及八圖文字在四尺寸、JS開關均比對通過，200%與鍵盤操作通過。八圖下載及HTTP回應與正式來源位元組完全一致，SVG文字沒有超出viewBox或互相重疊；新圖為3564 bytes。production-browser.json保存13項結果，assets.json保存八圖大小與SHA256。正式站截圖的桌面／390px圖8再次目視；參數與SQL仍是同組資料輸入，兩個分組結果及箭頭清楚。
+
+本回執不表示讀者已完成兩題；沒有新增外部資料庫、提交或批改服務。這次新增可執行片段閘門沿既有release串接，保留所有原檢查，沒有依賴升級或CI改寫。後續文件回執提交使用[skip ci]，不替換已驗收部署。
