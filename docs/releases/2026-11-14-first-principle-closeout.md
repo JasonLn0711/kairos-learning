@@ -21,3 +21,12 @@
 Planning開始時落後origin/main五提交，已以fast-forward承接至`62c7a9ac`，既有AURA與其他11/14紀錄完整保留。本輪依交付／容量及規範／整合拆分提交，發布前fetch核對，使用非強制`HEAD:main`；驗證與發布結果依本輪實測補記。
 
 驗證：Planning的`agenda.py day 2026-11-14`與`agenda.py week 2026-W46`均退出0；日誌成果摘要已對齊實際交付，個人must-win仍pending。指標最新2026-08-20、已86天，僅報告stale而不估算新容量。owner四份Markdown檢查0 findings。Planning五份完整檔初篩有314項既有跨根目錄／缺目標警示，本次附加區塊0項；另按實際checkout核對41個GitHub檔案／明示錨點路由全部存在，不宣稱遠端HTTP或全庫舊連結皆通過。兩repo `git diff --check`通過，未改knowledge、模板、程式或教材，故不重跑網站／knowledge驗證。
+
+## 已驗證Git發布
+
+- Kairos `8eafa416`：本輪owner證據、規範／工具鏈回執與Planning雙向連結，已推送main。
+- Planning `c5332709`：日誌、週容量及網站／CEH專案的教材交付與學習界線。
+- Planning `533fdeee`：文章規範及pnpm完整性證據的owner路由。
+- Planning `3edafa0a`：日誌成果摘要連回實際交付owner，保留原課務日曆入口。
+
+Planning目前分支`feat/0903`依使用者要求以`git push origin HEAD:main`發布；`git ls-remote`確認main為`3edafa0a14a9183c1cc9e3a673df8d4fb509f980`，與本機HEAD相同，對origin/main為`0 0`且工作目錄乾淨。沒有強制推送、丟棄或改寫任何既有提交。此文件補記仍以獨立docs提交／`[skip ci]`發布；本輪未變動網站內容或重新部署。
