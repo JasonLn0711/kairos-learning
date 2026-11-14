@@ -21,7 +21,9 @@ def render_continuation(b,lang,spec):
   elif (name=='ciaobjectives' and i==2) or (name=='itotrisks' and i==1):fill='#f7f1e9'
   elif (name=='ciaobjectives' and i>2) or (name=='m20gcmflow' and i in [2,3,4]):fill='#f6f7f8'
   stroke=['#a4c5e1','#a4c5e1','#cbd1d5','#cbd1d5','#cbd1d5','#b8d5c5','#d9a4a4'][i] if name=='m20gcmflow' else '#b8d5c5'
-  out.insert(start,rect(x,y,w,cy-y,fill,stroke));return cy
+  markup=rect(x,y,w,cy-y,fill,stroke)
+  if name=='m20d2rcausal' and i in [4,7]:markup=markup.replace('/>',' stroke-dasharray="5 4"/>')
+  out.insert(start,markup);return cy
  def arrow(y,x=450):path(f'M{x} {y}v24m-6-6 6 6 6-6')
  y=text(b['caption'],28,40,40,22,True)+16
  layout=spec['layout'].replace('continuation-','');items=b['items']
@@ -59,7 +61,7 @@ def render_continuation(b,lang,spec):
     lx,ly=(sx+tx)/2,mid-10
    connections.append(f'<path d="{d}" fill="none" stroke="#77867f" stroke-width="2"/>')
    if key:
-    label={'yes':'是' if lang=='zh' else 'Yes','no':'否' if lang=='zh' else 'No','optional':'必要時' if lang=='zh' else 'If needed','impact':'依影響啟動' if lang=='zh' else 'Per impact'}.get(key,key)
+    label={'yes':'是' if lang=='zh' else 'Yes','no':'否' if lang=='zh' else 'No','reject':'拒絕' if lang=='zh' else 'Reject','accept':'通過' if lang=='zh' else 'Accept','optional':'必要時' if lang=='zh' else 'If needed','impact':'依影響啟動' if lang=='zh' else 'Per impact'}.get(key,key)
     connections.append(f'<text x="{lx}" y="{ly}" text-anchor="middle" font-size="16">{escape(label)}</text>')
   out=connections+out;y-=50
  elif layout in ('parallel','paired'):

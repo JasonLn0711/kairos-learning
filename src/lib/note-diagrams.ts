@@ -8,6 +8,8 @@ export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;de
 export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
+  const replacementNames=['architecture','scenarios','causal','request','outcomes','conditions','decisions'].map(n=>'m20d2r'+n);
+  if(date==='2026-11-14'&&replacementNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/csrf-replacement/image-${replacementNames.indexOf(name)+1}.png`;
   const csrfNames=['browser','session','exchange','cookieheaders','csrfsequence','origins','samesite','csrftoken'].map(n=>'m20d2'+n);
   if(date==='2026-11-14'&&csrfNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/csrf-browser/image-${csrfNames.indexOf(name)+1}.png`;
   if(date==='2026-11-14'&&name==='m20d2binding')return 'https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/parameterized-query/image-1.png';

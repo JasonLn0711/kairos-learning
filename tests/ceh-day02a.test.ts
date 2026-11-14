@@ -6,7 +6,7 @@ import {noteBodyText} from '../src/lib/ceh-notes.ts';
 import {validateNoteDiagram,noteDiagramSpecs,type NoteDiagram} from '../src/lib/note-diagrams.ts';
 const data=JSON.parse(readFileSync('content/ceh-day02-a.json','utf8')) as M20Review;
 test('Day02-A retains 13 chapters, protocol examples, seven ambiguities and five unanswered checks',()=>{
- validateM20Review(data);assert.equal(data.sections.length,14);
+ validateM20Review(data);assert.equal(data.sections.filter(s=>!s.collapsible).length,14);
  const text=data.sections.flatMap(s=>s.body.flatMap(noteBodyText)).join('\n');
  for(const id of ['EC-Q002','EC-Q434','P2-Q006','EC-Q513','EC-Q140','EC-Q198','EC-Q024'])assert.ok(text.includes(id));
  for(const key of ['192.0.2.25','192.0.2.0/28','-sT','-sS','-sU','-sA','Key Transport','Key Agreement','Claim:','Next Validation:','未包含完整原題','WHOIS','RDAP','180 分鐘'])assert.ok(text.includes(key),key);

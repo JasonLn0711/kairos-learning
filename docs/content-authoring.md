@@ -1003,3 +1003,9 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 [供稿及44標題逐節對照](sources/ceh-day02-a/2026-11-14/csrf-browser/README.md)保存十四節、三十小節、八PNG與前版。`ceh_day02a_csrf.py`在既有CSRF核心段之後插入完整教學，沿原發布日及舊正文；原文24程式片段中兩段HTTP由圖11承接，13表中兩表由圖14／15承接，資料與文字完整保留。五題先不提供答案，六項DevTools清單不建立假進度。
 
 `NoteCsrfBrowser`提供受限架構分組、並列分工、HTTP往返、標頭方向、三角色五訊息、兩種固定表格與五步流程；窄欄重排保留角色、順序與資料格。八SVG由`ceh_day02a_csrf_svg.py`同源生成，原有serializer白名單保留。模型拒絕錯誤表格與時序方向，`tests/ceh-day02a-csrf.test.ts`核對來源與舊正文。`check-day02a-csrf-mechanism.mjs`以本機HTTPS／三個測試主機實跑SameSite、HttpOnly、表單防偽、CORS簡單請求與預檢；只改正式範例目的地及fixture Token，不連外部帳戶。瀏覽器沿整頁入口，發布及證據見[回執](releases/2026-11-14-ceh-day02-a-csrf-browser.md)。
+
+### Day02-A CSRF 抽換及可收合 part｜v1.4.0
+
+依本次使用者明確要求，將既有CSRF長篇抽換為[新版完整十四節／二十六小節](sources/ceh-day02-a/2026-11-14/csrf-replacement/README.md)，並於K07之後放獨立預設收合part；保留原13章、非CSRF正文與原發布日。這是A11Y-03的本次指定呈現，不變更全站預設。M20Review新增限指定入口的collapsible:true及受驗證aliases，以原生details／summary承接，內文無巢狀收合；舊CSRF小節連結揭露新版part，不宣稱語意逐一相同。
+
+七圖沿純文字模型、既有分支圖與新固定groups條件樹；桌面保留因果分支與平行歸屬，手機條件樹分四群而非串成流程。25程式片段中一段由圖2承接，八表與三道三選項題完整保留，不新增假提交。產生器驗23份現用／歷史SVG，正文目前14圖。舊版測試讀前版快照以保留歷史證據；新測試核對當前抽換、收合schema、其餘內容與錨點。整頁瀏覽器另外驗Enter／Space、JS開關及舊深層連結；本機HTTPS實驗改以本次自動表單測四類訪客狀態。實測與發布見[回執](releases/2026-11-14-ceh-day02-a-csrf-part-replacement.md)。

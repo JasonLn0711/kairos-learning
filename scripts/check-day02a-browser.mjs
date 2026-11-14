@@ -8,13 +8,18 @@ const clean=s=>s.replace(/\[([^\]]+)\]\(https:\/\/[^)]+\)/g,'$1').replace(/\s+/g
 const specs=JSON.parse(readFileSync('src/lib/note-diagram-specs.json','utf8'));
 const out='.local/day02a';mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});const checks=[];
+const makeContext=async(options={})=>{const context=await browser.newContext(options);context.setDefaultTimeout(15000);context.setDefaultNavigationTimeout(30000);return context;};
 try{
  for(const javaScriptEnabled of [true,false]){
-  const ctx=await browser.newContext({javaScriptEnabled,acceptDownloads:true});const page=await ctx.newPage();
+  const ctx=await makeContext({javaScriptEnabled,acceptDownloads:true});const page=await ctx.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
   for(const width of [320,390,768,1280]){
    await page.setViewportSize({width,height:900});const response=await page.goto(base+'/ceh-notes/day02-a-reconnaissance/');await page.waitForLoadState('networkidle');assert.equal(response.status(),200);
    assert.equal(await page.locator('h1').textContent(),data.title);assert.ok((await page.locator('main').innerText()).includes('v'+data.contentVersion));assert.equal(await page.locator('main time').first().getAttribute('datetime'),data.publishedOn);assert.equal(await page.locator('main time').last().getAttribute('datetime'),data.revisedOn);assert.equal(await page.locator('[data-diagram]').count(),figureCount);
+   const part=page.locator('details.csrf-part');assert.equal(await part.count(),1);assert.equal(await part.evaluate(el=>el.open),false,'Part defaults to collapsed');assert.equal(await part.locator('details').count(),0,'No nested disclosure for the teaching');
+   if(javaScriptEnabled&&(width===390||width===1280))await part.locator('summary').screenshot({path:`${out}/csrf-part-closed-${width}.png`});
+   await part.locator('summary').focus();await page.keyboard.press('Enter');assert.equal(await part.evaluate(el=>el.open),true);await page.keyboard.press('Space');assert.equal(await part.evaluate(el=>el.open),false);await page.keyboard.press('Enter');assert.equal(await part.evaluate(el=>el.open),true);
+   if(javaScriptEnabled)await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
    if(javaScriptEnabled)for(const b of data.sections.flatMap(s=>s.body).filter(b=>b.kind==='diagram')){if(!specs[b.name].edges)continue;const count=specs[b.name].edges.length;await page.waitForFunction(({name,count})=>document.querySelectorAll(`[data-diagram="${name}"] .connections path`).length===count,{name:b.name,count});}
    assert.deepEqual(errors,[], 'Page and resource loading errors');
    assert.equal(await page.locator('a.__cf_email__, a[href*="email-protection"]').count(),0,'Synthetic teaching address stays selectable without email obfuscation');
@@ -31,10 +36,9 @@ try{
    const binding=page.locator('[data-diagram="m20d2binding"]');assert.equal(await binding.locator('.binding section').count(),2);assert.equal(await binding.locator('.binding code').count(),4);assert.equal(await binding.locator('.binding-inputs svg').count(),0);
    const inputLayout=await binding.locator('.binding-inputs').evaluate(el=>{const r=el.getBoundingClientRect(),a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {width:r.width,sameRow:Math.abs(a.y-b.y)<1,ordered:a.x<b.x||a.y<b.y};});assert.equal(inputLayout.sameRow,inputLayout.width>576);assert.ok(inputLayout.ordered);
    for(const code of await binding.locator('code').all())assert.ok(await code.evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=16));
-   const architecture=page.locator('[data-diagram="m20d2browser"]');assert.equal(await architecture.locator('.architecture>.parallel>.card').count(),2);assert.equal(await architecture.locator('.browser-group .card').count(),2);
-   const sequence=page.locator('[data-diagram="m20d2csrfsequence"]');assert.equal(await sequence.locator('.sequence li').count(),5);assert.equal(await sequence.locator('.arrow').count(),5);assert.deepEqual(await sequence.locator('.direction').allTextContents(),['Alice Browser → 銀行 Server','銀行 Server → Alice Browser','惡意網頁 → Alice Browser','Alice Browser → 銀行 Server','銀行 Server → Alice Browser']);
-   for(const [name,columns] of [['m20d2origins',3],['m20d2samesite',4]]){const table=page.locator(`[data-diagram="${name}"] table`);assert.equal(await table.locator('tbody tr').count(),4);assert.equal(await table.locator('thead th').count(),columns);assert.equal(await table.locator('tbody td').count(),4*(columns-1));}
-   assert.equal(await page.locator('[data-diagram="m20d2exchange"] pre').count(),2);assert.equal(await page.locator('[data-diagram="m20d2csrftoken"] li').count(),5);
+   const architecture=page.locator('[data-diagram="m20d2rarchitecture"]');assert.equal(await architecture.locator('.computer>.parallel>.card').count(),2);assert.equal(await architecture.locator('.server-lanes .card').count(),2);
+   assert.equal(await page.locator('[data-diagram="m20d2rscenarios"] li').count(),5);assert.equal(await page.locator('[data-diagram="m20d2routcomes"] li').count(),4);assert.equal(await page.locator('[data-diagram="m20d2rrequest"] li').count(),3);assert.equal(await page.locator('[data-diagram="m20d2rdecisions"] li').count(),3);
+   console.error(`Full body verified: ${width}px JS=${javaScriptEnabled}`);
    checks.push(`Full body and ${figureCount} figures, ${width}px, JS=${javaScriptEnabled}`);
    if(javaScriptEnabled&&(width===390||width===1280))for(const figure of await page.locator('[data-diagram]').all())await figure.screenshot({path:`${out}/${await figure.getAttribute('data-diagram')}-${width}.png`});
   }
@@ -42,17 +46,22 @@ try{
   await page.evaluate(()=>document.documentElement.style.fontSize='');
   const table=page.locator('.table-scroll').first();await table.focus();await page.keyboard.press('ArrowRight');assert.equal(await table.evaluate(el=>el===document.activeElement),true);
   await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');assert.equal(await table.evaluate(el=>el===document.activeElement),true);checks.push(`Keyboard table focus, JS=${javaScriptEnabled}`);
-  for(const target of ['[data-diagram="m20d2exchange"] pre','[data-diagram="m20d2samesite"] .comparison']){const region=page.locator(target).first();await region.focus();await page.keyboard.press('ArrowRight');assert.ok(await region.evaluate(el=>el===document.activeElement));}
+  for(const target of ['details.csrf-part pre','details.csrf-part .table-scroll']){const region=page.locator(target).first();await region.focus();await page.keyboard.press('ArrowRight');assert.ok(await region.evaluate(el=>el===document.activeElement));}
   await ctx.close();
  }
- const ctx=await browser.newContext();const page=await ctx.newPage();await page.goto(base+'/ceh-notes/day02-a-reconnaissance/');await page.waitForLoadState('networkidle');
+ const ctx=await makeContext();const page=await ctx.newPage();await page.goto(base+'/ceh-notes/day02-a-reconnaissance/');await page.waitForLoadState('networkidle');
  for(const figure of await page.locator('[data-diagram]').all()){
-  const link=figure.locator('a[download]');await link.focus();assert.equal(await link.evaluate(el=>el===document.activeElement),true);const downloaded=page.waitForEvent('download');await page.keyboard.press('Enter');assert.deepEqual(readFileSync(await (await downloaded).path()),readFileSync('site'+await link.getAttribute('href')));const href=await link.getAttribute('href');const response=await ctx.request.get(base+href);assert.equal(response.status(),200);assert.deepEqual(await response.body(),readFileSync('site'+href));
+  console.error('Downloading '+await figure.getAttribute('data-diagram'));
+  const disclosure=page.locator('details.csrf-part');if(!await disclosure.evaluate(el=>el.open)){await disclosure.locator('summary').click();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));}
+  const link=figure.locator('a[download]');await link.focus();assert.equal(await link.evaluate(el=>el===document.activeElement),true);const downloaded=page.waitForEvent('download',{timeout:15000});await page.keyboard.press('Enter');assert.deepEqual(readFileSync(await (await downloaded).path()),readFileSync('site'+await link.getAttribute('href')));const href=await link.getAttribute('href');const response=await ctx.request.get(base+href);assert.equal(response.status(),200);assert.deepEqual(await response.body(),readFileSync('site'+href));
   await page.goto(base+href);const geometry=await page.evaluate(()=>{const root=document.documentElement;const v=root.viewBox.baseVal;return [...root.querySelectorAll('text')].map(el=>{const b=el.getBBox();return {text:el.textContent,x:b.x,y:b.y,w:b.width,h:b.height,out:b.x<0||b.y<0||b.x+b.width>v.width||b.y+b.height>v.height};});});assert.ok(!geometry.some(b=>b.out),JSON.stringify(geometry.filter(b=>b.out)));for(let i=0;i<geometry.length;i++)for(let j=i+1;j<geometry.length;j++){const a=geometry[i],b=geometry[j];assert.ok(!(a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y),`Overlapping SVG labels: ${a.text} / ${b.text}`);}await page.goto(base+'/ceh-notes/day02-a-reconnaissance/');await page.waitForLoadState('networkidle');
  }
  const index=await ctx.request.get(base+'/search-index.json');assert.ok((await index.text()).includes('CEH-DAY02-A'));
 
  await page.goto(base+'/ceh-notes/');assert.equal(await page.locator('a[href="/ceh-notes/day02-a-reconnaissance/"]').count(),1);
  checks.push(`${figureCount} SVGs: exact bytes, text bounds; notes index and search discovery`);await ctx.close();
+ for(const javaScriptEnabled of [true,false]){console.error('Legacy hash JS='+javaScriptEnabled);const context=await makeContext({javaScriptEnabled});const p=await context.newPage();await p.goto(base+'/ceh-notes/day02-a-reconnaissance/#p1-csrf-browser-subsection-01');await p.waitForLoadState('networkidle');assert.equal(await p.locator('#p1-csrf-browser-subsection-01').count(),1);assert.equal(await p.locator('details.csrf-part').evaluate(el=>el.open),true,'Legacy deep link reveals its native details ancestor');await context.close();}
+ checks.push('Collapsed part: Enter/Space toggle, no nested disclosure, legacy hash reveals full body with JS on/off');
+
  writeFileSync(out+'/result.json',JSON.stringify({base,checks,scope:'Article/browser QA; not learner completion'},null,2)+'\n');console.log(JSON.stringify({passed:checks.length,base}));
 }finally{await browser.close();}

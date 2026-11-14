@@ -4,10 +4,10 @@ import {readFileSync} from 'node:fs';
 import {noteBodyText} from '../src/lib/ceh-notes.ts';
 import {validateM20Review,type M20Review} from '../src/lib/m20-review.ts';
 import {validateNoteDiagram,noteDiagramSpecs,type NoteDiagram} from '../src/lib/note-diagrams.ts';
-const data=JSON.parse(readFileSync('content/ceh-day02-a.json','utf8')) as M20Review;
+const data=JSON.parse(readFileSync('docs/sources/ceh-day02-a/2026-11-14/csrf-replacement/published-v1.3.0.json','utf8')) as M20Review;
 const base='docs/sources/ceh-day02-a/2026-11-14/four-topics/';
 const previous=JSON.parse(readFileSync(base+'published-v1.0.1.json','utf8')) as M20Review;
-test('Four-topic insertion preserves original prose, anchors and contextual positions',()=>{
+test('Archived v1.3 four-topic insertion preserves original prose, anchors and contextual positions',()=>{
  validateM20Review(data);assert.ok(data.revision>=3);assert.equal(data.publishedOn,previous.publishedOn);
  assert.deepEqual(data.sections.map(s=>s.id),previous.sections.map(s=>s.id));
  for(const old of previous.sections){const current=data.sections.find(s=>s.id===old.id)!;

@@ -6,10 +6,10 @@ import {validateM20Review,type M20Review} from '../src/lib/m20-review.ts';
 import {validateNoteDiagram,type NoteDiagram,noteDiagramSpecs} from '../src/lib/note-diagrams.ts';
 import {noteBodyText} from '../src/lib/ceh-notes.ts';
 const root='docs/sources/ceh-day02-a/2026-11-14/csrf-browser/';
-const data=JSON.parse(readFileSync('content/ceh-day02-a.json','utf8')) as M20Review;
+const data=JSON.parse(readFileSync('docs/sources/ceh-day02-a/2026-11-14/csrf-replacement/published-v1.3.0.json','utf8')) as M20Review;
 const prior=JSON.parse(readFileSync(root+'published-v1.2.0.json','utf8')) as M20Review;
 const adopted=JSON.parse(readFileSync(root+'adopted-body.json','utf8')) as M20Review['sections'][number]['body'];
-test('Complete CSRF source retains fourteen chapters, all thirty subheadings, code, tables and five open questions at its existing explanation',()=>{
+test('Archived v1.3 complete CSRF source retains fourteen chapters, all thirty subheadings, code, tables and five open questions at its existing explanation',()=>{
  validateM20Review(data);assert.equal(data.contentVersion,'1.3.0');assert.equal(data.revision,5);assert.equal(data.publishedOn,prior.publishedOn);assert.equal(data.revisedOn,'2026-11-14');
  assert.deepEqual(data.sections.map(s=>[s.id,s.heading]),prior.sections.map(s=>[s.id,s.heading]));
  for(const old of prior.sections){let cursor=0;const body=data.sections.find(s=>s.id===old.id)!.body;for(const b of old.body){const i=body.findIndex((n,i)=>i>=cursor&&JSON.stringify(b)===JSON.stringify(n));assert.ok(i>=0,JSON.stringify(b));cursor=i+1;}}
