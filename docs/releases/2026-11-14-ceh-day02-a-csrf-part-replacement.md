@@ -38,3 +38,8 @@ PUB-02：真實draft／future隔離已通過，新collapsible／aliases沒有破
 [正式頁](https://learn.cs-kairos.com/ceh-notes/day02-a-reconnaissance/) v1.4.0已回讀，[正式站14項驗收](2026-11-14-ceh-day02-a-csrf-part-replacement-production-browser.json)全部通過：四尺寸、200%、JS開關、鍵盤、全文、搜尋、14圖下載及位元組一致，舊深連結在兩種JS模式均揭露原生part。手機收合標題、條件樹與架構圖另目視確認。現用十四圖[大小與SHA256](2026-11-14-ceh-day02-a-csrf-part-replacement-assets.json)留存；歷史圖網址保留。
 
 本次沒有修改manifest、lockfile、CI或Git歷史。收合欄位只接受指定CSRF入口，其他正文保持；共用元件另有既有文章13項瀏覽器回歸。證據支持本次變更在上述環境與檢查範圍正常，不代表未來任意變更皆不會出錯，也不代替實體裝置、完整WCAG或讀者學習成效驗收。當日三項pnpm文件指令的獨立安全確認見[工具鏈完整性紀錄](2026-11-14-pnpm-documentation-check.md)。
+
+
+## Planning關聯｜2026-11-14
+
+[當日FIRST PRINCIPLE與雙向路由](2026-11-14-first-principle-closeout.md#kairos-day02a-2026-11-14)連回日誌、週容量、網站／CEH專案與整合入口；本回執仍持自己的版本與證據，不將教材交付計為個人學習完成。
