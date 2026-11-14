@@ -24,9 +24,17 @@ CODE-01：本機Chrome157.0.8103.79／loopback HTTPS，從本次正式採用稿�
 
 ## 頁面與發布驗收
 
-HTML-01–04、A11Y-01–03、PUB-01–02的本機整頁14項通過，包含預設收合、Enter／Space、無JS、舊深連結自動展開、四尺寸／200%、完整正文及14圖下載／幾何；七圖桌面與390px逐張目視。正式發布結果待下節補記。初次探針在停用JS時等待動畫回呼，未取得完整結果，沒有記為通過；已改為只有JS模式等待繪圖，無JS直接驗原生收合與全文。下載探針亦在每次重載後先展開part並設定逾時，再重新驗收。這是探針與新互動狀態的對齊，不修改內容來迴避驗證。
+HTML-01–04、A11Y-01–03、PUB-01–02的本機整頁14項通過，包含預設收合、Enter／Space、無JS、舊深連結自動展開、四尺寸／200%、完整正文及14圖下載／幾何；七圖桌面與390px逐張目視。正式發布結果見下節。初次探針在停用JS時等待動畫回呼，未取得完整結果，沒有記為通過；已改為只有JS模式等待繪圖，無JS直接驗原生收合與全文。下載探針亦在每次重載後先展開part並設定逾時，再重新驗收。這是探針與新互動狀態的對齊，不修改內容來迴避驗證。
 
 
 ## 發布前閘門
 
 PUB-02：真實draft／future隔離已通過，新collapsible／aliases沒有破壞路由、搜尋、payload或導覽的排除；fixture全部還原後正式重建。完整release、內容驗證、六項HTML契約、來源JSON、文件連結與git差異檢查通過。七份下載SVG已逐張目視，保留節點、分支、群組與圖示；架構圖另具名兩組Browser往返，避免手機堆疊誤讀為Server互相連線。最新呈現版本再做整頁及正式站回讀。
+
+## 正式發布與完整性確認
+
+內容提交 `31bfe594cdb73d193871164e46fc0db267903a5a` 已以非強制推送發布至 main。[Pages run 43600010274](https://github.com/JasonLn0711/kairos-learning/actions/runs/43600010274) 的安裝、依賴稽核、423項測試、HTML契約、型別、draft／future發布隔離、release、下載校驗及部署全部成功；[部署回執](2026-11-14-ceh-day02-a-csrf-part-replacement-deployment.json)保存精確source及步驟。
+
+[正式頁](https://learn.cs-kairos.com/ceh-notes/day02-a-reconnaissance/) v1.4.0已回讀，[正式站14項驗收](2026-11-14-ceh-day02-a-csrf-part-replacement-production-browser.json)全部通過：四尺寸、200%、JS開關、鍵盤、全文、搜尋、14圖下載及位元組一致，舊深連結在兩種JS模式均揭露原生part。手機收合標題、條件樹與架構圖另目視確認。現用十四圖[大小與SHA256](2026-11-14-ceh-day02-a-csrf-part-replacement-assets.json)留存；歷史圖網址保留。
+
+本次沒有修改manifest、lockfile、CI或Git歷史。收合欄位只接受指定CSRF入口，其他正文保持；共用元件另有既有文章13項瀏覽器回歸。證據支持本次變更在上述環境與檢查範圍正常，不代表未來任意變更皆不會出錯，也不代替實體裝置、完整WCAG或讀者學習成效驗收。當日三項pnpm文件指令的獨立安全確認見[工具鏈完整性紀錄](2026-11-14-pnpm-documentation-check.md)。
