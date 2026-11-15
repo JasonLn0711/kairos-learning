@@ -1009,3 +1009,12 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 依本次使用者明確要求，將既有CSRF長篇抽換為[新版完整十四節／二十六小節](sources/ceh-day02-a/2026-11-14/csrf-replacement/README.md)，並於K07之後放獨立預設收合part；保留原13章、非CSRF正文與原發布日。這是A11Y-03的本次指定呈現，不變更全站預設。M20Review新增限指定入口的collapsible:true及受驗證aliases，以原生details／summary承接，內文無巢狀收合；舊CSRF小節連結揭露新版part，不宣稱語意逐一相同。
 
 七圖沿純文字模型、既有分支圖與新固定groups條件樹；桌面保留因果分支與平行歸屬，手機條件樹分四群而非串成流程。25程式片段中一段由圖2承接，八表與三道三選項題完整保留，不新增假提交。產生器驗23份現用／歷史SVG，正文目前14圖。舊版測試讀前版快照以保留歷史證據；新測試核對當前抽換、收合schema、其餘內容與錨點。整頁瀏覽器另外驗Enter／Space、JS開關及舊深層連結；本機HTTPS實驗改以本次自動表單測四類訪客狀態。實測與發布見[回執](releases/2026-11-14-ceh-day02-a-csrf-part-replacement.md)。
+
+<a id="ceh-day02-b"></a>
+## CEH Day02-B｜網路掃描與安全判讀（2026-11-15）
+
+獨立單語頁 `/ceh-notes/day02-b-network-scanning/` 沿M20Review／NoteDiagram模型，保留Day02-A。[完整供稿與逐節對照](sources/ceh-day02-b/2026-11-15/README.md)持十三章、39細層標題、14表、9段code、五PNG及593行採用紀錄。原23題缺件、三題技術待核、六道靜態情境問題分別標示；沒有作答提交或批改服務。
+
+`python3 scripts/ceh_day02b.py --check`核對正文及五SVG。五圖限定m20d2b前綴及6／3／6／5／4節點；HTTPS／雙掃描／UDP由NoteDay02B原生重排，三向交握及觀察層沿既有版型。模型固定TCP訊息方向與UDP四態，serializer白名單及已知原圖路徑維持。單語例外僅本路徑，真實draft／future建置驗證路由、搜尋與payload關閉。
+
+`tests/ceh-day02b.test.ts`檢查完整內容、來源與非法圖解；`node scripts/check-day02b-browser.mjs`驗全文、四尺寸、200%、無JS、鍵盤、搜尋／索引及五SVG位元組／字框。正式站指定`DAY02B_BASE_URL=https://learn.cs-kairos.com`，結果見[發布回執](releases/2026-11-15-ceh-day02-b.md)。
