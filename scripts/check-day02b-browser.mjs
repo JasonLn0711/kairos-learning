@@ -41,7 +41,7 @@ try{
   await page.goto(base+href);const geometry=await page.evaluate(()=>{const root=document.documentElement;const v=root.viewBox.baseVal;return [...root.querySelectorAll('text')].map(el=>{const b=el.getBBox();return {text:el.textContent,x:b.x,y:b.y,w:b.width,h:b.height,out:b.x<0||b.y<0||b.x+b.width>v.width||b.y+b.height>v.height};});});assert.ok(!geometry.some(b=>b.out),JSON.stringify(geometry.filter(b=>b.out)));for(let i=0;i<geometry.length;i++)for(let j=i+1;j<geometry.length;j++){const a=geometry[i],b=geometry[j];assert.ok(!(a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y),`Overlapping SVG labels: ${a.text} / ${b.text}`);}await page.goto(base+'/ceh-notes/day02-b-network-scanning/');await page.waitForLoadState('networkidle');
  }
  const index=await ctx.request.get(base+'/search-index.json');assert.ok((await index.text()).includes('CEH-DAY02-B'));
- 
+
  await page.goto(base+'/ceh-notes/');assert.equal(await page.locator('a[href="/ceh-notes/day02-b-network-scanning/"]').count(),1);
  checks.push(`${figureCount} SVGs: exact bytes, text bounds; notes index and search discovery`);await ctx.close();
  writeFileSync(out+'/result.json',JSON.stringify({base,checks,scope:'Article/browser QA; not learner completion'},null,2)+'\n');console.log(JSON.stringify({passed:checks.length,base}));
