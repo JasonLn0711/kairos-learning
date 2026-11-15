@@ -28,7 +28,7 @@
 - `python3 -m unittest discover -s scripts -p test_validation_html.py`：6項通過。
 - `pnpm audit --audit-level=high`：exit 0，沒有high／critical；保留既有4 low與2 moderate，未改依賴。
 - `node scripts/check-emeans-browser.mjs`：33組通過。兩語四寬度、JS開／關、全文逐區塊、八圖、200%文字、鍵盤捲動／Tab／Shift+Tab／Enter下載、搜尋與導覽均有檢查。16 SVG位元組一致、字框在viewBox內且文字不重疊；證據在`.local/emeans-browser/`。
-- 目視核對手機／桌面圖組的中心點、數線、局部谷底、更新批數、EMA位置、cosine趨勢及IVF分層。補充來源註記採14px下限，正文／圖解16px以上。重建後重啟預覽，排除舊資產manifest造成的404，再驗收最終產物。
+- 目視核對手機／桌面圖組的中心點、數線、局部谷底、更新批數、EMA位置、cosine趨勢及IVF分層。本篇補充來源註記採14px下限，正文／圖解16px以上；字級修正僅套用本篇，保持其他觀點的閱讀版本不變。重建後重啟預覽，排除舊資產manifest造成的404，再驗收最終產物。
 - `git diff --check`通過；Git與正式部署狀態於下列發布回執記錄。
 
 目前不以教學頁、來源清冊、測試或部署推論GPU效能、實體裝置、螢幕閱讀器認證或學習者理解。容量維持Unknown；未啟動分群研究實驗、模型服務或新增週承諾。
