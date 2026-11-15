@@ -14,6 +14,9 @@ def render_reference(b,lang):
     spec=SPECS[b['name']]
     assert len(b['items'])==spec['count']
     assert all(set(i)=={'title','body'} for i in b['items'])
+    if spec['layout'].startswith('day02b-'):
+        from ceh_day02b_svg import render_day02b
+        return render_day02b(b,lang,spec)
     if spec['layout'].startswith('csrf-v2-'):
         from ceh_day02a_csrf_replacement_svg import render_replacement
         return render_replacement(b,lang,spec)

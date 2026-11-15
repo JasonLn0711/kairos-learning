@@ -8,6 +8,8 @@ export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;de
 export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
+  const day02BNames=['https','handshake','scans','udp','visibility'].map(n=>'m20d2b'+n);
+  if(date==='2026-11-15'&&day02BNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-b/2026-11-15/image-${day02BNames.indexOf(name)+1}.png`;
   const replacementNames=['architecture','scenarios','causal','request','outcomes','conditions','decisions'].map(n=>'m20d2r'+n);
   if(date==='2026-11-14'&&replacementNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/csrf-replacement/image-${replacementNames.indexOf(name)+1}.png`;
   const csrfNames=['browser','session','exchange','cookieheaders','csrfsequence','origins','samesite','csrftoken'].map(n=>'m20d2'+n);
@@ -47,6 +49,9 @@ export function validateNoteDiagram(block:NoteDiagram):void {
   if(![block.caption,block.description].every(s=>typeof s==='string'&&s.trim()))fail();
   if(!Array.isArray(block.items)||block.items.length!==noteDiagramSpecs[block.name].count)fail();
   if(block.name==='m20d2priority'&&!block.items.every((item,i)=>item.body.startsWith([40,30,15,15][i]+'%｜')&&item.body.split('｜').length===2))fail();
+  const messages=block.name==='m20d2bhandshake'?['SYN','SYN/ACK','ACK']:block.name==='m20d2bscans'?['SYN','SYN/ACK','ACK','SYN','SYN/ACK','RST']:null;
+  if(messages&&!block.items.every((item,i)=>item.title===messages[i]&&item.body.startsWith(i%3===1?'Server → Client：':'Client → Server：')))fail();
+  if(block.name==='m20d2budp'&&!block.items.every((item,i)=>item.title===['送出 UDP 探測封包','open','closed','filtered','open|filtered'][i]))fail();
   for(const item of block.items)if(Object.keys(item).sort().join(',')!=='body,title'||![item.title,item.body].every(s=>typeof s==='string'&&s.trim()))fail();
   if(block.name==='m20d2origins'&&!block.items.every((item,i)=>item.body===['Origin：相同｜Site：相同','Origin：不同｜Site：相同','Origin：不同｜Site：不同','Origin：不同｜Site：不同'][i]))fail();
   if(block.name==='m20d2samesite'&&!block.items.every((item,i)=>item.body===['Strict：允許｜Lax：允許｜None：允許','Strict：不允許｜Lax：允許｜None：允許','Strict：不允許｜Lax：不允許｜None：允許','Strict：不允許｜Lax：不允許｜None：允許'][i]))fail();

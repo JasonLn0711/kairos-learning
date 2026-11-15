@@ -69,6 +69,7 @@
     {:else if kind === 'ceh-note'}<CehDailyNote note={data.dailyNote!} {lang}/>
     {:else if kind === 'ceh-notes'}
       <p class="lead">{zh ? '把每天整理的考古題連回知識觀念，留下判斷理由、易混淆的差異與可回查的參考資料。' : 'Connect daily exam practice to the underlying concepts, recording reasoning, commonly confused distinctions and references you can revisit.'}</p>
+      {#if data.day02BLink}<p><a href={data.day02BLink.href}>{data.day02BLink.title} · Day02-B</a></p>{/if}
       {#if data.day02ALink}<p><a href={data.day02ALink.href}>{data.day02ALink.title} · Day02-A</a></p>{/if}
       {#if data.day01BLink}<p><a href={data.day01BLink.href}>{data.day01BLink.title} · Day01-B</a></p>{/if}
       {#if data.m20ReviewLink}<section class="prose"><h2>{zh?'M20 密碼學專題':'M20 cryptography · Traditional Chinese'}</h2><a href={data.m20ReviewLink.href}>{data.m20ReviewLink.title}</a><p>{data.m20ReviewLink.summary}</p></section>{/if}

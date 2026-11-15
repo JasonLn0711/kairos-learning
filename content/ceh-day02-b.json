@@ -1,0 +1,2343 @@
+{
+  "title": "CEH Day02-B｜網路掃描、TCP／UDP、服務列舉與安全判讀",
+  "summary": "從封包回應判讀主機、連接埠與服務：完整保留K01–K12教學、23題對照、三題待核與六道情境練習。",
+  "status": "published",
+  "publishedOn": "2026-11-15",
+  "revisedOn": "2026-11-15",
+  "revision": 1,
+  "contentVersion": "1.0.0",
+  "sections": [
+    {
+      "id": "p1-introduction",
+      "heading": "閱讀範圍與證據判讀",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "供稿標示23題、12個知識點（K01–K12）；本次未附完整23題題幹、選項及題庫答案。以下保留完整教學、題號對照與技術待核註記。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這份教材最重要的，不是背誦 Nmap 指令或連接埠號碼，而是學會："
+        },
+        {
+          "kind": "paragraph",
+          "text": "當一個封包從電腦送出去，經過網路，到達另一台主機，再收到某種回應時，我們究竟能從這些證據推論出什麼？又有哪些事情不能推論？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "只要這個問題想通，Host Discovery、Port Scanning、TCP SYN Scan、UDP Scan、Enumeration，以及防火牆與 IDS 的判讀，就能組合成一套連貫的知識系統。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-01",
+      "heading": "一、先看全貌：網路安全測試究竟在做什麼？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "想像你是銀行的資安工程師。銀行有數百台伺服器，其中一些是十年前建置的系統，甚至連資訊部門都不確定它們目前提供哪些服務。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你的工作不是立刻找漏洞，而是先回答以下問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 授權（Authorization）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我可以測哪些系統？允許什麼方式？什麼時候必須停止？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 主機探索（Host Discovery）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這個 IP 位址是否有主機正在使用？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 連接埠掃描（Port Scanning）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "主機上哪些 TCP／UDP 入口可以到達？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 服務辨識（Service Identification）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些入口後面，究竟是哪個軟體或服務？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 服務列舉（Enumeration）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "服務會暴露哪些帳號、分享資源或設定資訊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "6. 風險判斷（Risk Assessment）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "已取得的證據是否足以支持弱點、暴露面或設定錯誤的結論？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這六個階段有一個非常重要的邏輯："
+        },
+        {
+          "kind": "paragraph",
+          "text": "每完成一個階段，只能回答該階段能回答的問題，不能直接跳到下一個階段的結論。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "主機回應 Ping，不代表上面有網站。",
+            "TCP 443 開放，不代表一定正在執行 HTTPS。",
+            "HTTPS 正常運作，不代表網站沒有漏洞。",
+            "找到使用者帳號名稱，不代表能登入該帳號。",
+            "某個掃描沒有觸發 IDS，不代表它無法被偵測。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是整份教材最重要的推理原則。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-02",
+      "heading": "二、K02–K03｜先理解網路通訊：IP、Port、Protocol 與服務",
+      "body": [
+        {
+          "kind": "heading",
+          "id": "p1-subsection-01",
+          "text": "2.1 為什麼電腦需要 IP 和 Port？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像銀行總部是一棟大樓。"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "IP Address：這棟大樓的地址。",
+            "Port：大樓裡不同部門的服務櫃台。",
+            "Protocol：櫃台與客戶遵守的通訊規則。",
+            "Service：真正負責處理工作的服務或程式。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如，一台銀行伺服器位於："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`192.168.1.10`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能同時提供："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "目的地",
+            "可能的服務"
+          ],
+          "rows": [
+            [
+              "`192.168.1.10:22/tcp`",
+              "SSH 遠端管理"
+            ],
+            [
+              "`192.168.1.10:443/tcp`",
+              "HTTPS 網站"
+            ],
+            [
+              "`192.168.1.10:445/tcp`",
+              "SMB 檔案分享"
+            ],
+            [
+              "`192.168.1.10:1433/tcp`",
+              "Microsoft SQL Server"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "但請注意，埠號只是服務的慣例，不是服務身分的保證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SSH 也可以設定在 TCP 2222；TCP 443 後面也可能是一個非 HTTPS 的自訂程式。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IANA 的官方登錄說明也明確指出，埠號被登錄給某項服務，不代表實際流量必然屬於該服務。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-02",
+          "text": "2.2 封包如何從瀏覽器走到伺服器？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Alice 在瀏覽器開啟 `https://bank.example`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "簡化流程：以 TCP 型 HTTPS 為例。HTTP/3 通常改走 QUIC／UDP 443，不使用 TCP 三向交握。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "標準的 TCP 型 HTTPS 連線，大致經過四個步驟："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. DNS：瀏覽器先查詢網域名稱對應的 IP。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. TCP：向銀行的 TCP 443 建立連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. TLS：協商加密與驗證伺服器身分。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. HTTP：在受保護的連線上送出網頁請求並取得回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡還有一個經常被忽略的問題：為什麼 Alice 的電腦也是 `:53000`？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為網路連線通常有兩端的 Port。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Alice 的作業系統會選擇一個臨時來源埠（Ephemeral Port），用來接收這條連線的回應。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "伺服器以目的埠 443 接受服務，而 Alice 用臨時來源埠區分不同連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，辨識一條 TCP／UDP 通訊時，常會用到五個資訊："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`來源 IP、來源 Port、目的 IP、目的 Port、傳輸協定`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這稱為 5-tuple（五元組），也是許多防火牆、流量紀錄與連線追蹤的重要基礎。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2bhttps",
+          "caption": "圖1｜從瀏覽器到銀行：兩端入口與四個協定步驟",
+          "description": "虛線表示網際網路上的概念連線；下方1–4表示TCP型HTTPS的協定建立順序，不表示DNS代送網頁。HTTP/3通常走QUIC／UDP 443，不使用TCP三向交握。",
+          "items": [
+            {
+              "title": "Alice 的瀏覽器",
+              "body": "192.168.1.20:53000"
+            },
+            {
+              "title": "銀行伺服器",
+              "body": "203.0.113.10:443"
+            },
+            {
+              "title": "1 DNS 找出 IP",
+              "body": "查詢 bank.example 的位址"
+            },
+            {
+              "title": "2 TCP 建立連線",
+              "body": "臨時來源埠 53000 → 目的埠 443"
+            },
+            {
+              "title": "3 TLS 建立保護",
+              "body": "協商加密並驗證相應伺服器身分"
+            },
+            {
+              "title": "4 HTTP 請求／回應",
+              "body": "在受保護的連線上交換網頁訊息"
+            }
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-03",
+          "text": "2.3 TCP 與 UDP 的真正差別"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 和 UDP 都能讓應用程式透過網路交換資料，但它們的設計取捨不同。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "特性",
+            "TCP",
+            "UDP"
+          ],
+          "rows": [
+            [
+              "開始傳輸前",
+              "建立連線",
+              "不需建立 TCP 式連線"
+            ],
+            [
+              "可靠傳送",
+              "提供序號、確認與重傳",
+              "不由 UDP 本身保證"
+            ],
+            [
+              "資料順序",
+              "提供依序的位元組串流",
+              "不保證到達順序"
+            ],
+            [
+              "常見情境",
+              "SSH、傳統 HTTPS、SMB",
+              "DNS、DHCP、QUIC"
+            ],
+            [
+              "掃描主要線索",
+              "SYN/ACK、RST 等",
+              "UDP 回應、ICMP 錯誤或靜默"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些差異將直接決定為什麼 TCP 埠可以相對明確地判斷 Open／Closed，而 UDP 埠經常會得到 `open|filtered`。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-04",
+          "text": "2.4 必須掌握的標準連接埠"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "Port",
+            "常見協定／服務",
+            "主要用途"
+          ],
+          "rows": [
+            [
+              "TCP 21",
+              "FTP",
+              "檔案傳輸控制連線"
+            ],
+            [
+              "TCP 22",
+              "SSH",
+              "加密遠端操作"
+            ],
+            [
+              "TCP 23",
+              "Telnet",
+              "傳統明文遠端終端"
+            ],
+            [
+              "TCP 25",
+              "SMTP",
+              "郵件傳送"
+            ],
+            [
+              "TCP 80",
+              "HTTP",
+              "網頁通訊"
+            ],
+            [
+              "TCP 110",
+              "POP3",
+              "郵件收取"
+            ],
+            [
+              "TCP／UDP 53",
+              "DNS",
+              "網域名稱解析"
+            ],
+            [
+              "UDP 67",
+              "DHCP Server",
+              "配發網路設定"
+            ],
+            [
+              "TCP 443",
+              "HTTPS",
+              "加密網頁通訊"
+            ],
+            [
+              "TCP 445",
+              "SMB",
+              "檔案與資源分享"
+            ],
+            [
+              "TCP 1433",
+              "MS SQL Server",
+              "常見資料庫連線"
+            ],
+            [
+              "TCP 3389",
+              "RDP",
+              "Windows 遠端桌面"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這張表是基本慣例，不是所有實際部署都必須遵守的設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "特別重要：TCP 1433 與 TCP／UDP 1434"
+        },
+        {
+          "kind": "paragraph",
+          "text": "原題 EC-Q038 與 EC-Q149 故意使用相近的服務名稱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IANA 登錄："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "TCP 1433：`ms-sql-s`",
+            "TCP 1434：`ms-sql-m`",
+            "UDP 1434：`ms-sql-m`"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 Microsoft SQL Server 的常見實際用途是："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "TCP 1433：資料庫引擎連線。",
+            "UDP 1434：SQL Server Browser。",
+            "TCP 1434：在特定設定下可能涉及 Dedicated Administrator Connection（DAC）。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以看到 TCP 1434 時，應先分清楚兩件事：標準登錄名稱是什麼，以及實際執行的程式是什麼。後者需要進一步核對。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-05",
+          "text": "2.5 Netcat：監聽和主動連線的區別"
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材中的指令："
+        },
+        {
+          "kind": "code",
+          "text": "nc -l -p 4444"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像你在辦公室開設一個臨時服務櫃台："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`nc`：啟動網路通訊工具。",
+            "`-l`：在本機監聽（listen）。",
+            "`-p 4444`：傳統 Netcat 實作中指定監聽埠。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "它的意思是：在本機 TCP 4444 等待其他端點連進來。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這不表示正在掃描 1 到 4444，也不表示主動去連線別人的伺服器，更不表示檔案已被傳送。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不同 Netcat 版本的參數可能不同。例如 OpenBSD `nc` 常使用 `nc -l 4444`。考題要理解的是監聽方向，而不是把某一版本的語法當成所有版本的共同規格。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-03",
+      "heading": "三、K04｜Host Discovery：如何判斷一台電腦是否存在？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "這個部分看似簡單，卻最容易產生錯誤推論。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-06",
+          "text": "3.1 Ping 到底做了什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "一般的 `ping` 通常使用 ICMP Echo 訊息。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以想像 Alice 在銀行機房門口喊："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「192.168.1.10，你在嗎？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "正常情況下："
+        },
+        {
+          "kind": "code",
+          "text": "Alice                       Server\n  |                           |\n  |------ ICMP Echo Request -->|\n  |                           |\n  |<------ ICMP Echo Reply ----|\n  |                           |"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Alice 收到 Echo Reply，可以合理認為：有某個符合探測條件的網路端點回應了她。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但如果沒有回覆："
+        },
+        {
+          "kind": "code",
+          "text": "Alice                       Server\n  |                           |\n  |------ ICMP Echo Request -->|\n  |                           |\n  |         沒有回覆           |\n  |                           |"
+        },
+        {
+          "kind": "paragraph",
+          "text": "你能證明伺服器不存在嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為中間可能發生："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "防火牆丟棄 ICMP Echo Request。",
+            "伺服器本身設定不回覆 Echo。",
+            "網路封包遺失。",
+            "回應遭到過濾或限速。",
+            "探測路徑與其他服務的路徑或控制條件不同。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，假設銀行網站 HTTPS 一直正常，但 Ping 沒有回應，你應優先考慮探測方式受到限制，而不是認定銀行主機已關機。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這對應 EC-Q047、EC-Q540。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-07",
+          "text": "3.2 ICMP Echo 與 ICMP Timestamp 有什麼不同？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ICMP 不是只有 Ping 一種訊息。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "類型",
+            "想問什麼？"
+          ],
+          "rows": [
+            [
+              "ICMP Echo",
+              "你有收到我的訊息嗎？"
+            ],
+            [
+              "ICMP Timestamp",
+              "你能提供時間戳記資訊嗎？"
+            ],
+            [
+              "ICMP Destination Unreachable",
+              "某個目的地、協定或入口無法到達"
+            ],
+            [
+              "ICMP Time Exceeded",
+              "封包在允許的時間／跳數限制內未能完成傳送"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材 P2-Q107 所說的「請求目標主機的內部時鐘資訊」，對應的是 ICMP Timestamp，而不是一般 Echo。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "要注意，Timestamp 訊息是歷史上定義的 ICMPv4 功能，不是每個現代系統都會回應，也不能把回傳時間當作完全可信的主機時鐘。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-08",
+          "text": "3.3 fping 和 Nmap 的 Host Discovery 指令"
+        },
+        {
+          "kind": "paragraph",
+          "text": "指令 A："
+        },
+        {
+          "kind": "code",
+          "text": "fping -a -g 192.168.1.0/24"
+        },
+        {
+          "kind": "paragraph",
+          "text": "拆成三部分："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`fping`：支援多目標探測的工具。",
+            "`-g`：根據網段產生目標位址。",
+            "`-a`：列出有回應的主機。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "`/24` 是 CIDR 網段表示法，代表前 24 個位元用於識別網路。在典型 IPv4 子網中，這個範圍共有 256 個位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以它的目標是找出該範圍內有哪些主機回應，而不是找每台主機開啟哪些埠。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "指令 B："
+        },
+        {
+          "kind": "code",
+          "text": "nmap -sn -PE 10.0.0.0/24"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`-sn`：執行主機探索，不進行一般埠掃描。",
+            "`-PE`：指定 ICMP Echo 探測類型。",
+            "`10.0.0.0/24`：指定目標網段。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "但有一個進階細節：如果掃描者和目標位於同一本地 Ethernet，Nmap 通常會優先使用 ARP 進行 IPv4 主機探索，即使指定了 ICMP 探測選項。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為在本地網路中，ARP 本來就負責把 IPv4 位址解析為鏈路層的 MAC 位址。Nmap 會利用這個機制判斷本地目標是否存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我們不能只看指令名稱，就宣稱實際送出去的一定是某一種封包。實際網路介面、權限、路由與工具預設行為都會影響結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也是 EC-Q255 的關鍵陷阱。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-04",
+      "heading": "四、K05–K08｜TCP 掃描：為什麼 SYN/ACK 可以支持埠開放？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "這是整份教材的技術核心。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-09",
+          "text": "4.1 先理解 TCP 三向交握"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Alice 要跟銀行伺服器建立 TCP 連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "逐步解釋："
+        },
+        {
+          "kind": "paragraph",
+          "text": "第一步：SYN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Alice 告訴 Server：「我想建立一條 TCP 連線。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SYN 是 Synchronize，涉及初始序號同步。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第二步：SYN/ACK"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Server 回覆：「我收到了你的請求，也願意建立這條連線。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SYN/ACK 同時包含同步與確認的意義。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "第三步：ACK"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Alice 再次回覆：「我確認收到你的回應。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "雙方完成連線建立，接著就能交換應用資料。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2bhandshake",
+          "caption": "圖2｜TCP 三向交握：SYN、SYN/ACK、ACK",
+          "description": "箭頭依序為Client（Alice）→Server、Server→Client、Client→Server；第三步ACK完成連線建立，之後才交換應用資料。",
+          "items": [
+            {
+              "title": "SYN",
+              "body": "Client → Server：我想建立連線，同步初始序號。"
+            },
+            {
+              "title": "SYN/ACK",
+              "body": "Server → Client：收到請求，也準備建立連線。"
+            },
+            {
+              "title": "ACK",
+              "body": "Client → Server：確認收到回應，TCP 連線已建立。"
+            }
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-10",
+          "text": "4.2 TCP Connect Scan 與 SYN Scan 到底差在哪？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP Connect Scan"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap `-sT`"
+        },
+        {
+          "kind": "code",
+          "text": "Client      Server\n  SYN  ----->\n       <----- SYN/ACK\n  ACK  ----->\n\n  連線成立"
+        },
+        {
+          "kind": "paragraph",
+          "text": "由作業系統執行一般連線建立，完成 TCP 交握。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP SYN Scan"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap `-sS`"
+        },
+        {
+          "kind": "code",
+          "text": "Client      Server\n  SYN  ----->\n       <----- SYN/ACK\n  RST  ----->\n\n  未完成交握"
+        },
+        {
+          "kind": "paragraph",
+          "text": "透過觀察 SYN 的回應辨識埠狀態，通常以 RST 結束探測。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SYN Scan 又稱 Half-open Scan（半開掃描）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它的關鍵是：根本不需要完成 TCP 連線，就能透過對方是否回覆 SYN/ACK，取得判斷埠狀態的重要證據。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 Half-open 並不代表無法偵測。網路上的防火牆、IDS 或封包擷取系統仍可能看見 SYN 與 RST。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Nmap 官方文件也指出，SYN Scan 不完成正常 TCP 連線，因此可能比完整 Connect Scan 減少部分應用程式層的紀錄，但這不構成隱形保證。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2bscans",
+          "caption": "圖3｜TCP Connect 與 SYN Scan：第三個封包的差別",
+          "description": "兩欄為平行比較，不是先後執行。每欄箭頭是Client與Server間的探測方向；-sT完成交握，-sS通常用RST結束，不保證避開IDS。",
+          "items": [
+            {
+              "title": "SYN",
+              "body": "Client → Server：建立連線請求。"
+            },
+            {
+              "title": "SYN/ACK",
+              "body": "Server → Client：可建立連線。"
+            },
+            {
+              "title": "ACK",
+              "body": "Client → Server：連線成立，由作業系統執行一般連線建立。"
+            },
+            {
+              "title": "SYN",
+              "body": "Client → Server：探測埠狀態。"
+            },
+            {
+              "title": "SYN/ACK",
+              "body": "Server → Client：支持 open 判定。"
+            },
+            {
+              "title": "RST",
+              "body": "Client → Server：通常結束探測，未完成TCP交握。"
+            }
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-11",
+          "text": "4.3 Open、Closed、Filtered 到底是什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們只討論標準 TCP SYN Scan。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "觀察到的回應",
+            "可能判斷",
+            "原因"
+          ],
+          "rows": [
+            [
+              "SYN/ACK",
+              "`open`",
+              "目標願意建立 TCP 連線"
+            ],
+            [
+              "RST",
+              "`closed`",
+              "目標拒絕該連線"
+            ],
+            [
+              "無回覆／特定 ICMP 錯誤",
+              "`filtered`",
+              "可能有過濾阻止判斷"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "用生活比喻："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Open：櫃台有人回答「可以辦理」。",
+            "Closed：櫃台回應「這裡沒有提供這項服務」。",
+            "Filtered：你的詢問可能被門口的警衛擋下，無法知道櫃台裡面是否有人。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且掃描狀態是有條件的觀測結果。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如同一台銀行伺服器："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "在銀行內網掃描 TCP 445：`open`",
+            "從外部網際網路掃描 TCP 445：`filtered`"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這完全可能同時成立。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因為防火牆可以允許內網存取 SMB，卻拒絕外網存取。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以一份嚴謹的掃描報告，至少應保留掃描來源、目的地、傳輸協定、掃描方法、時間和回應證據，不能只寫「Port 445 是 Open」就當作永久且普遍的事實。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-12",
+          "text": "4.4 為什麼「大量 SYN、沒有 ACK」可能代表掃描？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 SOC（安全營運中心）看到這樣的封包模式："
+        },
+        {
+          "kind": "code",
+          "text": "192.168.1.30 → 10.0.0.5:21   SYN\n192.168.1.30 → 10.0.0.5:22   SYN\n192.168.1.30 → 10.0.0.5:23   SYN\n192.168.1.30 → 10.0.0.5:80   SYN\n192.168.1.30 → 10.0.0.5:443  SYN"
+        },
+        {
+          "kind": "paragraph",
+          "text": "卻幾乎沒有觀察到完成連線的 ACK。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與 SYN 半開掃描的行為相符，因為掃描器並不需要完成每條 TCP 連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但是，相符不等於證明。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果封包擷取只有一個方向、部分封包遺失，或系統正遭遇 SYN Flood，也可能看到類似現象。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "實務上還要結合目標埠分布、封包方向、掃描頻率、RST、應用日誌和網路設備紀錄。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這對應 EC-Q317、EC-Q415、P3-Q023、EC-Q446、EC-Q388。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-05",
+      "heading": "五、K07｜UDP 掃描：為什麼沒有回應，比 TCP 更難判斷？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "這是另一個重要觀念。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-13",
+          "text": "5.1 UDP 沒有 TCP 的三向交握"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像 Alice 寄一封信給銀行某個部門。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 比較像先打電話，確認對方接聽，再開始談事情。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UDP 則比較像直接寄出資料，傳輸層本身不要求對方先建立連線，也不保證一定回覆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，掃描器想知道某個 UDP Port 是否開放，不能使用 SYN/ACK 這種 TCP 特有的證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-14",
+          "text": "5.2 UDP 掃描可能得到的四種結果"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設掃描器向一台主機的 UDP 53 發送探測資料。"
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2budp",
+          "caption": "圖4｜UDP 探測結果：四種條件分支",
+          "description": "四格是同一次探測的替代觀察結果，不是依序發生。ICMP Type 3 Code 3指ICMPv4；其他指定不可達錯誤可支持filtered；靜默保留不確定性。",
+          "items": [
+            {
+              "title": "送出 UDP 探測封包",
+              "body": "觀察目標或網路設備是否回應"
+            },
+            {
+              "title": "open",
+              "body": "UDP 服務回覆：確實收到對應服務的回應。"
+            },
+            {
+              "title": "closed",
+              "body": "ICMP Type 3 Code 3：Port Unreachable，目的埠不可達。"
+            },
+            {
+              "title": "filtered",
+              "body": "其他特定 ICMP 不可達錯誤：存在網路存取限制的證據。"
+            },
+            {
+              "title": "open|filtered",
+              "body": "完全沒有回覆：無法確定開放或受到過濾。"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 Nmap UDP Scan 的典型判讀規則。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-15",
+          "text": "5.3 為什麼 UDP 不回應，不代表 Port 關閉？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設我們向 DNS Server 發送一個毫無意義的 UDP 封包。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS Server 可能收到它，但發現資料不符合預期格式，因此直接忽略。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這代表："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "主機存在。",
+            "UDP 53 可能正在提供服務。",
+            "但這次探測沒有得到有效回覆。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "另一方面，防火牆也可能直接丟棄 UDP 封包。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這兩種不同情況，都可能呈現相同的觀察結果：靜默（Silence）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以，`open|filtered` 的意思不是「確定同時開放又被過濾」，而是目前的證據還不能區分這兩種假設。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是很重要的證據推理問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "多做一次掃描能解決嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不一定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果第一次沒收到回覆是因為封包遺失，重新探測可能有幫助。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但如果伺服器永遠不回覆無效格式的 UDP 封包，即使再試一百次，也未必取得新資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "更有效的方法，可能是使用符合應用協定格式的有效探測、比對防火牆紀錄，或直接檢查有權限存取的伺服器設定。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-16",
+          "text": "5.4 必須區分「負面觀察」與「否定證據」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 TCP、UDP 與 ICMP 三種探測共同的重要思維。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "觀察",
+            "可以合理推論",
+            "不能直接推論"
+          ],
+          "rows": [
+            [
+              "收到 ICMP Echo Reply",
+              "有端點回應探測",
+              "所有服務都正常"
+            ],
+            [
+              "沒有 ICMP Echo Reply",
+              "本次未取得回應",
+              "主機一定不存在"
+            ],
+            [
+              "SYN Scan 收到 SYN/ACK",
+              "TCP 埠支持開放判定",
+              "後端應用沒有漏洞"
+            ],
+            [
+              "UDP 收到 Port Unreachable",
+              "UDP 埠支持關閉判定",
+              "其他 UDP 埠都關閉"
+            ],
+            [
+              "UDP 完全靜默",
+              "開放或過濾尚未釐清",
+              "一定被 IDS 阻擋"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果能把這個表格理解透徹，掃描結果就不再只是幾個固定答案，而是一種有明確限制的證據。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-06",
+      "heading": "六、K08｜Stealth Scan：為什麼「半開」不等於「隱形」？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "教材多次使用 *Stealth* 這個詞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它常被翻譯為「隱匿」，但應該小心解讀。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-17",
+          "text": "6.1 系統有很多不同的觀察位置"
+        },
+        {
+          "kind": "paragraph",
+          "text": "想像銀行從三個地方觀察網路活動："
+        },
+        {
+          "kind": "diagram",
+          "name": "m20d2bvisibility",
+          "caption": "圖5｜SYN 探測的三個觀察位置",
+          "description": "箭頭由發送端往不同觀察層次閱讀，不代表每一層必然產生日誌。應用沒有完整連線紀錄，不能推論防火牆或IDS看不到封包。",
+          "items": [
+            {
+              "title": "掃描者發送 SYN",
+              "body": "封包朝已授權目標送出。"
+            },
+            {
+              "title": "第一層：防火牆／網路 IDS",
+              "body": "看得到封包、TCP Flags、來源、目的地與流量模式。"
+            },
+            {
+              "title": "第二層：作業系統／TCP Stack",
+              "body": "可以觀察連線嘗試、狀態變化及部分事件。"
+            },
+            {
+              "title": "第三層：應用程式日誌",
+              "body": "是否留下紀錄，取決於應用程式何時開始記錄及其設定。"
+            }
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "SYN Scan 因為沒有完成 TCP 交握，某些應用程式可能不會記錄到一筆完整連線。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但防火牆和 IDS 可以直接在較低層觀察 SYN 封包。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「應用程式沒有留下完整連線紀錄」與「網路設備偵測不到」是完全不同的命題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這也說明為什麼不能單靠 `nmap -sS`，就保證不觸發告警。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-18",
+          "text": "6.2 其他掃描類型應該怎麼比較？"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "掃描方法",
+            "主要機制",
+            "核心用途或限制"
+          ],
+          "rows": [
+            [
+              "TCP Connect `-sT`",
+              "完成 TCP 連線",
+              "一般連線式探測"
+            ],
+            [
+              "SYN `-sS`",
+              "不完成 TCP 交握",
+              "辨識 TCP 埠狀態"
+            ],
+            [
+              "UDP `-sU`",
+              "發送 UDP 探測",
+              "辨識 UDP 服務狀態"
+            ],
+            [
+              "ACK `-sA`",
+              "發送 ACK 探測",
+              "主要研究過濾規則，不直接辨識開放服務"
+            ],
+            [
+              "FIN `-sF`",
+              "發送 FIN",
+              "依賴特定 TCP 行為，結果可能有歧義"
+            ],
+            [
+              "Xmas `-sX`",
+              "組合 FIN、PSH、URG",
+              "依 TCP 實作而異"
+            ],
+            [
+              "Idle `-sI`",
+              "利用中介主機的 IP ID 行為",
+              "間接推測，條件較特殊"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果題目問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「哪一種掃描技術不完成完整 TCP 連線？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "應該從 TCP 交握機制判斷，而不是把所有帶有 *Stealth* 名稱的技術當成有絕對優勢。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果題目問："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「哪一種掃描一定不會被 IDS 偵測？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那就是另一個問題。沒有充分的 IDS 規則、網路拓樸、封包證據與測試條件，不能做這種保證。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-07",
+      "heading": "七、K09–K10｜Enumeration：找到服務後，還能知道什麼？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "前面學的是："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個服務入口是否可達？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現在進一步研究："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個服務會對外透露什麼資訊？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這叫 Enumeration（列舉）。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-19",
+          "text": "7.1 SMTP：怎麼可能還沒登入，就知道某個帳號存在？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMTP 是電子郵件傳送協定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設一家公司有以下員工信箱："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "`alice@example.com`",
+            "`bob@example.com`"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "郵件伺服器需要處理郵件投遞，因此必須理解收件人位址。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某些 SMTP 伺服器會對不同的收件人給予不同回覆。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如概念上的情境："
+        },
+        {
+          "kind": "code",
+          "text": "詢問 alice@example.com\n伺服器：接受此收件人\n\n詢問 unknown@example.com\n伺服器：無此收件人"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使詢問者沒有登入，仍可能藉由回覆差異推測哪些帳號存在。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就形成了 User Enumeration（使用者列舉）。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-20",
+          "text": "7.2 三種需要分清楚的 SMTP 指令"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "指令",
+            "功能",
+            "可能的資訊暴露"
+          ],
+          "rows": [
+            [
+              "`VRFY`",
+              "詢問使用者或信箱是否可辨識",
+              "使用者存在與否"
+            ],
+            [
+              "`EXPN`",
+              "請求展開郵件名單",
+              "清單成員資訊"
+            ],
+            [
+              "`RCPT TO`",
+              "在郵件交易中指定收件人",
+              "依回覆差異推測信箱是否有效"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "但請注意：知道 Alice 的信箱存在，不表示可以登入 Alice 的信箱。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這裡至少有三個不同的安全問題："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Enumeration：外部能否辨識有效帳號？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Authentication：外部能否通過身分驗證？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Authorization：登入後能否存取原本不應存取的資源？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不能因為第一個問題有風險，就直接宣稱第二、第三個問題也已被突破。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-21",
+          "text": "7.3 STARTTLS 能防止帳號列舉嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不必然。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "STARTTLS 主要處理傳輸通道的加密。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Alice 與 SMTP Server 之間的訊息已經受到 TLS 保護，但伺服器仍向 Alice 回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「這個收件人存在。」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "那麼訊息雖然經過加密，Alice 自己仍然可以知道伺服器的回答。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "傳輸加密保護通訊內容不被未授權的中途觀察者讀取，不代表伺服器不會對詢問者透露資訊。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是教材 EC-Q310、EC-Q523 的核心。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "補充一個原題細節：供稿提及另份附件中的 `smtp-enum-users` 命令參數；本次未附該原題命令，無法逐字核對，不能將轉述當成現行版本的正確用法。Nmap 官方文件使用 `smtp-enum-users.methods` 指定 EXPN、VRFY 或 RCPT 等方法。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-22",
+          "text": "7.4 SMB：Port 445 開放，能知道多少資訊？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMB（Server Message Block）常見於 Windows 網路檔案與印表機分享。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設公司某台伺服器開放 TCP 445。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "它可能提供："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "部門共享資料夾。",
+            "印表機分享。",
+            "其他 SMB／RPC 相關服務。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這裡有三個不同層次："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "層次",
+            "問題"
+          ],
+          "rows": [
+            [
+              "網路可達性",
+              "TCP 445 是否能建立連線？"
+            ],
+            [
+              "資訊可見性",
+              "能否列出共享名稱、帳號或網域資訊？"
+            ],
+            [
+              "存取權限",
+              "能否讀取、修改或刪除分享中的檔案？"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "例如："
+        },
+        {
+          "kind": "paragraph",
+          "text": "外部可能知道某台伺服器提供名為 `Finance` 的分享。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這不代表能打開 `Finance` 中的薪資資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "真正的存取能力仍取決於身分驗證、分享權限、檔案系統權限及伺服器設定。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "而且 SMB 並不是只要開啟 TCP 445，就必然允許匿名帳號列舉。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-08",
+      "heading": "八、K11｜DNSSEC：為什麼它不是 DNS 加密？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "這個部分很適合用密碼學的觀念理解。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-23",
+          "text": "8.1 DNS 可能面對什麼問題？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Alice 詢問 DNS Resolver："
+        },
+        {
+          "kind": "paragraph",
+          "text": "「`bank.example` 的 IP 是什麼？」"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNS Resolver 回答："
+        },
+        {
+          "kind": "paragraph",
+          "text": "`203.0.113.10`"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 Alice 要如何知道這個回答沒有被不當修改？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC 的設計目標之一，就是讓驗證端能利用密碼學證據，檢查 DNS 資料來源的真實性（Authenticity）與完整性（Integrity）。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-24",
+          "text": "8.2 DNSSEC 如何建立信任？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC 採用數位簽章及信任鏈（Chain of Trust）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可以用下列簡化流程理解："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. 權威 DNS 區域持有相應的簽章金鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. 區域資料附有數位簽章（例如 `RRSIG`）。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. 驗證端利用對應的公開金鑰（`DNSKEY`）驗證簽章。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 再透過上層區域的 `DS` 等紀錄，以及已信任的根金鑰，建立信任鏈。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果驗證成功，表示相關 DNS 資料符合該信任鏈下的驗證要求。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但 DNSSEC 不會因此保證網站本身沒有惡意程式，也不保證查詢過程具有保密性。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-25",
+          "text": "8.3 DNSSEC、DoH、DoT、HTTPS 的功能不同"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "技術",
+            "主要保護目標"
+          ],
+          "rows": [
+            [
+              "DNSSEC",
+              "DNS 資料來源真實性與完整性"
+            ],
+            [
+              "DNS over HTTPS（DoH）",
+              "DNS 查詢在特定傳輸鏈路上的機密性與完整性"
+            ],
+            [
+              "DNS over TLS（DoT）",
+              "使用 TLS 保護 DNS 傳輸鏈路"
+            ],
+            [
+              "HTTPS",
+              "保護瀏覽器與網站之間的 HTTP 通訊，並驗證相應的伺服器身分"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC 與 DoH／DoT 可以互補，並不是二選一。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "RFC 4033 明確說明 DNSSEC 所提供的服務及其限制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這對應 P3-Q079。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-09",
+      "heading": "九、K12｜非對稱密碼學：為什麼公開金鑰能協助安全建立共享金鑰？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "這個知識點與前面 TLS 的連線建立機制有直接關係。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-26",
+          "text": "9.1 對稱式加密的核心問題"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 Alice 與 Bob 想秘密交換資料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果使用 AES 這類對稱式加密，雙方需要持有適當的共享秘密金鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題來了："
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果雙方原本沒有共享金鑰，該如何安全建立或傳送這把金鑰？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 Alice 直接透過未受保護的網路把金鑰傳給 Bob，旁觀者可能也取得金鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這就是初始金鑰建立問題。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-27",
+          "text": "9.2 非對稱式密碼學如何幫忙？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "非對稱式密碼學涉及公開金鑰與私人金鑰，可以支援適當的金鑰建立、加密或數位簽章機制。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以一種採用公開金鑰加密的金鑰傳送情境來看："
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Bob 產生公鑰與私鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Bob 向 Alice 提供公鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Alice 驗證公鑰確實屬於 Bob。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Alice 利用適當的機制保護要傳給 Bob 的金鑰材料。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. Bob 使用自己的私鑰完成相應操作。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "6. 雙方取得可用於後續對稱加密的秘密金鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "現代協定也常使用 ECDHE 等金鑰協議機制，讓雙方共同建立共享秘密，而不是直接加密傳送一把預先選好的對稱金鑰。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，必須區分："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Key Transport：安全傳送金鑰材料。",
+            "Key Agreement：雙方透過協定共同建立共享秘密。",
+            "Symmetric Encryption：利用已建立的金鑰有效率地保護資料。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些方法都需要適當的身分認證，否則可能受到中間人攻擊。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-28",
+          "text": "9.3 為什麼 Hash 與 Disk Encryption 不是相同問題的答案？"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "機制",
+            "解決的主要問題"
+          ],
+          "rows": [
+            [
+              "非對稱金鑰建立機制",
+              "如何安全建立或傳送共享秘密"
+            ],
+            [
+              "對稱式加密",
+              "如何有效率地加密資料"
+            ],
+            [
+              "Hash",
+              "如何產生資料摘要"
+            ],
+            [
+              "Disk Encryption",
+              "如何保護儲存中的資料"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "單獨的 Hash 並不能把秘密安全傳給對方。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "磁碟加密能保護儲存設備上的資料，卻不會自動解決兩個遠端通訊者如何建立共享金鑰的問題。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是 EC-Q053 的考點；附件所引用的主要技術依據為 NIST SP 800-56 系列。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-10",
+      "heading": "十、K01｜最根本的問題：為什麼資安測試需要事先授權？",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "這是整份教材的治理基礎。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設某個資安工程師發現某家銀行的伺服器似乎存在弱點。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "他認為自己正在做好事，所以直接對銀行進行完整掃描與弱點驗證。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "即使他的目的是幫忙，也不能因此認定行為獲得授權。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "有效的安全測試至少需要確定："
+        },
+        {
+          "kind": "list",
+          "items": [
+            "誰有權批准測試。",
+            "哪些系統與網段屬於範圍。",
+            "允許哪些技術和操作。",
+            "何時可以測試。",
+            "發生異常時如何停止與通報。"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這些通常透過測試計畫、授權文件與 Rules of Engagement（ROE，交戰規則）進行約束。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "教材中的 White Hat、Grey Hat、Black Hat，重點不應只放在名稱，而應落到授權、行為、目的與責任。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "其中 White Hat 通常強調事先取得有效許可，並在約定範圍內進行安全測試。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這與 NIST SP 800-115《Technical Guide to Information Security Testing and Assessment》的測試規劃精神一致。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-11",
+      "heading": "十一、這份題庫有三個地方，不能把原答案當成絕對事實",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "供稿明確將三題標記為技術待核，而不是已完全驗證的正確答案。這一點值得特別保留。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-29",
+          "text": "11.1 EC-Q255：為什麼某個 Ping Sweep 沒觸發 IDS？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題目把「使用 ICMP Echo，不做埠掃描」與「未被 IDS 偵測」連在一起。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這裡缺少一個重要環節：IDS 實際上偵測什麼？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "如果 IDS 只針對高頻率的 TCP 埠掃描建立規則，那麼 ICMP 探測可能不會命中該規則。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "可是，假如 IDS 對 ICMP 探測頻率、來源分布或異常模式設有規則，同一種探測也可能被偵測。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "因此，工具使用的探測方式是已知事實，而沒有告警的真正原因仍需要更多證據。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-30",
+          "text": "11.2 EC-Q388：哪一種掃描最能避開 IDS？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "題庫傾向選擇 SYN Scan。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但這個問題缺少 IDS 類型、部署位置、規則和測試流量條件。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不同工具在不同網路環境中，可能呈現不同可見性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "所以可以說 SYN Scan 不完成完整 TCP 交握，不能直接說它一定能規避 IDS。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-31",
+          "text": "11.3 EC-Q522：UDP 沒有回應，一定是 open|filtered 嗎？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "依照 Nmap 一般的 UDP 掃描判讀規則，沒有回覆通常歸類為 `open|filtered`。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "但題目又宣稱沒有防火牆或 IDS 干擾。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這時就必須考慮服務不回應無效資料、封包遺失、限速等其他原因。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "問題不是 Nmap 的分類錯誤，而是題目是否已充分給出判定真實狀態的條件。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-32",
+          "text": "如何處理這類題目？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "我建議養成三層判讀習慣："
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "層次",
+            "應該回答的問題"
+          ],
+          "rows": [
+            [
+              "題庫意圖",
+              "出題者最可能希望選擇哪個選項？"
+            ],
+            [
+              "技術機制",
+              "這個選項在哪些條件下成立？"
+            ],
+            [
+              "證據限制",
+              "目前還缺少什麼，才能形成可靠的實際判斷？"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這種方法比單純背誦答案更有價值，也能避免將證照題目的簡化假設誤用到真正的系統安全分析。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-12",
+      "heading": "十二、把 23 題全部連回知識系統",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "建議用下表安排學習與作答。"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "觀念群組",
+            "對應題號",
+            "必須掌握的重點"
+          ],
+          "rows": [
+            [
+              "授權與白帽定義",
+              "22、23",
+              "授權範圍及 ROE"
+            ],
+            [
+              "常見服務與埠號",
+              "01–04",
+              "TCP／UDP、IANA、標準埠"
+            ],
+            [
+              "Netcat",
+              "05",
+              "Listener 與 Client"
+            ],
+            [
+              "主機探索",
+              "06–10",
+              "Echo、Timestamp、fping、Nmap"
+            ],
+            [
+              "TCP 掃描",
+              "11–15",
+              "SYN、ACK、RST、Half-open、IDS"
+            ],
+            [
+              "UDP 掃描",
+              "16",
+              "ICMP 錯誤、靜默及不確定性"
+            ],
+            [
+              "SMTP 列舉",
+              "17、20",
+              "VRFY、EXPN、RCPT"
+            ],
+            [
+              "SMB 列舉",
+              "18",
+              "TCP 445 與權限"
+            ],
+            [
+              "DNSSEC",
+              "19",
+              "真實性、完整性"
+            ],
+            [
+              "密碼學",
+              "21",
+              "非對稱金鑰建立"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "這樣 23 題就不是 23 個互不相關的問題，而是由少數幾套機制推導出的應用題。"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-33",
+          "text": "建議的 180 分鐘學習安排"
+        },
+        {
+          "kind": "paragraph",
+          "text": "沿用供稿建議的半天節奏，優先保留實際作答與錯題分析。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "0–10 分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "建立全貌"
+        },
+        {
+          "kind": "paragraph",
+          "text": "10 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "回顧主機探索、掃描、列舉的差異"
+        },
+        {
+          "kind": "paragraph",
+          "text": "10–70 分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "集中精讀"
+        },
+        {
+          "kind": "paragraph",
+          "text": "60 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "重點放在 TCP SYN、UDP、ICMP 與埠狀態"
+        },
+        {
+          "kind": "paragraph",
+          "text": "70–80 分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "休息"
+        },
+        {
+          "kind": "paragraph",
+          "text": "10 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "暫停學習"
+        },
+        {
+          "kind": "paragraph",
+          "text": "80–120 分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "23 題閉卷作答（需另持原題庫）"
+        },
+        {
+          "kind": "paragraph",
+          "text": "40 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "不確定的題目先標記，不停留過久"
+        },
+        {
+          "kind": "paragraph",
+          "text": "120–160 分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "錯題分析"
+        },
+        {
+          "kind": "paragraph",
+          "text": "40 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "區分不知道概念與題幹條件不足"
+        },
+        {
+          "kind": "paragraph",
+          "text": "160–180 分"
+        },
+        {
+          "kind": "paragraph",
+          "text": "重答與整合"
+        },
+        {
+          "kind": "paragraph",
+          "text": "20 分鐘"
+        },
+        {
+          "kind": "paragraph",
+          "text": "重新畫出 TCP、UDP 與 ICMP 判讀流程"
+        },
+        {
+          "kind": "paragraph",
+          "text": "這是針對本份教材的學習優先順序，不代表 CEH 官方考試權重。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-13",
+      "heading": "十三、綜合情境練習：你是銀行資安分析師",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "以下是一組整合案例，請先自行分析，不需要查原題答案。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "某銀行委託你評估一台內部伺服器 `10.20.30.40`。你已取得書面授權，允許在指定時間進行非破壞性的網路探索與服務辨識。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "觀察到以下結果："
+        },
+        {
+          "kind": "paragraph",
+          "text": "測試紀錄（假設資料）"
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "觀察項目",
+            "測試紀錄（假設資料）"
+          ],
+          "rows": [
+            [
+              "ICMP Echo",
+              "沒有回應"
+            ],
+            [
+              "TCP 443",
+              "收到 SYN/ACK"
+            ],
+            [
+              "TCP 1433",
+              "收到 SYN/ACK"
+            ],
+            [
+              "TCP 445",
+              "收到 SYN/ACK"
+            ],
+            [
+              "UDP 53",
+              "完全靜默"
+            ],
+            [
+              "SMTP",
+              "可從差異回應辨識有效信箱"
+            ],
+            [
+              "DNSSEC",
+              "相關 DNS 資料簽章驗證成功"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-34",
+          "text": "問題 1｜主機存在與否"
+        },
+        {
+          "kind": "paragraph",
+          "text": "ICMP Echo 沒有回應，但 TCP 443 收到 SYN/ACK。你能否推論這台主機存在？為什麼兩項觀察不矛盾？"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-35",
+          "text": "問題 2｜資料庫與 SMB"
+        },
+        {
+          "kind": "paragraph",
+          "text": "TCP 1433、445 都有 SYN/ACK。你可以合理懷疑哪些服務？又有哪些風險結論目前不能成立？"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-36",
+          "text": "問題 3｜UDP 不確定性"
+        },
+        {
+          "kind": "paragraph",
+          "text": "UDP 53 沒有回應。你應如何表達結果？還需要哪一類證據才能降低不確定性？"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-37",
+          "text": "問題 4｜列舉與權限"
+        },
+        {
+          "kind": "paragraph",
+          "text": "SMTP 能辨識有效信箱，是否代表已經突破登入驗證？如果想降低資訊暴露，應從哪一類控制著手？"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-38",
+          "text": "問題 5｜加密與信任"
+        },
+        {
+          "kind": "paragraph",
+          "text": "DNSSEC 驗證成功，是否代表 DNS 查詢內容已加密？這和 HTTPS、DoH、非對稱金鑰建立有何不同？"
+        },
+        {
+          "kind": "heading",
+          "id": "p1-subsection-39",
+          "text": "問題 6｜偵測與授權"
+        },
+        {
+          "kind": "paragraph",
+          "text": "假設 IDS 沒有產生告警，你能否宣稱本次掃描不可偵測？要得出較可靠的結論，還需要哪些紀錄與測試條件？"
+        },
+        {
+          "kind": "paragraph",
+          "text": "以上六題供靜態自我檢核：自行記錄觀察、推論與還缺的證據，再與教師討論。本頁未提供提交、批改或學習完成紀錄。"
+        }
+      ]
+    },
+    {
+      "id": "p1-section-14",
+      "heading": "最後整理：真正要建立的五個觀念",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "1. IP、Port、Service 是不同層次。 找到開放埠，不等於證明特定軟體存在，更不等於證明存在漏洞。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. TCP 與 UDP 的掃描證據不同。 TCP SYN/ACK 是較明確的狀態線索；UDP 靜默往往留下較多不確定性。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Host Discovery、Port Scanning、Enumeration 是不同任務。 每一步取得的證據，都有自己的推論邊界。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. 安全控制必須對準真正的安全目標。 TLS 保護傳輸，DNSSEC 驗證 DNS 資料，身分驗證與授權控制資源存取，IDS 則負責依觀測與規則偵測活動。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. 沒有觀察到，不等於沒有發生。 沒回覆、沒日誌、沒告警，都必須結合觀測位置、探測條件與替代解釋判讀。"
+        },
+        {
+          "kind": "paragraph",
+          "text": "若另持原題庫，下一步建議先完成第 06–16 題，尤其是 ICMP、TCP SYN 與 UDP 相關題目。這一組最能檢驗你是否已經真正理解「從封包回應推導網路狀態」的核心機制。"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "nmap-scans",
+      "title": "Nmap：TCP／UDP 掃描與判讀",
+      "url": "https://nmap.org/book/man-port-scanning-techniques.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "nmap-discovery",
+      "title": "Nmap：主機探索與本地ARP",
+      "url": "https://nmap.org/book/man-host-discovery.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "nmap-smtp",
+      "title": "Nmap：smtp-enum-users與methods",
+      "url": "https://nmap.org/nsedoc/scripts/smtp-enum-users.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "iana",
+      "title": "IANA：服務名稱與埠號登錄",
+      "url": "https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "sql",
+      "title": "Microsoft：SQL Server連線埠",
+      "url": "https://learn.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "dnssec",
+      "title": "RFC 4033：DNSSEC服務與限制",
+      "url": "https://www.rfc-editor.org/rfc/rfc4033.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "icmp",
+      "title": "RFC 792：ICMP Echo與Timestamp",
+      "url": "https://www.rfc-editor.org/rfc/rfc792.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "smtp",
+      "title": "RFC 5321：SMTP的VRFY、EXPN與RCPT",
+      "url": "https://www.rfc-editor.org/rfc/rfc5321.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "tls",
+      "title": "RFC 8446：TLS 1.3金鑰協議與認證",
+      "url": "https://www.rfc-editor.org/rfc/rfc8446.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "quic",
+      "title": "RFC 9114：HTTP/3與QUIC",
+      "url": "https://www.rfc-editor.org/rfc/rfc9114.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "nist-115",
+      "title": "NIST SP 800-115：安全測試規劃",
+      "url": "https://csrc.nist.gov/pubs/sp/800/115/final",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "nist-56",
+      "title": "NIST SP 800-56A Rev.3：金鑰建立",
+      "url": "https://csrc.nist.gov/pubs/sp/800/56/a/r3/final",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "fping",
+      "title": "fping官方手冊：-a與-g",
+      "url": "https://fping.org/fping.8.html",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "nc",
+      "title": "OpenBSD nc手冊：監聽與來源埠",
+      "url": "https://man.openbsd.org/nc",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "nist-56b",
+      "title": "NIST SP 800-56B Rev.2：RSA金鑰傳送與協議",
+      "url": "https://csrc.nist.gov/pubs/sp/800/56/b/r2/final",
+      "checkedOn": "2026-11-15"
+    }
+  ]
+}
