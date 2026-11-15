@@ -1,4 +1,5 @@
 <script lang="ts">
+ import EMeansFigure from './EMeansFigure.svelte';
  import SystemsFigure from './SystemsFigure.svelte';
  import type {PerspectiveBlock} from '$lib/perspective-body';
  import QAInline from './QAInline.svelte';
@@ -6,11 +7,11 @@
 </script>
 <div class="longform">
 {#each blocks as b}
- {#if b.kind==='systemsFigure'}<SystemsFigure name={b.name} {lang}/>{:else if b.kind==='heading'}<h3 id={b.id}>{b.text}</h3>
+ {#if b.kind==='eMeansFigure'}<EMeansFigure name={b.name} {lang}/>{:else if b.kind==='systemsFigure'}<SystemsFigure name={b.name} {lang}/>{:else if b.kind==='heading'}<h3 id={b.id}>{b.text}</h3>
  {:else if b.kind==='paragraph'}<p><QAInline text={b.text}/></p>
  {:else if b.kind==='list'}<ul>{#each b.items as item}<li><QAInline text={item}/></li>{/each}</ul>
  {:else if b.kind==='code'}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard scrolling for long examples.) -->
- <pre tabindex="0" role="region" aria-label={(lang==='zh'?'程式碼或示意流程：':'Code or illustrative flow: ')+heading}><code>{b.text}</code></pre>
+ <pre tabindex="0" role="region" aria-label={(lang==='zh'?'程式碼、公式或示意流程：':'Code, equation or illustrative flow: ')+heading}><code>{b.text}</code></pre>
  {:else if b.kind==='table'}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard scrolling for wide tables.) -->
  <div class="table-scroll" tabindex="0" role="region" aria-label={(lang==='zh'?'表格：':'Table: ')+heading}><table><thead><tr>{#each b.headers as h}<th scope="col">{h}</th>{/each}</tr></thead><tbody>{#each b.rows as row}<tr>{#each row as cell}<td><QAInline text={cell}/></td>{/each}</tr>{/each}</tbody></table></div>
  {/if}

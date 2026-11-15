@@ -1,0 +1,1971 @@
+{
+  "id": "e-means-clustering",
+  "slug": "e-means-clustering",
+  "status": "published",
+  "publishedOn": "2026-11-15",
+  "updatedOn": "2026-11-15",
+  "contentVersion": "1.0.0",
+  "revision": 1,
+  "category": "analysis",
+  "topics": [
+    "cs",
+    "ai"
+  ],
+  "sources": [
+    {
+      "id": "emeans-paper",
+      "title": "e-means: outperforming k-means (in one-tenth the epochs), arXiv:2611.09501v1",
+      "url": "https://arxiv.org/html/2611.09501v1",
+      "checkedOn": "2026-11-15"
+    },
+    {
+      "id": "emeans-project",
+      "title": "e-means — author project and interactive demonstrations",
+      "url": "https://e-means.github.io/",
+      "checkedOn": "2026-11-15"
+    }
+  ],
+  "related": [
+    {
+      "kind": "lesson",
+      "id": "ai-data-splits"
+    }
+  ],
+  "updates": [
+    {
+      "date": "2026-11-15",
+      "text": {
+        "zh": "初版：完整原理、推導、實驗判讀與八張原生重排圖解；保留效能重現與下游驗證界線。",
+        "en": "Initial release: complete mechanisms, derivations, evidence interpretation and eight responsive figures; runtime reproduction and downstream validation remain separate."
+      }
+    }
+  ],
+  "text": {
+    "zh": {
+      "title": "e-means與k-means：更頻繁的更新，如何改變分群成本？",
+      "summary": "從Lloyd手算到EMA有效步長、cosine排程與向量索引，完整理解e-means的機制，並學會分開loss、epochs、牆鐘時間與下游品質。",
+      "author": "CS Kairos Learn",
+      "sections": [
+        {
+          "id": "same-objective",
+          "heading": "一、先看目標，再看加速主張",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "這篇文章幫助第一次接觸分群最佳化的讀者，從Lloyd的更新方式理解e-means，並能判斷「快約10倍、loss更低」需要哪些比較條件。核心問題是：在相同分群目標與品質要求下，怎麼以較少的資料遍歷及計算成本找到中心？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "e-means: outperforming k-means (in one-tenth the epochs)是2026-11-06提交的arXiv預印本。作者為Swann Bessa、Pierre-Emmanuel Mazaré、Gergely Szilvasy、Hugo Touvron、David Picard、Matthijs Douze與Hervé Jégou，研究來自Meta FAIR及École Nationale des Ponts et Chaussées。本文依v1說明方法，並將作者實驗、可手算的性質與尚未重現的展示數字分開。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Lloyd每次讀完整批資料才更新中心；e-means在每個mini-batch後更新群統計，使用指數移動平均（Exponential Moving Average，EMA）衰減舊資訊。作者在受測高維embedding資料集報告，以1.4–2.6 epochs達到Lloyd跑25 epochs的loss水準，部分GPU比較約10–45倍加速。這些是指定實驗的報告，不是所有資料集的下界。"
+            },
+            {
+              "kind": "list",
+              "items": [
+                "兩者最小化同一個平方歐氏距離目標；e-means改變求解路徑。",
+                "總時間較短可能來自更少的epochs，也可能受kernel、硬體及近似指派影響。",
+                "較低loss只證明該距離目標較好；全域最優、語意正確與下游任務品質各需自己的證據。"
+              ]
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "knowledge-map",
+          "heading": "二、六個問題串起知識地圖",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "分群與向量量化都要從大量資料中找出k個代表中心。先定義「好」代表什麼，再討論如何在有限計算預算中取得它，能避免把更漂亮的圖當成更好的方法。"
+            },
+            {
+              "kind": "list",
+              "items": [
+                "基本問題：為什麼把距離轉成目標函數？",
+                "傳統演算法：Lloyd如何交替分配與取均值？",
+                "新更新法：mini-batch與EMA如何取得更頻繁的回饋？",
+                "最佳化理論：更新方式如何改變局部極小值的路徑？",
+                "實驗驗證：怎樣公平比較loss、時間與穩定性？",
+                "系統應用：分群如何影響向量索引、RAG與資料管理？"
+              ]
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "kmeans-problem",
+          "heading": "三、從配送中心理解k-means",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "假設有10,000個配送地址，要設10個配送中心。問題同時包含：每個地址歸哪一個中心，以及中心應放在哪裡。把地址換成影像、文字或音訊的特徵向量，就得到相同的代表向量問題。圖1的小圓是資料，大圈加號是中心；三個群是平行關係。"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "clusters"
+            },
+            {
+              "kind": "heading",
+              "id": "elements",
+              "text": "3.1 資料量n、群數k與維度d"
+            },
+            {
+              "kind": "paragraph",
+              "text": "n是資料筆數，k是中心數，d是每筆資料的數值維度。地址可先用二維位置理解，embedding常有768或1024維。令xᵢ是第i筆資料、cⱼ是第j個中心，平均平方量化誤差MSE如下。"
+            },
+            {
+              "kind": "code",
+              "text": "L(C) = (1/n) Σᵢ minⱼ ‖xᵢ − cⱼ‖²\na(i) = argminⱼ ‖xᵢ − cⱼ‖²"
+            },
+            {
+              "kind": "list",
+              "items": [
+                "對每個點找最近中心。",
+                "計算點到該中心的距離平方。",
+                "加總全部點的平方距離。",
+                "除以n，取得平均損失。"
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "loss較低表示資料平均更接近其中心；它不會自動判定人類認為相同的事物是否分在同一群。量化目標與語意分類品質要分開。"
+            },
+            {
+              "kind": "heading",
+              "id": "squared-distance",
+              "text": "3.2 為什麼用距離平方？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "若三個地址到中心的距離為1、2、5，普通距離總和為8，平方距離總和為30。平方讓最遠的點承擔較大懲罰；另一個好處是固定群成員時，算術平均值恰好最小化平方歐氏距離總和。"
+            },
+            {
+              "kind": "code",
+              "text": "1 + 2 + 5 = 8\n1² + 2² + 5² = 30"
+            },
+            {
+              "kind": "paragraph",
+              "text": "配送是機制比喻。真實物流還有路網、車輛容量與服務成本，不能把道路距離直接當平方歐氏距離來決定設站。"
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "lloyd",
+          "heading": "四、Lloyd如何分配與更新",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Lloyd反覆交替兩步：先固定中心，將每個點分配給最近中心；再固定成員，重算每群的算術平均。可在指派或中心不再改變時停止，也常設固定迭代預算。"
+            },
+            {
+              "kind": "heading",
+              "id": "lloyd-example",
+              "text": "4.1 六個數字的一次更新"
+            },
+            {
+              "kind": "code",
+              "text": "X = {1, 2, 3, 8, 9, 10};  k = 2\nInitial centroids: c₁ = 2, c₂ = 8"
+            },
+            {
+              "kind": "paragraph",
+              "text": "最近中心指派把1、2、3放進第一群，把8、9、10放進第二群。接著取均值，左中心保持2，右中心從8移到9。重複這兩步，直到停止條件成立。圖2保留資料的數線位置，只有代表中心移動。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "第一群",
+                "第二群"
+              ],
+              "rows": [
+                [
+                  "1、2、3",
+                  "8、9、10"
+                ]
+              ]
+            },
+            {
+              "kind": "code",
+              "text": "c₁ = (1 + 2 + 3)/3 = 2\nc₂ = (8 + 9 + 10)/3 = 9\n(2, 8) → (2, 9)"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "lloyd"
+            },
+            {
+              "kind": "heading",
+              "id": "lloyd-proof",
+              "text": "4.2 為什麼完整更新使loss不增？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "固定第j群的成員集合Aⱼ，將群內平方誤差視為中心cⱼ的函數。對cⱼ微分、令梯度為零，得到群平均；非空群的Hessian為2|Aⱼ|I，因此這是固定成員下的唯一最小值。"
+            },
+            {
+              "kind": "code",
+              "text": "Lⱼ(cⱼ) = Σᵢ∈Aⱼ ‖xᵢ − cⱼ‖²\n∇Lⱼ = 2|Aⱼ|cⱼ − 2Σᵢ∈Aⱼ xᵢ\n∇Lⱼ = 0 ⇒ cⱼ = (1/|Aⱼ|)Σᵢ∈Aⱼ xᵢ"
+            },
+            {
+              "kind": "paragraph",
+              "text": "固定中心時，最近中心指派選擇每點的最低距離；固定指派時，均值選擇該群的最低平方誤差。兩步都是交替最佳化，所以精確Lloyd完整迭代的訓練目標單調不增。空群、近似指派及數值精度須另列處理條件。"
+            },
+            {
+              "kind": "heading",
+              "id": "local-minima",
+              "text": "4.3 一直下降，為什麼仍會停在較差的解？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "想像在山區每一步都往下走，最後到了一個山谷，隔壁卻有更深的谷。這是局部極小值：目前附近沒有更低方向，卻不代表整個空間都沒有更好的解。k-means還要同時決定離散的群身分，整體目標一般是非凸的。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "k-means++希望用較好的初始化降低不良配置的機率；它是可搭配求解器的起點策略，不是另一個群更新法。圖3把兩個點放在相同示意地形的不同谷底，提醒我們單調下降與全域最優是不同性質。"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "minima"
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "mini-batch-ema",
+          "heading": "五、小批次更新與EMA記憶",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "full-vs-batch",
+              "text": "5.1 同樣一個epoch，不同更新頻率"
+            },
+            {
+              "kind": "paragraph",
+              "text": "對100萬筆embedding，Lloyd讀完整份資料才更新一次中心。e-means每處理一個mini-batch就更新，一個epoch可有數十次或更多次調整，因此更早取得回饋。mini-batch不等於只讀資料的10%就停；一個epoch仍指一次完整資料遍歷。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "圖4將上下長條視為同一個epoch；下列五批只是示意，實際批數由資料量n與batch size B決定。要重現實作，還要說明尾批是否丟棄、資料打散次序與處理點數，避免把近似epoch標示當精確樣本計數。"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "batches"
+            },
+            {
+              "kind": "heading",
+              "id": "ema-intuition",
+              "text": "5.2 EMA如何平衡反應與穩定？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "若配送中心只跟今天訂單移動，位置可能劇烈震盪；若所有舊訂單永遠同權，新資訊又很難改變它。EMA保留部分歷史，同時讓新資料逐漸影響統計。下面是單一數值的入門式，α為0到1之間的更新步長。"
+            },
+            {
+              "kind": "code",
+              "text": "mₜ = (1 − α)mₜ₋₁ + αxₜ\nα = 0.2, mₜ₋₁ = 50, xₜ = 80\nmₜ = 0.8×50 + 0.2×80 = 56"
+            },
+            {
+              "kind": "paragraph",
+              "text": "α越大，新資料影響越強；α越小，舊資訊保留越多。圖5是可手算的靜態算例，不是假裝可操作的滑桿。實際e-means會對群的總和與樣本數分別做EMA，下一章再由兩者比例取得中心。"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "ema"
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "statistics",
+          "heading": "六、同時更新總和與計數",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "statistics-definition",
+              "text": "6.1 每群維護兩個統計量"
+            },
+            {
+              "kind": "paragraph",
+              "text": "對第j群，Nⱼ是加權樣本數，Sⱼ是加權向量總和；中心cⱼ=Sⱼ/Nⱼ。若本批有nⱼ筆被指派到該群，向量總和為sⱼ，則兩個統計量使用相同的EMA步長更新。論文也寫成衰減率γ=1−α；α變小代表γ變大，兩者方向不能混用。"
+            },
+            {
+              "kind": "code",
+              "text": "Nⱼ′ = (1 − αₜ)Nⱼ + αₜnⱼ\nSⱼ′ = (1 − αₜ)Sⱼ + αₜsⱼ\ncⱼ′ = Sⱼ′ / Nⱼ′\nγₜ = 1 − αₜ"
+            },
+            {
+              "kind": "paragraph",
+              "text": "一批100筆可能有50筆分給第一群，只有2筆分給第二群。直接用相同步長混合各群的新平均，會忽略不同樣本數所帶來的資訊量。先平滑總和與計數再取比例，讓這個差異進入中心更新。"
+            },
+            {
+              "kind": "heading",
+              "id": "two-updates",
+              "text": "6.2 手算兩次更新"
+            },
+            {
+              "kind": "paragraph",
+              "text": "設α=0.2，初始N=10⁻¹⁰、S=Nc⁽⁰⁾，即可讓比值回傳指定初始中心，且初始權重很小。以下為易讀而忽略這個極小初始量。第一批{2,4}，所以n=2、s=6，更新後N=0.4、S=1.2、c=3。"
+            },
+            {
+              "kind": "code",
+              "text": "Batch 1: {2,4}; n=2; s=6\nN₁ = 0.2×2 = 0.4\nS₁ = 0.2×6 = 1.2\nc₁ = 1.2/0.4 = 3"
+            },
+            {
+              "kind": "paragraph",
+              "text": "第二批{4,6}的n=2、s=10。歷史統計保留80%，新批次加入20%；結果是N=0.72、S=2.96、中心約4.11。兩批均值分別為3和5，最終中心保留第一批影響並往第二批移動。"
+            },
+            {
+              "kind": "code",
+              "text": "Batch 2: {4,6}; n=2; s=10\nN₂ = 0.8×0.4 + 0.2×2 = 0.72\nS₂ = 0.8×1.2 + 0.2×10 = 2.96\nc₂ = 2.96/0.72 ≈ 4.111111"
+            },
+            {
+              "kind": "heading",
+              "id": "effective-step",
+              "text": "6.3 有效步長的代數推導"
+            },
+            {
+              "kind": "paragraph",
+              "text": "令本批該群均值x̄ⱼ=sⱼ/nⱼ，將舊統計Sⱼ=Nⱼcⱼ代入比值，再把舊中心分離出來，就得到每個群實際的有效步長βⱼ。全域α相同，也不代表各群移動相同比例；β還受本批筆數及歷史計數影響。"
+            },
+            {
+              "kind": "code",
+              "text": "x̄ⱼ = sⱼ/nⱼ\ncⱼ′ = [(1−α)Nⱼcⱼ + αnⱼx̄ⱼ] / [(1−α)Nⱼ + αnⱼ]\nβⱼ = αnⱼ / [(1−α)Nⱼ + αnⱼ]\ncⱼ′ = cⱼ + βⱼ(x̄ⱼ − cⱼ)"
+            },
+            {
+              "kind": "paragraph",
+              "text": "當Nⱼ≥0、nⱼ>0、0≤α≤1且新分母為正，0≤βⱼ≤1，新中心位於舊中心與本批均值之間。這種非負權重平均的幾何結構，與可能跨過目標點的直接梯度更新不同。若初始化取自資料點，純EMA更新保留相關資料凸包內的性質；作者用此提出穩定性解釋，但不是普遍優於SGD的定理。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "若nⱼ=0、α<1且Nⱼ>0，S與N同比例衰減，中心不變。若α=1且nⱼ=0，分母成零，必須處理空群。donor splitting的擾動及低精度運算也要另外核對；不能把純EMA的凸包推導直接當成整套程式的不變量。"
+            },
+            {
+              "kind": "heading",
+              "id": "minibatch-comparison",
+              "text": "6.4 與傳統MiniBatchKMeans的差別"
+            },
+            {
+              "kind": "paragraph",
+              "text": "小批次更新已有MacQueen（1967）與Sculley（2010）等工作。e-means的貢獻在固定資料集上管理歷史統計、排程與完整求解流程，不能把mini-batch本身當成首次發明。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "方法",
+                "核心更新",
+                "判讀重點"
+              ],
+              "rows": [
+                [
+                  "Lloyd",
+                  "每輪使用全部資料重算",
+                  "精確完整迭代loss不增，仍可能停在局部解"
+                ],
+                [
+                  "傳統MiniBatchKMeans",
+                  "小批次累積／調整中心",
+                  "更新頻繁；品質受步長與初始化影響"
+                ],
+                [
+                  "e-means",
+                  "總和與計數的EMA",
+                  "衰減舊指派，搭配排程、revival與收尾"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "recipe",
+          "heading": "七、組件如何改變求解路徑",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "只有mini-batch還不足以描述這項研究。核心EMA之外，cosine排程、低計數群復活、收尾與scaling laws各自處理穩定性、中心利用率、最終品質及參數選擇。圖6中的卡片是平行角色，不是保證逐一帶來相同幅度加速的流程。"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "components"
+            },
+            {
+              "kind": "heading",
+              "id": "cosine-schedule",
+              "text": "7.1 Cosine Schedule：先調整，再穩定"
+            },
+            {
+              "kind": "paragraph",
+              "text": "固定大α可以快速改變中心，卻容易震盪；很小的α較穩定，卻可能來不及離開不理想配置。e-means使用餘弦退火，讓步長從α₀逐漸降到其10%。M表示總mini-batch更新數，t表示更新位置。"
+            },
+            {
+              "kind": "code",
+              "text": "α(t) = α₀[0.1 + 0.9(1 + cos(πt/M))/2]\nα₀ = 0.4:  α(0)=0.4;  α(M/2)=0.22;  α(M)=0.04"
+            },
+            {
+              "kind": "paragraph",
+              "text": "圖7依公式計算，橫軸為已完成更新的比例，縱軸為步長，不是訓練loss。它建立「早期積極調整、後期逐步穩定」的直覺，並沒有畫出實測收斂結果。論文公式同時把t列成0到M−1，pseudocode又先增加t；重現時須固定索引慣例。圖中100%端點使用連續u=t/M∈[0,1]定義。"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "cosine"
+            },
+            {
+              "kind": "heading",
+              "id": "stochastic-noise",
+              "text": "7.2 小批次隨機性何時有幫助？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Lloyd每次使用全資料，沿著固定目標下降，也可能因此留在不良局部配置。小批次的隨機雜訊會讓更新方向波動，可能使中心跨過某些指派邊界，進入另一條路徑。e-means每個batch並不保證全資料loss下降；暫時上升可能換來後來更低的局部解，也可能使結果變差。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此不能把不穩定本身當成優勢，也不是雜訊越多越好。過大的更新會破壞已有分群；cosine排程的角色，是讓探索和後期穩定在有限預算內取得平衡。這和深度學習的learning-rate scheduling有相近設計思路。"
+            },
+            {
+              "kind": "heading",
+              "id": "revival",
+              "text": "7.3 Dead-cluster Revival：重新利用中心"
+            },
+            {
+              "kind": "paragraph",
+              "text": "若設100個配送中心，卻有20個完全沒有服務對象，實際只有80個中心發揮作用。k-means也會產生沒有點、或計數極低的dead cluster。e-means每五個mini-batches檢查一次，將N低於平均計數0.1倍的群重新配置，透過拆分donor群來重新利用中心。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這項機制有既有方法基礎；研究改進了使用方式並做消融。Appendix H中DEEP、100萬筆、16384群的結果如下。數字是這組設定的報告，反映中心利用率，不是所有資料集的固定比例。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "策略",
+                "死亡群數",
+                "比例"
+              ],
+              "rows": [
+                [
+                  "不啟用revival",
+                  "4313",
+                  "26.3%"
+                ],
+                [
+                  "從batch重新抽樣",
+                  "2343",
+                  "14.3%"
+                ],
+                [
+                  "e-means拆分策略",
+                  "47",
+                  "0.3%"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "當許多中心閒置，單純精確更新其餘中心，仍無法充分利用指定k個代表向量。評估時應同時看計數分布、空群比例與品質，而不只看平均loss。"
+            },
+            {
+              "kind": "heading",
+              "id": "finalization",
+              "text": "7.4 Finalization：固定指派後重算均值"
+            },
+            {
+              "kind": "paragraph",
+              "text": "訓練中的EMA中心，未必等於最後epoch所記錄群成員的算術平均。Last-Epoch-Mean把已記錄的指派固定，重算每群均值，利用既有指派減少額外工作。Slow-EMA則另外維護較慢的統計，觀察同樣指派但不參與訓練中心選擇，目標偏向未見資料的MSE。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "收尾方式",
+                "優先比較"
+              ],
+              "rows": [
+                [
+                  "Last-Epoch Mean",
+                  "固定最後指派的Training MSE"
+                ],
+                [
+                  "Slow EMA",
+                  "Out-of-sample / Test MSE"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "保證的條件要說清楚：對固定指派A，均值最小化Q(A,C)=Σ‖xᵢ−cₐᵢ‖²；再做最近指派，有nL(C)≤Q(A,C)。最後epoch指派可能來自一路移動的中心，因此這個證明沒有直接比較最終EMA中心重新指派後的MSE。應分別記錄保存指派loss、fresh-assignment train MSE與test MSE；論文Table 1的train評估也說明採最後epoch的codes及固定子集。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "現有資料的壓縮品質與新資料的泛化品質相關，但不完全一致。選擇收尾方式前，先決定系統要改善哪個判斷。"
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "scaling-laws",
+          "heading": "八、Scaling Laws如何設定參數",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "why-scaling",
+              "text": "8.1 減少每份資料重做調參"
+            },
+            {
+              "kind": "paragraph",
+              "text": "這裡的scaling law指依資料量n、群數k及epochs預算T預測batch size與步長，不是語言模型大小的普遍定律。手動在512、4096、65536等批次大小或0.01、0.1、0.5等步長間搜尋，可能耗掉大量實驗成本。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "作者在DEEP資料的多種問題規模進行約75,000次最佳化實驗，再擬合兩組經驗關係。它把先前昂貴的搜尋成本轉成可直接計算的規則；公式的適用性仍要由目標分布驗證。"
+            },
+            {
+              "kind": "heading",
+              "id": "batch-law",
+              "text": "8.2 第一條：預測batch size"
+            },
+            {
+              "kind": "code",
+              "text": "B ≈ 0.035 × k^0.13 × n^0.88 × T^0.81"
+            },
+            {
+              "kind": "paragraph",
+              "text": "B是每批筆數。依論文預設規則，結果取最接近的2次方並限制B≤n。對n>200萬的受測大規模設定，預設batch law結果再除以8，平衡品質與吞吐量。這些取整、上限及規模分支都要在重現契約中寫清楚。"
+            },
+            {
+              "kind": "heading",
+              "id": "step-law",
+              "text": "8.3 第二條：預測初始步長"
+            },
+            {
+              "kind": "code",
+              "text": "α₀ = min(0.824 × k^(−0.46) × B^0.90 × n^(−0.45) × T^(−0.11), 1)\nn = 10⁶; k = 16384; T = 3\nB = 65536; α₀ ≈ 0.362779 ≈ 0.363"
+            },
+            {
+              "kind": "paragraph",
+              "text": "步長跟資料量、群數、批次與訓練預算一起改變，沒有一個對所有資料都最好的固定值。算例得到B=65536、α₀約0.363，再用cosine逐步降低到約十分之一；這只是代入公式的設定，不是對你的資料實測出的最佳參數。"
+            },
+            {
+              "kind": "heading",
+              "id": "scaling-limits",
+              "text": "8.4 經驗規則的外推界線"
+            },
+            {
+              "kind": "paragraph",
+              "text": "係數與指數來自經驗迴歸，不是k-means普遍最佳解的數學定理。作者在未參與擬合的資料上檢驗轉移，但也指出規則主要針對相對高維資料；極低維、小資料或不同內在維度的分布，未必得到最佳設定。減少調參不等於消除分布差異。"
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "read-claims",
+          "heading": "九、怎樣閱讀Voronoi、epochs與loss圖",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "voronoi",
+              "text": "9.1 Voronoi區域告訴我們什麼？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "某中心的Voronoi區域包含空間中所有比其他中心更接近它的位置。歐氏距離的二維分界通常為直線，多個邊界形成多邊形；高維則為多面體。邊界由中心位置決定，不是圖1的虛線圓，也不是已知類別標籤。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "供稿描述的比較展示以紅／藍點表示兩種演算法的中心、背景點表示資料、細線表示Voronoi邊界。顏色是在比較求解結果，不是在說兩份資料不同。只看區域好不好看，無法可靠判斷MSE高低；仍要計算相同目標。八張隨文圖本身沒有包含那張帶秒數的原始效能展示。"
+            },
+            {
+              "kind": "heading",
+              "id": "time-epochs",
+              "text": "9.2 比較停止標準，再讀曲線斜率"
+            },
+            {
+              "kind": "paragraph",
+              "text": "供稿的loss展示把Lloyd畫成較慢下降的紅線、e-means畫成較早下降的藍線。應先問是否達到同一品質門檻，以及loss是train還是test、是否重新指派。不能只因曲線較陡就決定方法勝負。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "來源展示指標",
+                "Lloyd",
+                "e-means"
+              ],
+              "rows": [
+                [
+                  "總時間",
+                  "4.39秒",
+                  "0.43秒"
+                ],
+                [
+                  "資料遍歷",
+                  "25 epochs",
+                  "2.2 epochs"
+                ],
+                [
+                  "畫面最後loss",
+                  "較高，未提供精確值",
+                  "較低，未提供精確值"
+                ]
+              ]
+            },
+            {
+              "kind": "code",
+              "text": "Time ratio = 4.39/0.43 ≈ 10.2093\nPass ratio = 25/2.2 ≈ 11.3636\nLloyd total time / epochs = 4.39/25 = 0.1756 s\ne-means total time / epochs = 0.43/2.2 ≈ 0.19545 s"
+            },
+            {
+              "kind": "paragraph",
+              "text": "兩個比值不同，顯示總時間與遍歷次數是不同指標。總時間除epochs得到的商值在e-means略大，但因初始化、收尾及計時範圍未分離，不能宣稱每輪kernel一定較慢。2.2 epochs約為兩次完整遍歷加部分第三次，不是2.2次中心更新。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "目前缺少這組展示的固定資料、硬體、精度、程式版本、初始化、重複次數與誤差範圍，也沒有精確loss值。本頁保留數字作圖表判讀材料，不把它冒充本站重現結果或所有資料的保證。"
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "evidence",
+          "heading": "十、作者實驗能支持什麼",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "原論文不只展示二維玩具資料，也比較多種影像與文字embedding。下表採Table 4的DINO10B子集，基準為Flash-KMeans執行25 iterations的Test MSE；e-means以0.2 epochs為間距增加預算，找出達到基準的設定。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "資料量n",
+                "群數k",
+                "e-means epochs",
+                "GPU時間加速"
+              ],
+              "rows": [
+                [
+                  "100萬",
+                  "16384",
+                  "2.0",
+                  "12.7×"
+                ],
+                [
+                  "1000萬",
+                  "65536",
+                  "1.4",
+                  "23.3×"
+                ],
+                [
+                  "1億",
+                  "262144",
+                  "1.6",
+                  "31.3×"
+                ],
+                [
+                  "10億",
+                  "1048576",
+                  "1.6",
+                  "45.5×"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "前面三種規模為10個seeds的中位數，10億規模僅一個seed。1M至100M使用一張GPU，1B使用8張GPU；比較時要保留同列設定，不能把不同機器數混成單機速度結論。單seed的統計確定性也較低。這張表支持受測設定的固定品質效率改善，不證明所有資料都一樣。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "另一個案例有100億筆、1024維DINO向量，分成2²⁴=16,777,216群。僅以FP32存放每群向量總和S，就需要約64 GiB，尚未包含資料、計數、暫存及其他副本；這說明為何要考慮多GPU分片。"
+            },
+            {
+              "kind": "code",
+              "text": "2²⁴ × 1024 × 4 bytes = 68,719,476,736 bytes = 64 GiB"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Table 3報告，這個規模達到Lloyd@25 Test MSE的成本，由e-means的精確指派約779 GPU-hours降到IVF近似指派約22.8 GPU-hours。這裡比較的是e-means的指派實作，額外改善包含搜尋剪枝；不是又一次單獨的EMA對Lloyd比較。GPU-hours是加總裝置成本，不是單機牆鐘秒數。"
+            },
+            {
+              "kind": "heading",
+              "id": "counterevidence",
+              "text": "10.1 如何處理反面證據？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "原始供稿提到一則2026-11-10的獨立NumPy實作：100,000筆、128維合成資料，約1.51倍加速，最終loss高1.42%，並說沒有使用融合GPU kernels。供稿沒有直接文章網址、程式版本或執行回條，所以本文保留為待查核主張，不當成已證實反例。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "即使日後取得回條，仍要比對資料、硬體、初始化、排程、revival與收尾是否一致。不同條件的弱結果可以限制適用範圍，但不能直接推翻另一組設定；同樣地，作者的強結果也不能保證簡化CPU版只加上EMA就有十倍速度。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "主張",
+                "目前可採判斷"
+              ],
+              "rows": [
+                [
+                  "EMA可用於mini-batch分群",
+                  "有明確N/S數學定義"
+                ],
+                [
+                  "部分實驗顯著優於Lloyd",
+                  "有作者報告，仍非本站重現"
+                ],
+                [
+                  "高維大規模embedding有應用潛力",
+                  "需目標系統的品質與成本驗證"
+                ],
+                [
+                  "所有資料都快10倍",
+                  "證據不足"
+                ],
+                [
+                  "必定找到全域最佳解",
+                  "無此理論保證"
+                ],
+                [
+                  "低MSE必定改善下游任務",
+                  "必須另測任務指標"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "theory-systems",
+          "heading": "十一、與EM、SGD及GPU計算的連結",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "em-connection",
+              "text": "11.1 e-means與Expectation-Maximization"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Gaussian Mixture Model（GMM，高斯混合模型）假設資料來自多個高斯分布。一般EM的E-step估計各點屬於各群的機率，M-step依這些權重更新分布參數。k-means在特定假設與極限下可理解成硬指派形式：每點只選一群，不保留多群機率。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "e-means沿用硬指派的平方距離目標，用衰減統計管理更新。它和EM、SGD的歷史有連結，但不代表提出了新的通用EM，也不是所有梯度下降的替代品。"
+            },
+            {
+              "kind": "heading",
+              "id": "complexity",
+              "text": "11.2 計算複雜度改變了多少？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "最直接的精確指派，對n個點各比較k個中心，每個距離涉及d個維度。一個epoch的主要距離工作為O(nkd)，T個epochs約O(Tnkd)。e-means若也做精確指派，仍需這些距離，只是以較小Tₑ達到目標品質。"
+            },
+            {
+              "kind": "code",
+              "text": "Lloyd:  O(T n k d)\ne-means with exact assignment:  O(Tₑ n k d)"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此要分開演算法效率與系統加速：較少遍歷改善求解成本，IVF近似搜尋減少距離比較，矩陣乘法、資料分片與低精度又改變吞吐量及誤差。這些效果可以組合，不能全部歸因於單一EMA公式。"
+            },
+            {
+              "kind": "heading",
+              "id": "gpu",
+              "text": "11.3 為什麼GPU適合距離指派？"
+            },
+            {
+              "kind": "code",
+              "text": "‖x − c‖² = ‖x‖² + ‖c‖² − 2xᵀc"
+            },
+            {
+              "kind": "paragraph",
+              "text": "距離展開後的內積可用大量矩陣乘加平行計算，符合GPU擅長的工作。論文研究BF16、FP8、INT8等近似距離計算，同時以FP32保留群總和與EMA累積。低精度可能改變接近邊界點的指派，需量測最終MSE與下游影響。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "只有當資料規模、記憶體與計算模式適合，數學設計才容易轉成牆鐘優勢。硬體名稱相同仍不足以建立公平條件；記錄裝置數、資料搬移、暖機、同步與峰值記憶體。"
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "applications",
+          "heading": "十二、向量索引、資料治理與領域應用",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "rag-ivf",
+              "text": "12.1 RAG與向量資料庫"
+            },
+            {
+              "kind": "paragraph",
+              "text": "若有1000萬份文件的高維embedding，查詢向量逐一比較所有文件可能昂貴。可先用k-means或e-means學到粗粒度中心，將資料放進對應區域；線上先找幾個相關中心，再搜尋這些區域的候選文件。這是IVF（Inverted File Index，倒排檔案索引）的核心概念之一。"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "ivf"
+            },
+            {
+              "kind": "paragraph",
+              "text": "分群品質可能影響搜尋召回率，訓練速度影響離線索引建置或重建時間。它最直接的價值是降低離線工作成本，不等於每次LLM生成自動變快。論文Appendix L比較索引建置時間與Recall@10，作者報告多數受測資料可更快達到相近或較好的召回；目標系統仍須測量自己的召回—延遲曲線。"
+            },
+            {
+              "kind": "heading",
+              "id": "curation",
+              "text": "12.2 資料集治理與去重"
+            },
+            {
+              "kind": "paragraph",
+              "text": "對數千萬張圖片、音訊片段或文字，可先分群找高度相似候選、抽取代表樣本、探索分布，以及觀察過度或不足採樣區域。這些是資料管理用途，但同群不等於重複；跨群也可能有近重複。後續仍需精確相似度門檻或其他驗證。"
+            },
+            {
+              "kind": "heading",
+              "id": "speech-medical",
+              "text": "12.3 語音、醫療影像與距離的意義"
+            },
+            {
+              "kind": "paragraph",
+              "text": "語音片段可轉成聲學embedding來探索結構，醫療影像區塊或病灶候選可轉成特徵來協助抽樣與資料管理。不過，一個語音群可能主要反映裝置或背景噪音，而不是口音、說話者或語意；影像群可能反映掃描設備，而不是病理差異。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "因此先問embedding距離是否代表你關心的相似性，再看MSE。原始k-means使用平方歐氏距離；若應用重視cosine similarity，必須核對向量正規化、中心正規化與目標函數。不能只因原始向量單位長度，就假設後續均值中心及指派與cosine完全等價。"
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "evaluation",
+          "heading": "十三、設計公平的時間—品質比較",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "研究問題要寫成：在指定資料分布、計算預算與品質要求下，哪個方法有較好的速度—品質權衡？這比只重畫兩條曲線，更接近真正的採用決策。先固定資料分割、評估方式與初始化策略，計時包含初始化、訓練、收尾和必要資料搬移。"
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "維度",
+                "應比較的條件"
+              ],
+              "rows": [
+                [
+                  "求解器與初始化",
+                  "Lloyd、MiniBatchKMeans、e-means；k-means++初始化另列"
+                ],
+                [
+                  "資料分布",
+                  "合成Gaussian、真實文字與影像embedding"
+                ],
+                [
+                  "資料規模",
+                  "小型、中型、大型"
+                ],
+                [
+                  "更新規則",
+                  "EMA、固定步長、cosine schedule"
+                ],
+                [
+                  "組件",
+                  "revival與finalization開／關"
+                ],
+                [
+                  "品質",
+                  "train MSE、test MSE、downstream Recall"
+                ],
+                [
+                  "效率",
+                  "wall-clock time、GPU-hours、peak VRAM"
+                ],
+                [
+                  "穩定性",
+                  "不同random seeds的分布"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "固定品質比較時間：例如Lloyd@25的Test MSE為0.40，問e-means多久達到不高於0.40。固定預算比較品質：例如兩者都有10秒GPU時間，問誰的Test MSE與Recall較好。兩種問題各自對應效率需求與有限資源下的選擇。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "若想解釋原因，逐一移除cosine、revival、finalization及scaling-law設定來做消融；其他條件保持一致。報告多seeds結果、分位數或區間，不用單次最好結果代表穩定性；也不要把測試集用來反覆挑參數。"
+            },
+            {
+              "kind": "heading",
+              "id": "practical-decision",
+              "text": "研究上的實際判斷"
+            },
+            {
+              "kind": "paragraph",
+              "text": "大型、高維、靜態embedding值得把e-means列入候選；小資料、低維、群數少或一次性工作，Lloyd搭配合理初始化可能已足夠。比較時要計入整合與驗證成本。對持續變動的資料流，還需要概念漂移、歷史權重與更新穩定性的研究；固定資料集的證據不能直接涵蓋所有串流情境。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "最小下一步是先確認瓶頸是否在中心訓練，再寫下目標向量、查詢、參考鄰居、Recall底線、計時範圍與硬體。若較低MSE帶來召回退步，或瓶頸其實在embedding生成，應保留現有方法或另查真正瓶頸。"
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "takeaway",
+          "heading": "十四、把更新策略連回系統判斷",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Lloyd用完整統計與均值更新，具有簡單且可證明的單調性。e-means則讓資料一批批回饋到群統計，配合EMA記憶、步長排程、低計數群復活與最後修正，改變找到解的路徑。scaling laws讓參數選擇更容易搬到不同問題規模，但仍保留分布與實作的適用條件。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "可帶走的設計觀念是：固定最終目標之後，更新頻率、記憶機制、探索方式與計算流程都值得重新設計。價值由可重現的成本與品質權衡證明，並且要連回使用者真正關心的下游判斷。本文完成的是方法教學、來源查核與數學算例；GPU效能與實際採用仍需另做目標系統驗證。"
+            },
+            {
+              "kind": "paragraph",
+              "text": "延伸閱讀：[模型評估：訓練、驗證、測試與資料洩漏](https://learn.cs-kairos.com/courses/ai-ml/data-splits-and-leakage/)，將本文的train/test MSE分界連回公平選模；[資工系統基礎](https://learn.cs-kairos.com/perspectives/cs-systems-foundations/)則可接續理解硬體、環境與版本如何影響可重現性。"
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "understanding-check",
+          "heading": "理解檢查：把公式轉成判斷",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "question-one",
+              "text": "問題一：最佳化理論"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Lloyd每次完整迭代不增加loss，為什麼允許短暫上升的e-means仍可能取得較低最終loss？這是否代表e-means一定比較好？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "參考解：單調性限制的是目前路徑，不代表它到達最深的谷。小批次隨機性可能改變路徑，也可能破壞好配置；結果應由同目標、同預算與多seeds比較決定。"
+            },
+            {
+              "kind": "heading",
+              "id": "question-two",
+              "text": "問題二：有效步長手算"
+            },
+            {
+              "kind": "paragraph",
+              "text": "舊中心c=10、加權樣本數N=20；新batch有5筆，平均30；α=0.2。計算新中心，並解釋為什麼不能直接使用0.8×10+0.2×30。"
+            },
+            {
+              "kind": "code",
+              "text": "Old S = 20×10 = 200; batch sum s = 5×30 = 150\nN′ = 0.8×20 + 0.2×5 = 17\nS′ = 0.8×200 + 0.2×150 = 190\nβ = 0.2×5/17 = 1/17\nc′ = 190/17 ≈ 11.17647\nDirect centroid mixing: 0.8×10 + 0.2×30 = 14"
+            },
+            {
+              "kind": "paragraph",
+              "text": "參考解：11.17647才是N/S規則的結果。14把舊中心與新均值當成固定權重混合，沒有讓不同樣本數進入有效步長。"
+            },
+            {
+              "kind": "heading",
+              "id": "question-three",
+              "text": "問題三：速度改善但Recall退步"
+            },
+            {
+              "kind": "paragraph",
+              "text": "100萬筆768維文字embedding，要建8192群。e-means快8倍、Test MSE低0.5%，但Recall@10下降2個百分點。你會採用嗎？還需要哪些比較？"
+            },
+            {
+              "kind": "paragraph",
+              "text": "參考解：若需求要求維持召回，2個百分點退步就是採用阻塞。先固定embedding、正規化、nlist/nprobe、候選rerank、seeds、精度及硬體，再比較召回—延遲曲線與端到端成本。只有需求明確允許這個取捨、證據可重現且資源可承擔時才另行採用。這是參考判讀，沒有線上提交、批改或學習完成紀錄。"
+            }
+          ],
+          "sourceIds": []
+        }
+      ]
+    },
+    "en": {
+      "title": "e-means and k-means: how do more frequent updates change clustering cost?",
+      "summary": "From a worked Lloyd update to EMA effective steps, cosine scheduling and vector indexes: understand e-means and distinguish loss, epochs, wall-clock time and downstream quality.",
+      "author": "CS Kairos Learn",
+      "sections": [
+        {
+          "id": "same-objective",
+          "heading": "1. Start with the objective, then the speed claim",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "This article helps readers new to clustering optimization understand e-means through Lloyd’s update rule and judge what a claim of roughly tenfold speed and lower loss actually requires. The central question is how to reach a specified clustering quality with fewer data passes and less computation while keeping the objective fixed."
+            },
+            {
+              "kind": "paragraph",
+              "text": "e-means: outperforming k-means (in one-tenth the epochs) is an arXiv preprint submitted on 2026-11-06 by Swann Bessa, Pierre-Emmanuel Mazaré, Gergely Szilvasy, Hugo Touvron, David Picard, Matthijs Douze and Hervé Jégou, with affiliations at Meta FAIR and École Nationale des Ponts et Chaussées. We discuss v1 and distinguish the authors’ experiments, independently checkable mathematics and demonstration numbers that have not been reproduced here."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Lloyd updates centroids after a full batch. e-means updates cluster statistics after each mini-batch and uses an exponential moving average (EMA) to decay old information. On tested high-dimensional embedding datasets, the authors report reaching Lloyd’s 25-epoch loss in 1.4–2.6 epochs, with roughly 10–45-fold GPU speedups in some comparisons. These are results under specified conditions, not a lower bound for every dataset."
+            },
+            {
+              "kind": "list",
+              "items": [
+                "Both minimize the same squared-Euclidean objective; e-means changes the optimization procedure.",
+                "Shorter total time can come from fewer epochs, kernels, hardware and approximate assignment.",
+                "Lower loss establishes improvement on that distance objective; global optimality, semantic correctness and downstream quality each need separate evidence."
+              ]
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "knowledge-map",
+          "heading": "2. A map of six connected questions",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Clustering and vector quantization seek k representative centroids for a large dataset. Defining what counts as good before optimizing the compute budget prevents us from treating a more attractive plot as a better method."
+            },
+            {
+              "kind": "list",
+              "items": [
+                "The basic problem: why turn distances into an objective?",
+                "The baseline: how does Lloyd alternate assignment and mean updates?",
+                "The update rule: how do mini-batches and EMA provide more frequent feedback?",
+                "Optimization: how can the update rule change the path to a local minimum?",
+                "Evidence: how do we compare loss, time and stability fairly?",
+                "Systems: how does clustering affect vector indexes, RAG and data management?"
+              ]
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "kmeans-problem",
+          "heading": "3. Understand k-means through delivery centers",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Imagine 10,000 delivery addresses and ten delivery centers. We must decide both which center serves each address and where the centers go. Replacing addresses with image, text or audio feature vectors gives the same representative-vector problem. In Figure 1, small dots are data and circled plus signs are centroids; the three groups are peers."
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "clusters"
+            },
+            {
+              "kind": "heading",
+              "id": "elements",
+              "text": "3.1 Dataset size n, cluster count k and dimension d"
+            },
+            {
+              "kind": "paragraph",
+              "text": "n is the number of points, k the number of centroids and d the number of numerical coordinates per point. Addresses can be illustrated in two dimensions; embeddings may have 768 or 1024. With xᵢ denoting point i and cⱼ centroid j, mean squared quantization error is:"
+            },
+            {
+              "kind": "code",
+              "text": "L(C) = (1/n) Σᵢ minⱼ ‖xᵢ − cⱼ‖²\na(i) = argminⱼ ‖xᵢ − cⱼ‖²"
+            },
+            {
+              "kind": "list",
+              "items": [
+                "Find the nearest centroid for each point.",
+                "Square the distance from the point to that centroid.",
+                "Sum the squared distances over all points.",
+                "Divide by n to obtain the mean loss."
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "A lower loss means points are closer to their centroids on average. It does not automatically tell us whether things humans consider similar belong to the same cluster. Quantization quality and semantic classification quality are different judgments."
+            },
+            {
+              "kind": "heading",
+              "id": "squared-distance",
+              "text": "3.2 Why square the distance?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "For distances 1, 2 and 5, the ordinary sum is 8 but the sum of squares is 30. Squaring penalizes the farthest point more strongly. It also gives a useful property: for fixed cluster membership, the arithmetic mean minimizes the sum of squared Euclidean distances."
+            },
+            {
+              "kind": "code",
+              "text": "1 + 2 + 5 = 8\n1² + 2² + 5² = 30"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The delivery story is a mechanism analogy. Real logistics also involves road networks, vehicle capacities and service costs; road distance should not simply be replaced by squared Euclidean distance when choosing facilities."
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "lloyd",
+          "heading": "4. How Lloyd assigns points and updates centroids",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Lloyd alternates two steps. With centroids fixed, assign each point to the nearest one. With memberships fixed, recompute each group’s arithmetic mean. Stop when assignments or centroids stabilize, or use a fixed iteration budget."
+            },
+            {
+              "kind": "heading",
+              "id": "lloyd-example",
+              "text": "4.1 One update with six numbers"
+            },
+            {
+              "kind": "code",
+              "text": "X = {1, 2, 3, 8, 9, 10};  k = 2\nInitial centroids: c₁ = 2, c₂ = 8"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Nearest-centroid assignment puts 1, 2 and 3 in the first cluster and 8, 9 and 10 in the second. Taking their means keeps the left centroid at 2 and moves the right from 8 to 9. Repeat until the stopping rule is met. Figure 2 keeps the data positions fixed and moves only the representative centroid."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "First cluster",
+                "Second cluster"
+              ],
+              "rows": [
+                [
+                  "1, 2, 3",
+                  "8, 9, 10"
+                ]
+              ]
+            },
+            {
+              "kind": "code",
+              "text": "c₁ = (1 + 2 + 3)/3 = 2\nc₂ = (8 + 9 + 10)/3 = 9\n(2, 8) → (2, 9)"
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "lloyd"
+            },
+            {
+              "kind": "heading",
+              "id": "lloyd-proof",
+              "text": "4.2 Why does a full update not increase loss?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Fix cluster j’s member set Aⱼ and view its sum of squared errors as a function of cⱼ. Differentiating and setting the gradient to zero gives the cluster mean. For a nonempty cluster, the Hessian is 2|Aⱼ|I, so this is the unique minimum with memberships fixed."
+            },
+            {
+              "kind": "code",
+              "text": "Lⱼ(cⱼ) = Σᵢ∈Aⱼ ‖xᵢ − cⱼ‖²\n∇Lⱼ = 2|Aⱼ|cⱼ − 2Σᵢ∈Aⱼ xᵢ\n∇Lⱼ = 0 ⇒ cⱼ = (1/|Aⱼ|)Σᵢ∈Aⱼ xᵢ"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Nearest-centroid assignment minimizes each point’s distance for fixed centroids, and the mean minimizes each cluster’s error for fixed assignments. This alternating optimization makes the training objective nonincreasing after an exact Lloyd iteration. Empty clusters, approximate assignment and numerical precision require explicit handling."
+            },
+            {
+              "kind": "heading",
+              "id": "local-minima",
+              "text": "4.3 Why can repeated improvement still end at a worse solution?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Imagine walking downhill until you reach a valley while a deeper valley lies nearby. A local minimum has no immediate downhill direction but need not be the best solution over the whole space. Because k-means must also choose discrete memberships, its overall optimization problem is generally nonconvex."
+            },
+            {
+              "kind": "paragraph",
+              "text": "k-means++ aims to reduce poor configurations through better initialization. It is a starting-point strategy that can be paired with a solver, not a separate centroid-update method. Figure 3 places two points in different valleys of the same illustrative landscape to separate monotone improvement from global optimality."
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "minima"
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "mini-batch-ema",
+          "heading": "5. Mini-batch updates and EMA memory",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "full-vs-batch",
+              "text": "5.1 The same epoch, different update frequencies"
+            },
+            {
+              "kind": "paragraph",
+              "text": "For one million embeddings, Lloyd reads the full dataset before updating centroids once. e-means updates after each mini-batch and can adjust dozens of times or more per epoch, obtaining feedback earlier. A mini-batch does not mean stopping after 10% of the dataset: an epoch still denotes a full data pass."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Figure 4 gives both bars the same one-epoch meaning. The five batches are illustrative; their actual number depends on n and batch size B. A reproducible implementation also specifies remainder handling, shuffling and the number of processed points, rather than treating an approximate epoch label as an exact sample count."
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "batches"
+            },
+            {
+              "kind": "heading",
+              "id": "ema-intuition",
+              "text": "5.2 How does EMA balance response and stability?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A delivery center following only today’s orders may jump around; giving every past order equal weight forever can make it slow to adapt. EMA retains some history while letting new observations change the statistic. The scalar introductory rule below uses an update step α between 0 and 1."
+            },
+            {
+              "kind": "code",
+              "text": "mₜ = (1 − α)mₜ₋₁ + αxₜ\nα = 0.2, mₜ₋₁ = 50, xₜ = 80\nmₜ = 0.8×50 + 0.2×80 = 56"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A larger α gives new observations more influence; a smaller one retains more history. Figure 5 is a checkable static example, not a nonfunctional slider. Actual e-means applies EMA separately to each cluster’s sum and count and obtains the centroid from their ratio, as the next chapter shows."
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "ema"
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "statistics",
+          "heading": "6. Update sums and counts together",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "statistics-definition",
+              "text": "6.1 Two statistics per cluster"
+            },
+            {
+              "kind": "paragraph",
+              "text": "For cluster j, Nⱼ is a weighted count and Sⱼ a weighted vector sum; cⱼ=Sⱼ/Nⱼ. If the current batch assigns nⱼ points with sum sⱼ to that cluster, both statistics use the same EMA step. The paper also uses decay γ=1−α: decreasing α increases γ, so their directions must not be confused."
+            },
+            {
+              "kind": "code",
+              "text": "Nⱼ′ = (1 − αₜ)Nⱼ + αₜnⱼ\nSⱼ′ = (1 − αₜ)Sⱼ + αₜsⱼ\ncⱼ′ = Sⱼ′ / Nⱼ′\nγₜ = 1 − αₜ"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A batch of 100 points might assign 50 to one cluster and only two to another. Mixing each batch mean with a fixed identical weight ignores the difference in supporting counts. Smoothing sums and counts before taking the ratio lets that difference affect the centroid update."
+            },
+            {
+              "kind": "heading",
+              "id": "two-updates",
+              "text": "6.2 Work through two updates"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Set α=0.2 and initialize N=10⁻¹⁰, S=Nc⁽⁰⁾. The ratio then returns the prescribed initial centroid with very small initial weight. For readability, ignore that tiny contribution below. The first batch {2,4} has n=2 and s=6, producing N=0.4, S=1.2 and c=3."
+            },
+            {
+              "kind": "code",
+              "text": "Batch 1: {2,4}; n=2; s=6\nN₁ = 0.2×2 = 0.4\nS₁ = 0.2×6 = 1.2\nc₁ = 1.2/0.4 = 3"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The second batch {4,6} has n=2 and s=10. Retaining 80% of the previous statistics and adding 20% of the new batch gives N=0.72, S=2.96 and a centroid near 4.11. The batch means are 3 and 5; the result retains influence from the first batch while moving toward the second."
+            },
+            {
+              "kind": "code",
+              "text": "Batch 2: {4,6}; n=2; s=10\nN₂ = 0.8×0.4 + 0.2×2 = 0.72\nS₂ = 0.8×1.2 + 0.2×10 = 2.96\nc₂ = 2.96/0.72 ≈ 4.111111"
+            },
+            {
+              "kind": "heading",
+              "id": "effective-step",
+              "text": "6.3 Derive the effective step"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Let the batch mean for this cluster be x̄ⱼ=sⱼ/nⱼ. Substitute the old relation Sⱼ=Nⱼcⱼ into the ratio and separate out the old centroid to obtain the cluster-specific effective step βⱼ. A common global α does not imply equal movement fractions: β also depends on the current and historical counts."
+            },
+            {
+              "kind": "code",
+              "text": "x̄ⱼ = sⱼ/nⱼ\ncⱼ′ = [(1−α)Nⱼcⱼ + αnⱼx̄ⱼ] / [(1−α)Nⱼ + αnⱼ]\nβⱼ = αnⱼ / [(1−α)Nⱼ + αnⱼ]\ncⱼ′ = cⱼ + βⱼ(x̄ⱼ − cⱼ)"
+            },
+            {
+              "kind": "paragraph",
+              "text": "For Nⱼ≥0, nⱼ>0, 0≤α≤1 and a positive new denominator, 0≤βⱼ≤1, so the new centroid lies between the old one and the batch mean. This nonnegative averaging geometry differs from a direct gradient step that can overshoot. Starting from data points, pure EMA updates retain a convex-hull property. The authors use it to suggest a stability explanation, not a theorem of universal superiority over SGD."
+            },
+            {
+              "kind": "paragraph",
+              "text": "When nⱼ=0, α<1 and Nⱼ>0, S and N decay proportionally and the centroid stays fixed. If α=1 and nⱼ=0, the denominator is zero and an empty-cluster rule is required. Donor-splitting perturbations and low-precision arithmetic also need separate checks; the pure EMA convex-hull argument is not automatically an invariant of the complete implementation."
+            },
+            {
+              "kind": "heading",
+              "id": "minibatch-comparison",
+              "text": "6.4 How this differs from traditional mini-batch k-means"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Mini-batch updates precede this work, including MacQueen (1967) and Sculley (2010). e-means contributes a recipe for historical statistics, scheduling and the overall optimization process on fixed datasets; mini-batching itself is not new."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Method",
+                "Core update",
+                "Interpretation"
+              ],
+              "rows": [
+                [
+                  "Lloyd",
+                  "Recompute from the full dataset each round",
+                  "Exact full iterations do not increase loss; local traps remain"
+                ],
+                [
+                  "Traditional mini-batch k-means",
+                  "Accumulate or update from batches",
+                  "Frequent updates; step choice and initialization matter"
+                ],
+                [
+                  "e-means",
+                  "EMA of sums and counts",
+                  "Decay old assignments; combine scheduling, revival and finalization"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "recipe",
+          "heading": "7. How the components change the optimization path",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Mini-batching alone does not describe the study. Beyond EMA, cosine scheduling, low-count cluster revival, finalization and scaling laws address stability, centroid utilization, final quality and parameter selection. The cards in Figure 6 represent complementary roles, not a pipeline whose stages each guarantee equal speed gains."
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "components"
+            },
+            {
+              "kind": "heading",
+              "id": "cosine-schedule",
+              "text": "7.1 Cosine scheduling: move, then stabilize"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A consistently large α moves centroids quickly but can oscillate. A small α is steadier but may not leave a poor configuration in time. e-means uses cosine annealing to reduce the step from α₀ toward 10% of its initial value. M denotes the update budget and t the update position."
+            },
+            {
+              "kind": "code",
+              "text": "α(t) = α₀[0.1 + 0.9(1 + cos(πt/M))/2]\nα₀ = 0.4:  α(0)=0.4;  α(M/2)=0.22;  α(M)=0.04"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Figure 7 is computed from the formula: its horizontal axis is update progress and its vertical axis is the step, not training loss. It illustrates active early movement and gradual stabilization, rather than measured convergence. The paper lists t from 0 to M−1 while its pseudocode increments t first, so reproduction must fix the indexing convention. The plotted 100% endpoint uses the continuous definition u=t/M in [0,1]."
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "cosine"
+            },
+            {
+              "kind": "heading",
+              "id": "stochastic-noise",
+              "text": "7.2 When can mini-batch randomness help?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Using the full dataset makes Lloyd descend the fixed objective, but can also keep it in an unfavorable configuration. Stochastic mini-batch noise perturbs update directions and may move centroids across assignment boundaries into a different path. An e-means batch need not decrease full-dataset loss: a temporary increase can lead to a lower later minimum, or can worsen the result."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Instability is not itself an advantage, and more noise is not always better. Excessive movement can destroy a useful clustering. Cosine scheduling balances exploration with late stability within the available budget, echoing learning-rate scheduling in deep learning."
+            },
+            {
+              "kind": "heading",
+              "id": "revival",
+              "text": "7.3 Dead-cluster revival: reuse inactive centroids"
+            },
+            {
+              "kind": "paragraph",
+              "text": "If 20 of 100 delivery centers serve nobody, only 80 representatives are doing useful work. k-means can likewise develop empty or very low-count dead clusters. Every five mini-batches, e-means checks for counts below 0.1 times the mean and revives those centroids by splitting a donor cluster."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The mechanism builds on prior techniques; the work improves its use and evaluates it by ablation. Appendix H reports the following for DEEP with one million points and 16,384 clusters. These configuration-specific figures describe centroid utilization, not universal proportions."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Policy",
+                "Dead clusters",
+                "Share"
+              ],
+              "rows": [
+                [
+                  "Revival off",
+                  "4313",
+                  "26.3%"
+                ],
+                [
+                  "Resample from batch",
+                  "2343",
+                  "14.3%"
+                ],
+                [
+                  "e-means donor splitting",
+                  "47",
+                  "0.3%"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "When many centroids are idle, precisely updating the others still fails to use all k representatives. Evaluate count distributions and empty-cluster rates alongside quality, rather than looking only at average loss."
+            },
+            {
+              "kind": "heading",
+              "id": "finalization",
+              "text": "7.4 Finalization: recompute means for fixed assignments"
+            },
+            {
+              "kind": "paragraph",
+              "text": "EMA centroids during training need not equal the arithmetic means of the memberships recorded in the last epoch. Last-Epoch-Mean fixes those saved assignments and recomputes each mean, reusing assignments to keep added work small. Slow-EMA maintains additional slower statistics, observing the same assignments without directing training, and favors MSE on unseen data."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Finalizer",
+                "Primary comparison"
+              ],
+              "rows": [
+                [
+                  "Last-Epoch Mean",
+                  "Training MSE for saved last-epoch assignments"
+                ],
+                [
+                  "Slow EMA",
+                  "Out-of-sample / test MSE"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "State the guarantee precisely: for fixed assignments A, the mean minimizes Q(A,C)=Σ‖xᵢ−cₐᵢ‖², and reassignment to nearest centroids gives nL(C)≤Q(A,C). Last-epoch assignments may have been produced by moving centroids, so this proof does not directly compare against fresh-assignment MSE at the final EMA centroids. Record saved-assignment loss, fresh-assignment train MSE and test MSE separately. Table 1 also specifies last-epoch codes and a fixed subset for training evaluation."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Compression quality on existing data and generalization to new data are related but not identical. Choose the finalizer after deciding which judgment the system needs to improve."
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "scaling-laws",
+          "heading": "8. How scaling laws choose parameters",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "why-scaling",
+              "text": "8.1 Reduce repeated hyperparameter searches"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Here a scaling law predicts batch size and step from dataset size n, cluster count k and epoch budget T; it is not a universal statement about language-model size. Searching manually among batches such as 512, 4096 and 65536 or steps such as 0.01, 0.1 and 0.5 can consume substantial experimental resources."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The authors fit two empirical relationships using about 75,000 optimization runs at different DEEP problem scales. This turns an expensive prior search into directly computable rules, whose applicability still needs checking on the target distribution."
+            },
+            {
+              "kind": "heading",
+              "id": "batch-law",
+              "text": "8.2 First law: predict batch size"
+            },
+            {
+              "kind": "code",
+              "text": "B ≈ 0.035 × k^0.13 × n^0.88 × T^0.81"
+            },
+            {
+              "kind": "paragraph",
+              "text": "B is the number of points per batch. The paper rounds the prediction to the nearest power of two and caps B at n. For tested large-scale settings with n above two million, it divides the default batch-law prediction by eight to balance quality and throughput. Reproduction must specify rounding, caps and scale-dependent branches."
+            },
+            {
+              "kind": "heading",
+              "id": "step-law",
+              "text": "8.3 Second law: predict the initial step"
+            },
+            {
+              "kind": "code",
+              "text": "α₀ = min(0.824 × k^(−0.46) × B^0.90 × n^(−0.45) × T^(−0.11), 1)\nn = 10⁶; k = 16384; T = 3\nB = 65536; α₀ ≈ 0.362779 ≈ 0.363"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The step depends jointly on data size, cluster count, batch size and training budget; there is no single fixed value that is best everywhere. The example gives B=65536 and α₀ near 0.363, then anneals toward about one tenth of that value. This is a formula-derived setting, not a measured optimum for your data."
+            },
+            {
+              "kind": "heading",
+              "id": "scaling-limits",
+              "text": "8.4 Limits of empirical extrapolation"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The coefficients and exponents come from empirical regression, not a theorem giving universally optimal k-means settings. The authors test transfer to held-out datasets but note that the rules target relatively high-dimensional data. Very low-dimensional, tiny or intrinsically different distributions may need other settings. Less tuning does not remove distribution uncertainty."
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "read-claims",
+          "heading": "9. Read Voronoi, epoch and loss comparisons",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "voronoi",
+              "text": "9.1 What does a Voronoi region tell us?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A centroid’s Voronoi region contains locations closer to it than to other centroids. In two-dimensional Euclidean space, straight boundaries form polygons; in higher dimensions the regions are polyhedral. The centroid positions determine these boundaries. They are not Figure 1’s dashed circles or known class labels."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The supplied description of a comparison demo uses red and blue points for the algorithms’ centroids, background points for data and thin lines for Voronoi boundaries. Colors distinguish optimization results, not different datasets. Visual appeal cannot reliably establish lower MSE: compute the same objective. The eight supplied teaching figures do not themselves include the original timed performance comparison."
+            },
+            {
+              "kind": "heading",
+              "id": "time-epochs",
+              "text": "9.2 Read the stopping criterion before the slope"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The supplied loss-demo description shows Lloyd as a slower descending red curve and e-means as an earlier descending blue one. First ask whether both reach the same quality threshold and whether the loss is train or test loss with fresh assignments. A steeper curve alone does not decide which method wins."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Reported demonstration metric",
+                "Lloyd",
+                "e-means"
+              ],
+              "rows": [
+                [
+                  "Total time",
+                  "4.39 s",
+                  "0.43 s"
+                ],
+                [
+                  "Data passes",
+                  "25 epochs",
+                  "2.2 epochs"
+                ],
+                [
+                  "Displayed final loss",
+                  "Higher; exact value not supplied",
+                  "Lower; exact value not supplied"
+                ]
+              ]
+            },
+            {
+              "kind": "code",
+              "text": "Time ratio = 4.39/0.43 ≈ 10.2093\nPass ratio = 25/2.2 ≈ 11.3636\nLloyd total time / epochs = 4.39/25 = 0.1756 s\ne-means total time / epochs = 0.43/2.2 ≈ 0.19545 s"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The ratios differ because total time and data passes are different metrics. Dividing time by epochs gives a slightly larger quotient for e-means, but initialization, finalization and timing scope have not been separated, so it does not establish slower per-epoch kernels. About 2.2 epochs means two full passes plus part of a third, not 2.2 centroid updates."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The fixed dataset, hardware, precision, code version, initialization, repetitions, uncertainty and exact loss for this demonstration are missing. We retain its numbers to teach interpretation, without presenting them as a result reproduced by this site or a guarantee for all data."
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "evidence",
+          "heading": "10. What the authors’ experiments support",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "The paper evaluates image and text embeddings in addition to two-dimensional toy data. The table below uses the DINO10B subset results in Table 4, with the test MSE of Flash-KMeans at 25 iterations as the baseline. e-means increases its epoch budget in steps of 0.2 to find a setting reaching that baseline."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Dataset size n",
+                "Clusters k",
+                "e-means epochs",
+                "GPU time speedup"
+              ],
+              "rows": [
+                [
+                  "1 million",
+                  "16384",
+                  "2.0",
+                  "12.7×"
+                ],
+                [
+                  "10 million",
+                  "65536",
+                  "1.4",
+                  "23.3×"
+                ],
+                [
+                  "100 million",
+                  "262144",
+                  "1.6",
+                  "31.3×"
+                ],
+                [
+                  "1 billion",
+                  "1048576",
+                  "1.6",
+                  "45.5×"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "The first three scales report medians over ten seeds, while the billion-point scale uses one seed. The 1M–100M experiments use one GPU and the 1B experiment uses eight. Preserve each row’s configuration rather than turning different device counts into a single-device claim. A single seed also gives less statistical assurance. The table supports fixed-quality efficiency gains on the tested settings, not all datasets."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Another case uses ten billion 1024-dimensional DINO vectors and 2²⁴=16,777,216 clusters. Storing only the per-cluster sums S in FP32 requires about 64 GiB, before data, counts, temporary buffers and other copies. This explains the need to consider multi-GPU sharding."
+            },
+            {
+              "kind": "code",
+              "text": "2²⁴ × 1024 × 4 bytes = 68,719,476,736 bytes = 64 GiB"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Table 3 reports that reaching Lloyd@25 test MSE at this scale costs about 779 GPU-hours with exact e-means assignment and 22.8 with IVF approximate assignment. This compares assignment implementations within e-means, including search-space pruning; it is not another isolated EMA-versus-Lloyd comparison. GPU-hours aggregate device time rather than single-machine wall-clock seconds."
+            },
+            {
+              "kind": "heading",
+              "id": "counterevidence",
+              "text": "10.1 How should counterevidence be handled?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The supplied manuscript mentions an independent NumPy implementation dated 2026-11-10: 100,000 synthetic 128-dimensional points, about 1.51-fold speedup and 1.42% higher final loss, reportedly without fused GPU kernels. No direct article URL, code revision or execution receipt was supplied. We retain it as an unverified report rather than established counterevidence."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Even if a receipt becomes available, compare the data, hardware, initialization, schedule, revival and finalization. A weaker result under different conditions can constrain applicability without directly refuting another setting. Conversely, strong author results do not guarantee that a simplified CPU implementation gains tenfold speed merely by adding EMA."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Claim",
+                "Current assessment"
+              ],
+              "rows": [
+                [
+                  "EMA can update mini-batch clusters",
+                  "A precise N/S update is defined"
+                ],
+                [
+                  "Some experiments substantially improve on Lloyd",
+                  "Supported by author reports, not reproduced here"
+                ],
+                [
+                  "Potential for large high-dimensional embeddings",
+                  "Validate quality and cost in the target system"
+                ],
+                [
+                  "Tenfold speed on every dataset",
+                  "Not supported"
+                ],
+                [
+                  "Guaranteed global optimum",
+                  "No such guarantee"
+                ],
+                [
+                  "Lower MSE always improves downstream tasks",
+                  "Measure downstream metrics separately"
+                ]
+              ]
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "theory-systems",
+          "heading": "11. Connections to EM, SGD and GPU computation",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "em-connection",
+              "text": "11.1 e-means and expectation-maximization"
+            },
+            {
+              "kind": "paragraph",
+              "text": "A Gaussian mixture model (GMM) assumes data arise from several Gaussian distributions. In ordinary expectation-maximization, the E-step estimates membership probabilities and the M-step uses them to update distribution parameters. Under particular assumptions and limiting arguments, k-means can be understood as hard assignment: each point chooses one cluster instead of retaining several probabilities."
+            },
+            {
+              "kind": "paragraph",
+              "text": "e-means retains the hard-assignment squared-distance objective and manages updates with decayed statistics. It connects to the history of EM and SGD without introducing a new general-purpose EM algorithm or replacing all gradient-descent methods."
+            },
+            {
+              "kind": "heading",
+              "id": "complexity",
+              "text": "11.2 How much does the computational complexity change?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "With direct exact assignment, each of n points compares against k centroids across d dimensions. The dominant distance work is O(nkd) per epoch and approximately O(Tnkd) for T epochs. Exact-assignment e-means still performs these comparisons; its main benefit is reaching target quality with a smaller Tₑ."
+            },
+            {
+              "kind": "code",
+              "text": "Lloyd:  O(T n k d)\ne-means with exact assignment:  O(Tₑ n k d)"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Separate optimization efficiency from systems acceleration. Fewer passes reduce optimization cost; IVF approximation reduces distance comparisons; matrix multiplication, sharding and lower precision alter throughput and error. They can combine, but their gains should not all be attributed to a single EMA equation."
+            },
+            {
+              "kind": "heading",
+              "id": "gpu",
+              "text": "11.3 Why do GPUs suit distance assignment?"
+            },
+            {
+              "kind": "code",
+              "text": "‖x − c‖² = ‖x‖² + ‖c‖² − 2xᵀc"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Expanding the distance exposes inner products that can be computed with parallel matrix multiply-add operations, a GPU strength. The paper explores approximate distance computation in BF16, FP8 and INT8 while keeping sums and EMA accumulation in FP32. Reduced precision may change assignments near boundaries, so measure its effect on final MSE and downstream behavior."
+            },
+            {
+              "kind": "paragraph",
+              "text": "A mathematical improvement translates readily into wall-clock benefit only when data scale, memory and computation fit the hardware. Matching a device name alone is not enough: record device counts, transfers, warmup, synchronization and peak memory."
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "applications",
+          "heading": "12. Vector indexes, data management and domain applications",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "rag-ivf",
+              "text": "12.1 RAG and vector databases"
+            },
+            {
+              "kind": "paragraph",
+              "text": "With high-dimensional embeddings for ten million documents, comparing each query against every document can be expensive. Learn coarse centroids using k-means or e-means and assign data to their regions. At query time, find a few relevant centroids, then search candidate documents in those regions. This is a core idea of an inverted file index (IVF)."
+            },
+            {
+              "kind": "eMeansFigure",
+              "name": "ivf"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Clustering can affect retrieval recall, while training speed affects offline index construction or rebuilding. The direct benefit is cheaper offline work, not automatically faster LLM generation. Appendix L compares index-building time with Recall@10 and reports faster attainment of similar or better recall on most tested datasets. A target system still needs its own recall–latency curve."
+            },
+            {
+              "kind": "heading",
+              "id": "curation",
+              "text": "12.2 Dataset curation and deduplication"
+            },
+            {
+              "kind": "paragraph",
+              "text": "For tens of millions of images, audio clips or text items, clustering can form similarity candidates, select representative samples, explore distributions and reveal over- or undersampled regions. These are curation uses, but cluster membership does not prove duplication; near-duplicates may also cross cluster boundaries. Follow with precise similarity thresholds or other checks."
+            },
+            {
+              "kind": "heading",
+              "id": "speech-medical",
+              "text": "12.3 Speech, medical images and the meaning of distance"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Audio clips can become acoustic embeddings for structure exploration, and medical-image patches or lesion candidates can become features for sampling and data management. But an audio cluster may primarily reflect recording equipment or background noise rather than accent, speaker or meaning. An image cluster may reflect scanner differences rather than pathology."
+            },
+            {
+              "kind": "paragraph",
+              "text": "First ask whether embedding distance represents the similarity that matters, then inspect MSE. Ordinary k-means uses squared Euclidean distance. If the application relies on cosine similarity, check vector normalization, centroid normalization and the objective. Unit-length input vectors alone do not make all later mean centroids and assignments equivalent to cosine clustering."
+            }
+          ],
+          "sourceIds": [
+            "emeans-paper"
+          ]
+        },
+        {
+          "id": "evaluation",
+          "heading": "13. Design a fair time–quality comparison",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Frame the question as: which method gives a better speed–quality tradeoff for a specified data distribution, compute budget and quality requirement? That is closer to an adoption decision than simply reproducing two curves. Fix splits, evaluation and initialization, and include initialization, training, finalization and required data transfers in the timing scope."
+            },
+            {
+              "kind": "table",
+              "headers": [
+                "Dimension",
+                "Conditions to compare"
+              ],
+              "rows": [
+                [
+                  "Solvers and initialization",
+                  "Lloyd, MiniBatchKMeans and e-means; list k-means++ initialization separately"
+                ],
+                [
+                  "Distributions",
+                  "Synthetic Gaussians and real text/image embeddings"
+                ],
+                [
+                  "Scales",
+                  "Small, medium and large"
+                ],
+                [
+                  "Updates",
+                  "EMA, fixed step and cosine schedule"
+                ],
+                [
+                  "Components",
+                  "Revival and finalization on/off"
+                ],
+                [
+                  "Quality",
+                  "Train MSE, test MSE and downstream recall"
+                ],
+                [
+                  "Efficiency",
+                  "Wall-clock time, GPU-hours and peak VRAM"
+                ],
+                [
+                  "Stability",
+                  "Distributions across random seeds"
+                ]
+              ]
+            },
+            {
+              "kind": "paragraph",
+              "text": "For fixed quality, suppose Lloyd@25 has test MSE 0.40: how long does e-means take to reach at most 0.40? For fixed compute, give each method ten seconds of GPU time: which achieves better test MSE and recall? These address efficiency requirements and choices under limited resources, respectively."
+            },
+            {
+              "kind": "paragraph",
+              "text": "To explain causes, ablate cosine scheduling, revival, finalization and scaling-law settings while holding other conditions fixed. Report multiple seeds and quantiles or intervals instead of using the best run as evidence of stability. Do not repeatedly tune on the test set."
+            },
+            {
+              "kind": "heading",
+              "id": "practical-decision",
+              "text": "Practical research judgment"
+            },
+            {
+              "kind": "paragraph",
+              "text": "e-means is a useful candidate for large, high-dimensional, static embeddings. For small, low-dimensional, low-cluster-count or one-off tasks, Lloyd with reasonable initialization may be sufficient. Include integration and validation costs. Streaming data also requires work on concept drift, historical weights and update stability; evidence on fixed datasets does not cover every streaming setting."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The smallest next step is to establish whether centroid training is the bottleneck, then specify target vectors, queries, reference neighbors, a recall floor, timing scope and hardware. If lower MSE hurts recall, or embedding generation is the actual bottleneck, retain the current method or investigate the real bottleneck."
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "takeaway",
+          "heading": "14. Connect the update strategy to the system decision",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "Lloyd uses full statistics and mean updates, giving it a simple monotonicity argument. e-means lets batches feed back into cluster statistics and combines EMA memory, step scheduling, low-count revival and final correction to change the route to a solution. Scaling laws make parameter choice easier across problem sizes while retaining distribution and implementation limits."
+            },
+            {
+              "kind": "paragraph",
+              "text": "The transferable design idea is to reconsider update frequency, memory, exploration and computation after fixing the objective. Value comes from a reproducible cost–quality tradeoff tied to the downstream judgment users actually care about. This article provides teaching, source checks and mathematical examples; GPU performance and adoption still require validation in the target system."
+            },
+            {
+              "kind": "paragraph",
+              "text": "Further reading: [Model evaluation: training, validation, testing and leakage](https://learn.cs-kairos.com/en/courses/ai-ml/data-splits-and-leakage/) connects the train/test MSE distinction to fair selection. [Computing systems foundations](https://learn.cs-kairos.com/en/perspectives/cs-systems-foundations/) explains how hardware, environments and version history affect reproducibility."
+            }
+          ],
+          "sourceIds": []
+        },
+        {
+          "id": "understanding-check",
+          "heading": "Understanding checks: turn equations into judgments",
+          "paragraphs": [],
+          "body": [
+            {
+              "kind": "heading",
+              "id": "question-one",
+              "text": "Question 1: optimization"
+            },
+            {
+              "kind": "paragraph",
+              "text": "If Lloyd never increases loss after a full iteration, why might e-means obtain a lower final loss while allowing temporary increases? Does that make e-means always better?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Reference answer: monotonicity constrains the current path without establishing the deepest valley. Mini-batch randomness can change the path or damage a useful configuration. Compare the same objective under matched budgets across multiple seeds."
+            },
+            {
+              "kind": "heading",
+              "id": "question-two",
+              "text": "Question 2: calculate the effective step"
+            },
+            {
+              "kind": "paragraph",
+              "text": "The old centroid is c=10 with weighted count N=20. A new batch contributes five points with mean 30 and α=0.2. Calculate the new centroid and explain why 0.8×10+0.2×30 is not the correct update."
+            },
+            {
+              "kind": "code",
+              "text": "Old S = 20×10 = 200; batch sum s = 5×30 = 150\nN′ = 0.8×20 + 0.2×5 = 17\nS′ = 0.8×200 + 0.2×150 = 190\nβ = 0.2×5/17 = 1/17\nc′ = 190/17 ≈ 11.17647\nDirect centroid mixing: 0.8×10 + 0.2×30 = 14"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Reference answer: the N/S rule gives 11.17647. The value 14 mixes the old centroid and new mean with fixed weights and omits how their supporting counts determine the effective step."
+            },
+            {
+              "kind": "heading",
+              "id": "question-three",
+              "text": "Question 3: faster training but worse recall"
+            },
+            {
+              "kind": "paragraph",
+              "text": "You have one million 768-dimensional text embeddings and need 8192 clusters. e-means is eight times faster with 0.5% lower test MSE, but Recall@10 drops by two percentage points. Would you adopt it, and what else should be compared?"
+            },
+            {
+              "kind": "paragraph",
+              "text": "Reference answer: if recall must be preserved, a two-percentage-point decline blocks adoption. Fix embeddings, normalization, nlist/nprobe, candidate reranking, seeds, precision and hardware, then compare recall–latency curves and end-to-end cost. Adopt only if requirements explicitly allow the tradeoff, evidence is reproducible and resources are affordable. These are reference judgments, not an online submission, grading service or record of learning completion."
+            }
+          ],
+          "sourceIds": []
+        }
+      ]
+    }
+  }
+}

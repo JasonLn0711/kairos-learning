@@ -19,4 +19,4 @@
 <section id="sources"><h2>{zh?'參考來源':'Sources'}</h2><ul>{#each article.sources as s}<li><a href={s.url}>{s.title}</a> · {s.checkedOn}</li>{/each}</ul></section>
 {#if article.updates.length}<section id="updates"><h2>{zh?'更新紀錄':'Updates'}</h2>{#each article.updates as u}<p>{u.date} · {u.text[lang]}</p>{/each}</section>{/if}
 <a href={zh?'/perspectives/':'/en/perspectives/'}>{zh?'返回觀點':'Back to perspectives'}</a>
-<style>.prose{max-width:72ch}pre{background:#f2f6f5;color:#18252c}.table-scroll{overflow-x:auto;max-width:100%}table{border-collapse:collapse;width:100%}th,td{min-width:7rem;padding:.6rem;text-align:left;border-bottom:1px solid var(--line)}</style>
+<style>.source-note{font-size:.875rem;line-height:1.8}.prose{max-width:72ch}pre{background:#f2f6f5;color:#18252c}.table-scroll{overflow-x:auto;max-width:100%}table{border-collapse:collapse;width:100%}th,td{min-width:7rem;padding:.6rem;text-align:left;border-bottom:1px solid var(--line)}</style>

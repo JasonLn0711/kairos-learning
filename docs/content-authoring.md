@@ -1018,3 +1018,11 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 `python3 scripts/ceh_day02b.py --check`核對正文及五SVG。五圖限定m20d2b前綴及6／3／6／5／4節點；HTTPS／雙掃描／UDP由NoteDay02B原生重排，三向交握及觀察層沿既有版型。模型固定TCP訊息方向與UDP四態，serializer白名單及已知原圖路徑維持。單語例外僅本路徑，真實draft／future建置驗證路由、搜尋與payload關閉。
 
 `tests/ceh-day02b.test.ts`檢查完整內容、來源與非法圖解；`node scripts/check-day02b-browser.mjs`驗全文、四尺寸、200%、無JS、鍵盤、搜尋／索引及五SVG位元組／字框。正式站指定`DAY02B_BASE_URL=https://learn.cs-kairos.com`，結果見[發布回執](releases/2026-11-15-ceh-day02-b.md)。
+
+## e-means觀點教學
+
+`content/perspectives/e-means-clustering.json`持有完整兩語正文與同序區塊，
+[專用契約](perspectives/e-means-design.md)與[逐小節採用](sources/e-means/2026-11-15/adoption-map.md)
+連接十四章、數學算例、表格、八張原生圖及三道理解題。沿用既有escaped code
+區塊呈現Unicode公式，沒有外部數學渲染服務。品質驗收與[發布回執](releases/2026-11-15-e-means-perspective.md)
+分別記錄來源、正文、工程檢查與正式站回讀。
