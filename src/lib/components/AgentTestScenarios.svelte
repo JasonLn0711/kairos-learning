@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import {agentTestScenarios} from '$lib/agent-test-scenarios';
- import {applicationReport} from '$lib/application-check-demo';
+ import {agentTestScenarios} from '#lib/agent-test-scenarios.ts';
+ import {applicationReport} from '#lib/application-check-demo.ts';
  let {lang='zh'}:{lang?:'zh'|'en'}=$props();
  let ready=$state(false),selected=$state<keyof typeof agentTestScenarios>('cleared');onMount(()=>{ready=true;});
  const data=$derived(agentTestScenarios[selected]);

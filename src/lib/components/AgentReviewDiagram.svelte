@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptBlock} from '$lib/concepts';
+ import type {ConceptBlock} from '#lib/concepts.ts';
  import InlineText from './InlineText.svelte';
  let {diagram,number,lang}:{diagram:Extract<ConceptBlock,{kind:'cards'|'flow'}>|Extract<ConceptBlock,{kind:'table'}>;number:number;lang:'zh'|'en'}=$props();
 </script>

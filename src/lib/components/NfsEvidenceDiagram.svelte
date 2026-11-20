@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {SourceBlock} from '$lib/concepts';
- import {permissionBits,permissionModes} from '$lib/nfs-permissions';
+ import type {SourceBlock} from '#lib/concepts.ts';
+ import {permissionBits,permissionModes} from '#lib/nfs-permissions.ts';
  let {block,lang='zh'}:{block:Extract<SourceBlock,{kind:'visual'}>;lang?:string}=$props();
  const items=$derived(block.visual.items),mount=$derived(block.src.includes('-mount-'));
  let ready=$state(false),mode=$state(600);onMount(()=>{ready=true;});

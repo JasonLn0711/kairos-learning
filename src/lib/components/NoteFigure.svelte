@@ -1,8 +1,8 @@
 <script lang="ts">
-  import {noteFigurePath,type NoteFigure} from '$lib/ceh-notes';
-  import type {Locale} from '$lib/model';
-  import icons from '$lib/note-cia-icons.json';
-  import {noteReferenceImage} from '$lib/note-diagrams';
+  import {noteFigurePath,type NoteFigure} from '#lib/ceh-notes.ts';
+  import type {Locale} from '#lib/model.ts';
+  import icons from '#lib/note-cia-icons.json';
+  import {noteReferenceImage} from '#lib/note-diagrams.ts';
   let {figure,date,part,lang}:{figure:NoteFigure;date:string;part:number;lang:Locale}=$props();
 </script>
 <figure class="note-figure" class:workflow={figure.name==='workflow'} data-figure={figure.name}>

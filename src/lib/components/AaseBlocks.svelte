@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {AaseBlock} from '$lib/aase';
+ import type {AaseBlock} from '#lib/aase.ts';
  import AaseProse from './AaseProse.svelte';
  import ConceptBlocks from './ConceptBlocks.svelte';
  import ArchitectureDiagram from './ArchitectureDiagram.svelte';

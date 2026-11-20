@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {AaseSection} from '$lib/aase';
+ import type {AaseSection} from '#lib/aase.ts';
  import AaseBlocks from './AaseBlocks.svelte';
  import InlineText from './InlineText.svelte';
  let {section,lang}:{section:AaseSection;lang:'zh'|'en'}=$props();

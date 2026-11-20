@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  import AttentionDemo from './AttentionDemo.svelte';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3|4|5|6;lang:'zh'|'en'}=$props();
 </script>

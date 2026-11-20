@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {NoteDiagram} from '$lib/note-diagrams';
+ import type {NoteDiagram} from '#lib/note-diagrams.ts';
  let {diagram}:{diagram:NoteDiagram}=$props();
 </script>
 <div class="tcp">

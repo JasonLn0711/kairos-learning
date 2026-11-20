@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptBlock} from '$lib/concepts';
+ import type {ConceptBlock} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ConceptBlock;number:number;lang:'zh'|'en'}=$props();
 </script>
 <figure class="usability-diagram" data-figure={number}>

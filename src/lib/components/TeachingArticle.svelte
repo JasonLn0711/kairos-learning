@@ -1,8 +1,8 @@
 <script lang="ts">
   import type {Snippet} from 'svelte';
-  import type {Locale} from '$lib/model';
-  import type {ConceptDiscussion} from '$lib/concepts';
-  import type {ReadingGuide} from '$lib/article-reading';
+  import type {Locale} from '#lib/model.ts';
+  import type {ConceptDiscussion} from '#lib/concepts.ts';
+  import type {ReadingGuide} from '#lib/article-reading.ts';
   import ArticleMetadata from './ArticleMetadata.svelte';
   import ArticleReadingGuide from './ArticleReadingGuide.svelte';
   import ConceptQA from './ConceptQA.svelte';

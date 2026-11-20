@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from 'svelte';
-  import {applicationScenarios,applicationReport} from '$lib/application-check-demo';
-  import type {ConceptVisual} from '$lib/concepts';
+  import {applicationScenarios,applicationReport} from '#lib/application-check-demo.ts';
+  import type {ConceptVisual} from '#lib/concepts.ts';
   let {lang='zh',comparison}:{lang?:'zh'|'en';comparison?:ConceptVisual}=$props();
   let ready=$state(false), scenario=$state<'missing'|'complete'>('missing');
   onMount(()=>{ready=true;});

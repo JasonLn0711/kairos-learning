@@ -1,8 +1,8 @@
 <script lang="ts">
   import FootprintDiagram from './FootprintDiagram.svelte';
   import ReadableDiagramText from './ReadableDiagramText.svelte';
-  import { reviewedSvgMarkup } from '$lib/reviewed-svg';
-  import type { SourceBlock } from '$lib/concepts';
+  import { reviewedSvgMarkup } from '#lib/reviewed-svg.ts';
+  import type { SourceBlock } from '#lib/concepts.ts';
   let { block, lang='zh' }: {block:Extract<SourceBlock,{kind:'visual'}>;lang?:string} = $props();
   const svg=$derived.by(()=>{
     const markup=reviewedSvgMarkup(block.src);

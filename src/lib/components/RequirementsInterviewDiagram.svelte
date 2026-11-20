@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,layout,lang}:{diagram:ConceptVisual;layout:'comparison'|'process'|'evidence';lang:'zh'|'en'}=$props();
  const icons=['</>','◉','↗'];
 </script>

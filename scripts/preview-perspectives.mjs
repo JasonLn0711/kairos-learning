@@ -11,7 +11,7 @@ if(!process.argv.includes('--build-only')) {
 }
 const root=process.cwd(),target=resolve('.local/perspectives-preview');
 rmSync(target,{recursive:true,force:true});mkdirSync(target,{recursive:true});
-for(const name of ['src','site','content','package.json','svelte.config.js','vite.config.ts','tsconfig.json'])cpSync(join(root,name),join(target,name),{recursive:true});
+for(const name of ['src','site','content','package.json','vite.config.ts','tsconfig.json'])cpSync(join(root,name),join(target,name),{recursive:true});
 symlinkSync(join(root,'node_modules'),join(target,'node_modules'),'dir');
 writeFileSync(join(target,'content/perspectives/preview-perspective.json'),readFileSync('tests/fixtures/perspectives/example.json'));
 const result=spawnSync('pnpm',['run','build'],{cwd:target,stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);

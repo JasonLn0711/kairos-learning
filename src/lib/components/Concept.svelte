@@ -1,11 +1,11 @@
 <script lang="ts">
   import TeachingArticle from './TeachingArticle.svelte';
-  import type { Page } from '$lib/server/catalog';
-  import { conceptVersionLabel } from '$lib/concepts';
+  import type { Page } from '#lib/server/catalog.ts';
+  import { conceptVersionLabel } from '#lib/concepts.ts';
   import ConceptBlocks from './ConceptBlocks.svelte';
   import ConceptChecks from './ConceptChecks.svelte';
   import SourceBody from './SourceBody.svelte';
-  import { modulePath } from '$lib/model';
+  import { modulePath } from '#lib/model.ts';
   let { data }: { data: Page } = $props();
   const lang = $derived(data.route.lang);
   const zh = $derived(lang === 'zh');

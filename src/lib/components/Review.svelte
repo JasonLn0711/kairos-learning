@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Question, Locale } from '$lib/model';
-  import { emptyProgress, readProgress, wrongQuestions, STORAGE_KEY } from '$lib/progress';
+  import type { Question, Locale } from '#lib/model.ts';
+  import { emptyProgress, readProgress, wrongQuestions, STORAGE_KEY } from '#lib/progress.ts';
   import QuestionCard from './QuestionCard.svelte';
   let { questions, lang }: { questions: Question[]; lang: Locale } = $props();
   let progress = $state(emptyProgress());

@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:number;lang:'zh'|'en'}=$props();
 </script>
 <figure class="wireframe-diagram" data-figure={number} class:states={number===2} class:transitions={number===3} class:comparison={number===4}>

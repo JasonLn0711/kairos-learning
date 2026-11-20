@@ -1,5 +1,5 @@
 <script lang="ts">
- import {parseQA} from '$lib/qa-markdown';import QAInline from './QAInline.svelte';import QAQuiz from './QAQuiz.svelte';
+ import {parseQA} from '#lib/qa-markdown.ts';import QAInline from './QAInline.svelte';import QAQuiz from './QAQuiz.svelte';
  let {source,id,explanation,lang}:{source:string;id:string;explanation:string[];lang:string}=$props();
  const blocks=$derived(parseQA(source));
 </script>

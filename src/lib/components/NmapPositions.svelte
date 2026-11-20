@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {SourceBlock} from '$lib/concepts';
+  import type {SourceBlock} from '#lib/concepts.ts';
   let {block}:{block:Extract<SourceBlock,{kind:'visual'}>}=$props();
   const target=$derived(block.visual.items[0]);
   const sources=$derived(block.visual.items.slice(1));

@@ -1,6 +1,6 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {SourceBlock} from '$lib/concepts';
+ import type {SourceBlock} from '#lib/concepts.ts';
  let {block,lang}:{block:Extract<SourceBlock,{kind:'visual'}>;lang:string}=$props();
  const name=$derived(block.src.match(/m04-10-(rights|controls|acceptance)-/)![1]);
  const v=$derived(block.visual);

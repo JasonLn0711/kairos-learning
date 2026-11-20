@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {TeachingDiagram} from '$lib/perspective-diagrams';
+ import type {TeachingDiagram} from '#lib/perspective-diagrams.ts';
  let {diagram:d}:{diagram:TeachingDiagram}=$props();
 </script>
 <div class="structured" data-layout={d.layout}>

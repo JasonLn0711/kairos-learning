@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {SourceBlock} from '$lib/concepts';
+  import type {SourceBlock} from '#lib/concepts.ts';
   let {block,lang='zh'}:{block:Extract<SourceBlock,{kind:'visual'}>;lang?:string}=$props();
   const stages=$derived(block.visual.kind==='flow');
   const labels=$derived(lang==='zh'?['觀察到的事情','能確定的事','不能直接推論']:['Observed','Established','Not established']);

@@ -1,6 +1,6 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {Locale} from '$lib/model';
+ import type {Locale} from '#lib/model.ts';
  let {lang='zh',mode}:{lang?:Locale;mode:'stale'|'walkthrough'}=$props();
  let ready=$state(false),amount=$state('100'),snapshot=$state('100'),valid=$state(true),exported=$state(''),copyStatus=$state(''),active=$state(0),revealed=$state(false);
  onMount(()=>{ready=true;});

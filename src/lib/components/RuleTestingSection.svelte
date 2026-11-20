@@ -1,9 +1,9 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {AaseSection} from '$lib/aase';
+ import type {AaseSection} from '#lib/aase.ts';
  import AaseBlocks from './AaseBlocks.svelte';
  import InlineText from './InlineText.svelte';
- import {deliveryFee,acceptsLength} from '$lib/rule-testing-demo';
+ import {deliveryFee,acceptsLength} from '#lib/rule-testing-demo.ts';
  let {section,lang}:{section:AaseSection;lang:'zh'|'en'}=$props();
  let ready=$state(false);let amount=$state(999);let length=$state(80);
  const zh=$derived(lang==='zh');

@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {SourceBlock} from '$lib/concepts';
+ import type {SourceBlock} from '#lib/concepts.ts';
  let {block,lang}:{block:Extract<SourceBlock,{kind:'visual'}>;lang:string}=$props();
  const name=$derived(block.src.match(/m04-09-(.+)-(?:zh|en)-v1-[01]-0/)![1]);
  const v=$derived(block.visual);

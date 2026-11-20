@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getPage, routes } from '$lib/server/catalog';
+import { getPage, routes } from '#lib/server/catalog.ts';
 export const entries = () => routes.filter(r => r.path !== '/').map(r => ({path:r.path.slice(1,-1)}));
 export const load = ({ params }: { params: { path: string } }) => {
   const page = getPage('/' + params.path.split('/').filter(Boolean).join('/') + '/');

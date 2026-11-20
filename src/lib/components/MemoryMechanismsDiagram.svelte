@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3|4|5|6;lang:'zh'|'en'}=$props();
 </script>
 <figure class="memory-diagram" class:roles={number===1} class:tokens={number===2} class:summary={number===3} class:flow={number===4||number===6} class:handover={number===5} data-figure={number}>

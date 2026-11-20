@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { Locale, SearchEntry } from '$lib/model';
-  import { search } from '$lib/model';
+  import type { Locale, SearchEntry } from '#lib/model.ts';
+  import { search } from '#lib/model.ts';
   let { lang }: { lang: Locale } = $props();
   let query = $state(''); let entries = $state<SearchEntry[]>([]); let loaded = $state(false); let loading = $state(false); let failed = $state(false);
   const results = $derived(search(entries, query, lang));

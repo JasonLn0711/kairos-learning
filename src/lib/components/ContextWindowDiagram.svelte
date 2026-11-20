@@ -1,6 +1,6 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  import ContextBudgetDemo from './ContextBudgetDemo.svelte';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3|4|5;lang:'zh'|'en'}=$props();
  let ready=$state(false),copyState=$state<'idle'|'copied'|'failed'>('idle');

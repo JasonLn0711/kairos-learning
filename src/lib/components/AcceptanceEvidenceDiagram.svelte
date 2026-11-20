@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,lang}:{diagram:ConceptVisual;lang:'zh'|'en'}=$props();
  const number=$derived(diagram.kind==='flow'?1:2);
 </script>

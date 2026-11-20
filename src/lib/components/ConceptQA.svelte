@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { ConceptDiscussion } from '$lib/concepts';
-  import type { Locale } from '$lib/model';
+  import type { ConceptDiscussion } from '#lib/concepts.ts';
+  import type { Locale } from '#lib/model.ts';
   import QAAnswer from './QAAnswer.svelte';
   import InlineText from './InlineText.svelte';
   let { qa, lang }: { qa: ConceptDiscussion[]; lang: Locale } = $props();

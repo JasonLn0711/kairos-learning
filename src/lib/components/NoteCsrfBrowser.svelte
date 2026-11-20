@@ -1,5 +1,5 @@
 <script lang="ts">
- import {noteDiagramSpecs,type NoteDiagram} from '$lib/note-diagrams';
+ import {noteDiagramSpecs,type NoteDiagram} from '#lib/note-diagrams.ts';
  let {diagram}:{diagram:NoteDiagram}=$props();
  const layout=$derived(noteDiagramSpecs[diagram.name].layout);
  const lanes=[[1,2],[2,1],[0,1],[1,2],[2,1]];

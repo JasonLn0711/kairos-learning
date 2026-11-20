@@ -1,7 +1,7 @@
 <script lang="ts">
  import EMeansFigure from './EMeansFigure.svelte';
  import SystemsFigure from './SystemsFigure.svelte';
- import type {PerspectiveBlock} from '$lib/perspective-body';
+ import type {PerspectiveBlock} from '#lib/perspective-body.ts';
  import QAInline from './QAInline.svelte';
  let {blocks,lang,heading}:{blocks:PerspectiveBlock[];lang:'zh'|'en';heading:string}=$props();
 </script>

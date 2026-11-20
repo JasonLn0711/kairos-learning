@@ -1,5 +1,5 @@
 <script lang="ts">
- import diagrams from '$lib/footprint-diagrams.json';
+ import diagrams from '#lib/footprint-diagrams.json';
  let {src,lang='zh'}:{src:string;lang?:string}=$props();
  type Diagram={flow:boolean;nodes:{title:string;body:string[]}[];footer:string[]};
  const diagram=$derived((diagrams as Record<string,Diagram>)[src]);

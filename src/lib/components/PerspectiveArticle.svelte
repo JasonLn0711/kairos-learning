@@ -1,8 +1,8 @@
 <script lang="ts">
  import PerspectiveBody from './PerspectiveBody.svelte';
  import ArticleMetadata from './ArticleMetadata.svelte';
- import type {Perspective} from '$lib/perspectives';
- import type {Locale} from '$lib/model';
+ import type {Perspective} from '#lib/perspectives.ts';
+ import type {Locale} from '#lib/model.ts';
  import TeachingDiagram from './TeachingDiagram.svelte';
  import QAInline from './QAInline.svelte';
  let {article,lang,related}:{article:Perspective;lang:Locale;related:{title:string;href:string}[]}=$props();

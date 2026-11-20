@@ -1,6 +1,6 @@
 <script lang="ts">
- import models from '$lib/cs-systems-diagrams.json';
- import type {SystemsFigureName} from '$lib/perspective-body';
+ import models from '#lib/cs-systems-diagrams.json';
+ import type {SystemsFigureName} from '#lib/perspective-body.ts';
  let {name,lang}:{name:SystemsFigureName;lang:'zh'|'en'}=$props();
  const m=$derived(models[name]);
  const src=$derived(`/images/perspectives/cs-systems-${name}-${lang}.svg`);

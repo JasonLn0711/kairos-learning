@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:number;lang:'zh'|'en'}=$props();
 </script>
 {#snippet node(index:number)}<div class="node" data-node={index} id={number===3&&index===1?`flow-check-${lang}`:undefined}><strong>{diagram.items[index].title}</strong><p>{diagram.items[index].body}</p></div>{/snippet}

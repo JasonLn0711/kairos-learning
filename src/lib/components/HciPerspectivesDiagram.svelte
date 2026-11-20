@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3|4;lang:'zh'|'en'}=$props();
 </script>
 <figure class="hci-diagram" data-figure={number} class:lenses={number===1} class:overlap={number===2} class:journey={number===3} class:comparison={number===4}>

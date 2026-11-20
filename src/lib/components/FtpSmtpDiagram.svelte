@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {SourceBlock} from '$lib/concepts';
+  import type {SourceBlock} from '#lib/concepts.ts';
   let {block,lang='zh'}:{block:Extract<SourceBlock,{kind:'visual'}>;lang?:string}=$props();
   const items=$derived(block.visual.items);
   const protocols=$derived(block.src.includes('-protocols-'));

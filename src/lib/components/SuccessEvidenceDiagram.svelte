@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {ConceptVisual} from '$lib/concepts';
- import {successMetrics} from '$lib/success-metrics';
+ import type {ConceptVisual} from '#lib/concepts.ts';
+ import {successMetrics} from '#lib/success-metrics.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:number;lang:'zh'|'en'}=$props();
  let blocked=$state(3),falseBlocked=$state(0),ready=$state(false);
  const result=$derived(successMetrics(blocked,falseBlocked));

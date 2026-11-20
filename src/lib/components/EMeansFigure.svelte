@@ -1,5 +1,5 @@
 <script lang="ts">
- import {eMeansModels,eMeansArtwork,eMeansAsset,cosineStep,type EMeansFigureName,type EMeansLocale} from '$lib/e-means-figures';
+ import {eMeansModels,eMeansArtwork,eMeansAsset,cosineStep,type EMeansFigureName,type EMeansLocale} from '#lib/e-means-figures.ts';
  let {name,lang}:{name:EMeansFigureName;lang:EMeansLocale}=$props();
  const m=$derived(eMeansModels[name]);
  const art=$derived(eMeansArtwork(name));

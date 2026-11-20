@@ -1,7 +1,7 @@
 <script lang="ts">
  import ArchitectureDiagram from './ArchitectureDiagram.svelte';
- import type {ArchitectureDiagramModel} from '$lib/architecture-diagram';
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ArchitectureDiagramModel} from '#lib/architecture-diagram.ts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ArchitectureDiagramModel|ConceptVisual;number:number;lang:'zh'|'en'}=$props();
 </script>
 <div class="context-figure" data-figure={number}>

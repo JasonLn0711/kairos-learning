@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Question, Locale } from '$lib/model';
-  import { readProgress, recordAnswer, STORAGE_KEY, type Attempt } from '$lib/progress';
+  import type { Question, Locale } from '#lib/model.ts';
+  import { readProgress, recordAnswer, STORAGE_KEY, type Attempt } from '#lib/progress.ts';
   let { question, lang, directReading = false, onanswered = () => {} }: { question: Question; lang: Locale; directReading?: boolean; onanswered?: () => void } = $props();
   let choice = $state<number | undefined>();
   let confidence = $state<Attempt['confidence'] | ''>('');

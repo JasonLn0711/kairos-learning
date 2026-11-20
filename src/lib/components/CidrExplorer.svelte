@@ -1,6 +1,6 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import {examplePrefix} from '$lib/m0206-network';
+ import {examplePrefix} from '#lib/m0206-network.ts';
  let {lang}:{lang:string}=$props();
  let prefix=$state(24);
  let interactive=$state(false);

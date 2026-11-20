@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from 'svelte';
-  import type {NoteChecks} from '$lib/ceh-notes';
-  import type {Locale} from '$lib/model';
+  import type {NoteChecks} from '#lib/ceh-notes.ts';
+  import type {Locale} from '#lib/model.ts';
   let {block,lang}:{block:NoteChecks;lang:Locale}=$props();
   let ready=$state(false),submitted=$state(false),answers=$state<Record<string,number>>({});
   onMount(()=>{ready=true;});

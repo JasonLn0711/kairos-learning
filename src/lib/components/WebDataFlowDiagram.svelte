@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual,ConceptBlock} from '$lib/concepts';
+ import type {ConceptVisual,ConceptBlock} from '#lib/concepts.ts';
  import ConceptBlocks from './ConceptBlocks.svelte';
  let {diagram,number,lang}:{diagram:ConceptVisual|Extract<ConceptBlock,{kind:'table'}>;number:1|2|3|4;lang:'zh'|'en'}=$props();
 </script>

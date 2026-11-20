@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,lang}:{diagram:ConceptVisual;number:1|2;lang:'zh'|'en'}=$props();
  // Validated graph shapes select layouts without changing the shared caller’s legacy hint.
  const number=$derived(diagram.kind==='flow'&&diagram.items.length===5?1:diagram.items.length);

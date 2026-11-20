@@ -1,6 +1,6 @@
 <script lang="ts">
- import type {NoteDiagram} from '$lib/note-diagrams';
- import {noteDiagramSpecs} from '$lib/note-diagrams';
+ import type {NoteDiagram} from '#lib/note-diagrams.ts';
+ import {noteDiagramSpecs} from '#lib/note-diagrams.ts';
  let {diagram}:{diagram:NoteDiagram}=$props();
  const layout=$derived(noteDiagramSpecs[diagram.name].layout);
  const priority=noteDiagramSpecs.m20d2priority;

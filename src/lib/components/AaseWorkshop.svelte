@@ -1,9 +1,9 @@
 <script lang="ts">
  import checksum from '../../../site/downloads/aase/SHA256SUMS.txt?raw';
  const packageHash=checksum.trim().split(/\s+/)[0];
- import type {AaseCourse} from '$lib/aase';
- import {aaseUI} from '$lib/aase-ui';
- import {localized,type Locale} from '$lib/model';
+ import type {AaseCourse} from '#lib/aase.ts';
+ import {aaseUI} from '#lib/aase-ui.ts';
+ import {localized,type Locale} from '#lib/model.ts';
  let {course,lang='zh'}:{course:Pick<AaseCourse,'modules'>;lang?:Locale}=$props();
  const l=$derived(aaseUI[lang]);
 </script>

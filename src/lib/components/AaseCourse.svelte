@@ -1,8 +1,8 @@
 <script lang="ts">
-  import {aaseDisplayId} from '$lib/aase-labels';
-  import type {AaseCourse} from '$lib/aase';
-  import {localized,type Locale} from '$lib/model';
-  import {aaseUI} from '$lib/aase-ui';
+  import {aaseDisplayId} from '#lib/aase-labels.ts';
+  import type {AaseCourse} from '#lib/aase.ts';
+  import {localized,type Locale} from '#lib/model.ts';
+  import {aaseUI} from '#lib/aase-ui.ts';
   let {moduleId,concepts,course,lang='zh'}:{moduleId?:string;concepts:{id:string;available:boolean;href:string}[];course:Pick<AaseCourse,'title'|'subtitle'|'modules'>;lang?:Locale}=$props();
   const modules=$derived(moduleId?course.modules.filter(m=>m.id===moduleId):course.modules);
   const l=$derived(aaseUI[lang]);

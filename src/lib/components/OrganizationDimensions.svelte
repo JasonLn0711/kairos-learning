@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram}:{diagram:ConceptVisual}=$props();
 </script>
 <figure class="organization-dimensions">

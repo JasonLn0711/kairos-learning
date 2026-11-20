@@ -1,5 +1,5 @@
 <script lang="ts">
- import {readableDiagram} from '$lib/article-reading';
+ import {readableDiagram} from '#lib/article-reading.ts';
  let {src,lang}:{src:string;lang:string}=$props();
  const data=$derived(readableDiagram(src,lang));
 </script>

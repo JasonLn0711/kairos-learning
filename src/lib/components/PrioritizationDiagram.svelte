@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {SourceBlock} from '$lib/concepts';
+ import type {SourceBlock} from '#lib/concepts.ts';
  let {block}:{block:Extract<SourceBlock,{kind:'visual'}>}=$props();
  const name=$derived(block.src.match(/m05-05-([a-z]+)-/)![1]);
  const icons=['M3 18a9 9 0 1 1 18 0 M12 14l5-7 M5 19h14','M12 2l9 4v7c0 5-4 8-9 10-5-2-9-5-9-10V6z M12 7v6 M12 16v1','M3 21v-5 M8 21V12 M13 21v-8 M18 21V7 M2 12l6-6 5 3 8-7'];

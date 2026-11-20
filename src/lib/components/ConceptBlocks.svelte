@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ConceptBlock } from '$lib/concepts';
+  import type { ConceptBlock } from '#lib/concepts.ts';
   import InlineText from './InlineText.svelte';
   let { blocks }: {blocks:ConceptBlock[]} = $props();
 </script>

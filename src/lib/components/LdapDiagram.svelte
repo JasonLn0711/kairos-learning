@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {SourceBlock} from '$lib/concepts';
+ import type {SourceBlock} from '#lib/concepts.ts';
  let {block}:{block:Extract<SourceBlock,{kind:'visual'}>}=$props();
  const key=$derived(block.src.split('m04-08-')[1].replace(/-(zh|en)-v1-1-0\.svg$/,''));
  const items=$derived(block.visual.items);

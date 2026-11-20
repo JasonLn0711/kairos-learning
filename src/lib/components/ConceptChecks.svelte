@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { ConceptCheck } from '$lib/concepts';
-  import type { Locale } from '$lib/model';
+  import type { ConceptCheck } from '#lib/concepts.ts';
+  import type { Locale } from '#lib/model.ts';
   let { checks, lang }: {checks:ConceptCheck[];lang:Locale} = $props();
 </script>
 {#each checks.filter(q=>q.text[lang]) as check}

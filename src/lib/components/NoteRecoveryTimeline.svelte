@@ -1,6 +1,6 @@
 <script lang="ts">
- import type {NoteDiagram} from '$lib/note-diagrams';
- import {recoveryTimelineWidths} from '$lib/ceh-recovery-timeline';
+ import type {NoteDiagram} from '#lib/note-diagrams.ts';
+ import {recoveryTimelineWidths} from '#lib/ceh-recovery-timeline.ts';
  let {diagram,lang}:{diagram:NoteDiagram;lang:string}=$props();
 </script>
 <div class="timeline" data-timeline="recovery" aria-label={lang==='zh'?'時間比例：RPO 15 分鐘，RTO 120 分鐘，1：8':'Time ratio: RPO 15 minutes, RTO 120 minutes, 1:8'}>

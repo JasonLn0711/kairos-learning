@@ -15,10 +15,10 @@
  import SddChangeDiagram from './SddChangeDiagram.svelte';
   import WorkflowDiagram from './WorkflowDiagram.svelte';
   import WorkflowExercises from './WorkflowExercises.svelte';
-  import {aaseDisplayId} from '$lib/aase-labels';
-  import type {AasePublishedLesson,AaseSource} from '$lib/aase';
-  import {aaseUI} from '$lib/aase-ui';
-  import {localized,type Locale} from '$lib/model';
+  import {aaseDisplayId} from '#lib/aase-labels.ts';
+  import type {AasePublishedLesson,AaseSource} from '#lib/aase.ts';
+  import {aaseUI} from '#lib/aase-ui.ts';
+  import {localized,type Locale} from '#lib/model.ts';
   import PromptSpecDiagram from './PromptSpecDiagram.svelte';
   import VerticalSliceDiagram from './VerticalSliceDiagram.svelte';
   import VerticalSliceForm from './VerticalSliceForm.svelte';

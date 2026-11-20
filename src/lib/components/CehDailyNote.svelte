@@ -1,8 +1,8 @@
 <script lang="ts">
-  import {watchLegacyNoteHash} from '$lib/ceh-note-legacy-links';
-  import {notePath} from '$lib/ceh-notes';
-  import type {DailyNote} from '$lib/ceh-notes';
-  import type {Locale} from '$lib/model';
+  import {watchLegacyNoteHash} from '#lib/ceh-note-legacy-links.ts';
+  import {notePath} from '#lib/ceh-notes.ts';
+  import type {DailyNote} from '#lib/ceh-notes.ts';
+  import type {Locale} from '#lib/model.ts';
   import ArticleMetadata from './ArticleMetadata.svelte';
   import SourceBody from './SourceBody.svelte';
   import NoteFigure from './NoteFigure.svelte';

@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {M20Review} from '$lib/m20-review';
+ import type {M20Review} from '#lib/m20-review.ts';
  import ArticleMetadata from './ArticleMetadata.svelte';
  import SourceBody from './SourceBody.svelte';
  import NoteDiagram from './NoteDiagram.svelte';

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {noteDiagramSpecs,tlsDirections,noteReferenceImage,type NoteDiagram} from '$lib/note-diagrams';
+  import {noteDiagramSpecs,tlsDirections,noteReferenceImage,type NoteDiagram} from '#lib/note-diagrams.ts';
   import NoteDay02B from './NoteDay02B.svelte';
   import NoteCsrfBrowser from './NoteCsrfBrowser.svelte';
   import NoteDay02Supplement from './NoteDay02Supplement.svelte';
@@ -7,8 +7,8 @@
   import NoteRecoveryTimeline from './NoteRecoveryTimeline.svelte';
   import NoteDay01Diagram from './NoteDay01Diagram.svelte';
   import NoteContinuationDiagram from './NoteContinuationDiagram.svelte';
-  import {noteFigurePath} from '$lib/ceh-notes';
-  import type {Locale} from '$lib/model';
+  import {noteFigurePath} from '#lib/ceh-notes.ts';
+  import type {Locale} from '#lib/model.ts';
   let {diagram,date,part,lang}:{diagram:NoteDiagram;date:string;part:number;lang:Locale}=$props();
   const layout=$derived(noteDiagramSpecs[diagram.name].layout);
   const zh=$derived(lang==='zh');

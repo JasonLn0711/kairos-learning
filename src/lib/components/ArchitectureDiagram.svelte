@@ -1,5 +1,5 @@
 <script lang="ts">
- import {architectureDiagramLabels,type ArchitectureDiagramModel} from '$lib/architecture-diagram';
+ import {architectureDiagramLabels,type ArchitectureDiagramModel} from '#lib/architecture-diagram.ts';
  let {diagram,lang='zh'}:{diagram:ArchitectureDiagramModel;lang?:'zh'|'en'}=$props();
  const l=$derived(architectureDiagramLabels[lang]);
  const nodeTitle=(id:string)=>diagram.nodes.find(n=>n.id===id)!.title;

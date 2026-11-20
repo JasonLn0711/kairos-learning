@@ -1,6 +1,6 @@
 <script lang="ts">
   import {onMount} from 'svelte';
-  import {noteDiagramSpecs,type NoteDiagram,type NoteDiagramSpec} from '$lib/note-diagrams';
+  import {noteDiagramSpecs,type NoteDiagram,type NoteDiagramSpec} from '#lib/note-diagrams.ts';
   let {diagram,lang}:{diagram:NoteDiagram;lang:string}=$props();
   const spec=$derived(noteDiagramSpecs[diagram.name] as NoteDiagramSpec);
   const layout=$derived(spec.layout.replace('continuation-',''));

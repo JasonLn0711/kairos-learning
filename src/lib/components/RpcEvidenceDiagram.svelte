@@ -1,6 +1,6 @@
 <script lang="ts">
- import type {SourceBlock} from '$lib/concepts';
- import groups from '$lib/rpc-diagram-groups.json';
+ import type {SourceBlock} from '#lib/concepts.ts';
+ import groups from '#lib/rpc-diagram-groups.json';
  let {block,lang='zh'}:{block:Extract<SourceBlock,{kind:'visual'}>;lang?:string}=$props();
  const name=$derived(block.src.includes('-roles-')?'roles':block.src.includes('-families-')?'families':'evidence');
  const panels=$derived(groups[name][lang==='en'?'en':'zh']);

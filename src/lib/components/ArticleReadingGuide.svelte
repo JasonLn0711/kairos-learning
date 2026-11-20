@@ -1,5 +1,5 @@
 <script lang="ts">
- import {readingGuide,type ReadingGuide} from '$lib/article-reading';
+ import {readingGuide,type ReadingGuide} from '#lib/article-reading.ts';
  let {id,lang,guide:providedGuide}:{id:string;lang:string;guide?:ReadingGuide}=$props();
  const guide=$derived(providedGuide??readingGuide(id,lang));
 </script>

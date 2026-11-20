@@ -1,6 +1,6 @@
 <script lang="ts">
  import {onMount,untrack} from 'svelte';
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,lang}:{diagram:ConceptVisual;lang:'zh'|'en'}=$props();
  let ready=$state(false);
  let application_id=$state(untrack(()=>diagram.items[0].body)),applicant_code=$state(untrack(()=>diagram.items[1].body)),document_type=$state('');

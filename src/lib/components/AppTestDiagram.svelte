@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3;lang:'zh'|'en'}=$props();
  const icons=['M4 5h16v14H4zM7 9h1m3 0h1m3 0h1M7 13h10','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m-2 5 6 4-6 4z','m4 12 5 5L20 6m-7 11 7-7'];
 </script>

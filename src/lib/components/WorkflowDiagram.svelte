@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3|5|6;lang:'zh'|'en'}=$props();
  const destinations:Record<number,number[]>={0:[1],1:[2],2:[11,3],3:[4],4:[5,6],5:[1],6:[7],7:[8,9],8:[1],9:[10,11]};
  function routeText(body:string,targets:number[]):{text:string;target?:number}[]{

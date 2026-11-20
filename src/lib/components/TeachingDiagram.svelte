@@ -1,6 +1,6 @@
 <script lang="ts">
  import StructuredDiagram from './StructuredDiagram.svelte';
- import {diagramAsset,diagramIcons,diagramTones,type TeachingDiagram} from '$lib/perspective-diagrams';
+ import {diagramAsset,diagramIcons,diagramTones,type TeachingDiagram} from '#lib/perspective-diagrams.ts';
  let {diagram:d,articleId,lang}:{diagram:TeachingDiagram;articleId:string;lang:'zh'|'en'}=$props();
  const captionId=$derived(`${articleId}-${d.id}-${lang}-caption`);
 </script>

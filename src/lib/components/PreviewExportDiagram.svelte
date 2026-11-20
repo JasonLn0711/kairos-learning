@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {ConceptVisual} from '$lib/concepts';
- import {checkedPreviewReport,validPreviewRecord,type PreviewRecord} from '$lib/preview-export';
+ import type {ConceptVisual} from '#lib/concepts.ts';
+ import {checkedPreviewReport,validPreviewRecord,type PreviewRecord} from '#lib/preview-export.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2;lang:'zh'|'en'}=$props();
  let ready=$state(false),documentType=$state('收入證明'),snapshot=$state<PreviewRecord|null>(null),attempted=$state(false);
  const en=$derived(lang==='en');

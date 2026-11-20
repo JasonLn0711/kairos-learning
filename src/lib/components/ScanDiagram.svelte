@@ -1,6 +1,6 @@
 <script lang="ts">
- import models from '$lib/m0303-scan-diagrams.json';
- import type {SourceBlock} from '$lib/concepts';
+ import models from '#lib/m0303-scan-diagrams.json';
+ import type {SourceBlock} from '#lib/concepts.ts';
  let {block,lang='zh'}:{block:Extract<SourceBlock,{kind:'visual'}>;lang?:string}=$props();
  const model=$derived(models[block.src as keyof typeof models]);
 </script>

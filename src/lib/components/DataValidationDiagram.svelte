@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {ConceptVisual} from '$lib/concepts';
- import {validationIssue} from '$lib/validation-demo';
+ import type {ConceptVisual} from '#lib/concepts.ts';
+ import {validationIssue} from '#lib/validation-demo.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3|4;lang:'zh'|'en'}=$props();
  let ready=$state(false);
  // svelte-ignore state_referenced_locally (Immutable lesson defaults initialize this local exercise.)

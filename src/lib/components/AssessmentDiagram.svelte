@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {SourceBlock} from '$lib/concepts';
+  import type {SourceBlock} from '#lib/concepts.ts';
   let {block}:{block:Extract<SourceBlock,{kind:'visual'}>}=$props();
   const names=['terms','scan','access','workflow'];
   const name=$derived(names.find(n=>block.src.includes(`-${n}-`))??'terms');

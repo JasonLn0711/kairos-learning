@@ -1,6 +1,6 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {AaseSection} from '$lib/aase';
+ import type {AaseSection} from '#lib/aase.ts';
  import AaseProse from './AaseProse.svelte';
  import AaseBlocks from './AaseBlocks.svelte';
  let {section,lang}:{section:AaseSection;lang:'zh'|'en'}=$props();

@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {ConceptVisual} from '$lib/concepts';
- import {contextBudget,contextBudgetParts,contextBudgetLimit} from '$lib/context-budget';
+ import type {ConceptVisual} from '#lib/concepts.ts';
+ import {contextBudget,contextBudgetParts,contextBudgetLimit} from '#lib/context-budget.ts';
  let {diagram,lang}:{diagram:ConceptVisual;lang:'zh'|'en'}=$props();
  let extra=$state(500),ready=$state(false);
  onMount(()=>{ready=true;});

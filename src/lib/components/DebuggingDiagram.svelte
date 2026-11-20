@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount,untrack} from 'svelte';
- import type {ConceptVisual} from '$lib/concepts';
- import {checkReport,reportAvailable,type ReportForm,type ReportMode} from '$lib/stale-report';
+ import type {ConceptVisual} from '#lib/concepts.ts';
+ import {checkReport,reportAvailable,type ReportForm,type ReportMode} from '#lib/stale-report.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:number;lang:'zh'|'en'}=$props();
  let ready=$state(false),mode=$state<ReportMode>('bug'),snapshot=$state<ReportForm|null>(null),copyStatus=$state(''),checkFailed=$state(false);
  const en=$derived(lang==='en');

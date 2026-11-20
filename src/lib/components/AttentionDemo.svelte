@@ -1,6 +1,6 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import {attentionDemo} from '$lib/attention-demo';
+ import {attentionDemo} from '#lib/attention-demo.ts';
  let {lang='zh'}:{lang?:'zh'|'en'}=$props();
  let a=$state(1),b=$state(0),ready=$state(false);
  onMount(()=>{ready=true;});

@@ -17,19 +17,19 @@
   import ProtectionDiagram from "./ProtectionDiagram.svelte";
   import NmapPositions from "./NmapPositions.svelte";
   import ScanDiagram from "./ScanDiagram.svelte";
-  import scanDiagrams from "$lib/m0303-scan-diagrams.json";
+  import scanDiagrams from "#lib/m0303-scan-diagrams.json";
   import DiscoveryDiagram from "./DiscoveryDiagram.svelte";
-  import discoveryDiagrams from "$lib/m0302-discovery-diagrams.json";
+  import discoveryDiagrams from "#lib/m0302-discovery-diagrams.json";
   import TransportDiagram from "./TransportDiagram.svelte";
-  import transportDiagrams from "$lib/m0301-diagrams.json";
+  import transportDiagrams from "#lib/m0301-diagrams.json";
   import NetworkDiagram from './NetworkDiagram.svelte';
-  import {networkDiagram} from '$lib/m0206-network';
+  import {networkDiagram} from '#lib/m0206-network.ts';
   import ReadableDiagramText from './ReadableDiagramText.svelte';
-  import {readingGuide} from '$lib/article-reading';
-  import type { SourceBlock } from '$lib/concepts';
+  import {readingGuide} from '#lib/article-reading.ts';
+  import type { SourceBlock } from '#lib/concepts.ts';
   import ConceptBlocks from './ConceptBlocks.svelte';
   import ReviewedSvgVisual from './ReviewedSvgVisual.svelte';
-  import { reviewedSvgMarkup } from '$lib/reviewed-svg';
+  import { reviewedSvgMarkup } from '#lib/reviewed-svg.ts';
   import InlineText from './InlineText.svelte';
   let { blocks, conceptId='', lang='zh' }: {blocks: SourceBlock[];conceptId?:string;lang?:string} = $props();
 </script>

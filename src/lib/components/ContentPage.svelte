@@ -1,16 +1,16 @@
 <script lang="ts">
   import M20Review from './M20Review.svelte';
   import CehDailyNote from './CehDailyNote.svelte';
-  import {aaseConceptTitle} from '$lib/aase-labels';
+  import {aaseConceptTitle} from '#lib/aase-labels.ts';
   import CourseRail from './CourseRail.svelte';
   import AaseLesson from './AaseLesson.svelte';
   import AaseWorkshop from './AaseWorkshop.svelte';
   import AaseCourse from './AaseCourse.svelte';
   import ArticleMetadata from './ArticleMetadata.svelte';
   import ArticleReadingGuide from './ArticleReadingGuide.svelte';
-  import {readingGuide} from '$lib/article-reading';
-  import type { Page } from '$lib/server/catalog';
-  import { SITE, MAIN, localized, modulePath } from '$lib/model';
+  import {readingGuide} from '#lib/article-reading.ts';
+  import type { Page } from '#lib/server/catalog.ts';
+  import { SITE, MAIN, localized, modulePath } from '#lib/model.ts';
   import QuestionCard from './QuestionCard.svelte';
   import Search from './Search.svelte';
   import Review from './Review.svelte';

@@ -1,6 +1,6 @@
 <script lang="ts">
- import type {SourceBlock} from '$lib/concepts';
- import {networkDiagram} from '$lib/m0206-network';
+ import type {SourceBlock} from '#lib/concepts.ts';
+ import {networkDiagram} from '#lib/m0206-network.ts';
  import CidrExplorer from './CidrExplorer.svelte';
  let {block,lang}:{block:Extract<SourceBlock,{kind:'visual'}>;lang:string}=$props();
  const diagram=$derived(networkDiagram(block.src)!);

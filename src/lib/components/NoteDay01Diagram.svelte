@@ -1,8 +1,8 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import {riskScore,controlCounts} from '$lib/ceh-risk-score';
- import type {NoteDiagram} from '$lib/note-diagrams';
- import type {Locale} from '$lib/model';
+ import {riskScore,controlCounts} from '#lib/ceh-risk-score.ts';
+ import type {NoteDiagram} from '#lib/note-diagrams.ts';
+ import type {Locale} from '#lib/model.ts';
  let {diagram,lang}:{diagram:NoteDiagram;lang:Locale}=$props();
  const zh=$derived(lang==='zh');
  let ready=$state(false),likelihood=$state(3),impact=$state(5);

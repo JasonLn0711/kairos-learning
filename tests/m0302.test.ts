@@ -107,6 +107,12 @@ test('M03-02 ARP supplement preserves both named figures, prior ICMP, and all se
    const original=data.toString().replace('  import NmapPositions from "./NmapPositions.svelte";\n','').replace("{:else if block.kind === 'visual' && ['/images/ceh/m03-07-positions-zh.svg','/images/ceh/m03-07-positions-en.svg'].includes(block.src)}<NmapPositions {block}/>",'').replace('  import ScanDiagram from "./ScanDiagram.svelte";\n','').replace('  import scanDiagrams from "$lib/m0303-scan-diagrams.json";\n','').replace("{:else if block.kind === 'visual' && block.src in scanDiagrams}<ScanDiagram {block} {lang}/>",'').replace("||conceptId==='M03-03'",'').replace("||conceptId==='M03-04'",'').replace("||conceptId==='M03-05'",'').replace("||conceptId==='M03-06'",'');
    data=Buffer.from(original);
   }
+  if(path==='src/lib/components/DiscoveryDiagram.svelte'){
+   // Ignore only the two import migrations so the historical diagram bytes remain protected.
+   data=Buffer.from(data.toString()
+    .replace("from '#lib/m0302-discovery-diagrams.json';","from '$lib/m0302-discovery-diagrams.json';")
+    .replace("from '#lib/concepts.ts';","from '$lib/concepts';"));
+  }
   assert.equal(createHash('sha256').update(data).digest('hex'),hash,path);
  }
  const supplied=JSON.parse(readFileSync(root+'source.sha256.json','utf8'));

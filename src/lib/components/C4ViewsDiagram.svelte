@@ -1,5 +1,5 @@
 <script lang="ts">
- import type {ConceptVisual} from '$lib/concepts';
+ import type {ConceptVisual} from '#lib/concepts.ts';
  let {diagram,number,lang}:{diagram:ConceptVisual;number:number;lang:'zh'|'en'}=$props();
  const labels={zh:{deployment:'實際部署（Deployment）',ordering:'線上訂餐系統 — C4 Container 視角',backend:'訂單後端 API（同一個應用程式）',local:'本機收件完整性檢核系統',framework:'Streamlit 管理的通訊',database:'讀取／保存訂單與商品',payment:'訂單後端 ↔ 第三方支付平台',download:'瀏覽器前端 → 操作者裝置：下載 JSON',open:'開啟／下載原尺寸 SVG'},en:{deployment:'Actual deployment',ordering:'Online ordering system — C4 container view',backend:'Order backend API (one application)',local:'Local intake-completeness checker',framework:'Communication managed by Streamlit',database:'Read / save orders and products',payment:'Order backend ↔ third-party payment platform',download:'Browser frontend → operator device: JSON download',open:'Open / download full-size SVG'}};
  const l=$derived(labels[lang]);

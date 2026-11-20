@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from 'svelte';
-  import {noteFigurePath,type NoteRecall} from '$lib/ceh-notes';
-  import type {Locale} from '$lib/model';
+  import {noteFigurePath,type NoteRecall} from '#lib/ceh-notes.ts';
+  import type {Locale} from '#lib/model.ts';
   let {block,date,part,lang}:{block:NoteRecall;date:string;part:number;lang:Locale}=$props();
   let ready=$state(false), active=$state(0);
   onMount(()=>{ready=true;});

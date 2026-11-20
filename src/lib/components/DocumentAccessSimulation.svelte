@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount} from 'svelte';
- import type {ConceptVisual} from '$lib/concepts';
- import {simulatedDocumentAccess} from '$lib/document-access-simulation';
+ import type {ConceptVisual} from '#lib/concepts.ts';
+ import {simulatedDocumentAccess} from '#lib/document-access-simulation.ts';
  let {diagram,lang='zh'}:{diagram:ConceptVisual;lang?:'zh'|'en'}=$props();
  let ready=$state(false),actor=$state('a'),document=$state('A'),action=$state('read');onMount(()=>{ready=true;});
  const allowed=$derived(simulatedDocumentAccess(actor,document,action));

@@ -1,3 +1,5 @@
+import adapter from '@sveltejs/adapter-static';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, type Plugin } from 'vite';
 // MATLAB's preserved links use /index.html. Static hosts serve build/index.html;
@@ -13,4 +15,14 @@ const legacyHome: Plugin = {
     res.writeHead(308,{Location:'/' + (req.url.includes('?') ? '?'+req.url.split('?')[1] : '')}); res.end();
   }); }
 };
-export default defineConfig({ plugins: [legacyHome, sveltekit()] });
+export default defineConfig({
+  plugins: [legacyHome, sveltekit({
+    preprocess: vitePreprocess(),
+    adapter: adapter({ fallback: '404.html' }),
+    files: { assets: 'site' },
+    csp: {
+      mode: 'hash',
+      directives: { 'script-src': ['self'], 'style-src': ['self', 'unsafe-inline'], 'object-src': ['none'], 'base-uri': ['self'] }
+    }
+  })]
+});
