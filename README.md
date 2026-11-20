@@ -16,7 +16,7 @@
 
 ## 開發與檢查
 
-使用 Node.js 24；安裝以 lockfile 為準。
+使用 Node.js 24、`package.json` 固定的 pnpm 版本，以及可由 `python3` 呼叫的 Python 3.12 以上；安裝以 lockfile 為準。既有教材產生器使用 Python 3.12 的 f-string 語法，執行前確認 `python3 --version`，避免選到 macOS 較舊的系統 Python。
 
 ```sh
 pnpm install --frozen-lockfile
@@ -52,7 +52,9 @@ MATLAB 下載來源變更時，執行 `python3 scripts/package_release.py` 重�
 
 ## 觀點 Perspectives
 
-Learn 的觀點專欄承接有教學價值的事件解讀與實作反思；個人研究與專案論述仍由主站承接。每篇完整雙語。參見 [編輯指南](docs/perspectives/authoring.md) 、[撰稿模板](docs/perspectives/writing-template.md) 與 [首兩篇企劃](docs/perspectives/editorial-briefs.md)。使用 `pnpm run preview:perspectives` 檢查隔離的合成文章；目前沒有正式發布文章。
+Learn 的觀點專欄承接有教學價值的事件解讀與實作反思；個人研究與專案論述仍由主站承接。每篇完整雙語。參見 [編輯指南](docs/perspectives/authoring.md) 、[撰稿模板](docs/perspectives/writing-template.md) 與 [首兩篇企劃](docs/perspectives/editorial-briefs.md)。使用 `pnpm run preview:perspectives` 檢查隔離的合成文章；正式目錄與搜尋沿用內容發布閘門。
+
+[e-means與k-means完整教學](https://learn.cs-kairos.com/perspectives/e-means-clustering/)提供完整中英雙語、八張原生重排圖與效能主張判讀；[來源／採用對照](docs/sources/e-means/2026-11-15/README.md)與[發布驗證](docs/releases/2026-11-15-e-means-perspective.md)由本repo持有。
 
 ## 全站共同規範
 

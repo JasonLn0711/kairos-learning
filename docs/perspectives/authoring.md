@@ -243,3 +243,12 @@ NAS 漏洞公告與記憶體生命週期的圖解範例見[內容設計](nas-cve
 新增 `cells`、`stages`、`layers`、`reference`、`lifetime`、`access-path` 版型及受限 cells／released 欄位，契約、響應式規則與驗收統一依[圖解設計規範](../diagram-design-system.md)。新增教學範圍與版型的實作見[記憶體基礎回執](../releases/2026-11-01-nas-memory-foundations.md)。
 
 合成預覽的 fixture 使用現存課程 ID，保留課程往返連結；退休 ID 的修正由 fixture 承接。[11/9 整合與驗證](../releases/2026-11-09-repository-reconciliation.md)。
+
+## e-means具名空間圖組
+
+[e-means內容與圖組契約](e-means-design.md)定義`eMeansFigure`的八個固定名稱。
+沿用ordered body，圖說、節點與備註由雙語模型供應，空間圖形由固定幾何產生；
+內容不能傳入HTML、URL或SVG路徑。`node --experimental-strip-types scripts/generate-emeans-figures.ts`
+同步16張下載SVG，`node scripts/check-emeans-browser.mjs`檢查兩語全文、原生重排、
+數學圖表、下載、搜尋與導覽；正式站使用`EMEANS_BASE_URL=https://learn.cs-kairos.com`。
+原文與逐小節採用對照見[來源快照](../sources/e-means/2026-11-15/README.md)。

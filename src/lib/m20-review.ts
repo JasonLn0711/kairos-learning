@@ -3,7 +3,7 @@ import {noteBodyText} from './ceh-notes.ts';
 import {validateNoteDiagram,type NoteDiagram} from './note-diagrams.ts';
 import type {Source} from './model.ts';
 export const m20ReviewPath='/ceh-notes/m20-cryptography/';
-export type M20Review={title:string;summary:string;status:'draft'|'published';publishedOn:string;revisedOn:string;revision:number;contentVersion:string;sections:{id:string;heading:string;body:(NoteProse|NoteDiagram)[]}[];sources:Source[]};
+export type M20Review={title:string;summary:string;status:'draft'|'published';publishedOn:string;revisedOn:string;revision:number;contentVersion:string;sections:{id:string;heading:string;collapsible?:true;aliases?:string[];body:(NoteProse|NoteDiagram)[]}[];sources:Source[]};
 export function validateM20Review(value:M20Review):M20Review {
  const fail=():never=>{throw Error('Invalid M20 review content');};
  const filled=(s:unknown)=>typeof s==='string'&&s.trim().length>0;
@@ -14,7 +14,10 @@ export function validateM20Review(value:M20Review):M20Review {
  const ids=new Set<string>(['main','m20-sources']),figures=new Set<string>();
  const anchor=(s:string)=>{if(!/^p1-[a-z0-9-]+$/.test(s)||ids.has(s))fail();ids.add(s);};
  for(const section of value.sections){
-  only(section,['id','heading','body']);anchor(section.id);if(!filled(section.heading)||!section.body.length)fail();
+  only(section,['id','heading','body','collapsible','aliases']);anchor(section.id);
+  if(section.collapsible!==undefined&&(section.collapsible!==true||section.id!=='p1-csrf-browser-intro'))fail();
+  if(section.aliases!==undefined){if(!section.collapsible||!Array.isArray(section.aliases)||section.aliases.length>50)fail();for(const id of section.aliases)anchor(id);}
+ if(!filled(section.heading)||!section.body.length)fail();
   for(const b of section.body){
    const fields:Record<string,string[]>={paragraph:['kind','text'],heading:['kind','id','text'],code:['kind','text'],list:['kind','items'],table:['kind','headers','rows'],answer:['kind','id','summary','paragraphs'],diagram:['kind','name','caption','description','items']};
    if(!fields[b.kind])fail();only(b,fields[b.kind]);

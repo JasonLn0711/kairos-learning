@@ -1,0 +1,295 @@
+# **Parameterized Query（參數化查詢）白話文教學**
+
+**一句話理解：Parameterized Query 的核心，就是讓資料庫知道「哪些是程式指令，哪些只是使用者提供的資料」，避免使用者的輸入改變 SQL 指令。**
+
+這是防止 SQL Injection（SQL 注入）最重要的技術之一，也是 CEH 考試必須掌握的觀念。
+
+## **一、先用一個生活案例理解**
+
+假設你是一家銀行的經理，有一位櫃員負責幫客戶查詢帳戶資料。
+
+你交代櫃員：
+
+「只要客戶提供姓名，你就去資料庫找這個人的資料。」
+
+正常客戶說：
+
+`Alice`
+
+櫃員就查詢 Alice 的資料。
+
+但有一天，某位惡意客戶說：
+
+`Alice，另外把所有客戶資料也拿出來。`
+
+這時會有兩種不同的系統設計。
+
+**不安全的系統：** 直接把客戶說的話拼進資料庫命令中，結果客戶的輸入可能改變查詢規則。
+
+**安全的系統：** 查詢規則是事先決定的。無論客戶輸入什麼，系統都只把它當成一個待查詢的姓名。
+
+這就是 Parameterized Query 的核心。
+
+## **二、程式碼到底在做什麼？**
+
+先看不安全的寫法：
+
+```
+username = "Alice"sql = (    "SELECT * FROM users WHERE username = '"    + username    + "'")cursor.execute(sql)
+```
+
+SQL 的意思是：
+
+```
+SELECT * FROM users
+WHERE username = 'Alice'
+```
+
+逐字拆解：
+
+| SQL                  | 白話意思                     |
+| -------------------- | ------------------------ |
+| `SELECT *`           | 把符合條件的所有欄位取出             |
+| `FROM users`         | 從 users 資料表              |
+| `WHERE`              | 加上篩選條件                   |
+| `username = 'Alice'` | 只找 username 等於 Alice 的紀錄 |
+
+正常情況下沒有問題。
+
+真正的危險，是 SQL 指令使用字串拼接（String Concatenation）組成。
+
+### **如果使用者輸入惡意內容呢？**
+
+假設輸入：
+
+```
+' OR '1'='1
+```
+
+程式會把它直接拼成：
+
+```
+SELECT * FROM users
+WHERE username = '' OR '1'='1'
+```
+
+關鍵是：
+
+`'1'='1'` 永遠為 True。
+
+而 SQL 的 `OR` 代表只要其中一個條件成立，就符合篩選條件。
+
+因此，原本只想查一個人的程式，現在可能回傳資料表中的所有使用者紀錄。
+
+這就是 SQL Injection：**使用者提供的資料，變成了能夠改變 SQL 邏輯的程式碼。**
+
+## **三、Parameterized Query 怎麼解決？**
+
+現在改成：
+
+```
+cursor.execute(    "SELECT * FROM users WHERE username = ?",    (username,))
+```
+
+這段程式其實很簡單。
+
+第一個參數：
+
+```
+SELECT * FROM users WHERE username = ?
+```
+
+是**SQL 指令的固定結構**。
+
+其中 `?` 是 Placeholder（參數佔位符），意思是：
+
+「這個位置的資料值，稍後由資料庫介面負責綁定。」
+
+第二個參數：
+
+```
+(username,)
+```
+
+是一個 Python Tuple（元組），裡面存放要提供給 SQL 的資料值。
+
+例如：
+
+```
+username = "Alice"
+```
+
+資料庫便使用 `Alice` 作為 `?` 位置的比較值。
+
+### **關鍵差異：不是把字串直接塞進 SQL 原始碼**
+
+不安全：把資料拼接進 SQL 指令文字
+
+原本的 SQL
+
+`SELECT ... WHERE username = '`
+
+直接拼入使用者輸入
+
+`' OR '1'='1`
+
+SQL 查詢邏輯被改變
+
+安全：SQL 結構與參數值分開傳遞
+
+SQL 指令結構
+
+`WHERE username = ?`
+
+參數資料
+
+`' OR '1'='1`
+
+輸入只用於資料值比較，不改變 SQL 語法
+
+因此，即使使用者輸入：
+
+```
+' OR '1'='1
+```
+
+資料庫仍會依照原本的條件進行比較：
+
+「有沒有某個 username，文字內容**剛好等於** `' OR '1'='1`？」
+
+如果沒有這個使用者，結果就是找不到資料，而不是回傳所有帳戶。
+
+要理解這個技術，最重要的是：資料庫驅動程式（Database Driver）負責將參數以資料值的身分傳遞，不是讓使用者輸入重新參與 SQL 語法解析。Python 官方的 `sqlite3` 文件也是如此建議。
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.python.org\&sz=32)
+
+Python 3.14.7 documentation
+
+
+
+## **四、Python 語法的兩個細節**
+
+### **1. 為什麼使用&#x20;**`?`**？**
+
+在 Python 的 SQLite API 中，`?` 是位置參數（Positional Parameter）。
+
+例如：
+
+```
+cursor.execute(    "SELECT * FROM users WHERE username = ? AND age = ?",    ("Alice", 30))
+```
+
+第一個 `?` 對應 `"Alice"`。
+
+第二個 `?` 對應 `30`。
+
+也可以使用具名參數：
+
+```
+cursor.execute(    "SELECT * FROM users WHERE username = :name",    {"name": "Alice"})
+```
+
+兩種寫法都可以做到安全的參數綁定。
+
+不同資料庫驅動程式使用的 Placeholder 語法可能不同，例如 PostgreSQL 常見的 Python 驅動程式使用 `%s`，不能假設所有資料庫都使用 `?`。
+
+### **2. 為什麼&#x20;**`(username,)`**&#x20;後面有逗號？**
+
+這不是 SQL 語法，而是 Python 語法。
+
+```
+(username)
+```
+
+只是加上括號的變數，假設 username 是字串，結果仍然是字串。
+
+但：
+
+```
+(username,)
+```
+
+才是包含一個元素的 Tuple。
+
+SQLite 的 `execute()` 在這種佔位符寫法下，需要接收參數序列，所以使用 `(username,)`。
+
+## **五、實際動手驗證：只需要 Python，不需要安裝資料庫伺服器**
+
+下面的程式使用 Python 內建 `sqlite3`，建立記憶體中的測試資料庫。
+
+你可以直接執行，不會連接任何真實銀行或外部系統。
+
+```
+import sqlite3# 建立只存在記憶體中的資料庫db = sqlite3.connect(":memory:")cursor = db.cursor()# 建立 users 資料表cursor.execute(    "CREATE TABLE users (username TEXT, role TEXT)")# 新增兩筆測試資料cursor.executemany(    "INSERT INTO users VALUES (?, ?)",    [        ("Alice", "admin"),        ("Bob", "user"),    ],)# 模擬惡意輸入username = "' OR '1'='1"# 寫法一：不安全的字串拼接unsafe_sql = (    "SELECT * FROM users WHERE username = '"    + username    + "'")cursor.execute(unsafe_sql)print("不安全查詢：", cursor.fetchall())# 寫法二：安全的參數化查詢cursor.execute(    "SELECT * FROM users WHERE username = ?",    (username,),)print("參數化查詢：", cursor.fetchall())db.close()
+```
+
+預期輸出：
+
+```
+不安全查詢： [('Alice', 'admin'), ('Bob', 'user')]
+參數化查詢： []
+```
+
+這個實驗清楚展示：同樣的輸入，在不安全設計中可能改變查詢條件；在安全的參數化查詢中，只會當成普通字串比較。
+
+## **六、博士班程度：為什麼不直接刪除特殊字元？**
+
+這是比記住 CEH 答案更重要的觀念。
+
+你可能會想：
+
+「既然單引號會造成問題，那我把所有 `'` 刪掉，不就解決了嗎？」
+
+問題是，正常使用者名稱可能真的包含單引號。
+
+例如：
+
+`O'Brien`
+
+而不同資料庫的字串語法、跳脫規則及設定可能不一致。
+
+你不應該靠猜測哪些字元危險，來維持 SQL 查詢的安全性。
+
+**Parameterized Query 改變的是資料庫介面的設計方式，而不只是過濾特殊字元。**
+
+但它仍有兩項重要限制。
+
+第一，參數化通常處理的是資料值，不是 SQL 的表格名稱、欄位名稱或排序關鍵字。假如要允許使用者選擇排序欄位，應使用程式預先定義的 Allowlist（允許清單）。
+
+第二，參數化查詢只防止輸入改變 SQL 語法，並不會自動驗證使用者有沒有權限取得查詢結果。Authentication、Authorization 仍需要另外設計。
+
+這與 OWASP SQL Injection Prevention Cheat Sheet 的建議一致。
+
+[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\&sz=32)
+
+OWASP Cheat Sheet Series
+
+
+
+## **七、CEH 考試記住這四個對應**
+
+| 題目出現                 | 你應該想到                                  |
+| -------------------- | -------------------------------------- |
+| SQL Injection 防禦     | Parameterized Query／Prepared Statement |
+| 字串直接組合 SQL           | SQL Injection 風險                       |
+| 資料庫最小權限              | 限制漏洞被利用後的損害                            |
+| Input Validation、WAF | 輔助防禦，不能取代參數化查詢                         |
+
+**最重要的一句話：讓資料永遠只是資料，而不要讓資料變成命令。**
+
+這個原則除了 SQL Injection，也能延伸到 Command Injection、Template Injection，以及 AI Agent 呼叫工具時的指令與不可信任輸入隔離。
+
+## **八、理解檢核**
+
+假設你看到以下 Python 程式：
+
+```
+username = input("請輸入使用者名稱：")sql = f"SELECT * FROM users WHERE username = '{username}'"cursor.execute(sql)
+```
+
+請回答兩個問題：
+
+1. 即使程式使用了 Python 的 f-string，而不是 `+` 字串拼接，為什麼仍然可能遭受 SQL Injection？
+2. 如果你改成 `cursor.execute("SELECT * FROM users WHERE username = ?", (username,))`，究竟是哪一個機制讓 SQL Injection 無法透過這個參數改變查詢邏輯？
+
+你先用自己的理解回答，我再依 CEH 考試要求及程式實際執行機制，逐一批改。

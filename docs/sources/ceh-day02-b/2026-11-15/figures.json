@@ -1,0 +1,138 @@
+[
+  {
+    "kind": "diagram",
+    "name": "m20d2bhttps",
+    "caption": "圖1｜從瀏覽器到銀行：兩端入口與四個協定步驟",
+    "description": "虛線表示網際網路上的概念連線；下方1–4表示TCP型HTTPS的協定建立順序，不表示DNS代送網頁。HTTP/3通常走QUIC／UDP 443，不使用TCP三向交握。",
+    "items": [
+      {
+        "title": "Alice 的瀏覽器",
+        "body": "192.168.1.20:53000"
+      },
+      {
+        "title": "銀行伺服器",
+        "body": "203.0.113.10:443"
+      },
+      {
+        "title": "1 DNS 找出 IP",
+        "body": "查詢 bank.example 的位址"
+      },
+      {
+        "title": "2 TCP 建立連線",
+        "body": "臨時來源埠 53000 → 目的埠 443"
+      },
+      {
+        "title": "3 TLS 建立保護",
+        "body": "協商加密並驗證相應伺服器身分"
+      },
+      {
+        "title": "4 HTTP 請求／回應",
+        "body": "在受保護的連線上交換網頁訊息"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2bhandshake",
+    "caption": "圖2｜TCP 三向交握：SYN、SYN/ACK、ACK",
+    "description": "箭頭依序為Client（Alice）→Server、Server→Client、Client→Server；第三步ACK完成連線建立，之後才交換應用資料。",
+    "items": [
+      {
+        "title": "SYN",
+        "body": "Client → Server：我想建立連線，同步初始序號。"
+      },
+      {
+        "title": "SYN/ACK",
+        "body": "Server → Client：收到請求，也準備建立連線。"
+      },
+      {
+        "title": "ACK",
+        "body": "Client → Server：確認收到回應，TCP 連線已建立。"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2bscans",
+    "caption": "圖3｜TCP Connect 與 SYN Scan：第三個封包的差別",
+    "description": "兩欄為平行比較，不是先後執行。每欄箭頭是Client與Server間的探測方向；-sT完成交握，-sS通常用RST結束，不保證避開IDS。",
+    "items": [
+      {
+        "title": "SYN",
+        "body": "Client → Server：建立連線請求。"
+      },
+      {
+        "title": "SYN/ACK",
+        "body": "Server → Client：可建立連線。"
+      },
+      {
+        "title": "ACK",
+        "body": "Client → Server：連線成立，由作業系統執行一般連線建立。"
+      },
+      {
+        "title": "SYN",
+        "body": "Client → Server：探測埠狀態。"
+      },
+      {
+        "title": "SYN/ACK",
+        "body": "Server → Client：支持 open 判定。"
+      },
+      {
+        "title": "RST",
+        "body": "Client → Server：通常結束探測，未完成TCP交握。"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2budp",
+    "caption": "圖4｜UDP 探測結果：四種條件分支",
+    "description": "四格是同一次探測的替代觀察結果，不是依序發生。ICMP Type 3 Code 3指ICMPv4；其他指定不可達錯誤可支持filtered；靜默保留不確定性。",
+    "items": [
+      {
+        "title": "送出 UDP 探測封包",
+        "body": "觀察目標或網路設備是否回應"
+      },
+      {
+        "title": "open",
+        "body": "UDP 服務回覆：確實收到對應服務的回應。"
+      },
+      {
+        "title": "closed",
+        "body": "ICMP Type 3 Code 3：Port Unreachable，目的埠不可達。"
+      },
+      {
+        "title": "filtered",
+        "body": "其他特定 ICMP 不可達錯誤：存在網路存取限制的證據。"
+      },
+      {
+        "title": "open|filtered",
+        "body": "完全沒有回覆：無法確定開放或受到過濾。"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2bvisibility",
+    "caption": "圖5｜SYN 探測的三個觀察位置",
+    "description": "箭頭由發送端往不同觀察層次閱讀，不代表每一層必然產生日誌。應用沒有完整連線紀錄，不能推論防火牆或IDS看不到封包。",
+    "items": [
+      {
+        "title": "掃描者發送 SYN",
+        "body": "封包朝已授權目標送出。"
+      },
+      {
+        "title": "第一層：防火牆／網路 IDS",
+        "body": "看得到封包、TCP Flags、來源、目的地與流量模式。"
+      },
+      {
+        "title": "第二層：作業系統／TCP Stack",
+        "body": "可以觀察連線嘗試、狀態變化及部分事件。"
+      },
+      {
+        "title": "第三層：應用程式日誌",
+        "body": "是否留下紀錄，取決於應用程式何時開始記錄及其設定。"
+      }
+    ]
+  }
+]

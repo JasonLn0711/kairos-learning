@@ -1,0 +1,38 @@
+[
+  {
+    "code": 1,
+    "original": "username = \"Alice\"sql = (    \"SELECT * FROM users WHERE username = '\"    + username    + \"'\")cursor.execute(sql)",
+    "adopted": "username = \"Alice\"\nsql = (\n    \"SELECT * FROM users WHERE username = '\"\n    + username\n    + \"'\"\n)\ncursor.execute(sql)",
+    "reason": "修復黏合換行／縮排，保留原語意"
+  },
+  {
+    "code": 5,
+    "original": "cursor.execute(    \"SELECT * FROM users WHERE username = ?\",    (username,))",
+    "adopted": "cursor.execute(\n    \"SELECT * FROM users WHERE username = ?\",\n    (username,),\n)",
+    "reason": "修復黏合換行／縮排，保留原語意"
+  },
+  {
+    "code": 10,
+    "original": "cursor.execute(    \"SELECT * FROM users WHERE username = ? AND age = ?\",    (\"Alice\", 30))",
+    "adopted": "cursor.execute(\n    \"SELECT * FROM users WHERE username = ? AND age = ?\",\n    (\"Alice\", 30),\n)",
+    "reason": "修復黏合換行／縮排，保留原語意"
+  },
+  {
+    "code": 11,
+    "original": "cursor.execute(    \"SELECT * FROM users WHERE username = :name\",    {\"name\": \"Alice\"})",
+    "adopted": "cursor.execute(\n    \"SELECT * FROM users WHERE username = :name\",\n    {\"name\": \"Alice\"},\n)",
+    "reason": "修復黏合換行／縮排，保留原語意"
+  },
+  {
+    "code": 14,
+    "original": "import sqlite3# 建立只存在記憶體中的資料庫db = sqlite3.connect(\":memory:\")cursor = db.cursor()# 建立 users 資料表cursor.execute(    \"CREATE TABLE users (username TEXT, role TEXT)\")# 新增兩筆測試資料cursor.executemany(    \"INSERT INTO users VALUES (?, ?)\",    [        (\"Alice\", \"admin\"),        (\"Bob\", \"user\"),    ],)# 模擬惡意輸入username = \"' OR '1'='1\"# 寫法一：不安全的字串拼接unsafe_sql = (    \"SELECT * FROM users WHERE username = '\"    + username    + \"'\")cursor.execute(unsafe_sql)print(\"不安全查詢：\", cursor.fetchall())# 寫法二：安全的參數化查詢cursor.execute(    \"SELECT * FROM users WHERE username = ?\",    (username,),)print(\"參數化查詢：\", cursor.fetchall())db.close()",
+    "adopted": "import sqlite3\n\n# 建立只存在記憶體中的資料庫\ndb = sqlite3.connect(\":memory:\")\ncursor = db.cursor()\n\n# 建立 users 資料表\ncursor.execute(\n    \"CREATE TABLE users (username TEXT, role TEXT)\"\n)\n\n# 新增兩筆測試資料\ncursor.executemany(\n    \"INSERT INTO users VALUES (?, ?)\",\n    [\n        (\"Alice\", \"admin\"),\n        (\"Bob\", \"user\"),\n    ],\n)\n\n# 模擬惡意輸入\nusername = \"' OR '1'='1\"\n\n# 寫法一：不安全的字串拼接\nunsafe_sql = (\n    \"SELECT * FROM users WHERE username = '\"\n    + username\n    + \"'\"\n)\ncursor.execute(unsafe_sql)\nprint(\"不安全查詢：\", cursor.fetchall())\n\n# 寫法二：安全的參數化查詢\ncursor.execute(\n    \"SELECT * FROM users WHERE username = ?\",\n    (username,),\n)\nprint(\"參數化查詢：\", cursor.fetchall())\ndb.close()",
+    "reason": "修復黏合換行／縮排，保留原語意"
+  },
+  {
+    "code": 16,
+    "original": "username = input(\"請輸入使用者名稱：\")sql = f\"SELECT * FROM users WHERE username = '{username}'\"cursor.execute(sql)",
+    "adopted": "username = input(\"請輸入使用者名稱：\")\nsql = f\"SELECT * FROM users WHERE username = '{username}'\"\ncursor.execute(sql)",
+    "reason": "修復黏合換行／縮排，保留原語意"
+  }
+]

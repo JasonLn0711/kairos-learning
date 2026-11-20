@@ -1,0 +1,222 @@
+[
+  {
+    "kind": "diagram",
+    "name": "m20d2rarchitecture",
+    "caption": "CSRF 圖 1｜同一瀏覽器、不同網頁與兩個伺服器",
+    "description": "Alice電腦中的兩個網頁並列，由同一Browser管理Cookie與網路；兩組HTTPS往返分別連至銀行與惡意網站Server，不是兩個Server互相轉送Session。這是責任分工示意，不是固定的程序配置。",
+    "items": [
+      {
+        "title": "Alice 的電腦：同一個瀏覽器",
+        "body": "網頁有自己的 DOM、JavaScript；網路與儲存由 Browser 仲裁"
+      },
+      {
+        "title": "銀行網頁",
+        "body": "bank.example\n自己的 DOM、JavaScript"
+      },
+      {
+        "title": "惡意網頁",
+        "body": "evil.example\n自己的 DOM、JavaScript"
+      },
+      {
+        "title": "Browser 的 Cookie 儲存與網路管理機制",
+        "body": "儲存不同網站的 Cookie，依照目標網址、Cookie 屬性和請求情境決定是否附帶。"
+      },
+      {
+        "title": "銀行 Server",
+        "body": "驗證 Alice 身分、維護 Session、處理交易"
+      },
+      {
+        "title": "惡意網站 Server",
+        "body": "提供惡意頁面，但無權直接取得銀行的 Cookie"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rscenarios",
+    "caption": "CSRF 圖 2｜Web 需要的五種跨網站互動",
+    "description": "五個情境是平行用途，不是同一請求的五個階段。圖片HTML是可讀範例，不會在本頁執行；不會載入遠端CDN或執行程式。",
+    "items": [
+      {
+        "title": "情境 A：新聞網站提供外部連結",
+        "body": "Alice 從新聞網站點擊政府公告連結，Browser 向政府網站發送 GET Request。新聞網站不需要有權讀取政府網站的私人資料。"
+      },
+      {
+        "title": "情境 B：從 CDN 載入圖片",
+        "body": "商品網站使用另一個網域提供產品圖片。\n<img src=\"https://cdn.example/product.jpg\">\n瀏覽器向 CDN 發送 Request，取得圖片並顯示。這不代表商品網站的 JavaScript 可以讀取 CDN 的任意私人資料。"
+      },
+      {
+        "title": "情境 C：購物網站前往第三方付款服務",
+        "body": "商家網站把顧客導向付款服務商，也可能透過表單提交必要資料。跨網站表單提交本來就是 Web 支援的能力，實際付款仍須通過付款服務商的安全驗證。"
+      },
+      {
+        "title": "情境 D：使用 Google 或 Microsoft 登入",
+        "body": "應用程式導向身分提供者；驗證完成後，再重新導向原本的應用程式。這類跨網站導航是 OAuth 2.0／OpenID Connect 等流程的重要組成部分。"
+      },
+      {
+        "title": "情境 E：嵌入另一個網站的影片",
+        "body": "教學網站透過 iframe 嵌入影片播放器。Browser 可以載入它，但不同 Origin 的 Frame 仍受 SOP 與各種嵌入政策限制。"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rcausal",
+    "caption": "CSRF 圖 3｜CSRF 的完整因果流程",
+    "description": "分析以Cookie登入的轉帳情境。Cookie閘門的否分支止於「沒有銀行登入憑證」，不會流入下一個驗證閘門；是分支才攜帶Session到銀行。Server拒絕與通過分開，不表示請求能發出就會成功。虛線框是決策，實線箭頭是因果方向。",
+    "items": [
+      {
+        "title": "Alice 登入銀行",
+        "body": "完成身分驗證"
+      },
+      {
+        "title": "銀行建立 Session，瀏覽器儲存銀行 Cookie",
+        "body": "Server 與 Browser 各自管理工作階段和Cookie"
+      },
+      {
+        "title": "Alice 開啟 evil.example",
+        "body": "取得惡意頁面"
+      },
+      {
+        "title": "惡意頁面要求 Browser 向 bank.example 發 Request",
+        "body": "指定銀行URL與操作參數"
+      },
+      {
+        "title": "Cookie 政策允許附帶銀行 Cookie？",
+        "body": "依目的地、Cookie屬性與請求情境判斷"
+      },
+      {
+        "title": "Request 可能送達，但沒有銀行登入憑證",
+        "body": "通常不能以已登入Alice身分執行轉帳"
+      },
+      {
+        "title": "銀行收到操作參數及 Alice 的 Session Cookie",
+        "body": "仍須進一步驗證"
+      },
+      {
+        "title": "Server 是否通過 CSRF 與權限檢查？",
+        "body": "連同必要的交易安全要求一併判斷"
+      },
+      {
+        "title": "阻止操作",
+        "body": "拒絕未通過驗證的Request"
+      },
+      {
+        "title": "處理 Request",
+        "body": "通過必要驗證後才執行"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rrequest",
+    "caption": "CSRF 圖 4｜誘發請求與 Cookie 的真正目的地",
+    "description": "Session Cookie若被允許附帶，是直接送到銀行，不是送給惡意網站。箭頭表示發起、附帶與處理的責任接續，不是Cookie先經過惡意Server。",
+    "items": [
+      {
+        "title": "惡意網頁",
+        "body": "指定銀行 URL 與參數"
+      },
+      {
+        "title": "瀏覽器",
+        "body": "決定 Cookie 是否附帶"
+      },
+      {
+        "title": "銀行 Server",
+        "body": "驗證並處理 Request"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2routcomes",
+    "caption": "CSRF 圖 5｜一次廣泛 CSRF 嘗試的四種結果",
+    "description": "四種訪客狀態並列比較，不是同一人的時間順序；紅色警示只表示條件符合時可能成功，不表示攻擊者事前已知道該訪客登入。",
+    "items": [
+      {
+        "title": "Bob：沒有登入銀行",
+        "body": "沒有有效 Session，通常無法以已登入使用者身分執行操作"
+      },
+      {
+        "title": "Carol：登入已過期",
+        "body": "Server 應拒絕失效 Session"
+      },
+      {
+        "title": "David：已登入，但網站有 CSRF 防護",
+        "body": "即使 Session 有效，Server 仍可阻擋未通過檢查的 Request"
+      },
+      {
+        "title": "Alice：已登入，且目標操作缺乏防護",
+        "body": "若 Cookie 被附帶、參數符合要求、權限足夠，攻擊可能成功"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rconditions",
+    "caption": "CSRF 圖 6｜已登入使用者 CSRF 情境的必要條件樹",
+    "description": "四類條件共同構成此Cookie登入情境的分析，不是四選一。攻擊者分成「知道目標URL與參數」及「能誘發請求」兩個必要面向；個別訪客的登入歷史不是必須事先知道的資料。此圖不概括其他如登入CSRF的不同威脅模型。",
+    "items": [
+      {
+        "title": "CSRF 攻擊要成功",
+        "body": "本圖分析利用已登入憑證的操作"
+      },
+      {
+        "title": "受害者條件",
+        "body": "有效工作階段與權限"
+      },
+      {
+        "title": "攻擊者條件",
+        "body": "目標資訊與誘發能力"
+      },
+      {
+        "title": "瀏覽器條件",
+        "body": "允許請求與必要憑證"
+      },
+      {
+        "title": "Server 條件",
+        "body": "相關防護缺失或未正確執行"
+      },
+      {
+        "title": "目標使用者具有有效 Session 及足夠操作權限",
+        "body": "受害者狀態"
+      },
+      {
+        "title": "知道可用的目標 URL 與必要參數",
+        "body": "不是知道Session Token"
+      },
+      {
+        "title": "能讓受害者瀏覽器觸發 Request",
+        "body": "不一定需要社交工程"
+      },
+      {
+        "title": "允許對應的跨站請求並附帶必要憑證",
+        "body": "依實際Cookie與請求政策判斷"
+      },
+      {
+        "title": "缺少或未正確執行 CSRF 與其他安全檢查",
+        "body": "Server接受不符合防偽流程的操作"
+      }
+    ]
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rdecisions",
+    "caption": "CSRF 圖 7｜把 Web 請求拆成三個決策",
+    "description": "三個責任分別判斷、依序互動；決策1允許發起不保證決策2附帶Cookie，更不保證決策3接受操作。",
+    "items": [
+      {
+        "title": "決策 1：網頁能不能發起這個操作？",
+        "body": "Browser 檢查 Web Platform、Sandbox、SOP、Fetch 等規則。"
+      },
+      {
+        "title": "決策 2：Browser 實際送出哪些憑證？",
+        "body": "依 Cookie Domain、Path、Secure、SameSite、Credentials Mode 等規則決定。"
+      },
+      {
+        "title": "決策 3：Server 應不應該接受並執行？",
+        "body": "驗證 Session、Authorization、CSRF、來源、操作參數與必要的額外確認。"
+      }
+    ]
+  }
+]

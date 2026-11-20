@@ -1,0 +1,545 @@
+[
+  {
+    "kind": "heading",
+    "id": "p1-binding-intro",
+    "text": "補充精讀｜Parameterized Query（參數化查詢）白話文教學"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這一節是另外加入的 SQL 參數化精讀；前面的40／30／15／15保留為四重點補充的閱讀建議，不代表新增精讀後整頁的實際字數比例，也不是官方配分。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "一句話理解：Parameterized Query 的核心，就是讓資料庫知道「哪些是程式指令，哪些只是使用者提供的資料」，避免使用者的輸入改變 SQL 指令。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是防止 SQL Injection（SQL 注入）最重要的技術之一，也是 CEH 考試必須掌握的觀念。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-section-01",
+    "text": "參數化精讀｜一、先用一個生活案例理解"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設你是一家銀行的經理，有一位櫃員負責幫客戶查詢帳戶資料。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "你交代櫃員："
+  },
+  {
+    "kind": "paragraph",
+    "text": "「只要客戶提供姓名，你就去資料庫找這個人的資料。」"
+  },
+  {
+    "kind": "paragraph",
+    "text": "正常客戶說："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`Alice`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "櫃員就查詢 Alice 的資料。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "但有一天，某位惡意客戶說："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`Alice，另外把所有客戶資料也拿出來。`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這時會有兩種不同的系統設計。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "不安全的系統： 直接把客戶說的話拼進資料庫命令中，結果客戶的輸入可能改變查詢規則。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "安全的系統： 查詢規則是事先決定的。無論客戶輸入什麼，系統都只把它當成一個待查詢的姓名。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這就是 Parameterized Query 的核心。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-section-02",
+    "text": "參數化精讀｜二、程式碼到底在做什麼？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "以下為程式片段，假設已建立資料庫連線與 cursor；第五節提供可單獨執行的完整程式。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "先看不安全的寫法："
+  },
+  {
+    "kind": "code",
+    "text": "username = \"Alice\"\nsql = (\n    \"SELECT * FROM users WHERE username = '\"\n    + username\n    + \"'\"\n)\ncursor.execute(sql)"
+  },
+  {
+    "kind": "paragraph",
+    "text": "SQL 的意思是："
+  },
+  {
+    "kind": "code",
+    "text": "SELECT * FROM users\nWHERE username = 'Alice'"
+  },
+  {
+    "kind": "paragraph",
+    "text": "逐字拆解："
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "SQL",
+      "白話意思"
+    ],
+    "rows": [
+      [
+        "`SELECT *`",
+        "把符合條件的所有欄位取出"
+      ],
+      [
+        "`FROM users`",
+        "從 users 資料表"
+      ],
+      [
+        "`WHERE`",
+        "加上篩選條件"
+      ],
+      [
+        "`username = 'Alice'`",
+        "只找 username 等於 Alice 的紀錄"
+      ]
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "正常情況下沒有問題。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "真正的危險，是 SQL 指令使用字串拼接（String Concatenation）組成。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-subsection-01",
+    "text": "參數化查詢｜如果使用者輸入惡意內容呢？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設輸入："
+  },
+  {
+    "kind": "code",
+    "text": "' OR '1'='1"
+  },
+  {
+    "kind": "paragraph",
+    "text": "程式會把它直接拼成："
+  },
+  {
+    "kind": "code",
+    "text": "SELECT * FROM users\nWHERE username = '' OR '1'='1'"
+  },
+  {
+    "kind": "paragraph",
+    "text": "關鍵是："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`'1'='1'` 永遠為 True。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "而 SQL 的 `OR` 代表只要其中一個條件成立，就符合篩選條件。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因此，原本只想查一個人的程式，現在可能回傳資料表中的所有使用者紀錄。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這就是 SQL Injection：使用者提供的資料，變成了能夠改變 SQL 邏輯的程式碼。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-section-03",
+    "text": "參數化精讀｜三、Parameterized Query 怎麼解決？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "現在改成："
+  },
+  {
+    "kind": "code",
+    "text": "cursor.execute(\n    \"SELECT * FROM users WHERE username = ?\",\n    (username,),\n)"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這段程式其實很簡單。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第一個參數："
+  },
+  {
+    "kind": "code",
+    "text": "SELECT * FROM users WHERE username = ?"
+  },
+  {
+    "kind": "paragraph",
+    "text": "是SQL 指令的固定結構。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "其中 `?` 是 Placeholder（參數佔位符），意思是："
+  },
+  {
+    "kind": "paragraph",
+    "text": "「這個位置的資料值，稍後由資料庫介面負責綁定。」"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第二個參數："
+  },
+  {
+    "kind": "code",
+    "text": "(username,)"
+  },
+  {
+    "kind": "paragraph",
+    "text": "是一個 Python Tuple（元組），裡面存放要提供給 SQL 的資料值。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如："
+  },
+  {
+    "kind": "code",
+    "text": "username = \"Alice\""
+  },
+  {
+    "kind": "paragraph",
+    "text": "資料庫便使用 `Alice` 作為 `?` 位置的比較值。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-subsection-02",
+    "text": "參數化查詢｜關鍵差異：不是把字串直接塞進 SQL 原始碼"
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2binding",
+    "caption": "圖 8｜SQL 字串拼接與參數綁定的差異",
+    "description": "上半部呈現拼接過程的片段，完整查詢與收尾引號見正文。下半部的 SQL 結構與參數值並列傳遞，沒有把參數接成 SQL 原始碼；兩種設計使用相同輸入，結果仍依資料內容而定。",
+    "items": [
+      {
+        "title": "原本的 SQL（片段）",
+        "body": "SELECT ... WHERE username = '"
+      },
+      {
+        "title": "直接拼入使用者輸入",
+        "body": "' OR '1'='1"
+      },
+      {
+        "title": "SQL 查詢邏輯被改變",
+        "body": "輸入可能擴大查詢條件"
+      },
+      {
+        "title": "SQL 指令結構",
+        "body": "WHERE username = ?"
+      },
+      {
+        "title": "參數資料",
+        "body": "' OR '1'='1"
+      },
+      {
+        "title": "輸入只用於資料值比較，不改變 SQL 語法",
+        "body": "驅動程式將這個輸入綁定為資料值"
+      }
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "因此，即使使用者輸入："
+  },
+  {
+    "kind": "code",
+    "text": "' OR '1'='1"
+  },
+  {
+    "kind": "paragraph",
+    "text": "資料庫仍會依照原本的條件進行比較："
+  },
+  {
+    "kind": "paragraph",
+    "text": "「有沒有某個 username，文字內容剛好等於 `' OR '1'='1`？」"
+  },
+  {
+    "kind": "paragraph",
+    "text": "如果沒有這個使用者，結果就是找不到資料，而不是回傳所有帳戶。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "要理解這個技術，最重要的是：資料庫驅動程式（Database Driver）負責將參數以資料值的身分傳遞，不是讓使用者輸入重新參與 SQL 語法解析。Python 官方的 `sqlite3` 文件也是如此建議。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-section-04",
+    "text": "參數化精讀｜四、Python 語法的兩個細節"
+  },
+  {
+    "kind": "paragraph",
+    "text": "本節雙參數片段假設 users 另外有 age 欄位；第五節完整實驗只建立 username、role，兩個範例使用不同的示意資料表。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-subsection-03",
+    "text": "參數化查詢｜1. 為什麼使用 `?`？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "在 Python 的 SQLite API 中，`?` 是位置參數（Positional Parameter）。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如："
+  },
+  {
+    "kind": "code",
+    "text": "cursor.execute(\n    \"SELECT * FROM users WHERE username = ? AND age = ?\",\n    (\"Alice\", 30),\n)"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第一個 `?` 對應 `\"Alice\"`。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第二個 `?` 對應 `30`。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "也可以使用具名參數："
+  },
+  {
+    "kind": "code",
+    "text": "cursor.execute(\n    \"SELECT * FROM users WHERE username = :name\",\n    {\"name\": \"Alice\"},\n)"
+  },
+  {
+    "kind": "paragraph",
+    "text": "兩種寫法都可以做到安全的參數綁定。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "不同資料庫驅動程式使用的 Placeholder 語法可能不同，例如 PostgreSQL 常見的 Python 驅動程式使用 `%s`，不能假設所有資料庫都使用 `?`。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-subsection-04",
+    "text": "參數化查詢｜2. 為什麼 `(username,)` 後面有逗號？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這不是 SQL 語法，而是 Python 語法。"
+  },
+  {
+    "kind": "code",
+    "text": "(username)"
+  },
+  {
+    "kind": "paragraph",
+    "text": "只是加上括號的變數，假設 username 是字串，結果仍然是字串。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "但："
+  },
+  {
+    "kind": "code",
+    "text": "(username,)"
+  },
+  {
+    "kind": "paragraph",
+    "text": "才是包含一個元素的 Tuple。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "SQLite 的 `execute()` 在這種佔位符寫法下，需要接收參數序列，所以使用 `(username,)`。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-section-05",
+    "text": "參數化精讀｜五、實際動手驗證：只需要 Python，不需要安裝資料庫伺服器"
+  },
+  {
+    "kind": "paragraph",
+    "text": "將下方完整程式存成 parameterized_query_demo.py，執行 python3 parameterized_query_demo.py，再比對預期輸出。實驗只使用記憶體與兩筆假資料；關閉連線後資料庫消失，只留下自行保存的程式檔。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "下面的程式使用 Python 內建 `sqlite3`，建立記憶體中的測試資料庫。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "你可以直接執行，不會連接任何真實銀行或外部系統。"
+  },
+  {
+    "kind": "code",
+    "text": "import sqlite3\n\n# 建立只存在記憶體中的資料庫\ndb = sqlite3.connect(\":memory:\")\ncursor = db.cursor()\n\n# 建立 users 資料表\ncursor.execute(\n    \"CREATE TABLE users (username TEXT, role TEXT)\"\n)\n\n# 新增兩筆測試資料\ncursor.executemany(\n    \"INSERT INTO users VALUES (?, ?)\",\n    [\n        (\"Alice\", \"admin\"),\n        (\"Bob\", \"user\"),\n    ],\n)\n\n# 模擬惡意輸入\nusername = \"' OR '1'='1\"\n\n# 寫法一：不安全的字串拼接\nunsafe_sql = (\n    \"SELECT * FROM users WHERE username = '\"\n    + username\n    + \"'\"\n)\ncursor.execute(unsafe_sql)\nprint(\"不安全查詢：\", cursor.fetchall())\n\n# 寫法二：安全的參數化查詢\ncursor.execute(\n    \"SELECT * FROM users WHERE username = ?\",\n    (username,),\n)\nprint(\"參數化查詢：\", cursor.fetchall())\ndb.close()"
+  },
+  {
+    "kind": "paragraph",
+    "text": "預期輸出："
+  },
+  {
+    "kind": "code",
+    "text": "不安全查詢： [('Alice', 'admin'), ('Bob', 'user')]\n參數化查詢： []"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這個實驗清楚展示：同樣的輸入，在不安全設計中可能改變查詢條件；在安全的參數化查詢中，只會當成普通字串比較。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-section-06",
+    "text": "參數化精讀｜六、進一步理解：為什麼不直接刪除特殊字元？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是比記住 CEH 答案更重要的觀念。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "你可能會想："
+  },
+  {
+    "kind": "paragraph",
+    "text": "「既然單引號會造成問題，那我把所有 `'` 刪掉，不就解決了嗎？」"
+  },
+  {
+    "kind": "paragraph",
+    "text": "問題是，正常使用者名稱可能真的包含單引號。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`O'Brien`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "而不同資料庫的字串語法、跳脫規則及設定可能不一致。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "你不應該靠猜測哪些字元危險，來維持 SQL 查詢的安全性。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Parameterized Query 改變的是資料庫介面的設計方式，而不只是過濾特殊字元。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "但它仍有兩項重要限制。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第一，參數化通常處理的是資料值，不是 SQL 的表格名稱、欄位名稱或排序關鍵字。假如要允許使用者選擇排序欄位，應使用程式預先定義的 Allowlist（允許清單）。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第二，參數化查詢只防止輸入改變 SQL 語法，並不會自動驗證使用者有沒有權限取得查詢結果。Authentication、Authorization 仍需要另外設計。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這與 OWASP SQL Injection Prevention Cheat Sheet 的建議一致。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-section-07",
+    "text": "參數化精讀｜七、CEH 考試記住這四個對應"
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "題目出現",
+      "你應該想到"
+    ],
+    "rows": [
+      [
+        "SQL Injection 防禦",
+        "Parameterized Query／Prepared Statement"
+      ],
+      [
+        "字串直接組合 SQL",
+        "SQL Injection 風險"
+      ],
+      [
+        "資料庫最小權限",
+        "限制漏洞被利用後的損害"
+      ],
+      [
+        "Input Validation、WAF",
+        "輔助防禦，不能取代參數化查詢"
+      ]
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "最重要的一句話：讓資料永遠只是資料，而不要讓資料變成命令。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這個原則除了 SQL Injection，也能延伸到 Command Injection、Template Injection，以及 AI Agent 呼叫工具時的指令與不可信任輸入隔離。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是對信任邊界的類比：各系統需要自己的安全介面與驗證；SQL 參數化不能直接視為命令、範本或 AI 提示注入的完整防護。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-binding-section-08",
+    "text": "參數化精讀｜八、理解檢核"
+  },
+  {
+    "kind": "paragraph",
+    "text": "以下兩題為本次參數化查詢補充的自我檢核，與原五道整合情境題、四道選擇題及未附全文的23道題庫題目分開計數；先不公布解答。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設你看到以下 Python 程式："
+  },
+  {
+    "kind": "code",
+    "text": "username = input(\"請輸入使用者名稱：\")\nsql = f\"SELECT * FROM users WHERE username = '{username}'\"\ncursor.execute(sql)"
+  },
+  {
+    "kind": "paragraph",
+    "text": "請回答兩個問題："
+  },
+  {
+    "kind": "paragraph",
+    "text": "1. 即使程式使用了 Python 的 f-string，而不是 `+` 字串拼接，為什麼仍然可能遭受 SQL Injection？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "2. 如果你改成 `cursor.execute(\"SELECT * FROM users WHERE username = ?\", (username,))`，究竟是哪一個機制讓 SQL Injection 無法透過這個參數改變查詢邏輯？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "先自行記下兩題的推理，再與教師討論；本頁提供靜態自我檢核，未提供提交或批改功能，也不記錄已作答或理解狀態。"
+  }
+]

@@ -1,0 +1,478 @@
+# **CEH 精讀｜SQL Injection、RDAP、Directory Traversal、CSRF**
+
+**結論：建議依「SQL Injection → RDAP／WHOIS → Directory Traversal ≈ CSRF」的順序學習。** SQL Injection 要理解原理與防禦，其餘三個重點是能快速辨識題目情境、排除錯誤選項。
+
+## **一、重要性排序與學習比例**
+
+我核對了你提供的 CEH Day02-A 共 23 題，以及 EC-Council 的考試範圍。
+
+| 排名 | 觀念                      | 建議時間占比 | 考試定位                       |
+| -- | ----------------------- | ------ | -------------------------- |
+| 1  | **SQL Injection**       | 40%    | M15 獨立章節，必須深入理解            |
+| 2  | **RDAP／WHOIS**          | 30%    | M02 Footprinting，當前題組重複出現  |
+| 3  | **Directory Traversal** | 15%    | M14 Web Application，辨識攻擊機制 |
+| 3  | **CSRF**                | 15%    | M14 Web Application，辨識攻擊機制 |
+
+這是本次建議教學篇幅，不是 CEH 官方四項考題配分。
+
+依據有兩點：
+
+- **本份 23 題：** WHOIS 出現在 5 題的題幹或選項中，其中 P1-Q050 直接考網域註冊資料；RDAP 本身未出現在原始題目。其餘三項都只在 P3-Q005 出現一次，作為干擾選項。
+- **官方考試範圍：** CEH Exam Blueprint v5.0 將 SQL Injection 列為獨立子領域，配置 6 題；Web Application Hacking 整個領域為 14%，但這不是 SQL Injection 單獨的配分。
+
+  [image](https://www.google.com/s2/favicons?domain=https://cert.eccouncil.org\&sz=32)
+
+  cert.eccouncil.org
+
+
+
+因此 SQL Injection 需要教得較深；RDAP 雖然不是 SQL Injection 等級的獨立攻擊主題，但對你正在練習的 M02 題組有直接價值。
+
+## **二、SQL Injection（SQL 注入）｜40%**
+
+CEH M15｜最重要：原理、種類、如何防禦
+
+### **1. 白話文：把使用者輸入的「資料」，變成資料庫的「命令」**
+
+想像你經營一家銀行。
+
+銀行櫃員收到一張紙條：
+
+「請查詢帳號 12345。」
+
+正常情況下，櫃員只會用 12345 查詢資料。
+
+但如果櫃員把紙條內容直接當作操作指令的一部分，就可能發生問題。
+
+**SQL Injection 的本質，就是使用者輸入的資料突破了資料與 SQL 指令之間的界線，改變原本的查詢邏輯。**
+
+例如網站後端用 Python 建立查詢：
+
+```
+# 不安全的程式設計sql = "SELECT * FROM users WHERE username = '" + username + "'"
+```
+
+原本預期使用者輸入：
+
+```
+alice
+```
+
+資料庫看到：
+
+```
+SELECT * FROM users WHERE username = 'alice'
+```
+
+這是正常查詢。
+
+但如果輸入包含 SQL 語法，開發者又直接拼接字串，資料庫就可能把使用者提供的部分內容誤認為查詢指令。
+
+例如在隔離測試環境中，輸入：
+
+```
+' OR '1'='1
+```
+
+可能讓查詢成為：
+
+```
+SELECT * FROM users
+WHERE username = '' OR '1'='1'
+```
+
+為什麼危險？
+
+因為 `'1'='1'` 永遠成立，查詢條件可能因此被擴大，回傳原本不應取得的紀錄。
+
+實際效果仍取決於 SQL 結構、資料庫權限及程式如何處理查詢結果；不是所有輸入都能成功利用。
+
+### **2. SQL Injection 的根本原因**
+
+不安全的資料處理流程
+
+使用者輸入（不可信任）
+
+程式直接拼接 SQL 字串
+
+資料可能被解讀為 SQL 語法
+
+查詢條件、操作或回傳結果遭改變
+
+在資訊安全中，這屬於不可信任輸入跨越 **Trust Boundary（信任邊界）**，進入具有更高權限的資料庫操作流程。
+
+### **3. CEH 必考的 SQL Injection 類型**
+
+| 類型                     | 白話解釋                 | 考題關鍵字                    |
+| ---------------------- | -------------------- | ------------------------ |
+| In-band SQLi           | 透過同一個通道注入並取得結果       | Error-based、UNION-based  |
+| Blind／Inferential SQLi | 沒有直接顯示資料，靠應用程式行為間接判斷 | Boolean-based、Time-based |
+| Out-of-band SQLi       | 利用其他通訊通道取得資訊         | DNS、不同回傳通道               |
+
+**In-band：看得到結果**
+
+例如資料庫錯誤被直接顯示在網站上，或結果被合併進正常回應。
+
+**Blind：看不到結果，但可以觀察差異**
+
+例如某個測試條件成立時，網站顯示正常頁面；條件不成立時，顯示空結果。即使沒有直接顯示資料庫內容，仍可能逐步推論資料。
+
+Time-based 則是透過伺服器回應時間的差異進行推論，但延遲也可能來自網路壅塞，不能只憑一次慢回應就認定存在弱點。
+
+**Out-of-band：走另一個通道**
+
+例如在某些資料庫功能與權限允許的條件下，資料庫可以產生額外的 DNS 或其他網路活動，讓測試者透過不同通道觀察結果。
+
+這些分類可對照 OWASP WSTG-INPV-05。
+
+[image](https://www.google.com/s2/favicons?domain=https://wstg.owasp.org\&sz=32)
+
+OWASP Web Security Testing Guide
+
+
+
+### **4. 最重要的防禦：Parameterized Query**
+
+不要把不可信任資料直接拼接成 SQL 指令。
+
+改用參數化查詢（Parameterized Query）：
+
+```
+# 使用 Python sqlite3 的安全查詢方式cursor.execute(    "SELECT * FROM users WHERE username = ?",    (username,))
+```
+
+差異在哪裡？
+
+即使使用者輸入包含 `' OR ...` 等文字，資料庫驅動程式仍會將它作為參數值，而不是把它加入 SQL 的條件語法。
+
+這叫作 **Code/Data Separation（程式指令與資料分離）**。
+
+CEH 解題要記得：
+
+- Prepared Statement／Parameterized Query：主要防禦方法。
+- Input Validation：重要的輔助防線，但不能取代參數化。
+- Least Privilege：降低資料庫帳號權限，限制被利用後的損害。
+- WAF：可以輔助阻擋部分攻擊，但不是修復程式漏洞的根本方法。
+
+還有一個較進階的細節：參數化通常適用於資料值；SQL 表格名稱、欄位名稱及排序方向等結構性部分，需要固定映射或 Allowlist，不應任意接受使用者提供的 SQL 片段。
+
+來源：[OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html?utm_source=chatgpt.com)。
+
+[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\&sz=32)
+
+OWASP Cheat Sheet Series
+
+
+
+**SQL Injection 的考試判斷句：使用者輸入改變資料庫查詢語意，就要優先想到 SQL Injection；最重要的防禦是參數化查詢。**
+
+## **三、RDAP（Registration Data Access Protocol）｜30%**
+
+CEH M02｜重點：WHOIS、RDAP、DNS 的差別
+
+### **1. 白話文：RDAP 就是查詢網域登記資料的新式協定**
+
+假設你想調查一家公司的網域：
+
+`example.com`
+
+你想知道：
+
+「這個網域在哪裡註冊？由哪一家註冊商管理？什麼時候建立？什麼時候到期？」
+
+過去常使用 WHOIS 查詢。
+
+現在則有標準化程度更高的 RDAP。
+
+可以這樣理解：
+
+- **WHOIS：** 傳統網域登記資料查詢方式，回應格式較不統一。
+- **RDAP：** 新式註冊資料查詢協定，使用 HTTP(S) 和標準化的 JSON 資料結構。
+
+### **2. 為什麼需要 RDAP？**
+
+傳統 WHOIS 可能回傳：
+
+```
+Domain Name: EXAMPLE.COM
+Registrar: Example Registrar
+Creation Date: 2020-01-01
+Registry Expiry Date: 2030-01-01
+```
+
+不同伺服器可能使用不同欄位與文字格式。
+
+如果你要撰寫自動化研究工具，解析起來比較麻煩。
+
+RDAP 則提供機器容易理解的標準化資料結構。以下為簡化示意：
+
+```
+{
+  "ldhName": "EXAMPLE.COM",
+  "status": ["active"],
+  "events": [
+    {
+      "eventAction": "registration",
+      "eventDate": "2020-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+上述是教學用假資料，不是 `example.com` 的即時註冊紀錄。
+
+RDAP 的主要優點包括標準化格式、國際化支援、權威服務查找，以及依授權提供不同程度的資料存取。
+
+自 **2025 年 1 月 28 日** 起，RDAP 已成為 ICANN 管轄之通用頂級網域（gTLD）註冊資料的主要正式查詢協定；部分網域仍保留 WHOIS 服務要求。
+
+[image](https://www.google.com/s2/favicons?domain=https://www.icann.org\&sz=32)
+
+ICANN
+
+
+
+### **3. CEH 最容易考錯：RDAP／WHOIS 與 DNS**
+
+| 你想知道的事       | 主要使用       |
+| ------------ | ---------- |
+| 網域註冊商是誰？     | WHOIS／RDAP |
+| 網域註冊與到期資訊？   | WHOIS／RDAP |
+| 網站對應什麼 IPv4？ | DNS A      |
+| 郵件應寄往哪個伺服器？  | DNS MX     |
+| DNS 區域序號是什麼？ | DNS SOA    |
+
+要注意，RDAP 的網域註冊回應也可能包含 nameserver 等資料，但它不等同於 DNS 的即時名稱解析服務。
+
+另外，RDAP 不保證能看到完整的註冊人個資，部分欄位可能依法規或服務政策遮蔽。
+
+### **4. 對應你的考古題**
+
+P1-Q050 描述一名倫理駭客：
+
+> 希望取得組織的網域所有權與可能的聯絡資訊，並且避免直接與目標系統互動。
+
+這種題目應該優先聯想到 WHOIS／RDAP 所屬的註冊資料查詢領域。
+
+但如果題目變成：
+
+「請找出公司接收郵件的伺服器。」
+
+這就應該想到 DNS MX，而不是 WHOIS。
+
+你可以直接用 [ICANN Lookup](https://lookup.icann.org/en?utm_source=chatgpt.com) 理解 RDAP 的實際使用情境。這是查詢介面，不需要自己執行掃描。
+
+**RDAP 的考試判斷句：查網域註冊資料，用 WHOIS／RDAP；查網域名稱與服務紀錄，用 DNS。**
+
+## **四、Directory Traversal（目錄穿越）｜15%**
+
+CEH M14｜重點：`../`、跳出預期目錄、任意檔案存取
+
+### **1. 白話文：本來只能看自己的文件，卻能跑到別的資料夾**
+
+假設有一個企業文件系統。
+
+正常使用者只能下載：
+
+```
+/srv/app/reports/report.pdf
+```
+
+程式原本設計讓使用者指定 `report.pdf`，然後從 `reports` 資料夾讀取。
+
+但是，如果程式直接相信使用者提供的路徑，攻擊者可能嘗試指定：
+
+```
+../config/settings.yaml
+```
+
+其中：
+
+- `..` 代表上一層目錄。
+- `/` 是路徑分隔符號。
+- `../` 就是往上一層移動。
+
+檔案目錄示意
+
+**/srv/app/**
+
+**reports/**
+
+report.pdf（預期可下載）
+
+**config/**
+
+settings.yaml（不應公開）
+
+如果程式沒有適當限制路徑，使用者可能透過 `../` 跳出 reports 目錄，讀取其他檔案。
+
+這就是 Directory Traversal（也稱 Path Traversal）的核心。
+
+它可能造成機密檔案外洩；具體影響仍取決於程式邏輯、作業系統權限及檔案位置。
+
+### **2. 如何防禦？**
+
+最可靠的設計之一，是讓使用者提供文件 ID，而不是直接決定檔案系統路徑。
+
+例如：
+
+```
+/download?id=123
+```
+
+後端先確認使用者有權取得文件 123，再從內部固定映射找到實際檔案。
+
+若系統必須接受路徑，就需要正規化與驗證最終路徑、限制在授權的基底目錄內、考慮符號連結（symlink），並限制程式的檔案存取權限。
+
+參考 [OWASP WSTG-ATHZ-01](https://wstg.owasp.org/stable/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include/?utm_source=chatgpt.com)。
+
+[image](https://www.google.com/s2/favicons?domain=https://wstg.owasp.org\&sz=32)
+
+OWASP Web Security Testing Guide
+
+
+
+### **3. 如何區分 robots.txt？**
+
+這是本份 P3-Q005 的重點。
+
+| 情境                         | 概念                  |
+| -------------------------- | ------------------- |
+| 在 robots.txt 發現 `/backup/` | 公開路徑線索／資訊蒐集         |
+| 操縱路徑跳出允許目錄                 | Directory Traversal |
+| 使用者輸入改變 SQL 查詢             | SQL Injection       |
+| 誘使已登入使用者發出非預期請求            | CSRF                |
+
+**Directory Traversal 的考試判斷句：看到&#x20;**`../`**、跳出允許目錄、讀取不應存取的檔案，就優先想到目錄穿越。**
+
+## **五、CSRF（Cross-Site Request Forgery）｜15%**
+
+CEH M14｜重點：利用已登入使用者的瀏覽器發出非預期請求
+
+### **1. 白話文：不是偷走你的帳號，而是騙你的瀏覽器替攻擊者辦事**
+
+假設 Alice 已登入銀行網站。
+
+銀行透過 Session Cookie 辨識 Alice。
+
+這時，Alice 開啟一個惡意網站。
+
+該網站試圖讓 Alice 的瀏覽器向銀行送出一個修改帳戶設定的請求。
+
+如果瀏覽器依 Cookie 政策自動附上有效的登入憑證，而且銀行沒有採取足夠的 CSRF 防護，就可能把這個非預期請求當成 Alice 的操作。
+
+**Alice 已登入銀行網站**
+
+瀏覽器持有有效的 Session Cookie
+
+**Alice 開啟惡意網站**
+
+惡意頁面誘使瀏覽器產生請求
+
+**瀏覽器向銀行發出請求**
+
+在特定 Cookie 政策及請求條件下，附上登入憑證
+
+**銀行未充分驗證請求來源或防偽資訊**
+
+可能錯誤執行非使用者本意的操作
+
+CSRF 最重要的概念是：
+
+**Authentication（確認登入身分）不等於確認這個操作真的是使用者所發起。**
+
+### **2. CSRF 如何防禦？**
+
+| 防禦方式                     | 作用                    |
+| ------------------------ | --------------------- |
+| CSRF Token               | 驗證請求具有合法產生的防偽資訊       |
+| SameSite Cookie          | 限制某些跨網站情境下的 Cookie 傳送 |
+| Origin／Fetch Metadata 檢查 | 判斷請求來源及跨網站特性          |
+| 敏感操作重新驗證                 | 提升高風險交易的確認強度          |
+
+單純使用 POST 或 HTTPS，都不代表已經防止 CSRF。
+
+SameSite 可以降低風險，但仍需要視瀏覽器、Cookie 設定與應用程式架構搭配適當的防禦。
+
+來源：[OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html?utm_source=chatgpt.com)。
+
+[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\&sz=32)
+
+OWASP Cheat Sheet Series
+
+
+
+### **3. CSRF 跟 XSS 不同**
+
+這是後續 M14 題組很值得預先釐清的差異。
+
+- **XSS（Cross-Site Scripting）：** 不可信任內容被當成網頁腳本執行。
+- **CSRF：** 誘使使用者的瀏覽器發出他不打算執行的已驗證請求。
+
+兩者可能互相影響，但不是同一種弱點。
+
+**CSRF 的考試判斷句：看到「使用者已登入」、「惡意網站」、「瀏覽器代替使用者送出非預期請求」，就優先想到 CSRF。**
+
+## **六、考前最後整理：四種概念一張表**
+
+| 觀念                  | 核心問題         | 快速辨識                      |
+| ------------------- | ------------ | ------------------------- |
+| SQL Injection       | 資料變成資料庫指令    | SQL 語法、查詢邏輯改變             |
+| RDAP                | 如何取得網域登記資訊   | Registrar、Registrant、註冊日期 |
+| Directory Traversal | 如何突破檔案路徑限制   | `../`、任意檔案讀取              |
+| CSRF                | 如何偽造使用者的操作請求 | 已登入、Cookie、非預期操作          |
+
+你的 Day02-A 第 16 題（P3-Q005）尤其值得記住：**發現 robots.txt 暴露的路徑，不等於已經使用 Directory Traversal、SQL Injection 或 CSRF。** 題目要的是辨識實際發生了什麼行為，而非只看系統是否有敏感資訊。
+
+## **七、理解檢核（先不公布答案）**
+
+題目 1｜資料庫安全
+
+某網站把使用者輸入直接拼接進 SQL 指令，使查詢條件遭到改變。最重要的程式層防禦是什麼？
+
+A. WAF
+
+B. Parameterized Query
+
+C. HTTPS
+
+D. robots.txt
+
+題目 2｜資訊蒐集
+
+資安分析師想取得某網域的註冊商及註冊日期。最適合查詢的資訊來源是什麼？
+
+A. DNS MX
+
+B. Nmap SYN Scan
+
+C. RDAP／WHOIS
+
+D. ICMP Echo
+
+題目 3｜網頁攻擊辨識
+
+某下載服務允許使用者提供相對路徑，攻擊者以 ../ 跳出原本允許的資料夾。這是什麼？
+
+A. CSRF
+
+B. SQL Injection
+
+C. Directory Traversal
+
+D. DNS Spoofing
+
+題目 4｜瀏覽器安全
+
+一名已登入網站的使用者，被惡意頁面誘使瀏覽器發送修改帳戶設定的請求。網站缺少防偽機制。這最符合哪種攻擊？
+
+A. CSRF
+
+B. SQL Injection
+
+C. RDAP Enumeration
+
+D. Directory Traversal
+
+提交 4 題答案並批改
+
+**學習完成標準：** 看到題幹，能在 10–15 秒內辨識概念，並用一句話說明為什麼其他三種不適用。SQL Injection 額外要求能解釋為什麼 Parameterized Query 比手動過濾特殊字元更可靠。

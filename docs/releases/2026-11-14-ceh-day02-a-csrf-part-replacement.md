@@ -1,0 +1,45 @@
+# Day02-A CSRF 新稿抽換與原生收合 part
+
+## 範圍與來源
+
+使用者明確要求抽換今日頁面的CSRF，並改為可收合part。本次v1.4.0／revision 6保留原發布日2026-11-14及13章，移除舊四重點的CSRF長解說與v1.3完整精讀，改在K07後、K08前放一個預設收合的「CSRF完整教學」part。主文原CSRF簡短定義、所有非CSRF區塊與錨點保持；這是本次指定呈現，不將A11Y-03全站預設改成收合。
+
+[來源與40標題對照](../sources/ceh-day02-a/2026-11-14/csrf-replacement/README.md)保存新稿、七PNG、前版、實際移除區塊、576個非空行採用與程式修正。十四節、二十六小節、25段程式／HTTP／偽碼（24原生code、一段圖內HTML）、八表、七圖及三個三選項情境完整進part。原稿兩行Mermaid匯出CSS依PNG重繪，沒有採用任意HTML。移除虛假提交承諾，三題保留未公布答案與未作答狀態。
+
+WRITE-06、09–13、15：日期不重置，版本依新範圍升minor；目標選擇、端點情報、投遞、訪客狀態、Cookie及Server防偽的界線完整保留。舊30個小節及早期四個補充錨點轉接到新版part，原14節入口沿用；轉接不表示新舊小節語意相同。舊九張CSRF圖不進新版正文，但歷史下載網址與來源保留；正文目前十四圖，產生器驗二十三份現用／歷史SVG。
+
+## 收合與圖解契約
+
+原生details／summary預設關閉，一次展開全部教學，內文無巢狀收合。M20Review只接受指定CSRF入口的collapsible:true及合法唯一aliases；不新增任意遞迴或HTML欄位，日期draft／future仍可驗證。其他教材維持原呈現。
+
+FIG-03–07：七圖保留架構群組、五個平行情境、十節點九邊因果流程、三角色請求、四種訪客結果、四類條件樹／攻擊者兩葉，以及三決策。兩個決策框用虛線；Cookie否分支不流入Server驗證。條件樹手機用具名父子群組保留歸屬，不把平行條件串成步驟。HTML、搜尋與SVG同源，固定groups／rows／edges與serializer白名單保留，原PNG另存。
+
+## 機制與回歸實測
+
+CODE-01：本機Chrome157.0.8103.79／loopback HTTPS，從本次正式採用稿取得自動提交表單，只改目的地為fixture；四種訪客結果為未登入401、過期401、具防偽端點403與缺防偽端點接受合成操作。相同探針不用事先辨識訪客狀態，直接展示來源的Bob／Carol／David／Alice分界。另驗十二格顯式SameSite、HttpOnly、合法Token、CORS簡單請求及拒絕預檢，共四組核心檢核。無外部銀行或真實憑證；公開JSON只記Cookie名稱與觀察，不含憑證值。
+
+矩陣為控制提交時機移除自動腳本並加按鈕，合法表單替換fixture Token、加入按鈕並填假資料；Fetch為獨立控制而非宣稱原稿可執行程式。反例偽碼與body省略號片段已明列不可獨立執行，不將合成服務當成完整安全實作。
+
+423／423單元通過，含新版完整採用、僅移除指定CSRF區塊、保留其餘正文與錨點、非法收合／別名拒絕、未來日期及七圖關係。型別0 errors／0 warnings，正式建置通過。共用M20Review另以原M20專頁的既有瀏覽器腳本驗四尺寸、200%、JS開關、全文與圖檔，13項通過；只在忽略的本機副本選用Chrome，不改原有腳本契約。
+
+## 頁面與發布驗收
+
+HTML-01–04、A11Y-01–03、PUB-01–02的本機整頁14項通過，包含預設收合、Enter／Space、無JS、舊深連結自動展開、四尺寸／200%、完整正文及14圖下載／幾何；七圖桌面與390px逐張目視。正式發布結果見下節。初次探針在停用JS時等待動畫回呼，未取得完整結果，沒有記為通過；已改為只有JS模式等待繪圖，無JS直接驗原生收合與全文。下載探針亦在每次重載後先展開part並設定逾時，再重新驗收。這是探針與新互動狀態的對齊，不修改內容來迴避驗證。
+
+
+## 發布前閘門
+
+PUB-02：真實draft／future隔離已通過，新collapsible／aliases沒有破壞路由、搜尋、payload或導覽的排除；fixture全部還原後正式重建。完整release、內容驗證、六項HTML契約、來源JSON、文件連結與git差異檢查通過。七份下載SVG已逐張目視，保留節點、分支、群組與圖示；架構圖另具名兩組Browser往返，避免手機堆疊誤讀為Server互相連線。最新呈現版本再做整頁及正式站回讀。
+
+## 正式發布與完整性確認
+
+內容提交 `31bfe594cdb73d193871164e46fc0db267903a5a` 已以非強制推送發布至 main。[Pages run 43600010274](https://github.com/JasonLn0711/kairos-learning/actions/runs/43600010274) 的安裝、依賴稽核、423項測試、HTML契約、型別、draft／future發布隔離、release、下載校驗及部署全部成功；[部署回執](2026-11-14-ceh-day02-a-csrf-part-replacement-deployment.json)保存精確source及步驟。
+
+[正式頁](https://learn.cs-kairos.com/ceh-notes/day02-a-reconnaissance/) v1.4.0已回讀，[正式站14項驗收](2026-11-14-ceh-day02-a-csrf-part-replacement-production-browser.json)全部通過：四尺寸、200%、JS開關、鍵盤、全文、搜尋、14圖下載及位元組一致，舊深連結在兩種JS模式均揭露原生part。手機收合標題、條件樹與架構圖另目視確認。現用十四圖[大小與SHA256](2026-11-14-ceh-day02-a-csrf-part-replacement-assets.json)留存；歷史圖網址保留。
+
+本次沒有修改manifest、lockfile、CI或Git歷史。收合欄位只接受指定CSRF入口，其他正文保持；共用元件另有既有文章13項瀏覽器回歸。證據支持本次變更在上述環境與檢查範圍正常，不代表未來任意變更皆不會出錯，也不代替實體裝置、完整WCAG或讀者學習成效驗收。當日三項pnpm文件指令的獨立安全確認見[工具鏈完整性紀錄](2026-11-14-pnpm-documentation-check.md)。
+
+
+## Planning關聯｜2026-11-14
+
+[當日FIRST PRINCIPLE與雙向路由](2026-11-14-first-principle-closeout.md#kairos-day02a-2026-11-14)連回日誌、週容量、網站／CEH專案與整合入口；本回執仍持自己的版本與證據，不將教材交付計為個人學習完成。

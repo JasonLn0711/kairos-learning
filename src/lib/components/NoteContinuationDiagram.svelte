@@ -8,7 +8,7 @@
   let graph=$state<HTMLDivElement>();
   let paths=$state<{d:string;label:string;x:number;y:number}[]>([]);
   let canvas=$state({width:1,height:1});
-  const label=(key:string)=>({yes:zh?'是':'Yes',no:zh?'否':'No',optional:zh?'必要時':'If needed',impact:zh?'依影響啟動':'Per impact'}[key]??key);
+  const label=(key:string)=>({yes:zh?'是':'Yes',no:zh?'否':'No',reject:zh?'拒絕':'Reject',accept:zh?'通過':'Accept',optional:zh?'必要時':'If needed',impact:zh?'依影響啟動':'Per impact'}[key]??key);
   const directions=[null,[0,1],[2,1],[1,2],[1,2],[1,2],null,[2,1],null];
   function measure(){
     if(!graph)return;
@@ -48,7 +48,7 @@
     measure();return ()=>observer.disconnect();
   });
 </script>
-{#snippet node(i:number)}<div class="node" class:danger={(diagram.name==='m20gcmflow'&&i===6)||(diagram.name==='authorizationgates'&&[2,4].includes(i))||(diagram.name==='transactiontampering'&&i===1)||(diagram.name==='serviceavailability'&&i===1)||(diagram.name==='transportprotection'&&i<3)||(diagram.name==='ssdremapping'&&i===2)} class:blue={(diagram.name==='m20gcmflow'&&i<2)||(diagram.name==='itotrisks'&&i===0)||(diagram.name==='ciaobjectives'&&i===0)||(diagram.name==='signatureevidence'&&i===2)||(diagram.name==='riskassessment'&&i===2)||(diagram.name==='alerttriage'&&i===3)||(diagram.name==='socgovernance'&&i===3)||(diagram.name==='incidentcoordination'&&i===0)} class:warm={(diagram.name==='ciaobjectives'&&i===2)||(diagram.name==='itotrisks'&&i===1)} class:neutral={(diagram.name==='ciaobjectives'&&i>2)||(diagram.name==='m20gcmflow'&&[2,3,4].includes(i))} class:decision={spec.edges?.some(([from,,key])=>from===i&&['yes','no'].includes(key))} data-node={i}><strong>{diagram.items[i].title}</strong>{#each diagram.items[i].body.split('\n') as line}<p>{line}</p>{/each}</div>{/snippet}
+{#snippet node(i:number)}<div class="node" class:danger={(diagram.name==='m20gcmflow'&&i===6)||(diagram.name==='authorizationgates'&&[2,4].includes(i))||(diagram.name==='transactiontampering'&&i===1)||(diagram.name==='serviceavailability'&&i===1)||(diagram.name==='transportprotection'&&i<3)||(diagram.name==='ssdremapping'&&i===2)} class:blue={(diagram.name==='m20gcmflow'&&i<2)||(diagram.name==='itotrisks'&&i===0)||(diagram.name==='ciaobjectives'&&i===0)||(diagram.name==='signatureevidence'&&i===2)||(diagram.name==='riskassessment'&&i===2)||(diagram.name==='alerttriage'&&i===3)||(diagram.name==='socgovernance'&&i===3)||(diagram.name==='incidentcoordination'&&i===0)} class:warm={(diagram.name==='ciaobjectives'&&i===2)||(diagram.name==='itotrisks'&&i===1)} class:neutral={(diagram.name==='ciaobjectives'&&i>2)||(diagram.name==='m20gcmflow'&&[2,3,4].includes(i))} class:decision={spec.edges?.some(([from,,key])=>from===i&&['yes','no','reject','accept'].includes(key))} data-node={i}><strong>{diagram.items[i].title}</strong>{#each diagram.items[i].body.split('\n') as line}<p>{line}</p>{/each}</div>{/snippet}
 {#snippet arrow()}<svg class="arrow" aria-hidden="true" viewBox="0 0 24 32"><path d="M12 2v26m-6-6 6 6 6-6"/></svg>{/snippet}
 {#if layout==='graph'}
   <div class="graph" bind:this={graph}>

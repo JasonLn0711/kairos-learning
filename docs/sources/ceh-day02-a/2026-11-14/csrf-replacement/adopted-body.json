@@ -1,0 +1,1802 @@
+[
+  {
+    "kind": "paragraph",
+    "text": "展開這個part，可依序閱讀瀏覽器、Session、Cookie與CSRF的完整流程及圖解。以下使用虛構網域、帳號與Session示意值；HTTP／表單／偽碼用於解釋機制，不會在本頁執行交易。三個情境題保留未公布答案，與原五題、四道選擇題、參數化兩題及缺件23題分開計數。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-01",
+    "text": "一、先回答你最核心的五個疑問"
+  },
+  {
+    "kind": "paragraph",
+    "text": "你對瀏覽器沙盒（Sandbox）的理解有一個重要部分是正確的：不同網站通常不能任意讀取彼此的資料。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "但是，這不代表不同網站不能要求瀏覽器向其他網站發送 HTTP Request。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這兩件事是理解 CSRF（Cross-Site Request Forgery，跨網站請求偽造）的關鍵。"
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "你的疑問",
+      "核心答案"
+    ],
+    "rows": [
+      [
+        "不同網頁不是獨立沙盒嗎？",
+        "不同 Origin 通常受到資料與程式存取限制；Tab、Origin、Site與程序沙盒不是同一個邊界，也不是禁止所有跨網站網路請求。"
+      ],
+      [
+        "惡意網站怎麼取得銀行的 Session Token？",
+        "一般 CSRF 不需要取得 Token。瀏覽器可能自行把銀行的 Session Cookie 附在發往銀行的 Request 上。"
+      ],
+      [
+        "為什麼瀏覽器願意替惡意網站送出 Request？",
+        "因為跨網站連結、表單提交、載入圖片等，本來就是 Web 設計允許的正常功能。"
+      ],
+      [
+        "惡意網站怎麼知道 Alice 已經登入銀行？",
+        "通常不需要知道。攻擊者可以預先指定目標網站，只有符合條件的使用者才可能受影響。"
+      ],
+      [
+        "攻擊者怎麼知道銀行的網址與 API？",
+        "可以透過公開網頁、前端 JavaScript、API 文件、測試觀察或目標情報蒐集取得；但不保證能找到可利用的端點。"
+      ]
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "這裡有一個非常重要的區別："
+  },
+  {
+    "kind": "paragraph",
+    "text": "CSRF 通常不是攻擊者偷走 Alice 的身分證明，而是攻擊者誘使 Alice 的瀏覽器，利用原本已經存在的身分證明，向銀行發出 Alice 沒有授權的操作。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "而且，現代瀏覽器已經透過 `SameSite` 等機制限制這種行為。因此，能跨網站發出 Request，不代表一定會帶上 Cookie，更不代表 CSRF 一定成功。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "接下來，我們從瀏覽器與 Server 最基本的運作方式開始，完整重建這套機制。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-02",
+    "text": "二、理解 CSRF 之前，先建立正確的 Web 架構"
+  },
+  {
+    "kind": "paragraph",
+    "text": "請把 Web 想成四個不同的部分："
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rarchitecture",
+    "caption": "CSRF 圖 1｜同一瀏覽器、不同網頁與兩個伺服器",
+    "description": "Alice電腦中的兩個網頁並列，由同一Browser管理Cookie與網路；兩組HTTPS往返分別連至銀行與惡意網站Server，不是兩個Server互相轉送Session。這是責任分工示意，不是固定的程序配置。",
+    "items": [
+      {
+        "title": "Alice 的電腦：同一個瀏覽器",
+        "body": "網頁有自己的 DOM、JavaScript；網路與儲存由 Browser 仲裁"
+      },
+      {
+        "title": "銀行網頁",
+        "body": "bank.example\n自己的 DOM、JavaScript"
+      },
+      {
+        "title": "惡意網頁",
+        "body": "evil.example\n自己的 DOM、JavaScript"
+      },
+      {
+        "title": "Browser 的 Cookie 儲存與網路管理機制",
+        "body": "儲存不同網站的 Cookie，依照目標網址、Cookie 屬性和請求情境決定是否附帶。"
+      },
+      {
+        "title": "銀行 Server",
+        "body": "驗證 Alice 身分、維護 Session、處理交易"
+      },
+      {
+        "title": "惡意網站 Server",
+        "body": "提供惡意頁面，但無權直接取得銀行的 Cookie"
+      }
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "這張架構圖要記住三件事。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第一，網頁（Page）和瀏覽器（Browser）不是同一個東西。網頁內的 JavaScript 受到安全限制；瀏覽器本身則負責處理網路連線、Cookie 和導航。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第二，Cookie 通常不是分別保存在每個分頁裡，而是由瀏覽器的 Cookie 儲存機制管理。在一般瀏覽器設定檔中，兩個分頁可以共用相同網站的登入 Session，但不同設定檔、無痕模式及 Cookie 分區機制可能隔離這些狀態。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "第三，銀行 Server 通常只看到「收到什麼 HTTP Request」，不會自然知道 Alice 是親自按下轉帳按鈕，還是其他網頁觸發了這個操作。Server 必須使用額外的安全機制判斷請求是否可信。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-01",
+    "text": "HTTP 為什麼需要 Session？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "HTTP 基本上是 Stateless（無狀態）的協定。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設 Alice 今天向銀行 Server 發出三個 Request："
+  },
+  {
+    "kind": "code",
+    "text": "GET /login\nGET /accounts\nGET /transactions"
+  },
+  {
+    "kind": "paragraph",
+    "text": "單看這三個 Request，銀行無法確定它們一定來自同一個已驗證身分的使用者。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "就像你每次走到銀行櫃檯，櫃員都需要某種方式確認：「你是誰？你是否已經完成身分驗證？」"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這正是 Session Management（工作階段管理）要解決的問題。它讓 Server 可以把多次獨立 HTTP Request 關聯到已登入的使用者。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-03",
+    "text": "三、Alice 從登入銀行到完成操作：HTTP 與 Session 的完整生命週期"
+  },
+  {
+    "kind": "paragraph",
+    "text": "我們先完全不考慮攻擊者，只研究正常情況。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "以下是簡化的教學案例，使用虛構網域與 Session 值，不代表任何真實銀行的實作。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-02",
+    "text": "階段 A：第一次開啟銀行網站"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Alice 在瀏覽器輸入："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`https://bank.example/login`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "發生的事情大致如下："
+  },
+  {
+    "kind": "paragraph",
+    "text": "1. 瀏覽器解析網址，透過 DNS 取得 Server 的 IP 位址（如果沒有可用快取）。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "2. 建立網路連線，例如 TCP 與 TLS，或 HTTP/3 使用的 QUIC。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "3. HTTPS 連線建立後，瀏覽器發出 HTTP Request。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "4. 銀行 Server 回傳登入頁面的 HTML。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "5. 瀏覽器解析 HTML，可能繼續請求 CSS、JavaScript、圖片，再顯示登入頁面。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如，HTTP Request 可以簡化為："
+  },
+  {
+    "kind": "code",
+    "text": "GET /login HTTP/1.1\nHost: bank.example"
+  },
+  {
+    "kind": "paragraph",
+    "text": "銀行可能回傳："
+  },
+  {
+    "kind": "code",
+    "text": "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html>...</html>"
+  },
+  {
+    "kind": "paragraph",
+    "text": "此時 Alice 還沒登入，因此不一定存在已驗證身分的 Session Cookie。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "但有些網站會在登入前建立匿名 Session，作為 CSRF 防護或登入流程管理之用。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-03",
+    "text": "階段 B：Alice 輸入帳號密碼並登入"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Alice 輸入："
+  },
+  {
+    "kind": "list",
+    "items": [
+      "Username：alice",
+      "Password：她自己的密碼"
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "點擊「登入」。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "瀏覽器發出類似："
+  },
+  {
+    "kind": "code",
+    "text": "POST /login HTTP/1.1\nHost: bank.example\nContent-Type: application/x-www-form-urlencoded\n\nusername=alice&password=..."
+  },
+  {
+    "kind": "paragraph",
+    "text": "此 HTTP Body 經過 HTTPS 傳送時受到 TLS 加密保護。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Server 收到後，可能執行："
+  },
+  {
+    "kind": "code",
+    "text": "1. 檢查帳號是否存在\n2. 驗證密碼\n3. 執行必要的 MFA\n4. 建立已登入的 Session\n5. 產生安全、不可預測的 Session ID"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這裡要理解兩個不同概念："
+  },
+  {
+    "kind": "paragraph",
+    "text": "Authentication（身分驗證）：確認使用者是 Alice。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Session Management（工作階段管理）：讓後續的 Request 不必每次重新輸入密碼，也能識別已驗證的 Alice。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-04",
+    "text": "階段 C：銀行建立 Session ID，並透過 Cookie 交給瀏覽器"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設銀行產生一個隨機 Session ID："
+  },
+  {
+    "kind": "code",
+    "text": "s_9cf72a...（示意值）"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Server 內部保存："
+  },
+  {
+    "kind": "code",
+    "text": "Session Store（可能是 Redis / Database）\n\ns_9cf72a...\n    user_id: 42\n    username: alice\n    authenticated: true\n    expires_at: ..."
+  },
+  {
+    "kind": "paragraph",
+    "text": "Server 再透過 Response Header 通知 Browser："
+  },
+  {
+    "kind": "code",
+    "text": "HTTP/1.1 303 See Other\nLocation: /accounts\nSet-Cookie: __Host-sid=s_9cf72a...; Path=/; Secure; HttpOnly; SameSite=Lax"
+  },
+  {
+    "kind": "paragraph",
+    "text": "注意最重要的地方："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`Set-Cookie` 是 Server 對 Browser 發出的指示，而不是 Server 直接去修改某個網頁的 JavaScript 變數。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "瀏覽器收到後，會依照自己的 Cookie 規則儲存它。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "另外，Session ID 通常只是個隨機識別值，不必包含 Alice 的姓名或密碼。Server 透過它查詢 Session Store。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是一種常見的 Server-side Session 設計。其他架構也可能使用經過簽署的 Token，例如 JWT，不一定每個請求都查詢 Session Store。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-05",
+    "text": "階段 D：Cookie 內的安全屬性是什麼？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "剛才的 Cookie："
+  },
+  {
+    "kind": "code",
+    "text": "Set-Cookie: __Host-sid=s_9cf72a...; Path=/; Secure; HttpOnly; SameSite=Lax"
+  },
+  {
+    "kind": "paragraph",
+    "text": "可以拆解為："
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "屬性",
+      "功能"
+    ],
+    "rows": [
+      [
+        "`__Host-sid`",
+        "Cookie 名稱；`__Host-` 前綴要求更嚴格的主機範圍設定"
+      ],
+      [
+        "`s_9cf72a...`",
+        "Session ID，作為身分驗證狀態的識別依據"
+      ],
+      [
+        "`Path=/`",
+        "允許該 Host 下符合路徑規則的 Request 附帶"
+      ],
+      [
+        "`Secure`",
+        "原則上只透過 HTTPS 傳送"
+      ],
+      [
+        "`HttpOnly`",
+        "不允許網頁 JavaScript 直接透過 `document.cookie` 讀取"
+      ],
+      [
+        "`SameSite=Lax`",
+        "限制跨網站 Request 何時能附帶這個 Cookie"
+      ]
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "Cookie 若未設定 `Domain`，通常是 Host-only Cookie，也就是只針對設定它的主機，而非任意其他網域。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "支援__Host-前綴的瀏覽器要求Secure、Path=/且不得指定Domain；Path是Cookie傳送匹配，並非安全隔離。Cookie不以Port分隔，這與Origin的Scheme／Host／Port判斷不同。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "銀行也可以設定 Cookie 的有效期限。即使瀏覽器還保存 Cookie，Server 仍必須自行判斷 Session 是否過期、撤銷或已登出。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-06",
+    "text": "階段 E：Alice 再次查詢銀行帳戶"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Alice 已登入，現在點擊「我的帳戶」。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "瀏覽器準備向銀行發 Request："
+  },
+  {
+    "kind": "code",
+    "text": "GET /accounts HTTP/1.1\nHost: bank.example\nCookie: __Host-sid=s_9cf72a..."
+  },
+  {
+    "kind": "paragraph",
+    "text": "這次 Request 多了："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`Cookie: __Host-sid=s_9cf72a...`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "請特別注意：Alice 並沒有再次輸入 Session ID，網頁的 JavaScript 也不必先讀出它。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "是瀏覽器發送 Request 時，依據 Cookie 規則附帶它。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Server 接收到後："
+  },
+  {
+    "kind": "code",
+    "text": "收到 Cookie\n     ↓\n取得 Session ID\n     ↓\n查詢並驗證 Session\n     ↓\n辨認 user_id = 42\n     ↓\n檢查 Alice 是否有權查看該帳戶\n     ↓\n回傳帳戶資料"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這個過程同時涉及三個不同的安全判斷："
+  },
+  {
+    "kind": "list",
+    "items": [
+      "Authentication：這是哪個已驗證的使用者？",
+      "Authorization：這位使用者有沒有權限執行這項操作？",
+      "Request legitimacy：這個請求是否符合應用程式的安全要求，包括必要的 CSRF 防護？"
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "Session Cookie 通常主要解決前兩者需要的身分關聯問題，並不能單獨證明 Alice 有意發出這次 Request。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Session識別碼建立的是身分關聯；資源歸屬與每次操作的Authorization仍須由Server另行檢查，不能因為持有Session就略過權限檢查。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這就是 CSRF 問題的根源。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-07",
+    "text": "階段 F：登出銀行"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Alice 點擊登出時，銀行應使 Server 端的 Session 失效，並指示瀏覽器刪除或過期對應 Cookie。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設 Server 已撤銷 `s_9cf72a...`，那麼即使 Browser 之後再次送出舊 Cookie，銀行也應拒絕它。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因此必須區分："
+  },
+  {
+    "kind": "paragraph",
+    "text": "Cookie 還存在 ≠ Session 還有效 ≠ 使用者仍具有執行某操作的權限。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-04",
+    "text": "四、為什麼有沙盒，卻仍然允許跨網站 Request？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "現在進入你提出的最重要的架構問題。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "你認為："
+  },
+  {
+    "kind": "paragraph",
+    "text": "銀行網頁與惡意網頁不是應該處於不同的沙盒嗎？為什麼惡意網頁還可以要求 Browser 對銀行送 Request？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "要回答這個問題，我們必須區分三種行為。"
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "行為",
+      "不同 Origin 間的基本規則",
+      "例子"
+    ],
+    "rows": [
+      [
+        "Cross-origin read",
+        "通常受到限制",
+        "惡意網頁讀取銀行帳戶內容"
+      ],
+      [
+        "Cross-origin write / navigation",
+        "許多基本操作允許",
+        "跨網站表單提交、點擊連結"
+      ],
+      [
+        "Cross-origin embedding",
+        "許多資源類型允許，但有個別限制",
+        "引用其他網站的圖片、影片"
+      ]
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是 MDN 對 Same-Origin Policy（SOP，同源政策）的核心分類。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-08",
+    "text": "1. 什麼是 Origin？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Origin 由三個要素構成："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`Scheme（協定） + Host（主機） + Port（連接埠）`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如，以 `https://bank.example` 為基準："
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "網址",
+      "是否 Same-Origin"
+    ],
+    "rows": [
+      [
+        "`https://bank.example/accounts`",
+        "是"
+      ],
+      [
+        "`https://bank.example/transfer`",
+        "是"
+      ],
+      [
+        "`https://api.bank.example`",
+        "否，Host 不同"
+      ],
+      [
+        "`http://bank.example`",
+        "否，Scheme 不同"
+      ],
+      [
+        "`https://bank.example:8443`",
+        "否，Port 不同"
+      ],
+      [
+        "`https://evil.example`",
+        "否，Host 不同"
+      ]
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "所以你所說的沙盒概念，主要是不同 Origin 之間的資料存取與程式互動限制，而不是「每個分頁完全不能影響其他網路資源」。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-09",
+    "text": "2. 同源政策不是網路防火牆"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設 Alice 正在閱讀："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`https://blog.example`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "網站上寫著："
+  },
+  {
+    "kind": "paragraph",
+    "text": "「推薦閱讀：MDN Web Docs」"
+  },
+  {
+    "kind": "code",
+    "text": "<a href=\"https://developer.mozilla.org\">\n  閱讀 MDN\n</a>"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Alice 點擊後，Browser 就會向另一個 Origin 發出 HTTP Request。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "如果 SOP 完全禁止跨網站 Request，那麼這個連結就不能正常運作。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "同樣道理，網頁中的圖片、外部表單、登入導向、付款頁面，也經常需要向另一個 Origin 發出 Request。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因此瀏覽器需要在兩個目標之間取得平衡："
+  },
+  {
+    "kind": "paragraph",
+    "text": "允許跨網站互動，才能讓 Web 正常運作；限制跨網站讀取，才能保護各網站的資料。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-10",
+    "text": "3. 所謂的 Sandbox，到底保護什麼？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設 Alice 同時開著："
+  },
+  {
+    "kind": "paragraph",
+    "text": "銀行：`https://bank.example`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "惡意網站：`https://evil.example`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "惡意網站內的 JavaScript 一般不能直接執行："
+  },
+  {
+    "kind": "code",
+    "text": "// 示意：不能任意取得另一個 Origin 的私人 DOM\nconst secret = bankWindow.document.body.innerText;"
+  },
+  {
+    "kind": "paragraph",
+    "text": "也不能直接讀取銀行的 HttpOnly Session Cookie。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "但是，它可以在自己管理的頁面建立連結或表單，指定目標 URL 為銀行。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這兩者完全不同："
+  },
+  {
+    "kind": "list",
+    "items": [
+      "讀取別人的資料：涉及跨 Origin 的資料存取權。",
+      "要求瀏覽器對別人發出 Request：涉及跨 Origin 的網路操作能力。"
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "更精確地說，瀏覽器不是把整個控制權交給惡意網頁；它只是允許網頁使用受限制的瀏覽器功能，並在實際執行時套用 Cookie、SameSite、CORS 等政策。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-05",
+    "text": "五、Web 為什麼需要跨網站連結、表單、圖片和重新導向？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "以下用五個日常情境說明。"
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rscenarios",
+    "caption": "CSRF 圖 2｜Web 需要的五種跨網站互動",
+    "description": "五個情境是平行用途，不是同一請求的五個階段。圖片HTML是可讀範例，不會在本頁執行；不會載入遠端CDN或執行程式。",
+    "items": [
+      {
+        "title": "情境 A：新聞網站提供外部連結",
+        "body": "Alice 從新聞網站點擊政府公告連結，Browser 向政府網站發送 GET Request。新聞網站不需要有權讀取政府網站的私人資料。"
+      },
+      {
+        "title": "情境 B：從 CDN 載入圖片",
+        "body": "商品網站使用另一個網域提供產品圖片。\n<img src=\"https://cdn.example/product.jpg\">\n瀏覽器向 CDN 發送 Request，取得圖片並顯示。這不代表商品網站的 JavaScript 可以讀取 CDN 的任意私人資料。"
+      },
+      {
+        "title": "情境 C：購物網站前往第三方付款服務",
+        "body": "商家網站把顧客導向付款服務商，也可能透過表單提交必要資料。跨網站表單提交本來就是 Web 支援的能力，實際付款仍須通過付款服務商的安全驗證。"
+      },
+      {
+        "title": "情境 D：使用 Google 或 Microsoft 登入",
+        "body": "應用程式導向身分提供者；驗證完成後，再重新導向原本的應用程式。這類跨網站導航是 OAuth 2.0／OpenID Connect 等流程的重要組成部分。"
+      },
+      {
+        "title": "情境 E：嵌入另一個網站的影片",
+        "body": "教學網站透過 iframe 嵌入影片播放器。Browser 可以載入它，但不同 Origin 的 Frame 仍受 SOP 與各種嵌入政策限制。"
+      }
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "所以，跨網站發 Request 並不是 CSRF 發明的新能力，而是 Web 原本就有的功能。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "CSRF 是攻擊者利用這些正常功能，加上目標 Server 錯誤的請求信任判斷，造成未經使用者意願授權的操作。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-06",
+    "text": "六、現在重建 CSRF：惡意網站如何利用 Alice 的登入狀態？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設 Alice 已經登入銀行，而且開啟了另一個分頁。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "我們研究兩個不同對象："
+  },
+  {
+    "kind": "list",
+    "items": [
+      "Alice：銀行的合法使用者，Browser 已有銀行 Session Cookie。",
+      "Mallory：攻擊者，控制 `https://evil.example`，但不知道 Alice 的密碼，也不知道她的 Session ID。"
+    ]
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-11",
+    "text": "CSRF 的完整因果流程"
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rcausal",
+    "caption": "CSRF 圖 3｜CSRF 的完整因果流程",
+    "description": "分析以Cookie登入的轉帳情境。Cookie閘門的否分支止於「沒有銀行登入憑證」，不會流入下一個驗證閘門；是分支才攜帶Session到銀行。Server拒絕與通過分開，不表示請求能發出就會成功。虛線框是決策，實線箭頭是因果方向。",
+    "items": [
+      {
+        "title": "Alice 登入銀行",
+        "body": "完成身分驗證"
+      },
+      {
+        "title": "銀行建立 Session，瀏覽器儲存銀行 Cookie",
+        "body": "Server 與 Browser 各自管理工作階段和Cookie"
+      },
+      {
+        "title": "Alice 開啟 evil.example",
+        "body": "取得惡意頁面"
+      },
+      {
+        "title": "惡意頁面要求 Browser 向 bank.example 發 Request",
+        "body": "指定銀行URL與操作參數"
+      },
+      {
+        "title": "Cookie 政策允許附帶銀行 Cookie？",
+        "body": "依目的地、Cookie屬性與請求情境判斷"
+      },
+      {
+        "title": "Request 可能送達，但沒有銀行登入憑證",
+        "body": "通常不能以已登入Alice身分執行轉帳"
+      },
+      {
+        "title": "銀行收到操作參數及 Alice 的 Session Cookie",
+        "body": "仍須進一步驗證"
+      },
+      {
+        "title": "Server 是否通過 CSRF 與權限檢查？",
+        "body": "連同必要的交易安全要求一併判斷"
+      },
+      {
+        "title": "阻止操作",
+        "body": "拒絕未通過驗證的Request"
+      },
+      {
+        "title": "處理 Request",
+        "body": "通過必要驗證後才執行"
+      }
+    ]
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-12",
+    "text": "第一步：攻擊者建立帶有表單的網頁"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如："
+  },
+  {
+    "kind": "code",
+    "text": "<form\n  id=\"attack\"\n  action=\"https://bank.example/transfer\"\n  method=\"POST\"\n>\n  <input\n    type=\"hidden\"\n    name=\"recipient\"\n    value=\"attacker\"\n  >\n  <input\n    type=\"hidden\"\n    name=\"amount\"\n    value=\"1000\"\n  >\n</form>\n\n<script>\n  document.getElementById(\"attack\").submit();\n</script>"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這個表單的意思是："
+  },
+  {
+    "kind": "paragraph",
+    "text": "「請 Browser 將收款對象 `attacker`、金額 `1000`，以 POST Request 送到銀行的 `/transfer`。」"
+  },
+  {
+    "kind": "paragraph",
+    "text": "注意：惡意網頁不需要也沒有包含 Alice 的 Session ID。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "而且，這段程式只有在銀行端存在相容的操作端點、接受這些欄位，並缺乏適當防護時，才可能造成預期操作。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-13",
+    "text": "第二步：Alice 開啟惡意網站"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Browser 取得惡意網頁的 HTML，解析後執行表單提交。"
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rrequest",
+    "caption": "CSRF 圖 4｜誘發請求與 Cookie 的真正目的地",
+    "description": "Session Cookie若被允許附帶，是直接送到銀行，不是送給惡意網站。箭頭表示發起、附帶與處理的責任接續，不是Cookie先經過惡意Server。",
+    "items": [
+      {
+        "title": "惡意網頁",
+        "body": "指定銀行 URL 與參數"
+      },
+      {
+        "title": "瀏覽器",
+        "body": "決定 Cookie 是否附帶"
+      },
+      {
+        "title": "銀行 Server",
+        "body": "驗證並處理 Request"
+      }
+    ]
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-14",
+    "text": "第三步：Browser 檢查銀行的 Cookie"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這裡才是重點。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設銀行使用的是："
+  },
+  {
+    "kind": "code",
+    "text": "Set-Cookie: __Host-sid=s_9cf72a...; Path=/; Secure; HttpOnly; SameSite=None"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這表示 Cookie 可以用於符合條件的跨網站 Request，仍須遵循瀏覽器其他 Cookie 與隱私限制。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "如果該請求允許附帶 Cookie，銀行可能收到："
+  },
+  {
+    "kind": "code",
+    "text": "POST /transfer HTTP/1.1\nHost: bank.example\nOrigin: https://evil.example\nSec-Fetch-Site: cross-site\nCookie: __Host-sid=s_9cf72a...\nContent-Type: application/x-www-form-urlencoded\n\nrecipient=attacker&amount=1000"
+  },
+  {
+    "kind": "paragraph",
+    "text": "觀察這裡的三個重要欄位："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`Cookie` 是 Alice 的登入憑證，由 Browser 附帶。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "`Origin` 表示 Request 來自哪個 Origin，銀行可以用它協助判斷請求來源。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "`Sec-Fetch-Site` 告訴銀行 Request 的跨站關係。現代瀏覽器可提供這類 Fetch Metadata 資訊。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這個 Request 確實可能攜帶有效的 Alice Session，但來源是惡意網頁。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-15",
+    "text": "第四步：銀行 Server 決定是否執行"
+  },
+  {
+    "kind": "paragraph",
+    "text": "如果銀行只檢查："
+  },
+  {
+    "kind": "code",
+    "text": "session = find_session(request.cookies[\"__Host-sid\"])\nif session.is_authenticated:\n    transfer_money(\n        recipient=request.form[\"recipient\"],\n        amount=request.form[\"amount\"],\n    )"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這段是不完整的反例偽碼，只展示只驗Session的缺陷；實際應用還要處理查無Session、權限、防偽及交易確認，不能直接當成完整可執行的安全實作。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "那麼邏輯就不完整。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因為銀行只確認「這是 Alice 的有效 Session」，沒有確認「這是不是一個符合安全政策、可被接受的操作請求」。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設銀行缺乏 CSRF 防護，也沒有額外交易確認，攻擊可能成功。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "反之，銀行若驗證 CSRF Token、來源資訊、權限及必要的交易確認，就能在對應的驗證階段拒絕它。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這也是 OWASP 與 MDN 所描述的典型 CSRF 風險。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-16",
+    "text": "你應該注意的反直覺現象"
+  },
+  {
+    "kind": "paragraph",
+    "text": "攻擊者的 JavaScript 無法讀取銀行的 Session Cookie。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "但如果 Browser 的 Cookie 規則允許，Browser 自己可以把這個 Cookie 送給銀行。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因此："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`HttpOnly` 能防止 JavaScript 直接讀取 Session Cookie，但它本身不是 CSRF 防護。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "SOP 能限制跨 Origin 的資料讀取，但不代表所有跨 Origin 的 Request 都會被阻止。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "CORS 即使阻止惡意 JavaScript 讀取回應，也不代表此前的跨網站表單提交一定沒有送達銀行。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這三件事必須分開理解。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-07",
+    "text": "七、那為什麼現在的瀏覽器不會全部遭受 CSRF？SameSite 是關鍵"
+  },
+  {
+    "kind": "paragraph",
+    "text": "剛才我們使用 `SameSite=None`，是為了說明攻擊能成立的情境。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "現在改成較常見的安全設定："
+  },
+  {
+    "kind": "code",
+    "text": "Set-Cookie: __Host-sid=s_9cf72a...; Path=/; Secure; HttpOnly; SameSite=Lax"
+  },
+  {
+    "kind": "paragraph",
+    "text": "再讓惡意網頁提交前面那個跨網站 POST 表單。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "在正常的明確設定 `SameSite=Lax` 情境下，Browser 不會附帶銀行的 Session Cookie。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "銀行可以收到 POST，但通常無法將它識別為已登入的 Alice。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因此剛才那個攻擊通常失敗。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-17",
+    "text": "三種 SameSite 設定的差異"
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "請求情境",
+      "`Strict`",
+      "`Lax`",
+      "`None`"
+    ],
+    "rows": [
+      [
+        "銀行自己的頁面向銀行發 Request",
+        "可附帶",
+        "可附帶",
+        "可附帶"
+      ],
+      [
+        "從惡意網站點連結，頂層導航 GET 到銀行",
+        "不附帶",
+        "可附帶",
+        "可附帶"
+      ],
+      [
+        "惡意網站發起跨站頂層 POST 表單",
+        "不附帶",
+        "不附帶",
+        "可附帶"
+      ],
+      [
+        "惡意網站嵌入銀行圖片，發跨站 GET",
+        "不附帶",
+        "不附帶",
+        "可附帶"
+      ]
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "表格假設 Cookie 的 Domain、Path、Secure、有效期等條件均符合，且未受其他隱私機制阻擋。「可附帶」不等於一定附帶，也不代表 Server 會接受請求。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "還有一個實作細節：部分瀏覽器在 Cookie 沒有明確設定 `SameSite`、而是採用預設 Lax 行為時，可能對剛建立不久（約兩分鐘內）的 Cookie 放寬跨站 POST 限制。因此不能單純依賴瀏覽器預設值。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-18",
+    "text": "SameSite=Lax 仍然存在什麼風險？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設某個設計不良的網站竟然使用："
+  },
+  {
+    "kind": "code",
+    "text": "GET /delete-account"
+  },
+  {
+    "kind": "paragraph",
+    "text": "來刪除帳戶，而且只檢查 Session Cookie。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "惡意網頁可以讓 Browser 進行跨站頂層導航："
+  },
+  {
+    "kind": "code",
+    "text": "<a href=\"https://bank.example/delete-account\">\n  查看重要通知\n</a>"
+  },
+  {
+    "kind": "paragraph",
+    "text": "在 `SameSite=Lax` 下，這種頂層 GET 導航仍可能帶上銀行 Cookie。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "如果 Server 把 GET 當成更改資料的操作，又沒有其他防護，就存在 CSRF 風險。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這也是為什麼安全設計要求 GET、HEAD 等 Safe Methods 不應執行具有業務狀態變更意義的操作。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-19",
+    "text": "另一個重要概念：Same-Origin 不等於 Same-Site"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`https://app.company.example`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "以及："
+  },
+  {
+    "kind": "paragraph",
+    "text": "`https://hr.company.example`"
+  },
+  {
+    "kind": "paragraph",
+    "text": "兩者不同 Origin，但通常屬於同一個 Site。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "原因是 `SameSite` 主要考慮 Scheme 與可註冊網域，而不是完整的 Scheme、Host、Port 三元素。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因此，若攻擊者控制了同一個 Site 底下的不可信子網域，單靠 SameSite 未必能防禦所有攻擊。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這也是 OWASP 特別提醒必須評估 sibling subdomains 與 subdomain takeover 風險的原因。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-08",
+    "text": "八、惡意網站究竟怎麼知道 Alice 有沒有登入銀行？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "直接回答："
+  },
+  {
+    "kind": "paragraph",
+    "text": "大部分傳統 CSRF 攻擊，不需要預先知道 Alice 是否已登入。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "我們從攻擊者的角度想一次。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Mallory 經營一個惡意網站，目標是一個會員系統。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Mallory 完全不知道哪一位訪客登入過會員系統，但他可以把觸發跨站 Request 的表單放在惡意網頁裡。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設有很多人瀏覽這個網站。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "其中有人沒有會員帳號，有人有帳號但沒登入，也有人剛好保持登入狀態。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "攻擊者未必能辨認每個人的狀態，但也不一定需要知道。"
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2routcomes",
+    "caption": "CSRF 圖 5｜一次廣泛 CSRF 嘗試的四種結果",
+    "description": "四種訪客狀態並列比較，不是同一人的時間順序；紅色警示只表示條件符合時可能成功，不表示攻擊者事前已知道該訪客登入。",
+    "items": [
+      {
+        "title": "Bob：沒有登入銀行",
+        "body": "沒有有效 Session，通常無法以已登入使用者身分執行操作"
+      },
+      {
+        "title": "Carol：登入已過期",
+        "body": "Server 應拒絕失效 Session"
+      },
+      {
+        "title": "David：已登入，但網站有 CSRF 防護",
+        "body": "即使 Session 有效，Server 仍可阻擋未通過檢查的 Request"
+      },
+      {
+        "title": "Alice：已登入，且目標操作缺乏防護",
+        "body": "若 Cookie 被附帶、參數符合要求、權限足夠，攻擊可能成功"
+      }
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是網路攻擊裡很常見的一種邏輯："
+  },
+  {
+    "kind": "paragraph",
+    "text": "攻擊者可以先發起嘗試，由目標的實際狀態決定結果。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "不用每次都先知道結果一定會成功。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-20",
+    "text": "那麼，攻擊者完全不可能知道 Alice 的登入狀態嗎？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "也不能如此絕對。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "一般的 SOP 會阻止惡意頁面直接讀取其他 Origin 的私人資料，但仍可能存在某些間接推測技術，例如 XS-Leaks（Cross-Site Leaks）。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這些技術利用網頁載入、瀏覽器行為或其他可觀察差異，嘗試推測跨網站狀態。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "不過，這類攻擊具有特定成立條件，並不是攻擊者可以隨意讀取 Alice 的銀行登入資訊。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "對理解一般 CSRF 而言，你暫時不需要把它與 XS-Leaks 混在一起。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-09",
+    "text": "九、如果攻擊者不知道 Alice 常用什麼網站，他又怎麼決定攻擊哪個網站？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這個問題已經從 Web 安全機制，進入了攻擊者的 Target Selection（目標選擇）與 Reconnaissance（情報蒐集）。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這兩個階段與 CSRF 的漏洞原理有關，但不是同一件事。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-21",
+    "text": "攻擊者不一定是先選 Alice，也可能先選有漏洞的網站"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如，Mallory 發現某個會員網站存在可被跨網站請求觸發的個人資料修改功能。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "他可以先研究那個會員網站的功能，再設法讓該網站的使用者瀏覽惡意頁面。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是一種「先有漏洞目標，再尋找符合條件的受害者」的思路。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "相反地，如果 Mallory 明確想針對一家企業的員工，則可能先研究企業使用的 HR、ERP、SSO 或管理系統，再尋找可能存在的 CSRF 攻擊面。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是一種「先有受害者群體，再研究目標系統」的思路。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-22",
+    "text": "攻擊者怎麼知道 URL 與 API？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這些資訊不一定是秘密。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如，公開網站可能存在："
+  },
+  {
+    "kind": "code",
+    "text": "<form action=\"/profile/update\" method=\"POST\">"
+  },
+  {
+    "kind": "paragraph",
+    "text": "或者前端 JavaScript 出現："
+  },
+  {
+    "kind": "code",
+    "text": "fetch(\"/api/profile/update\", {\n  method: \"POST\",\n  body: ...\n});"
+  },
+  {
+    "kind": "paragraph",
+    "text": "此片段的省略號表示尚未填入的操作資料，只用來示意公開程式可能揭露Endpoint，不能直接執行或證明該端點有漏洞。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "只要攻擊者能合法取得這些公開資源，或用自己的測試帳號觀察功能，就可能了解網站使用的部分路徑、HTTP Method 與參數格式。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "其他來源可能包括公開的 API 文件、開發者文件、公開程式碼、應用程式流量觀察，以及對已知功能的測試。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "但要強調："
+  },
+  {
+    "kind": "paragraph",
+    "text": "知道 Endpoint，不等於可以成功執行它；知道 Endpoint，也不等於知道 Alice 的 Session Token。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "目標 Server 仍然可以要求 CSRF Token、授權檢查、MFA、交易確認、不可預測的操作識別資訊等。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-23",
+    "text": "社交工程是否必要？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "不一定。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "假設惡意網頁本身有流量，攻擊者可以利用該流量嘗試影響符合條件的訪客。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "如果攻擊者希望特定 Alice 進入惡意網頁，才可能透過釣魚郵件、通訊訊息、社群貼文或其他社交工程方式誘導 Alice 開啟。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因此，社交工程在這裡的角色通常是 Delivery（攻擊投遞），而非 CSRF 的必要技術條件。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "可以把整個攻擊拆成一棵 Issue Tree："
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rconditions",
+    "caption": "CSRF 圖 6｜已登入使用者 CSRF 情境的必要條件樹",
+    "description": "四類條件共同構成此Cookie登入情境的分析，不是四選一。攻擊者分成「知道目標URL與參數」及「能誘發請求」兩個必要面向；個別訪客的登入歷史不是必須事先知道的資料。此圖不概括其他如登入CSRF的不同威脅模型。",
+    "items": [
+      {
+        "title": "CSRF 攻擊要成功",
+        "body": "本圖分析利用已登入憑證的操作"
+      },
+      {
+        "title": "受害者條件",
+        "body": "有效工作階段與權限"
+      },
+      {
+        "title": "攻擊者條件",
+        "body": "目標資訊與誘發能力"
+      },
+      {
+        "title": "瀏覽器條件",
+        "body": "允許請求與必要憑證"
+      },
+      {
+        "title": "Server 條件",
+        "body": "相關防護缺失或未正確執行"
+      },
+      {
+        "title": "目標使用者具有有效 Session 及足夠操作權限",
+        "body": "受害者狀態"
+      },
+      {
+        "title": "知道可用的目標 URL 與必要參數",
+        "body": "不是知道Session Token"
+      },
+      {
+        "title": "能讓受害者瀏覽器觸發 Request",
+        "body": "不一定需要社交工程"
+      },
+      {
+        "title": "允許對應的跨站請求並附帶必要憑證",
+        "body": "依實際Cookie與請求政策判斷"
+      },
+      {
+        "title": "缺少或未正確執行 CSRF 與其他安全檢查",
+        "body": "Server接受不符合防偽流程的操作"
+      }
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "這張圖很適合用來建立攻擊分析模型。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "你會發現，攻擊者是否知道 Alice 的個人登入歷史，不在所有 CSRF 攻擊共同必須具備的條件中。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-10",
+    "text": "十、CSRF、CORS、SOP、Session Token、CSRF Token 到底有什麼差異？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這是建議你特別整理的一組概念，因為它們經常在同一個 HTTP Request 中出現，卻各自負責不同工作。"
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "名詞",
+      "核心問題",
+      "主要由誰處理"
+    ],
+    "rows": [
+      [
+        "Session ID",
+        "這個 Request 對應哪個登入 Session？",
+        "Server 與 Session 管理系統"
+      ],
+      [
+        "Cookie",
+        "要怎麼儲存及傳送相關資料？",
+        "Browser 與 Server"
+      ],
+      [
+        "SOP",
+        "這個 Origin 能讀取另一個 Origin 的資料嗎？",
+        "Browser"
+      ],
+      [
+        "CORS",
+        "Server 是否允許另一個 Origin 的 JavaScript 讀取回應，或通過特定跨來源請求檢查？",
+        "Browser 與 Server"
+      ],
+      [
+        "SameSite",
+        "跨網站 Request 是否可以附帶這個 Cookie？",
+        "Browser"
+      ],
+      [
+        "CSRF Token",
+        "這個受保護的 Request 是否攜帶 Server 要求的不可預測證明？",
+        "Server 驗證，Client 附帶"
+      ],
+      [
+        "Authorization",
+        "這個使用者有權執行操作嗎？",
+        "Server"
+      ]
+    ]
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-24",
+    "text": "為什麼已經有 Session Token，還需要 CSRF Token？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "因為兩者回答不同的問題。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Session ID 主要告訴銀行："
+  },
+  {
+    "kind": "paragraph",
+    "text": "「這個 Request 搭配的登入狀態是 Alice。」"
+  },
+  {
+    "kind": "paragraph",
+    "text": "CSRF Token 則讓銀行增加一項檢查："
+  },
+  {
+    "kind": "paragraph",
+    "text": "「這個 Request 是否持有合法應用程式流程提供的防偽造值？」"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如銀行原本產生："
+  },
+  {
+    "kind": "code",
+    "text": "<form action=\"/transfer\" method=\"POST\">\n  <input name=\"recipient\">\n  <input name=\"amount\">\n\n  <input\n    type=\"hidden\"\n    name=\"csrf_token\"\n    value=\"RANDOM_UNPREDICTABLE_TOKEN\"\n  >\n</form>"
+  },
+  {
+    "kind": "paragraph",
+    "text": "當 Alice 正常提交表單時，CSRF Token 會一起送給 Server。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "Server 再比對這個 Token 是否屬於相應的 Session、是否有效。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "而在一般跨 Origin 攻擊中，惡意網站通常無法讀取銀行網頁裡的這個值，也無法可靠猜出它。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這就能阻止單純依靠 Cookie 和可預測參數的偽造請求。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "不過，CSRF Token 並不是對 Alice 真實意願的絕對證明。如果銀行自己的頁面存在 XSS，或合法應用程式 JavaScript 被攻擊者操縱，威脅模型就不同了。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "OWASP 建議使用成熟框架內建的 CSRF 防護，並對狀態變更請求執行 Server-side 驗證。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-25",
+    "text": "那麼，Authorization: Bearer Token 又如何？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這也是你最初問題值得補充的部分。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "如果應用程式不是用 Cookie，而是由 JavaScript 明確加入："
+  },
+  {
+    "kind": "code",
+    "text": "Authorization: Bearer eyJ..."
+  },
+  {
+    "kind": "paragraph",
+    "text": "那麼其他 Origin 的網頁通常無法像使用 Cookie 一樣，要求 Browser 自動附帶該應用程式持有的 Bearer Token。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "所以，是否容易受到傳統 CSRF 攻擊，取決於身分憑證如何被儲存、取得及附帶，而不只是它的名稱是否叫 Session Token 或 JWT。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "例如，JWT 如果存在 Cookie 中，而且會自動附帶，仍可能面臨 CSRF 風險。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "反過來說，也不應因為想避免 CSRF，就一律把 Token 改放 `localStorage`，因為這又牽涉到 XSS 與 Token 竊取風險。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-11",
+    "text": "十一、現代 Web 應該如何防禦 CSRF？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "對有登入 Session 的 Web 系統，我建議使用分層防護，而不是只依賴單一瀏覽器設定。"
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "防禦層",
+      "做法",
+      "目的"
+    ],
+    "rows": [
+      [
+        "1. Cookie 安全設定",
+        "`Secure`、`HttpOnly`、`SameSite=Lax/Strict`、`__Host-`",
+        "限制憑證傳送、存取與 Cookie 範圍"
+      ],
+      [
+        "2. CSRF Token",
+        "使用 Server 驗證的 Token，或妥善設計的簽章 Double-submit Cookie",
+        "防止請求僅靠自動附帶憑證就被接受"
+      ],
+      [
+        "3. Request 來源檢查",
+        "驗證 `Origin`，必要時使用 `Referer` 作備援",
+        "識別非預期跨 Origin 操作"
+      ],
+      [
+        "4. Fetch Metadata",
+        "檢查 `Sec-Fetch-Site` 等 Header",
+        "區分同源、同站與跨站請求"
+      ],
+      [
+        "5. HTTP API 設計",
+        "GET 不執行狀態變更；必要時要求非 Simple Request",
+        "減少可利用的跨來源請求方式"
+      ],
+      [
+        "6. 高風險操作確認",
+        "重新驗證、交易簽核、OTP 或其他交易綁定證明",
+        "限制金流、帳號權限與高風險操作"
+      ]
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "對於 JSON API，要求適當的 `Content-Type` 或自訂 Header，可利用 CORS Preflight 限制不被允許的跨 Origin 非 Simple Request，但不能把 CORS 當成萬能的 CSRF 防火牆。傳統 HTML 表單仍可能直接送出 Simple Request。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這些機制可以採取不同組合，並不表示每個 Endpoint 都必須毫無區分地同時使用所有六層。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "參考依據包括："
+  },
+  {
+    "kind": "list",
+    "items": [
+      "[OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)",
+      "[MDN Cross-site Request Forgery](https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF)",
+      "[NIST SP 800-63B — Session Management](https://pages.nist.gov/800-63-4/sp800-63b/session/)"
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "NIST SP 800-63B 的 Session Management 指引也建議使用 HTTPS、HttpOnly、限縮 Cookie 範圍，以及 `SameSite=Lax` 或 `Strict`。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-12",
+    "text": "十二、從你的提問反推：你有哪些概念尚未真正串接？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "我認為你目前最值得補上的不是更多資安術語，而是幾個不同層次之間的邊界。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "以下是依據你提出問題的方式所做的學習診斷假設，不代表已經正式測驗你的理解程度。"
+  },
+  {
+    "kind": "table",
+    "headers": [
+      "你提出的問題",
+      "可能尚未建立的概念",
+      "建議補強方向"
+    ],
+    "rows": [
+      [
+        "每個網頁不是獨立沙盒嗎？",
+        "把 Tab、Origin、Site、Browser Process 視為同一個隔離邊界",
+        "Browser Architecture、Same-Origin Policy"
+      ],
+      [
+        "惡意網站為何能送出銀行 Session？",
+        "將網頁 JavaScript 的資料權限與 Browser 的 HTTP Request 處理混為一談",
+        "HTTP Request Pipeline、Cookie Jar"
+      ],
+      [
+        "惡意網站怎麼知道 Alice 登入過？",
+        "認為攻擊必須先掌握每個受害者的真實狀態",
+        "Threat Modeling、Blind / Opportunistic Attacks"
+      ],
+      [
+        "攻擊者怎麼知道攻擊網址？",
+        "將目標偵察與漏洞利用當作同一個技術階段",
+        "Reconnaissance、Attack Surface Discovery"
+      ],
+      [
+        "已經有 Session Token，為什麼還會有 CSRF？",
+        "尚未完全區分使用者身分與操作請求的合法性",
+        "Authentication、Authorization、CSRF Defenses"
+      ]
+    ]
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-v2-subsection-26",
+    "text": "最核心的缺口：沒有把整套系統拆成三個獨立決策"
+  },
+  {
+    "kind": "paragraph",
+    "text": "你可以把這次學習凝結成一個簡單的模型："
+  },
+  {
+    "kind": "diagram",
+    "name": "m20d2rdecisions",
+    "caption": "CSRF 圖 7｜把 Web 請求拆成三個決策",
+    "description": "三個責任分別判斷、依序互動；決策1允許發起不保證決策2附帶Cookie，更不保證決策3接受操作。",
+    "items": [
+      {
+        "title": "決策 1：網頁能不能發起這個操作？",
+        "body": "Browser 檢查 Web Platform、Sandbox、SOP、Fetch 等規則。"
+      },
+      {
+        "title": "決策 2：Browser 實際送出哪些憑證？",
+        "body": "依 Cookie Domain、Path、Secure、SameSite、Credentials Mode 等規則決定。"
+      },
+      {
+        "title": "決策 3：Server 應不應該接受並執行？",
+        "body": "驗證 Session、Authorization、CSRF、來源、操作參數與必要的額外確認。"
+      }
+    ]
+  },
+  {
+    "kind": "paragraph",
+    "text": "這三個決策是互相獨立、但依序互動的。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "而你最初的困惑，是把「決策 1 的隔離」當成也會保證「決策 2 不送 Cookie」以及「決策 3 不執行操作」。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "實際上，沒有這樣的自動保證。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "一旦理解這個模型，你會比較容易看懂 XSS、Clickjacking、CORS Misconfiguration、Session Hijacking，甚至與 OAuth 授權流程有關的攻擊問題。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-13",
+    "text": "十三、你可以怎麼實際驗證這些概念？"
+  },
+  {
+    "kind": "paragraph",
+    "text": "建議使用 Chrome 或 Firefox 的 Developer Tools，在你自己控制的測試網站觀察："
+  },
+  {
+    "kind": "paragraph",
+    "text": "1. 開啟 Network，觀察登入 Request 與 Response。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "2. 找到 Response 裡的 `Set-Cookie`，以及後續 Request 裡的 `Cookie`。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "3. 在 Application／Storage 的 Cookies 區域查看 `HttpOnly`、`Secure`、`SameSite`。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "4. 使用另一個測試 Origin 發出表單 Request，觀察 `Origin`、`Sec-Fetch-Site` 與是否附帶 Cookie。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "5. 將測試 Cookie 分別設定為 `SameSite=Strict`、`Lax`、`None`，驗證不同跨站請求的結果。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "一個有趣的進階陷阱：`http://localhost:3000` 和 `http://localhost:8000` 雖然是 Cross-Origin，通常仍屬於 Same-Site，單靠改變 Port 不足以測試真正的 Cross-Site Cookie 行為。這是很適合用實驗釐清的差異。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "測試時請使用自建應用與虛構 Session，不要貼出真實 Session Cookie 或銀行憑證。"
+  },
+  {
+    "kind": "heading",
+    "id": "p1-csrf-browser-section-14",
+    "text": "十四、理解檢查：三個情境"
+  },
+  {
+    "kind": "paragraph",
+    "text": "先不提供答案。請依照你現在建立的 Browser → Cookie → Server 模型判斷。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "情境 1：Alice 已登入銀行。銀行 Session Cookie 明確設為 SameSite=Lax。惡意網站自動提交跨站 POST 表單到銀行。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "A. Browser 一定附帶 Cookie，因為 Alice 已登入"
+  },
+  {
+    "kind": "paragraph",
+    "text": "B. Browser 通常不會附帶 Cookie，因為這是跨站 POST"
+  },
+  {
+    "kind": "paragraph",
+    "text": "C. 因為 SOP，Browser 連 POST 都不會發送"
+  },
+  {
+    "kind": "paragraph",
+    "text": "情境 2：銀行把刪除帳號錯誤設計成 GET /delete-account。Session Cookie 是 SameSite=Lax。惡意網站讓 Alice 點擊該銀行網址並進行頂層導航。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "A. 仍可能存在 CSRF 風險"
+  },
+  {
+    "kind": "paragraph",
+    "text": "B. SameSite=Lax 一定會阻擋 Cookie"
+  },
+  {
+    "kind": "paragraph",
+    "text": "C. GET 一定不能造成 Server 狀態改變"
+  },
+  {
+    "kind": "paragraph",
+    "text": "情境 3：銀行的 Session Cookie 設定 HttpOnly、Secure、SameSite=None。惡意網站無法讀取銀行 Cookie，卻嘗試跨站表單 POST。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "A. 只要 HttpOnly 存在，CSRF 就不可能成功"
+  },
+  {
+    "kind": "paragraph",
+    "text": "B. 惡意網站必須先取得 Session ID 才能提交表單"
+  },
+  {
+    "kind": "paragraph",
+    "text": "C. 若 Browser 附帶 Cookie，且 Server 缺乏 CSRF 防護，攻擊仍可能成功"
+  },
+  {
+    "kind": "paragraph",
+    "text": "三個情境各有三個選項，供靜態自我檢核；先自行記錄選擇與理由，再與教師討論。本頁不提交、批改或記錄已理解狀態。"
+  },
+  {
+    "kind": "paragraph",
+    "text": "這三題用來檢查能否串接跨網站 Request、Cookie 自動附帶與 Server 端請求驗證；需要實際回答及核對推理，不能僅憑閱讀或展開本part認定已經理解。"
+  }
+]

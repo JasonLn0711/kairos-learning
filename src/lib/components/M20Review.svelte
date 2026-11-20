@@ -5,19 +5,28 @@
  import NoteDiagram from './NoteDiagram.svelte';
  let {review}:{review:M20Review}=$props();
 </script>
-<div class="m20-review">
+<div class="m20-review" class:day02={['2026-11-14','2026-11-15'].includes(review.publishedOn)}>
  <p class="lead">{review.summary}</p>
  <p><a href="/courses/ceh/v13/m20/hash-encryption-and-signatures/">延伸閱讀：M20 雜湊、加密與數位簽章</a></p>
  <ArticleMetadata lang="zh" publishedOn={review.publishedOn} revisedOn={review.revisedOn} version={'v'+review.contentVersion} author="CS Kairos"/>
  <nav aria-label="本文導覽"><ol>{#each review.sections as section}<li><a href={'#'+section.id}>{section.heading}</a></li>{/each}<li><a href="#m20-sources">參考來源</a></li></ol></nav>
- <article class="prose">{#each review.sections as section}<section><h2 id={section.id}>{section.heading}</h2>{#each section.body as block}
- {#if block.kind==='diagram'}<NoteDiagram diagram={block} date="2026-11-12" part={20} lang="zh"/>
+ {#if ['2026-11-14','2026-11-15'].includes(review.publishedOn)}{@html '<!--email_off-->'}{/if}
+ {#snippet body(blocks:M20Review['sections'][number]['body'])}{#each blocks as block}
+{#if block.kind==='diagram'}<NoteDiagram diagram={block} date={review.publishedOn} part={20} lang="zh"/>
  {:else if block.kind==='heading'}<h3 id={block.id}>{block.text}</h3>
  {:else if block.kind==='code'}<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard access to local horizontal scrolling.) --><pre tabindex="0" role="region" aria-label="可捲動程式碼範例"><code>{block.text}</code></pre>
  {:else}<SourceBody blocks={[block]} lang="zh"/>{/if}
- {/each}</section>{/each}</article>
- <section><h2 id="m20-sources">參考來源與查核界線</h2><p>英文題幹、題號及選項來自本次供稿；以下一手來源支持技術解說。題庫預期答案未另附，不將編輯判斷稱為官方答案。本文提供閱讀與自我複習，學習完成與考試準備度須另外評估。</p><ul>{#each review.sources as source}<li><a href={source.url}>{source.title}</a> · 查核：{source.checkedOn}</li>{/each}</ul></section>
+ {/each}{/snippet}
+ <article class="prose">{#each review.sections as section}
+ {#if section.collapsible}
+ <details class="csrf-part" id={section.id}><summary><h2>{section.heading}</h2><span class="part-hint">展開／收合完整教學</span></summary><div class="part-body">{#each section.aliases??[] as alias}<span id={alias} class="anchor-alias" aria-hidden="true"></span>{/each}{@render body(section.body)}</div></details>
+ {:else}<section><h2 id={section.id}>{section.heading}</h2>{@render body(section.body)}</section>{/if}
+ {/each}</article>
+ {#if ['2026-11-14','2026-11-15'].includes(review.publishedOn)}{@html '<!--/email_off-->'}{/if}
+ <section><h2 id="m20-sources">參考來源與查核界線</h2><p>{review.publishedOn==='2026-11-15'?'本次供稿提供K01–K12完整教學與23題對照，未附完整23題題幹及選項；三題維持技術待核，六道情境題供靜態自我檢核。以下一手來源支持技術解說。':review.publishedOn==='2026-11-14'?'本次供稿提供 K01–K13 教學與題號對照，未附完整23題題幹及選項；以下一手來源支持技術解說。':review.publishedOn==='2026-11-13'?'本次供稿提供觀念解說與題號對照，未附完整13題題幹及52個選項；以下一手來源支持技術解說。':'英文題幹、題號及選項來自本次供稿；以下一手來源支持技術解說。'}題庫預期答案未另附，不將編輯判斷稱為官方答案。本文提供閱讀與自我複習，學習完成與考試準備度須另外評估。</p><ul>{#each review.sources as source}<li><a href={source.url}>{source.title}</a> · 查核：{source.checkedOn}</li>{/each}</ul></section>
 </div>
 <style>
+ .csrf-part{border:1px solid #c7d2d7;border-radius:14px;margin:2rem 0;background:#fbfcfd;min-width:0}.csrf-part summary{cursor:pointer;padding:1rem;line-height:1.8;overflow-wrap:anywhere}.csrf-part summary h2{display:inline;font-size:1.25rem;line-height:1.8;margin:0}.part-hint{display:block;font-size:.875rem;color:#515b61;margin-top:.35rem}.part-body{padding:0 1rem 1rem;min-width:0}.anchor-alias{display:block;scroll-margin-top:6rem}.csrf-part:target,.part-body :global(:target){scroll-margin-top:6rem}
+ .m20-review.day02 pre{background:#f2f6f5;color:#18252c;font-size:1rem;line-height:1.8}
  .m20-review{overflow-wrap:anywhere;min-width:0}.m20-review :global(p),.m20-review :global(li),.m20-review :global(td),.m20-review :global(th){font-size:1rem;line-height:1.8}.m20-review :global(:focus-visible){outline:3px solid #175f91;outline-offset:3px}pre{max-width:100%;overflow:auto}h3{font-size:1.2rem;line-height:1.8}
 </style>

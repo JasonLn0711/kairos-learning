@@ -1,0 +1,4082 @@
+[
+  {
+    "line": 1,
+    "source": "# **CSRF 深度教學：從瀏覽器沙盒、HTTP Session、Cookie 到跨網站請求的完整安全機制**",
+    "anchor": "p1-csrf-browser-intro",
+    "treatment": "補充主標題"
+  },
+  {
+    "line": 3,
+    "source": "## **一、核心答案：瀏覽器有沙盒，為什麼仍然可能發生 CSRF？**",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 5,
+    "source": "你提出的問題，正好觸及 Web Security 最容易混淆的設計邊界。",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 7,
+    "source": "你的理解有一大部分是正確的：**瀏覽器確實會隔離不同網站的 JavaScript 執行環境，阻止網站任意讀取其他網站的敏感資訊。**",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 9,
+    "source": "但是，你還需要補上一個關鍵：",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 11,
+    "source": "**瀏覽器限制「讀取其他網站的資料」，不等於完全禁止「向其他網站發出 HTTP Request」。**",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 13,
+    "source": "這不是瀏覽器忘了做隔離，而是 Web 原本就需要支援跨網站連結、表單、圖片、重新導向等功能。",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 15,
+    "source": "因此，以下三種行為必須分開理解：",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 17,
+    "source": "| 行為                                 | 一般瀏覽器的處理                  |",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 18,
+    "source": "| ---------------------------------- | ------------------------- |",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 19,
+    "source": "| 網站 A 讀取網站 B 的私人網頁資料                | 通常被 Same-Origin Policy 阻止 |",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 20,
+    "source": "| 網站 A 讓瀏覽器向網站 B 發出請求                | 在符合瀏覽器規則的情況下可以            |",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 21,
+    "source": "| 發給網站 B 的請求，自動附帶 B 的 Session Cookie | 取決於 Cookie 規則、請求類型與瀏覽器政策  |",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 23,
+    "source": "MDN 將跨來源操作區分為 Cross-origin Writes、Embeds 與 Reads：跨來源寫入（例如一般表單提交）通常允許，而跨來源讀取通常受限制。",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 25,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://developer.mozilla.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 27,
+    "source": "MDN",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 31,
+    "source": "這正是 CSRF 可能存在的原因。",
+    "anchor": "p1-csrf-browser-section-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 33,
+    "source": "### **你最需要建立的心智模型**",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 35,
+    "source": "瀏覽器不是每個網頁各自擁有一個完全獨立的網路世界",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 37,
+    "source": "**銀行頁面**",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 39,
+    "source": "bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 41,
+    "source": "**惡意頁面**",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 43,
+    "source": "evil.example.net",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 45,
+    "source": "不同的網頁執行安全環境；無法任意互讀資料",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 47,
+    "source": "都需要透過瀏覽器的網路與儲存機制",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 49,
+    "source": "**Browser：執行權限與網路請求的仲裁者**",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 51,
+    "source": "Cookie Store",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 53,
+    "source": "依網域與安全規則管理",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 55,
+    "source": "Network Stack",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 57,
+    "source": "發送 HTTP Request",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 59,
+    "source": "**Destination Server**",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 61,
+    "source": "接收 Request，驗證身分及是否允許操作",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "圖9：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 63,
+    "source": "這是概念架構，不代表每個瀏覽器都採用相同的作業系統程序切分方式。",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 65,
+    "source": "真正的重點是：",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 67,
+    "source": "- 網頁 JavaScript 不能任意存取其他網站的 Cookie。",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 68,
+    "source": "- 網頁可以透過允許的 Web API 與 HTML 機制要求瀏覽器發出網路請求。",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 69,
+    "source": "- **瀏覽器自己決定要不要為目的地附帶 Cookie。**",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 70,
+    "source": "- Server 必須判斷這筆 Request 不只是「帶著有效登入憑證」，而且符合操作授權與防偽要求。",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 72,
+    "source": "接下來，我們從使用者第一次打開網站開始，完整追蹤每個步驟。",
+    "anchor": "p1-csrf-browser-subsection-01",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 74,
+    "source": "# **二、先理解基礎：HTTP 本身為什麼需要 Session？**",
+    "anchor": "p1-csrf-browser-section-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 76,
+    "source": "## **1. HTTP 是 Stateless（無狀態）的**",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 78,
+    "source": "假設你進入一家銀行網站。",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 80,
+    "source": "第一次發出：",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 82,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 83,
+    "source": "GET /login HTTP/1.1",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 84,
+    "source": "Host: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 85,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 87,
+    "source": "伺服器回傳登入頁面。",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 89,
+    "source": "接著你登入成功，又發出：",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 91,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 92,
+    "source": "GET /account HTTP/1.1",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 93,
+    "source": "Host: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 94,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 96,
+    "source": "問題來了：",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 98,
+    "source": "第二筆 HTTP Request 本身，並沒有自動告訴 Server「這是剛才登入成功的同一個使用者」。",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 100,
+    "source": "HTTP 的基本請求／回應模型，不會天然記住使用者身分。",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 102,
+    "source": "而且即使底層 TCP 或 HTTP/2 連線保持開啟，**傳輸連線也不是使用者登入身分的證明**。",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 104,
+    "source": "所以 Web Application 需要另外建立 Session Management（工作階段管理）。",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 106,
+    "source": "你可以把它理解為：",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 108,
+    "source": "> HTTP 負責一次次傳送請求與回應；Session Management 負責把不同請求關聯到同一個已驗證的使用者工作階段。",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 110,
+    "source": "這也是 OWASP Session Management Cheat Sheet 的核心架構。",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 112,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 114,
+    "source": "OWASP Cheat Sheet Series",
+    "anchor": "p1-csrf-browser-subsection-02",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 118,
+    "source": "## **2. Cookie 跟 Session 是不是同一個東西？**",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 120,
+    "source": "不是。",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 122,
+    "source": "這是理解 CSRF 最重要的先備知識之一。",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 124,
+    "source": "**Cookie 是瀏覽器儲存及傳送資料的機制；Session 是應用程式持續辨識使用者及管理登入狀態的概念。**",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 126,
+    "source": "以傳統 Server-side Session 為例：",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 128,
+    "source": "**Browser**",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "圖10：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 130,
+    "source": "儲存一個識別碼，例如：",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "圖10：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 132,
+    "source": "`session=S7x9...`",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "圖10：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 134,
+    "source": "瀏覽器不一定知道這個識別碼對應誰。",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "圖10：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 136,
+    "source": "**Server**",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "圖10：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 138,
+    "source": "儲存 Session 紀錄，例如：",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "圖10：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 140,
+    "source": "`S7x9... → User Alice`",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "圖10：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 142,
+    "source": "同時管理有效期限、權限及其他狀態。",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "圖10：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 144,
+    "source": "Session ID 或 Session Token 通常是一個足夠隨機、難以猜測的識別碼。",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 146,
+    "source": "Server 可以依此查到使用者身分，例如：",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 148,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 149,
+    "source": "Session Store（示意）",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 151,
+    "source": "session_id: S7x9...",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 152,
+    "source": "user_id: 1024",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 153,
+    "source": "authenticated: true",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 154,
+    "source": "role: customer",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 155,
+    "source": "expires_at: ...",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 156,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 158,
+    "source": "請注意，這只是其中一種 Session 架構。",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 160,
+    "source": "另外也可以使用經過簽署或加密保護的 Token，例如某些 JWT-based Session 設計，不必每次都查詢傳統的 Session Store。",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 162,
+    "source": "但對你理解 CSRF 而言，**識別碼在伺服器端查表，或以密碼學方式驗證，不是關鍵差異；關鍵在於瀏覽器是否會自動附帶登入憑證。**",
+    "anchor": "p1-csrf-browser-subsection-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 164,
+    "source": "# **三、從零開始：Browser 和 Server 如何交換 Session Token？**",
+    "anchor": "p1-csrf-browser-section-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 166,
+    "source": "現在完整模擬一次登入。",
+    "anchor": "p1-csrf-browser-section-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 168,
+    "source": "假設 Alice 使用瀏覽器打開：",
+    "anchor": "p1-csrf-browser-section-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 170,
+    "source": "`https://bank.example.com`",
+    "anchor": "p1-csrf-browser-section-03",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 172,
+    "source": "## **階段 A：第一次連線**",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 174,
+    "source": "瀏覽器大致需要完成：",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 176,
+    "source": "1. 解析網址，判斷 Scheme、Host、Port 與 Path。",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 177,
+    "source": "2. 必要時透過 DNS 取得伺服器 IP。",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 178,
+    "source": "3. 建立網路連線，例如 TCP／TLS 或 QUIC／TLS。",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 179,
+    "source": "4. 送出 HTTP Request。",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 180,
+    "source": "5. 取得 Server Response，解析 HTML 與載入必要資源。",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 182,
+    "source": "以下只看 HTTP 層的請求／回應。",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 184,
+    "source": "**Browser → Bank Server**",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 186,
+    "source": "HTTP Request",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 188,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 189,
+    "source": "GET /login HTTP/1.1",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 190,
+    "source": "Host: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 191,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 193,
+    "source": "**Bank Server → Browser**",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 195,
+    "source": "HTTP Response",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 197,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 198,
+    "source": "HTTP/1.1 200 OK",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 199,
+    "source": "Content-Type: text/html",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 201,
+    "source": "<html>登入頁面...</html>",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 202,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "圖11：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 204,
+    "source": "為了簡化例子，假設尚未建立任何 Session。",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 206,
+    "source": "此時 Alice 還沒有登入。",
+    "anchor": "p1-csrf-browser-subsection-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 208,
+    "source": "## **階段 B：Alice 輸入帳號與密碼**",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 210,
+    "source": "使用者填入表單後，Browser 發出：",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 212,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 213,
+    "source": "POST /login HTTP/1.1",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 214,
+    "source": "Host: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 215,
+    "source": "Content-Type: application/x-www-form-urlencoded",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 217,
+    "source": "username=alice&password=example-password",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 218,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 220,
+    "source": "在 HTTPS 下，HTTP 請求資料會由 TLS 保護傳輸；此處展示的是解密後的概念內容，不代表密碼會以明文暴露在網路上。",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 222,
+    "source": "Server 接著執行：",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 224,
+    "source": "1. 驗證帳號與密碼。",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 225,
+    "source": "2. 確認是否通過額外登入要求。",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 226,
+    "source": "3. 建立已驗證的 Session。",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 227,
+    "source": "4. 產生新的、不可預測的 Session ID。",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 228,
+    "source": "5. 將 Session 與 Alice 的使用者身分建立關聯。",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 230,
+    "source": "實務上，登入及權限提升後應更新 Session ID，以降低 Session Fixation 風險。",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 232,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 234,
+    "source": "OWASP Cheat Sheet Series",
+    "anchor": "p1-csrf-browser-subsection-05",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 238,
+    "source": "## **階段 C：Server 將 Session ID 交給 Browser**",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 240,
+    "source": "假設驗證成功，Server 回傳：",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 242,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 243,
+    "source": "HTTP/1.1 303 See Other",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 244,
+    "source": "Location: /account",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 245,
+    "source": "Set-Cookie: __Host-session=S7x9;",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 246,
+    "source": "            Path=/;",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 247,
+    "source": "            Secure;",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 248,
+    "source": "            HttpOnly;",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 249,
+    "source": "            SameSite=Lax",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 250,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 252,
+    "source": "這裡最重要的是：",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 254,
+    "source": "`Set-Cookie`",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 256,
+    "source": "它是 **Response Header**。",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 258,
+    "source": "意思是：",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 260,
+    "source": "「瀏覽器，請依照這些屬性，保存這筆 Cookie。」",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 262,
+    "source": "`303 See Other` 則讓瀏覽器接著以 GET 導向帳戶頁面；它不是 Session 本身必要的機制，只是常見的登入後導向方式。",
+    "anchor": "p1-csrf-browser-subsection-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 264,
+    "source": "### **Cookie 的安全屬性**",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 266,
+    "source": "| 屬性                  | 真正的用途                            |",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 267,
+    "source": "| ------------------- | -------------------------------- |",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 268,
+    "source": "| `__Host-session`    | Cookie 名稱，`__Host-` 前綴強制更嚴格的主機限制 |",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 269,
+    "source": "| `Path=/`            | Cookie 的 URL 路徑匹配範圍              |",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 270,
+    "source": "| `Secure`            | 僅透過符合要求的安全連線傳送                   |",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 271,
+    "source": "| `HttpOnly`          | 防止網頁 JavaScript 直接讀取 Cookie      |",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 272,
+    "source": "| `SameSite=Lax`      | 限制部分跨網站情境下的 Cookie 傳送            |",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 273,
+    "source": "| `Max-Age`／`Expires` | 控制瀏覽器端保存期限（本例未設定）                |",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 275,
+    "source": "這些屬性分別控制不同的事情，不能把它們視為一個總體的「安全開關」。",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 277,
+    "source": "其中 `HttpOnly` 特別重要：",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 279,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 280,
+    "source": "document.cookie",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 281,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 283,
+    "source": "即使在銀行自己網站的 JavaScript 中，這個操作也不能讀取銀行設定的 `HttpOnly` Session Cookie。",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 285,
+    "source": "但這不代表 Cookie 不會被送出去。",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 287,
+    "source": "**HttpOnly 是限制 JavaScript 讀取 Cookie，不是停止瀏覽器在合適請求中傳送 Cookie。**&#x20;",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 289,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://developer.mozilla.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 291,
+    "source": "MDN",
+    "anchor": "p1-csrf-browser-subsection-07",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 295,
+    "source": "## **階段 D：瀏覽器儲存 Cookie**",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 297,
+    "source": "這時候，銀行網站並不需要在每一個網頁的 JavaScript 裡面分別保存 Session ID。",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 299,
+    "source": "Browser 自己有 Cookie 儲存與管理機制。",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 301,
+    "source": "可以把它想像成一張表格：",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 303,
+    "source": "| Cookie 所屬主機      | 名稱               | 值       |",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 304,
+    "source": "| ---------------- | ---------------- | ------- |",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 305,
+    "source": "| bank.example.com | `__Host-session` | S7x9... |",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 306,
+    "source": "| shop.example.org | session          | K8p2... |",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 307,
+    "source": "| news.example.net | preferences      | ...     |",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 309,
+    "source": "這個表格只是概念示意。實際瀏覽器還會考慮 Domain、Path、Secure、SameSite、過期時間、分區儲存及使用者隱私政策等條件。",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 311,
+    "source": "Cookie 也不等於「每個分頁一份」。",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 313,
+    "source": "**同一個 Browser Profile 中，不同分頁可以共用符合適用範圍的 Cookie。**",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 315,
+    "source": "但一般模式、無痕模式，以及不同 Browser Profile 通常有不同的 Cookie 儲存隔離範圍。",
+    "anchor": "p1-csrf-browser-subsection-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 317,
+    "source": "## **階段 E：Alice 再次存取帳戶頁面**",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 319,
+    "source": "現在 Alice 已登入。",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 321,
+    "source": "Browser 發出：",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 323,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 324,
+    "source": "GET /account HTTP/1.1",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 325,
+    "source": "Host: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 326,
+    "source": "Cookie: __Host-session=S7x9",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 327,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 329,
+    "source": "有沒有發現差異？",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 331,
+    "source": "剛剛是 Server 回傳：",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 333,
+    "source": "`Set-Cookie`",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 335,
+    "source": "現在變成 Browser 發送：",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 337,
+    "source": "`Cookie`",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 339,
+    "source": "兩者方向不同。",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 341,
+    "source": "**Server → Browser**",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "圖12：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 343,
+    "source": "`Set-Cookie`：請保存這筆 Cookie",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "圖12：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 345,
+    "source": "**Browser → Server**",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "圖12：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 347,
+    "source": "`Cookie`：這次請求附帶符合規則的 Cookie 名稱和值",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "圖12：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 349,
+    "source": "請求中的 `Cookie` Header 不會把 Secure、HttpOnly、SameSite 等設定全部傳回去；那些屬性由 Browser 在判斷是否傳送時使用。",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 351,
+    "source": "Server 收到 Session ID 後，便可以查詢：",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 353,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 354,
+    "source": "S7x9 → Alice → Customer",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 355,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 357,
+    "source": "再檢查 Session 是否有效、Alice 是否有權讀取帳戶資料。",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 359,
+    "source": "到這裡，你應該已經理解為什麼使用者不必每次打開銀行頁面都重新登入。",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 361,
+    "source": "**Browser 自動附帶 Cookie，Server 使用 Session ID 恢復使用者的登入狀態。**",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 363,
+    "source": "接下來，這項便利機制也正是我們分析 CSRF 的起點。",
+    "anchor": "p1-csrf-browser-subsection-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 365,
+    "source": "# **四、CSRF 的真正發生過程：惡意網站如何利用「已登入的瀏覽器」？**",
+    "anchor": "p1-csrf-browser-section-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 367,
+    "source": "現在假設 Alice 已經成功登入銀行網站。",
+    "anchor": "p1-csrf-browser-section-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 369,
+    "source": "我們加入第三個角色：攻擊者控制的惡意網站。",
+    "anchor": "p1-csrf-browser-section-04",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 371,
+    "source": "正常登入與 CSRF 攻擊的差異",
+    "anchor": "p1-csrf-browser-section-04",
+    "treatment": "圖13：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 373,
+    "source": "圖示假設 Cookie 政策允許這次請求附帶 Session Cookie；現代瀏覽器並非任何跨網站請求都會送出 Cookie。",
+    "anchor": "p1-csrf-browser-section-04",
+    "treatment": "圖13：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 375,
+    "source": "## **1. 攻擊者其實不需要知道 Session Token**",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 377,
+    "source": "這是你問題的核心答案。",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 379,
+    "source": "假設 Alice 的瀏覽器已有：",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 381,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 382,
+    "source": "銀行的 Cookie",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 383,
+    "source": "Name: __Host-session",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 384,
+    "source": "Value: S7x9",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 385,
+    "source": "Domain scope: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 386,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 388,
+    "source": "攻擊者完全不知道 `S7x9`。",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 390,
+    "source": "也讀不到它。",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 392,
+    "source": "攻擊者甚至不需要碰銀行網站的 JavaScript。",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 394,
+    "source": "他只需要設法讓 Alice 的瀏覽器對銀行發出某個 HTTP Request。",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 396,
+    "source": "例如惡意網頁包含以下示意表單：",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 398,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 399,
+    "source": "<form",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 400,
+    "source": "  action=\"https://bank.example.com/transfer\"",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 401,
+    "source": "  method=\"POST\"",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 402,
+    "source": ">",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 403,
+    "source": "  <input name=\"to\" value=\"attacker-account\">",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 404,
+    "source": "  <input name=\"amount\" value=\"1000\">",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 405,
+    "source": "  <button type=\"submit\">Continue</button>",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 406,
+    "source": "</form>",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 407,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 409,
+    "source": "這個表單只是向另一個網站指定 HTTP Request 的目的地和內容。HTML 本來就支援將表單提交到其他網站。",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 411,
+    "source": "假設使用者被誘導提交這個表單，或惡意頁面在允許的執行環境下觸發提交，Browser 就會考慮建立：",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 413,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 414,
+    "source": "POST /transfer HTTP/1.1",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 415,
+    "source": "Host: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 416,
+    "source": "Content-Type: application/x-www-form-urlencoded",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 418,
+    "source": "to=attacker-account&amount=1000",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 419,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 421,
+    "source": "請注意：",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 423,
+    "source": "**到這個階段，攻擊者控制的是請求的目的地及部分內容，不是銀行的 Session Cookie。**",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 425,
+    "source": "接下來才是 Browser 自己的工作。",
+    "anchor": "p1-csrf-browser-subsection-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 427,
+    "source": "## **2. Browser 為什麼可能自動加上銀行的 Session Cookie？**",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 429,
+    "source": "當瀏覽器要送出 HTTP Request 時，會根據請求的目的地、Cookie 屬性及瀏覽器政策判斷：",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 431,
+    "source": "「我保存的 Cookies 裡，有哪些應該附在這次送往 `bank.example.com` 的請求上？」",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 433,
+    "source": "假設銀行設定了：",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 435,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 436,
+    "source": "Set-Cookie: __Host-session=S7x9;",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 437,
+    "source": "            Path=/;",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 438,
+    "source": "            Secure;",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 439,
+    "source": "            HttpOnly;",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 440,
+    "source": "            SameSite=None",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 441,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 443,
+    "source": "這裡為了展示 CSRF 可成立的條件，特別假設使用 `SameSite=None; Secure`，並且瀏覽器的 Cookie 政策允許在這次請求中傳送它。",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 445,
+    "source": "那麼瀏覽器可能送出：",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 447,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 448,
+    "source": "POST /transfer HTTP/1.1",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 449,
+    "source": "Host: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 450,
+    "source": "Origin: https://evil.example.net",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 451,
+    "source": "Sec-Fetch-Site: cross-site",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 452,
+    "source": "Cookie: __Host-session=S7x9",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 453,
+    "source": "Content-Type: application/x-www-form-urlencoded",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 455,
+    "source": "to=attacker-account&amount=1000",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 456,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 458,
+    "source": "其中：",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 460,
+    "source": "- `Origin`：表示請求來自哪個 Origin，讓 Server 有機會檢查來源。",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 461,
+    "source": "- `Sec-Fetch-Site`：瀏覽器提供的請求來源關係資訊，支援此機制時可用來辨識跨網站請求。",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 462,
+    "source": "- `Cookie`：瀏覽器替目的地銀行網站附上的有效 Session Cookie。",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 464,
+    "source": "攻擊者不知道 `S7x9`。",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 466,
+    "source": "但是銀行 Server 收到 Request 時，看得到有效的 `S7x9`。",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 468,
+    "source": "假設 Server 沒有檢查 CSRF Token、請求來源或其他必要的防偽條件，便可能錯誤執行這個請求。",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 470,
+    "source": "OWASP 將此列為 CSRF 的基本攻擊模型：利用使用者已登入的瀏覽器，使目標系統執行非使用者本意的操作。",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 472,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 474,
+    "source": "OWASP Cheat Sheet Series",
+    "anchor": "p1-csrf-browser-subsection-11",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 478,
+    "source": "## **3. 所以，Session Token 究竟被送到了哪裡？**",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 480,
+    "source": "這個問題非常關鍵。",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 482,
+    "source": "不是：",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 484,
+    "source": "Alice Browser → 惡意網站 → 銀行",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 486,
+    "source": "而是：",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 488,
+    "source": "**Alice Browser → 銀行 Server**",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 490,
+    "source": "惡意網站只是促使 Browser 發出這次請求。",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 492,
+    "source": "Session Cookie 的傳送對象仍然是它符合規則的目的地主機 `bank.example.com`。",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 494,
+    "source": "所以需要分清楚：",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 496,
+    "source": "| 問題                                    | 結果                   |",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 497,
+    "source": "| ------------------------------------- | -------------------- |",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 498,
+    "source": "| 惡意網站能讀取銀行的 HttpOnly Session Cookie 嗎？ | 正常情況不能               |",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 499,
+    "source": "| 惡意網站能安排一個指向銀行的表單嗎？                    | 可以                   |",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 500,
+    "source": "| Browser 一定會附上銀行 Cookie 嗎？             | 不一定，取決於 Cookie 與請求規則 |",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 501,
+    "source": "| 惡意網站能直接讀取銀行的回應內容嗎？                    | 通常不能                 |",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 502,
+    "source": "| 銀行仍可能執行惡意請求嗎？                         | 若認證與防偽設計有缺陷，可能       |",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 504,
+    "source": "**CSRF 是利用瀏覽器代為執行已驗證的請求，不等同於偷取 Session Token。**",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 506,
+    "source": "這兩種攻擊應該區別：",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 508,
+    "source": "- Session Hijacking：攻擊者取得或控制有效 Session，冒用使用者。",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 509,
+    "source": "- CSRF：攻擊者可能根本不知道 Session Token，卻利用使用者自己的瀏覽器執行非預期操作。",
+    "anchor": "p1-csrf-browser-subsection-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 511,
+    "source": "# **五、你提到的 Browser Sandbox，究竟保護什麼？**",
+    "anchor": "p1-csrf-browser-section-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 513,
+    "source": "這是整套課程最有深度的地方。",
+    "anchor": "p1-csrf-browser-section-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 515,
+    "source": "你原本的想法是：",
+    "anchor": "p1-csrf-browser-section-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 517,
+    "source": "「每一個網頁都在獨立沙盒裡面，為什麼 A 網站還能操作 B 網站？」",
+    "anchor": "p1-csrf-browser-section-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 519,
+    "source": "問題出在我們平常把不同層次的「隔離」統稱為 Sandbox。",
+    "anchor": "p1-csrf-browser-section-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 521,
+    "source": "其實至少要分成三層。",
+    "anchor": "p1-csrf-browser-section-05",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 523,
+    "source": "## **第一層：Process Sandbox（作業系統程序沙盒）**",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 525,
+    "source": "以 Chromium 架構為例，瀏覽器使用多程序架構，盡可能將不同網站的內容放在受到限制的 Renderer Process 中。",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 527,
+    "source": "其設計目的包括：",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 529,
+    "source": "- 降低惡意網頁直接存取作業系統資源的能力。",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 530,
+    "source": "- 限制 Renderer 被攻破後的影響。",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 531,
+    "source": "- 透過 Site Isolation 減少不同網站的敏感資料在程序中的混合。",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 533,
+    "source": "但它不是「每個網頁都不能發任何跨網站 HTTP Request」。",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 535,
+    "source": "Chromium 的 Site Isolation 設計文件也明確說明，這套機制本身並不是用來阻止傳統 CSRF。",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 537,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://www.chromium.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 539,
+    "source": "Chromium",
+    "anchor": "p1-csrf-browser-subsection-13",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 543,
+    "source": "## **第二層：Same-Origin Policy（同源政策）**",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 545,
+    "source": "這層跟你的疑問最直接相關。",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 547,
+    "source": "Origin（來源）由三個元素組成：",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 549,
+    "source": "\\\\[ \\text{Origin} = (\\text{Scheme},\\text{Host},\\text{Port}) \\\\]",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 551,
+    "source": "例如：",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 553,
+    "source": "| 網址                                  | 與 `https://bank.example.com` 同源？ |",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 554,
+    "source": "| ----------------------------------- | -------------------------------- |",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 555,
+    "source": "| `https://bank.example.com/account`  | 是                                |",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 556,
+    "source": "| `https://bank.example.com/transfer` | 是                                |",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 557,
+    "source": "| `http://bank.example.com`           | 否，Scheme 不同                      |",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 558,
+    "source": "| `https://bank.example.com:8443`     | 否，Port 不同                        |",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 559,
+    "source": "| `https://promo.example.com`         | 否，Host 不同                        |",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 561,
+    "source": "Same-Origin Policy 的目的是限制某個 Origin 的程式碼任意存取其他 Origin 的敏感資料與物件。",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 563,
+    "source": "例如，惡意網頁不能直接讀取銀行分頁的 DOM，也通常不能利用 JavaScript 直接讀取銀行 API 回傳的私人 JSON。",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 565,
+    "source": "但它**不會一律禁止跨來源導覽、表單提交或載入外部資源**。",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 567,
+    "source": "否則 Web 會失去許多基本能力：你不能點選連往另一個網站的連結，也不能在網頁中載入其他網站提供的圖片。",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 569,
+    "source": "所以：",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 571,
+    "source": "**Same-Origin Policy 不是「不能向其他網站發 Request」，而是針對不同類型的跨來源操作施加不同限制，尤其保護資料讀取。**",
+    "anchor": "p1-csrf-browser-subsection-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 573,
+    "source": "## **第三層：Cookie Policy（Cookie 傳送規則）**",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 575,
+    "source": "這又是一套不同的規則。",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 577,
+    "source": "Cookie Policy 主要在回答：",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 579,
+    "source": "「當這個 Request 發往某個目的地時，哪些 Cookie 可以附帶？」",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 581,
+    "source": "它必須考慮 Cookie 的 Domain、Path、Secure、SameSite 等屬性，以及瀏覽器的其他政策。",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 583,
+    "source": "這也就解釋了為什麼：",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 585,
+    "source": "- 網頁 A 可以沒有權限讀 Cookie B。",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 586,
+    "source": "- 但 Browser 在允許的情況下，仍可以為發往網站 B 的 Request 加入 Cookie B。",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 588,
+    "source": "這兩件事並不矛盾。",
+    "anchor": "p1-csrf-browser-subsection-15",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 590,
+    "source": "# **六、Same-Origin 與 Same-Site：名稱很像，安全邊界卻不同**",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 592,
+    "source": "你接下來一定要弄懂這個差異，因為它決定了 SameSite Cookie 對 CSRF 的防禦能力。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 594,
+    "source": "**Origin** 精確比對 Scheme、Host、Port。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 596,
+    "source": "**Site** 在現代 Schemeful Same-Site 模型下，主要比對 Scheme 與 Registrable Domain（可註冊網域）。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 598,
+    "source": "例如：",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 600,
+    "source": "以 bank.example.com 作為比較對象",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "圖14：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 602,
+    "source": "| **其他網址**                    | **Origin** | **Site** |",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "圖14：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 603,
+    "source": "| --------------------------- | ---------- | -------- |",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "圖14：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 604,
+    "source": "| `https://bank.example.com`  | &#x20;相同   | &#x20;相同 |",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "圖14：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 605,
+    "source": "| `https://promo.example.com` | &#x20;不同   | &#x20;相同 |",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "圖14：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 606,
+    "source": "| `https://evil.example.net`  | &#x20;不同   | &#x20;不同 |",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "圖14：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 607,
+    "source": "| `http://bank.example.com`   | &#x20;不同   | &#x20;不同 |",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "圖14：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 609,
+    "source": "此例中，[https://bank.example.com](https://bank.example.com?utm_source=chatgpt.com) 與 [https://promo.example.com](https://promo.example.com?utm_source=chatgpt.com) 的 Site 都是 https\\://example.com，但不是同一個 Origin。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 611,
+    "source": "為什麼這很重要？",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 613,
+    "source": "假設銀行使用 `SameSite=Strict`，並且 `promo.example.com` 這個同 Site、不同 Origin 的子網域被攻擊者控制。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 615,
+    "source": "攻擊者即使不能直接讀取銀行的 Session Cookie，仍可能從該子網域發出指向銀行的請求，而 Browser 把它視為 Same-Site Request。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 617,
+    "source": "因此，`SameSite=Strict` 不保證能防止這類同 Site、不同 Origin 的偽造請求。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 619,
+    "source": "這也是 OWASP 特別提醒：不能把所有子網域都假設為相同可信任等級。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 621,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://developer.mozilla.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 623,
+    "source": "MDN",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 627,
+    "source": "另外，Cookie 的 Host／Domain 匹配與 SameSite 是兩個獨立判斷。即使銀行 Cookie 使用 `__Host-` 限制它只送往銀行主機，也不代表來自同 Site 子網域、但發往銀行主機的請求必然被阻止。",
+    "anchor": "p1-csrf-browser-section-06",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 629,
+    "source": "# **七、SameSite Cookie 到底如何阻止 CSRF？**",
+    "anchor": "p1-csrf-browser-section-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 631,
+    "source": "現在我們已經知道：",
+    "anchor": "p1-csrf-browser-section-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 633,
+    "source": "1. 惡意網站可以讓瀏覽器發出某些跨網站請求。",
+    "anchor": "p1-csrf-browser-section-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 634,
+    "source": "2. 瀏覽器可能自動附帶目的地網站的 Session Cookie。",
+    "anchor": "p1-csrf-browser-section-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 635,
+    "source": "3. Server 如果只檢查 Session，而沒有防偽機制，就可能錯誤執行操作。",
+    "anchor": "p1-csrf-browser-section-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 637,
+    "source": "那麼瀏覽器可不可以乾脆不傳 Cookie？",
+    "anchor": "p1-csrf-browser-section-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 639,
+    "source": "這就是 `SameSite` 的用途。",
+    "anchor": "p1-csrf-browser-section-07",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 641,
+    "source": "## **1. SameSite 的三種設定**",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 643,
+    "source": "| 設定       | 跨網站情境下的行為                         |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 644,
+    "source": "| -------- | --------------------------------- |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 645,
+    "source": "| `Strict` | 不在 Cross-Site Request 附帶 Cookie   |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 646,
+    "source": "| `Lax`    | 允許部分跨網站頂層導覽，例如一般 GET 導覽           |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 647,
+    "source": "| `None`   | 不因 SameSite 限制跨網站傳送，但須搭配 `Secure` |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 649,
+    "source": "以下是更精確的比較。",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 651,
+    "source": "Cookie 傳送判斷表",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "圖15：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 653,
+    "source": "假設 Cookie 符合主機、路徑、HTTPS 等條件，且沒有其他瀏覽器政策阻擋。",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "圖15：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 655,
+    "source": "| **請求情境**           | **Strict** | **Lax** | **None** |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "圖15：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 656,
+    "source": "| ------------------ | ---------- | ------- | -------- |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "圖15：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 657,
+    "source": "| Same-Site POST     |            |         |          |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "圖15：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 658,
+    "source": "| Cross-Site 頂層 GET  |            |         |          |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "圖15：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 659,
+    "source": "| Cross-Site 頂層 POST |            |         |          |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "圖15：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 660,
+    "source": "| Cross-Site 圖片 GET  |            |         |          |",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "圖15：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 662,
+    "source": "此表針對明確指定 SameSite 屬性的 Cookie。未指定時，部分瀏覽器預設 Lax，且可能存在近期設定 Cookie 的短暫 POST 例外；實際行為仍應測試。",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 664,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://developer.mozilla.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 666,
+    "source": "MDN",
+    "anchor": "p1-csrf-browser-subsection-16",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 670,
+    "source": "### **為什麼 Lax 允許跨網站 GET？**",
+    "anchor": "p1-csrf-browser-subsection-17",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 672,
+    "source": "因為使用者經常從其他網站點擊連結進入銀行網站。",
+    "anchor": "p1-csrf-browser-subsection-17",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 674,
+    "source": "假設 Alice 在新聞網站點選一個銀行公告連結。",
+    "anchor": "p1-csrf-browser-subsection-17",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 676,
+    "source": "如果 `SameSite=Strict`，瀏覽器可能不會在這次跨網站導覽中附上銀行 Session Cookie，導致銀行不能立即辨識既有登入狀態。",
+    "anchor": "p1-csrf-browser-subsection-17",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 678,
+    "source": "`Lax` 提供了比較兼顧便利性與防禦效果的設計。",
+    "anchor": "p1-csrf-browser-subsection-17",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 680,
+    "source": "但是，這也帶出另一個安全工程原則：",
+    "anchor": "p1-csrf-browser-subsection-17",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 682,
+    "source": "**GET 應該是 Safe Method，不應直接造成轉帳、刪除紀錄、修改帳戶設定等狀態變更。**",
+    "anchor": "p1-csrf-browser-subsection-17",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 684,
+    "source": "否則攻擊者可能利用跨網站頂層 GET 導覽觸發不應發生的操作。",
+    "anchor": "p1-csrf-browser-subsection-17",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 686,
+    "source": "## **2. 為什麼 SameSite 仍不是完整解答？**",
+    "anchor": "p1-csrf-browser-subsection-18",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 688,
+    "source": "主要有三個原因。",
+    "anchor": "p1-csrf-browser-subsection-18",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 690,
+    "source": "第一，`SameSite=Lax` 仍允許部分跨網站導覽的 Cookie 傳送，因此不安全的 GET 操作仍有風險。",
+    "anchor": "p1-csrf-browser-subsection-18",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 692,
+    "source": "第二，Same-Site 不等於 Same-Origin。你可能有不可信任或遭入侵的子網域，而 SameSite 並不會因此限制所有從該子網域發出的請求。",
+    "anchor": "p1-csrf-browser-subsection-18",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 694,
+    "source": "第三，某些應用為了特殊跨站整合使用 `SameSite=None`，或必須支援政策不同的瀏覽器環境。",
+    "anchor": "p1-csrf-browser-subsection-18",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 696,
+    "source": "因此 OWASP 將 SameSite 視為重要的 Defense in Depth（縱深防禦），而不是所有情境下 CSRF Token 的完整替代品。",
+    "anchor": "p1-csrf-browser-subsection-18",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 698,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-18",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 700,
+    "source": "OWASP Cheat Sheet Series",
+    "anchor": "p1-csrf-browser-subsection-18",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 704,
+    "source": "# **八、另一個常見疑問：為什麼 CORS 沒有阻止 CSRF？**",
+    "anchor": "p1-csrf-browser-section-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 706,
+    "source": "這裡你需要把兩件事徹底分開：",
+    "anchor": "p1-csrf-browser-section-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 708,
+    "source": "**SOP 是瀏覽器的同源安全原則；CORS 是讓 Server 透過回應標頭，指定哪些其他 Origin 可以讓瀏覽器讀取跨來源回應的機制。**",
+    "anchor": "p1-csrf-browser-section-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 710,
+    "source": "在某些非簡單跨來源請求中，CORS 還會要求 Browser 先發送 Preflight Request。",
+    "anchor": "p1-csrf-browser-section-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 712,
+    "source": "但不能因此認為「沒有允許 CORS，跨網站的所有 HTTP Request 都不會送到 Server」。",
+    "anchor": "p1-csrf-browser-section-08",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 714,
+    "source": "## **1. 以 JavaScript Fetch 為例**",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 716,
+    "source": "假設惡意網站執行：",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 718,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 719,
+    "source": "fetch(\"https://bank.example.com/account\");",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 720,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 722,
+    "source": "Fetch API 的 `credentials` 預設是 `same-origin`。",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 724,
+    "source": "因為惡意網站與銀行不同 Origin，所以這個跨來源 Fetch 預設不會附帶銀行的 Cookie。",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 726,
+    "source": "但攻擊者也可能寫：",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 728,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 729,
+    "source": "fetch(\"https://bank.example.com/api/action\", {",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 730,
+    "source": "  method: \"POST\",",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 731,
+    "source": "  credentials: \"include\",",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 732,
+    "source": "  body: new URLSearchParams({",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 733,
+    "source": "    action: \"change-setting\"",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 734,
+    "source": "  })",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 735,
+    "source": "});",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 736,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 738,
+    "source": "`credentials: \"include\"` 是要求瀏覽器在跨來源請求中也考慮附帶憑證。",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 740,
+    "source": "但它不是一張萬能通行證。實際 Cookie 仍受到 SameSite、Domain、Secure 及瀏覽器隱私政策等規則限制。",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 742,
+    "source": "如果這是符合 CORS Simple Request 條件的請求，Browser 可能先送出 HTTP Request，之後才因為 Server 沒有提供適當的 CORS 回應標頭，而阻止惡意網頁讀取結果。",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 744,
+    "source": "所以可能發生：",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 746,
+    "source": "Request 已經送達 Server",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 748,
+    "source": "若伺服器沒有防偽驗證，操作可能已執行",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 750,
+    "source": "惡意網站的 JavaScript 被禁止讀取 Response",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 752,
+    "source": "換句話說：",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 754,
+    "source": "**CORS 錯誤不一定代表 Server 沒收到請求，也不代表 Server 沒有執行任何操作。**",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 756,
+    "source": "這是 Web 開發人員容易出現的誤判。",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 758,
+    "source": "MDN 在 Fetch API 文件中也明確區分：簡單跨來源請求可以先送出，再依照 CORS 回應決定是否讓呼叫端取得資料；非簡單請求則可能先執行 Preflight。",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 760,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://developer.mozilla.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 762,
+    "source": "MDN",
+    "anchor": "p1-csrf-browser-subsection-19",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 766,
+    "source": "## **2. 什麼是 Preflight Request？**",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 768,
+    "source": "假設某個 JavaScript 請求使用：",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 770,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 771,
+    "source": "Content-Type: application/json",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 772,
+    "source": "X-CSRF-Token: ...",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 773,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 775,
+    "source": "這類非簡單跨來源請求，Browser 一般會先送出 OPTIONS Preflight，詢問目的地 Server 是否允許此 Origin 使用指定的方法和標頭。",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 777,
+    "source": "若 Server 不允許，Browser 就不會發出後續的實際跨來源 Fetch 請求。",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 779,
+    "source": "但一般 HTML 表單可以使用符合 Simple Request 範圍的提交格式，所以不能把 CORS Preflight 當成所有表單的 CSRF 防禦。",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 781,
+    "source": "你可以用以下三句話記住：",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 783,
+    "source": "| 技術              | 核心問題                               |",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 784,
+    "source": "| --------------- | ---------------------------------- |",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 785,
+    "source": "| SOP             | 哪些跨來源互動與資料讀取受到限制？                  |",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 786,
+    "source": "| CORS            | 哪些跨來源網路存取可以被瀏覽器允許讀取，哪些需要預先核准？      |",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 787,
+    "source": "| CSRF Protection | 這筆可能帶著有效登入憑證的狀態變更請求，是否符合應用程式的防偽要求？ |",
+    "anchor": "p1-csrf-browser-subsection-20",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 789,
+    "source": "# **九、真正完整的 CSRF 防禦：Session Token 與 CSRF Token 分工**",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 791,
+    "source": "到這裡我們可以建立正確的 Server 設計。",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 793,
+    "source": "假設銀行要處理轉帳。",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 795,
+    "source": "只做下面這個檢查是不夠的：",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 797,
+    "source": "```",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 798,
+    "source": "if valid_session(request.cookies[\"session\"]):    transfer_money()",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 799,
+    "source": "```",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 801,
+    "source": "因為這只能證明 Request 帶著有效 Session，並不能防止符合條件的偽造請求。",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 803,
+    "source": "我們需要另外驗證請求是否具有合法操作流程產生的 CSRF 防偽資訊。",
+    "anchor": "p1-csrf-browser-section-09",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 805,
+    "source": "## **1. Session Token 與 CSRF Token 根本不同**",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 807,
+    "source": "|                 | Session Token   | CSRF Token        |",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 808,
+    "source": "| --------------- | --------------- | ----------------- |",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 809,
+    "source": "| 主要用途            | 識別已驗證的 Session  | 證明請求具備合法防偽資訊      |",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 810,
+    "source": "| 通常存放在哪裡？        | HttpOnly Cookie | 表單隱藏欄位或請求標頭等      |",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 811,
+    "source": "| Browser 會自動附帶嗎？ | Cookie 規則允許時會   | 一般不會，需由應用程式加入     |",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 812,
+    "source": "| Server 要驗證嗎？    | 要               | 要                 |",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 813,
+    "source": "| 能完全證明使用者真實意圖嗎？  | 不能              | 也不能，仍須依操作風險設計額外確認 |",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 815,
+    "source": "CSRF Token 不是第二個 Session ID，也不能直接取代 Authentication。",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 817,
+    "source": "它的主要作用，是讓只有符合合法頁面工作流程的請求，才能提供正確的防偽證明。",
+    "anchor": "p1-csrf-browser-subsection-21",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 819,
+    "source": "## **2. 正常的轉帳流程**",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 821,
+    "source": "具有 CSRF Token 防護的請求流程",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 823,
+    "source": "1. **Alice 開啟銀行轉帳頁面**",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 825,
+    "source": "   Browser 附帶 Session Cookie，Server 確認 Alice 已登入。",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 826,
+    "source": "2. **Server 提供合法的 CSRF Token**",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 828,
+    "source": "   Token 可以由 Server 隨機產生，並與 Alice 的 Session 建立關聯。",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 829,
+    "source": "3. **Alice 透過銀行頁面提交轉帳表單**",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 831,
+    "source": "   表單包含轉帳資料和 CSRF Token，Browser 同時依 Cookie 規則傳送 Session Cookie。",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 832,
+    "source": "4. **Server 逐項驗證**",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 834,
+    "source": "   檢查 Session、使用者權限、CSRF Token、交易內容，以及其他交易安全控制。",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 835,
+    "source": "5. **所有條件符合才執行**",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 837,
+    "source": "   缺少 CSRF Token 或驗證不符，就拒絕該請求。",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "圖16：依原PNG還原分組、方向或資料格；圖3保留兩段HTTP於同源圖文"
+  },
+  {
+    "line": 839,
+    "source": "例如合法轉帳頁面由銀行 Server 產生：",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 841,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 842,
+    "source": "<form action=\"/transfer\" method=\"POST\">",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 843,
+    "source": "  <input name=\"to\" value=\"recipient-account\">",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 844,
+    "source": "  <input name=\"amount\" value=\"1000\">",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 846,
+    "source": "  <input",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 847,
+    "source": "    type=\"hidden\"",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 848,
+    "source": "    name=\"csrf_token\"",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 849,
+    "source": "    value=\"unpredictable-token\"",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 850,
+    "source": "  >",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 852,
+    "source": "  <button type=\"submit\">轉帳</button>",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 853,
+    "source": "</form>",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 854,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 856,
+    "source": "這裡 `unpredictable-token` 是教學佔位文字。真實系統必須使用安全方式產生與驗證 Token，不能使用固定值。",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 858,
+    "source": "Browser 提交時可能同時包含：",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 860,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 861,
+    "source": "POST /transfer HTTP/1.1",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 862,
+    "source": "Host: bank.example.com",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 863,
+    "source": "Cookie: __Host-session=S7x9",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 864,
+    "source": "Content-Type: application/x-www-form-urlencoded",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 866,
+    "source": "to=recipient-account&",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 867,
+    "source": "amount=1000&",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 868,
+    "source": "csrf_token=RANDOM_VALUE",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 869,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 871,
+    "source": "Server 不只是驗證 Session 是否有效，還會驗證這個 CSRF Token 是否對應目前 Session。",
+    "anchor": "p1-csrf-browser-subsection-22",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 873,
+    "source": "## **3. 為什麼惡意網站不容易取得 CSRF Token？**",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 875,
+    "source": "因為銀行的合法 HTML 表單或 API 回應，受到 Same-Origin Policy 保護。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 877,
+    "source": "惡意網站一般不能讀取銀行的私人頁面，取得其中的 CSRF Token。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 879,
+    "source": "惡意網站雖然能建立一個指向銀行的表單，但無法憑空知道有效的 Token 值。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 881,
+    "source": "所以：",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 883,
+    "source": "- Session Cookie 可以在符合條件時由 Browser 自動附帶。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 884,
+    "source": "- CSRF Token 需要由合法工作流程取得，再明確放進請求。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 885,
+    "source": "- 攻擊者即使能利用 Browser 發出請求，也通常無法提供有效的 CSRF Token。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 887,
+    "source": "這就是兩種 Token 分工的精髓。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 889,
+    "source": "OWASP 將 Synchronizer Token Pattern（同步器 Token 模式）列為有狀態應用的重要防禦方法：Server 產生並保存 Token，收到狀態變更請求後核對其有效性。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 891,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://github.com\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 893,
+    "source": "GitHub",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 897,
+    "source": "但要注意，CSRF Token 不是對抗所有攻擊的保證。如果同源網站存在 XSS，惡意腳本可能在銀行的 Origin 內運作，進而讀取或使用合法頁面的 Token。",
+    "anchor": "p1-csrf-browser-subsection-23",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 899,
+    "source": "## **4. Server 還應該檢查什麼？**",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 901,
+    "source": "正式系統應採取縱深防禦：",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 903,
+    "source": "| 層次             | 防護                                 |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 904,
+    "source": "| -------------- | ---------------------------------- |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 905,
+    "source": "| Session        | 安全 Session ID、HttpOnly、Secure、適當逾時 |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 906,
+    "source": "| Cookie         | 明確設定 SameSite，避免不必要的廣域 Domain      |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 907,
+    "source": "| Request        | CSRF Token，或經完整設計的其他主要防偽機制         |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 908,
+    "source": "| Origin         | 驗證 Origin／Referer 等來源資訊            |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 909,
+    "source": "| Fetch Metadata | 根據 `Sec-Fetch-Site` 等標頭限制跨來源狀態變更   |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 910,
+    "source": "| API            | 不讓 GET 直接執行狀態變更；限制跨來源存取            |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 911,
+    "source": "| Authorization  | 每次操作驗證使用者權限與資源歸屬                   |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 912,
+    "source": "| 高風險交易          | 交易內容確認、必要時重新驗證或交易授權                |",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 914,
+    "source": "例如 `Sec-Fetch-Site: cross-site` 可以讓 Server 辨識跨網站請求，並依政策拒絕敏感操作。",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 916,
+    "source": "但 `same-site` 仍不等於可信任；遇到子網域風險時還需要更精確的 Origin 驗證與防偽機制。",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 918,
+    "source": "這些控制的具體選擇，應由應用程式的網頁架構、驗證方式與威脅模型決定。",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 920,
+    "source": "[image](https://www.google.com/s2/favicons?domain=https://cheatsheetseries.owasp.org\\&sz=32)",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 922,
+    "source": "OWASP Cheat Sheet Series",
+    "anchor": "p1-csrf-browser-subsection-24",
+    "treatment": "移除匯出favicon／來源卡；官方來源改用正式sources"
+  },
+  {
+    "line": 926,
+    "source": "# **十、如果使用 JWT，而不是傳統 Session Cookie，還會有 CSRF 嗎？**",
+    "anchor": "p1-csrf-browser-section-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 928,
+    "source": "答案是：**不能只看是不是 JWT；要看 Token 如何保存與傳送。**",
+    "anchor": "p1-csrf-browser-section-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 930,
+    "source": "這是現代 SPA、React、Next.js、FastAPI 和 API Gateway 常見的混淆。",
+    "anchor": "p1-csrf-browser-section-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 932,
+    "source": "考慮兩種架構。",
+    "anchor": "p1-csrf-browser-section-10",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 934,
+    "source": "### **架構 A：JWT 放在 Cookie**",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 936,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 937,
+    "source": "Set-Cookie: access_token=eyJ...;",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 938,
+    "source": "            HttpOnly;",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 939,
+    "source": "            Secure;",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 940,
+    "source": "            SameSite=Lax",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 941,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 943,
+    "source": "如果 Browser 會自動在符合條件的 Request 中附帶該 Cookie，那麼仍然需要考慮 CSRF。",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 945,
+    "source": "JWT 只是 Token 的格式，不會自動解決 CSRF。",
+    "anchor": "p1-csrf-browser-subsection-25",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 947,
+    "source": "### **架構 B：Access Token 由前端主動放進 Authorization Header**",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 949,
+    "source": "例如：",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 951,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 952,
+    "source": "fetch(\"/api/account\", {",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 953,
+    "source": "  headers: {",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 954,
+    "source": "    Authorization: `Bearer ${accessToken}`",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 955,
+    "source": "  }",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 956,
+    "source": "});",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 957,
+    "source": "```",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 959,
+    "source": "在這種架構中，假設 Access Token 沒有另外放進可自動傳送的 Cookie，而且惡意 Origin 不能讀取該 Token，那麼攻擊者通常無法透過傳統跨網站表單，讓 Browser 自動附上這個 Bearer Token。",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 961,
+    "source": "因此，**典型的 Cookie-based CSRF 風險會降低**。",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 963,
+    "source": "但是，這不表示架構 B 自動更安全。",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 965,
+    "source": "如果 Token 儲存在可由 JavaScript 讀取的環境，一旦應用程式遭到 XSS，惡意腳本可能取得 Token。",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 967,
+    "source": "簡化比較：",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 969,
+    "source": "| 設計                      | 主要需要注意              |",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 970,
+    "source": "| ----------------------- | ------------------- |",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 971,
+    "source": "| HttpOnly Session Cookie | CSRF 與其他 Session 安全 |",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 972,
+    "source": "| JWT 放在 HttpOnly Cookie  | 仍須考慮 CSRF           |",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 973,
+    "source": "| Bearer Token 由 JS 主動附加  | Token 暴露與 XSS、授權設計  |",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 974,
+    "source": "| 混合式架構                   | 分析哪些憑證會被自動附帶        |",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 976,
+    "source": "所以不能簡單說「Cookie 不安全，JWT 安全」，或「LocalStorage 一定比 Cookie 安全」。",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 978,
+    "source": "真正的問題是憑證儲存、使用方式，以及應用程式整體威脅模型。",
+    "anchor": "p1-csrf-browser-subsection-26",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 980,
+    "source": "# **十一、實際觀察：用 Browser DevTools 追蹤整個過程**",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 982,
+    "source": "如果你想把這些概念真正學通，我建議做一個只使用自己測試系統的實驗。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 984,
+    "source": "你不需要先寫複雜的攻擊程式，先用 Chrome、Firefox 或 Safari 的開發者工具觀察機制即可。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 986,
+    "source": "**瀏覽器實驗觀察清單**",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 988,
+    "source": "觀察登入 Request",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 990,
+    "source": "在 Network 面板找到登入 POST，確認 Request Method、Request Headers、Payload。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 992,
+    "source": "觀察 Set-Cookie",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 994,
+    "source": "查看登入 Response Headers，確認是否有 Set-Cookie，以及 HttpOnly、Secure、SameSite。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 996,
+    "source": "觀察 Cookie 儲存",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 998,
+    "source": "在 Storage／Application 的 Cookies 頁面，檢查測試網站的 Cookie 屬性。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1000,
+    "source": "觀察後續 Request",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1002,
+    "source": "登入後重新整理受保護頁面，查看 Request Headers 中是否出現 Cookie。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1004,
+    "source": "比較跨來源請求",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1006,
+    "source": "在自行控制的測試網域間比較 Origin、Sec-Fetch-Site、Cookie 是否出現，以及 CORS 是否阻止讀取。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1008,
+    "source": "驗證防偽機制",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1010,
+    "source": "比較帶有效 CSRF Token 與缺少 Token 的測試請求，確認 Server 是否拒絕後者。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1012,
+    "source": "已完成 0／6 項",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "不保留未實作進度狀態"
+  },
+  {
+    "line": 1014,
+    "source": "0%",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "移除未實作進度百分比"
+  },
+  {
+    "line": 1016,
+    "source": "測試請使用虛構資料及測試帳號。Session Cookie 與 Authorization Token 都應視為敏感憑證，不要將其原始值貼到公開討論區或研究報告中。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1018,
+    "source": "這個實驗完成後，你看到的就不只是「登入了」或「CSRF 被擋了」，而是實際的 HTTP Header、Cookie 政策與 Server 驗證結果。",
+    "anchor": "p1-csrf-browser-section-11",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1020,
+    "source": "# **十二、回到你真正的問題：你還有哪些概念沒有完全串起來？**",
+    "anchor": "p1-csrf-browser-section-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1022,
+    "source": "從你的提問方式，可以辨識出幾個具體的概念缺口。這些不是對你能力的評價，而是你目前建立的瀏覽器模型與真實 Web 架構之間，還有幾處需要連接。",
+    "anchor": "p1-csrf-browser-section-12",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1024,
+    "source": "## **概念缺口診斷**",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1026,
+    "source": "| 你的隱含假設                     | 還需要補上的觀念                                       | 建議掌握程度 |",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1027,
+    "source": "| -------------------------- | ---------------------------------------------- | ------ |",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1028,
+    "source": "| 每個網頁是完全獨立的沙盒               | Browser Process／Renderer Process／網路與儲存機制的不同責任  | 理解架構   |",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1029,
+    "source": "| 不同 Origin 不能互相操作           | SOP 主要限制特定跨來源操作，尤其是資料讀取，不是全面禁止跨來源請求            | 深入理解   |",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1030,
+    "source": "| Session Token 屬於某個網頁       | Cookie 由 Browser 管理，依目的地及政策決定是否傳送              | 深入理解   |",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1031,
+    "source": "| 惡意網站必須取得 Token 才能利用它       | CSRF 可以利用 Browser 自動附帶憑證，不必偷取 Token            | 深入理解   |",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1032,
+    "source": "| 只要 Server 驗證了 Session 就安全  | Authentication、Authorization 與 Request 防偽是不同檢查 | 深入理解   |",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1033,
+    "source": "| CORS 或 SameSite 應可全面阻止跨站攻擊 | CORS、SameSite、CSRF Token 各自處理不同的安全邊界           | 理解適用條件 |",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1035,
+    "source": "我認為其中最核心的是前三項，尤其是：",
+    "anchor": "p1-csrf-browser-subsection-27",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1037,
+    "source": "### **1. 你尚未完全分離「程式執行權限」與「網路請求權限」**",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1039,
+    "source": "你把 Browser Sandbox 理解為一種整體隔離：",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1041,
+    "source": "「A 網頁不能存取 B 網頁，所以 A 也不能讓瀏覽器對 B 發出請求。」",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1043,
+    "source": "但 Web 的隔離更細緻：",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1045,
+    "source": "- 能不能執行程式碼？",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1046,
+    "source": "- 能不能讀取另一個 Origin 的資料？",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1047,
+    "source": "- 能不能發出跨 Origin 的請求？",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1048,
+    "source": "- 請求能不能附帶 Cookie？",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1049,
+    "source": "- 能不能讀取該請求的回應？",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1051,
+    "source": "這五個問題的答案可以不同。",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1053,
+    "source": "**這是最應優先修正的心智模型。**",
+    "anchor": "p1-csrf-browser-subsection-28",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1055,
+    "source": "### **2. 你可能把 Session 理解成前端網頁的物件**",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1057,
+    "source": "你正在從軟體開發的直覺理解 Session，例如：",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1059,
+    "source": "「網頁在某個沙盒裡執行，所以 Session Token 應該只能由那個網頁掌握。」",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1061,
+    "source": "但傳統 Cookie Session 模型實際上是：",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1063,
+    "source": "- Browser 管理 Cookie。",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1064,
+    "source": "- Server 管理登入 Session。",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1065,
+    "source": "- HTTP Request 將兩者連接起來。",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1066,
+    "source": "- 前端網頁不一定能直接讀取 Session Token。",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1068,
+    "source": "理解這個分工後，CSRF 就不再難以解釋。",
+    "anchor": "p1-csrf-browser-subsection-29",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1070,
+    "source": "### **3. 你還需要把「使用者是誰」和「是否同意這次操作」拆開**",
+    "anchor": "p1-csrf-browser-subsection-30",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1072,
+    "source": "想像以下三個安全問題：",
+    "anchor": "p1-csrf-browser-subsection-30",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1074,
+    "source": "**Authentication：** 這次請求來自哪個已驗證的使用者？",
+    "anchor": "p1-csrf-browser-subsection-30",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1076,
+    "source": "**Authorization：** 這個使用者是否具有執行該操作的權限？",
+    "anchor": "p1-csrf-browser-subsection-30",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1078,
+    "source": "**Request Forgery Protection：** 這筆請求是否符合合法防偽流程，還是可能被其他網站誘發？",
+    "anchor": "p1-csrf-browser-subsection-30",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1080,
+    "source": "即使前兩個檢查都通過，第三個檢查仍可能失敗。",
+    "anchor": "p1-csrf-browser-subsection-30",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1082,
+    "source": "另外，CSRF Token 並不是直接證明人類真實意圖；它是防偽機制。對於高風險轉帳，還需要交易內容確認、重新驗證等額外措施。",
+    "anchor": "p1-csrf-browser-subsection-30",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1084,
+    "source": "這是從一般程式設計進入安全工程時，非常重要的一次概念提升。",
+    "anchor": "p1-csrf-browser-subsection-30",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1086,
+    "source": "## **十三、把整套知識整合為一個可重用的分析框架**",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1088,
+    "source": "以後你遇到任何 Web Authentication／Session／CSRF 問題，都可以使用這個模型：",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1090,
+    "source": "Web Request Security：六層分析模型",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1092,
+    "source": "1｜Execution Context",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1094,
+    "source": "哪個 Origin 的程式碼正在執行？",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1096,
+    "source": "2｜Request Initiation",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1098,
+    "source": "它透過什麼機制發出 HTTP Request？",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1100,
+    "source": "3｜Credential Attachment",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1102,
+    "source": "Browser 會自動附帶哪些憑證？",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1104,
+    "source": "4｜Response Access",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1106,
+    "source": "發起請求的程式碼能否讀取回應？",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1108,
+    "source": "5｜Server Verification",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1110,
+    "source": "Server 驗證了 Session、權限與防偽資訊嗎？",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1112,
+    "source": "6｜Business Action",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1114,
+    "source": "在所有檢查通過後，是否應執行這項操作？",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1116,
+    "source": "這個框架也能延伸到你未來設計 AI Agent、工具執行 Gateway 或權限代理系統。",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1118,
+    "source": "例如 AI Agent 可以合法持有某個 API Token，但這不表示所有來自不可信任文件、網頁或模型輸出的工具呼叫，都應自動獲得使用該 Token 的權限。",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1120,
+    "source": "這與 CSRF 在系統設計上的共同點是：",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1122,
+    "source": "**不能因為請求帶有有效憑證，就直接將請求視為符合授權流程的操作。**",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1124,
+    "source": "不過兩者並不是同一種漏洞：CSRF 是瀏覽器及 Web Authentication 情境下的請求偽造；Agent Tool Misuse 則還涉及模型控制流程、不可信任內容與工具授權等不同問題。",
+    "anchor": "p1-csrf-browser-section-13",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1126,
+    "source": "## **十四、博士班理解檢核**",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1128,
+    "source": "請你嘗試回答以下整合案例。我先不提供答案。",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1130,
+    "source": "某銀行有兩個系統：",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1132,
+    "source": "- `https://bank.example.com`：正式網路銀行。",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1133,
+    "source": "- `https://promo.example.com`：行銷網站，最近遭攻擊者控制。",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1135,
+    "source": "Alice 已登入銀行，銀行的 Session Cookie 設定為：",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1137,
+    "source": "```",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1138,
+    "source": "Set-Cookie: __Host-session=S7x9;",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1139,
+    "source": "            Secure;",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1140,
+    "source": "            HttpOnly;",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1141,
+    "source": "            Path=/;",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1142,
+    "source": "            SameSite=Strict",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1143,
+    "source": "```",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1145,
+    "source": "攻擊者在 `promo.example.com` 製作了一個表單，讓 Alice 的 Browser 向 `https://bank.example.com/transfer` 發送 POST Request。",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1147,
+    "source": "Q1：這兩個網站是 Same-Origin 還是 Same-Site？請說明兩者的判斷條件。",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1149,
+    "source": "Q2：攻擊者能否直接透過 promo.example.com 的 JavaScript 讀取銀行的 HttpOnly Session Cookie？",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1151,
+    "source": "Q3：在上述條件下，Browser 是否仍可能把銀行的 Cookie 附在 POST /transfer 請求上？為什麼？",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1153,
+    "source": "Q4：如果銀行 Server 只有 Session Authentication，沒有 CSRF Token 或其他足夠的防偽控制，會出現什麼安全風險？",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1155,
+    "source": "Q5：如果 Browser 不允許惡意頁面讀取銀行 Response，為什麼仍然可能造成損害？",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1157,
+    "source": "提交答案，逐題診斷理解",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1159,
+    "source": "這五題真正要檢驗的是：你能不能在不把所有瀏覽器防護機制混成同一個「沙盒」的情況下，獨立推導出一筆 HTTP Request 從發起、附帶 Cookie、讀取 Response，到 Server 執行操作的完整安全結果。",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  },
+  {
+    "line": 1161,
+    "source": "建議下一步先用 DevTools 實際觀察 `Set-Cookie` 與 `Cookie` 的往返，再完成這五題；這會比繼續背 CSRF 的定義更能鞏固整套理解。",
+    "anchor": "p1-csrf-browser-section-14",
+    "treatment": "正文保留"
+  }
+]

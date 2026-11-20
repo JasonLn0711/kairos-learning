@@ -1,5 +1,9 @@
 <script lang="ts">
   import {noteDiagramSpecs,tlsDirections,noteReferenceImage,type NoteDiagram} from '$lib/note-diagrams';
+  import NoteDay02B from './NoteDay02B.svelte';
+  import NoteCsrfBrowser from './NoteCsrfBrowser.svelte';
+  import NoteDay02Supplement from './NoteDay02Supplement.svelte';
+  import NoteTcpHandshake from './NoteTcpHandshake.svelte';
   import NoteRecoveryTimeline from './NoteRecoveryTimeline.svelte';
   import NoteDay01Diagram from './NoteDay01Diagram.svelte';
   import NoteContinuationDiagram from './NoteContinuationDiagram.svelte';
@@ -15,9 +19,17 @@
     return d==='to-server'?(zh?'瀏覽器 → 網站伺服器':'Browser → Web server'):d==='to-client'?(zh?'網站伺服器 → 瀏覽器':'Web server → Browser'):d==='both'?(zh?'雙方各自在本機計算':'Both endpoints compute locally'):(zh?'瀏覽器在本機驗證':'Browser validates locally');
   }
 </script>
-<figure class="note-diagram" data-diagram={diagram.name}>
+<figure class="note-diagram" class:day02b-layers={diagram.name==='m20d2bvisibility'} data-diagram={diagram.name}>
   <figcaption>{diagram.caption}</figcaption>
-  {#if layout==='soc-timeline'}
+  {#if layout.startsWith('day02b-')}
+    <NoteDay02B {diagram}/>
+  {:else if layout.startsWith('csrf-')}
+    <NoteCsrfBrowser {diagram}/>
+  {:else if layout.startsWith('day02-')}
+    <NoteDay02Supplement {diagram}/>
+  {:else if layout==='tcp-handshake'}
+    <NoteTcpHandshake {diagram}/>
+  {:else if layout==='soc-timeline'}
     <NoteRecoveryTimeline {diagram} {lang}/>
   {:else if layout.startsWith('day01-')}
     <NoteDay01Diagram {diagram} {lang}/>
@@ -57,6 +69,7 @@
 <style>
   .note-diagram{container-type:inline-size;min-width:0;margin:1.75rem 0;padding:1rem;border:1px solid #d8dce0;border-radius:14px;background:#fbfcfd;overflow-wrap:anywhere}
   figcaption{font-weight:650;font-size:1rem;line-height:1.8}ol,ul{list-style:none;margin:1rem 0;padding:0}li{min-width:0}strong{font-size:1.125rem;line-height:1.8}p{margin:.35rem 0;white-space:pre-line}svg{fill:none;stroke:currentColor;stroke-width:1.8;width:24px;height:24px;flex-shrink:0}.next{display:block;margin:1.2rem auto;color:#657079}
+  .day02b-layers .layers li:not(:first-child)>div{padding:1rem;border:1px solid #b9c5cf;border-radius:12px;background:#fbfcfd}.day02b-layers .layers li:first-child{text-align:center}
   .flow li{text-align:center;padding:.6rem}.overview-icon{display:block;margin:0 auto .5rem}.layers li{padding:1rem .6rem}.layers li strong{font-size:1.2rem}.numbered li{display:grid;grid-template-columns:3.5rem minmax(0,1fr);gap:.8rem}.number{padding:.5rem;background:#f1f3f4;border-radius:12px;text-align:center;font-size:1.25rem;align-self:start}.numbered .next{grid-column:1;margin:.8rem auto}.rows li{display:grid;grid-template-columns:3.5rem minmax(0,1fr);gap:1rem;border-bottom:1px solid #e1e5e8;padding:1.2rem 0}.rows li:last-child{border:0}.shield{width:2.5rem;height:2.5rem;background:#eaf5f1;border-radius:10px;padding:.5rem;box-sizing:content-box;color:#006b39}.rows li:nth-child(2) .shield{color:#b52323;background:#f9eeee}.rows li:nth-child(3) .shield{color:#18252c;background:#f1f3f4}
   .roe{margin:1rem 0}.roe>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:1rem;border-bottom:1px solid #d8dce0;padding:.65rem 0}dt{font-weight:600}dd{margin:0;white-space:pre-line}
   .parallel,.branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.parallel li,.branches li{padding:1rem;background:#f5f7f8;border-radius:10px}.branches li{border-top:2px solid #d8dce0}.root{text-align:center;font-weight:650;padding:.75rem}.description{color:#515b61;margin:1rem 0 .4rem}a{font-size:.875rem;line-height:1.8}

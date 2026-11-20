@@ -2,6 +2,30 @@
 
 Each public lesson should help a reader make one defensible technical judgment. Start with the problem, explain its mechanism and limits, work through an original example, then give a safe task with an observable expected result.
 
+<a id="contextual-supplement-workflow"></a>
+## 同頁補充的共用實作流程
+
+依[共同規範 WRITE-12–15、CODE-01、PUB-01–02](article-standards.md#contextual-supplement)與[補充工作表](article-writing-template.md#supplement-checklist)辦理。下列是跨文章的流程；本檔各課次紀錄保留其實際模型及歷史驗收，不用今天的單語頁例外放寬既有雙語教材。
+
+| 階段 | 實作方式 | 本次應留下的證據 |
+| --- | --- | --- |
+| 1. 鎖定範圍 | 確認目標文章、網址、語言、原發布日、當前版號及本次供稿；檢查 Git／遠端與既有變動。 | 原稿、原圖、前版、完整檔案清單及缺件；保存目錄與雜湊。 |
+| 2. 逐節採用 | 列到小節、分支、表格、程式與題目；先完成來源到正文對照，再修正技術錯誤與排版。 | 來源位置、採用錨點、保留內容、實質修正理由及一手依據；自由改寫另核對教學深度。 |
+| 3. 定位補充 | 以原定義／原理解說為插入點；必要時只拆分共同清單，維持原項目與順序。 | 插入位置與舊內容保留的核對；新增題與原題分開計數。 |
+| 4. 選用模型 | 沿用文章正式模型、元件、來源及搜尋路徑；缺能力時補受限欄位／版型與驗證。 | 固定名稱、位置、節點／資料格／關係、語言契約及非法資料拒絕；不存任意標記。 |
+| 5. 同源生成 | 從正式採用內容生成 HTML、搜尋及下載 SVG；來源不改寫成圖解摘要，生成檔不手修。 | 產生器的 `--check` 或等效同步檢查；原圖連結與每個公開教學圖檔大小。 |
+| 6. 驗教學機制 | 對承接主要結論的程式，以正式片段及隔離假資料驗正常和關鍵邊界情境。 | 命令、環境、預期／實際輸出與適用條件；假資料實跑不外推成真實系統測試。 |
+| 7. 驗整頁 | 比對完整模型與實際文字，檢查插入順序、題幹／選項、無 JS、四尺寸、200%、鍵盤、圖意與下載。 | 全文核對、計算樣式、截圖／目視結果、比例量測、SVG 幾何與位元組。 |
+| 8. 驗公開版 | 完成適用的現有閘門，依已獲授權發布；回讀確切公開版本與資產，記錄修正及重驗。 | source SHA、run／attempt／結果、URL、公開版號、全文與下載結果、尚待驗事項。 |
+
+來源對照可沿用既有 README／source-map／逐行紀錄，不要求每篇重造同一組檔名。逐行紀錄及段落數可幫助找漏項，仍須核對實際語意與正文；補充新增的編輯說明須與原稿來源分清。既有錨點、原稿及原發布日保持可追溯，補充範圍及版號依 WRITE-06 更新。
+
+比例與目錄等新圖的搜尋文字須含必要數值、名稱、層級與條件；排版拆開百分比與說明時，全文核對依語意欄位比對，不要求不存在的視覺分隔字元，也不能因此跳過文字欄位。程式碼必須維持可選取、換行與語法內容，不能為了測試通過把格式錯誤留給讀者。
+
+題庫查證資料不足時，以供稿轉述及缺件說明承接，仍查核技術機制。單語文章不宣告不存在的翻譯頁；既有雙語文章補充兩語的相同深度、數值、條件與答案揭露方式，維持原語言發布閘門。
+
+可重用實例：Day02-A 的[來源與逐節對照](sources/ceh-day02-a/2026-11-14/four-topics/README.md)、[產生器](../scripts/ceh_day02a.py)、[補充採用](../scripts/ceh_day02a_supplement.py)、[SQLite 片段實跑](../scripts/check-day02a-sql-example.py)、[相對位置與保留檢查](../tests/ceh-day02a-supplement.test.ts)、[整頁瀏覽器驗收](../scripts/check-day02a-browser.mjs)及[正式回執](releases/2026-11-14-ceh-day02-a-four-topics.md)。其他文章使用其自己的模型、固定資料與測試入口，不直接套用本案例的題數、比例、日期或圖名。
+
 ## Canonical fields
 
 Edit one `content/lessons/<id>.json` object. `src/lib/model.ts` defines the types and `src/lib/validate.ts` checks the content before deployment.
@@ -947,3 +971,58 @@ M20專頁v1.1.0追加AES、AES-GCM、Birthday Bound與Kerckhoffs原則的完整�
 新`m20gcmflow`沿受限continuation-graph，七節點、五列及七條固定邊，保留密文／Tag並列，驗證通過／失敗是兩個條件結果。接收端以自身持有的key及相同nonce／AAD驗證；箭頭是依賴關係，不表示傳送秘密金鑰。HTML／搜尋／SVG共用正文模型，原PNG另保管；現有`m20_review_svg.py --check`核對完整十一名白名單。
 
 [完整供稿、前版與逐節採納](sources/ceh-m20-review/2026-11-12/four-concepts-supplement/README.md)及[本次發布與驗收](releases/2026-11-12-ceh-m20-four-concepts.md)承接來源、修正與各層證據。四個時間建議只對應供稿的八題；五題包含選項文字出現AES，不是官方配分或五題答案均為AES。兩題理解檢查保留未答狀態，不建立作答提交或學習完成。
+
+## CEH Day01-B｜密碼學 L01–L12（2026-11-13）
+
+獨立單語頁 `/ceh-notes/day01-b-cryptography/` 使用既有 M20Review／NoteDiagram 模型，完整採用供稿概念與八圖，保留另一篇 M20 八題文章。原文、八PNG、SHA256SUMS、逐行採用與技術修正見[來源紀錄](sources/ceh-day01-b/2026-11-13/README.md)。供稿未附完整13題與52選項，頁面保留題號對照與四道未公布答案的靜態自我檢核。
+
+`python3 scripts/ceh_day01b.py --check` 驗正文／八SVG同源；`tests/ceh-day01b.test.ts` 驗概念範圍、缺件邊界、金鑰平行及簽章／憑證方向。`node scripts/check-day01b-browser.mjs` 驗全文、四尺寸、200%、無JS、鍵盤、SVG下載位元組與字框、搜尋及索引；正式站指定 `DAY01B_BASE_URL=https://learn.cs-kairos.com`。發布閘門同時檢查新頁draft／future的路由、搜尋與payload排除。實測與正式回讀見[回執](releases/2026-11-13-ceh-day01-b.md)。
+
+## CEH Day02-A｜情報、DNS 與掃描（2026-11-14）
+
+`/ceh-notes/day02-a-reconnaissance/`沿既有單語M20Review／NoteDiagram模型；[完整來源及逐小節對照](sources/ceh-day02-a/2026-11-14/README.md)保存13章23小節、原稿與三PNG。`python3 scripts/ceh_day02a.py --check`核對正式JSON、逐行採用紀錄及三個同源SVG，納入release閘門。23原題未附，保留題號／歧義與五道靜態自檢，不補造原題或答案；公開正文使用一般教學用語。
+
+三圖限定名稱m20d2mail（flow四節點）、m20d2tcp（tcp-handshake三訊息）與m20d2evidence（table六列）。新TCP版型固定Client／Server及三箭頭方向右／左／右，HTML文字換行，手機保留方向文字與箭頭，SVG由同一資料與既有白名單serializer產生。模型拒絕任意標記與節點增減；圖3不接箭頭，授權在主動行動前確認。單語例外只增列本路徑，既有雙語發布門保持。
+
+`tests/ceh-day02a.test.ts`檢查正文與圖解契約；`scripts/check-day02a-browser.mjs`檢查全文、四尺寸／200%、無JS、鍵盤與下載，正式站指定`DAY02A_BASE_URL`，系統瀏覽器可指定`PLAYWRIGHT_CHANNEL=chrome`。發布閘門以真實draft／future建置核對路由、搜尋、payload及索引關閉。各層驗證與部署見[本次回執](releases/2026-11-14-ceh-day02-a.md)。
+
+### Day02-A 四重點補充｜v1.1.0
+
+[供稿與逐小節對照](sources/ceh-day02-a/2026-11-14/four-topics/README.md)保存補充7節／14小節及四PNG。`ceh_day02a_supplement.py`由原產生器接入：優先順序下方放40／30／15／15配置，RDAP放WHOIS下方／DNS之前，三種Web弱點精讀分別置於其原定義之下，四道新題接原五題之後；舊13章、錨點、原發布日與全文保留。
+
+新圖限定priority四節點（固定weights／ranks、比例字串驗證）、boxflow四節點（後兩個框）、tree五節點（根與兩個平行目錄），由NoteDay02Supplement呈現可搜尋HTML，固定白名單serializer匯出；不接受任意標記或外部圖形資料。四新圖加原三圖由既有`ceh_day02a.py --check`核對；`check-day02a-sql-example.py`以記憶體SQLite實跑正式片段，`tests/ceh-day02a-supplement.test.ts`檢查舊內容保留、相對位置、比例與來源。全頁瀏覽器入口仍為`check-day02a-browser.mjs`，正式站指定DAY02A_BASE_URL；實際發布見[回執](releases/2026-11-14-ceh-day02-a-four-topics.md)。
+
+### Day02-A 參數化查詢精讀｜v1.2.0
+
+[完整供稿與逐節採用](sources/ceh-day02-a/2026-11-14/parameterized-query/README.md)保存原文、PNG、前版及六段程式排版修復。`ceh_day02a_parameterized.py`在Code/Data Separation下方接入八節、四小節、16程式區塊、兩表及兩題；保留舊正文、錨點與原發布日。不同片段的age欄位及完整實驗的username／role前置條件分開標示。
+
+`m20d2binding`限定六項、同一payload及固定SQL片段；NoteDay02Supplement以兩組上下對照呈現，安全組的SQL與參數並列而非先後，手機原生重排。HTML／搜尋／SVG同源，既有serializer限制保留。`check-day02a-parameterized.py`抽取正式片段實跑記憶體SQLite，納入validate:release；單元測試核對舊區塊保留、完整採用及模型拒絕非法圖解。瀏覽器沿原全頁入口驗全文、四尺寸／200%、無JS、鍵盤及八圖下載。各層結果見[本次回執](releases/2026-11-14-ceh-day02-a-parameterized.md)。
+
+### Day02-A 瀏覽器、Session 與 CSRF｜v1.3.0
+
+[供稿及44標題逐節對照](sources/ceh-day02-a/2026-11-14/csrf-browser/README.md)保存十四節、三十小節、八PNG與前版。`ceh_day02a_csrf.py`在既有CSRF核心段之後插入完整教學，沿原發布日及舊正文；原文24程式片段中兩段HTTP由圖11承接，13表中兩表由圖14／15承接，資料與文字完整保留。五題先不提供答案，六項DevTools清單不建立假進度。
+
+`NoteCsrfBrowser`提供受限架構分組、並列分工、HTTP往返、標頭方向、三角色五訊息、兩種固定表格與五步流程；窄欄重排保留角色、順序與資料格。八SVG由`ceh_day02a_csrf_svg.py`同源生成，原有serializer白名單保留。模型拒絕錯誤表格與時序方向，`tests/ceh-day02a-csrf.test.ts`核對來源與舊正文。`check-day02a-csrf-mechanism.mjs`以本機HTTPS／三個測試主機實跑SameSite、HttpOnly、表單防偽、CORS簡單請求與預檢；只改正式範例目的地及fixture Token，不連外部帳戶。瀏覽器沿整頁入口，發布及證據見[回執](releases/2026-11-14-ceh-day02-a-csrf-browser.md)。
+
+### Day02-A CSRF 抽換及可收合 part｜v1.4.0
+
+依本次使用者明確要求，將既有CSRF長篇抽換為[新版完整十四節／二十六小節](sources/ceh-day02-a/2026-11-14/csrf-replacement/README.md)，並於K07之後放獨立預設收合part；保留原13章、非CSRF正文與原發布日。這是A11Y-03的本次指定呈現，不變更全站預設。M20Review新增限指定入口的collapsible:true及受驗證aliases，以原生details／summary承接，內文無巢狀收合；舊CSRF小節連結揭露新版part，不宣稱語意逐一相同。
+
+七圖沿純文字模型、既有分支圖與新固定groups條件樹；桌面保留因果分支與平行歸屬，手機條件樹分四群而非串成流程。25程式片段中一段由圖2承接，八表與三道三選項題完整保留，不新增假提交。產生器驗23份現用／歷史SVG，正文目前14圖。舊版測試讀前版快照以保留歷史證據；新測試核對當前抽換、收合schema、其餘內容與錨點。整頁瀏覽器另外驗Enter／Space、JS開關及舊深層連結；本機HTTPS實驗改以本次自動表單測四類訪客狀態。實測與發布見[回執](releases/2026-11-14-ceh-day02-a-csrf-part-replacement.md)。
+
+<a id="ceh-day02-b"></a>
+## CEH Day02-B｜網路掃描與安全判讀（2026-11-15）
+
+獨立單語頁 `/ceh-notes/day02-b-network-scanning/` 沿M20Review／NoteDiagram模型，保留Day02-A。[完整供稿與逐節對照](sources/ceh-day02-b/2026-11-15/README.md)持十三章、39細層標題、14表、9段code、五PNG及593行採用紀錄。原23題缺件、三題技術待核、六道靜態情境問題分別標示；沒有作答提交或批改服務。
+
+`python3 scripts/ceh_day02b.py --check`核對正文及五SVG。五圖限定m20d2b前綴及6／3／6／5／4節點；HTTPS／雙掃描／UDP由NoteDay02B原生重排，三向交握及觀察層沿既有版型。模型固定TCP訊息方向與UDP四態，serializer白名單及已知原圖路徑維持。單語例外僅本路徑，真實draft／future建置驗證路由、搜尋與payload關閉。
+
+`tests/ceh-day02b.test.ts`檢查完整內容、來源與非法圖解；`node scripts/check-day02b-browser.mjs`驗全文、四尺寸、200%、無JS、鍵盤、搜尋／索引及五SVG位元組／字框。正式站指定`DAY02B_BASE_URL=https://learn.cs-kairos.com`，結果見[發布回執](releases/2026-11-15-ceh-day02-b.md)。
+
+## e-means觀點教學
+
+`content/perspectives/e-means-clustering.json`持有完整兩語正文與同序區塊，
+[專用契約](perspectives/e-means-design.md)與[逐小節採用](sources/e-means/2026-11-15/adoption-map.md)
+連接十四章、數學算例、表格、八張原生圖及三道理解題。沿用既有escaped code
+區塊呈現Unicode公式，沒有外部數學渲染服務。品質驗收與[發布回執](releases/2026-11-15-e-means-perspective.md)
+分別記錄來源、正文、工程檢查與正式站回讀。

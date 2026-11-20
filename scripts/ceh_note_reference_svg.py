@@ -14,6 +14,18 @@ def render_reference(b,lang):
     spec=SPECS[b['name']]
     assert len(b['items'])==spec['count']
     assert all(set(i)=={'title','body'} for i in b['items'])
+    if spec['layout'].startswith('day02b-'):
+        from ceh_day02b_svg import render_day02b
+        return render_day02b(b,lang,spec)
+    if spec['layout'].startswith('csrf-v2-'):
+        from ceh_day02a_csrf_replacement_svg import render_replacement
+        return render_replacement(b,lang,spec)
+    if spec['layout'].startswith('csrf-'):
+        from ceh_day02a_csrf_svg import render_csrf
+        return render_csrf(b,lang,spec)
+    if spec['layout'].startswith('day02-'):
+        from ceh_day02a_supplement_svg import render_supplement
+        return render_supplement(b,lang,spec)
     if spec['layout']=='soc-timeline':
         from ceh_note_recovery_svg import render_recovery_timeline
         return render_recovery_timeline(b,lang)
@@ -44,7 +56,18 @@ def render_reference(b,lang):
         return cy
     y=text(b['caption'],28,40,41,22,True)+18
     layout=spec['layout']
-    if layout in ('flow','layers','numbered'):
+    if layout=='tcp-handshake':
+        for x,label in [(28,'Client'),(508,'Server')]:
+            out.append(rect(x,y,364,64,'#e8ecef','#94a3b8'));text(label,x+182,y+39,16,24,True,True)
+        y+=94;top=y;insert=len(out)
+        for i,item in enumerate(b['items']):
+            y=text(item['title'],450,y+24,34,22,True,True)
+            y=text(item['body'],450,y+6,34,18,False,True)
+            if i==1:path(f'M690 {y+4} 210 {y+56}m18-16-18 16 24 5','#008c83')
+            else:path(f'M210 {y+4} 690 {y+56}m-24 5 24-5-18-16','#245fe8')
+            y+=96
+        out.insert(insert,f'<path d="M210 {top-28}V{y-15}M690 {top-28}V{y-15}" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8 10"/>')
+    elif layout in ('flow','layers','numbered'):
         for index,item in enumerate(b['items']):
             if layout=='numbered':
                 out.append(rect(28,y,58,58,'#f1f3f4'))

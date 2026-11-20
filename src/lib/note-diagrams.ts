@@ -8,6 +8,19 @@ export type NoteDiagram = {kind:'diagram';name:NoteDiagramName;caption:string;de
 export const tlsDirections = ['to-server','to-client','both','to-client','to-client','to-client','client','to-server','to-server','to-client'] as const;
 const referenceNumbers:Record<string,number>={overview:1,cia:2,encryption:3,defense:4,hats:5,roe:6,testing:7,decision:8,hash:9,compare:10,tls:11};
 export function noteReferenceImage(date:string,name:string):string|null {
+  const day02BNames=['https','handshake','scans','udp','visibility'].map(n=>'m20d2b'+n);
+  if(date==='2026-11-15'&&day02BNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-b/2026-11-15/image-${day02BNames.indexOf(name)+1}.png`;
+  const replacementNames=['architecture','scenarios','causal','request','outcomes','conditions','decisions'].map(n=>'m20d2r'+n);
+  if(date==='2026-11-14'&&replacementNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/csrf-replacement/image-${replacementNames.indexOf(name)+1}.png`;
+  const csrfNames=['browser','session','exchange','cookieheaders','csrfsequence','origins','samesite','csrftoken'].map(n=>'m20d2'+n);
+  if(date==='2026-11-14'&&csrfNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/csrf-browser/image-${csrfNames.indexOf(name)+1}.png`;
+  if(date==='2026-11-14'&&name==='m20d2binding')return 'https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/parameterized-query/image-1.png';
+  const fourTopics=['m20d2priority','m20d2sqli','m20d2tree','m20d2csrf'];
+  if(date==='2026-11-14'&&fourTopics.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/four-topics/image-${fourTopics.indexOf(name)+1}.png`;
+  const day02Names=['m20d2mail','m20d2tcp','m20d2evidence'];
+  if(date==='2026-11-14'&&day02Names.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day02-a/2026-11-14/image-${day02Names.indexOf(name)+1}.png`;
+  const day01BNames=['m20bmap','m20bkeys','m20bsizes','m20bfinalists','m20bsignature','m20bpki','m20bsystem','m20btime'];
+  if(date==='2026-11-13'&&day01BNames.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-day01-b/2026-11-13/image-${day01BNames.indexOf(name)+1}.png`;
   if(date==='2026-11-12'&&name==='m20gcmflow')return 'https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-m20-review/2026-11-12/four-concepts-supplement/image-1.png';
   const m20Names=['map','cia','aead','symmetric','asymmetric','hybrid','transforms','sizes','finalists','mounted'].map(n=>'m20'+n);
   if(date==='2026-11-12'&&m20Names.includes(name))return `https://github.com/JasonLn0711/kairos-learning/blob/main/docs/sources/ceh-m20-review/2026-11-12/image-${m20Names.indexOf(name)+1}.png`;
@@ -35,5 +48,13 @@ export function validateNoteDiagram(block:NoteDiagram):void {
   if(!Object.hasOwn(noteDiagramSpecs,block.name)||Object.keys(block).sort().join(',')!=='caption,description,items,kind,name')fail();
   if(![block.caption,block.description].every(s=>typeof s==='string'&&s.trim()))fail();
   if(!Array.isArray(block.items)||block.items.length!==noteDiagramSpecs[block.name].count)fail();
+  if(block.name==='m20d2priority'&&!block.items.every((item,i)=>item.body.startsWith([40,30,15,15][i]+'%｜')&&item.body.split('｜').length===2))fail();
+  const messages=block.name==='m20d2bhandshake'?['SYN','SYN/ACK','ACK']:block.name==='m20d2bscans'?['SYN','SYN/ACK','ACK','SYN','SYN/ACK','RST']:null;
+  if(messages&&!block.items.every((item,i)=>item.title===messages[i]&&item.body.startsWith(i%3===1?'Server → Client：':'Client → Server：')))fail();
+  if(block.name==='m20d2budp'&&!block.items.every((item,i)=>item.title===['送出 UDP 探測封包','open','closed','filtered','open|filtered'][i]))fail();
   for(const item of block.items)if(Object.keys(item).sort().join(',')!=='body,title'||![item.title,item.body].every(s=>typeof s==='string'&&s.trim()))fail();
+  if(block.name==='m20d2origins'&&!block.items.every((item,i)=>item.body===['Origin：相同｜Site：相同','Origin：不同｜Site：相同','Origin：不同｜Site：不同','Origin：不同｜Site：不同'][i]))fail();
+  if(block.name==='m20d2samesite'&&!block.items.every((item,i)=>item.body===['Strict：允許｜Lax：允許｜None：允許','Strict：不允許｜Lax：允許｜None：允許','Strict：不允許｜Lax：不允許｜None：允許','Strict：不允許｜Lax：不允許｜None：允許'][i]))fail();
+  if(block.name==='m20d2csrfsequence'&&!block.items.every((item,i)=>item.body===['Alice Browser → 銀行 Server','銀行 Server → Alice Browser','惡意網頁 → Alice Browser','Alice Browser → 銀行 Server','銀行 Server → Alice Browser'][i]))fail();
+  if(block.name==='m20d2binding'&&(block.items[0].body!=="SELECT ... WHERE username = '"||block.items[1].body!=="' OR '1'='1"||block.items[4].body!==block.items[1].body||block.items[3].body!=='WHERE username = ?'))fail();
 }
