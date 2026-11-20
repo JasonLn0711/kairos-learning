@@ -1,4 +1,4 @@
-"""Render the six bounded M02-06 layouts from the same text used by HTML."""
+"""Render the bounded M02-06 layouts from the same text used by HTML."""
 from pathlib import Path
 import json,html,re
 ROOT=Path(__file__).resolve().parents[1]
@@ -35,10 +35,20 @@ def render(d,layout):
   sign=1 if y2>y1 else -1
   out.append(f'<path d="M{x} {y1}V{y2}M{x-8} {y2-sign*10}L{x} {y2}L{x+8} {y2-sign*10}" fill="none" stroke="{color}" stroke-width="3"'+(' stroke-dasharray="6 4"' if dash else '')+'/>')
  y=text(d['caption'],400,18,740,24,True)+8;y=text(d['description'],400,y,740,18)+22
+ if layout=='provider-roles':y+=50
  if layout=='network-map':
   for i in range(4):
    if i:arrow(400,y,y+26,'#52677f');y+=36
    y=box(i,65,y,670)
+ elif layout=='provider-roles':
+  widths=[220,220,180];xs=[20,320,600]
+  h=max(height(i,w) for i,w in enumerate(widths))
+  for i,w in enumerate(widths):box(i,xs[i],y,w)
+  for i,(x1,x2) in enumerate([(244,316),(544,596)]):
+   cy=y+h/2
+   out.append(f'<path d="M{x1} {cy}H{x2}M{x2-8} {cy-7}L{x2} {cy}L{x2-8} {cy+7}" fill="none" stroke="#52677f" stroke-width="3"'+(' stroke-dasharray="6 4"' if i==0 else '')+'/>' )
+   text(d['labels'][i],(x1+x2)/2,y-36,100,16)
+  y+=h
  elif layout=='prefix-bits':
   h=max(height(i,170) for i in range(4))
   for i in range(4):box(i,30+i*195,y,170)
@@ -83,4 +93,4 @@ def generate(check=False):
 if __name__=='__main__':
  import sys
  generate('--check' in sys.argv)
- print('Six paired network figures match shared HTML text')
+ print('Seven paired network figures match shared HTML text')

@@ -139,86 +139,211 @@ NAT（Network Address Translation，網路位址轉換）則可以讓多台內�
 
 [私有 IPv4](https://www.rfc-editor.org/rfc/rfc1918)、[IPv4 文件位址](https://www.rfc-editor.org/rfc/rfc5737)、[IPv6 文件位址](https://www.rfc-editor.org/rfc/rfc3849)。
 
-## 3｜ASN：誰管理這一組路由政策？
+## 3｜ASN、AS 與 BGP 白話文教學
 
-ASN 把前面的位址範圍連到對外路由政策。
+**核心觀念：IP 告訴我們「目的地在哪裡」，ASN 告訴我們「是哪一個自治網路」，BGP 則讓不同網路交換「如何抵達目的地」的路由資訊。**
+
+你可以把網際網路想像成由許多不同物流公司共同建立的全球配送系統。
+
+- **IP Address**：收件地址。
+- **IP Prefix（網段）**：一整片配送區域。
+- **AS（Autonomous System，自治系統）**：具有自己運送政策的物流體系。
+- **ASN（Autonomous System Number）**：該物流體系的識別號碼。
+- **BGP（Border Gateway Protocol）**：不同物流體系互相交換可達路線資訊的規則。
+
+[AS 定義](https://www.rfc-editor.org/rfc/rfc1930)。
 
 ### 3.1 為什麼有 IP 還需要 ASN？
 
-假設你知道朋友的住址在日本東京。
+假設你想要瀏覽一個咖啡店網站：
 
-你要從台灣寄一個包裹過去，光是知道目的地地址還不夠。包裹需要由不同的物流業者接力運送。
+`shop.coffee.example`
 
-網際網路同樣如此。
+電腦透過 DNS，取得網站對應的 IP 位址：
 
-你的電腦可能先連上中華電信或其他網路供應商，再經過其他業者管理的網路，最終到達網站所在的網路。
+`192.0.2.25`
 
-但這裡存在一個問題：
+但是這時候，我們只知道網路上的目的位址，**還不知道哪個網路能幫我們把封包送到那裡。**
 
-這些網路由不同組織管理，大家要怎麼協調哪些目的地可以經由誰抵達？
+本節沿用教材的合成範例。192.0.2.0/24 與 AS64496–AS64498 都是文件示例資源，不代表真實網站或實際路由公告。[文件用 IPv4](https://www.rfc-editor.org/rfc/rfc5737)、[文件用 ASN](https://www.rfc-editor.org/rfc/rfc5398)。
 
-因此，我們需要了解兩個概念：
+**為什麼不能只靠 IP？**
 
-- AS（Autonomous System，自治系統）：在對外路由上呈現一致政策的網路體系。
-- ASN（Autonomous System Number，自治系統編號）：識別這個自治系統的號碼。
+想像你住在宜蘭，要把包裹寄到東京。
 
-例如 `AS64496` 是教材用的示例編號，不是 IP，也不是電腦編號。
+你已經知道東京收件人的地址，但你還需要知道：哪一家物流公司可以運送？它能和哪些物流公司合作？跨國後由誰接手？
 
-一個 AS 可以管理或宣告許多不同的網段；同一家公司也可能營運多個 AS。
+網際網路也是如此。
 
-[AS 定義](https://www.rfc-editor.org/rfc/rfc1930)、[文件用 ASN](https://www.rfc-editor.org/rfc/rfc5398)。
+假設世界上有三個不同網路：
+
+- 網路 A：你所使用的 ISP（網際網路服務供應商）。
+- 網路 B：國際網路骨幹或轉接業者。
+- 網路 C：網站所在的網路。
+
+每個網路有自己的路由政策（Routing Policy），例如願意和誰交換路由、接受哪些路由，以及偏好使用哪一條線路。
+
+為了讓其他網路能夠識別它們，就使用 ASN。
+
+**AS 是網路體系本身；ASN 是這個體系的號碼。** 一個 AS 可以宣告多個網段；同一家公司也可能營運多個 AS。
+
+這也解釋了為什麼電信業者、雲端業者、大型企業及學術網路可能擁有 ASN，而普通家庭或一般網站不需要自己申請一個 ASN。因為後者通常使用上游 ISP 或服務商的網路。[BGP 規範](https://www.rfc-editor.org/info/rfc4271/)、[Cloudflare AS 說明](https://www.cloudflare.com/learning/network-layer/what-is-an-autonomous-system/)
 
 ### 3.2 什麼是 BGP？不同 AS 如何交換路由資訊？
 
-BGP（Border Gateway Protocol，邊界閘道協定）可以理解成不同網路營運者之間交換的「可達目的地資訊」。
+BGP 全名是 Border Gateway Protocol，中文常稱為**邊界閘道協定**。
 
-假設 CDN 業者營運 `AS64496`，其網路可以提供 `192.0.2.0/24` 這個目的位址範圍的連線服務。
+它的工作不是替每一個封包預先規劃完整旅程，而是讓網路之間交換：
 
-它會透過 BGP 向相鄰的 AS 宣告相關路由資訊，讓其他網路知道如何到達這個前綴。
+「我知道如何抵達哪些 IP 網段，你可以透過我前往那些地方。」
 
 ![Diagram](figures/bgp-routing.zh-TW.svg)
 
-BGP 負責交換路由資訊；路由器則依照選定的路由資訊轉送實際封包。
+圖 4 的藍色實線表示封包傳送，橘色虛線表示 BGP 路由公告，兩者方向相反。圖中用戶透過 ISP 到達 CDN；下列三個 AS 的例子另外加入網路 A，逐步說明路由如何傳遞；B 在此為 A 提供轉接服務。A 是 AS64498，B 是 AS64497，C 是 AS64496；這是簡化的外部 BGP（eBGP）示例。
 
-BGP 不會替每一個使用者封包重新向全世界詢問一次怎麼走。它維護和交換路由資訊，讓路由設備能建立可用的轉送決策。
+**第一步：AS64496 宣布「我能抵達這個網段」**
 
-而且 BGP 選路也不一定是物理距離最短的路線。商業關係、路由政策、網路配置和其他屬性都可能影響選擇。
+網站所在的網路 C，透過與鄰近網路 B 建立的 BGP 連線，公告：
 
-[BGP 規範](https://www.rfc-editor.org/rfc/rfc4271)。
+「`192.0.2.0/24` 這個網段可以透過我抵達。」
+
+這個動作稱為 Route Advertisement（路由公告）。
+
+**第二步：AS64497 告訴 AS64498**
+
+網路 B 收到公告後，依照自己的路由政策，決定是否把這條路由繼續傳給網路 A。
+
+如果傳出去，A 可能收到這樣的路由資訊：
+
+```text
+目的網段：192.0.2.0/24
+AS_PATH：64497 64496
+```
+
+這裡的 `AS_PATH` 就是 BGP 的重要屬性。
+
+它表示這筆路由資訊所記載的 AS 路徑。按照這個例子，從 A 的角度看，公告所列的路線會經過 AS64497，最後抵達起源的 AS64496。
+
+注意：AS_PATH 記錄的是 **AS 層級的路徑，不是每一台路由器，也不保證和某一次封包的實際路徑完全一致**。[BGP 規範](https://www.rfc-editor.org/rfc/rfc4271)
+
+**第三步：網路 A 選擇適合的路由**
+
+假設 A 同時收到兩條路由：
+
+| 候選路由 | AS 路徑 |
+|--------|--------|
+| 路線 1 | A → B → C |
+| 路線 2 | A → D → E → C |
+
+你可能會想：路線 1 比較短，當然應該選它。
+
+**但 BGP 並不是單純選擇最短或最快的路。**
+
+網路業者可能根據商業合作關係、路由偏好、政策限制，以及其他 BGP 屬性來選擇路由。即使一條路線經過比較多個 AS，仍然可能被優先採用。[BGP 適用性說明](https://datatracker.ietf.org/doc/rfc1655/)、[Cisco BGP 選路說明](https://docs.manage.security.cisco.com/cdfmc/c_bgp_path_selection.html)
+
+**第四步：真正的 IP 封包開始傳送**
+
+一旦選定可用路由，路由器便可以依其轉送表（Forwarding Table）將封包送到下一站。
+
+這裡必須區分兩件事情：
+
+| 比較項目 | BGP | IP 封包轉送 |
+|--------|--------|--------|
+| 主要目的 | 交換可達路由資訊 | 把實際資料送出去 |
+| 所屬概念 | 控制平面（Control Plane） | 資料平面（Data Plane） |
+| 白話比喻 | 物流公司交換配送路線 | 貨車真的運送包裹 |
+| 主要資訊 | Prefix、AS_PATH、NEXT_HOP 等 | 目的 IP、轉送表與下一跳 |
+
+這就是為什麼第三節先教 ASN 與 BGP，後面才教 Traceroute。
+
+BGP 讓我們研究「網路公開宣告哪些路由」，而 Traceroute 幫助我們觀察「某次探測有哪些路由器回覆」。
+
+兩者並不相同。
 
 ### 3.3 查到 ASN，就知道網站是誰的嗎？
 
-不一定。這是 CEH 網路足跡蒐集裡非常容易誤判的地方。
+**不一定。這是 CEH 足跡蒐集（Footprinting）非常重要的判讀界線。**
 
-假設我們得到：
+假設你正在調查一家咖啡店網站，發現它使用 Cloudflare 的代理服務。
 
+**Cloudflare 使用的 ASN 包括 AS13335。** [Cloudflare ASN 文件](https://developers.cloudflare.com/byoip/concepts/loa/)。
+
+這表示你可能觀察到 Cloudflare 對外提供的網路服務，但不能因此認定 Cloudflare 擁有該網站。[Cloudflare AS 說明](https://www.cloudflare.com/learning/network-layer/what-is-an-autonomous-system/)
+
+![Diagram](figures/provider-roles.zh-TW.svg)
+
+架構示意，箭頭代表角色關係而非封包流向。Cloudflare 開啟代理後，DNS 可回覆 Cloudflare 的 Anycast IP，而不是原始伺服器 IP。[Cloudflare 代理狀態](https://developers.cloudflare.com/dns/proxy-status/)
+
+也就是說，當我們發現某個 IP 的 Origin ASN 是 AS13335，能夠合理推論的，是該位址所屬前綴在觀察到的 BGP 路由資訊中由 Cloudflare 的 AS 起源公告。
+
+但不能單憑這個結果推論：
+
+- 網站的所有權屬於 Cloudflare。
+- 網站的原始伺服器就放在 Cloudflare。
+- 網站經營者的真實身分。
+- 網站所有服務都使用同一個 ASN。
+
+**那我們究竟要查什麼？**
+
+實務上要把四種不同的身分分開確認。
+
+| 查詢資料 | 可以知道什麼 | 不能直接證明什麼 |
+|--------|--------|--------|
+| DNS | 網域目前解析到哪些 IP | IP 背後真正的網站經營者 |
+| RDAP | IP 網段或 ASN 的登記資料 | 網站的真正所有權 |
+| BGP / Origin ASN | 某網段由哪個 AS 起源公告 | 真正的應用程式主機在哪裡 |
+| 服務合約、雲端管理後台、資產清冊 | 網站、網路服務與管理者的實際關係 | 仍須確認資料是否完整且最新 |
+
+其中 RDAP（Registration Data Access Protocol，登記資料存取協定）是查詢網路資源登記資訊的標準化方式；RIPEstat 則能查詢公開路由資訊與路由起源 AS。[ARIN RDAP](https://www.arin.net/resources/registry/whois/rdap/)、[RIPEstat 路由狀態](https://stat.ripe.net/docs/data-api/api-endpoints/routing-status)
+
+### 3.4 練習：依序查 DNS、Origin ASN 與登記資料
+
+環境：具備 `dig` 的 Linux／macOS，或已安裝 DNS 工具的終端機，以及瀏覽器。以 `example.com` 或你有權查詢的網域練習；只查 DNS、公開路由及登記資訊。下列步驟不使用合成 IP 做真實查詢。
+
+**第一步：查 DNS**
+
+使用 `dig` 觀察網域解析出的 IP。可先用公開測試網域練習。
+
+```sh
+dig +short A example.com
 ```
-IP：192.0.2.25
-所屬前綴：192.0.2.0/24
-IP 網段登記者：Example Edge
-BGP Origin AS：AS64496
-```
 
-我們可以合理地說，資料顯示這個網段與 Example Edge 的登記資料有關，而且在所查詢的路由資料中，`AS64496` 是它的起源自治系統（Origin AS）。
+**第二步：查 IP 對應的 Origin ASN**
 
-但我們還不能因此斷定 Example Edge 就是網站經營者。
+打開 [RIPEstat](https://stat.ripe.net/)，輸入剛取得的 IP，查詢路由前綴及起源 AS。
 
-因為使用這個 IP 的網站可能是某間咖啡店，而 Example Edge 只是它所使用的 CDN、雲端或網路服務供應商。
+**第三步：查登記資料**
 
-實務上必須把幾種證據分開：
+使用 [RDAP](https://www.arin.net/resources/registry/whois/rdap/) 或對應區域網際網路註冊管理機構的查詢服務，確認網路資源登記組織。記錄時間、資料來源，並把「已觀察到的事實」與「尚未確認的所有權」分開。
 
-| 資料來源         | 可以回答的問題           |
-| ------------ | ----------------- |
-| DNS          | 網域目前解析到哪些位址或名稱？   |
-| RDAP／IP 登記資料 | IP 資源登記給誰？        |
-| BGP 路由資料     | 哪個 AS 正在宣告這個網路前綴？ |
-| 網站與組織內部設定    | 誰實際經營網站、管理後端服務？   |
+預期結果：記錄實際查到的 IP、前綴、Origin ASN、登記組織、查詢時間與來源。DNS 結果可能隨時間改變；若 `dig +short` 空白，改用 `dig A example.com` 查回覆狀態，不把空白當作網站不存在。若查無公開路由或登記資料，記為未查得，不補成推測。
 
-RDAP（Registration Data Access Protocol）是查詢網域、IP 與 ASN 等登記資料的重要標準之一。
+小檢查：確認每一項結論都能指回查詢來源，並另列尚未確認的網站所有權。清理：本練習不更改網路設定；依需要移除本機暫存查詢檔。這三個步驟建立的是初步網路足跡。
 
-至於 BGP 的 `AS_PATH`，則是公告中的路由屬性，不是 Traceroute 實測結果；不能直接把兩者視為相同的網路行經紀錄。
+### 3.5 判讀重點與路由安全
 
-[ARIN RDAP](https://www.arin.net/resources/registry/whois/rdap/)。
+1. **IP 是目的位址；ASN 是自治系統的識別編號。** 它們回答不同的問題。
+2. **BGP 是網路之間交換路由資訊的協定。** 它依政策選擇路由，不是單純尋找最短距離。
+3. **ASN 不是網站的身分證。** 查到路由業者，不等於查到網站實際營運者。
+
+另外，從資安角度來看，BGP 路由公告本身也存在遭到錯誤或惡意宣告的風險。RPKI（Resource Public Key Infrastructure，資源公開金鑰基礎建設）與 ROA（Route Origin Authorization，路由起源授權）可以協助驗證某個 ASN 是否獲授權起源公告特定 IP 前綴，但它們並不能證明網站所有權。[APNIC RPKI](https://www.apnic.net/community/security/resource-certification/)
+
+### 3.6 理解檢核
+
+假設某網站的 DNS 解析到一個 IP，而你查到：
+
+- Prefix：`192.0.2.0/24`
+- Origin ASN：`AS64496`
+- AS_PATH：`64497 64496`
+- RDAP 登記組織：Example Edge
+
+以上都是合成教材資料。
+
+**問題一：** `AS64496` 和 `AS64497` 分別在這條路由中扮演什麼角色？
+
+**問題二：** 你能不能因此斷言 Example Edge 就是這個網站的真正經營者？為什麼？
+
+先自行回答，再展開參考解答，比對路由角色與網站所有權所需的證據。
 
 ## 4｜把 DNS、IP、CDN 與服務角色連起來
 

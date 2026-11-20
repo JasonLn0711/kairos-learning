@@ -258,3 +258,8 @@ npm run test:browser:m0206
 ```
 
 第二步同步十二張新下載圖、原有受審核註冊表及獨立 network-svg.zip；不改寫原 bilingual-svg.zip。`--check` 驗證來源圖、序列化輸出與 ZIP 確定性。英文換行保留完整詞；瀏覽器檢查 SVG 文字在 viewBox 內且不與箭頭交疊。圖號 1–6 是這次網路角色補充的內部順序，舊圖以原標題辨識；stable section-* 錨點與既有課程路線保留。
+
+
+M02-06 v1.2.0 擴充第 3 節，保留圖 4 的原始資料、SVG 與箭頭；前版雙語教學與解答封存於 `docs/sources/m02-06/archive-v1.1.0/`。新增 `provider-roles` 受限版型：固定三個節點（網站營運者／代理網路／公開 IP）、兩個標籤；第一條虛線表示使用服務，第二條實線表示對外提供入口，兩者均為角色關係。節點 tone 僅用既有 blue／orange／gray；資料沿用 caption／description／nodes／labels／footer 雙語契約，不接受任意 SVG。HTML 寬欄三卡橫排，容器小於 680px 改上下排列；下載 SVG 保留橫排幾何與相同文字。新圖標為「補充圖」，既有圖號 1–6 與原圖保留。network-svg.zip 現含十四份圖，原 bilingual-svg.zip 保持不變。兩個 `answer-bgp-*` 參考解答放在第 3.6 節後，原九題仍在第 8 節後；不寫入學習進度。
+
+[ASN／BGP 補充與驗收回執](releases/2026-11-02-m02-06-asn-bgp.md)記錄供稿處理、圖 4 保留與補充圖差異。

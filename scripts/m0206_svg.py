@@ -3,7 +3,7 @@ from pathlib import Path
 import json,re,sys,io,zipfile,xml.etree.ElementTree as ET
 from m0903_svg import sanitized_svg,NS
 ROOT=Path(__file__).resolve().parents[1]
-NAMES=['01-domain-network','02-address-prefix-as','03-traceroute-hops','04-evidence-workflow','network-map','prefix-bits','private-network','bgp-routing','cdn-origin','proxy-modes']
+NAMES=['01-domain-network','02-address-prefix-as','03-traceroute-hops','04-evidence-workflow','network-map','prefix-bits','private-network','bgp-routing','cdn-origin','proxy-modes','provider-roles']
 def generate():
  bundle={};labels={'zh':[],'en':[]}
  for lang,suffix in [('zh','zh-TW'),('en','en')]:
@@ -35,4 +35,4 @@ if __name__=='__main__':
  package=ROOT/'site/downloads/ceh-m02-06-network-svg.zip'
  if '--check' in sys.argv:assert package.read_bytes()==archive.getvalue(),'Network ZIP differs'
  else:package.write_bytes(archive.getvalue())
- print('20 M02-06 assets and inline/search bundles match strict serializer')
+ print('22 M02-06 assets and inline/search bundles match strict serializer')

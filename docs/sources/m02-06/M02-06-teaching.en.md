@@ -81,45 +81,153 @@ NAT (Network Address Translation) can let multiple internal devices communicate 
 
 192.0.2.0/24 is reserved for documentation, not for deploying a public website. 2001:db8::/32 is the IPv6 documentation range. [Private IPv4](https://www.rfc-editor.org/rfc/rfc1918), [IPv4 documentation addresses](https://www.rfc-editor.org/rfc/rfc5737), [IPv6 documentation addresses](https://www.rfc-editor.org/rfc/rfc3849).
 
-## 3 | ASN: who manages a common routing policy?
+## 3 | ASNs, ASes and BGP in plain language
 
-ASN connects an address range to external routing policy.
+IP identifies a destination address, an ASN identifies an autonomous system, and BGP lets networks exchange route information about reaching destinations.
+
+Think of the Internet as a global delivery system shared by independent logistics operators.
+
+- IP Address: a delivery address.
+- IP Prefix: a delivery area containing a range of addresses.
+- AS (Autonomous System): a network system with its own external routing policy.
+- ASN (Autonomous System Number): the identifier for that system.
+- BGP (Border Gateway Protocol): the rules for exchanging reachability information between systems.
+
+[AS definition](https://www.rfc-editor.org/rfc/rfc1930).
 
 ### 3.1 Why do we need ASNs as well as IP addresses?
 
-A parcel sent from Taiwan to Tokyo may pass between delivery operators. Likewise, your computer can connect through an ISP, other operators’ networks and finally the destination network. Independently managed networks need a way to exchange which destinations are reachable through which neighbors.
+Suppose DNS resolves a coffee shop’s domain, `shop.coffee.example`, to `192.0.2.25`. This gives the destination address; routers still need routing information to reach it.
 
-An AS (Autonomous System) presents a common external routing policy. Its ASN (Autonomous System Number) identifies that system. AS64496 is a documentation example, not an IP address or a computer number. One AS can announce many prefixes, and one company can operate multiple ASes. [AS definition](https://www.rfc-editor.org/rfc/rfc1930), [documentation ASNs](https://www.rfc-editor.org/rfc/rfc5398).
+This section uses synthetic examples. 192.0.2.0/24 and AS64496–AS64498 are documentation resources, not a real website or observed announcements. [Documentation IPv4](https://www.rfc-editor.org/rfc/rfc5737), [documentation ASNs](https://www.rfc-editor.org/rfc/rfc5398).
+
+Knowing a recipient’s address in Tokyo does not tell a sender in Yilan which delivery operator can carry the parcel, which partners it uses, or who takes over abroad. Networks likewise cooperate to deliver packets.
+
+- Network A: your ISP (Internet Service Provider).
+- Network B: an international backbone or transit provider.
+- Network C: the network serving the website.
+
+Each network has a Routing Policy: which neighbors it exchanges routes with, which routes it accepts, and which links it prefers. An ASN identifies the AS that applies that policy.
+
+AS is the network system; ASN is its number. One AS can announce many prefixes, and one company can operate multiple ASes. Telecom operators, cloud providers, large enterprises and academic networks may have ASNs. Typical households and websites use their provider’s network without applying for their own ASN. [BGP specification](https://www.rfc-editor.org/rfc/rfc4271), [Cloudflare AS explanation](https://www.cloudflare.com/learning/network-layer/what-is-an-autonomous-system/).
 
 ### 3.2 How does BGP exchange reachability information?
 
-BGP (Border Gateway Protocol) exchanges network reachability information. Suppose a CDN operates AS64496 and provides reachability to 192.0.2.0/24. It can announce that route to a neighboring AS, allowing other networks to learn a path to the prefix.
+BGP stands for Border Gateway Protocol. Networks use it to advertise which IP prefixes they can reach through neighboring networks. It does not preplan a complete journey for every packet.
 
 ![Diagram](figures/bgp-routing.en.svg)
 
-BGP exchanges route information; routers forward packets using selected forwarding entries. BGP does not ask the entire Internet for directions for every user packet. Policy, business relationships, network configuration and route attributes affect selection, so the chosen route need not be geographically shortest. [BGP specification](https://www.rfc-editor.org/rfc/rfc4271).
+In Figure 4, solid blue arrows show packet forwarding and the dashed orange arrow shows a route announcement in the opposite direction. The figure connects a user through an ISP to a CDN. The following three-AS example adds network A to explain route propagation, with B providing transit for A: A is AS64498, B is AS64497 and C is AS64496. This is a simplified external BGP (eBGP) example.
+
+**Step 1: AS64496 announces reachability**
+
+Network C announces `192.0.2.0/24` over a BGP session with neighboring network B. This is a Route Advertisement: the prefix is reachable through C.
+
+**Step 2: AS64497 tells AS64498**
+
+B decides, according to its routing policy, whether to export the route to A. If it does, A might receive:
+
+```text
+Destination prefix: 192.0.2.0/24
+AS_PATH: 64497 64496
+```
+
+AS_PATH is a BGP route attribute. From A’s perspective, this advertised path passes through AS64497 and ends at origin AS64496. It records AS-level information, not every router, and need not match the actual path of any particular packet. [BGP specification](https://www.rfc-editor.org/rfc/rfc4271).
+
+**Step 3: A selects a route**
+
+Suppose A receives two candidate routes:
+
+| Candidate | AS-level route |
+|---|---|
+| Route 1 | A → B → C |
+| Route 2 | A → D → E → C |
+
+BGP does not simply select the shortest or fastest route. Business relationships, local preferences, policy restrictions and other BGP attributes affect selection. A route crossing more ASes can still be preferred. [BGP applicability](https://datatracker.ietf.org/doc/rfc1655/), [Cisco BGP path selection](https://docs.manage.security.cisco.com/cdfmc/c_bgp_path_selection.html).
+
+**Step 4: Forward actual IP packets**
+
+After a usable route is selected and installed, routers use their Forwarding Table to send packets to the next hop. They do not query the entire Internet for each packet.
+
+| Comparison | BGP | IP packet forwarding |
+|---|---|---|
+| Purpose | Exchange reachability information | Deliver actual data |
+| Plane | Control Plane | Data Plane |
+| Analogy | Operators exchange delivery routes | Trucks carry parcels |
+| Main information | Prefix, AS_PATH, NEXT_HOP and other attributes | Destination IP, forwarding table and next hop |
+
+BGP reveals advertised reachability. Traceroute observes which routers respond to a particular probe. These are different kinds of evidence; this distinction prepares you for the later Traceroute sections.
 
 ### 3.3 Does an ASN identify the website operator?
 
-Consider this synthetic record:
+An ASN alone does not establish website ownership. Suppose a coffee shop uses Cloudflare’s proxy service. Cloudflare’s ASNs include AS13335. [Cloudflare ASN documentation](https://developers.cloudflare.com/byoip/concepts/loa/). Observing its public network service does not establish that Cloudflare owns the website. [Cloudflare AS explanation](https://www.cloudflare.com/learning/network-layer/what-is-an-autonomous-system/).
 
-```text
-IP: 192.0.2.25
-Containing prefix: 192.0.2.0/24
-IP resource registrant: Example Edge
-BGP origin AS: AS64496
+![Diagram](figures/provider-roles.en.svg)
+
+This is a role diagram: arrows show relationships, not packet flow. With proxying enabled, DNS can return Cloudflare Anycast IP addresses instead of the origin server’s address. [Cloudflare proxy status](https://developers.cloudflare.com/dns/proxy-status/).
+
+If routing data reports AS13335 as the Origin ASN for an IP’s prefix, it supports the observation that Cloudflare’s AS originated that prefix in that data. It does not by itself establish:
+
+- That Cloudflare owns the website.
+- That Cloudflare hosts the origin server.
+- The website operator’s real identity.
+- That every service of the website uses the same ASN.
+
+**Which evidence should we check?**
+
+| Source | What it tells us | What it does not directly establish |
+|---|---|---|
+| DNS | Which IP addresses the domain currently resolves to | The actual website operator behind an IP |
+| RDAP | IP prefix or ASN registration data | Actual website ownership |
+| BGP / Origin ASN | Which AS originates a prefix in observed routing data | The application’s actual hosting location |
+| Service contracts, cloud administration and asset inventory | Actual relationships between website, services and administrators | Whether the evidence is complete and current still needs checking |
+
+RDAP (Registration Data Access Protocol) standardizes access to network resource registration data. RIPEstat provides public routing information and origin AS data. [ARIN RDAP](https://www.arin.net/resources/registry/whois/rdap/), [RIPEstat routing status](https://stat.ripe.net/docs/data-api/api-endpoints/routing-status).
+
+### 3.4 Practice: DNS, Origin ASN and registration
+
+Environment: a Linux/macOS terminal with `dig`, or another terminal with DNS tools installed, plus a browser. Use `example.com` or a domain you are authorized to query. Query DNS, public routing and registration records only; do not use the synthetic IP for real lookups.
+
+**Step 1: Query DNS**
+
+```sh
+dig +short A example.com
 ```
 
-It associates the prefix with Example Edge’s registration and shows AS64496 as the origin in the queried routing data. It does not establish that Example Edge operates the website. A coffee shop could operate the site while Example Edge supplies CDN, cloud or network services.
+**Step 2: Look up the Origin ASN**
 
-| Source | Question it answers |
-|---|---|
-| DNS | Which addresses or names does the domain resolve to? |
-| RDAP / IP registration | Who is the IP resource registered to? |
-| BGP routing data | Which origin AS is observed announcing the prefix? |
-| Website and internal settings | Who operates the website and manages its backend? |
+Open [RIPEstat](https://stat.ripe.net/), enter an actual IP from Step 1 and inspect the route prefix and origin AS.
 
-RDAP (Registration Data Access Protocol) is a standard for accessing domain, IP and ASN registration data. BGP AS_PATH is an announcement attribute, not a measured traceroute; keep these observations separate. [ARIN RDAP](https://www.arin.net/resources/registry/whois/rdap/).
+**Step 3: Check registration**
+
+Use [RDAP](https://www.arin.net/resources/registry/whois/rdap/) or the appropriate regional Internet registry. Record the registered organization, lookup time and source. Keep observed facts separate from unconfirmed ownership.
+
+Expected result: a record of the actual IP, prefix, Origin ASN, registered organization, time and sources. DNS answers can change. If short output is empty, run `dig A example.com` to inspect the response status; empty output alone does not prove the website is absent. Record missing routing or registration data as not found rather than filling it with assumptions.
+
+Small check: trace each conclusion to its source and list website ownership as unconfirmed where appropriate. Cleanup: no network settings are changed; remove temporary local query files if needed. These steps establish preliminary network footprint evidence.
+
+### 3.5 Interpretation and routing security
+
+1. IP is a destination address; ASN identifies an autonomous system. They answer different questions.
+2. BGP exchanges route information and selects according to policy rather than simply minimizing distance.
+3. ASN is not a website identity card. Identifying a routing operator does not identify the actual website operator.
+
+Incorrect or malicious route announcements are a security risk. RPKI (Resource Public Key Infrastructure) and a ROA (Route Origin Authorization) help validate whether an ASN is authorized to originate a prefix. They do not prove website ownership. [APNIC RPKI](https://www.apnic.net/community/security/resource-certification/).
+
+### 3.6 Check your understanding
+
+Suppose a website resolves to an IP and you obtain this entirely synthetic record:
+
+- Prefix: `192.0.2.0/24`
+- Origin ASN: `AS64496`
+- AS_PATH: `64497 64496`
+- RDAP registered organization: Example Edge
+
+**Question 1:** What roles do AS64496 and AS64497 play in this route?
+
+**Question 2:** Can you conclude that Example Edge is the actual website operator? Why?
+
+Answer first, then open the reference answers to compare routing roles with the evidence needed to establish website ownership.
 
 ## 4 | Connect DNS, IP, CDN and service roles
 

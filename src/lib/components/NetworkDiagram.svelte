@@ -13,6 +13,8 @@
  <figcaption><strong>{d.caption}</strong><p>{d.description}</p></figcaption>
  {#if layout==='network-map'}
   <div class="map">{#each d.nodes as _,i}{#if i>0}{@render arrow()}{/if}{@render node(i)}{/each}</div>
+ {:else if layout==='provider-roles'}
+  <div class="roles">{@render node(0)}{@render arrow(d.labels[0],false,true)}{@render node(1)}{@render arrow(d.labels[1])}{@render node(2)}</div>
  {:else if layout==='prefix-bits'}
   <div class="bits"><div class="prefix"><div class="octets">{#each [0,1,2] as i}{@render node(i)}{/each}</div><p class="bit-label">{d.labels[0]}</p></div><div class="host">{@render node(3)}<p class="bit-label">{d.labels[1]}</p></div></div>
  {:else if layout==='private-network'}
@@ -39,6 +41,8 @@
  .bits{display:grid;grid-template-columns:3fr 1fr;gap:1rem}.octets{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}.bits .node{padding:.7rem .2rem}.bits .node strong{font-size:1.5rem}.bit-label{text-align:center;border-top:.55rem solid #075bc5;padding-top:.6rem;font-size:1rem;line-height:1.7}.host .bit-label{border-color:#b85b10}
  .dns-pair{display:grid;grid-template-columns:1fr 8rem 1fr;gap:.4rem;align-items:center}.dns-exchange{text-align:center;color:#52677f;min-width:0;font-size:1rem;line-height:1.7}.dns-exchange svg{display:block;width:100%;fill:none;stroke:currentColor;stroke-width:3;stroke-dasharray:6 4}
  .footer{border-top:1px dashed #94a3b8;padding-top:1rem;margin-top:1.2rem}.network-download{display:inline-block;font-size:1rem;line-height:1.7;color:#164d85}.network-download:focus-visible{outline:3px solid #175f91;outline-offset:4px}
+ .roles{display:grid;grid-template-columns:minmax(0,1.1fr) 5rem minmax(0,1.1fr) 5rem minmax(0,.9fr);align-items:stretch;gap:.3rem}.roles .connection{flex-direction:column;color:#52677f;font-size:1rem}.roles .connection svg{transform:rotate(-90deg);height:2.2rem}
+ @container(max-width:680px){.roles{grid-template-columns:1fr}.roles .connection{flex-direction:row}.roles .connection svg{transform:none;height:2.7rem}}
  @container(max-width:560px){.comparison,.peers,.dns-pair{grid-template-columns:1fr}.dns-exchange svg{width:5rem;height:3rem;margin:1rem 0;transform:rotate(90deg)}.dns-exchange{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:1rem 0}.merge{width:0;border-width:0 0 0 3px}.merge:after{left:0}.bits{grid-template-columns:1fr}.octets{grid-template-columns:repeat(3,minmax(0,1fr))}.bgp-exchange{grid-template-columns:1fr}.direct{min-height:3rem}.dns-pair .node{width:100%}}
  @container(max-width:300px){.octets{grid-template-columns:1fr}}
 </style>

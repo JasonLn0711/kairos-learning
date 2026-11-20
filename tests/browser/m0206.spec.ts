@@ -2,12 +2,12 @@ import {test,expect} from '@playwright/test';
 import {readFileSync,mkdirSync} from 'node:fs';
 const dir='.local/m0206-revision/screenshots';mkdirSync(dir,{recursive:true});
 const route=(lang:string)=>`${lang==='en'?'/en':''}/courses/ceh/v13/m02/concepts/m02-06/`;
-const ids=['network-map','prefix-bits','private-network','bgp-routing','cdn-origin','proxy-modes'];
+const ids=['network-map','prefix-bits','private-network','bgp-routing','cdn-origin','proxy-modes','provider-roles'];
 for(const lang of ['zh','en']){
  for(const width of [320,390,768,1280])test(`${lang} ${width}: replacement text, diagram layout and exports`,async({page,request})=>{
   await page.setViewportSize({width,height:900});await page.goto(route(lang));await page.waitForLoadState('networkidle');
-  await expect(page.locator('.article-metadata')).toContainText('v1.1.0');
-  await expect(page.locator('.network-diagram')).toHaveCount(6);await expect(page.locator('[data-reviewed-svg]')).toHaveCount(2);await expect(page.locator('.reference-answer')).toHaveCount(9);
+  await expect(page.locator('.article-metadata')).toContainText('v1.2.0');
+  await expect(page.locator('.network-diagram')).toHaveCount(7);await expect(page.locator('[data-reviewed-svg]')).toHaveCount(2);await expect(page.locator('.reference-answer')).toHaveCount(11);
   await expect(page.locator('#section-2-4')).toBeVisible();await expect(page.locator('#section-3-2')).toBeVisible();await expect(page.locator('#section-4-4')).toBeVisible();await expect(page.locator('#section-8-6')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect(await page.locator('.network-diagram .node p').evaluateAll(es=>es.every(e=>parseFloat(getComputedStyle(e).fontSize)>=16&&parseFloat(getComputedStyle(e).lineHeight)/parseFloat(getComputedStyle(e).fontSize)>=1.7&&e.scrollWidth<=e.clientWidth))).toBe(true);
@@ -16,6 +16,12 @@ for(const lang of ['zh','en']){
    const link=fig.locator('.network-download'),href=(await link.getAttribute('href'))!;const response=await request.get(href);expect(response.status()).toBe(200);expect(await response.body()).toEqual(readFileSync('site'+href));
    if(width===390||width===1280)await fig.screenshot({path:`${dir}/${lang}-${id}-${width}.png`});
   }
+  const roles=page.locator('[data-network-layout=provider-roles]');
+  await expect(roles.locator('.connection.dashed')).toHaveCount(1);
+  const first=(await roles.locator('.node').nth(0).boundingBox())!,second=(await roles.locator('.node').nth(1).boundingBox())!;
+  if(width<=390)expect(second.y).toBeGreaterThan(first.y+first.height);
+  if(width===1280)expect(Math.abs(second.y-first.y)).toBeLessThan(2);
+  await expect(page.locator('#answer-bgp-path')).not.toHaveAttribute('open');
   const comparison=page.locator('[data-network-layout=proxy-modes] .comparison');const panels=comparison.locator('section');const a=(await panels.nth(0).boundingBox())!,b=(await panels.nth(1).boundingBox())!;
   if(width===1280)expect(Math.abs(a.y-b.y)).toBeLessThan(2);if(width<=390)expect(b.y).toBeGreaterThan(a.y+a.height);
   await expect(page.locator('[data-network-layout=bgp-routing] .connection.up.dashed')).toHaveCount(1);
@@ -35,7 +41,7 @@ for(const lang of ['zh','en']){
   await page.locator('[data-network-layout=proxy-modes]').screenshot({path:`${dir}/${lang}-proxy-200.png`});
  });
  test(`${lang}: no JavaScript, search and SVG text bounds`,async({browser,page,baseURL})=>{
-  const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:320,height:900}});const p=await context.newPage();await p.goto(baseURL+route(lang));await expect(p.locator('.network-diagram')).toHaveCount(6);await expect(p.locator('#cidr-prefix')).toBeDisabled();await expect(p.locator('[data-cidr=network]')).toHaveText('192.0.2.0/24');
+  const context=await browser.newContext({javaScriptEnabled:false,viewport:{width:320,height:900}});const p=await context.newPage();await p.goto(baseURL+route(lang));await expect(p.locator('.network-diagram')).toHaveCount(7);await expect(p.locator('#cidr-prefix')).toBeDisabled();await expect(p.locator('[data-cidr=network]')).toHaveText('192.0.2.0/24');
   await p.locator('#answer-integrated-smb summary').click();await expect(p.locator('#answer-integrated-smb')).toHaveAttribute('open','');expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await context.close();
   await page.goto((lang==='en'?'/en':'')+'/search/');await page.locator('#search-query').fill('AS64497');await expect(page.locator(`a[href="${route(lang)}"]`).first()).toBeVisible();
   for(const id of ids){const svg=readFileSync(`site/images/ceh/m02-06-${id}-${lang}.svg`,'utf8');await page.setContent(svg);expect(await page.locator('svg').evaluate(e=>{const v=(e as SVGSVGElement).viewBox.baseVal;return [...e.querySelectorAll('text')].every(t=>{const b=t.getBBox();return b.x>=0&&b.y>=0&&b.x+b.width<=v.width&&b.y+b.height<=v.height;});})).toBe(true);expect(await page.locator('svg').evaluate(e=>{const overlap=(a:DOMRect,b:DOMRect)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;return [...e.querySelectorAll('text')].every(t=>[...e.querySelectorAll('path')].every(p=>!overlap(t.getBBox(),p.getBBox())));})).toBe(true);await page.locator('svg').screenshot({path:`${dir}/${lang}-${id}-svg.png`});}

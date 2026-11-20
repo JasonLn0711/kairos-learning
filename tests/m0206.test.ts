@@ -10,20 +10,20 @@ import {createConceptCatalog,type SourceBlock} from '../src/lib/concepts.ts';
 import {allConceptTeachings,concepts} from '../src/lib/server/catalog.ts';
 const lesson=allConceptTeachings.find(t=>t.id==='M02-06')!;
 const flatten=(b:SourceBlock):string[]=>b.kind==='visual'?[b.visual.caption,b.visual.description,...b.visual.items.flatMap(i=>[i.title,i.body])]:b.kind==='table'?[...b.headers,...b.rows.flat()]:b.kind==='list'?b.items:b.kind==='answer'?[b.summary,...b.paragraphs]:'text' in b?[b.text]:[];
-test('M02-06 complete bilingual lesson, eight diagrams, paired closed-answer data records and next linked unit',()=>{
- assert.equal(lesson.contentVersion,'1.1.0');assert.equal(lesson.revision,3);assert.deepEqual(lesson.qa,[]);
+test('M02-06 complete bilingual lesson, nine diagrams, paired closed-answer data records and next linked unit',()=>{
+ assert.equal(lesson.contentVersion,'1.2.0');assert.equal(lesson.revision,4);assert.deepEqual(lesson.qa,[]);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-01');
  for(const lang of ['zh','en'] as const){
   const body=lesson.text[lang].sourceBody!;assert.ok(body.length>=40);
   assert.equal(body.filter(b=>b.kind==='heading'&&/^section-\d+$/.test(b.id??'')).length,9);
-  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-local-prefix', 'answer-address-count', 'answer-asn-role', 'answer-missing-reply', 'answer-service-correlation','answer-integrated-prefix','answer-integrated-operator','answer-integrated-origin','answer-integrated-smb']);
+  assert.deepEqual(body.filter(b=>b.kind==='answer').map(b=>b.id),['answer-bgp-path','answer-bgp-ownership','answer-local-prefix', 'answer-address-count', 'answer-asn-role', 'answer-missing-reply', 'answer-service-correlation','answer-integrated-prefix','answer-integrated-operator','answer-integrated-origin','answer-integrated-smb']);
   const text=body.flatMap(flatten).join('\n');
   for(const term of ['TTL','ASN','192.0.2.0/24','RTT','Traceroute'])assert.ok(text.includes(term));
   assert.ok(!/Sentinel_|libfile_|CalpicoFile_|sandbox:|chatgpt-content-reference/.test(text));
   const page=catalog.get('M02-06',lang)!;
   assert.equal(page.navigation.previous?.id,'M02-05');assert.ok(page.navigation.previous?.href);
-  assert.equal(page.navigation.next?.id,'M02-07');assert.equal(page.navigation.next?.href,null);
-  assert.equal(catalog.get('M02-07',lang),null);
+  assert.equal(page.navigation.next?.id,'M02-07');assert.ok(page.navigation.next?.href);
+  assert.ok(catalog.get('M02-07',lang));
   const search=catalog.searchEntries.find(e=>e.id==='M02-06'&&e.lang===lang)!;
   for(const b of body.filter(b=>b.kind==='answer'))for(const p of b.paragraphs)assert.ok(search.text.includes(p));
  }
@@ -45,7 +45,7 @@ test('M02-06 reviewed inline bundle and search labels match deterministic allowl
  const result=spawnSync('python3',['scripts/m0206_svg.py','--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stdout+result.stderr);
  const catalog=createConceptCatalog(concepts,allConceptTeachings,'2026-11-01');
  for(const lang of ['zh','en'] as const){
-  const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,8);
+  const body=lesson.text[lang].sourceBody!;assert.equal(body.filter(b=>b.kind==='visual').length,9);
   for(const b of body.filter(b=>b.kind==='visual')){
    const svg=readFileSync('site'+b.src,'utf8');assert.equal(reviewedSvgMarkup(b.src),svg);assert.ok(Buffer.byteLength(svg)<100000);
    assert.ok(!/<(?:script|foreignObject|image|use)\b|\bon\w+=|\bhref=/i.test(svg));
@@ -60,7 +60,7 @@ test('M02-06 reference answers preserve the paired source documents',()=>{
   const answers=lesson.text[lang].sourceBody!.filter(b=>b.kind==='answer');
   const source=readFileSync(`docs/sources/m02-06/M02-06-answers.${suffix}.md`,'utf8');
   const parts=source.split('\n## ').slice(1);assert.equal(parts.length,answers.length);
-  for(let i=0;i<parts.length;i++){const [heading,...paragraphs]=parts[i].trim().split('\n\n');assert.ok(heading.startsWith(answers[i].id));assert.deepEqual(answers[i].paragraphs,paragraphs);}
+  for(let i=0;i<parts.length;i++){const [heading,...paragraphs]=parts[i].trim().split('\n\n');const answer=answers.find(a=>heading.startsWith(a.id));assert.ok(answer);assert.deepEqual(answer.paragraphs,paragraphs);}
  }
 });
 
@@ -83,7 +83,7 @@ test('M02-06 CIDR explorer computes every supported prefix and rejects other inp
  for(const n of [23,31,24.5,NaN,Infinity])assert.throws(()=>examplePrefix(n),RangeError);
 });
 test('M02-06 network diagrams have bounded bilingual structures and primary text fidelity',()=>{
- const counts={'network-map':4,'prefix-bits':4,'private-network':4,'bgp-routing':3,'cdn-origin':4,'proxy-modes':5};
+ const counts={'network-map':4,'prefix-bits':4,'private-network':4,'bgp-routing':3,'cdn-origin':4,'proxy-modes':5,'provider-roles':3};
  for(const [id,count] of Object.entries(counts))for(const lang of ['zh','en']){
   const d=networkDiagram(`/images/ceh/m02-06-${id}-${lang}.svg`)!;assert.equal(d.data.nodes.length,count);
   const block=lesson.text[lang as 'zh'|'en'].sourceBody!.find(b=>b.kind==='visual' && b.src.endsWith(`-${id}-${lang}.svg`));assert.ok(block?.kind==='visual');
@@ -105,5 +105,23 @@ test('M02-06 keeps the Traceroute sections and runs both offline Python examples
  for(const block of blocks){
   assert.ok(block.kind==='code');const result=spawnSync('python3',['-c',block.text],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);
   assert.equal(result.stdout,block.text.includes('ip_interface')?'IP: 192.0.2.25\nNetwork: 192.0.2.0/24\nStart: 192.0.2.0\nEnd: 192.0.2.255\nAddresses: 256\n':'256\n192.0.2.0 192.0.2.255\nTrue\n');
+ }
+});
+
+
+test('M02-06 ASN expansion preserves Figure 4 and all sections outside section 3',()=>{
+ for(const [file,sha] of Object.entries({"site/images/ceh/m02-06-bgp-routing-zh.svg": "a66890d5bc43a1970084985f2695b625dd1c3518df815f9382247a05e822de66", "site/images/ceh/m02-06-bgp-routing-en.svg": "8c6f0fa5d8743e566da08fc750fd1ade8fc42ff35caf23dcb41c94f07e76ec1d"})) assert.equal(createHash('sha256').update(readFileSync(file)).digest('hex'),sha);
+ for(const suffix of ['zh-TW','en']){
+  const before=readFileSync(`docs/sources/m02-06/archive-v1.1.0/M02-06-teaching.${suffix}.md`,'utf8');
+  const after=readFileSync(`docs/sources/m02-06/M02-06-teaching.${suffix}.md`,'utf8');
+  assert.equal(after.slice(0,after.indexOf('## 3')),before.slice(0,before.indexOf('## 3')));
+  assert.equal(after.slice(after.indexOf('## 4')),before.slice(before.indexOf('## 4')));
+ }
+ for(const lang of ['zh','en'] as const){
+  const body=lesson.text[lang].sourceBody!;
+  const text=body.flatMap(flatten).join('\n');
+  for(const term of ['64497 64496','AS64498','AS13335','RPKI','ROA','dig +short A example.com','NEXT_HOP']) assert.ok(text.includes(term));
+  const check=body.findIndex(b=>'id' in b&&b.id==='section-3-6'),answer=body.findIndex(b=>b.kind==='answer'&&b.id==='answer-bgp-path'),next=body.findIndex(b=>'id' in b&&b.id==='section-4');
+  assert.ok(check<answer&&answer<next);
  }
 });

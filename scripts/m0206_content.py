@@ -36,7 +36,9 @@ def parse(lang,suffix):
  for chunk in ap.read_text().split('\n## ')[1:]:
   heading,*paras=chunk.strip().split('\n\n');ident,title=re.split(r'｜|\s*\|\s*',heading,maxsplit=1)
   answers.append(dict(kind='answer',id=ident,summary=('參考解答：' if lang=='zh' else 'Reference answer: ')+title,paragraphs=paras))
- at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=answers
+ bgp=[a for a in answers if a['id'].startswith('answer-bgp-')]
+ at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-4');blocks[at:at]=bgp
+ at=next(i for i,b in enumerate(blocks) if b.get('id')=='section-9');blocks[at:at]=[a for a in answers if a not in bgp]
  return dict(summary='串連 IP、網段、ASN 與路徑觀測，建立可回查的網路地圖。' if lang=='zh' else 'Build a traceable network map with IP addresses, prefixes, ASNs, and path observations.',sections=[],sourceBody=blocks)
-lesson=dict(id='M02-06',revision=3,contentVersion='1.1.0',date='2026-11-01',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
+lesson=dict(id='M02-06',revision=4,contentVersion='1.2.0',date='2026-11-02',status='published',publishedOn='2026-11-01',qa=[],text={lang:parse(lang,suf) for lang,suf in [('zh','zh-TW'),('en','en')]})
 (ROOT/'content/concepts/m02-06.json').write_text(json.dumps(lesson,ensure_ascii=False,indent=2)+'\n')

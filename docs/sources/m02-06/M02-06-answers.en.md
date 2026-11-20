@@ -35,3 +35,11 @@ A CDN DNS answer normally exposes an entry point. Cross-check owner-controlled D
 ## answer-integrated-smb | Integrated case: SMB protection
 
 A standard HTTP reverse proxy does not automatically cover SMB. Check SMB routing, listening interfaces, firewall rules, VPN/private-network access and identity policy separately. Website proxy status alone does not establish safety.
+
+## answer-bgp-path | The two AS_PATH roles
+
+In this synthetic route, AS64496 is the origin AS for 192.0.2.0/24. AS64497 is the intermediate AS before the origin in AS_PATH, passing reachability information to the observer. This is an AS-level advertised path, not a measured router-by-router trace or a guarantee of a particular packet’s path.
+
+## answer-bgp-ownership | Registrant and website operator
+
+No. Example Edge in RDAP is a resource registration clue; Origin ASN and AS_PATH are routing clues. A coffee shop could operate the website using that provider’s CDN, proxy or hosting. Service contracts, cloud administration and asset inventory, including their dates and completeness, are needed to establish the actual relationship.
