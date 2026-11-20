@@ -2,7 +2,7 @@
 
 本包包含學員手冊、教師流程、起始骨架、前兩次切片快照、可執行參考解答、規則及 AppTest 測試、合成資料與作品工作表。教材正本在 CS Kairos Learn 的 AASE 系列；本包不是原分享對話附件的重製。
 
-適用 Python 3.11／3.12。本次套件固定為 Streamlit 1.51.0、pytest 8.4.2；這是重現組合，不表示最新版本。測試結果與執行環境以 repo 發布回執為準。Agent 品牌可替換，教師需先測試授課版本、帳號與費用。
+適用 Python 3.11／3.12。本版鎖定 Streamlit 1.67.0、pytest 9.2.0 及所有間接依賴。`requirements.txt` 同時記錄下載套件的 SHA-256，安裝時會核對。測試結果與執行環境以 repo 發布回執為準。Agent 品牌可替換，教師需先測試授課版本、帳號與費用。
 
 ## 啟動與測試
 
@@ -11,7 +11,7 @@
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install --require-hashes -r requirements.txt
 python -m streamlit run starter/app.py --server.address 127.0.0.1
 ```
 
@@ -28,6 +28,16 @@ python -m streamlit run app.py --server.address 127.0.0.1
 ```
 
 在瀏覽器輸入 SYN-001、DEMO-A，文件類型空白時應指出缺漏且沒有完整下載。補上「合成申請表」、按檢查後可下載 JSON。接著清空文件類型，舊下載應消失。真實下載位元組及鍵盤流程需另做瀏覽器測試，AppTest 不能取代。
+
+## 維護依賴
+
+修改 `requirements.in` 後，在解壓後的根目錄用 uv 重新解算鎖檔：
+
+```sh
+uv pip compile requirements.in --universal --python-version 3.11 --generate-hashes -o requirements.txt
+```
+
+在乾淨的 Python 3.11 與 3.12 環境以 `--require-hashes` 安裝，掃描已安裝依賴，再分別執行兩個切片、參考解答及 `examples/m08-04` 的測試。重打包後核對 ZIP 內的鎖檔及實際下載內容。
 
 ## 契約與限制
 
