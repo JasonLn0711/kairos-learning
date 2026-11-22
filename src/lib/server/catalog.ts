@@ -37,7 +37,12 @@ searchEntries.push(...perspectives.flatMap(p=>(['zh','en'] as Locale[]).map(lang
 const aaseSources=JSON.parse(readFileSync(join(root,'aase/sources.json'),'utf8')) as AaseSource[];
 const allAaseLessons=readdirSync(join(root,'aase/lessons')).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(readFileSync(join(root,'aase/lessons',f),'utf8')) as AaseLesson);
 export const aaseCatalog=createAaseCatalog(aase,allAaseLessons,aaseSources,new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),aaseEnglish as AaseCourseTranslation);
-searchEntries.push(...aaseCatalog.searchEntries,...(aaseCatalog.forLanguage('en')?.searchEntries??[]));
+// Page generation reuses the localized catalogs, including their search text.
+const aaseByLocale = {
+  zh: aaseCatalog.forLanguage<Locale>('zh'),
+  en: aaseCatalog.forLanguage<Locale>('en')
+};
+searchEntries.push(...aaseCatalog.searchEntries,...(aaseByLocale.en?.searchEntries??[]));
 const allDailyNotes=readdirSync(join(root,'ceh-notes')).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(readFileSync(join(root,'ceh-notes',f),'utf8')) as DailyNote);
 export const notesCatalog=createNotesCatalog(allDailyNotes,new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));
 searchEntries.push(...notesCatalog.searchEntries);
@@ -80,7 +85,7 @@ if(day02APublic)routes.push({path:day02APath,kind:'ceh-m20-review',lang:'zh'});
 if(day01BPublic)routes.push({path:day01BPath,kind:'ceh-m20-review',lang:'zh'});
 if(m20Public)routes.push({path:m20ReviewPath,kind:'ceh-m20-review',lang:'zh'});
 for(const lang of ['zh','en'] as const){
-  const catalog=aaseCatalog.forLanguage(lang);if(!catalog)continue;
+  const catalog=aaseByLocale[lang];if(!catalog)continue;
   routes.push({path:localized('/courses/aase/v1/',lang),kind:'aase',lang,courseId:'aase'},...catalog.modules.map(m=>({path:aaseModulePath(m.id,lang),kind:'aase' as Kind,lang,courseId:'aase',moduleId:m.id})));
   routes.push({path:localized('/courses/aase/v1/workshop/',lang),kind:'aase-workshop',lang,courseId:'aase'},...catalog.concepts.filter(c=>c.lesson).map(c=>({path:c.href,kind:'aase-concept' as Kind,lang,courseId:'aase',moduleId:c.module,conceptId:c.id})));
   searchEntries.push({id:'AASE',lang,title:catalog.title,summary:catalog.subtitle,text:catalog.modules.map(m=>m.title).join(' '),href:localized('/courses/aase/v1/',lang),label:lang==='zh'?'AASE · 課程規劃':'AASE · Course map'});
@@ -100,7 +105,7 @@ export function getPage(path: string) {
   const activePerspective=perspectives.find(p=>p.id===route.perspectiveId);
   const relatedLearning=(activePerspective?.related??[]).flatMap(r=>{if(r.kind==='lesson'){const l=index.find(l=>l.id===r.id);return l?[{title:l.title,href:l.href}]:[];}const c=conceptCatalog.list(lang).find(c=>c.id===r.id&&c.href);return c?[{title:c.title[lang],href:c.href!}]:[];});
   const relatedPerspectives=perspectiveLinks.filter(p=>perspectives.find(x=>x.id===p.id)!.related.some(r=>r.kind==='lesson'?r.id===route.lessonId:r.id===route.conceptId));
-  const currentAase=aaseCatalog.forLanguage(lang);
+  const currentAase=aaseByLocale[lang];
   const aaseConcept=currentAase?.concepts.find(c=>c.id===route.conceptId);
   const aaseAt=currentAase?.concepts.findIndex(c=>c.id===route.conceptId)??-1;
   const aaseNavigation=(route.kind==='aase-concept'?(['previous','next'] as const).flatMap((side,i)=>{const c=currentAase?.concepts[aaseAt+(i===0?-1:1)];return c?[{side,displayId:aaseDisplayId(c.id),title:c.title,href:c.lesson?c.href:aaseModulePath(c.module,lang)+'#'+c.slug,pending:!c.lesson}]:[]}):[]);
