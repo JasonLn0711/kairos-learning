@@ -29,8 +29,26 @@ export function isPublic(lesson: Pick<Lesson, 'status' | 'publishedOn'>, today: 
   return lesson.status === 'published' && /^\d{4}-\d{2}-\d{2}$/.test(lesson.publishedOn) && Number.isFinite(Date.parse(lesson.publishedOn)) && new Date(lesson.publishedOn).toISOString().slice(0,10) === lesson.publishedOn && lesson.publishedOn <= today;
 }
 export type SearchEntry = { id: string; lang: Locale; title: string; summary: string; text: string; href: string; label: string };
+function searchTerms(query: string) {
+  return query.normalize('NFKC').trim().toLocaleLowerCase().split(/\s+/).filter(Boolean).slice(0, 12);
+}
+function searchableText(entry: SearchEntry) {
+  return `${entry.title} ${entry.summary} ${entry.text} ${entry.label}`.normalize('NFKC').toLocaleLowerCase();
+}
 export function search(entries: SearchEntry[], query: string, lang: Locale) {
-  const terms = query.normalize('NFKC').trim().toLocaleLowerCase().split(/\s+/).filter(Boolean).slice(0, 12);
+  const terms = searchTerms(query);
   if (!terms.length) return [];
-  return entries.filter(e => e.lang === lang && terms.every(t => `${e.title} ${e.summary} ${e.text} ${e.label}`.normalize('NFKC').toLocaleLowerCase().includes(t)));
+  return entries.filter(entry => {
+    if (entry.lang !== lang) return false;
+    const text = searchableText(entry);
+    return terms.every(term => text.includes(term));
+  });
+}
+export function prepareSearch(entries: SearchEntry[]) {
+  const prepared = entries.map(entry => ({ entry, text: searchableText(entry) }));
+  return (query: string, lang: Locale) => {
+    const terms = searchTerms(query);
+    if (!terms.length) return [];
+    return prepared.filter(({ entry, text }) => entry.lang === lang && terms.every(term => text.includes(term))).map(({ entry }) => entry);
+  };
 }
