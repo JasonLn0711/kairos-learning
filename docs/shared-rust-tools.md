@@ -106,3 +106,9 @@ Jason 指定用 rust-anything 找出可改善的路徑，Codex 執行剖析、�
 - `rust-anything gate` 在本次整合工作樹通過 52/52 個版本化案例。實作分為[搜尋提交](https://github.com/JasonLn0711/kairos-learning/commit/7dabde2c)與[發布驗證提交](https://github.com/JasonLn0711/kairos-learning/commit/52cd8ee0)。既有 [AASE 頁面資料效能](#aase-catalog-performance-2026-11-22)獨立保存建置端量測。
 
 下一關由 Kairos Learning 維護者查核 Pages 工作與正式站的雙語搜尋。日後選用 Rust 時，先對該次產物以 shadow 檢查解析一致性。
+
+### 遠端主線整合驗證
+
+以遠端主線 `2a38e1cd` 為整合基線，保留 SvelteKit 3 的模組路徑。乾淨建置的索引包含 252 筆項目。重跑 960 次查詢，結果順序一致，計時由 7.707 秒降至 0.513 秒，另需 19 毫秒準備索引。這是一組本機配對量測。
+
+發布驗證三種模式皆通過 414 頁、1,062 項資產，零錯誤。該次 Python、shadow、Rust 模式分別耗時 2.06、2.51、0.95 秒。429 項 Node 測試、型別檢查、內容驗證、發布邊界與完整發布驗證均通過。Rust 閘門通過 52/52 個案例，連結解析的兩項 Python 回歸測試也通過。
