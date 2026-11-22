@@ -73,3 +73,25 @@ JSON 輸出位元一致且退出 0；三項合成測試驗證範圍、實體解�
 折疊深度、缺少 body 與跨頁狀態隔離。既有逐字稿來源比對器另有不同
 略過／標記語意，本次不套用此 parser。沒有新增瀏覽器或正式部署驗收，
 也沒有耗時或 Token 節省主張。
+
+<a id="aase-catalog-performance-2026-11-22"></a>
+## 2026-11-22｜AASE 頁面資料效能
+
+Jason 的原始指示：
+
+```text
+$rust-anything:rust-anything  Please use this skill to optimize our repo.
+```
+
+Jason 指定用 rust-anything 找出可改善的路徑，Codex 執行剖析、修改和驗證。維護優先保住建置等待時間與雙語發布證據。Kairos Learning 管理程式、量測與發布檢查，[Planning 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W47/days/2026-11-22.md#aase-catalog-performance-2026-11-22)保存狀態、容量與下一關。
+
+**已驗證。** `rust-anything profile . --lang ts -- node node_modules/vite/bin/vite.js build` 在建置樣本中辨識出 `getPage` 反覆透過 `forLanguage` 生成 AASE 語系資料及搜尋文字。改用 [server catalog](../src/lib/server/catalog.ts) 的語系快照，讓路由、搜尋與頁面資料共用已通過發布條件的結果。沿用 TypeScript 及[既有發布閘門](platform-architecture.md#decisions)。
+
+### 量測與輸出
+
+- 本機 Linux aarch64、Node v24.22.0。比較基準 `2a1fda73` 與實作 `f946f764`。每個版本以同一份資料，在單一 Node 行程匯入 `getPage` 與 `routes`，先跑完 408 條路由暖身，再量七輪。每輪依原順序遍歷四次，合計呼叫 1,632 次。計時範圍是頁面資料組裝。
+- 修改前七輪（ms）：1327.01、1302.04、1297.95、1296.18、1298.66、1304.76、1306.20。修改後：30.54、22.39、23.47、22.15、21.43、21.34、21.36。中位數由 **1302.04 ms** 降至 **22.15 ms**，約 **59 倍**。此比率適用於頁面資料組裝。
+- 依序對 `routes`、`searchEntries`、全部路由的 `getPage(path)` 與 `getPage('/missing-page/')` 進行 JSON 序列化並累計 SHA-256。兩版皆為 `9df05c131f21956c94ac88791c4db69c3414e35a6295449846453487915b927a`。靜態 `build/search-index.json` 與 `build/sitemap.xml` 分別通過修改前後的 SHA-256 比對。
+- `pnpm test` 428 項、`pnpm run check`、`pnpm run validate:content`、`node scripts/check-publication-boundary.mjs`、`pnpm run validate:release` 和 `git diff --check` 均通過。發布邊界包含雙語課程與文章的草稿、未來日期及乾淨重建。
+
+下一關由 Kairos Learning 維護者確認對應提交的 Pages 工作與正式站讀回。日後若頁面組裝再度成為瓶頸，先在相同內容與 Node 版本重測，保留輸出比對。
