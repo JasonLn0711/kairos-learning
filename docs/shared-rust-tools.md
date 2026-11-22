@@ -95,3 +95,14 @@ Jason 指定用 rust-anything 找出可改善的路徑，Codex 執行剖析、�
 - `pnpm test` 428 項、`pnpm run check`、`pnpm run validate:content`、`node scripts/check-publication-boundary.mjs`、`pnpm run validate:release` 和 `git diff --check` 均通過。發布邊界包含雙語課程與文章的草稿、未來日期及乾淨重建。
 
 下一關由 Kairos Learning 維護者確認對應提交的 Pages 工作與正式站讀回。日後若頁面組裝再度成為瓶頸，先在相同內容與 Node 版本重測，保留輸出比對。
+
+<a id="search-and-release-performance-2026-11-22"></a>
+## 2026-11-22｜瀏覽器搜尋與發布驗證效能
+
+稀缺資源是使用者的搜尋等待時間、維護者的驗證時間與發布證據。Kairos Learning 保存實作、案例、量測和回歸檢查。Planning 保存狀態、容量與下一關。[11/22 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W47/days/2026-11-22.md#search-and-release-performance-2026-11-22)
+
+- [搜尋實作](../src/lib/model.ts)在索引載入後預先正規化文字。[回歸測試](../tests/search.test.ts)涵蓋全形字元、中英文詞組、語系篩選及結果順序。原開發環境以 240 筆索引測試 960 次查詢，從 4.24 秒降至 0.39 秒，另需約 9 毫秒準備索引。隔離建置以 Chromium 確認雙語搜尋可顯示結果與零筆狀態。
+- [發布驗證](../scripts/validate_release.py)共用站內連結解析及檔案查找。[Rust 解析器](../rust/release-rs/README.md)提供 `shadow` 比對與 `rust` 選用模式，預設仍由 Python 執行。原隔離建置的三種模式均通過 402 頁與 695 項資產檢查，該次 Python 與 Rust 模式分別耗時 1.46 秒及 0.60 秒。原隔離建置曾在副本中補回 AASE M08-05 的雙語開場段落。
+- `rust-anything gate` 在本次整合工作樹通過 52/52 個版本化案例。實作分為[搜尋提交](https://github.com/JasonLn0711/kairos-learning/commit/7dabde2c)與[發布驗證提交](https://github.com/JasonLn0711/kairos-learning/commit/52cd8ee0)。既有 [AASE 頁面資料效能](#aase-catalog-performance-2026-11-22)獨立保存建置端量測。
+
+下一關由 Kairos Learning 維護者查核 Pages 工作與正式站的雙語搜尋。日後選用 Rust 時，先對該次產物以 shadow 檢查解析一致性。
