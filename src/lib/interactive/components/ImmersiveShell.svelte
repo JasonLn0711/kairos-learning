@@ -87,7 +87,7 @@
 </InteractiveFrame>
 
 <style>
-  .immersive-lesson { margin-inline: auto; width: min(100%, 1600px); padding: .6rem clamp(.7rem, 2vw, 1.8rem) 1rem; overflow-wrap: anywhere; min-inline-size: 0; }
+  .immersive-lesson { margin-inline: auto; width: min(100%, 1920px); padding: .45rem clamp(.7rem, 1.4vw, 1.5rem) max(.7rem, env(safe-area-inset-bottom)); overflow-wrap: anywhere; min-inline-size: 0; }
   .lesson-heading { display: flex; align-items: end; justify-content: space-between; gap: .5rem 1rem; margin-bottom: .7rem; }
   h1 { max-width: none; margin: 0; font-size: clamp(1.4rem, 3vw, 2rem); text-wrap: balance; }
   .lesson-title { min-width: 0; }
@@ -95,8 +95,11 @@
   .lesson-title p { color: var(--muted); margin: .45rem 0; }
   .lesson-tools { display: flex; align-items: center; gap: .65rem; flex: 0 0 auto; }
   .lesson-tools small { color: var(--muted); white-space: nowrap; }
-  .workspace { display: grid; grid-template-columns: minmax(10rem, .8fr) minmax(0, 3fr) minmax(14rem, 1.4fr); gap: 1rem; align-items: start; }
-  .lesson-explainer { position: relative; }
+  .workspace { display: grid; grid-template-columns: clamp(10rem, 15vw, 17rem) minmax(0, 1fr) clamp(16rem, 23vw, 26rem); gap: clamp(.6rem, .9vw, 1rem); align-items: start; }
+  .lesson-explainer { position: relative; border-inline-start:1px solid var(--line); padding-inline-start:clamp(.6rem,1vw,1.25rem); }
+  .scene-column {background:var(--paper)}
+  .workspace :global(button:focus-visible), .lesson-explainer:focus-visible {outline:2px solid var(--accent);outline-offset:2px}
+
   .workspace > * { min-width: 0; min-height: 0; }
   .scene-column { border: 1px solid var(--line); border-radius: .5rem; }
   .static-reading { max-width: 75ch; margin: 1.5rem auto; }
@@ -121,6 +124,9 @@
   @media (max-width: 790px) {
     .workspace { grid-template-columns: minmax(0, 1fr); gap: .8rem; }
     .lesson-heading { flex-wrap: wrap; }
+    .lesson-explainer {border-inline-start:0;padding-inline-start:0;border-block-start:1px solid var(--line);padding-block-start:.65rem}
+    .scene-column :global(button),.scene-column :global(select){min-block-size:44px}
+
     .lesson-tools small { display: none; }
   }
 </style>

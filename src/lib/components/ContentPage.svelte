@@ -53,7 +53,7 @@
     <h1 class:hero={kind === 'home'}>{title}</h1>
     {#if kind === 'aase-concept'}<AaseLesson lesson={data.aaseConcept!.lesson!} sources={data.aaseSources} navigation={data.aaseNavigation} m02CourseLinks={data.aaseM02CourseLinks} {lang} indexHref={localized('/courses/aase/v1/'+data.route.moduleId+'/',lang)+'#one-concept'} />
     {:else if kind === 'aase-workshop'}<AaseWorkshop course={data.aaseCourse!} {lang} />
-    {:else if kind === 'aase'}{#if data.aaseM02InteractiveHref}<p><a class="text-link" href={data.aaseM02InteractiveHref}>{zh ? '探索 M02 互動概念圖譜' : 'Explore the M02 interactive atlas'}</a></p>{/if}<AaseCourse course={data.aaseCourse!} {lang} moduleId={data.route.moduleId} concepts={data.aaseConcepts} />
+    {:else if kind === 'aase'}{#if data.aaseM02InteractiveHref}<p><a class="text-link atlas-entry" href={data.aaseM02InteractiveHref}>{zh ? '探索 M02 互動概念圖譜' : 'Explore the M02 interactive atlas'}</a></p>{/if}<AaseCourse course={data.aaseCourse!} {lang} moduleId={data.route.moduleId} concepts={data.aaseConcepts} />
     {:else if kind === 'home'}
       <p class="lead">{zh ? '一次讀懂一個重要概念。從問題出發，沿著原理、例子與練習，建立可以自己解釋的技術知識。' : 'One meaningful concept at a time. Start with a question, follow the mechanism, and use an example and a small exercise to make the idea your own.'}</p>
       <div class="home-intro"><p>{zh ? '依課程與篇目提供繁體中文或英文教材；已完成對應翻譯的頁面可切換語言，閱讀、練習與複習各有清楚入口。' : 'Choose available Traditional Chinese or English materials. Completed language pairs include a language switch, with clear routes for reading, practice and review.'}</p><a class="text-link" href={localized('/courses/ceh/v13/m01/',lang)}>{zh ? '從 M01 開始' : 'Begin with M01'} <span aria-hidden="true">↗</span></a></div>
@@ -144,7 +144,7 @@
 <style>
   .course-home{overflow-wrap:anywhere}
   .course-home .course-row{grid-template-columns:minmax(45px,max-content) minmax(0,1fr) 25px}
-  .course-home .home-intro .text-link{white-space:normal}
+  .course-home .home-intro .text-link, .atlas-entry{white-space:normal;overflow-wrap:anywhere}
   @media(max-width:540px){.course-home .course-row{grid-template-columns:minmax(0,1fr) max-content}.course-home .course-number{grid-column:1 / -1}}
   .dns-lesson :global(pre) { font-size:1rem; line-height:1.8; }
   .new-route-lesson { overflow-wrap:anywhere; }
