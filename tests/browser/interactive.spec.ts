@@ -132,8 +132,10 @@ for (const locale of locales) {
       })).toBeLessThan(.01);
       expect(controls.y + controls.height).toBeLessThanOrEqual(height);
     }
+    await page.setViewportSize({ width: 1280, height: 720 });
     await page.keyboard.press('ArrowRight');
     await expect(page.locator('[data-step="2"]')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(720);
     await read.click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.locator('#written-walkthrough h3').last()).toBeVisible();

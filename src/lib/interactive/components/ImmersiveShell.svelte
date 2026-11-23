@@ -96,6 +96,7 @@
   .lesson-tools { display: flex; align-items: center; gap: .65rem; flex: 0 0 auto; }
   .lesson-tools small { color: var(--muted); white-space: nowrap; }
   .workspace { display: grid; grid-template-columns: minmax(10rem, .8fr) minmax(0, 3fr) minmax(14rem, 1.4fr); gap: 1rem; align-items: start; }
+  .lesson-explainer { position: relative; }
   .workspace > * { min-width: 0; min-height: 0; }
   .scene-column { border: 1px solid var(--line); border-radius: .5rem; }
   .static-reading { max-width: 75ch; margin: 1.5rem auto; }
