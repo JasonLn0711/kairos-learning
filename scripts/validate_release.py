@@ -5,6 +5,7 @@ Usage: python3 scripts/validate_release.py [--json]
 No network access or third-party dependencies. Exit 1 identifies failed checks.
 """
 import argparse
+from functools import cache
 import hashlib
 from html.parser import HTMLParser
 import json
@@ -47,6 +48,14 @@ def main():
     print('Checking static links, language pairs, public files and MATLAB byte parity.', file=sys.stderr)
     pages = {p.relative_to(BUILD).as_posix(): Page(p.read_text()) for p in BUILD.rglob('*.html')}
     if not pages: errors.append('No HTML output; run pnpm run build first.')
+
+    @cache
+    def target_key(path):
+        # The build is fixed during validation. Navigation repeats the same paths.
+        target = BUILD / path
+        if target.is_dir(): target = target / 'index.html'
+        return target.relative_to(BUILD).as_posix() if target.is_file() else None
+
     for rel, page in pages.items():
         legacy = rel.startswith('courses/matlab-practice/')
         if page.duplicates: errors.append(f'{rel}: duplicate IDs {sorted(page.duplicates)}')
@@ -70,10 +79,8 @@ def main():
             u = urlsplit(urljoin('https://learn.cs-kairos.com/' + rel, href))
             if u.scheme not in ('http','https') or u.netloc != 'learn.cs-kairos.com': continue
             path = unquote(u.path).lstrip('/')
-            target = BUILD / path
-            if target.is_dir(): target = target / 'index.html'
-            if not target.is_file(): errors.append(f'{rel}: missing target {href}'); continue
-            key = target.relative_to(BUILD).as_posix()
+            key = target_key(path)
+            if key is None: errors.append(f'{rel}: missing target {href}'); continue
             if u.fragment and key in pages and unquote(u.fragment) not in pages[key].ids: errors.append(f'{rel}: missing anchor {href}')
     preserved = 0
     for source in SITE.rglob('*'):
