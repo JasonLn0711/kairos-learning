@@ -94,4 +94,11 @@ Jason 指定用 rust-anything 找出可改善的路徑，Codex 執行剖析、�
 - 依序對 `routes`、`searchEntries`、全部路由的 `getPage(path)` 與 `getPage('/missing-page/')` 進行 JSON 序列化並累計 SHA-256。兩版皆為 `9df05c131f21956c94ac88791c4db69c3414e35a6295449846453487915b927a`。靜態 `build/search-index.json` 與 `build/sitemap.xml` 分別通過修改前後的 SHA-256 比對。
 - `pnpm test` 428 項、`pnpm run check`、`pnpm run validate:content`、`node scripts/check-publication-boundary.mjs`、`pnpm run validate:release` 和 `git diff --check` 均通過。發布邊界包含雙語課程與文章的草稿、未來日期及乾淨重建。
 
-下一關由 Kairos Learning 維護者確認對應提交的 Pages 工作與正式站讀回。日後若頁面組裝再度成為瓶頸，先在相同內容與 Node 版本重測，保留輸出比對。
+提交 `2a38e1cd` 的 [Pages 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/45031723250)成功，正式站搜尋索引與 sitemap 經下載比對，與本機驗證版本位元組一致。日後若頁面組裝再度成為瓶頸，先在相同內容與 Node 版本重測，保留輸出比對。
+
+### 後續剖析：路由資料與發布驗證
+
+- **路由資料。** 重跑 Vite 建置剖析後，SvelteKit 資料序列化成為主要成本之一。CEH 總覽保留完整概念目錄，模組頁取得同模組項目，概念頁取得當前項目。其餘頁面省下未使用的目錄。408 份 `__data.json` 未壓縮總量由 27,236,537 降至 20,671,940 位元組，減少 24.1%。414 個 HTML 在排除 hydration 啟動程式與 CSP 雜湊後逐檔相同，搜尋索引與 sitemap 位元組一致。[路由資料](../src/lib/server/catalog.ts) · [回歸測試](../tests/learning.test.ts)
+- **發布驗證。** 在固定建置產物上，Python 剖析指出大量連結重複執行同一路徑的檔案系統查詢。每次驗證共用路徑查詢結果，各來源頁仍各自檢查錨點並回報錯誤。修改前五輪（秒）為 2.05、2.04、2.89、2.11、2.04，修改後為 1.38、1.38、1.38、1.38、1.39。中位數由 2.05 秒降至 1.38 秒，縮短約 33%。兩版都通過 414 個 HTML、1,062 個靜態資產的檢查，合成缺檔及缺錨點案例的四筆錯誤與退出碼相同。[發布驗證器](../scripts/validate_release.py)
+
+後續改動通過 429 項單元測試、型別檢查、正式建置、發布邊界、完整靜態發布檢查及 7 項課程側欄瀏覽器測試。AASE 雙語瀏覽器套件為 54 通過、9 失敗；將這 9 項以同一瀏覽器對修改前產物重跑，錯誤訊息全數相同，分別涉及既有排版與文字比對。
