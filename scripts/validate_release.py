@@ -1,61 +1,80 @@
 #!/usr/bin/env python3
 """Validate static output, bilingual navigation and preserved MATLAB assets.
 
-Usage: python3 scripts/validate_release.py [--json]
-No network access or third-party dependencies. Exit 1 identifies failed checks.
+Usage: python3 scripts/validate_release.py [--json] [--parser python|shadow|rust]
+The default parser uses the standard library. Exit 1 identifies failed checks.
 """
 import argparse
-from functools import cache
 import hashlib
-from html.parser import HTMLParser
+from functools import cache
 import json
 from pathlib import Path
 import re
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 from urllib.parse import unquote, urljoin, urlsplit
+from release_html.metadata import Page, page_metadata
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / 'build'
 SITE = ROOT / 'site'
+ORIGIN = 'https://learn.cs-kairos.com/'
 
-class Page(HTMLParser):
-    def __init__(self, text):
-        super().__init__(convert_charrefs=True)
-        self.ids = set(); self.duplicates = set(); self.links = []; self.lang = ''; self.canonical = ''; self.h1 = 0
-        self.alternates = {}; self.scripts = []; self.csp = ''
-        self.feed(text)
-    def handle_starttag(self, tag, attrs):
-        a = dict(attrs)
-        if a.get('id'):
-            if a['id'] in self.ids: self.duplicates.add(a['id'])
-            self.ids.add(a['id'])
-        if tag == 'html': self.lang = a.get('lang', '')
-        if tag == 'h1': self.h1 += 1
-        if tag in ('a', 'img', 'script', 'link'):
-            for key in ('href', 'src'):
-                if a.get(key): self.links.append(a[key])
-        if tag == 'link' and a.get('rel') == 'canonical': self.canonical = a.get('href', '')
-        if tag == 'link' and a.get('rel') == 'alternate': self.alternates[a.get('hreflang')] = a.get('href', '')
-        if tag == 'script' and a.get('src'): self.scripts.append(a['src'])
-        if tag == 'meta' and a.get('http-equiv', '').lower() == 'content-security-policy': self.csp = a.get('content', '')
+
+@cache
+def _resolve_link(page, href):
+    url = urlsplit(urljoin(ORIGIN + page, href))
+    if url.scheme in ('http', 'https') and url.netloc == 'learn.cs-kairos.com':
+        return unquote(url.path).lstrip('/'), unquote(url.fragment)
+    return None
+
+
+def resolve_link(page, href):
+    if href.startswith('/') and not href.startswith('//') and not any(c in href for c in '\r\n\t'):
+        page = ''
+    return _resolve_link(page, href)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--json', action='store_true', help='emit a machine-readable summary')
+    parser.add_argument('--parser', choices=('python', 'shadow', 'rust'), default='python',
+                        help='shadow compares both parsers and validates the Python result')
     args = parser.parse_args(); start = time.monotonic(); errors = []
+    if args.parser != 'python':
+        sys.path.insert(0, str(ROOT / 'rust/release-rs/python'))
+        try:
+            from release_rs import page_metadata as rust_metadata
+        except ImportError as error:
+            parser.error(f'Rust parser unavailable. Run rust-anything build rust/release-rs ({error})')
     print('Checking static links, language pairs, public files and MATLAB byte parity.', file=sys.stderr)
-    pages = {p.relative_to(BUILD).as_posix(): Page(p.read_text()) for p in BUILD.rglob('*.html')}
+    pages = {}
+    for path in BUILD.rglob('*.html'):
+        rel = path.relative_to(BUILD).as_posix()
+        text = path.read_text()
+        if args.parser == 'python':
+            pages[rel] = Page(text)
+        elif args.parser == 'rust':
+            pages[rel] = SimpleNamespace(**rust_metadata(text))
+        else:
+            expected = page_metadata(text)
+            actual = rust_metadata(text)
+            if expected != actual:
+                fields = ', '.join(key for key in expected if expected[key] != actual.get(key))
+                errors.append(f'{rel}: Rust parser differs in {fields}')
+            pages[rel] = SimpleNamespace(**expected)
     if not pages: errors.append('No HTML output; run pnpm run build first.')
 
     @cache
-    def target_key(path):
-        # The build is fixed during validation. Navigation repeats the same paths.
+    def resolve_target(path):
         target = BUILD / path
-        if target.is_dir(): target = target / 'index.html'
+        if target.is_dir():
+            target /= 'index.html'
         return target.relative_to(BUILD).as_posix() if target.is_file() else None
 
+    _resolve_link.cache_clear()
     for rel, page in pages.items():
         legacy = rel.startswith('courses/matlab-practice/')
         if page.duplicates: errors.append(f'{rel}: duplicate IDs {sorted(page.duplicates)}')
@@ -76,12 +95,12 @@ def main():
                 if page.alternates != expected_alternates: errors.append(f'{rel}: incorrect language alternates')
             if 'script-src' not in page.csp or 'sha256-' not in page.csp: errors.append(f'{rel}: missing hashed script CSP')
         for href in page.links:
-            u = urlsplit(urljoin('https://learn.cs-kairos.com/' + rel, href))
-            if u.scheme not in ('http','https') or u.netloc != 'learn.cs-kairos.com': continue
-            path = unquote(u.path).lstrip('/')
-            key = target_key(path)
+            link = resolve_link(rel, href)
+            if link is None: continue
+            path, fragment = link
+            key = resolve_target(path)
             if key is None: errors.append(f'{rel}: missing target {href}'); continue
-            if u.fragment and key in pages and unquote(u.fragment) not in pages[key].ids: errors.append(f'{rel}: missing anchor {href}')
+            if fragment and key in pages and fragment not in pages[key].ids: errors.append(f'{rel}: missing anchor {href}')
     preserved = 0
     for source in SITE.rglob('*'):
         if not source.is_file() or source.relative_to(SITE).as_posix() == 'index.html': continue

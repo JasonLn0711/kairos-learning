@@ -96,9 +96,28 @@ Jason 指定用 rust-anything 找出可改善的路徑，Codex 執行剖析、�
 
 提交 `2a38e1cd` 的 [Pages 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/45031723250)成功，正式站搜尋索引與 sitemap 經下載比對，與本機驗證版本位元組一致。日後若頁面組裝再度成為瓶頸，先在相同內容與 Node 版本重測，保留輸出比對。
 
-### 後續剖析：路由資料與發布驗證
+<a id="route-payload-performance-2026-11-23"></a>
+## 2026-11-23｜路由資料與發布驗證
+
+這組量測取自本機分支，基準早於[搜尋與發布驗證整合](#search-and-release-performance-2026-11-22)。合併後沿用遠端的路徑快取與選用 Rust 解析器。[Planning 11/23 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/days/2026-11-23.md#route-payload-performance-2026-11-23)
 
 - **路由資料。** 重跑 Vite 建置剖析後，SvelteKit 資料序列化成為主要成本之一。CEH 總覽保留完整概念目錄，模組頁取得同模組項目，概念頁取得當前項目。其餘頁面省下未使用的目錄。408 份 `__data.json` 未壓縮總量由 27,236,537 降至 20,671,940 位元組，減少 24.1%。414 個 HTML 在排除 hydration 啟動程式與 CSP 雜湊後逐檔相同，搜尋索引與 sitemap 位元組一致。[路由資料](../src/lib/server/catalog.ts) · [回歸測試](../tests/learning.test.ts)
 - **發布驗證。** 在固定建置產物上，Python 剖析指出大量連結重複執行同一路徑的檔案系統查詢。每次驗證共用路徑查詢結果，各來源頁仍各自檢查錨點並回報錯誤。修改前五輪（秒）為 2.05、2.04、2.89、2.11、2.04，修改後為 1.38、1.38、1.38、1.38、1.39。中位數由 2.05 秒降至 1.38 秒，縮短約 33%。兩版都通過 414 個 HTML、1,062 個靜態資產的檢查，合成缺檔及缺錨點案例的四筆錯誤與退出碼相同。[發布驗證器](../scripts/validate_release.py)
 
 後續改動通過 429 項單元測試、型別檢查、正式建置、發布邊界、完整靜態發布檢查及 7 項課程側欄瀏覽器測試。AASE 雙語瀏覽器套件為 54 通過、9 失敗；將這 9 項以同一瀏覽器對修改前產物重跑，錯誤訊息全數相同，分別涉及既有排版與文字比對。
+<a id="search-and-release-performance-2026-11-22"></a>
+## 2026-11-22｜瀏覽器搜尋與發布驗證效能
+
+稀缺資源是使用者的搜尋等待時間、維護者的驗證時間與發布證據。Kairos Learning 保存實作、案例、量測和回歸檢查。Planning 保存狀態、容量與下一關。[11/22 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W47/days/2026-11-22.md#search-and-release-performance-2026-11-22)
+
+- [搜尋實作](../src/lib/model.ts)在索引載入後預先正規化文字。[回歸測試](../tests/search.test.ts)涵蓋全形字元、中英文詞組、語系篩選及結果順序。原開發環境以 240 筆索引測試 960 次查詢，從 4.24 秒降至 0.39 秒，另需約 9 毫秒準備索引。隔離建置以 Chromium 確認雙語搜尋可顯示結果與零筆狀態。
+- [發布驗證](../scripts/validate_release.py)共用站內連結解析及檔案查找。[Rust 解析器](../rust/release-rs/README.md)提供 `shadow` 比對與 `rust` 選用模式，預設仍由 Python 執行。原隔離建置的三種模式均通過 402 頁與 695 項資產檢查，該次 Python 與 Rust 模式分別耗時 1.46 秒及 0.60 秒。原隔離建置曾在副本中補回 AASE M08-05 的雙語開場段落。
+- `rust-anything gate` 在本次整合工作樹通過 52/52 個版本化案例。實作分為[搜尋提交](https://github.com/JasonLn0711/kairos-learning/commit/7dabde2c)與[發布驗證提交](https://github.com/JasonLn0711/kairos-learning/commit/52cd8ee0)。既有 [AASE 頁面資料效能](#aase-catalog-performance-2026-11-22)獨立保存建置端量測。
+
+主線整合的 [Pages 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/45032690910)已成功。日後選用 Rust 時，先對該次產物以 shadow 檢查解析一致性。
+
+### 遠端主線整合驗證
+
+以遠端主線 `2a38e1cd` 為整合基線，保留 SvelteKit 3 的模組路徑。乾淨建置的索引包含 252 筆項目。重跑 960 次查詢，結果順序一致，計時由 7.707 秒降至 0.513 秒，另需 19 毫秒準備索引。這是一組本機配對量測。
+
+發布驗證三種模式皆通過 414 頁、1,062 項資產，零錯誤。該次 Python、shadow、Rust 模式分別耗時 2.06、2.51、0.95 秒。429 項 Node 測試、型別檢查、內容驗證、發布邊界與完整發布驗證均通過。Rust 閘門通過 52/52 個案例，連結解析的兩項 Python 回歸測試也通過。

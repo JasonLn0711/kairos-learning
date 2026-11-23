@@ -1,13 +1,13 @@
 <script lang="ts">
   import type { Locale, SearchEntry } from '#lib/model.ts';
-  import { search } from '#lib/model.ts';
+  import { prepareSearch } from '#lib/model.ts';
   let { lang }: { lang: Locale } = $props();
-  let query = $state(''); let entries = $state<SearchEntry[]>([]); let loaded = $state(false); let loading = $state(false); let failed = $state(false);
-  const results = $derived(search(entries, query, lang));
+  let query = $state(''); let searchIndex = $state(prepareSearch([])); let loaded = $state(false); let loading = $state(false); let failed = $state(false);
+  const results = $derived(searchIndex(query, lang));
   async function load() {
     if (loaded || loading) return;
     loading = true; failed = false;
-    try { const res = await fetch('/search-index.json'); if (!res.ok) throw new Error('Search index unavailable'); entries = await res.json(); loaded = true; } catch { failed = true; } finally { loading = false; }
+    try { const res = await fetch('/search-index.json'); if (!res.ok) throw new Error('Search index unavailable'); const entries: SearchEntry[] = await res.json(); searchIndex = prepareSearch(entries); loaded = true; } catch { failed = true; } finally { loading = false; }
   }
 </script>
 <form role="search" onsubmit={(e) => { e.preventDefault(); load(); }}>
