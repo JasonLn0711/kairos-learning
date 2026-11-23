@@ -30,6 +30,7 @@
 
   let board: HTMLDivElement;
   let mode = $state<SceneLayout>('wide');
+  let fittedRatio = $state<number>();
   let visible = $state(false);
   let reduceMotion = $state(true);
   let marker = $state<{ mode: SceneLayout; point: Point; waiting: boolean }>();
@@ -39,12 +40,18 @@
 
   onMount(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const fitPreference = window.matchMedia('(min-width: 1120px) and (min-height: 660px)');
     const updatePreference = () => { reduceMotion = media.matches; };
     const updateVisibility = () => { visible = document.visibilityState === 'visible'; };
-    const updateLayout = () => { mode = board.getBoundingClientRect().width <= compactStageWidth ? 'compact' : 'wide'; };
+    const updateLayout = () => {
+      const { width, height } = board.getBoundingClientRect();
+      mode = width <= compactStageWidth ? 'compact' : 'wide';
+      fittedRatio = fitPreference.matches && width > 0 && height > 0 ? width / height : undefined;
+    };
     const observer = new ResizeObserver(updateLayout);
     observer.observe(board);
     media.addEventListener('change', updatePreference);
+    fitPreference.addEventListener('change', updateLayout);
     document.addEventListener('visibilitychange', updateVisibility);
     updatePreference();
     updateVisibility();
@@ -52,6 +59,7 @@
     return () => {
       observer.disconnect();
       media.removeEventListener('change', updatePreference);
+      fitPreference.removeEventListener('change', updateLayout);
       document.removeEventListener('visibilitychange', updateVisibility);
     };
   });
@@ -93,6 +101,10 @@
 
 {#snippet drawStage(layout: NetworkLayout, variant: SceneLayout)}
   {@const id = stageId + '-' + variant}
+  {@const cameraWidth = fittedRatio ? Math.max(layout.width, layout.height * fittedRatio) : layout.width}
+  {@const cameraHeight = fittedRatio ? Math.max(layout.height, layout.width / fittedRatio) : layout.height}
+  {@const cameraX = (layout.width - cameraWidth) / 2}
+  {@const cameraY = (layout.height - cameraHeight) / 2}
   {@const focus = layout.nodes.find(node => node.id === scene.focus)}
   {@const links = sceneLinks(layout, scene)}
   {@const motion = links.length ? links.map(link => link.path) : focus ? [localMotionPath(focus)] : []}
@@ -104,7 +116,7 @@
   <svg
     class:compact-svg={variant === 'compact'}
     class:wide-svg={variant === 'wide'}
-    viewBox="0 0 {layout.width} {layout.height}"
+    viewBox="{cameraX} {cameraY} {cameraWidth} {cameraHeight}"
     width={layout.width}
     height={layout.height}
     data-scene-layout={variant}
@@ -122,8 +134,8 @@
         <path class="arrowhead" d="M0 0L9 4.5 0 9 2.5 4.5Z" />
       </marker>
     </defs>
-    <rect class="ground" width={layout.width} height={layout.height} />
-    <rect width={layout.width} height={layout.height} fill={'url(#' + id + '-grid)'} />
+    <rect class="ground" x={cameraX} y={cameraY} width={cameraWidth} height={cameraHeight} />
+    <rect x={cameraX} y={cameraY} width={cameraWidth} height={cameraHeight} fill={'url(#' + id + '-grid)'} />
     {#each layout.links as link (link.id)}
       <path class="idle-link" d={link.path} />
     {/each}
@@ -240,6 +252,11 @@
   }
 
   .board { container: request-stage / inline-size; }
+  @media (min-width: 1120px) and (min-height: 660px) {
+    :global(.immersive-lesson.focus) .interactive-stage { display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+    :global(.immersive-lesson.focus) .board { min-height: 0; background: var(--stage-ground); }
+    :global(.immersive-lesson.focus) svg { height: 100%; }
+  }
   svg { display: block; width: 100%; height: auto; }
   .compact-svg { display: none; }
   @container request-stage (max-width: 475px) {

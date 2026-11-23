@@ -110,6 +110,38 @@ for (const locale of locales) {
     }
   });
 
+  test(`${locale.lang} focus mode fits desktop and reading returns focus`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(path);
+    const read = page.getByRole('button', { name: locale.lang === 'zh' ? '完整解說' : 'Read details', exact: true });
+    await expect(read).toBeVisible();
+    for (const [width, height] of [[1280, 720], [1366, 768], [1440, 900], [1920, 1080]]) {
+      await page.setViewportSize({ width, height });
+      expect(await page.evaluate(() => {
+        const root = document.scrollingElement!;
+        return { vertical: root.scrollHeight - innerHeight, horizontal: root.scrollWidth - innerWidth };
+      })).toEqual({ vertical: 0, horizontal: 0 });
+      const stage = await page.locator('.interactive-stage').boundingBox();
+      const controls = await page.locator('.lesson-controls').boundingBox();
+      if (!stage || !controls) throw new Error('Missing focus workspace at ' + width);
+      expect(stage.height).toBeGreaterThan(height * .45);
+      await expect.poll(() => page.locator('.interactive-stage svg:visible').evaluate(svg => {
+        const { width, height } = svg.getBoundingClientRect();
+        const { width: viewWidth, height: viewHeight } = (svg as SVGSVGElement).viewBox.baseVal;
+        return Math.abs(width / height - viewWidth / viewHeight);
+      })).toBeLessThan(.01);
+      expect(controls.y + controls.height).toBeLessThanOrEqual(height);
+    }
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('[data-step="2"]')).toBeVisible();
+    await read.click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.locator('#written-walkthrough h3').last()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(read).toBeFocused();
+  });
+
   test(`${locale.lang} screenshot matrix and responsive article`, async ({ page }) => {
     const evidence = '.local/interactive-evidence';
     await mkdir(evidence, { recursive: true });
@@ -204,6 +236,7 @@ test('step history, keyboard controls, scenarios and comprehension feedback', as
   await page.goto('/en' + lessonPath + '?step=10');
   await expect(current(10)).toBeVisible();
   await expect(next).toBeDisabled();
+  await page.getByRole('button', { name: 'Read details', exact: true }).click();
   await page.locator('main input[type="radio"]').first().check();
   await page.getByRole('button', { name: 'Check answer', exact: true }).click();
   await expect(page.locator('main .feedback[role="status"]')).not.toBeEmpty();

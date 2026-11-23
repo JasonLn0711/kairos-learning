@@ -3,12 +3,13 @@
   import { MAIN, SITE, localized } from '#lib/model.ts';
   import type { Locale } from '../model.ts';
 
-  let { lang, path, title, description, step, children }: {
+  let { lang, path, title, description, step, immersive = false, children }: {
     lang: Locale;
     path: string;
     title: string;
     description: string;
     step?: number;
+    immersive?: boolean;
     children: Snippet;
   } = $props();
   const zh = $derived(lang === 'zh');
@@ -31,6 +32,7 @@
 </svelte:head>
 
 <a class="skip" href="#main">{zh ? '跳至主要內容' : 'Skip to content'}</a>
+<div class="interactive-frame" class:immersive>
 <header class="site-header">
   <a class="brand" href={localized('/', lang)}>
     <span class="mark" aria-hidden="true">K</span><span>CS Kairos <em>Learn</em></span>
@@ -43,6 +45,7 @@
   </nav>
 </header>
 {@render children()}
+{#if !immersive}
 <footer>
   <p><a href={MAIN}>CS Kairos</a></p>
   <nav aria-label={zh ? '頁尾導覽' : 'Footer navigation'}>
@@ -50,7 +53,13 @@
     <a href={localized('/standards/', lang)}>{zh ? '內容原則' : 'Content principles'}</a>
   </nav>
 </footer>
+{/if}
+</div>
 
 <style>
+  .immersive > .site-header { max-width: none; margin: 0; padding: .3rem clamp(.75rem, 2vw, 2rem); gap: .75rem; }
+  @media (min-width: 1120px) and (min-height: 660px) {
+    .immersive { block-size: 100vh; block-size: 100dvh; min-block-size: 42rem; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+  }
   .site-header nav [aria-current='page'] { color: var(--accent); font-weight: 700; }
 </style>

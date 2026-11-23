@@ -4,7 +4,7 @@
   import { page } from '$app/state';
   import { localized } from '#lib/model.ts';
   import { explanationAt, sceneAt, type InteractiveLessonData, type Locale, type Scenario } from '../model.ts';
-  import InteractiveFrame from './InteractiveFrame.svelte';
+  import ImmersiveShell from './ImmersiveShell.svelte';
   import InteractiveStage from './InteractiveStage.svelte';
 
   let { lang, lesson }: { lang: Locale; lesson: InteractiveLessonData } = $props();
@@ -33,7 +33,7 @@
   const stepNumber = $derived(ready ? parseStep((page.shallow?.url ?? page.url).searchParams.get('step')) : 1);
   const step = $derived(lesson.steps[stepNumber - 1]);
   const scene = $derived(sceneAt(step, scenario));
-  const explanation = $derived(explanationAt(step, lang, scenario));
+  const stepExplanation = $derived(explanationAt(step, lang, scenario));
   const progress = $derived(zh
     ? `第 ${stepNumber} 步，共 ${lesson.steps.length} 步`
     : `Step ${stepNumber} of ${lesson.steps.length}`);
@@ -76,16 +76,17 @@
   }
 </script>
 
-<InteractiveFrame {lang} {path} title={lesson.title[lang]} description={lesson.summary[lang]} step={stepNumber}>
-  <main id="main" class="lesson" tabindex="-1">
+<ImmersiveShell {lang} {path} title={lesson.title[lang]} description={lesson.summary[lang]}
+  step={stepNumber} stepId={step.id} {ready}
+  onprevious={() => void setStep(stepNumber - 1)} onnext={() => void setStep(stepNumber + 1)}>
+  {#snippet breadcrumbs()}
     <nav class="breadcrumbs" aria-label={zh ? '所在位置' : 'Breadcrumb'}>
       <a href={localized('/', lang)}>{zh ? '課程' : 'Courses'}</a>
       <a href={localized('/interactive/', lang)}>{zh ? '互動學習' : 'Interactive learning'}</a>
       <span aria-current="page">{zh ? '系統設計' : 'System design'}</span>
     </nav>
-    <h1>{lesson.title[lang]}</h1>
-    <p class="lesson-summary">{lesson.summary[lang]}</p>
-    <section class="workspace" data-step={stepNumber} data-step-id={step.id} aria-label={zh ? '逐步教材' : 'Step-by-step lesson'}>
+  {/snippet}
+  {#snippet rail()}
       <nav class="step-rail" aria-label={zh ? '課程步驟' : 'Lesson steps'}>
         <ol>
           {#each lesson.steps as item (item.id)}
@@ -97,8 +98,8 @@
           {/each}
         </ol>
       </nav>
-
-      <div class="scene-column">
+  {/snippet}
+  {#snippet stage()}
         {#if ready}
           <label class="step-select">
             <span>{zh ? '前往步驟' : 'Go to step'}</span>
@@ -114,6 +115,8 @@
           <span>{zh ? '示意流程' : 'Illustration'}</span>
         </div>
         <InteractiveStage nodes={lesson.nodes} edges={lesson.edges} {scene} {lang} {playing} {replay} onfinish={() => { finished = true; playing = false; }} />
+  {/snippet}
+  {#snippet controls()}
         {#if ready}
           <div class="lesson-controls" role="group" aria-label={zh ? '示意流程控制' : 'Diagram controls'}>
             <div class="step-actions">
@@ -130,8 +133,8 @@
             </div>
           </div>
         {/if}
-      </div>
-
+  {/snippet}
+  {#snippet explanation()}
       <section class="explanation" aria-labelledby="step-title">
         <div class="step-progress">
           <p class="step-position">{progress}</p>
@@ -139,10 +142,10 @@
         </div>
         <h2 id="step-title">{step.title[lang]}</h2>
         <dl>
-          <div class="problem"><dt>{labels.problem}</dt><dd>{explanation.problem}</dd></div>
-          <div><dt>{labels.mechanism}</dt><dd>{explanation.mechanism}</dd></div>
-          <div><dt>{labels.observe}</dt><dd>{explanation.observe}</dd></div>
-          <div><dt>{labels.boundary}</dt><dd>{explanation.boundary}</dd></div>
+          <div class="problem"><dt>{labels.problem}</dt><dd>{stepExplanation.problem}</dd></div>
+          <div><dt>{labels.mechanism}</dt><dd>{stepExplanation.mechanism}</dd></div>
+          <div><dt>{labels.observe}</dt><dd>{stepExplanation.observe}</dd></div>
+          <div><dt>{labels.boundary}</dt><dd>{stepExplanation.boundary}</dd></div>
         </dl>
         {#if ready && step.variant?.when === 'dns-cached'}
           <fieldset class="variation">
@@ -157,13 +160,12 @@
             <label><input type="radio" name="db-query" checked={scenario.dbSlow} onchange={() => { scenario.dbSlow = true; }} /> {zh ? '緩慢查詢' : 'Slow query'}</label>
           </fieldset>
         {/if}
-      </section>
-
       {#if ready}
         <p class="sr-only" role="status">{[progress, step.title[lang], scene.label[lang]].join(zh ? '。' : '. ')}</p>
       {/if}
-    </section>
-
+      </section>
+  {/snippet}
+  {#snippet reading()}
     <div class="lesson-reading">
       {#if ready && stepNumber === lesson.steps.length}
         <section class="comprehension" aria-labelledby="check-title">
@@ -195,7 +197,7 @@
         <ul>{#each lesson.assumptions as assumption}<li>{assumption[lang]}</li>{/each}</ul>
       </section>
 
-      <details id="written-walkthrough" open={!ready}>
+      <details id="written-walkthrough" open>
         <summary>{zh ? '閱讀完整十步文字版' : 'Read the complete ten-step walkthrough'}</summary>
         <p>{zh ? '這份文字版也可在停用 JavaScript 時閱讀。' : 'The written steps are also available with JavaScript disabled.'}</p>
         <ol class="reading-steps">
@@ -236,29 +238,11 @@
         </p>
       </section>
     </div>
-  </main>
-</InteractiveFrame>
+  {/snippet}
+</ImmersiveShell>
 
 <style>
-  /* Hallmark v2.0.0 | custom CS Kairos technical editorial | signature: spatial request map */
-  /* An always-present diagram anchors changing steps and conditions. */
-  .lesson {
-    width: min(100%, 1380px);
-    padding: clamp(1.2rem, 3vw, 2.65rem) clamp(1rem, 3vw, 2.5rem) 4rem;
-    margin-inline: auto;
-    overflow-wrap: break-word;
-  }
-  .lesson > .breadcrumbs { align-items: baseline; margin-bottom: .65rem; }
   .breadcrumbs > :not(:first-child)::before { content: ' / '; margin-right: .55rem; color: var(--muted); }
-  .lesson > h1 { max-width: none; margin: 0 0 .4rem; font-size: clamp(1.9rem, 4vw, 3rem); text-wrap: balance; }
-  .lesson-summary { margin: 0 0 1.4rem; max-width: 73ch; color: var(--muted); }
-  .workspace {
-    display: grid;
-    grid-template-columns: minmax(10rem, .8fr) minmax(0, 3fr) minmax(14rem, 1.4fr);
-    gap: 1.15rem;
-    align-items: start;
-  }
-  .workspace > * { min-width: 0; }
   .step-rail ol { list-style: none; padding: 0; margin: 0; }
   .step-rail li { margin: 0; padding: 0; }
   .step-rail a {
@@ -277,7 +261,6 @@
   .step-rail a:hover { text-decoration: underline; }
   .step-ordinal { font-variant-numeric: tabular-nums; color: var(--muted); }
   .step-rail a[aria-current='step'] { border-inline-start-color: var(--accent); background: var(--soft); color: var(--accent); font-weight: 700; }
-  .scene-column { border: 1px solid var(--line); border-radius: .5rem; }
   .stage-label { display: flex; justify-content: space-between; gap: .6rem; padding: .56rem .78rem; border-bottom: 1px solid var(--line); font-size: .77rem; line-height: 1.4; color: var(--muted); }
   .stage-label span:first-child { color: var(--ink); font-weight: 650; }
   .step-select { display: none; }
@@ -303,9 +286,9 @@
   .step-actions, .motion-controls { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: .6rem; }
   .motion-controls p { margin: 0; color: var(--muted); font-size: .85rem; }
   .lesson-controls button { font-size: .85rem; }
-  .lesson :is(a, button, input, select, summary):focus-visible { outline-offset: 3px; }
-  .lesson button:not(:disabled):active { filter: brightness(.85); }
-  .lesson button:disabled { border-style: dashed; }
+  :is(a, button, input, select, summary):focus-visible { outline-offset: 3px; }
+  button:not(:disabled):active { filter: brightness(.85); }
+  button:disabled { border-style: dashed; }
   .lesson-reading { margin: 2.2rem auto 0; max-width: 75ch; }
   .lesson-reading h2 { margin: .3rem 0 .7rem; }
   .lesson-reading section { margin-bottom: 1.6rem; }
@@ -316,13 +299,11 @@
   .feedback { margin: .8rem 0 0; }
   .metadata { display: flex; flex-wrap: wrap; gap: .7rem; }
   @media (max-width: 1020px) {
-    .workspace { grid-template-columns: minmax(0, 1fr) minmax(14rem, .65fr); }
     .step-rail { display: none; }
     .step-select { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: center; padding: .6rem .78rem; border-bottom: 1px solid var(--line); color: var(--ink); font-size: .9rem; }
     .step-select select { flex: 1 1 15.5rem; min-width: 0; }
   }
   @media (max-width: 790px) {
-    .workspace { grid-template-columns: minmax(0, 1fr); gap: .8rem; }
     .explanation { padding-top: .35rem; }
     .lesson-reading { margin-top: 1.4rem; }
   }
