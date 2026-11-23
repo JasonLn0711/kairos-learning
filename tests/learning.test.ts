@@ -87,3 +87,20 @@ test('CEH study notes have independent bilingual routes and searchable entries',
     assert.equal(getPage((lang==='en'?'/en':'')+'/courses/ceh/v13/')?.route.kind,'ceh');
   }
 });
+
+test('page payloads include the concept directory at the scope used by each route', () => {
+  for (const lang of ['zh', 'en'] as const) {
+    const byKind = (kind: string) => routes.filter(route => route.lang === lang && route.kind === kind);
+    const directory = getPage(byKind('ceh')[0].path)!.concepts;
+    assert.ok(directory.length > 0);
+    for (const route of byKind('module')) {
+      assert.deepEqual(getPage(route.path)!.concepts, directory.filter(c => c.module === route.moduleId));
+    }
+    for (const route of byKind('concept')) {
+      assert.deepEqual(getPage(route.path)!.concepts, directory.filter(c => c.id === route.conceptId));
+    }
+    for (const route of byKind('aase-concept')) {
+      assert.deepEqual(getPage(route.path)!.concepts, []);
+    }
+  }
+});
