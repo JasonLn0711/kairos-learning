@@ -90,6 +90,24 @@
         {#each cards as card}<tr><th scope="row">{card.label[lang]}</th><td>{card.value[lang]}</td></tr>{/each}
       </tbody>
     </table>
+  {:else if scene.kind === 'comparison' || scene.kind === 'evidence-check'}
+    <dl class="ledger" data-family={scene.kind}>
+      {#each cards as card}
+        <div><dt>{card.label[lang]}</dt><dd>{card.value[lang]}</dd></div>
+      {/each}
+    </dl>
+  {:else if scene.kind === 'document-retrieval'}
+    <dl class="sources-grid">
+      {#each cards as card}
+        <div><dt>{card.label[lang]}</dt><dd>{card.value[lang]}</dd></div>
+      {/each}
+    </dl>
+  {:else if scene.kind === 'timeline-trace' || scene.kind === 'trust-boundary'}
+    <dl class="observations" data-family={scene.kind}>
+      {#each cards as card}
+        <div><dt>{card.label[lang]}</dt><dd>{card.value[lang]}</dd></div>
+      {/each}
+    </dl>
   {:else}
     <dl class="cards" data-card-layout={scene.kind}>
       {#each cards as card}
@@ -108,6 +126,22 @@
 </div>
 
 <style>
+  .ledger,.observations,.sources-grid { margin:0; min-inline-size:0; }
+  .ledger { border-block:2px solid var(--accent); background:var(--paper); }
+  .ledger > div { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); }
+  .ledger > div + div { border-block-start:1px solid var(--line); }
+  .ledger :is(dt,dd) { margin:0; padding:.48rem .65rem; overflow-wrap:anywhere; }
+  .ledger dt { border-inline-end:1px solid var(--line); }
+  .ledger[data-family='evidence-check'] dt { color:var(--ink); border-inline-start:4px double var(--accent); }
+  .sources-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(10rem,100%),1fr));gap:.7rem}
+  .sources-grid > div {position:relative;border:1px solid var(--line);padding:.65rem .8rem;background:var(--paper);box-shadow:2px 3px 0 var(--line);overflow-wrap:anywhere}
+  .sources-grid dt {padding-inline-end:1rem;border-block-end:1px solid var(--line);padding-block-end:.3rem}
+  .sources-grid > div::after {content:'';position:absolute;inset:.28rem .28rem auto auto;border-inline-end:2px solid var(--accent);border-block-start:2px solid var(--accent);inline-size:.6rem;block-size:.6rem}
+  .observations {display:grid;gap:.45rem}
+  .observations > div {position:relative;border-inline-start:2px solid var(--accent);padding:.35rem .8rem;background:var(--paper);overflow-wrap:anywhere}
+  .observations[data-family='timeline-trace'] > div::before {content:'';position:absolute;inset-inline-start:-.32rem;inset-block-start:.65rem;inline-size:.5rem;block-size:.5rem;border-radius:50%;background:var(--accent)}
+  .observations[data-family='trust-boundary'] > div {border:1px dashed var(--muted);border-inline-start:4px solid var(--accent)}
+  @container (max-width:21rem) { .ledger > div {grid-template-columns:1fr} .ledger dt{border-inline-end:0;padding-block-end:0} }
   .diagram { display: grid; gap: .55rem; min-inline-size: 0; container-type: inline-size; }
   .cards, .support-network { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr)); gap: .55rem; margin: 0; }
   .cards > div, .support-network > div { min-inline-size: 0; min-block-size: 0; overflow-wrap: anywhere; border: 1px solid var(--line); background: var(--paper); border-radius: .35rem; padding: .55rem .7rem; }
