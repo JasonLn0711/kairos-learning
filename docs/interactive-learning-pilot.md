@@ -93,3 +93,7 @@ After review and authorization, use the existing GitHub Pages workflow and its p
 ## Planning and related material
 
 The [daily note](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/days/2026-11-23.md#kairos-interactive-pilot-2026-11-23) records the layout decision and acceptance gate. The [weekly plan](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/weekly-plan.md#kairos-interactive-pilot-2026-11-23) tracks capacity and the [site project](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-interactive-pilot-2026-11-23) tracks status. See the [publishing policy](publishing-security.md) and [previous performance evidence](shared-rust-tools.md#route-payload-performance-2026-11-23).
+
+## Immersive workspace follow-up
+
+The shared focus workspace and six-chapter AASE M02 atlas extend this pilot. See the [M02 engineering receipt](interactive/aase-m02-delivery.md) for its acceptance and release evidence.

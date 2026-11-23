@@ -41,3 +41,7 @@ Bilingual educational perspectives use a separate catalog with the shared public
 ## 全站共同規範
 
 所有教學頁面遵循[文章與響應式閱讀規範](article-standards.md)。既有歷史規則有差異時，以共同規範的閱讀品質與收合要求為準；資料契約及原始教材保留要求持續適用。
+
+## Immersive interactive curriculum
+
+The existing static app serves a shared focus workspace and bilingual interactive atlas. Publication-aware routes, search, sitemap and lesson links derive from the validated catalogs. The original AASE articles remain the canonical curriculum. See the [engineering receipt](interactive/aase-m02-delivery.md) and [source coverage](interactive/aase-m02-coverage.md).
