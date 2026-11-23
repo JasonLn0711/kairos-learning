@@ -121,3 +121,12 @@ Jason 指定用 rust-anything 找出可改善的路徑，Codex 執行剖析、�
 以遠端主線 `2a38e1cd` 為整合基線，保留 SvelteKit 3 的模組路徑。乾淨建置的索引包含 252 筆項目。重跑 960 次查詢，結果順序一致，計時由 7.707 秒降至 0.513 秒，另需 19 毫秒準備索引。這是一組本機配對量測。
 
 發布驗證三種模式皆通過 414 頁、1,062 項資產，零錯誤。該次 Python、shadow、Rust 模式分別耗時 2.06、2.51、0.95 秒。429 項 Node 測試、型別檢查、內容驗證、發布邊界與完整發布驗證均通過。Rust 閘門通過 52/52 個案例，連結解析的兩項 Python 回歸測試也通過。
+
+<a id="kairos-performance-production-2026-11-23"></a>
+## 2026-11-23｜效能變更正式站回讀
+
+[AASE 目錄共用的 Pages 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/45031723250)成功部署 `2a38e1cd`。[整合版 Pages 工作](https://github.com/JasonLn0711/kairos-learning/actions/runs/45032690910)成功部署 `c8a5ed14`，內容、型別、單元、發布邊界、靜態站驗證與下載校驗步驟皆成功。
+
+11/23 以 Chrome 讀取正式站。兩語均成功載入 252 筆索引。[中文搜尋](https://learn.cs-kairos.com/search/)「資料洩漏」回傳 3 筆，[英文搜尋](https://learn.cs-kairos.com/en/search/)「data leakage」回傳 6 筆，兩語均顯示零筆結果狀態。正式站檢查涵蓋搜尋功能，本機配對量測提供效能數據。維護者日後選用 Rust 時，先對當次產物執行 shadow 比對。
+
+[11/22 原始工作](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W47/days/2026-11-22.md#search-and-release-performance-2026-11-22) · [11/23 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/days/2026-11-23.md#kairos-performance-production-2026-11-23) · [W48 容量](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/weekly-plan.md#kairos-performance-production-2026-11-23)
