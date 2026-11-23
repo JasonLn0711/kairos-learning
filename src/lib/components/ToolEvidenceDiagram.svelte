@@ -1,12 +1,12 @@
 <script lang="ts">
  import type {ConceptVisual} from '#lib/concepts.ts';
- let {diagram,number,lang}:{diagram:ConceptVisual;number:1|2|3|4;lang:'zh'|'en'}=$props();
+ let {diagram,number,lang,courseLinks}:{diagram:ConceptVisual;number:1|2|3|4;courseLinks?:(string|null)[];lang:'zh'|'en'}=$props();
 </script>
 <figure class="tool-evidence" class:tool-flow={number===1} class:permission-pair={number===2} class:course-map={number===3} class:execution-record={number===4} data-figure={number}>
  <figcaption><strong>{diagram.caption}</strong></figcaption>
  {#if number===1}<p class="lead">{diagram.description}</p><svg class="initial-arrow" aria-hidden="true" viewBox="0 0 24 32"><path d="M12 2v26m-7-7 7 7 7-7"/></svg>{/if}
- <ol>{#each diagram.items as item,i}<li class:accepted={(number===1&&i===4)||(number===2&&i===0)} class:prohibited={number===2&&i===1} class:record-success={number===4&&i<3} class:record-missing={number===4&&i===3}>
-  {#if number===3}<a href={`${lang==='en'?'/en':''}/courses/aase/v1/m02/concepts/m02-0${i+1}/`}>{item.title}</a>{:else}<strong>{item.title}</strong>{/if}<p>{item.body}</p>
+ <ol>{#each diagram.items as item,i}{@const href=courseLinks?.[i]}<li class:accepted={(number===1&&i===4)||(number===2&&i===0)} class:prohibited={number===2&&i===1} class:record-success={number===4&&i<3} class:record-missing={number===4&&i===3}>
+  {#if number===3&&href}<a {href}>{item.title}</a>{:else}<strong>{item.title}</strong>{/if}<p>{item.body}</p>
   {#if number===1&&i<4}<svg class="arrow" aria-hidden="true" viewBox="0 0 24 32"><path d="M12 2v26m-7-7 7 7 7-7"/></svg>{/if}
  </li>{/each}</ol>
  {#if number!==1}<p class="description">{diagram.description}</p>{/if}

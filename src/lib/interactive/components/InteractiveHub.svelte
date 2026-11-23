@@ -3,7 +3,7 @@
   import type { InteractiveSummary, Locale } from '../model.ts';
   import InteractiveFrame from './InteractiveFrame.svelte';
 
-  let { lang, lessons }: { lang: Locale; lessons: InteractiveSummary[] } = $props();
+  let { lang, lessons, hasAaseAtlas }: { lang: Locale; lessons: InteractiveSummary[]; hasAaseAtlas: boolean } = $props();
   const zh = $derived(lang === 'zh');
   const heading = $derived(zh ? '互動學習' : 'Interactive learning');
   const description = $derived(zh ? '沿著圖解看系統怎麼運作，改變條件，比較結果。' : 'Follow a system diagram, change a condition, and compare what happens.');
@@ -16,6 +16,12 @@
     </nav>
     <h1>{heading}</h1>
     <p class="intro">{description}</p>
+    {#if hasAaseAtlas}
+      <section class="m02-discovery">
+        <h2><a href={localized('/interactive/aase/m02/', lang)}>{zh ? 'AASE M02 互動概念圖譜' : 'AASE M02 interactive atlas'}</a></h2>
+        <p>{zh ? '從語言模型怎麼讀文字，到工具何時執行、如何驗收。' : 'From how a language model reads text to when tools execute and how to verify the result.'}</p>
+      </section>
+    {/if}
     {#each lessons as lesson (lesson.id)}
       <article class="feature">
         <div class="feature-copy">
@@ -68,6 +74,8 @@
   .breadcrumbs { align-items: baseline; margin-bottom: 1rem; }
   .breadcrumbs [aria-current]::before { content: ' / '; margin-right: .55rem; color: var(--muted); }
   .hub h1 { margin: .3rem 0 .55rem; font-size: clamp(2.45rem, 6vw, 4.4rem); max-width: 24ch; text-wrap: balance; }
+  .m02-discovery { border-block: 1px solid var(--line); margin-block: 1rem; }
+  .m02-discovery h2 { margin: .75rem 0 0; }
   .intro { margin: 0 0 2rem; max-width: 62ch; color: var(--muted); font-size: 1.08rem; }
   .feature {
     background: var(--atlas-paper);

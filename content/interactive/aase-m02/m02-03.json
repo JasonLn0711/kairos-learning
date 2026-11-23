@@ -1,0 +1,1836 @@
+[
+  {
+    "slug": "kv-cache",
+    "title": {
+      "zh": "KV Cache｜重用注意力中間結果",
+      "en": "KV Cache: Reusing Attention State"
+    },
+    "objective": {
+      "zh": "在相容的因果解碼中，分辨可重用的舊 K/V 與新位置的運算。",
+      "en": "Distinguish reusable earlier K/V from work required at the new position."
+    },
+    "scenes": [
+      {
+        "id": "01",
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "start",
+          "office",
+          "kv-cache"
+        ],
+        "title": {
+          "zh": "前綴已處理",
+          "en": "The prefix is processed"
+        },
+        "problem": {
+          "zh": "每生成一個 token，都得從頭做一樣的計算嗎？",
+          "en": "Must decoding repeat the same computations at each token?"
+        },
+        "mechanism": {
+          "zh": "把已知的合成前綴 A、B 依序處理。注意力層已為兩個位置算好鍵和值（K/V），可由推論引擎暫存。",
+          "en": "Process the two tokens A and B in the toy prefix. The attention layer already computed a key and value (K/V) at each position, which the inference engine may retain."
+        },
+        "observe": {
+          "zh": "畫面分開顯示 A 與 B 的 K/V，下個位置才會決定這批狀態能否重用。",
+          "en": "The display shows K/V for A and B separately. The next position can reuse these entries if the prefix is compatible."
+        },
+        "boundary": {
+          "zh": "字母只是示意 token；實際分詞由 tokenizer 決定。",
+          "en": "Letters stand for tokens; the actual boundaries depend on the tokenizer."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "位置 A",
+              "en": "Position A"
+            },
+            "value": {
+              "zh": "K/A、V/A 已算好",
+              "en": "Key A and value A computed"
+            }
+          },
+          {
+            "label": {
+              "zh": "位置 B",
+              "en": "Position B"
+            },
+            "value": {
+              "zh": "K/B、V/B 已算好",
+              "en": "Key B and value B computed"
+            }
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "kind": "process-flow",
+        "sourceAnchors": [
+          "kv-cache"
+        ],
+        "title": {
+          "zh": "加入下一個 token",
+          "en": "Append the next token"
+        },
+        "problem": {
+          "zh": "加入 C 時，哪些工作能略過？",
+          "en": "When C arrives, which work can be skipped?"
+        },
+        "mechanism": {
+          "zh": "C 到來時仍須計算新位置表示，並對可見的 A、B、C 做注意力。若保留且可相容，舊位置的 K/V 可直接取用；若無快取，這個玩具路徑會重算前綴。",
+          "en": "When C arrives, compute the new position and attend to A, B and C. A compatible cache supplies earlier K/V; the uncached path in this example recomputes the prefix."
+        },
+        "observe": {
+          "zh": "比較兩條路徑的 K/V 計算位置數。這裡每個位置算作一次概念計數。",
+          "en": "Compare the positions where K/V must be computed. Count one conceptual operation per position."
+        },
+        "boundary": {
+          "zh": "這是運算路徑圖，沒有量測速度。",
+          "en": "These are computation paths without measured timings."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "新位置 C",
+              "en": "New position C"
+            },
+            "value": {
+              "zh": "仍要計算",
+              "en": "Always computed"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "相容前綴",
+              "en": "Matching prefix"
+            },
+            "result": {
+              "zh": "只為 C 算新 K/V；注意力仍使用 A、B、C。",
+              "en": "Only C adds new K/V this step. Attention still uses A, B and C."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "A、B",
+                  "en": "A and B"
+                },
+                "value": {
+                  "zh": "重用兩個位置",
+                  "en": "Reuse two positions"
+                }
+              },
+              {
+                "label": {
+                  "zh": "C",
+                  "en": "C"
+                },
+                "value": {
+                  "zh": "計算一個新位置",
+                  "en": "Compute one new position"
+                }
+              },
+              {
+                "label": {
+                  "zh": "本步重算",
+                  "en": "Computed this step"
+                },
+                "value": {
+                  "zh": "1 個位置",
+                  "en": "1 position"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "沒有快取",
+              "en": "No cache"
+            },
+            "result": {
+              "zh": "此路徑先計算 A、B、C 的 K/V，再做注意力。",
+              "en": "This path computes K/V for A, B and C before attention."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "A、B",
+                  "en": "A and B"
+                },
+                "value": {
+                  "zh": "重新計算兩個位置",
+                  "en": "Recompute two positions"
+                }
+              },
+              {
+                "label": {
+                  "zh": "C",
+                  "en": "C"
+                },
+                "value": {
+                  "zh": "計算一個新位置",
+                  "en": "Compute one new position"
+                }
+              },
+              {
+                "label": {
+                  "zh": "本步重算",
+                  "en": "Computed this step"
+                },
+                "value": {
+                  "zh": "3 個位置",
+                  "en": "3 positions"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "kv-cache"
+        ],
+        "title": {
+          "zh": "確認效益的證據",
+          "en": "Check evidence of benefit"
+        },
+        "problem": {
+          "zh": "下次開新工作階段，這些 K/V 可以當交接筆記嗎？",
+          "en": "Can you use these K/V tensors as next-session handoff notes?"
+        },
+        "mechanism": {
+          "zh": "K/V 是推論引擎的中間狀態。引擎配置與前綴匹配規則影響跨請求重用；隔天的任務交接則需要可讀回、可追蹤的外部紀錄。",
+          "en": "K/V is internal inference state. Cross-request reuse depends on engine settings and prefix matching. Next-day handoff needs a separate record that can be retrieved and traced."
+        },
+        "observe": {
+          "zh": "若要評估快取效果，固定引擎和負載再量延遲、吞吐量與記憶體。這裡只有可比對的運算路徑。",
+          "en": "To evaluate a cache, hold the engine and workload fixed and measure latency, throughput and memory. This scene only compares computation paths."
+        },
+        "boundary": {
+          "zh": "快取會佔用記憶體，且不會增加 context window。",
+          "en": "Caching consumes memory and does not extend the context window."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "快取命中",
+              "en": "Cache hit"
+            },
+            "value": {
+              "zh": "可重用前綴 K/V",
+              "en": "Prefix K/V can be reused"
+            }
+          },
+          {
+            "label": {
+              "zh": "跨日交接",
+              "en": "Next-day handoff"
+            },
+            "value": {
+              "zh": "另存版本、待辦與測試證據",
+              "en": "Store revision, open work and test evidence separately"
+            }
+          },
+          {
+            "label": {
+              "zh": "效能驗證",
+              "en": "Performance verification"
+            },
+            "value": {
+              "zh": "固定負載再量測",
+              "en": "Measure under a fixed workload"
+            }
+          }
+        ]
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "快取命中後，哪項工作仍必要？",
+        "en": "After a cache hit, what work remains?"
+      },
+      "options": [
+        {
+          "zh": "處理新位置的表示與注意力",
+          "en": "Compute representations and attention for the new position"
+        },
+        {
+          "zh": "自動讀取昨天的交接決策",
+          "en": "Automatically read yesterday’s handoff decisions"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "命中重用的是之前的 K/V。",
+          "en": "A hit reuses earlier K/V."
+        },
+        {
+          "zh": "跨日交接需要另存並讀回對應資料。",
+          "en": "Cross-day handoff requires separately saved and retrieved information."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "compaction",
+    "title": {
+      "zh": "Compaction｜濃縮對話",
+      "en": "Compaction: Summarizing Conversation"
+    },
+    "objective": {
+      "zh": "用逐條比對確認摘要保留規則、例外與待辦。",
+      "en": "Compare a summary against rules, exceptions and outstanding work."
+    },
+    "scenes": [
+      {
+        "id": "01",
+        "kind": "comparison",
+        "sourceAnchors": [
+          "summary-and-notes"
+        ],
+        "title": {
+          "zh": "整理工作桌",
+          "en": "Sort the working context"
+        },
+        "problem": {
+          "zh": "歷史對話變長，哪些內容值得保留？",
+          "en": "As the conversation grows, what should be retained?"
+        },
+        "mechanism": {
+          "zh": "先從對話找出三條規則、原文位置與尚未決定的問題，再把閒聊移出工作包。這些項目會作為後續摘要對照基準。",
+          "en": "Extract the three rules, the source locator and the unresolved question before removing conversational detail. Keep the extracted items to compare against the summary."
+        },
+        "observe": {
+          "zh": "原規格要求平日二科、週末三科，並允許考前一週調整；假日規則仍待確認。",
+          "en": "The source allows two subjects on weekdays, three on weekends and adjustment during the week before exams. Public holidays remain undecided."
+        },
+        "boundary": {
+          "zh": "整理用來維持可用工作上下文，摘要本身仍是衍生資料。",
+          "en": "Compaction maintains workable context; the summary remains derived data."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "會議原文節錄",
+              "en": "Conversation excerpt"
+            },
+            "value": {
+              "zh": "平日最多二科；週末最多三科。考前一週可調整。假日怎麼辦，先待確認。",
+              "en": "At most two on weekdays and three on weekends. The week before exams may be adjusted. We still need to decide what to do on public holidays."
+            }
+          },
+          {
+            "label": {
+              "zh": "原文依據",
+              "en": "Source record"
+            },
+            "value": {
+              "zh": "需求 v3 §4.2 與考前例外",
+              "en": "Requirements v3 §4.2 and the pre-exam exception"
+            }
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "kind": "comparison",
+        "sourceAnchors": [
+          "summary-and-notes"
+        ],
+        "title": {
+          "zh": "檢查摘要差異",
+          "en": "Check summary differences"
+        },
+        "problem": {
+          "zh": "一行摘要是否足以帶著規格繼續做？",
+          "en": "Can one line carry all the rules into the next task?"
+        },
+        "mechanism": {
+          "zh": "把同一段對話縮為兩種摘要。切換後逐條對照，找出哪些條件保留、改寫或遺漏。",
+          "en": "Compress the same dialogue into one of two summaries. Switch between them and compare against the source clause by clause."
+        },
+        "observe": {
+          "zh": "摘要寫每天二科時，找出週末分支、考前一週例外與未決問題是否都還在。",
+          "en": "When a summary says two every day, check the weekend branch, the adjustment week and the open holiday question."
+        },
+        "boundary": {
+          "zh": "只有與採用中的原規格一致才算保真。",
+          "en": "Fidelity depends on agreement with the applicable source."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "驗證基準",
+              "en": "Baseline"
+            },
+            "value": {
+              "zh": "原文三條條件",
+              "en": "Three source constraints"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "過度濃縮",
+              "en": "Over-compressed"
+            },
+            "result": {
+              "zh": "平日值仍吻合；週末值被改寫，考前例外及未決問題遺漏。",
+              "en": "The weekday value survives. The weekend value is overwritten; the exception and open question are missing."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "摘要",
+                  "en": "Summary"
+                },
+                "value": {
+                  "zh": "「每天最多二科。」",
+                  "en": "“At most two subjects per day.”"
+                }
+              },
+              {
+                "label": {
+                  "zh": "平日｜保留",
+                  "en": "Weekday | preserved"
+                },
+                "value": {
+                  "zh": "二科",
+                  "en": "Two"
+                }
+              },
+              {
+                "label": {
+                  "zh": "週末｜改寫",
+                  "en": "Weekend | overwritten"
+                },
+                "value": {
+                  "zh": "二科，原規格為三科",
+                  "en": "Two, rather than the original three"
+                }
+              },
+              {
+                "label": {
+                  "zh": "例外與未決｜遺漏",
+                  "en": "Exception and open issue | missing"
+                },
+                "value": {
+                  "zh": "考前一週調整與假日問題",
+                  "en": "Pre-exam adjustment and holiday question"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "結構化摘要",
+              "en": "Structured summary"
+            },
+            "result": {
+              "zh": "摘要保留原規格分支、例外與追溯資訊。",
+              "en": "The summary preserves the branches, exception and traceability."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "摘要",
+                  "en": "Summary"
+                },
+                "value": {
+                  "zh": "平日二科、週末三科；考前一週可調整。假日待查。",
+                  "en": "Two on weekdays, three on weekends. Adjustment allowed in the week before exams. Holidays remain open."
+                }
+              },
+              {
+                "label": {
+                  "zh": "週末｜保留",
+                  "en": "Weekend | preserved"
+                },
+                "value": {
+                  "zh": "三科",
+                  "en": "Three"
+                }
+              },
+              {
+                "label": {
+                  "zh": "例外｜保留",
+                  "en": "Exception | preserved"
+                },
+                "value": {
+                  "zh": "考前一週可調整",
+                  "en": "Adjustable during the week before exams"
+                }
+              },
+              {
+                "label": {
+                  "zh": "來源與未決",
+                  "en": "Source and open issue"
+                },
+                "value": {
+                  "zh": "v3 §4.2；假日待確認",
+                  "en": "v3 §4.2; confirm holidays"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "summary-and-notes",
+          "apply"
+        ],
+        "title": {
+          "zh": "讓測試驗證摘要",
+          "en": "Test the summarized rule"
+        },
+        "problem": {
+          "zh": "摘要變短後，要怎麼知道實作還符合規格？",
+          "en": "How can you verify the code still follows the original after summarization?"
+        },
+        "mechanism": {
+          "zh": "先跑週六三科、平日三科這兩個可區分案例。考前一週只寫「可調整」，上限尚未明確，先保留待釐清項目再設測試。",
+          "en": "Start with two discriminating cases: three subjects on Saturday and three on a weekday. The pre-exam rule allows adjustment without specifying a limit. Record the open point before designing its test."
+        },
+        "observe": {
+          "zh": "週六選三科能揭露每天只准二科的錯誤。",
+          "en": "Three Saturday subjects expose a mistaken flat limit of two."
+        },
+        "boundary": {
+          "zh": "例外尚未具體指定時，接受標準要由負責人補足。",
+          "en": "The owner must supply acceptance criteria for an unspecified exception."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "週六三科",
+              "en": "Saturday, three subjects"
+            },
+            "value": {
+              "zh": "原規格應接受",
+              "en": "Source requires acceptance"
+            }
+          },
+          {
+            "label": {
+              "zh": "平日三科",
+              "en": "Weekday, three subjects"
+            },
+            "value": {
+              "zh": "原規格應拒絕",
+              "en": "Source requires rejection"
+            }
+          },
+          {
+            "label": {
+              "zh": "例外數值",
+              "en": "Exception limit"
+            },
+            "value": {
+              "zh": "需先確認可調整範圍",
+              "en": "Confirm the adjustment range"
+            }
+          }
+        ]
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "摘要寫每天最多兩科，最直接的檢查是什麼？",
+        "en": "The summary says at most two every day. What is the most direct check?"
+      },
+      "options": [
+        {
+          "zh": "比對原文的週末與考前條件",
+          "en": "Compare weekend and pre-exam constraints with the source"
+        },
+        {
+          "zh": "測量摘要字數是否變少",
+          "en": "Measure whether the summary is shorter"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "逐條比對能抓出被覆寫或遺漏的規則。",
+          "en": "A clause-by-clause check finds overwritten or omitted rules."
+        },
+        {
+          "zh": "字數只說明長度。",
+          "en": "Word count measures length only."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "rag",
+    "title": {
+      "zh": "RAG｜先找來源再回答",
+      "en": "RAG: Retrieve Sources Before Answering"
+    },
+    "objective": {
+      "zh": "用來源版本和範圍判斷檢索結果是否足以支援答案。",
+      "en": "Evaluate whether retrieved evidence supports an answer using version and scope."
+    },
+    "scenes": [
+      {
+        "id": "01",
+        "kind": "document-retrieval",
+        "sourceAnchors": [
+          "retrieval"
+        ],
+        "title": {
+          "zh": "限定來源範圍",
+          "en": "Set the retrieval scope"
+        },
+        "problem": {
+          "zh": "要回答週末上限，該查哪類來源？",
+          "en": "What source should answer a weekend limit question?"
+        },
+        "mechanism": {
+          "zh": "把問題交給本機玩具檢索，在使用者有權讀取的規格中查候選。把選定的版本與條文放進生成輸入，再答覆。",
+          "en": "Send the question to the local toy retrieval stage. It considers only requirements the actor is allowed to read. Pass the chosen revision and clause into generation before answering."
+        },
+        "observe": {
+          "zh": "從「週末科目上限」追到有權讀取的候選規格，再檢查哪份是生效版本。",
+          "en": "Trace the weekend-limit query to authorized candidates and then check which revision applies."
+        },
+        "boundary": {
+          "zh": "選到的文件是資料，權限仍由系統強制執行。",
+          "en": "A selected document is input data; the system enforces access."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "本次查問",
+              "en": "Query"
+            },
+            "value": {
+              "zh": "週末最多幾科？",
+              "en": "How many subjects are allowed on weekends?"
+            }
+          },
+          {
+            "label": {
+              "zh": "檢索範圍",
+              "en": "Authorized scope"
+            },
+            "value": {
+              "zh": "可讀規格 v1、v3",
+              "en": "Readable requirements v1 and v3"
+            }
+          },
+          {
+            "label": {
+              "zh": "交給生成",
+              "en": "Generation input"
+            },
+            "value": {
+              "zh": "選中的版本與條文",
+              "en": "Selected version and clause"
+            }
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "kind": "document-retrieval",
+        "sourceAnchors": [
+          "retrieval"
+        ],
+        "title": {
+          "zh": "版本改變答案",
+          "en": "Version changes the answer"
+        },
+        "problem": {
+          "zh": "如果 v1 排第一，生成答案可能出錯在哪？",
+          "en": "If v1 ranks first, where can generation go wrong?"
+        },
+        "mechanism": {
+          "zh": "生成可以忠實讀出選中的條文，卻仍可能用了失效版本。切換 v1 與 v3，保留相同的使用者問題並核對哪份有權威。",
+          "en": "Generation can faithfully report an obsolete clause. Keep the question fixed while switching between v1 and v3, then verify which source is authoritative."
+        },
+        "observe": {
+          "zh": "切換版本，讀同一問題得到的答案。",
+          "en": "Switch versions and compare the answer to the same question."
+        },
+        "boundary": {
+          "zh": "語氣有信心不能補足版本錯誤。",
+          "en": "Confident wording cannot repair a version error."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "查詢",
+              "en": "Query"
+            },
+            "value": {
+              "zh": "週末科目上限",
+              "en": "Weekend limit"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "選取舊版 v1",
+              "en": "Select stale v1"
+            },
+            "result": {
+              "zh": "「最多二科」符合舊條文，但不適用現在的需求。",
+              "en": "“At most two” fits the old clause but does not apply to the current requirements."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "送到生成的來源",
+                  "en": "Source supplied"
+                },
+                "value": {
+                  "zh": "規格 v1｜已被取代",
+                  "en": "Requirements v1 | superseded"
+                }
+              },
+              {
+                "label": {
+                  "zh": "原文條件",
+                  "en": "Clause"
+                },
+                "value": {
+                  "zh": "週末上限二科",
+                  "en": "Weekend maximum 2"
+                }
+              },
+              {
+                "label": {
+                  "zh": "流暢回覆",
+                  "en": "Fluent answer"
+                },
+                "value": {
+                  "zh": "「週末最多二科。」",
+                  "en": "“At most two subjects on weekends.”"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "選取現行 v3",
+              "en": "Select current v3"
+            },
+            "result": {
+              "zh": "現行合成規格支持週末最多三科，並附可查證的位置。",
+              "en": "The toy requirements support three on weekends and provide a checkable locator."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "送到生成的來源",
+                  "en": "Source supplied"
+                },
+                "value": {
+                  "zh": "需求 v3 §4.2｜生效",
+                  "en": "Requirements v3 §4.2 | current"
+                }
+              },
+              {
+                "label": {
+                  "zh": "原文條件",
+                  "en": "Clause"
+                },
+                "value": {
+                  "zh": "週末上限三科",
+                  "en": "Weekend maximum 3"
+                }
+              },
+              {
+                "label": {
+                  "zh": "可追溯回覆",
+                  "en": "Traceable answer"
+                },
+                "value": {
+                  "zh": "「週末最多三科，見 v3 §4.2。」",
+                  "en": "“At most three subjects on weekends. See v3 §4.2.”"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "retrieval"
+        ],
+        "title": {
+          "zh": "把來源當證據",
+          "en": "Treat sources as evidence"
+        },
+        "problem": {
+          "zh": "有引用就可以通過驗收嗎？",
+          "en": "Is a citation sufficient for acceptance?"
+        },
+        "mechanism": {
+          "zh": "先查讀取權限、生效版號與條文適用範圍，再用平日、週末的區辨測試檢查程式。引用來源與實作結果需要各自的證據。",
+          "en": "Check access, active revision and clause scope. Then test the program with discriminating weekday and weekend cases. Source grounding and implementation results need separate evidence."
+        },
+        "observe": {
+          "zh": "有版本與節次可回查，比只有自信回答更容易找出錯配。",
+          "en": "A version and section make a mismatch easier to diagnose than confidence alone."
+        },
+        "boundary": {
+          "zh": "檢索、生成及程式驗收是不同結果。",
+          "en": "Retrieval, generation and program acceptance establish different results."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "來源核對",
+              "en": "Grounding check"
+            },
+            "value": {
+              "zh": "v3 §4.2、生效、週末條件",
+              "en": "v3 §4.2, current, weekend condition"
+            }
+          },
+          {
+            "label": {
+              "zh": "程式核對",
+              "en": "Behavior check"
+            },
+            "value": {
+              "zh": "週六三科接受，平日三科拒絕",
+              "en": "Accept three on Saturday, reject three on a weekday"
+            }
+          }
+        ]
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "舊 v1 找得到也完全吻合其舊條文，下一步是什麼？",
+        "en": "Retrieved v1 supports its own wording. What comes next?"
+      },
+      "options": [
+        {
+          "zh": "確認適用版本與條件，再回答",
+          "en": "Confirm applicable version and scope before answering"
+        },
+        {
+          "zh": "看到引文就直接採用舊規則",
+          "en": "Adopt the old rule as soon as it is cited"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "引用證明可追溯到文字；適用性另查。",
+          "en": "A citation provides traceability; applicability requires a separate check."
+        },
+        {
+          "zh": "能找到舊文件不代表它仍有效。",
+          "en": "Discoverability does not establish currency."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "memory",
+    "title": {
+      "zh": "Memory｜跨階段延續工作",
+      "en": "Memory: Continuing Across Sessions"
+    },
+    "objective": {
+      "zh": "分辨交接已存、讀入本次上下文和內容仍有效三件事。",
+      "en": "Distinguish saving a handoff, loading it and confirming it remains valid."
+    },
+    "scenes": [
+      {
+        "id": "01",
+        "kind": "timeline-trace",
+        "sourceAnchors": [
+          "memory"
+        ],
+        "title": {
+          "zh": "建立交接紀錄",
+          "en": "Save the handoff"
+        },
+        "problem": {
+          "zh": "隔天的新工作階段需要知道什麼？",
+          "en": "What should tomorrow’s session know?"
+        },
+        "mechanism": {
+          "zh": "工作結束時另存一份交接，記下已完成、未完成、來源版號與可重現的證據。隔天若要使用，還要讀回載入。",
+          "en": "At the end of the session, store a handoff with completed and pending work, source revision and reproducible evidence. The next session must retrieve and load it."
+        },
+        "observe": {
+          "zh": "新增科目已完成；週末排程待修。",
+          "en": "Adding subjects is done; weekend scheduling remains open."
+        },
+        "boundary": {
+          "zh": "交接儲存在本次上下文之外，可獨立管理期限和權限。",
+          "en": "The handoff lives outside current context and can have its own retention and permissions."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "外部交接",
+              "en": "Stored handoff"
+            },
+            "value": {
+              "zh": "科目新增功能完成",
+              "en": "Add-subject feature complete"
+            }
+          },
+          {
+            "label": {
+              "zh": "未決",
+              "en": "Open work"
+            },
+            "value": {
+              "zh": "週末排程待修",
+              "en": "Weekend scheduling still open"
+            }
+          },
+          {
+            "label": {
+              "zh": "版本",
+              "en": "Revision"
+            },
+            "value": {
+              "zh": "需求 v3",
+              "en": "Requirements v3"
+            }
+          },
+          {
+            "label": {
+              "zh": "核對下一步",
+              "en": "Next evidence"
+            },
+            "value": {
+              "zh": "重跑週末三科案例",
+              "en": "Rerun the three-subject weekend case"
+            }
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "kind": "document-retrieval",
+        "sourceAnchors": [
+          "memory"
+        ],
+        "title": {
+          "zh": "確認確實讀回",
+          "en": "Confirm the note is loaded"
+        },
+        "problem": {
+          "zh": "有紀錄就會影響模型的下一個回覆嗎？",
+          "en": "Does an existing note automatically affect the next reply?"
+        },
+        "mechanism": {
+          "zh": "讀回時先檢查是否授權、是否過期、是否與目前來源衝突，再確認有放入本次上下文。",
+          "en": "Check permission, expiry and conflict, then confirm the retrieved note is included in this context."
+        },
+        "observe": {
+          "zh": "選擇情境，看模型實際收到的內容。",
+          "en": "Choose a fixture and inspect what actually reaches the model."
+        },
+        "boundary": {
+          "zh": "記憶讀回不會改變模型權重。",
+          "en": "Loading a memory does not change model weights."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "新工作階段",
+              "en": "New session"
+            },
+            "value": {
+              "zh": "預設沒有舊內容",
+              "en": "No old material by default"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "新鮮且已讀入",
+              "en": "Fresh and loaded"
+            },
+            "result": {
+              "zh": "把「週末排程待修」放入本次上下文。",
+              "en": "Include “weekend scheduling remains open” in current context."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "模型可見",
+                  "en": "Model input"
+                },
+                "value": {
+                  "zh": "週末排程待修",
+                  "en": "Weekend scheduling open"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "已存但未讀入",
+              "en": "Saved but not loaded"
+            },
+            "result": {
+              "zh": "仍可在儲存中找到紀錄，這次模型沒收到。",
+              "en": "Storage retains the record, but the model did not receive it."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "模型可見",
+                  "en": "Model input"
+                },
+                "value": {
+                  "zh": "只有本次請求",
+                  "en": "Current request only"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "已過期",
+              "en": "Expired"
+            },
+            "result": {
+              "zh": "系統排除過期紀錄，向負責人查核現況。",
+              "en": "Exclude the expired record and confirm current status with the owner."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "決策",
+                  "en": "Decision"
+                },
+                "value": {
+                  "zh": "不採用",
+                  "en": "Exclude"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "與規格衝突",
+              "en": "Conflicting note"
+            },
+            "result": {
+              "zh": "交接提到舊規格 v1；先核對現行 v3 再繼續。",
+              "en": "The note refers to v1; resolve against current v3 before proceeding."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "待確認",
+                  "en": "Open issue"
+                },
+                "value": {
+                  "zh": "舊版內容不具現行效力",
+                  "en": "Old content may no longer apply"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "memory",
+          "apply"
+        ],
+        "title": {
+          "zh": "用目前證據更新紀錄",
+          "en": "Update from current evidence"
+        },
+        "problem": {
+          "zh": "交接說測試已通過，但今天有新提交，舊結論還能用嗎？",
+          "en": "The note reports passing tests, but today has new commits. Is the old result enough?"
+        },
+        "mechanism": {
+          "zh": "把記錄的 v3 與目前需求對照，並在本次程式版本重跑測試。測試結果出來後更新交接，留下舊紀錄與新證據可追溯的關係。",
+          "en": "Compare the recorded v3 with the applicable requirements and rerun tests against the current code revision. Then update the handoff, preserving traceability from the old note to the new evidence."
+        },
+        "observe": {
+          "zh": "維護紀錄包括更新、存取限制、到期及刪除。",
+          "en": "Maintenance includes updating, access restrictions, expiry and deletion."
+        },
+        "boundary": {
+          "zh": "交接提供工作起點；驗收需要對應目前版本的證據。",
+          "en": "Handoffs provide a starting point; acceptance requires evidence for the current revision."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "舊記錄",
+              "en": "Old note"
+            },
+            "value": {
+              "zh": "過去的版本有通過紀錄",
+              "en": "An older revision had a passing record"
+            }
+          },
+          {
+            "label": {
+              "zh": "本次證據",
+              "en": "Current evidence"
+            },
+            "value": {
+              "zh": "目前版本的週末測試尚未執行",
+              "en": "The weekend case has yet to run on this revision"
+            }
+          },
+          {
+            "label": {
+              "zh": "下一步",
+              "en": "Next action"
+            },
+            "value": {
+              "zh": "以現行規格與程式重跑",
+              "en": "Rerun on the current specification and code"
+            }
+          }
+        ]
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "已存但未讀入的交接，模型能直接使用嗎？",
+        "en": "Can a model use a handoff that was saved but never loaded?"
+      },
+      "options": [
+        {
+          "zh": "不能直接使用；先確認本次上下文包含它。",
+          "en": "It is unavailable until included in the current context."
+        },
+        {
+          "zh": "只要有存檔就等於已載入。",
+          "en": "Saving guarantees loading."
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "存放與讀回各有獨立證據。",
+          "en": "Storage and loading require separate evidence."
+        },
+        {
+          "zh": "存在的位置未必是模型可見的位置。",
+          "en": "The storage location may be outside model visibility."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "cross-session-orchestration",
+    "title": {
+      "zh": "跨日工作協調",
+      "en": "Orchestrating Work Across Days"
+    },
+    "objective": {
+      "zh": "沿兩天的工作追蹤重用、摘要、查證和交接，確認各層負責的證據。",
+      "en": "Trace reuse, summarization, retrieval and handoff across two days."
+    },
+    "scenes": [
+      {
+        "id": "01",
+        "kind": "comparison",
+        "sourceAnchors": [
+          "workflow"
+        ],
+        "title": {
+          "zh": "第一天｜做工與整理",
+          "en": "Day one: Work and summarize"
+        },
+        "problem": {
+          "zh": "撰寫讀書排程時，推論與任務資料各由誰處理？",
+          "en": "What handles inference and what handles task records?"
+        },
+        "mechanism": {
+          "zh": "第一天可依需要做兩件可分開選擇的事。推論引擎重用相容前綴以少做重算，或在上下文變多時將需求和待辦濃縮。兩者都不能替代交接和測試。",
+          "en": "Day one has two independent options. The inference engine may reuse compatible prefix state to reduce recomputation. When working context grows, summarize the requirements and open work. Handoff and verification still serve separate purposes."
+        },
+        "observe": {
+          "zh": "快取的產出是可重用的狀態；壓縮的產出是更短的文字工作包。",
+          "en": "Caching yields reusable state. Compaction yields a shorter textual packet."
+        },
+        "boundary": {
+          "zh": "此範例中的兩項機制可以獨立使用。",
+          "en": "Both mechanisms can operate independently."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "推論層｜可選",
+              "en": "Inference | optional"
+            },
+            "value": {
+              "zh": "重用相容前綴 K/V",
+              "en": "Reuse compatible prefix K/V"
+            }
+          },
+          {
+            "label": {
+              "zh": "材料層｜有容量壓力",
+              "en": "Materials | under capacity pressure"
+            },
+            "value": {
+              "zh": "把「週末測試待查」寫進摘要",
+              "en": "Retain “weekend test pending” in the summary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "kind": "timeline-trace",
+        "sourceAnchors": [
+          "workflow"
+        ],
+        "title": {
+          "zh": "暫停與次日開工",
+          "en": "Pause and resume the next day"
+        },
+        "problem": {
+          "zh": "要怎麼找回昨天留的未完成項目，又避免照抄舊規格？",
+          "en": "How do you resume without inheriting stale requirements?"
+        },
+        "mechanism": {
+          "zh": "暫停前寫下進度與來源。次日讀回交接定位待辦，必要時用 RAG 取回目前規格。",
+          "en": "Record progress and sources before pausing. Load the handoff next day and retrieve current requirements where needed."
+        },
+        "observe": {
+          "zh": "比較有無讀回及查證的效果。",
+          "en": "Compare resumption with and without retrieval and verification."
+        },
+        "boundary": {
+          "zh": "交接可搭配檢索定位；兩者沒有固定呼叫順序。",
+          "en": "Retrieval can help find a handoff; these steps have no universal order."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "昨日紀錄",
+              "en": "Yesterday’s note"
+            },
+            "value": {
+              "zh": "新增科目完成，週末測試待查",
+              "en": "Subject add complete; weekend test pending"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "只開新對話",
+              "en": "Open an empty session"
+            },
+            "result": {
+              "zh": "新對話只有現在的請求，請負責人指出未完成項目。",
+              "en": "The new context only has the request; ask the owner for the outstanding work."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "第 1 天｜保存",
+                  "en": "Day 1 | stored"
+                },
+                "value": {
+                  "zh": "交接留在外部",
+                  "en": "Handoff remains stored outside"
+                }
+              },
+              {
+                "label": {
+                  "zh": "第 2 天｜送達",
+                  "en": "Day 2 | loaded"
+                },
+                "value": {
+                  "zh": "只有新的請求",
+                  "en": "Only the new request"
+                }
+              },
+              {
+                "label": {
+                  "zh": "結果",
+                  "en": "Outcome"
+                },
+                "value": {
+                  "zh": "週末測試進度未知",
+                  "en": "Weekend test status unknown"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "讀回交接並查規格",
+              "en": "Load and verify"
+            },
+            "result": {
+              "zh": "讀回週末測試待查，再核對目前 v3 規則。",
+              "en": "Reload the pending weekend test and check the current v3 rule."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "第 1 天｜保存",
+                  "en": "Day 1 | stored"
+                },
+                "value": {
+                  "zh": "週末測試待做",
+                  "en": "Weekend test pending"
+                }
+              },
+              {
+                "label": {
+                  "zh": "第 2 天｜讀回",
+                  "en": "Day 2 | reloaded"
+                },
+                "value": {
+                  "zh": "交接進入上下文",
+                  "en": "Handoff enters the context"
+                }
+              },
+              {
+                "label": {
+                  "zh": "第 2 天｜檢索",
+                  "en": "Day 2 | retrieval"
+                },
+                "value": {
+                  "zh": "找現行需求 v3 §4.2",
+                  "en": "Locate active requirements v3 §4.2"
+                }
+              },
+              {
+                "label": {
+                  "zh": "結果",
+                  "en": "Outcome"
+                },
+                "value": {
+                  "zh": "目前可設計適用的測試",
+                  "en": "Can design the applicable test"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "workflow",
+          "apply"
+        ],
+        "title": {
+          "zh": "用新證據結案",
+          "en": "Close out with fresh evidence"
+        },
+        "problem": {
+          "zh": "查到 v3 就能將修正標成完成嗎？",
+          "en": "Does finding v3 establish completion?"
+        },
+        "mechanism": {
+          "zh": "依適用條文修改，執行能辨認錯誤版本的測試，再按實際結果更新交接。",
+          "en": "Use the applicable rule, run a discriminating test, then update the handoff from the observed results."
+        },
+        "observe": {
+          "zh": "週六三科通過，平日三科拒絕，是具體可核對的案例。",
+          "en": "Accepting three subjects Saturday and rejecting three on a weekday are concrete checks."
+        },
+        "boundary": {
+          "zh": "沒有這次測試結果時，仍需確認程式行為。",
+          "en": "Program behavior remains open until this test runs."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "第 2 天｜必要證據",
+              "en": "Day 2 | required evidence"
+            },
+            "value": {
+              "zh": "以現行版測平日與週末",
+              "en": "Test weekdays and weekends on the current revision"
+            }
+          },
+          {
+            "label": {
+              "zh": "預期可區分結果",
+              "en": "Expected discriminating outcome"
+            },
+            "value": {
+              "zh": "平日三科拒絕，週六三科接受",
+              "en": "Reject three on weekdays, accept three on Saturday"
+            }
+          },
+          {
+            "label": {
+              "zh": "記錄",
+              "en": "Record"
+            },
+            "value": {
+              "zh": "測完才更新交接",
+              "en": "Update the handoff after testing"
+            }
+          }
+        ]
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "次日找到昨天的成功紀錄，什麼證據最能確認今天修正？",
+        "en": "You found yesterday’s success note. What best establishes today’s fix?"
+      },
+      "options": [
+        {
+          "zh": "目前版本的區辨測試",
+          "en": "A discriminating test on the current revision"
+        },
+        {
+          "zh": "昨天紀錄的存在",
+          "en": "Existence of yesterday’s note"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "目前測試對應目前程式與規則。",
+          "en": "It covers the current program and rules."
+        },
+        {
+          "zh": "過去紀錄只能說明當時狀態。",
+          "en": "The note represents yesterday’s state."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "method-selection",
+    "title": {
+      "zh": "依故障選擇方法",
+      "en": "Choose a Method by the Failure"
+    },
+    "objective": {
+      "zh": "對四類故障選出首要工程手段及可驗證結果。",
+      "en": "Map four failures to an engineering method and verification signal."
+    },
+    "scenes": [
+      {
+        "id": "01",
+        "kind": "comparison",
+        "sourceAnchors": [
+          "office",
+          "comparison"
+        ],
+        "title": {
+          "zh": "拆成四個責任",
+          "en": "Separate four responsibilities"
+        },
+        "problem": {
+          "zh": "助理說自己忘記了，應先修哪一層？",
+          "en": "An assistant says it forgot. Which layer should you inspect first?"
+        },
+        "mechanism": {
+          "zh": "先辨認是重複計算、上下文太長、缺少外部資料還是跨日進度不可見。",
+          "en": "Identify recomputation, excessive context, missing external information or absent cross-session progress."
+        },
+        "observe": {
+          "zh": "這些故障會表現相似，改善效果要用各自的證據驗證。",
+          "en": "Symptoms can look alike; each method requires its own evidence."
+        },
+        "boundary": {
+          "zh": "成本、容量、資料來源和工作連續性可同時出問題。",
+          "en": "Compute, capacity, evidence and continuity can all fail together."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "運算",
+              "en": "Compute"
+            },
+            "value": {
+              "zh": "KV Cache",
+              "en": "KV Cache"
+            }
+          },
+          {
+            "label": {
+              "zh": "容量",
+              "en": "Capacity"
+            },
+            "value": {
+              "zh": "Compaction",
+              "en": "Compaction"
+            }
+          },
+          {
+            "label": {
+              "zh": "來源",
+              "en": "Sources"
+            },
+            "value": {
+              "zh": "RAG",
+              "en": "RAG"
+            }
+          },
+          {
+            "label": {
+              "zh": "進度",
+              "en": "Continuity"
+            },
+            "value": {
+              "zh": "Memory",
+              "en": "Memory"
+            }
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "kind": "comparison",
+        "sourceAnchors": [
+          "comparison",
+          "understanding"
+        ],
+        "title": {
+          "zh": "選一張故障卡",
+          "en": "Select a fault card"
+        },
+        "problem": {
+          "zh": "看到現象後，哪項方法最直接？",
+          "en": "Which method directly addresses the selected symptom?"
+        },
+        "mechanism": {
+          "zh": "切換症狀，核對首要方法及其量測或驗收方式。",
+          "en": "Select a symptom and compare the remedy and its verification."
+        },
+        "observe": {
+          "zh": "逐個選擇故障，檢查使用的方法與哪一項獨立證據可以驗收。",
+          "en": "Inspect each fault to see the suggested method and the independent evidence needed to verify it."
+        },
+        "boundary": {
+          "zh": "這是方法選擇練習，沒有實際效能結果。",
+          "en": "This is a method selection exercise without observed performance results."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "判準",
+              "en": "Basis"
+            },
+            "value": {
+              "zh": "故障位置",
+              "en": "Failure layer"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "重複計算",
+              "en": "Recomputation"
+            },
+            "result": {
+              "zh": "考慮 KV Cache，固定負載比較延遲與記憶體。",
+              "en": "Consider KV Cache; compare latency and memory at constant workload."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "方法",
+                  "en": "Method"
+                },
+                "value": {
+                  "zh": "KV Cache",
+                  "en": "KV Cache"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "歷史過長",
+              "en": "History too long"
+            },
+            "result": {
+              "zh": "用 Compaction，逐條確認限制與例外保留。",
+              "en": "Use compaction and check retention clause by clause."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "方法",
+                  "en": "Method"
+                },
+                "value": {
+                  "zh": "Compaction",
+                  "en": "Compaction"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "規格散落",
+              "en": "Scattered specs"
+            },
+            "result": {
+              "zh": "用 RAG 尋找授權的生效版本、節次與條文。",
+              "en": "Use RAG to retrieve authorized, applicable sources and clauses."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "方法",
+                  "en": "Method"
+                },
+                "value": {
+                  "zh": "RAG",
+                  "en": "RAG"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "明日無法接續",
+              "en": "Cannot resume tomorrow"
+            },
+            "result": {
+              "zh": "用 Memory 保存交接，於新階段確認讀回並查證。",
+              "en": "Save a handoff in memory; verify loading and validity in the new session."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "方法",
+                  "en": "Method"
+                },
+                "value": {
+                  "zh": "Memory",
+                  "en": "Memory"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "apply",
+          "understanding"
+        ],
+        "title": {
+          "zh": "替故障配對方法",
+          "en": "Assign an intervention to the fault"
+        },
+        "problem": {
+          "zh": "畫面說需求散在檔案中。選哪個方法才能讓這次呼叫看到現行條文？",
+          "en": "Requirements are scattered across files. Which intervention makes the applicable clause available to this call?"
+        },
+        "mechanism": {
+          "zh": "固定「規格散落」這個故障，再選擇一種方法。檢查它會改變推論運算、現有摘要、外部來源或跨次交接中的哪一層。",
+          "en": "Hold the scattered-specifications fault fixed and select an intervention. Check whether it changes inference work, the existing summary, external evidence or cross-session handoff."
+        },
+        "observe": {
+          "zh": "只有檢索適用且允許讀取的檔案，才會針對這個來源缺口。另要核對版號、條文及輸出。",
+          "en": "Retrieving an authorized, applicable document addresses this source gap. Verify its revision, clause and the output separately."
+        },
+        "boundary": {
+          "zh": "任何方法都不能單獨保證正確、安全及可靠。",
+          "en": "Each method still needs independent checks for correctness, safety and reliability."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "待分類故障",
+              "en": "Fault to classify"
+            },
+            "value": {
+              "zh": "規格散在檔案",
+              "en": "Specifications scattered across files"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "KV Cache",
+              "en": "KV Cache"
+            },
+            "result": {
+              "zh": "此法重用推論狀態。缺少的規格仍未送入。",
+              "en": "This reuses inference state. The missing specification is still absent."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "對應問題",
+                  "en": "Addresses"
+                },
+                "value": {
+                  "zh": "前綴重算",
+                  "en": "Prefix recomputation"
+                }
+              },
+              {
+                "label": {
+                  "zh": "此故障狀態",
+                  "en": "Current fault"
+                },
+                "value": {
+                  "zh": "來源缺口仍在",
+                  "en": "Source gap remains"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "Compaction",
+              "en": "Compaction"
+            },
+            "result": {
+              "zh": "縮短已經持有的對話，不會補進未選入的外部檔案。",
+              "en": "Shortening the existing material does not supply the missing external file."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "對應問題",
+                  "en": "Addresses"
+                },
+                "value": {
+                  "zh": "上下文容量",
+                  "en": "Context capacity"
+                }
+              },
+              {
+                "label": {
+                  "zh": "此故障狀態",
+                  "en": "Current fault"
+                },
+                "value": {
+                  "zh": "來源缺口仍在",
+                  "en": "Source gap remains"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "RAG",
+              "en": "RAG"
+            },
+            "result": {
+              "zh": "配對成功。找出授權且生效的文件版本，送入條文後再核對。",
+              "en": "This matches the fault. Retrieve an authorized, current revision and check the delivered clause."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "對應問題",
+                  "en": "Addresses"
+                },
+                "value": {
+                  "zh": "缺少外部證據",
+                  "en": "Missing external evidence"
+                }
+              },
+              {
+                "label": {
+                  "zh": "可查驗",
+                  "en": "Verify"
+                },
+                "value": {
+                  "zh": "版號、條文與實際送達內容",
+                  "en": "Revision, clause and actual delivery"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "Memory",
+              "en": "Memory"
+            },
+            "result": {
+              "zh": "記下工作進度有助接手，但未讀到現行規格就不能用它當需求正本。",
+              "en": "Recording progress helps a handoff. It does not establish the governing specification."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "對應問題",
+                  "en": "Addresses"
+                },
+                "value": {
+                  "zh": "跨次工作狀態",
+                  "en": "Cross-session state"
+                }
+              },
+              {
+                "label": {
+                  "zh": "此故障狀態",
+                  "en": "Current fault"
+                },
+                "value": {
+                  "zh": "仍須取回現行規格",
+                  "en": "Still need the applicable specification"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "需求文件散在檔案中，而生成速度沒問題。首先應做什麼？",
+        "en": "Requirements are scattered and decoding speed is fine. What should come first?"
+      },
+      "options": [
+        {
+          "zh": "建立授權檢索及版本查核",
+          "en": "Set up authorized retrieval and version verification"
+        },
+        {
+          "zh": "調大 KV 快取",
+          "en": "Increase the KV cache"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "問題在來源可見性。",
+          "en": "The problem is access to the appropriate source."
+        },
+        {
+          "zh": "快取不會根據現行條文更新答案。",
+          "en": "Caching cannot supply the current rule."
+        }
+      ]
+    }
+  }
+]

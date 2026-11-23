@@ -10,6 +10,15 @@ const scratch = mkdtempSync(join(tmpdir(), 'kairos-interactive-'));
 const source = 'content/interactive/request-lifecycle.json';
 const marker = 'INTERACTIVE_CLOSED_MARKER_4f89aa';
 const lessonUrls = ['interactive/system-design/request-lifecycle', 'en/interactive/system-design/request-lifecycle'];
+const atlasSource = 'content/interactive/aase-m02/m02-01.json';
+const atlas = JSON.parse(readFileSync(atlasSource, 'utf8'));
+const gatedUnit = 'embeddings';
+const gatedChapter = 'm02-02';
+const gatedSource = 'content/aase/lessons/aase-m02-c02.json';
+const canonical = JSON.parse(readFileSync(gatedSource, 'utf8'));
+const atlasRoots = ['interactive/aase/m02', 'en/interactive/aase/m02'];
+const atlasUrls = atlasRoots.flatMap(path => [path + '/m02-01/' + gatedUnit, path + '/' + gatedChapter]);
+const chapterUrls = atlasRoots.map(path => path + '/' + gatedChapter);
 const content = JSON.parse(readFileSync(source, 'utf8'));
 
 try {
@@ -32,23 +41,44 @@ try {
       ...content, ...override, summary: { zh: marker, en: marker }
     };
     writeFileSync(join(scratch, source), JSON.stringify(fixture));
+    const { status, publishedOn } = override;
+    // A middle concept exercises the next-concept link in its published predecessor.
+    const closed = atlas.map(unit => unit.slug === gatedUnit
+      ? { ...unit, status, ...(publishedOn ? { publishedOn } : {}), title: { zh: marker, en: marker } }
+      : unit);
+    writeFileSync(join(scratch, atlasSource), JSON.stringify(closed));
+    // A single closed translation must not leave reciprocal links to an unbuilt chapter.
+    const translation = { ...canonical.translations.en, status, ...(publishedOn ? { publishedOn } : {}) };
+    writeFileSync(join(scratch, gatedSource), JSON.stringify({
+      ...canonical, translations: { ...canonical.translations, en: translation }
+    }));
     const command = spawnSync('pnpm', ['run', 'build'], { cwd: scratch, encoding: 'utf8' });
     if (command.status !== 0) throw Error(command.error?.message ?? command.stdout + command.stderr);
     const build = join(scratch, 'build');
-    for (const path of lessonUrls) {
+    for (const path of [...lessonUrls, ...atlasUrls]) {
       assert(!existsSync(join(build, path, 'index.html')), path);
       assert(!existsSync(join(build, path, '__data.json')), path);
     }
-    for (const file of ['interactive/index.html', 'en/interactive/index.html', 'search-index.json', 'sitemap.xml']) {
-      const text = readFileSync(join(build, file), 'utf8');
-      for (const path of lessonUrls) assert(!text.includes('/'+path+'/'), file);
+    for (const path of chapterUrls) assert(!existsSync(join(build, path)), 'Closed source chapter: ' + path);
+    for (const path of atlasRoots) {
+      const neighbor = path + '/m02-01/tokenization';
+      assert(existsSync(join(build, neighbor, 'index.html')), 'Published control concept: ' + neighbor);
+      const payload = readFileSync(join(build, neighbor, '__data.json'), 'utf8');
+      assert(payload.includes(path + '/m02-01/position-information/'), 'Next published concept: ' + neighbor);
     }
     for (const file of readdirSync(build, { recursive: true, withFileTypes: true })) {
       if (file.isFile() && /\.(?:css|html|js|json|svg|xml)$/.test(file.name)) {
-        assert(!readFileSync(join(file.parentPath, file.name)).includes(marker), file.name);
+        const path = join(file.parentPath, file.name);
+        const text = readFileSync(path, 'utf8');
+        assert(!text.includes(marker), 'Closed content marker found in ' + path);
+        if (/\.(?:html|json|xml)$/.test(file.name)) {
+          for (const closedPath of [...lessonUrls, ...atlasUrls]) {
+            assert(!text.includes('/' + closedPath + '/'), 'Closed route ' + closedPath + ' found in ' + path);
+          }
+        }
       }
     }
-    console.log(`PASS: ${override.status === 'draft' ? 'Draft' : 'Future-dated'} interactive lesson excluded from pages, metadata, search and public assets.`);
+    console.log(`PASS: ${override.status === 'draft' ? 'Draft' : 'Future-dated'} networking lesson, AASE concept and chapter with a closed source translation excluded from public output.`);
   }
 } finally {
   rmSync(scratch, { recursive: true, force: true });

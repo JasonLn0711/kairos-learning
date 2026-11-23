@@ -5,4 +5,4 @@
   let { data }: PageProps = $props();
 </script>
 
-<InteractiveHub lang="en" lessons={data.lessons} />
+<InteractiveHub lang="en" lessons={data.lessons} hasAaseAtlas={data.hasAaseAtlas} />

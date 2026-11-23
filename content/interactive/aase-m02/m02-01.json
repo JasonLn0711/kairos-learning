@@ -1,0 +1,2018 @@
+[
+  {
+    "slug": "tokenization",
+    "title": {
+      "zh": "文字切成 token",
+      "en": "Tokenization"
+    },
+    "objective": {
+      "zh": "為什麼相同文字可以有不同切法？",
+      "en": "Why can the same text have different boundaries?"
+    },
+    "scenes": [
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "pipeline"
+        ],
+        "title": {
+          "zh": "從文字到 ID",
+          "en": "From text to IDs"
+        },
+        "problem": {
+          "zh": "為什麼相同文字可以有不同切法？",
+          "en": "Why can the same text have different boundaries?"
+        },
+        "mechanism": {
+          "zh": "分詞器依規則與詞彙表，把文字切成可查表的片段，再將每個片段映射為 ID。先在圖中認出輸入，下一步再比較切分。",
+          "en": "A tokenizer uses rules and a vocabulary to segment text, then maps each piece to an ID. Identify the input before comparing segmentations in the next scene."
+        },
+        "observe": {
+          "zh": "原文已知，切法與片段數要等分詞器確定後才能判斷。",
+          "en": "The text is known. The number of pieces depends on which tokenizer is specified."
+        },
+        "boundary": {
+          "zh": "兩套切法是教學假設，不能用來估計任何實際產品的 token 數。",
+          "en": "Both segmentations are hypothetical. They cannot estimate a product’s token count."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "收到文字",
+              "en": "Received text"
+            },
+            "value": {
+              "zh": "申請資料",
+              "en": "application form"
+            }
+          },
+          {
+            "label": {
+              "zh": "切分前",
+              "en": "Before segmentation"
+            },
+            "value": {
+              "zh": "片段邊界待定",
+              "en": "Piece boundaries undetermined"
+            }
+          }
+        ],
+        "id": "01"
+      },
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "units"
+        ],
+        "title": {
+          "zh": "比較兩套切法",
+          "en": "Compare two segmentations"
+        },
+        "problem": {
+          "zh": "改用另一套假想詞彙表會保留相同的片段嗎？",
+          "en": "Does a different hypothetical vocabulary preserve the same pieces?"
+        },
+        "mechanism": {
+          "zh": "切換兩套假設規則。圖上的分隔點只是標出片段邊界；兩套都表示相同原文。",
+          "en": "Switch between two hypothetical schemes. The separators mark piece boundaries. Both schemes encode the same original text."
+        },
+        "observe": {
+          "zh": "比較兩種方案的片段數與邊界。請找出哪個方案把一個英文單字拆成多個 token，或把多個中文字合為一個 token。",
+          "en": "Compare the counts and boundaries. Notice which scheme splits one English word or groups multiple Chinese characters into one token."
+        },
+        "boundary": {
+          "zh": "兩套切法是教學假設，不能用來估計任何實際產品的 token 數。",
+          "en": "Both segmentations are hypothetical. They cannot estimate a product’s token count."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "輸入",
+              "en": "Input"
+            },
+            "value": {
+              "zh": "申請資料",
+              "en": "application form"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "詞組切法",
+              "en": "Word groups"
+            },
+            "result": {
+              "zh": "兩個片段進入查表。",
+              "en": "Two pieces enter the lookup."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "序列",
+                  "en": "Sequence"
+                },
+                "value": {
+                  "zh": "申請 · 資料",
+                  "en": "application · form"
+                }
+              },
+              {
+                "label": {
+                  "zh": "片段數",
+                  "en": "Pieces"
+                },
+                "value": {
+                  "zh": "2",
+                  "en": "2"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "細粒度切法",
+              "en": "Finer segmentation"
+            },
+            "result": {
+              "zh": "相同文字需要四個片段。",
+              "en": "The same string now takes four pieces."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "序列",
+                  "en": "Sequence"
+                },
+                "value": {
+                  "zh": "申 · 請 · 資 · 料",
+                  "en": "ap · pli · cation · form"
+                }
+              },
+              {
+                "label": {
+                  "zh": "片段數",
+                  "en": "Pieces"
+                },
+                "value": {
+                  "zh": "4",
+                  "en": "4"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "02"
+      },
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "units"
+        ],
+        "title": {
+          "zh": "從片段查出 ID",
+          "en": "Map each piece to an ID"
+        },
+        "problem": {
+          "zh": "為什麼切法不同會改變模型實際收到的序列？",
+          "en": "Why does a different segmentation change the sequence the model receives?"
+        },
+        "mechanism": {
+          "zh": "以左側方案為例，查假設詞彙表，把每個片段換成一個 ID。切法改變時，索引序列也會改變，下一階段再用各 ID 查向量。",
+          "en": "Use the hypothetical vocabulary to replace each piece with an ID. A different segmentation changes that ID sequence. The next stage looks up a vector for each ID."
+        },
+        "observe": {
+          "zh": "畫面中的 42、64 是玩具索引，只代表查表位置。",
+          "en": "The displayed IDs 42 and 64 are toy lookup indices. Their sizes do not describe meaning."
+        },
+        "boundary": {
+          "zh": "兩套切法是教學假設，不能用來估計任何實際產品的 token 數。",
+          "en": "Both segmentations are hypothetical. They cannot estimate a product’s token count."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "假設切分",
+              "en": "Hypothetical split"
+            },
+            "value": {
+              "zh": "申請 · 資料",
+              "en": "application · form"
+            }
+          },
+          {
+            "label": {
+              "zh": "依序查表",
+              "en": "IDs in order"
+            },
+            "value": {
+              "zh": "42、64",
+              "en": "42, 64"
+            }
+          }
+        ],
+        "id": "03"
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "哪個結論適用？",
+        "en": "Which conclusion holds?"
+      },
+      "options": [
+        {
+          "zh": "計數依詞彙表和文字而變",
+          "en": "Counts vary with vocabulary and text"
+        },
+        {
+          "zh": "一個字永遠等於一個 token",
+          "en": "One character always equals one token"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "不同切法可表示相同輸入。",
+          "en": "Different segmentations can encode the same input."
+        },
+        {
+          "zh": "不同詞彙表會改變片段邊界。",
+          "en": "Different vocabularies change the boundaries."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "embeddings",
+    "title": {
+      "zh": "詞元嵌入",
+      "en": "Token embeddings"
+    },
+    "objective": {
+      "zh": "一個整數 ID 如何進入神經網路？",
+      "en": "How does an integer ID enter a neural network?"
+    },
+    "scenes": [
+      {
+        "kind": "vector-inspector",
+        "sourceAnchors": [
+          "analogy"
+        ],
+        "title": {
+          "zh": "用 ID 查向量",
+          "en": "Look up a vector"
+        },
+        "problem": {
+          "zh": "一個整數 ID 如何進入神經網路？",
+          "en": "How does an integer ID enter a neural network?"
+        },
+        "mechanism": {
+          "zh": "模型的詞嵌入表有很多列。先用 token ID 找到某一列，再把一組數字交給下一層。",
+          "en": "An embedding table has one row per vocabulary entry. The token ID selects a row whose numbers go on to the next layer."
+        },
+        "observe": {
+          "zh": "這個玩具例子先把「文件」定位為第 21 列，下一步才查看裡面的數字。",
+          "en": "In this toy example, “document” selects row 21. Inspect the values in the next scene."
+        },
+        "boundary": {
+          "zh": "這四維向量為人工數值。各座標沒有預先命名的情感或語意。",
+          "en": "These four dimensions are invented numbers. Coordinates have no assigned sentiment or meaning."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "Token",
+              "en": "Token"
+            },
+            "value": {
+              "zh": "文件",
+              "en": "document"
+            }
+          },
+          {
+            "label": {
+              "zh": "索引",
+              "en": "Index"
+            },
+            "value": {
+              "zh": "21",
+              "en": "21"
+            }
+          }
+        ],
+        "id": "01"
+      },
+      {
+        "kind": "vector-inspector",
+        "sourceAnchors": [
+          "analogy"
+        ],
+        "title": {
+          "zh": "交換詞元 ID",
+          "en": "Switch the token ID"
+        },
+        "problem": {
+          "zh": "選不同 ID，哪一列會進入模型？",
+          "en": "Which row enters the model with a different ID?"
+        },
+        "mechanism": {
+          "zh": "選擇一個 token，依 ID 讀出四個分量。比較選項時，維度數維持為四，每個維度的值可改變。",
+          "en": "Select a token to inspect the four coordinates in its row. The vector remains four-dimensional while individual coordinates can change."
+        },
+        "observe": {
+          "zh": "查看第 21 列與第 42 列的第三個座標。兩列都包含第三個分量，但值分別是 0.9 與 0.2。",
+          "en": "Inspect the third coordinate in rows 21 and 42. Both rows have a third coordinate, with values 0.9 and 0.2."
+        },
+        "boundary": {
+          "zh": "這四維向量為人工數值。各座標沒有預先命名的情感或語意。",
+          "en": "These four dimensions are invented numbers. Coordinates have no assigned sentiment or meaning."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "查表",
+              "en": "Lookup"
+            },
+            "value": {
+              "zh": "ID 指向一列",
+              "en": "The ID indexes a row"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "選文件 #21",
+              "en": "Choose document #21"
+            },
+            "result": {
+              "zh": "取第 21 列。",
+              "en": "Read row 21."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "ID",
+                  "en": "ID"
+                },
+                "value": {
+                  "zh": "21",
+                  "en": "21"
+                }
+              },
+              {
+                "label": {
+                  "zh": "維度 1",
+                  "en": "Dimension 1"
+                },
+                "value": {
+                  "zh": "0.4",
+                  "en": "0.4"
+                }
+              },
+              {
+                "label": {
+                  "zh": "維度 2",
+                  "en": "Dimension 2"
+                },
+                "value": {
+                  "zh": "-0.2",
+                  "en": "-0.2"
+                }
+              },
+              {
+                "label": {
+                  "zh": "維度 3",
+                  "en": "Dimension 3"
+                },
+                "value": {
+                  "zh": "0.9",
+                  "en": "0.9"
+                }
+              },
+              {
+                "label": {
+                  "zh": "維度 4",
+                  "en": "Dimension 4"
+                },
+                "value": {
+                  "zh": "0.1",
+                  "en": "0.1"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "選申請 #42",
+              "en": "Choose application #42"
+            },
+            "result": {
+              "zh": "取第 42 列，四個分量都可不同。",
+              "en": "Read row 42. All four components can differ."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "ID",
+                  "en": "ID"
+                },
+                "value": {
+                  "zh": "42",
+                  "en": "42"
+                }
+              },
+              {
+                "label": {
+                  "zh": "維度 1",
+                  "en": "Dimension 1"
+                },
+                "value": {
+                  "zh": "-0.1",
+                  "en": "-0.1"
+                }
+              },
+              {
+                "label": {
+                  "zh": "維度 2",
+                  "en": "Dimension 2"
+                },
+                "value": {
+                  "zh": "0.5",
+                  "en": "0.5"
+                }
+              },
+              {
+                "label": {
+                  "zh": "維度 3",
+                  "en": "Dimension 3"
+                },
+                "value": {
+                  "zh": "0.2",
+                  "en": "0.2"
+                }
+              },
+              {
+                "label": {
+                  "zh": "維度 4",
+                  "en": "Dimension 4"
+                },
+                "value": {
+                  "zh": "-0.4",
+                  "en": "-0.4"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "02"
+      },
+      {
+        "kind": "vector-inspector",
+        "sourceAnchors": [
+          "analogy"
+        ],
+        "title": {
+          "zh": "分清索引與坐標",
+          "en": "Separate row IDs from coordinates"
+        },
+        "problem": {
+          "zh": "兩個 ID 的差，能直接解釋兩個 token 的意思有多接近嗎？",
+          "en": "Does the numerical difference between two IDs tell you how similar the tokens are?"
+        },
+        "mechanism": {
+          "zh": "21 和 42 只用來指定列；向量是取出的表示。後續運算用向量做比較或轉換，不會以 ID 相減判斷兩個詞的關係。",
+          "en": "IDs 21 and 42 only identify rows. Later layers operate on the retrieved vectors rather than subtracting the IDs to compare meaning."
+        },
+        "observe": {
+          "zh": "同樣都是四維向量，第 21 列與第 42 列的第三分量不同。",
+          "en": "Both vectors have four coordinates, and their third values differ."
+        },
+        "boundary": {
+          "zh": "這四維向量為人工數值。各座標沒有預先命名的情感或語意。",
+          "en": "These four dimensions are invented numbers. Coordinates have no assigned sentiment or meaning."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "第 21 列",
+              "en": "Row 21"
+            },
+            "value": {
+              "zh": "第三分量 0.9",
+              "en": "Third coordinate 0.9"
+            }
+          },
+          {
+            "label": {
+              "zh": "第 42 列",
+              "en": "Row 42"
+            },
+            "value": {
+              "zh": "第三分量 0.2",
+              "en": "Third coordinate 0.2"
+            }
+          }
+        ],
+        "id": "03"
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "數值 0.9 能可靠代表某個固定語意嗎？",
+        "en": "Does 0.9 reliably denote a fixed semantic feature?"
+      },
+      "options": [
+        {
+          "zh": "能，每個座標都有固定名稱",
+          "en": "Yes, each coordinate has a fixed name"
+        },
+        {
+          "zh": "不能，這裡是合成座標",
+          "en": "No, this is a synthetic coordinate"
+        }
+      ],
+      "answer": 1,
+      "feedback": [
+        {
+          "zh": "同一維度無須有可解釋的獨立語意。",
+          "en": "A dimension need not have independently interpretable semantics."
+        },
+        {
+          "zh": "先分清查表機制與向量的語意詮釋。",
+          "en": "Distinguish the lookup mechanism from semantic interpretation."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "position-information",
+    "title": {
+      "zh": "位置資訊",
+      "en": "Position information"
+    },
+    "objective": {
+      "zh": "相同的詞如何表達不同的人物關係？",
+      "en": "How can the same words convey different roles?"
+    },
+    "scenes": [
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "analogy",
+          "position"
+        ],
+        "title": {
+          "zh": "同樣的詞集合",
+          "en": "The same set of words"
+        },
+        "problem": {
+          "zh": "相同的詞如何表達不同的人物關係？",
+          "en": "How can the same words convey different roles?"
+        },
+        "mechanism": {
+          "zh": "文字序列同時有 token 與先後位置。先在原句標出行動者、動作與接受者的位置。",
+          "en": "A text sequence carries tokens and order. Identify where the actor, action and recipient appear in the original sentence."
+        },
+        "observe": {
+          "zh": "原句裡小安先出現，位於「幫助」前面。",
+          "en": "Ana appears first, before the verb “helps.”"
+        },
+        "boundary": {
+          "zh": "模型可使用不同的位置表徵，例如相對位置。例句只顯示順序影響。",
+          "en": "Models can use different positional representations, including relative positions. This sentence only illustrates the effect of order."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "位置 1",
+              "en": "Position 1"
+            },
+            "value": {
+              "zh": "小安",
+              "en": "Ana"
+            }
+          },
+          {
+            "label": {
+              "zh": "位置 2",
+              "en": "Position 2"
+            },
+            "value": {
+              "zh": "幫助",
+              "en": "helps"
+            }
+          },
+          {
+            "label": {
+              "zh": "位置 3",
+              "en": "Position 3"
+            },
+            "value": {
+              "zh": "小宇",
+              "en": "Bo"
+            }
+          }
+        ],
+        "id": "01"
+      },
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "analogy",
+          "position"
+        ],
+        "title": {
+          "zh": "對調姓名",
+          "en": "Swap the names"
+        },
+        "problem": {
+          "zh": "交換兩個姓名後，誰做出動作？",
+          "en": "Who acts after the names swap positions?"
+        },
+        "mechanism": {
+          "zh": "交換兩個姓名，保留同一個動詞。比較新的位置和語法角色。",
+          "en": "Swap the two names while holding the verb fixed. Compare the new positions and grammatical roles."
+        },
+        "observe": {
+          "zh": "切換兩種順序，核對行動者和接受者是否互換。",
+          "en": "Switch orders and check whether the actor and recipient exchange roles."
+        },
+        "boundary": {
+          "zh": "模型可使用不同的位置表徵，例如相對位置。例句只顯示順序影響。",
+          "en": "Models can use different positional representations, including relative positions. This sentence only illustrates the effect of order."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "相同片段",
+              "en": "Same pieces"
+            },
+            "value": {
+              "zh": "小安、幫助、小宇",
+              "en": "Ana, helps, Bo"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "保留原順序",
+              "en": "Keep order"
+            },
+            "result": {
+              "zh": "小安是協助者。",
+              "en": "Ana provides help."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "序列",
+                  "en": "Sequence"
+                },
+                "value": {
+                  "zh": "小安 → 幫助 → 小宇",
+                  "en": "Ana → helps → Bo"
+                }
+              },
+              {
+                "label": {
+                  "zh": "行動者",
+                  "en": "Actor"
+                },
+                "value": {
+                  "zh": "小安",
+                  "en": "Ana"
+                }
+              },
+              {
+                "label": {
+                  "zh": "接受者",
+                  "en": "Recipient"
+                },
+                "value": {
+                  "zh": "小宇",
+                  "en": "Bo"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "交換姓名",
+              "en": "Swap names"
+            },
+            "result": {
+              "zh": "小宇變成協助者。",
+              "en": "Bo now provides help."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "序列",
+                  "en": "Sequence"
+                },
+                "value": {
+                  "zh": "小宇 → 幫助 → 小安",
+                  "en": "Bo → helps → Ana"
+                }
+              },
+              {
+                "label": {
+                  "zh": "行動者",
+                  "en": "Actor"
+                },
+                "value": {
+                  "zh": "小宇",
+                  "en": "Bo"
+                }
+              },
+              {
+                "label": {
+                  "zh": "接受者",
+                  "en": "Recipient"
+                },
+                "value": {
+                  "zh": "小安",
+                  "en": "Ana"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "02"
+      },
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "analogy"
+        ],
+        "title": {
+          "zh": "保留位置關係",
+          "en": "Give the model order information"
+        },
+        "problem": {
+          "zh": "模型如何分辨兩個詞頻相同、順序不同的輸入？",
+          "en": "How can a model distinguish inputs with the same token counts but different order?"
+        },
+        "mechanism": {
+          "zh": "模型可用絕對索引、相對關係或其他位置機制，讓後續運算能區分片段的排列。看到這兩句不同，無法推定真實模型用了哪個機制。",
+          "en": "A model can supply absolute indices, relative relationships or other positional signals so later operations can distinguish the arrangements. The example cannot identify a real model’s implementation."
+        },
+        "observe": {
+          "zh": "兩句的詞頻相同，但第一位置與第三位置的姓名互換了。",
+          "en": "The counts match, while the names at the first and third positions differ."
+        },
+        "boundary": {
+          "zh": "模型可使用不同的位置表徵，例如相對位置。例句只顯示順序影響。",
+          "en": "Models can use different positional representations, including relative positions. This sentence only illustrates the effect of order."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "原序列",
+              "en": "Original"
+            },
+            "value": {
+              "zh": "小安 → 幫助 → 小宇",
+              "en": "Ana → helps → Bo"
+            }
+          },
+          {
+            "label": {
+              "zh": "調換後",
+              "en": "Reordered"
+            },
+            "value": {
+              "zh": "小宇 → 幫助 → 小安",
+              "en": "Bo → helps → Ana"
+            }
+          }
+        ],
+        "id": "03"
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "為什麼詞頻相同仍會改變意思？",
+        "en": "Why can meaning change with identical word counts?"
+      },
+      "options": [
+        {
+          "zh": "先後位置不同，語法角色也不同",
+          "en": "Order changes the grammatical roles"
+        },
+        {
+          "zh": "模型會自動新增一個動詞",
+          "en": "The model automatically inserts a verb"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "原動詞保持相同，角色對調。",
+          "en": "The original verb is unchanged while roles swap."
+        },
+        {
+          "zh": "例句沒有增加任何詞。",
+          "en": "No word was added to either sentence."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "attention-qkv",
+    "title": {
+      "zh": "注意力的 Q、K、V",
+      "en": "Attention queries, keys and values"
+    },
+    "objective": {
+      "zh": "讀取目前位置時，哪些其他位置提供資訊？",
+      "en": "Which other positions supply information about the current position?"
+    },
+    "scenes": [
+      {
+        "kind": "process-flow",
+        "sourceAnchors": [
+          "attention",
+          "query-key-value"
+        ],
+        "title": {
+          "zh": "查詢如何比對鍵",
+          "en": "How a query matches keys"
+        },
+        "problem": {
+          "zh": "讀取目前位置時，哪些其他位置提供資訊？",
+          "en": "Which other positions supply information about the current position?"
+        },
+        "mechanism": {
+          "zh": "查詢 Q 描述目前位置所需的匹配，鍵 K 參與打分，值 V 是最後取來混合的向量。玩具例子用 Q = [1, 0]，A、B 的鍵分別為 [1, 1] 與 [0, 1]。為方便手算，這裡用未縮放的內積。",
+          "en": "The query Q supplies the match, keys K participate in scoring, and values V are the vectors to combine. Use toy Q = [1, 0] and keys [1, 1] and [0, 1]. This arithmetic omits scaling so it can be done by hand."
+        },
+        "observe": {
+          "zh": "Q 與 A 的鍵內積為 1，與 B 的鍵內積為 0。這一步還沒讀取或加權值向量。",
+          "en": "The dot product with key A is 1 and with key B it is 0. At this point the values have yet to be weighted."
+        },
+        "boundary": {
+          "zh": "這些分數與標籤是教學抽象。權重不是因果解釋或答案信心。",
+          "en": "The scores and labels are illustrative. Weights do not establish causation or answer confidence."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "查詢 Q",
+              "en": "Query Q"
+            },
+            "value": {
+              "zh": "[1, 0]",
+              "en": "[1, 0]"
+            }
+          },
+          {
+            "label": {
+              "zh": "鍵 A",
+              "en": "Key A"
+            },
+            "value": {
+              "zh": "[1, 1]，分數 1",
+              "en": "[1, 1], score 1"
+            }
+          },
+          {
+            "label": {
+              "zh": "鍵 B",
+              "en": "Key B"
+            },
+            "value": {
+              "zh": "[0, 1]，分數 0",
+              "en": "[0, 1], score 0"
+            }
+          }
+        ],
+        "id": "01"
+      },
+      {
+        "kind": "comparison",
+        "sourceAnchors": [
+          "attention",
+          "self-attention"
+        ],
+        "title": {
+          "zh": "切換可見位置",
+          "en": "Change visible positions"
+        },
+        "problem": {
+          "zh": "讓 B 進入遮罩後，B 還能影響輸出嗎？",
+          "en": "Can B affect the output after masking it?"
+        },
+        "mechanism": {
+          "zh": "Softmax 把可見鍵的分數正規化。把各鍵的權重乘上對應的值向量，再逐分量相加。若 B 被遮罩，即使算得分數也不納入分母。",
+          "en": "Softmax normalizes visible-key scores. Multiply each corresponding value vector by its weight and add component by component. When B is masked, its score stays out of the denominator."
+        },
+        "observe": {
+          "zh": "切換 B 是否可見，核對分母與兩個分量的加權結果。",
+          "en": "Toggle visibility for B and compare the denominator and the two weighted outputs."
+        },
+        "boundary": {
+          "zh": "這些分數與標籤是教學抽象。權重不是因果解釋或答案信心。",
+          "en": "The scores and labels are illustrative. Weights do not establish causation or answer confidence."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "查詢",
+              "en": "Query"
+            },
+            "value": {
+              "zh": "查找表單文件欄位",
+              "en": "Look for the form’s document field"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "A、B 都可見",
+              "en": "A and B visible"
+            },
+            "result": {
+              "zh": "兩列都參與，輸出約 [3.076, 1.538]。",
+              "en": "Both contribute to an output near [3.076, 1.538]."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "值 A",
+                  "en": "Value A"
+                },
+                "value": {
+                  "zh": "[2, 1]，權重 0.731",
+                  "en": "[2, 1], weight 0.731"
+                }
+              },
+              {
+                "label": {
+                  "zh": "值 B",
+                  "en": "Value B"
+                },
+                "value": {
+                  "zh": "[6, 3]，權重 0.269",
+                  "en": "[6, 3], weight 0.269"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "遮罩 B",
+              "en": "Mask B"
+            },
+            "result": {
+              "zh": "B 不進分母，A 權重變成 1，輸出 [2, 1]。",
+              "en": "B is out of the denominator. A gets weight 1 and the result is [2, 1]."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "值 A",
+                  "en": "Value A"
+                },
+                "value": {
+                  "zh": "[2, 1]，權重 1",
+                  "en": "[2, 1], weight 1"
+                }
+              },
+              {
+                "label": {
+                  "zh": "值 B",
+                  "en": "Value B"
+                },
+                "value": {
+                  "zh": "[6, 3]，權重 0",
+                  "en": "[6, 3], weight 0"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "02"
+      },
+      {
+        "kind": "attention-matrix",
+        "sourceAnchors": [
+          "attention"
+        ],
+        "title": {
+          "zh": "核對因果遮罩的可見範圍",
+          "en": "Check which positions are causally visible"
+        },
+        "problem": {
+          "zh": "自回歸模型在各已知位置可以參考哪些 token？",
+          "en": "Which tokens can each position of a causal model use?"
+        },
+        "mechanism": {
+          "zh": "在三個連續位置的概念矩陣中，列代表查詢位置，欄代表鍵位置。因果遮罩只讓每一列使用同位置及更早的欄，右上的未來欄不參與正規化。",
+          "en": "In a three-position mask, rows are query positions and columns are key positions. Each row allows the same or earlier columns. Future columns in the upper-right are excluded from normalization."
+        },
+        "observe": {
+          "zh": "位置 1 只可見鍵 1；位置 2 可見鍵 1、2；位置 3 可見全部三個鍵。",
+          "en": "Query 1 sees key 1. Query 2 sees keys 1 and 2. Query 3 sees all three."
+        },
+        "boundary": {
+          "zh": "這是因果遮罩的方向示意。圖格表示可見性，注意力實際權重仍取決於各列分數。",
+          "en": "This shows the direction of a causal mask. Cells represent visibility. Actual attention weights still depend on the row’s scores."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "查詢位置 1",
+              "en": "Query position 1"
+            },
+            "value": {
+              "zh": "鍵 1 可見",
+              "en": "Key 1 visible"
+            }
+          },
+          {
+            "label": {
+              "zh": "查詢位置 2",
+              "en": "Query position 2"
+            },
+            "value": {
+              "zh": "鍵 1、2 可見",
+              "en": "Keys 1 and 2 visible"
+            }
+          },
+          {
+            "label": {
+              "zh": "查詢位置 3",
+              "en": "Query position 3"
+            },
+            "value": {
+              "zh": "鍵 1、2、3 可見",
+              "en": "Keys 1, 2 and 3 visible"
+            }
+          }
+        ],
+        "id": "03",
+        "visual": "causal-mask"
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "相似度分數與哪一項比較？",
+        "en": "What participates in similarity scoring?"
+      },
+      "options": [
+        {
+          "zh": "查詢和值",
+          "en": "Query and value"
+        },
+        {
+          "zh": "查詢和鍵",
+          "en": "Query and key"
+        }
+      ],
+      "answer": 1,
+      "feedback": [
+        {
+          "zh": "值是被加權的資訊，並非用來打分的鍵。",
+          "en": "Values supply the weighted information; keys supply the match scores."
+        },
+        {
+          "zh": "值在計算權重後才被混合。",
+          "en": "Values are mixed after weights are computed."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "softmax-weighted-sum",
+    "title": {
+      "zh": "Softmax 與加權總和",
+      "en": "Softmax and weighted sum"
+    },
+    "objective": {
+      "zh": "把匹配分數轉成權重，算出兩個位置合成的值。",
+      "en": "Convert matching scores to weights and calculate the combined value of two positions."
+    },
+    "scenes": [
+      {
+        "kind": "numeric-budget",
+        "sourceAnchors": [
+          "attention-example"
+        ],
+        "title": {
+          "zh": "辨認分數和值",
+          "en": "Separate scores from values"
+        },
+        "problem": {
+          "zh": "A 與 B 的分數和內容都是數字，兩者各影響什麼？",
+          "en": "Scores and values are both numbers here. What does each affect?"
+        },
+        "mechanism": {
+          "zh": "分數決定資訊取用比例；值是被加權的資訊。先辨認兩欄再計算。",
+          "en": "Scores determine each share of information. Values are the information being mixed. Identify the two columns before calculating."
+        },
+        "observe": {
+          "zh": "預設 A 的匹配分數較大，但 B 的值較大。",
+          "en": "By default A has the higher score while B has the larger value."
+        },
+        "boundary": {
+          "zh": "真實模型的值通常是向量。本例只保留一個維度。",
+          "en": "Values are normally vectors in a model. This example retains one dimension."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "位置 A",
+              "en": "Position A"
+            },
+            "value": {
+              "zh": "分數 1，值 2",
+              "en": "Score 1, value 2"
+            }
+          },
+          {
+            "label": {
+              "zh": "位置 B",
+              "en": "Position B"
+            },
+            "value": {
+              "zh": "分數 0，值 6",
+              "en": "Score 0, value 6"
+            }
+          }
+        ],
+        "id": "01"
+      },
+      {
+        "kind": "numeric-budget",
+        "sourceAnchors": [
+          "attention-example",
+          "python-example"
+        ],
+        "title": {
+          "zh": "計算正規化權重",
+          "en": "Calculate normalized weights"
+        },
+        "problem": {
+          "zh": "如果兩個分數相等，每個位置應分到多少？",
+          "en": "How much weight should each position receive with equal scores?"
+        },
+        "mechanism": {
+          "zh": "令 m 為最大分數。每一項先算 exp(分數 − m)，再除以指數總和。減同一個 m 不改變各項比例。",
+          "en": "Let m be the maximum score. Compute exp(score − m) for each item and divide by their sum. Subtracting the same m preserves every ratio."
+        },
+        "observe": {
+          "zh": "把分數由 [1, 0] 調成 [0, 0]。權重會由約 [0.731, 0.269] 變成 [0.5, 0.5]。畫面到小數第三位，計算保留完整精度。",
+          "en": "Change the scores from [1, 0] to [0, 0]. Weights move from about [0.731, 0.269] to [0.5, 0.5]. The display rounds to three decimals after computing at full precision."
+        },
+        "boundary": {
+          "zh": "這是兩個可見位置的示例。遮罩排除的位置不應參與分母。",
+          "en": "This example has two visible positions. Masked positions do not belong in the denominator."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "正規化",
+              "en": "Normalization"
+            },
+            "value": {
+              "zh": "exp(sᵢ − m) / Σ exp(sⱼ − m)",
+              "en": "exp(sᵢ − m) / Σ exp(sⱼ − m)"
+            }
+          },
+          {
+            "label": {
+              "zh": "核對",
+              "en": "Invariant"
+            },
+            "value": {
+              "zh": "權重和為 1",
+              "en": "Weights sum to 1"
+            }
+          }
+        ],
+        "demo": "softmax",
+        "id": "02"
+      },
+      {
+        "kind": "numeric-budget",
+        "sourceAnchors": [
+          "attention-example",
+          "softmax-observations"
+        ],
+        "title": {
+          "zh": "用權重合成值",
+          "en": "Mix the values"
+        },
+        "problem": {
+          "zh": "保持分數相等，兩個值 2 和 6 會合成什麼？",
+          "en": "If the scores stay equal, how do values 2 and 6 combine?"
+        },
+        "mechanism": {
+          "zh": "將各位置的權重乘上對應值後相加。偏向數值較小的 A 時，合成值會向 2 靠近。",
+          "en": "Multiply each weight by its matching value and sum. Giving A more weight draws the combined value closer to 2."
+        },
+        "observe": {
+          "zh": "以預設分數計算約為 3.076。相等分數的結果為 4。",
+          "en": "The default scores give about 3.076. Equal scores give 4."
+        },
+        "boundary": {
+          "zh": "加權結果只是模型內部表示，不能當作答案的正確機率。",
+          "en": "The weighted result is an internal representation and supplies no probability that the answer is correct."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "合成式",
+              "en": "Aggregation"
+            },
+            "value": {
+              "zh": "wA × 2 + wB × 6",
+              "en": "wA × 2 + wB × 6"
+            }
+          },
+          {
+            "label": {
+              "zh": "顯示",
+              "en": "Display"
+            },
+            "value": {
+              "zh": "結果四捨五入至小數第三位",
+              "en": "Result rounded to three decimals"
+            }
+          }
+        ],
+        "demo": "softmax",
+        "id": "03"
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "分數同為 0，值維持 2 與 6。合成值是多少？",
+        "en": "Both scores are 0 and values remain 2 and 6. What is the combined value?"
+      },
+      "options": [
+        {
+          "zh": "4",
+          "en": "4"
+        },
+        {
+          "zh": "6",
+          "en": "6"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "兩個權重各 0.5，所以 0.5 × 2 + 0.5 × 6 = 4。",
+          "en": "Both weights are 0.5, so 0.5 × 2 + 0.5 × 6 = 4."
+        },
+        {
+          "zh": "6 是 B 的值。相同分數時，A 同樣占一半。",
+          "en": "6 is B’s value. With equal scores A still contributes half."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "transformer-block",
+    "title": {
+      "zh": "Transformer 區塊",
+      "en": "Transformer block"
+    },
+    "objective": {
+      "zh": "為什麼注意力只是 Transformer 的一部分？",
+      "en": "Why is attention only one part of a Transformer?"
+    },
+    "scenes": [
+      {
+        "kind": "comparison",
+        "sourceAnchors": [
+          "pipeline",
+          "transformer"
+        ],
+        "title": {
+          "zh": "區塊的四個角色",
+          "en": "Four roles inside a block"
+        },
+        "problem": {
+          "zh": "為什麼注意力只是 Transformer 的一部分？",
+          "en": "Why is attention only one part of a Transformer?"
+        },
+        "mechanism": {
+          "zh": "注意力可跨位置混合資訊，前饋網路在各位置轉換向量。殘差路徑保留原表示供合併，正規化調節尺度。",
+          "en": "Attention can mix information across positions. The feed-forward network transforms each position. Residual paths retain a representation for combination, and normalization regulates scale."
+        },
+        "observe": {
+          "zh": "注意力與前饋網路都處理表示。找出哪項跨位置收集資訊、哪項在每個位置各自做轉換。",
+          "en": "Attention and feed-forward layers both process representations. Find which gathers across positions and which transforms each position separately."
+        },
+        "boundary": {
+          "zh": "此圖列出角色。正規化、殘差和子層順序可隨架構改變。",
+          "en": "These cards show roles. The order of normalization, residual paths and sublayers can vary."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "注意力",
+              "en": "Attention"
+            },
+            "value": {
+              "zh": "跨位置合成資訊",
+              "en": "Mix information across positions"
+            }
+          },
+          {
+            "label": {
+              "zh": "前饋",
+              "en": "Feed-forward"
+            },
+            "value": {
+              "zh": "逐位置轉換向量",
+              "en": "Transform each position"
+            }
+          },
+          {
+            "label": {
+              "zh": "殘差",
+              "en": "Residual"
+            },
+            "value": {
+              "zh": "保留表示供合併",
+              "en": "Keep the representation for combination"
+            }
+          },
+          {
+            "label": {
+              "zh": "正規化",
+              "en": "Normalization"
+            },
+            "value": {
+              "zh": "調節數值尺度",
+              "en": "Regulate numerical scale"
+            }
+          }
+        ],
+        "id": "01"
+      },
+      {
+        "kind": "comparison",
+        "sourceAnchors": [
+          "transformer"
+        ],
+        "title": {
+          "zh": "比較兩個注意力頭",
+          "en": "Compare attention heads"
+        },
+        "problem": {
+          "zh": "看同一位置的兩個注意力頭，兩個頭一定取用相同資訊嗎？",
+          "en": "Must two heads at the same position draw on identical information?"
+        },
+        "mechanism": {
+          "zh": "各注意力頭有自己的投影，可用同一批位置算出不同的分數與權重。切換頭，看看兩個位置的權重如何重新分配。",
+          "en": "Each attention head uses its own projections and can score the same positions differently. Switch heads and compare how they distribute weight across the two positions."
+        },
+        "observe": {
+          "zh": "頭 A 把較多權重給位置 1，頭 B 把較多權重給位置 2。",
+          "en": "Head A places more weight on position 1, while head B favors position 2."
+        },
+        "boundary": {
+          "zh": "兩組權重為合成例子。真實注意力頭未必各自對應到可命名的語言功能。",
+          "en": "These weights are synthetic. Real heads need not map to individually named language functions."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "區塊",
+              "en": "Block"
+            },
+            "value": {
+              "zh": "注意力、前饋、殘差、正規化",
+              "en": "Attention, feed-forward, residual, normalization"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "查看頭 A",
+              "en": "Inspect head A"
+            },
+            "result": {
+              "zh": "頭 A 偏向位置 1。",
+              "en": "Head A favors position 1."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "權重示意",
+                  "en": "Illustrated weights"
+                },
+                "value": {
+                  "zh": "[0.8, 0.2]",
+                  "en": "[0.8, 0.2]"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "查看頭 B",
+              "en": "Inspect head B"
+            },
+            "result": {
+              "zh": "頭 B 偏向位置 2。",
+              "en": "Head B favors position 2."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "權重示意",
+                  "en": "Illustrated weights"
+                },
+                "value": {
+                  "zh": "[0.3, 0.7]",
+                  "en": "[0.3, 0.7]"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "02"
+      },
+      {
+        "kind": "process-flow",
+        "sourceAnchors": [
+          "transformer"
+        ],
+        "title": {
+          "zh": "合併各頭的輸出",
+          "en": "Combine the heads’ outputs"
+        },
+        "problem": {
+          "zh": "算完各頭的注意力之後，怎麼形成此位置的新表示？",
+          "en": "After the heads compute attention, how can the block form an updated representation for this position?"
+        },
+        "mechanism": {
+          "zh": "例如，把各頭輸出接起來再投影為一個表示，搭配殘差路徑、正規化與逐位置轉換。這裡追蹤表示如何交接，不規定所有模型中殘差與正規化的順序。",
+          "en": "For example, concatenate head outputs and project them into one representation, working with residual paths, normalization and position-wise transforms. This traces handoffs without prescribing a universal placement of residual connections or normalization."
+        },
+        "observe": {
+          "zh": "注意力頭的權重用來彙整各頭的值。「合併」階段收到的是各頭的彙整表示。",
+          "en": "Head weights aggregate values within each head. The combination stage receives the resulting representations."
+        },
+        "boundary": {
+          "zh": "此圖列出角色。正規化、殘差和子層順序可隨架構改變。",
+          "en": "These cards show roles. The order of normalization, residual paths and sublayers can vary."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "頭 A、B",
+              "en": "Heads A and B"
+            },
+            "value": {
+              "zh": "各自彙整值向量",
+              "en": "Each aggregates its values"
+            }
+          },
+          {
+            "label": {
+              "zh": "合併與投影",
+              "en": "Combine and project"
+            },
+            "value": {
+              "zh": "形成此位置的表示",
+              "en": "Produce a representation for this position"
+            }
+          },
+          {
+            "label": {
+              "zh": "後續處理",
+              "en": "Further processing"
+            },
+            "value": {
+              "zh": "殘差、正規化與逐位置轉換",
+              "en": "Residual, normalization and position-wise transforms"
+            }
+          }
+        ],
+        "id": "03"
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "哪個子層主要跨位置混合資訊？",
+        "en": "Which sublayer primarily mixes information across positions?"
+      },
+      "options": [
+        {
+          "zh": "逐位置前饋網路",
+          "en": "Position-wise feed-forward network"
+        },
+        {
+          "zh": "注意力",
+          "en": "Attention"
+        }
+      ],
+      "answer": 1,
+      "feedback": [
+        {
+          "zh": "前饋轉換與注意力混合扮演不同角色。",
+          "en": "Feed-forward transformations and attention mixing play different roles."
+        },
+        {
+          "zh": "前饋網路在每個位置各自運作。",
+          "en": "The feed-forward network operates separately at each position."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "autoregressive-generation",
+    "title": {
+      "zh": "自迴歸生成",
+      "en": "Autoregressive generation"
+    },
+    "objective": {
+      "zh": "生成下一個 token 時，模型已經看見後面的 token 嗎？",
+      "en": "Has the model already seen future tokens when predicting the next one?"
+    },
+    "scenes": [
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "pipeline",
+          "transformer"
+        ],
+        "title": {
+          "zh": "建立可見前綴",
+          "en": "Establish the visible prefix"
+        },
+        "problem": {
+          "zh": "生成下一個 token 時，模型已經看見後面的 token 嗎？",
+          "en": "Has the model already seen future tokens when predicting the next one?"
+        },
+        "mechanism": {
+          "zh": "因果遮罩讓各位置只使用當前與較早的位置。輸出分布供解碼程序挑選一個 token，再把它附加到序列。",
+          "en": "A causal mask permits the current and earlier positions. The output distribution feeds a decoding policy, which chooses one token to append."
+        },
+        "observe": {
+          "zh": "第一位置只能使用自己，第二位置可用一、二；尚未選出的第三個 token 不在輸入。",
+          "en": "The first position sees only itself. The second sees the first two positions. The unchosen third token is absent."
+        },
+        "boundary": {
+          "zh": "示意機率不證明選出的文字正確。解碼策略也不會突破因果遮罩。",
+          "en": "The illustrative probabilities cannot establish truth. A decoding policy does not bypass the causal mask."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "位置 1",
+              "en": "Position 1"
+            },
+            "value": {
+              "zh": "明天｜只見 1",
+              "en": "It | sees 1"
+            }
+          },
+          {
+            "label": {
+              "zh": "位置 2",
+              "en": "Position 2"
+            },
+            "value": {
+              "zh": "可能｜看見 1、2",
+              "en": "may | sees 1 and 2"
+            }
+          },
+          {
+            "label": {
+              "zh": "位置 3",
+              "en": "Position 3"
+            },
+            "value": {
+              "zh": "等待本次選取",
+              "en": "Awaiting selection"
+            }
+          }
+        ],
+        "id": "01"
+      },
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "transformer",
+          "autoregression"
+        ],
+        "title": {
+          "zh": "比較兩種解碼策略",
+          "en": "Compare decoding policies"
+        },
+        "problem": {
+          "zh": "取最高機率和抽樣一定會選到相同 token 嗎？",
+          "en": "Do maximum-probability selection and sampling always choose the same token?"
+        },
+        "mechanism": {
+          "zh": "兩個選項共用同一候選分布。取最大值挑 0.7 的候選，抽樣仍可取到機率 0.3 的候選；教具用固定抽樣結果重現比較。",
+          "en": "Both choices use the same distribution. Maximum-probability selection picks the 0.7 candidate. Sampling can pick the 0.3 candidate, illustrated here by one fixed sample."
+        },
+        "observe": {
+          "zh": "切換解碼方式，對照哪個 token 被附加到序列。",
+          "en": "Switch decoding policies to compare which token is appended."
+        },
+        "boundary": {
+          "zh": "示意機率不證明選出的文字正確。解碼策略也不會突破因果遮罩。",
+          "en": "The illustrative probabilities cannot establish truth. A decoding policy does not bypass the causal mask."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "已知前綴",
+              "en": "Known prefix"
+            },
+            "value": {
+              "zh": "明天、可能",
+              "en": "It, may"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "label": {
+              "zh": "選最大值",
+              "en": "Choose maximum"
+            },
+            "result": {
+              "zh": "選到「下雨」，把它加入已知序列。",
+              "en": "Append “rain” to the known sequence."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "候選",
+                  "en": "Candidates"
+                },
+                "value": {
+                  "zh": "下雨 0.7／放晴 0.3",
+                  "en": "rain 0.7 / clear 0.3"
+                }
+              },
+              {
+                "label": {
+                  "zh": "下一個輸入",
+                  "en": "Next prefix"
+                },
+                "value": {
+                  "zh": "明天、可能、下雨",
+                  "en": "It, may, rain"
+                }
+              }
+            ]
+          },
+          {
+            "label": {
+              "zh": "固定抽樣結果",
+              "en": "Use fixed sample"
+            },
+            "result": {
+              "zh": "此次抽到「放晴」，下一步收到不同前綴。",
+              "en": "This sample chooses “clear,” giving the next step a different prefix."
+            },
+            "cards": [
+              {
+                "label": {
+                  "zh": "候選",
+                  "en": "Candidates"
+                },
+                "value": {
+                  "zh": "下雨 0.7／放晴 0.3",
+                  "en": "rain 0.7 / clear 0.3"
+                }
+              },
+              {
+                "label": {
+                  "zh": "下一個輸入",
+                  "en": "Next prefix"
+                },
+                "value": {
+                  "zh": "明天、可能、放晴",
+                  "en": "It, may, clear"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "02"
+      },
+      {
+        "kind": "token-stream",
+        "sourceAnchors": [
+          "transformer",
+          "autoregression"
+        ],
+        "title": {
+          "zh": "把新 token 加到前綴",
+          "en": "Append the token and repeat"
+        },
+        "problem": {
+          "zh": "選完第三個 token 後，下一次預測使用哪些位置？",
+          "en": "After choosing the third token, which positions are available for the next prediction?"
+        },
+        "mechanism": {
+          "zh": "把選出的 token 接到前綴。下一次重新依這個前綴估計第四個 token。下雨和放晴兩個結果會各自形成不同的下一輪輸入。",
+          "en": "Append the chosen token. The next round estimates a fourth token from that expanded prefix. Choosing rain or clear creates a different next input."
+        },
+        "observe": {
+          "zh": "圖中沿用固定抽樣結果「放晴」；這是新的已知 token，下一個位置仍待預測。",
+          "en": "This scene follows the fixed sample “clear.” It is now part of the known prefix, and the next position remains to be predicted."
+        },
+        "boundary": {
+          "zh": "示意機率不證明選出的文字正確。解碼策略也不會突破因果遮罩。",
+          "en": "The illustrative probabilities cannot establish truth. A decoding policy does not bypass the causal mask."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "先前前綴",
+              "en": "Previous prefix"
+            },
+            "value": {
+              "zh": "明天、可能",
+              "en": "It, may"
+            }
+          },
+          {
+            "label": {
+              "zh": "新增位置 3",
+              "en": "New position 3"
+            },
+            "value": {
+              "zh": "放晴",
+              "en": "clear"
+            }
+          },
+          {
+            "label": {
+              "zh": "下一輪",
+              "en": "Next round"
+            },
+            "value": {
+              "zh": "使用 1、2、3 預測位置 4",
+              "en": "Use positions 1, 2 and 3 to predict position 4"
+            }
+          }
+        ],
+        "id": "03"
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "候選機率 0.7 能證明會下雨嗎？",
+        "en": "Does a candidate probability of 0.7 prove it will rain?"
+      },
+      "options": [
+        {
+          "zh": "不能，那是此文字續接的分布",
+          "en": "No, it is a distribution over continuations"
+        },
+        {
+          "zh": "能，代表氣象驗證已通過",
+          "en": "Yes, weather verification has passed"
+        }
+      ],
+      "answer": 0,
+      "feedback": [
+        {
+          "zh": "預報需要獨立觀測或可信來源。",
+          "en": "A forecast needs independent observations or reliable sources."
+        },
+        {
+          "zh": "文字機率並未驗證天氣。",
+          "en": "A token probability does not verify weather."
+        }
+      ]
+    }
+  },
+  {
+    "slug": "verification-boundary",
+    "title": {
+      "zh": "生成與驗證的界線",
+      "en": "Generation and verification"
+    },
+    "objective": {
+      "zh": "AI 說表單完整，怎樣知道必要欄位真的填了？",
+      "en": "When AI calls a form complete, how can you check the required field is present?"
+    },
+    "scenes": [
+      {
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "limits"
+        ],
+        "title": {
+          "zh": "分清三種訊號",
+          "en": "Distinguish three signals"
+        },
+        "problem": {
+          "zh": "AI 說表單完整，怎樣知道必要欄位真的填了？",
+          "en": "When AI calls a form complete, how can you check the required field is present?"
+        },
+        "mechanism": {
+          "zh": "注意力表示一個頭取用資訊的比例。生成機率表示文字續接偏好。驗證以獨立條件檢查實際欄位。",
+          "en": "Attention describes one head’s information mixture. Generation probability describes continuations. Verification checks the actual fields against an independent rule."
+        },
+        "observe": {
+          "zh": "模型可為文字分配高機率，必填資料仍要查實際欄位。",
+          "en": "A model can assign high probability to a continuation while the required fields still need a separate check."
+        },
+        "boundary": {
+          "zh": "具有非空值只證明通過這條規則，其他資料完整性仍需獨立檢查。",
+          "en": "A nonempty value passes only this rule. Other data-integrity claims require separate checks."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "注意力權重",
+              "en": "Attention weight"
+            },
+            "value": {
+              "zh": "混合位置的資訊",
+              "en": "Mixes information across positions"
+            }
+          },
+          {
+            "label": {
+              "zh": "生成機率",
+              "en": "Generation probability"
+            },
+            "value": {
+              "zh": "下一個文字片段的分布",
+              "en": "Distribution over next pieces"
+            }
+          },
+          {
+            "label": {
+              "zh": "規則驗證",
+              "en": "Rule verification"
+            },
+            "value": {
+              "zh": "檢查必要欄位是否有值",
+              "en": "Checks whether required fields are filled"
+            }
+          }
+        ],
+        "id": "01"
+      },
+      {
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "limits"
+        ],
+        "title": {
+          "zh": "清空必要欄位",
+          "en": "Clear a required field"
+        },
+        "problem": {
+          "zh": "清空文件類型欄，結果應如何變化？",
+          "en": "What should change if the document type is cleared?"
+        },
+        "mechanism": {
+          "zh": "查驗程式讀取三個合成欄位的實際值，逐一檢查是否有文字。把文件類型留空後，即使選擇顯示流暢的完成聲明，查驗結果仍指出缺少欄位。",
+          "en": "The check reads the values in the three synthetic fields and looks for a nonempty value in each. Leave the document type blank. Even with the fluent completion claim on, the check reports a missing field."
+        },
+        "observe": {
+          "zh": "填入文件類型並切換聲明，比較哪項改變會影響查驗結果。",
+          "en": "Fill in the document type and toggle the claim. Compare which input changes validation."
+        },
+        "boundary": {
+          "zh": "具有非空值只證明通過這條規則，其他資料完整性仍需獨立檢查。",
+          "en": "A nonempty value passes only this rule. Other data-integrity claims require separate checks."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "申請編號",
+              "en": "Application ID"
+            },
+            "value": {
+              "zh": "SYN-001",
+              "en": "SYN-001"
+            }
+          },
+          {
+            "label": {
+              "zh": "申請人代號",
+              "en": "Applicant code"
+            },
+            "value": {
+              "zh": "DEMO-A",
+              "en": "DEMO-A"
+            }
+          },
+          {
+            "label": {
+              "zh": "文件類型",
+              "en": "Document type"
+            },
+            "value": {
+              "zh": "空白",
+              "en": "Blank"
+            }
+          }
+        ],
+        "id": "02",
+        "demo": "required-field"
+      },
+      {
+        "kind": "evidence-check",
+        "sourceAnchors": [
+          "apply"
+        ],
+        "title": {
+          "zh": "用驗證指出下一步",
+          "en": "Use validation to identify the next action"
+        },
+        "problem": {
+          "zh": "若程式指出缺少文件類型，接下來要補什麼？",
+          "en": "What should happen after the check finds a missing document type?"
+        },
+        "mechanism": {
+          "zh": "保留欄位輸入與查驗輸出。寫明哪個欄位欠缺，補件後重跑同一條規則，而非用語氣判斷是否完整。",
+          "en": "Keep the inspected input and the check result. Identify the missing field and rerun the same check after it is filled."
+        },
+        "observe": {
+          "zh": "此案例須補文件類型。存在性驗證通過後，其他條件仍可另外核對。",
+          "en": "The document type needs to be filled in. Passing this presence check still leaves other rules to verify."
+        },
+        "boundary": {
+          "zh": "具有非空值只證明通過這條規則，其他資料完整性仍需獨立檢查。",
+          "en": "A nonempty value passes only this rule. Other data-integrity claims require separate checks."
+        },
+        "cards": [
+          {
+            "label": {
+              "zh": "合成表單",
+              "en": "Synthetic form"
+            },
+            "value": {
+              "zh": "SYN-001／DEMO-A／文件類型空白",
+              "en": "SYN-001 / DEMO-A / document type blank"
+            }
+          },
+          {
+            "label": {
+              "zh": "結果",
+              "en": "Result"
+            },
+            "value": {
+              "zh": "缺少文件類型",
+              "en": "Document type missing"
+            }
+          },
+          {
+            "label": {
+              "zh": "下一步",
+              "en": "Next action"
+            },
+            "value": {
+              "zh": "補上該欄再驗證",
+              "en": "Fill the field and rerun validation"
+            }
+          }
+        ],
+        "id": "03"
+      }
+    ],
+    "check": {
+      "question": {
+        "zh": "哪個結果能判定此規則是否通過？",
+        "en": "What establishes whether this rule passed?"
+      },
+      "options": [
+        {
+          "zh": "讀取生成 token 的機率",
+          "en": "Read the generated token probability"
+        },
+        {
+          "zh": "直接檢查實際欄位",
+          "en": "Inspect the actual field"
+        }
+      ],
+      "answer": 1,
+      "feedback": [
+        {
+          "zh": "機率無法證明欄位內容。",
+          "en": "A generation probability cannot establish field contents."
+        },
+        {
+          "zh": "可重現的欄位檢查提供此項證據。",
+          "en": "A reproducible field check supplies this evidence."
+        }
+      ]
+    }
+  }
+]
