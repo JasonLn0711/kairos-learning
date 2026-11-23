@@ -93,8 +93,15 @@
 <style>
   .weights.cards {grid-template-columns:1fr}
   .weights.cards > div {display:grid;grid-template-columns:minmax(5rem,.35fr) 1fr;align-items:center;border-top:0;border-inline-start:4px solid var(--accent)}
+  .weights {container-type:inline-size}
   .weights dd {display:grid;grid-template-columns:1fr auto;gap:.1rem .65rem;align-items:center}
   .weights meter {grid-column:1/-1;grid-row:2;inline-size:100%;height:1.1rem}
+  @container (max-width:24rem){
+    .weights.cards > div {display:block}
+    .weights.cards dd {display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:.25rem .6rem}
+    .weights meter {order:2;flex-basis:100%}
+  }
+  @media(max-width:390px){.learning-stage .gates{grid-template-columns:1fr}}
   .contribution {font-size:.9em;font-variant-numeric:tabular-nums}
   .gates li[data-outcome='failed'] {outline:2px solid var(--ink);outline-offset:-2px}
   .gates li[data-outcome='skipped'] {border-style:dashed;background:transparent}

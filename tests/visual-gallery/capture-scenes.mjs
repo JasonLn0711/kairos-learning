@@ -40,7 +40,7 @@ try {
  for(const b of [metric.stage,metric.controls,metric.title])assert.ok(b && b[1]>=0 && b[1]+b[3]<=height+1,JSON.stringify({id,lang,width,step,b}));
  }
  const name=[id,lang,width,step,variant].join('-')+'.png';
- const data=await page.screenshot({path:dir+'/'+name});
+ const data=await page.screenshot({path:dir+'/'+name,fullPage:width<1120});
  receipts.push({name,url:page.url(),width,height,lang,step,variant,...metric,utc:new Date().toISOString(),sha256:createHash('sha256').update(data).digest('hex')});
  }
  }
