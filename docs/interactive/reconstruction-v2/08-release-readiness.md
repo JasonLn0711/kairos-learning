@@ -16,9 +16,9 @@
 
 共執行 80 套 Playwright 設定。77 套廣泛檢查初次 65 套通過，補環境與修正連接埠後另 3 套通過，加上專用預覽與兩套代表課，最終 71 套通過、9 套仍有失敗。各設定與個別退出碼見[逐套紀錄](../../../.local/interactive-v2/task08/suite-progress.log)，每套的錯誤堆疊與未執行案例另存[原始輸出](../../../.local/interactive-v2/task08/suites/)。初次廣泛檢查採每套首敗即停。兩套代表課使用上表最終完整結果；觀點草稿使用專用預覽，16/16 通過。
 
-- 修正英文圖譜入口後，AASE bilingual 全套 54 passed、9 failed。其中 M02-02 已在基準重現 768 px 閱讀檢查失敗。其餘失敗涉及文章內容或版面。AASE 工作坊補齊鎖定的 Python 環境後 46 passed、19 failed，保留逐頁失敗記錄。[英文](../../../.local/interactive-v2/task08/atlas-reflow.log) · [工作坊](../../../.local/interactive-v2/task08/aase-workshop-retry.log)
+- 修正英文圖譜入口後，AASE bilingual 全套 54 passed、9 failed。9 個失敗案例全數在改版前基準重現。AASE 工作坊補齊鎖定的 Python 環境後 46 passed、19 failed，19 個失敗案例也在基準重現。兩組共 28 個案例逐頁比對相同的首個斷言錯誤。[逐頁比對](../../../.local/interactive-v2/task08/baseline-failure-comparison.json)。[英文](../../../.local/interactive-v2/task08/atlas-reflow.log) · [工作坊](../../../.local/interactive-v2/task08/aase-workshop-retry.log)
 - AASE M01-03 的原生選單鍵盤測試在原始基準也得到 reviewer，斷言期待 b。CEH M04-C03/C04/C05 的 sitemap 排除式涵蓋已發布的 m04-10，基準與最終版的該頁都回應 200 且列入 sitemap。[基準選單](../../../.local/interactive-v2/task08/baseline-m0103.log)
-- 兩套連接埠衝突改用獨立本機靜態站後通過，M03-04 為 2/2，M04-08 為 8/8。M07-01 補齊測試環境後 3/3。AASE M07-05、CEH M04-C06、NAS 等剩餘案例依原始輸出保留；未逐案建立基準的失敗原因仍待定位。
+- 兩套連接埠衝突改用獨立本機靜態站後通過，M03-04 為 2/2，M04-08 為 8/8。M07-01 補齊測試環境後 3/3。AASE M07-05 的檢查按鈕在修改輸入後消失；CEH M04-C06 原生選單以 Home、ArrowDown、Enter 操作後仍選到 777；NAS 文章的 #related a 數量為零。三項均已在基準與最終版以同一操作比較，觀察結果相同。[控制項比較](../../../.local/interactive-v2/task08/baseline-controls.json) · [連結比較](../../../.local/interactive-v2/task08/baseline-selectors.json)
 
 ## 變更、回復與正式站讀回
 
