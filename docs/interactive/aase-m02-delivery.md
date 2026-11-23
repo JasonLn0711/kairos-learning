@@ -111,3 +111,9 @@ The compact-desktop compaction alternate state was inspected at 1280×720. The s
 ## Planning and related evidence
 
 The [11/23 day note](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/days/2026-11-23.md#aase-m02-immersive-2026-11-23) records the teaching outcome and release gate. The [W48 plan](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/weekly-plan.md#aase-m02-immersive-2026-11-23) records capacity and the [website project](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#aase-m02-immersive-2026-11-23) records status. See the [Request Lifecycle pilot](../interactive-learning-pilot.md) for the predecessor and the [curriculum coverage](aase-m02-coverage.md) for source anchors and the integrated exercise.
+
+## Production read-back
+
+The initial Pages run deployed `85e8bd0b`. Live inspection found 22 px of outer vertical scroll in the Chinese DNS step at 1280×720. Fix `e6495938` contained the status announcement within the scrollable focus pane. All 20 bilingual Request Lifecycle scenes fit 1280×720 locally after the fix, and the 13 Request Lifecycle browser tests passed.
+
+[GitHub Pages run 45158413361](https://github.com/JasonLn0711/kairos-learning/actions/runs/45158413361) deployed `e6495938d7b1e488668b43e85efd311d9a9d3fa4`. On November 23, 2026, Chromium verified 40 concept links per locale, Softmax and Request Lifecycle step 2 at 1280×720, and both canonical module links. Search and sitemap included both concept paths. A missing path returned 404, and all six published MATLAB ZIP files matched their SHA-256 checksums. These checks establish a production spot check.
