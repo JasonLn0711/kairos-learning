@@ -1,0 +1,628 @@
+{
+  "id": "request-lifecycle",
+  "status": "published",
+  "publishedOn": "2026-11-23",
+  "revisedOn": "2026-11-23",
+  "version": "1.0.0",
+  "title": {
+    "zh": "一個網頁請求的旅程",
+    "en": "How an HTTPS Request Travels"
+  },
+  "summary": {
+    "zh": "跟著瀏覽器打開一個頁面，逐段看 DNS 查詢、連線、伺服器處理和回應。切換 DNS 快取與資料庫速度，觀察等待出現在哪裡。",
+    "en": "Follow a browser as it opens a page, from DNS and connection setup to server work and the response. Change the DNS cache and database speed to see where the browser waits."
+  },
+  "objective": {
+    "zh": "看完後，你能說出一次 HTTPS 請求經過哪些角色、辨認哪些工作影響等待時間或頁面能否取得，並解釋為什麼 DNS 快取命中時仍可能要等資料庫。",
+    "en": "By the end, you can trace the roles in an HTTPS request, identify work that affects response time or whether the page is available, and explain why a DNS cache hit can still leave the browser waiting on the database."
+  },
+  "assumptions": [
+    {
+      "zh": "用虛構網址 https://portal.example/guide 追蹤一次頁面導覽。瀏覽器需要取得新的頁面內容，且目前沒有可重用的連線。",
+      "en": "We follow one navigation to the fictional URL https://portal.example/guide. The browser needs a fresh page response and has no connection it can reuse."
+    },
+    {
+      "zh": "範例中，瀏覽器透過 TCP 與 TLS 1.3 使用 HTTP/2，並與反向代理建立 HTTPS 連線。應用程式要查一次資料庫才能完成頁面。",
+      "en": "In this example, the browser uses HTTP/2 over TCP and TLS 1.3 and makes its HTTPS connection to a reverse proxy. The application needs one database query to complete the page."
+    },
+    {
+      "zh": "動畫用來指出角色的分工、訊息方向和等待的位置。播放速度為示意，實際網站的耗時和路徑取決於網路、快取和部署方式。",
+      "en": "The animation shows roles, message direction, and where work can wait. Playback speed is illustrative. Actual timings and paths depend on the network, caches, and deployment."
+    }
+  ],
+  "nodes": [
+    {
+      "id": "browser",
+      "kind": "browser",
+      "label": {
+        "zh": "瀏覽器",
+        "en": "Browser"
+      },
+      "x": 1,
+      "y": 1
+    },
+    {
+      "id": "dns",
+      "kind": "dns",
+      "label": {
+        "zh": "DNS 解析器",
+        "en": "DNS resolver"
+      },
+      "x": 1,
+      "y": 5
+    },
+    {
+      "id": "edge",
+      "kind": "edge",
+      "label": {
+        "zh": "反向代理",
+        "en": "Reverse proxy"
+      },
+      "x": 3,
+      "y": 3
+    },
+    {
+      "id": "app",
+      "kind": "app",
+      "label": {
+        "zh": "應用程式",
+        "en": "Application"
+      },
+      "x": 5,
+      "y": 5
+    },
+    {
+      "id": "database",
+      "kind": "database",
+      "label": {
+        "zh": "資料庫",
+        "en": "Database"
+      },
+      "x": 7,
+      "y": 7
+    }
+  ],
+  "edges": [
+    {
+      "id": "browser-dns",
+      "from": "browser",
+      "to": "dns"
+    },
+    {
+      "id": "browser-edge",
+      "from": "browser",
+      "to": "edge"
+    },
+    {
+      "id": "edge-app",
+      "from": "edge",
+      "to": "app"
+    },
+    {
+      "id": "app-database",
+      "from": "app",
+      "to": "database"
+    }
+  ],
+  "steps": [
+    {
+      "id": "navigation",
+      "order": 1,
+      "title": {
+        "zh": "瀏覽器讀取網址",
+        "en": "The browser reads the URL"
+      },
+      "text": {
+        "zh": {
+          "problem": "你按下 Enter 後，瀏覽器要從網址中找出哪些資訊？",
+          "mechanism": "瀏覽器讀出 https、主機名稱 portal.example 和路徑 /guide。它會用主機名稱找到可連線的網路位址，再請網站提供 /guide 的內容。",
+          "observe": "先看瀏覽器節點。此時的重點是辨認要找哪個網站，以及要向網站取得哪個資源。",
+          "boundary": "瀏覽器可能從快取取得頁面。本例假設它需要向網路取得這個頁面。"
+        },
+        "en": {
+          "problem": "When you press Enter, what does the browser need to learn from the URL?",
+          "mechanism": "The browser reads the scheme https, the hostname portal.example, and the path /guide. It uses the hostname to find a network address it can connect to, then asks the site for the content at /guide.",
+          "observe": "Start at the browser. Its first job here is to identify the site and the resource it wants from that site.",
+          "boundary": "A browser may get a page from a cache. This example assumes it needs to fetch the page over the network."
+        }
+      },
+      "scene": {
+        "focus": "browser",
+        "route": [
+          "browser"
+        ],
+        "label": {
+          "zh": "解析網址",
+          "en": "Read the URL"
+        },
+        "signal": "local"
+      }
+    },
+    {
+      "id": "dns",
+      "order": 2,
+      "title": {
+        "zh": "DNS 查得網站位址",
+        "en": "DNS finds the site address"
+      },
+      "text": {
+        "zh": {
+          "problem": "瀏覽器知道 portal.example，接下來要連到哪個網路位址？",
+          "mechanism": "瀏覽器端先查看是否已有可用的位址快取。如果沒有，就向 DNS 解析器查詢對應的 IP 位址。解析器可以使用自己的快取，也可以再向其他 DNS 伺服器查詢。",
+          "observe": "查詢從瀏覽器方向送出，位址答案回到瀏覽器。接下來的連線會用到這個位址，路徑 /guide 則留到 HTTP 請求才使用。",
+          "boundary": "圖上用一個節點代表 DNS 解析器。實際的名稱解析可能牽涉多個伺服器，也可能找到多個可用位址。"
+        },
+        "en": {
+          "problem": "The browser knows the name portal.example. Which network address should it connect to?",
+          "mechanism": "The browser side first checks for a usable cached address. Without one, it asks a DNS resolver for an IP address. The resolver may answer from its own cache or consult other DNS servers.",
+          "observe": "The query goes out from the browser side and the address answer comes back. The connection uses that address, and the path /guide comes into play when the HTTP request is sent.",
+          "boundary": "The diagram represents DNS resolution with one resolver node. In practice, a lookup may involve several servers or return multiple usable addresses."
+        }
+      },
+      "scene": {
+        "focus": "dns",
+        "route": [
+          "browser",
+          "dns",
+          "browser"
+        ],
+        "label": {
+          "zh": "查詢並取得 IP 位址",
+          "en": "Look up an IP address"
+        },
+        "signal": "request"
+      },
+      "variant": {
+        "when": "dns-cached",
+        "scene": {
+          "focus": "browser",
+          "route": [
+            "browser"
+          ],
+          "label": {
+            "zh": "使用已有的 DNS 位址",
+            "en": "Use the cached DNS address"
+          },
+          "signal": "local"
+        },
+        "text": {
+          "zh": {
+            "observe": "瀏覽器端已有可用的位址答案，所以圖上略過瀏覽器與 DNS 解析器之間的往返。下一步仍會用到這個位址。",
+            "boundary": "這次命中省去的是對這個網域的網路查詢。頁面內容另由 HTTP 快取處理，本例仍需要向網站取得回應。"
+          },
+          "en": {
+            "observe": "The browser side already has a usable address answer, so the diagram skips the round trip to the DNS resolver. The next step still needs the address.",
+            "boundary": "This hit saves the network lookup for this hostname. Page content has its own HTTP caching rules, and the browser still needs a response from the site in this example."
+          }
+        }
+      }
+    },
+    {
+      "id": "tcp",
+      "order": 3,
+      "title": {
+        "zh": "建立 TCP 連線",
+        "en": "Establish the TCP connection"
+      },
+      "text": {
+        "zh": {
+          "problem": "知道位址後，瀏覽器與反向代理怎麼準備傳送資料？",
+          "mechanism": "瀏覽器送出 SYN，反向代理回覆 SYN-ACK，瀏覽器再送 ACK。這是 TCP 的三向交握。連線建立後，TCP 會為兩端提供可靠、依序的位元組傳輸。",
+          "observe": "沿著圖上的箭頭數三次。訊息依序由瀏覽器送出、由代理回覆，再由瀏覽器確認。",
+          "boundary": "本例建立新的 HTTP/2 連線。已有合適連線時可以重用，HTTP/3 則使用 QUIC。"
+        },
+        "en": {
+          "problem": "Once the browser has an address, how do it and the proxy get ready to exchange data?",
+          "mechanism": "The browser sends SYN, the proxy replies with SYN-ACK, and the browser sends ACK. This is the TCP three-way handshake. The connection then provides reliable, ordered byte delivery between the two peers.",
+          "observe": "Follow the three arrows in order. The browser starts the exchange, the proxy replies, and the browser acknowledges the reply.",
+          "boundary": "This example opens a new HTTP/2 connection. A suitable existing connection can be reused. HTTP/3 uses QUIC."
+        }
+      },
+      "scene": {
+        "focus": "edge",
+        "route": [
+          "browser",
+          "edge",
+          "browser",
+          "edge"
+        ],
+        "label": {
+          "zh": "SYN → SYN-ACK → ACK",
+          "en": "SYN → SYN-ACK → ACK"
+        },
+        "signal": "setup"
+      }
+    },
+    {
+      "id": "tls",
+      "order": 4,
+      "title": {
+        "zh": "在連線上完成 TLS 交握",
+        "en": "Complete the TLS handshake"
+      },
+      "text": {
+        "zh": {
+          "problem": "在送出 HTTP 請求前，瀏覽器怎麼確認對方是這個網站，並保護接下來的內容？",
+          "mechanism": "在這次完整的 TLS 1.3 交握中，代理提供憑證，瀏覽器檢查憑證鏈是否可信，以及憑證上的身分是否符合網址的主機名稱。雙方也建立後續加密與驗證資料會用到的金鑰。",
+          "observe": "再看一次瀏覽器與代理之間的路徑。這次圖上代表的是 TLS 交握，完成後瀏覽器才會送出本例的 HTTP 請求。",
+          "boundary": "圖上的往返用來指出兩端的互動。TLS 訊息可分批或合併傳送。代理與應用程式之間的連線有自己的設定。"
+        },
+        "en": {
+          "problem": "Before sending the HTTP request, how does the browser verify the site's identity and protect the exchange?",
+          "mechanism": "In this full TLS 1.3 handshake, the proxy presents a certificate. The browser checks whether the certificate chain is trusted and whether the certificate identity matches the URL's hostname. The peers also establish keys to encrypt and authenticate later data.",
+          "observe": "Watch the same path between browser and proxy again. This time it represents the TLS handshake. In our example, the browser sends its HTTP request after this handshake.",
+          "boundary": "The arrows show which peers take part in the exchange. TLS messages can be split or sent together. The proxy's connection to the application is configured separately."
+        }
+      },
+      "scene": {
+        "focus": "edge",
+        "route": [
+          "browser",
+          "edge",
+          "browser",
+          "edge"
+        ],
+        "label": {
+          "zh": "TLS 1.3 交握",
+          "en": "TLS 1.3 handshake"
+        },
+        "signal": "secure"
+      }
+    },
+    {
+      "id": "http-request",
+      "order": 5,
+      "title": {
+        "zh": "送出 HTTP 請求",
+        "en": "Send the HTTP request"
+      },
+      "text": {
+        "zh": {
+          "problem": "連線準備好後，瀏覽器怎麼告訴網站它想要哪個頁面？",
+          "mechanism": "瀏覽器送出一個 HTTP/2 請求。方法是 GET，路徑是 /guide，欄位還會傳送目標主機等資訊。請求透過剛建立的 TLS 連線抵達反向代理。",
+          "observe": "這一步只看瀏覽器到代理的箭頭。前幾步建立了傳送條件，這一步才提出頁面需求。",
+          "boundary": "圖上的 GET /guide 是方便閱讀的方法和路徑摘要。HTTP/2 會把這些資訊編碼在請求欄位中。"
+        },
+        "en": {
+          "problem": "Once the connection is ready, how does the browser tell the site which page it wants?",
+          "mechanism": "The browser sends an HTTP/2 request with the method GET and path /guide. Its fields also carry information such as the target host. The request goes to the reverse proxy over the TLS connection just established.",
+          "observe": "Watch the arrow from browser to proxy. The earlier steps prepared the connection, and this step asks for the page.",
+          "boundary": "The label GET /guide is a readable summary of the method and path. HTTP/2 encodes this information in request fields."
+        }
+      },
+      "scene": {
+        "focus": "edge",
+        "route": [
+          "browser",
+          "edge"
+        ],
+        "label": {
+          "zh": "GET /guide",
+          "en": "GET /guide"
+        },
+        "signal": "request"
+      }
+    },
+    {
+      "id": "proxy",
+      "order": 6,
+      "title": {
+        "zh": "反向代理轉送請求",
+        "en": "Proxy forwards the request"
+      },
+      "text": {
+        "zh": {
+          "problem": "瀏覽器連上反向代理後，哪個角色負責產生頁面？",
+          "mechanism": "反向代理先接住請求，再根據網站的轉送規則，把這個請求送到處理 /guide 的應用程式。對瀏覽器來說，代理仍是它連線的對象。",
+          "observe": "箭頭從代理往應用程式移動。從這一步開始，畫面上的工作焦點進到服務端。",
+          "boundary": "不同網站可能由代理直接回應快取內容，也可能直接由網站伺服器接收瀏覽器的請求。這條路徑是本例的部署方式。"
+        },
+        "en": {
+          "problem": "Once the browser reaches the reverse proxy, which role makes the page?",
+          "mechanism": "The reverse proxy accepts the request, then follows the site's routing rules to forward it to the application that handles /guide. The proxy remains the browser's connection peer.",
+          "observe": "The arrow moves from the proxy to the application. Work now shifts to the server side in the diagram.",
+          "boundary": "A proxy may serve a response from its cache. Other sites may accept browser requests directly on their web server. The diagram shows the deployment used in this example."
+        }
+      },
+      "scene": {
+        "focus": "app",
+        "route": [
+          "edge",
+          "app"
+        ],
+        "label": {
+          "zh": "轉送至應用程式",
+          "en": "Forward to the application"
+        },
+        "signal": "request"
+      }
+    },
+    {
+      "id": "application",
+      "order": 7,
+      "title": {
+        "zh": "應用程式決定頁面內容",
+        "en": "Application prepares the page"
+      },
+      "text": {
+        "zh": {
+          "problem": "應用程式收到 /guide 後，還需要做哪些工作？",
+          "mechanism": "應用程式找到負責這個路徑的處理流程，準備產生頁面。本例的頁面需要顯示最新的指南清單，因此處理流程接著向資料庫讀取資料。",
+          "observe": "焦點留在應用程式。這一步是選擇處理流程，查詢的往返會在下一步出現。",
+          "boundary": "有些頁面可以直接使用固定內容或應用程式快取。會用到哪些服務，取決於頁面的處理方式。"
+        },
+        "en": {
+          "problem": "What does the application have to do after it receives /guide?",
+          "mechanism": "The application selects the handler for that path and prepares to build the page. In this example, the page needs the current list of guides, so the handler needs to read from the database.",
+          "observe": "Focus stays on the application while it selects the handler. The query round trip appears in the next step.",
+          "boundary": "Some pages can use fixed content or an application cache. The work a request triggers depends on how the page is built."
+        }
+      },
+      "scene": {
+        "focus": "app",
+        "route": [
+          "app"
+        ],
+        "label": {
+          "zh": "選擇頁面處理流程",
+          "en": "Select the page handler"
+        },
+        "signal": "local"
+      }
+    },
+    {
+      "id": "database",
+      "order": 8,
+      "title": {
+        "zh": "等待資料庫回傳結果",
+        "en": "Wait for the database result"
+      },
+      "text": {
+        "zh": {
+          "problem": "如果頁面需要資料庫的內容，瀏覽器在等哪一段工作？",
+          "mechanism": "應用程式送出查詢。資料庫讀取資料並回傳結果，應用程式拿到結果後才能完成本例的 HTML。",
+          "observe": "沿著應用程式到資料庫的箭頭，再跟著結果回到應用程式。試著切換資料庫速度，觀察這段等待。",
+          "boundary": "圖上把資料庫工作畫成一次查詢往返，實際等待還可能包括連線佇列。如果資料庫無法回傳結果，應用程式就需要錯誤處理或備用資料，才能回應這次請求。"
+        },
+        "en": {
+          "problem": "If the page needs database content, which piece of work is the browser waiting for?",
+          "mechanism": "The application sends a query. The database reads the data and returns a result. The application needs that result before it can finish the HTML for this example.",
+          "observe": "Follow the query from application to database and the result back to the application. Change the database speed to see how the wait changes.",
+          "boundary": "The diagram represents database work as one query round trip. The actual wait can also include time in a connection queue. If the database cannot return a result, the application needs to handle the failure or use fallback data to respond."
+        }
+      },
+      "scene": {
+        "focus": "database",
+        "route": [
+          "app",
+          "database",
+          "app"
+        ],
+        "label": {
+          "zh": "查詢指南清單",
+          "en": "Query the guide list"
+        },
+        "signal": "data"
+      },
+      "variant": {
+        "when": "db-slow",
+        "scene": {
+          "focus": "database",
+          "route": [
+            "app",
+            "database",
+            "app"
+          ],
+          "label": {
+            "zh": "等待較慢的查詢",
+            "en": "Wait for the slower query"
+          },
+          "signal": "data",
+          "pace": "slow"
+        },
+        "text": {
+          "zh": {
+            "observe": "查詢仍由應用程式送出，結果仍回到應用程式。動畫延長這段等待，因為本例的頁面需要等查詢結果才能完成。",
+            "boundary": "較長的動畫代表這段依賴可能拉長回應等待。實際有多慢，要從個別請求的量測確認。"
+          },
+          "en": {
+            "observe": "The application sends the same query and still receives the result. Playback adds time to that wait because the page depends on the result.",
+            "boundary": "The longer animation shows how this dependency can delay the response. Measuring an individual request would tell us how long it actually took."
+          }
+        }
+      }
+    },
+    {
+      "id": "response",
+      "order": 9,
+      "title": {
+        "zh": "瀏覽器收到回應",
+        "en": "Receive the HTTP response"
+      },
+      "text": {
+        "zh": {
+          "problem": "頁面內容準備好之後，怎麼回到瀏覽器？",
+          "mechanism": "應用程式把 HTTP 回應交給反向代理，代理再傳給瀏覽器。回應包含狀態、標頭和本例的 HTML。瀏覽器收到 HTML 後可以開始解析，並逐步把內容顯示在畫面上。",
+          "observe": "箭頭沿著應用程式、代理、瀏覽器的順序回來。畫面上這一趟只追蹤原本的頁面請求。",
+          "boundary": "解析 HTML 時，瀏覽器可能發現還需要樣式表、圖片或指令碼。這些資源可以各自發出請求或使用快取，畫面也可能分階段呈現。"
+        },
+        "en": {
+          "problem": "Once the page content is ready, how does it get back to the browser?",
+          "mechanism": "The application returns the HTTP response to the reverse proxy, which passes it back to the browser. The response carries a status, headers, and the HTML in this example. As HTML arrives, the browser can begin parsing it and showing content progressively.",
+          "observe": "The arrows lead back from application to proxy to browser. This return path follows the original page request.",
+          "boundary": "While parsing HTML, the browser may discover stylesheets, images, or scripts it needs. Those resources can trigger their own requests or come from a cache, and the page can appear in stages."
+        }
+      },
+      "scene": {
+        "focus": "browser",
+        "route": [
+          "app",
+          "edge",
+          "browser"
+        ],
+        "label": {
+          "zh": "回傳頁面 HTML",
+          "en": "Return the page HTML"
+        },
+        "signal": "response"
+      }
+    },
+    {
+      "id": "recap",
+      "order": 10,
+      "title": {
+        "zh": "把旅程連起來",
+        "en": "Put the journey together"
+      },
+      "text": {
+        "zh": {
+          "problem": "如果 DNS 已快取，但資料庫回覆變慢，使用者還會在哪裡等？",
+          "mechanism": "如果要讓頁面在目標時間內回應，可以分段檢視時間預算。瀏覽器先找到網站並準備連線，服務端接著取得資料並產生頁面，最後把回應傳回瀏覽器。DNS 快取縮短第一段，資料庫速度影響服務端準備回應的時間。花最多時間的階段值得優先量測。",
+          "observe": "沿著圖重走請求、資料查詢和回應的路徑。切換 DNS 快取再看第 2 步，切換資料庫速度再看第 8 步，你會看到兩個選項作用在不同位置。",
+          "boundary": "用這張圖可以提出對等待位置的假設。要分辨真實網站的延遲來源，還需要該次請求的瀏覽器和服務端計時。"
+        },
+        "en": {
+          "problem": "If DNS is cached but the database replies slowly, where can the user still be waiting?",
+          "mechanism": "If you have a target response time, review that time budget in stages. The browser finds the site and prepares a connection. The server gets the data and builds the page, then the response travels back. A DNS cache hit shortens the first stage, and database speed affects the server's response preparation. Start by measuring the stage that appears to take the most time.",
+          "observe": "Retrace the request, query, and response in the diagram. Change the DNS cache and revisit step 2, then change database speed and revisit step 8. The two controls affect different points on the path.",
+          "boundary": "The diagram helps you form a hypothesis about where a request waits. Browser and server timings for that request help determine the actual source of delay."
+        }
+      },
+      "scene": {
+        "focus": "browser",
+        "route": [
+          "browser",
+          "edge",
+          "app",
+          "database",
+          "app",
+          "edge",
+          "browser"
+        ],
+        "label": {
+          "zh": "從請求到回應",
+          "en": "From request to response"
+        },
+        "signal": "recap"
+      }
+    }
+  ],
+  "check": {
+    "question": {
+      "zh": "DNS 快取命中，這次的資料庫查詢卻很慢。依本例，哪個結果合理？",
+      "en": "The DNS cache hits, but this database query is slow. What can happen in our example?"
+    },
+    "options": [
+      {
+        "zh": "瀏覽器略過 DNS 的網路查詢，仍然要等應用程式取得資料。",
+        "en": "The browser skips the network DNS lookup and still waits for the application to get the data."
+      },
+      {
+        "zh": "瀏覽器直接從 DNS 快取取得 /guide 的 HTML。",
+        "en": "The browser gets the HTML for /guide directly from the DNS cache."
+      },
+      {
+        "zh": "DNS 快取命中後，應用程式會一起取得資料庫的查詢結果。",
+        "en": "When the DNS cache hits, the application also gets its database query result."
+      }
+    ],
+    "answer": 0,
+    "feedback": [
+      {
+        "zh": "答對了。已知位址可以省掉一次查詢，但這個頁面要等應用程式拿到資料庫結果才能完成。",
+        "en": "Correct. The cached address saves a lookup, and the application still needs the database result to finish the page."
+      },
+      {
+        "zh": "DNS 快取提供主機名稱對應的位址。/guide 的 HTML 屬於網站的 HTTP 回應。",
+        "en": "The DNS cache provides an address for a hostname. The HTML for /guide comes from the site's HTTP response."
+      },
+      {
+        "zh": "DNS 快取命中發生在瀏覽器找到網站時。資料庫結果則要等應用程式送出查詢後回傳。",
+        "en": "The DNS cache hit happens when the browser looks up the site. The database result comes back after the application sends its query."
+      }
+    ]
+  },
+  "sources": [
+    {
+      "id": "rfc-1034",
+      "title": {
+        "zh": "RFC 1034 · DNS 概念、名稱解析與快取",
+        "en": "RFC 1034 · DNS concepts, resolution, and caching"
+      },
+      "url": "https://www.rfc-editor.org/rfc/rfc1034.html",
+      "checkedOn": "2026-11-23"
+    },
+    {
+      "id": "rfc-9293",
+      "title": {
+        "zh": "RFC 9293 · TCP 與三向交握",
+        "en": "RFC 9293 · TCP and the three-way handshake"
+      },
+      "url": "https://www.rfc-editor.org/rfc/rfc9293.html",
+      "checkedOn": "2026-11-23"
+    },
+    {
+      "id": "rfc-9846",
+      "title": {
+        "zh": "RFC 9846 · TLS 1.3 與交握",
+        "en": "RFC 9846 · TLS 1.3 and its handshake"
+      },
+      "url": "https://www.rfc-editor.org/rfc/rfc9846.html",
+      "checkedOn": "2026-11-23"
+    },
+    {
+      "id": "rfc-9525",
+      "title": {
+        "zh": "RFC 9525 · TLS 服務身分驗證",
+        "en": "RFC 9525 · Service identity in TLS"
+      },
+      "url": "https://www.rfc-editor.org/rfc/rfc9525.html",
+      "checkedOn": "2026-11-23"
+    },
+    {
+      "id": "rfc-9110",
+      "title": {
+        "zh": "RFC 9110 · HTTP 語意與中介角色",
+        "en": "RFC 9110 · HTTP semantics and intermediaries"
+      },
+      "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "checkedOn": "2026-11-23"
+    },
+    {
+      "id": "rfc-9113",
+      "title": {
+        "zh": "RFC 9113 · HTTP/2 請求與連線",
+        "en": "RFC 9113 · HTTP/2 requests and connections"
+      },
+      "url": "https://www.rfc-editor.org/rfc/rfc9113.html",
+      "checkedOn": "2026-11-23"
+    },
+    {
+      "id": "rfc-9114",
+      "title": {
+        "zh": "RFC 9114 · HTTP/3 與 QUIC",
+        "en": "RFC 9114 · HTTP/3 over QUIC"
+      },
+      "url": "https://www.rfc-editor.org/rfc/rfc9114.html",
+      "checkedOn": "2026-11-23"
+    },
+    {
+      "id": "rfc-9111",
+      "title": {
+        "zh": "RFC 9111 · HTTP 快取",
+        "en": "RFC 9111 · HTTP caching"
+      },
+      "url": "https://www.rfc-editor.org/rfc/rfc9111.html",
+      "checkedOn": "2026-11-23"
+    },
+    {
+      "id": "html-parsing",
+      "title": {
+        "zh": "WHATWG HTML · HTML 文件解析",
+        "en": "WHATWG HTML · Parsing HTML documents"
+      },
+      "url": "https://html.spec.whatwg.org/multipage/parsing.html",
+      "checkedOn": "2026-11-23"
+    }
+  ]
+}

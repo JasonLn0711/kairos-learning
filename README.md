@@ -2,7 +2,7 @@
 
 研究與技術教育平台的課程入口：<https://learn.cs-kairos.com/>。個人研究、專案與文章由[主站](https://cs-kairos.com/)承接。
 
-新課程採 **Svelte 5＋SvelteKit 2＋TypeScript＋adapter-static**，輸出純靜態 `build/`。既有 MATLAB HTML、程式、圖庫與 ZIP 保留在 `site/`，直接複製到相同公開路徑。
+新課程採 **Svelte 5＋SvelteKit 3.4＋TypeScript＋adapter-static**，輸出純靜態 `build/`。既有 MATLAB HTML、程式、圖庫與 ZIP 保留在 `site/`，直接複製到相同公開路徑。
 
 ## 課程與閱讀工具
 

@@ -1,3 +1,4 @@
+import { interactiveCatalog } from './interactive.ts';
 import day02BData from '../../../content/ceh-day02-b.json' with {type:'json'};
 import day02AData from '../../../content/ceh-day02-a.json' with {type:'json'};
 import day01BData from '../../../content/ceh-day01-b.json' with {type:'json'};
@@ -25,6 +26,7 @@ export const lessons = allLessons.filter(l => isPublic(l, new Intl.DateTimeForma
 export const allTerms = JSON.parse(readFileSync(join(root, 'glossary.json'), 'utf8')) as Term[];
 export const terms = allTerms.map(t => ({...t, lessons: t.lessons.filter(id => lessons.some(l => l.id === id))})).filter(t => t.lessons.length);
 export const searchEntries: SearchEntry[] = lessons.flatMap(l => (['zh','en'] as Locale[]).map(lang => ({ id:l.id, lang, title:l.text[lang].title, summary:l.text[lang].summary, text:[...readingText(l.id,lang),...l.text[lang].objectives, ...l.text[lang].sections.flatMap(s => [s.heading,...s.paragraphs,s.code ?? '']), ...Object.values(l.text[lang].example), ...Object.values(l.text[lang].lab).flat(), ...l.questions.flatMap(q => [q.text[lang].prompt,...q.text[lang].options,...q.text[lang].rationales]), ...l.terms].join(' '), href:lessonPath(l,lang), label:l.course === 'ceh' ? `CEH ${l.module.toUpperCase()}` : l.course })));
+searchEntries.push(...interactiveCatalog.search);
 export const concepts = JSON.parse(readFileSync(join(root, 'concepts.json'), 'utf8')) as ConceptEntry[];
 if (concepts.some(c => !modules.some(m => m.id === c.module))) throw new Error('Concept registry references an unknown module');
 export const allConceptTeachings = readdirSync(join(root,'concepts')).filter(f => f.endsWith('.json')).map(f => JSON.parse(readFileSync(join(root,'concepts',f),'utf8')) as ConceptTeaching);
