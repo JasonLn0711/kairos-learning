@@ -60,7 +60,7 @@
   {/snippet}
   {#snippet stage()}
     <div class="concept-stage">
-      {#key scene.id + ':' + replay}
+      {#key concept.slug + ':' + scene.id + ':' + replay}
         <LearningStage {scene} {lang} {ready} fixture={chapter === 'm02-06' ? 'm02-06' : 'm02-04'} />
       {/key}
     </div>
@@ -84,6 +84,9 @@
     {/if}
   {/snippet}
   {#snippet explanation()}
+    {#if ready && (page.shallow?.url??page.url).searchParams.has('step') && (page.shallow?.url??page.url).searchParams.get('step')!==String(step)}
+      <p role="status">{zh?'此步驟不存在，顯示第一步。':'Unknown step. Showing the first step.'}</p>
+    {/if}
     <section class="explanation" aria-labelledby="concept-step-title">
       <div class="lesson-progress">
         <p class="position" role="status">{progress}</p>

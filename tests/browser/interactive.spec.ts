@@ -215,6 +215,7 @@ test('step history, keyboard controls, scenarios and comprehension feedback', as
   await page.locator('a[hreflang="zh-Hant"]').click();
   await expect(page).toHaveURL(/\/interactive\/system-design\/request-lifecycle\/\?step=2$/);
   await expect(current(2)).toBeVisible();
+  await expect(page.getByRole('radio', {name:'已有快取結果',exact:true})).toBeChecked();
 
   await page.goto('/en' + lessonPath + '?step=8');
   await expect(current(8)).toBeVisible();
@@ -297,4 +298,29 @@ test('interactive pages coexist with the established learning routes and downloa
   expect(download.ok()).toBeTruthy();
   const { createHash } = await import('node:crypto');
   expect(createHash('sha256').update(await download.body()).digest('hex')).toBe(sha256);
+});
+
+test('hidden lesson suspends its advancing packet and navigation releases the animation frame', async ({page})=>{
+  await page.clock.install();
+  await page.goto('/en'+lessonPath+'?step=5');
+  const svg=page.locator('svg.wide-svg:visible');
+  await expect(page.locator('[data-step="5"]')).toBeVisible();
+  await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now()+1000)));
+  await page.getByRole('button',{name:'Replay',exact:true}).evaluate((btn:HTMLButtonElement)=>btn.click());
+  await page.clock.runFor(80);
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'visibilityState',{value:'hidden',configurable:true});
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const point=()=>svg.locator('[data-packet]').getAttribute('transform');
+  const paused=await point();
+  await page.clock.runFor(500);expect(await point()).toBe(paused);
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'visibilityState',{value:'visible',configurable:true});
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.runFor(120);expect(await point()).not.toBe(paused);
+  await page.locator('.breadcrumbs a').first().evaluate((link:HTMLAnchorElement)=>link.click());
+  await page.clock.runFor(200);
+  await expect(page.locator('.interactive-stage')).toHaveCount(0);
 });

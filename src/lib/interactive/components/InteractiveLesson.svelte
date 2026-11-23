@@ -21,7 +21,14 @@
   let playing = $state(false);
   let finished = $state(false);
   let replay = $state(0);
-  let scenario = $state<Scenario>({ dnsCached: false, dbSlow: false });
+  const query=$derived((page.shallow?.url??page.url).searchParams);
+  let scenario=$state<Scenario>({dnsCached:false,dbSlow:false});
+  const invalidStep=$derived(ready && query.has('step') && String(parseStep(query.get('step')))!==query.get('step'));
+  function rememberScenario(event:MouseEvent){
+    const link=event.target instanceof Element?event.target.closest<HTMLAnchorElement>('a.language'):null;
+    if(!link || event.button!==0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)return;
+    try { sessionStorage.setItem('request-language-transfer',JSON.stringify({url:link.href,...scenario})); } catch { /* Storage can be disabled. */ }
+  }
   let selectedAnswer = $state<number>();
   let checkedAnswer = $state<number>();
 
@@ -41,6 +48,13 @@
   onMount(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const applyPreference = () => { reducedMotion = preference.matches; };
+    try {
+      const key='request-language-transfer';
+      const saved=sessionStorage.getItem(key);
+      sessionStorage.removeItem(key);
+      const transfer=saved && JSON.parse(saved);
+      if(transfer?.url===location.href)scenario={dnsCached:transfer.dnsCached===true,dbSlow:transfer.dbSlow===true};
+    } catch { /* Use the default scenario when storage is unavailable. */ }
     applyPreference();
     ready = true;
     preference.addEventListener('change', applyPreference);
@@ -75,6 +89,8 @@
     playing = true;
   }
 </script>
+
+<svelte:window onclick={rememberScenario}/>
 
 <ImmersiveShell {lang} {path} title={lesson.title[lang]} description={lesson.summary[lang]}
   step={stepNumber} stepId={step.id} {ready}
@@ -114,7 +130,7 @@
           <span>{zh ? 'HTTP/2 連線示意' : 'Illustrated HTTP/2 connection'}</span>
           <span>{zh ? '示意流程' : 'Illustration'}</span>
         </div>
-        <InteractiveStage nodes={lesson.nodes} edges={lesson.edges} {scene} {lang} {playing} {replay} onfinish={() => { finished = true; playing = false; }} />
+        <InteractiveStage stepId={step.id} nodes={lesson.nodes} edges={lesson.edges} {scene} {lang} {playing} {replay} onfinish={() => { finished = true; playing = false; }} />
   {/snippet}
   {#snippet controls()}
         {#if ready}
@@ -135,6 +151,7 @@
         {/if}
   {/snippet}
   {#snippet explanation()}
+    {#if invalidStep}<p role="status">{zh?'此步驟不存在，顯示第一步。':'Unknown step. Showing the first step.'}</p>{/if}
       <section class="explanation" aria-labelledby="step-title">
         <div class="step-progress">
           <p class="step-position">{progress}</p>

@@ -5,7 +5,10 @@
   import type { TeachingScene } from '../aase/model.ts';
   import { attentionDemo, contextBudget, contextBudgetLimit, contextBudgetParts, evaluateGates, subjectLimit } from '../aase/simulations.ts';
 
+  import {teachingStage} from '../visual/scene.ts';
+
   let { scene, lang, ready, fixture }: { scene: TeachingScene; lang: Locale; ready: boolean; fixture: 'm02-04' | 'm02-06' } = $props();
+  const stage=$derived(teachingStage(scene,lang));
   const zh = $derived(lang === 'zh');
   let choice = $state(0);
   let first = $state(1);
@@ -27,18 +30,18 @@
   const gateStatus = $derived(zh ? { passed: '通過', failed: '失敗', skipped: '略過' } : { passed: 'Passed', failed: 'Failed', skipped: 'Skipped' });
 </script>
 
-<section class="learning-stage" data-kind={scene.kind} aria-label={scene.title[lang]}>
-  <h2>{scene.title[lang]}</h2>
+<section class="learning-stage" data-kind={scene.kind} data-renderer={stage.renderer} aria-label={scene.title[lang]}>
+  <h2>{stage.caption}</h2>
   {#if scene.demo === 'governed-policy' || scene.demo === 'sandbox-policy' || scene.demo === 'scope-policy' || scene.demo === 'retry-policy' || scene.demo === 'required-field'}
     <PolicyStage demo={scene.demo} {lang} {ready} />
-  {:else if scene.demo === 'softmax'}
+  {:else if stage.renderer === 'softmax'}
     <div class="inputs">
       <label>{zh ? '分數' : 'Score'} A <input type="range" min="-4" max="4" step=".25" bind:value={first} disabled={!ready} /> {first}</label>
       <label>{zh ? '分數' : 'Score'} B <input type="range" min="-4" max="4" step=".25" bind:value={second} disabled={!ready} /> {second}</label>
     </div>
-    <dl class="cards">
+    <dl class="cards weights">
       {#each attention.weights as weight, index}
-        <div><dt>{index === 0 ? 'A' : 'B'} · {zh ? '權重' : 'Weight'}</dt><dd>{weight.toFixed(3)} × {index === 0 ? 2 : 6}<meter min="0" max="1" value={weight} aria-label={index === 0 ? 'A' : 'B'}></meter></dd></div>
+        <div><dt>{index === 0 ? 'A' : 'B'} · {zh ? '權重' : 'Weight'}</dt><dd>{weight.toFixed(3)} × {index === 0 ? 2 : 6}<meter min="0" max="1" value={weight} aria-label={index === 0 ? 'A' : 'B'}></meter><span class="contribution">{zh?'加權貢獻':'Contribution'} · {(weight*(index===0?2:6)).toFixed(3)}</span></dd></div>
       {/each}
     </dl>
     <p class="formula">
@@ -61,7 +64,7 @@
       <label>{zh ? '科目數' : 'Subjects'} <select bind:value={subjects} disabled={!ready}>{#each [1,2,3,4,5,6] as value}<option {value}>{value}</option>{/each}</select></label>
     </div>
     <output aria-live="polite">{fixture.toUpperCase()} · {zh ? '上限' : 'Limit'} {limit.limit} · {limit.accepted ? (zh ? '接受' : 'Accepted') : (zh ? '拒絕' : 'Rejected')}</output>
-  {:else if scene.demo === 'gates'}
+  {:else if stage.renderer === 'gates'}
     <div class="inputs checks">
       <label><input type="checkbox" bind:checked={schema} disabled={!ready} /> {zh ? '格式有效' : 'Schema valid'}</label>
       <label><input type="checkbox" bind:checked={authorized} disabled={!ready} /> {zh ? '已授權' : 'Authorized'}</label>
@@ -88,6 +91,14 @@
 </section>
 
 <style>
+  .weights.cards {grid-template-columns:1fr}
+  .weights.cards > div {display:grid;grid-template-columns:minmax(5rem,.35fr) 1fr;align-items:center;border-top:0;border-inline-start:4px solid var(--accent)}
+  .weights dd {display:grid;grid-template-columns:1fr auto;gap:.1rem .65rem;align-items:center}
+  .weights meter {grid-column:1/-1;grid-row:2;inline-size:100%;height:1.1rem}
+  .contribution {font-size:.9em;font-variant-numeric:tabular-nums}
+  .gates li[data-outcome='failed'] {outline:2px solid var(--ink);outline-offset:-2px}
+  .gates li[data-outcome='skipped'] {border-style:dashed;background:transparent}
+
   .learning-stage { min-width: 0; min-height: 0; flex: 1; display: grid; align-content: center; align-content: safe center; gap: .65rem; padding: clamp(.65rem, 2vw, 1.5rem); background: var(--soft); border: 1px solid var(--line); border-radius: .45rem; }
   h2 { margin: 0; font-size: clamp(1.15rem, 2vw, 1.65rem); }
   .inputs { display:flex; flex-wrap:wrap; gap:.4rem .8rem; }
