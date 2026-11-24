@@ -45,3 +45,5 @@ Bilingual educational perspectives use a separate catalog with the shared public
 ## Immersive interactive curriculum
 
 The existing static app serves a shared focus workspace and bilingual interactive atlas. Publication-aware routes, search, sitemap and lesson links derive from the validated catalogs. The original AASE articles remain the canonical curriculum. See the [engineering receipt](interactive/aase-m02-delivery.md) and [source coverage](interactive/aase-m02-coverage.md).
+
+Full-text search uses two prerendered locale projections from the same public catalog. The combined `/search-index.json` remains the input for existing consumers and the static release check compares it to both locale files in catalog order. Localized home links join the catalog and the workspace. The workspace presents a complete scene chooser on narrow screens. [Design, payload measurements and verification](web-design-optimization.md)

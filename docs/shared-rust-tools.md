@@ -136,3 +136,5 @@ Jason 指定用 rust-anything 找出可改善的路徑，Codex 執行剖析、�
 11/23 以 Chrome 讀取正式站。兩語均成功載入 252 筆索引。[中文搜尋](https://learn.cs-kairos.com/search/)「資料洩漏」回傳 3 筆，[英文搜尋](https://learn.cs-kairos.com/en/search/)「data leakage」回傳 6 筆，兩語均顯示零筆結果狀態。正式站檢查涵蓋搜尋功能，本機配對量測提供效能數據。維護者日後選用 Rust 時，先對當次產物執行 shadow 比對。
 
 [11/22 原始工作](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W47/days/2026-11-22.md#search-and-release-performance-2026-11-22) · [11/23 日誌](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/days/2026-11-23.md#kairos-performance-production-2026-11-23) · [W48 容量](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W48/weekly-plan.md#kairos-performance-production-2026-11-23)
+
+11/24 接續量測首次搜尋。`rust-anything` 剖析與建置檔配對量測支持依語系縮小下載。既有 JavaScript 搜尋函式承接查詢與排序。兩語索引的一致性、壓縮大小與等待狀態見[網頁設計優化](web-design-optimization.md)。

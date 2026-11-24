@@ -42,6 +42,8 @@ python3 -m http.server 4179 --bind 127.0.0.1 --directory build
 
 [架構與所有權](docs/platform-architecture.md)說明 FIRST PRINCIPLE 分工；[內容指南](docs/content-authoring.md)定義雙語教材與題庫規範；[發布與回復](docs/publishing-security.md)保存 PR、預覽、部署及 rollback 步驟。[本輪驗證回執](docs/releases/2026-10-23-phase-0-3.md)區分本機驗證、正式發布與真人使用驗收。
 
+[首頁、全文搜尋與手機分鏡優化](docs/web-design-optimization.md)保存 11/24 稽核、設計決策、索引量測及驗收範圍。
+
 GitHub Actions 在 PR 驗證內容、程式、資產與實際靜態產物，提供可下載的預覽 artifact；main 通過相同檢查後把 `build/` 發布到 GitHub Pages。Cloudflare 保留既有 proxied `learn` CNAME；本 repo 不管理 API／console 的存取控制。
 
 MATLAB 下載來源變更時，執行 `python3 scripts/package_release.py` 重建 ZIP 與 SHA-256。PDF 範本由 `python3 scripts/build_report_pdfs.py` 產生（需要 ReportLab），再重建下載包。Python 合成參考圖庫不視為 MATLAB 執行結果。
