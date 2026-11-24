@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 
 const root=process.env.VISUAL_ORIGIN??'http://127.0.0.1:4652';
 const dir=process.env.VISUAL_EVIDENCE_DIR??'.local/aase-concept-flows';
+const widths=process.argv.length>2?process.argv.slice(2).map(Number):[1280,768,390,320];
+assert.ok(widths.every(width=>Number.isInteger(width) && width>0));
 const chapters=await read('manifest');
 const failures=[];
 async function read(key){
@@ -12,11 +14,11 @@ async function read(key){
 }
 const browser=await chromium.launch();
 try{
-  for(const width of [1280,320])for(const lang of ['zh','en']){
+  for(const width of widths)for(const lang of ['zh','en']){
     const receipts=[];
     const folder=dir+'/'+lang+'-'+width;
     await mkdir(folder,{recursive:true});
-    const page=await browser.newPage({viewport:{width,height:width===320?844:720},reducedMotion:'reduce'});
+    const page=await browser.newPage({viewport:{width,height:width===768?1024:width<768?844:720},reducedMotion:'reduce'});
     for(const chapter of chapters)for(const unit of await read(chapter.id)){
       const path=(lang==='en'?'/en':'')+'/interactive/aase/m02/'+chapter.id+'/'+unit.slug+'/';
       await page.goto(root+path);
