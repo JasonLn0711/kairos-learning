@@ -61,17 +61,17 @@
     <div class="reading-layout">
       <section class="board" aria-label={zh?'章節流程':'Chapter flow'}>
         <div class="tools">
-          <button type="button" aria-pressed={mode==='chapter'} onclick={()=>move('')}>{zh?'章節脈絡':'Chapter flow'}</button>
-          <button type="button" aria-pressed={mode==='poster'} onclick={()=>move('poster')}>{zh?'完整大圖':'Full diagram'}</button>
-          {#if !reduced}<button type="button" onclick={()=>paused=!paused}>{paused?(zh?'繼續動畫':'Resume animation'):(zh?'暫停動畫':'Pause animation')}</button>{/if}
+          <button type="button" disabled={!ready} aria-pressed={mode==='chapter'} onclick={()=>move('')}>{zh?'章節脈絡':'Chapter flow'}</button>
+          <button type="button" disabled={!ready} aria-pressed={mode==='poster'} onclick={()=>move('poster')}>{zh?'完整大圖':'Full diagram'}</button>
+          {#if !reduced}<button type="button" disabled={!ready} onclick={()=>paused=!paused}>{paused?(zh?'繼續動畫':'Resume animation'):(zh?'暫停動畫':'Pause animation')}</button>{/if}
         </div>
         <div class="controls">
           <div class="step-pair">
-            <button type="button" disabled={index<0} onclick={()=>move(scenes[index-1]?.key??'')}>{zh?'上一步':'Previous'}</button>
+            <button type="button" disabled={!ready || index<0} onclick={()=>move(scenes[index-1]?.key??'')}>{zh?'上一步':'Previous'}</button>
             {#if index===scenes.length-1 && nextChapter}<a class="advance" href={nextChapter.href}>{zh?'下一章':'Next chapter'} →</a>
-            {:else}<button type="button" class="advance" disabled={index===scenes.length-1} onclick={()=>move(scenes[index+1].key)}>{index>=0 && scenes[index+1]?.i!==row.i?(zh?'下一概念':'Next concept'):(zh?'下一步':'Next')}</button>{/if}
+            {:else}<button type="button" class="advance" disabled={!ready || index===scenes.length-1} onclick={()=>move(scenes[index+1].key)}>{index>=0 && scenes[index+1]?.i!==row.i?(zh?'下一概念':'Next concept'):(zh?'下一步':'Next')}</button>{/if}
           </div>
-          <label>{zh?'分鏡':'Scene'} <select value={index} onchange={e=>move(scenes[Number(e.currentTarget.value)]?.key??'')}><option value="-1">{zh?'章節脈絡':'Chapter flow'}</option>{#each scenes as s,k}<option value={k}>{s.i+1}.{s.j+1} · {s.scene.title[lang]}</option>{/each}</select></label>
+          <label>{zh?'分鏡':'Scene'} <select disabled={!ready} value={index} onchange={e=>move(scenes[Number(e.currentTarget.value)]?.key??'')}><option value="-1">{zh?'章節脈絡':'Chapter flow'}</option>{#each scenes as s,k}<option value={k}>{s.i+1}.{s.j+1} · {s.scene.title[lang]}</option>{/each}</select></label>
         </div>
         <ChapterChart chapter={chapter.id} title={chapter.title} units={chapter.units} {lang} {mode} unitIndex={row.i} step={row.j} snapshot={snapshot?.key===row.key?snapshot.value:undefined} paused={paused||reduced} {select}/>
         <p class="legend">{zh?'實線箭頭：資料或控制流　虛線箭頭：查驗　點線：平行支援':'Solid arrows carry data or control · Dashed arrows indicate checks · Dotted lines show parallel support'}</p>

@@ -19,13 +19,15 @@ try{
     const folder=dir+'/'+lang+'-'+width;
     await mkdir(folder,{recursive:true});
     const page=await browser.newPage({viewport:{width,height:width===768?1024:width<768?844:720},reducedMotion:'reduce'});
-    for(const chapter of chapters)for(const [unitIndex,unit] of (await read(chapter.id)).entries()){
+    for(const chapter of chapters){
       const path=(lang==='en'?'/en':'')+'/interactive/aase/m02/'+chapter.id+'/';
       await page.goto(root+path);
+      for(const [unitIndex,unit] of (await read(chapter.id)).entries()){
       for(const [index,scene] of unit.scenes.entries()){
         await page.locator('.controls select').selectOption(String(unitIndex*3+index));
         const diagram=page.locator('[data-panel="'+unit.slug+'-'+scene.id+'"]');
-        await page.locator('.chapter-svg[data-view=scene]').waitFor();
+        await page.waitForURL(root+path+'#'+unit.slug+'-'+scene.id);
+        await page.locator('[data-panel="'+unit.slug+'-'+scene.id+'"][aria-hidden=false]').waitFor();
         const stage=page.locator('.learning-stage');
         const label=await diagram.locator('[data-flow] > title').textContent();
         assert.equal(label,scene.title[lang]);
@@ -49,6 +51,7 @@ try{
         const image=await diagram.screenshot({path:folder+'/'+name});
         receipts.push({path,scene:scene.id,title:label,objects:await diagram.locator('[data-object]').count(),name,sha256:createHash('sha256').update(image).digest('hex')});
       }
+    }
     }
     await page.close();
     await writeFile(folder+'/receipts.json',JSON.stringify(receipts,null,2));
