@@ -51,21 +51,28 @@
   {#if showRail}<CourseRail title={kind.startsWith('aase')?(zh?'AASE 學習地圖':'AASE learning map'):(zh?'CEH 學習地圖':'CEH learning map')} overview={kind.startsWith('aase')?localized('/courses/aase/v1/',lang):localized('/courses/ceh/v13/',lang)} overviewLabel={zh?'課程總覽':'Course overview'} label={zh?'章節導覽':'Module navigation'} items={kind.startsWith('aase')?data.aaseModules.map(m=>({id:m.id,title:m.title,href:localized('/courses/aase/v1/'+m.id+'/',lang),current:m.id===data.route.moduleId})):data.modules.map(m=>({id:m.id,title:m.title[lang],href:modulePath(m.id,lang),current:m.id===data.module?.id}))}/>{/if}
   <main class:course-home={kind==='home'} class:dns-lesson={data.route.conceptId === 'CEH26-M04-C02'} class:new-route-lesson={['CEH26-M04-C01','CEH26-M04-C02','CEH26-M04-C08'].includes(data.route.conceptId ?? '')} class:reading-enhanced={kind.startsWith('aase') || Boolean(readingGuide(kind==='concept'?data.conceptTeaching!.id:kind==='lesson'?lesson.id:'',lang))} id="main" tabindex="-1" class:ceh-code={Boolean(data.module) || lesson?.course === 'ceh'}>
     {#if kind !== 'home'}<nav class="breadcrumbs" aria-label={zh ? '所在位置' : 'Breadcrumb'}><a href={localized('/',lang)}>{zh ? '首頁' : 'Home'}</a>{#if kind.startsWith('aase')}<span>/</span><a href={localized('/courses/aase/v1/',lang)}>AASE v1</a>{#if data.route.moduleId}<span>/</span><a href={localized('/courses/aase/v1/'+data.route.moduleId+'/',lang)}>{data.route.moduleId.toUpperCase()}</a>{/if}{/if}{#if kind==='ceh-note'||kind==='ceh-m20-review'}<span>/</span><a href={localized('/ceh-notes/',lang)}>{zh?'CEH 考古題知識筆記':'CEH Exam Study Notes'}</a>{/if}{#if kind==='perspective'}<span>/</span><a href={localized('/perspectives/',lang)}>{zh?'觀點':'Perspectives'}</a>{/if}{#if showRail && !kind.startsWith('aase')}<span>/</span><a href={localized('/courses/ceh/v13/',lang)}>CEH v13</a>{#if kind !== 'module' && data.module}<span>/</span><a href={modulePath(data.module.id,lang)}>{data.module.id.toUpperCase()}</a>{/if}{/if}</nav>{/if}
-    <div class="eyebrow">{kind === 'home' ? 'RESEARCH → UNDERSTANDING → PRACTICE' : kind === 'lesson' ? `${lesson.course.toUpperCase()} · ${lesson.module.toUpperCase()}` : 'CS KAIROS · LEARNING LIBRARY'}</div>
+    {#if kind !== 'home'}<div class="eyebrow">{kind === 'lesson' ? `${lesson.course.toUpperCase()} · ${lesson.module.toUpperCase()}` : 'CS KAIROS · LEARNING LIBRARY'}</div>{/if}
     <h1 class:hero={kind === 'home'}>{title}</h1>
     {#if kind === 'aase-concept'}{#if data.aaseChapter}<details bind:open={diagramOpen}><summary>{zh?'在本頁閱讀章節流程圖':'Explore the diagram in this lesson'}</summary>{#if diagramOpen}<ChapterLesson chapter={data.aaseChapter} {lang} embedded/>{/if}<p><a class="atlas-entry" href={data.aaseChapter.href}>{zh?'開啟本章互動流程圖':'Open this chapter’s interactive diagram'}</a></p></details>{/if}<AaseLesson lesson={data.aaseConcept!.lesson!} sources={data.aaseSources} navigation={data.aaseNavigation} m02CourseLinks={data.aaseM02CourseLinks} {lang} indexHref={localized('/courses/aase/v1/'+data.route.moduleId+'/',lang)+'#one-concept'} />
     {:else if kind === 'aase-workshop'}<AaseWorkshop course={data.aaseCourse!} {lang} />
     {:else if kind === 'aase'}{#if data.aaseM02InteractiveHref}<p><a class="text-link atlas-entry" href={data.aaseM02InteractiveHref}>{zh ? '選擇 M02 章節圖解' : 'Choose an M02 chapter diagram'}</a></p>{/if}<AaseCourse course={data.aaseCourse!} {lang} moduleId={data.route.moduleId} concepts={data.aaseConcepts} />
     {:else if kind === 'home'}
       <p class="lead">{zh ? '一次讀懂一個重要概念。從問題出發，沿著原理、例子與練習，建立可以自己解釋的技術知識。' : 'One meaningful concept at a time. Start with a question, follow the mechanism, and use an example and a small exercise to make the idea your own.'}</p>
-      <div class="home-intro"><p>{zh ? '依課程與篇目提供繁體中文或英文教材；已完成對應翻譯的頁面可切換語言，閱讀、練習與複習各有清楚入口。' : 'Choose available Traditional Chinese or English materials. Completed language pairs include a language switch, with clear routes for reading, practice and review.'}</p><a class="text-link" href={localized('/courses/ceh/v13/m01/',lang)}>{zh ? '從 M01 開始' : 'Begin with M01'} <span aria-hidden="true">↗</span></a></div>
-      <p><a class="text-link" href={localized('/interactive/', lang)}>{zh ? '探索互動教材' : 'Explore interactive lessons'}</a></p>
-      <section class="course-section"><div class="section-heading"><h2>{zh ? '選擇你的學習路線' : 'Choose a learning path'}</h2><span class="muted">{zh ? '選擇課程，持續累積' : 'Explore the courses'}</span></div><div class="course-list"><a class="course-row" href={data.aaseHomeHref}><span class="course-number">AASE</span><div><h3>{data.aaseTitle}</h3><p>{zh ? '9 個模組、49 個概念；從課程地圖選擇已開放教材與工作坊資源。' : data.aaseHomeHref.startsWith('/en/')?'Explore available English lessons, the 49-concept map and workshop resources.':'Explore available lessons and workshop resources in Traditional Chinese.'}</p></div><span aria-hidden="true">↗</span></a>
-        <a class="course-row" href={localized('/courses/ceh/v13/',lang)}><span class="course-number">01</span><div><h3>CEH · {zh ? '資訊安全' : 'Information security'}</h3><p>{zh ? 'M01–M20 核心概念系列，完整雙語教材與原創測驗。' : 'M01–M20 core-concept series with complete bilingual lessons and original tests.'}</p></div><span aria-hidden="true">↗</span></a>
-        <a class="course-row" href={localized('/ceh-notes/',lang)}><span class="course-number">CEH</span><div><h3>{zh ? 'CEH 考古題知識筆記' : 'CEH Exam Study Notes'}</h3><p>{zh ? '按日期整理考古題對應的知識、選項解析與複習重點。' : 'Dated notes on the concepts, option explanations and review points behind exam practice.'}</p></div><span aria-hidden="true">↗</span></a>
-        <a class="course-row" href="/courses/matlab-practice/index.html" data-sveltekit-reload><span class="course-number">02</span><div><h3>MATLAB · {zh ? '實作教材' : 'Practice'}</h3><p>{zh ? '三個既有案例、逐行解說、學習檢查與完整下載資源。原始教材以繁體中文呈現。' : 'Three existing case studies, line-by-line walkthroughs, checks and downloads. Original materials are in Traditional Chinese.'}</p></div><span aria-hidden="true">↗</span></a>
-        <a class="course-row" href={localized('/courses/ai-ml/',lang)}><span class="course-number">03</span><div><h3>{zh ? 'AI／ML 基礎' : 'AI & ML foundations'}</h3><p>{zh ? '從資料切分與洩漏開始，學會判讀模型評估。' : 'Start with dataset splits and leakage to interpret model evaluation.'}</p></div><span aria-hidden="true">↗</span></a>
-        <a class="course-row" href={localized('/courses/networking/',lang)}><span class="course-number">04</span><div><h3>{zh ? '資工網路基礎' : 'Computer networking foundations'}</h3><p>{zh ? '沿著 DNS、TCP、TLS 與 HTTP，理解一個請求走過的路。' : 'Follow a request through DNS, TCP, TLS and HTTP.'}</p></div><span aria-hidden="true">↗</span></a>
+      <div class="home-actions">
+        <a class="home-primary" href="#learning-paths">{zh ? '瀏覽課程' : 'Browse courses'} <span aria-hidden="true">↓</span></a>
+        <a href={localized('/interactive/', lang)}>{zh ? '開始互動教材' : 'Start an interactive lesson'} <span aria-hidden="true">→</span></a>
+      </div>
+      <section class="course-section" aria-labelledby="learning-paths">
+        <div class="section-heading"><h2 id="learning-paths" tabindex="-1">{zh ? '選擇你的學習路線' : 'Choose a learning path'}</h2></div>
+        <div class="course-list"><a class="course-row" href={data.aaseHomeHref}><div><h3>AASE · {data.aaseTitle}</h3><p>{zh ? '9 個模組、49 個概念；從課程地圖選擇已開放教材與工作坊資源。' : data.aaseHomeHref.startsWith('/en/')?'Explore available English lessons, the 49-concept map and workshop resources.':'Explore available lessons and workshop resources in Traditional Chinese.'}</p></div><span aria-hidden="true">↗</span></a>
+        <div class="ceh-entry">
+          <a class="course-row" href={localized('/courses/ceh/v13/',lang)}><div><h3>CEH · {zh ? '資訊安全' : 'Information security'}</h3><p>{zh ? 'M01–M20 核心概念系列，完整雙語教材與原創測驗。' : 'M01–M20 core-concept series with complete bilingual lessons and original tests.'}</p></div><span aria-hidden="true">↗</span></a>
+          <a class="ceh-start" href={localized('/courses/ceh/v13/m01/',lang)}>{zh ? '從 CEH M01 開始' : 'Begin with CEH M01'} <span aria-hidden="true">→</span></a>
+        </div>
+        <a class="course-row" href={localized('/ceh-notes/',lang)}><div><h3>{zh ? 'CEH 考古題知識筆記' : 'CEH Exam Study Notes'}</h3><p>{zh ? '按日期整理考古題對應的知識、選項解析與複習重點。' : 'Dated notes on the concepts, option explanations and review points behind exam practice.'}</p></div><span aria-hidden="true">↗</span></a>
+        <a class="course-row" href="/courses/matlab-practice/index.html" data-sveltekit-reload><div><h3>MATLAB · {zh ? '實作教材' : 'Practice'}</h3><p>{zh ? '三個既有案例、逐行解說、學習檢查與完整下載資源。原始教材以繁體中文呈現。' : 'Three existing case studies, line-by-line walkthroughs, checks and downloads. Original materials are in Traditional Chinese.'}</p></div><span aria-hidden="true">↗</span></a>
+        <a class="course-row" href={localized('/courses/ai-ml/',lang)}><div><h3>{zh ? 'AI／ML 基礎' : 'AI & ML foundations'}</h3><p>{zh ? '從資料切分與洩漏開始，學會判讀模型評估。' : 'Start with dataset splits and leakage to interpret model evaluation.'}</p></div><span aria-hidden="true">↗</span></a>
+        <a class="course-row" href={localized('/courses/networking/',lang)}><div><h3>{zh ? '資工網路基礎' : 'Computer networking foundations'}</h3><p>{zh ? '沿著 DNS、TCP、TLS 與 HTTP，理解一個請求走過的路。' : 'Follow a request through DNS, TCP, TLS and HTTP.'}</p></div><span aria-hidden="true">↗</span></a>
       </div></section>
       <section><h2>{zh ? '近期觀點' : 'Recent perspectives'}</h2>{#if !data.perspectiveLinks.length}<p>{zh ? '觀點文章整理中。' : 'Articles are being prepared.'}</p>{:else}<ul class="reading-list">{#each data.perspectiveLinks.slice(0,3) as p}<li><a href={p.href}>{p.title}</a><p>{p.summary}</p></li>{/each}</ul>{/if}<a href={localized('/perspectives/',lang)}>{zh ? '查看全部觀點' : 'All perspectives'}</a></section><section class="learning-method"><h2>{zh ? '閱讀之後，留下一個可驗證的理解' : 'Leave with an understanding you can check'}</h2><ol><li><b>{zh ? '理解問題' : 'Frame the question'}</b><p>{zh ? '這個概念幫你做什麼判斷？' : 'What decision does this concept help you make?'}</p></li><li><b>{zh ? '追蹤證據' : 'Trace the evidence'}</b><p>{zh ? '分清觀察、推論與還不知道的事。' : 'Separate observations, inferences and unknowns.'}</p></li><li><b>{zh ? '小步驗證' : 'Test a small step'}</b><p>{zh ? '用安全練習與解析，檢查自己的理由。' : 'Check your reasoning with safe practice and explanations.'}</p></li></ol></section>
     {:else if kind === 'ceh-m20-review'}<M20Review review={data.m20Review!}/>
@@ -148,10 +155,52 @@
 
 <style>
   .course-home{overflow-wrap:anywhere}
-  .course-home .course-row{grid-template-columns:minmax(45px,max-content) minmax(0,1fr) 25px}
-  .course-home .home-intro .text-link, .atlas-entry{white-space:normal;overflow-wrap:anywhere}
-  @media(max-width:540px){.course-home .course-row{grid-template-columns:minmax(0,1fr) max-content}.course-home .course-number{grid-column:1 / -1}}
-  #search-catalog:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .course-home .hero {
+    font-size: clamp(2rem, 1.2rem + 4vw, 4rem);
+    line-height: 1.2;
+    margin: 0 0 1rem;
+  }
+  .course-home .lead {
+    margin: 0;
+    line-height: 1.7;
+    text-wrap: pretty;
+  }
+  .home-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+    margin: 1.35rem 0 clamp(1.75rem, 4vw, 3rem);
+  }
+  .home-actions a, .ceh-start {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    min-block-size: 2.75rem;
+    font-weight: 650;
+  }
+  .home-actions a {
+    padding: .45rem .8rem;
+    border: 1px solid var(--accent);
+    border-radius: .25rem;
+    text-decoration: none;
+  }
+  .home-actions .home-primary {
+    color: var(--paper);
+    background: var(--accent);
+  }
+  .home-actions a:hover, .ceh-start:hover { text-decoration: underline; }
+  .home-actions a:focus-visible, .ceh-entry a:focus-visible,
+  #learning-paths:focus-visible, #search-catalog:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .ceh-entry { border-bottom: 1px solid var(--line); }
+  .ceh-entry .course-row {
+    border-bottom: 0;
+    padding-block-end: .15rem;
+  }
+  .ceh-start { margin-block-end: .6rem; }
+  .atlas-entry{white-space:normal;overflow-wrap:anywhere}
   .dns-lesson :global(pre) { font-size:1rem; line-height:1.8; }
   .new-route-lesson { overflow-wrap:anywhere; }
   .reading-enhanced{overflow-wrap:anywhere}

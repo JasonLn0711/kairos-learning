@@ -68,6 +68,29 @@ for (const locale of locales) {
       }
     }
   });
+  test(`${locale.lang} homepage distinguishes the course and interactive paths`, async ({ page }) => {
+    const browse = locale.lang === 'zh' ? '瀏覽課程' : 'Browse courses';
+    const interactive = locale.lang === 'zh' ? '開始互動教材' : 'Start an interactive lesson';
+    const ceh = locale.lang === 'zh' ? '從 CEH M01 開始' : 'Begin with CEH M01';
+    const returnLabel = locale.lang === 'zh' ? '課程首頁' : 'Course home';
+
+    for (const width of [320, 390, 768, 1280]) {
+      await page.setViewportSize({ width, height: 700 });
+      await page.goto(locale.path + '/');
+      await expect(page.getByRole('link', { name: browse })).toBeInViewport();
+      await expect(page.getByRole('link', { name: interactive })).toBeInViewport();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    }
+
+    await page.getByRole('link', { name: browse }).press('Enter');
+    await expect(page).toHaveURL(/#learning-paths$/);
+    await expect(page.getByRole('link', { name: ceh })).toHaveAttribute('href', locale.path + '/courses/ceh/v13/m01/');
+    await page.getByRole('link', { name: interactive }).click();
+    await expect(page.getByRole('heading', { level: 1, name: locale.title })).toBeVisible();
+    await page.getByRole('link', { name: returnLabel }).click();
+    await expect(page.getByRole('link', { name: browse })).toBeVisible();
+  });
+
   test(`${locale.lang} search downloads only its localized, ordered index`, async ({ page, request }) => {
     const indexPath = `/search-index-${locale.lang}.json`;
     const combined: SearchEntry[] = await (await request.get('/search-index.json')).json();

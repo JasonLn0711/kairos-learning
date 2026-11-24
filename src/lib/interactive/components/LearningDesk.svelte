@@ -289,6 +289,9 @@
         </svg><span id="desk-brand-name">Kairos <b>Learn</b></span>
         <span id="desk-brand-home" class="sr-only">{tr("互動學習首頁", "interactive learning home")}</span>
       </a>
+      <a class="desk-return" href={localized("/", lang)}>
+        <span aria-hidden="true">←</span> {tr("課程首頁", "Course home")}
+      </a>
       <nav class="desk-modes" aria-label={tr("學習模式", "Learning modes")}>
         {#each modes as m, i}<button aria-pressed={mode === m} onclick={() => setMode(m)}
             ><span aria-hidden="true">{["◫", "◇", "▱", "▤"][i]}</span> {names[m]}</button
