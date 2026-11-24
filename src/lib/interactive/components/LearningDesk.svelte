@@ -60,6 +60,7 @@
     reset = $state(0);
   let dark = $state(false);
   let panel = $state<"canvas" | "directory" | "detail">("canvas");
+  let scenePicker: HTMLDialogElement;
   let search: HTMLDialogElement,
     searchField: HTMLInputElement,
     query = $state("");
@@ -120,6 +121,9 @@
         : row.unit.scenes.map((s, j) => ({ label: s.title[lang], target: index - row.j + j }))
       : (lesson?.steps.map((s, i) => ({ label: s.title[lang], target: i })) ?? []),
   );
+  const timelineTitle = $derived(index < 0 ? tr("選擇概念", "Select a concept") : sceneTitle);
+  const timelineProgress = $derived(index < 0 ? "" : lessonPosition + " / " + lessonCount);
+  const scenePickerLabel = $derived(index < 0 ? tr("所有概念", "All concepts") : tr("所有分鏡", "All scenes"));
   const hits = $derived(
     directory
       .flatMap((g) => g.items.map((item) => ({ ...item, group: g.title })))
@@ -216,6 +220,7 @@
     searchField.focus();
   }
   function keys(e: KeyboardEvent) {
+    if (scenePicker.open) return;
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
       if (!search.open) void find();
@@ -525,9 +530,7 @@
         <div class="desk-timeline">
           <div class="desk-cap">
             <strong>{tr("本課分鏡", "In this lesson")}</strong><span
-              >{index < 0
-                ? tr("選擇概念", "Select a concept")
-                : lessonPosition + " / " + lessonCount}</span
+              >{timelineProgress || timelineTitle}</span
             >
           </div>
           <div class="stops">
@@ -537,6 +540,16 @@
                 aria-label={i + 1 + ". " + t.label}
                 onclick={() => go(t.target)}><b>{i + 1}</b><span>{t.label}</span></button
               >{/each}
+          </div>
+          <div class="desk-compact-timeline">
+            <div class="desk-current-scene" role="status">
+              {#if timelineProgress}<span>{timelineProgress}</span>{/if}
+              <strong>{timelineTitle}</strong>
+            </div>
+            <button type="button" aria-haspopup="dialog" onclick={(event) => {
+              event.currentTarget.focus();
+              scenePicker.showModal();
+            }}>{scenePickerLabel}</button>
           </div>
         </div>
         <div class="desk-compact-actions">{@render stepActions()}</div>
@@ -606,6 +619,20 @@
         </div>
       </aside>
     </div>
+    <dialog class="scene-picker" bind:this={scenePicker} aria-labelledby="scene-picker-title">
+      <div class="scene-picker-heading">
+        <h2 id="scene-picker-title">{scenePickerLabel}</h2>
+        <form method="dialog"><button>{tr("關閉", "Close")}</button></form>
+      </div>
+      <ol role="list">
+        {#each timeline as scene, i}
+          <li><button aria-current={index === scene.target ? "step" : undefined} onclick={() => {
+            scenePicker.close();
+            go(scene.target);
+          }}><span>{i + 1}.</span> {scene.label}</button></li>
+        {/each}
+      </ol>
+    </dialog>
     <dialog bind:this={search} aria-label={tr("搜尋課程", "Search lessons")}>
       <div class="search-head">
         <input

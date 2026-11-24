@@ -68,6 +68,7 @@ for (const locale of locales) {
       }
     }
   });
+
   test(`${locale.lang} homepage distinguishes the course and interactive paths`, async ({ page }) => {
     const browse = locale.lang === 'zh' ? '瀏覽課程' : 'Browse courses';
     const interactive = locale.lang === 'zh' ? '開始互動教材' : 'Start an interactive lesson';
@@ -117,6 +118,7 @@ for (const locale of locales) {
     expect(fetched).toEqual([indexPath]);
   });
 }
+
 test('search times out, offers a catalog jump, and recovers from timeout and HTTP failure', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.clock.install();
@@ -183,7 +185,43 @@ test('search resumes with text entered before the page becomes interactive', asy
   await expect(page.getByRole('status')).toHaveText(/^[1-9]\d* 個結果$/);
 });
 
+test('compact timeline shows the full active scene and opens a keyboard-accessible scene list', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true });
+  try {
+    const page = await context.newPage();
+    await page.goto('/en/interactive/?step=2');
+    const current = page.getByRole('status');
+    await expect(current).toContainText('2 / 10');
+    const open = page.getByRole('button', { name: 'All scenes' });
+    expect((await open.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await open.press('Enter');
+    const dialog = page.getByRole('dialog', { name: 'All scenes' });
+    await expect(dialog.getByRole('listitem')).toHaveCount(10);
+    await expect(dialog.locator('[aria-current="step"]')).toHaveText(/^2\./);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(open).toBeFocused();
+    await open.press('Space');
+    const scene = dialog.getByRole('button', { name: /^4\./ });
+    const label = (await scene.innerText()).replace(/^4\.\s*/, '');
+    await scene.press('Enter');
+    await expect(page).toHaveURL(/\?step=4$/);
+    await expect(current).toContainText('4 / 10');
+    await expect(current).toContainText(label);
+    await expect(open).toBeFocused();
+    await page.getByRole('button', { name: 'Step notes' }).click();
+    await expect(page.locator('#step-title')).toHaveText(label);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
 
+    await page.goto('/en/interactive/aase/m02/m02-01/');
+    await page.getByRole('button', { name: 'All concepts' }).click();
+    const concepts = page.getByRole('dialog', { name: 'All concepts' });
+    await concepts.getByRole('button', { name: /^1\./ }).click();
+    await expect(page.getByRole('button', { name: 'All scenes' })).toBeFocused();
+  } finally {
+    await context.close();
+  }
+});
 test('search, language, lab, practice, cheatsheets and browser history',async({page})=>{
   await page.goto('/en/interactive/');
   await page.getByRole('button',{name:/Design Lab/}).click();
@@ -210,7 +248,8 @@ test('touch panels and reduced motion remain usable',async({page})=>{
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.goto('/en/interactive/?step=11');
   await expect(page.locator('[data-step="1"]')).toBeVisible();
-  await page.locator('.stops button').nth(7).click();
+  await page.getByRole('button', { name: 'All scenes' }).click();
+  await page.getByRole('dialog', { name: 'All scenes' }).getByRole('button', { name: /^8\./ }).click();
   await page.getByRole('button',{name:'Step notes'}).click();
   await page.getByRole('checkbox',{name:'Slow database'}).check();
   await page.getByRole('button',{name:'Diagram',exact:true}).click();
