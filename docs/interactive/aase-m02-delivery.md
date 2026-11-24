@@ -121,6 +121,6 @@ The initial Pages run deployed `85e8bd0b`. Live inspection found 22 px of outer 
 
 ## 2026-11-24｜Kairos Learn 工作區
 
-現行入口使用滿版學習工作區。HTTP 與 AASE M02 共用課程目錄、圖解、分鏡與步驟說明。上方的 Kairos Learn 連回所選語系的互動首頁。 [中文入口](https://learn.cs-kairos.com/interactive/) · [英文入口](https://learn.cs-kairos.com/en/interactive/) · [現行正式發布與回讀](../releases/2026-11-24-kairos-learn.md) · [章節圖解與來源](reconstruction-v2/10-chapter-diagrams.md)
+現行入口使用滿版學習工作區。HTTP 與 AASE M02 共用課程目錄、圖解、分鏡與步驟說明。上方的 Kairos Learn 連回所選語系的互動首頁。 [中文入口](https://learn.cs-kairos.com/interactive/) · [英文入口](https://learn.cs-kairos.com/en/interactive/) · [滿版工作區發布回執](../releases/2026-11-24-kairos-learn.md) · [章節圖解與來源](reconstruction-v2/10-chapter-diagrams.md)
 
-讀者從工作區回到課程首頁、手機展開章節概念或逐幕選擇的設計與驗收，見[11/24 網頁設計優化](../web-design-optimization.md)。
+讀者從工作區回到課程首頁、手機展開章節概念或逐幕選擇的設計與驗收，見[11/24 網頁設計優化與正式站回讀](../web-design-optimization.md#production-read-back)。

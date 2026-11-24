@@ -25,3 +25,17 @@ Jason 指定先稽核再實作，採用 `modern-web-guidance` 確認網頁互動
 稽核的 48.8 秒樣本大部分時間花在等待首位元組，本次對正式站舊索引的三次重測耗時 1.21 至 1.52 秒。延遲成因仍需 CDN 或來源站的請求紀錄。正式站驗收另需核對兩語實際索引請求、冷載入與操作結果。
 
 [前一版正式發布](releases/2026-11-24-kairos-learn.md) · [既有搜尋效能證據](shared-rust-tools.md#search-and-release-performance-2026-11-22) · [AASE 互動教材交付](interactive/aase-m02-delivery.md) · [發布與回復](publishing-security.md)
+
+<a id="production-read-back"></a>
+## 正式發布與回讀
+
+2026-11-24 將 `3d66760090ad3753e5cc8405f729e3ad71bc668b` 推至 Kairos Learning `main`。Pages 第一次嘗試通過建置與檢查，部署步驟回報找不到 `github-pages-1`。REST API 隨後讀到同名、未過期的成品 `14928132480`，因此重跑同一來源。 [第一次嘗試](https://github.com/JasonLn0711/kairos-learning/actions/runs/45411224122/attempts/1)
+
+第二次嘗試通過依賴稽核、內容、測試、型別、發布邊界及下載驗證，於臺灣時間 22:22 使用 `github-pages-2`（成品 `14930176764`）部署成功。 [第二次嘗試](https://github.com/JasonLn0711/kairos-learning/actions/runs/45411224122/attempts/2)
+
+- 正式站三份搜尋索引均回傳 HTTP 200。解壓後與本機同版建置檔逐位元組相同。正式回應的 gzip 傳輸量為中文 986,162、英文 839,740、合併 1,841,528 位元組，單語各減少約 46.4% 與 54.4%。
+- 單台 macOS 以 HTTPS 分別重測三次，中文下載耗時 1.20–1.81 秒，英文 1.09–1.46 秒。跨地區網路、實體手機及真實讀者操作仍由後續回饋驗證。
+- Chromium 於 390 CSS px 核對雙語首頁兩入口、HTTP 10 幕清單、選取後的網址及焦點、返回課程首頁和 AASE 章節概念清單。兩語各只請求自己的索引，中文「資料洩漏」有 3 筆、英文 `data leakage` 有 6 筆，兩語均驗證零筆狀態。英文搜尋於 320 CSS px 停用 JavaScript 仍可前往教材目錄。
+- 正式站缺頁回傳 404；六個 MATLAB 下載檔與公開 SHA-256 清單均相符。
+
+第一次瀏覽器探針在路由剛顯示時送出 Enter，清單未開啟。直接開啟 `?step=2` 核對到靜態畫面顯示第 1 步，初始化後切到第 2 步。待靜態資源請求穩定後重跑，兩語分鏡操作與焦點驗收通過。讀者端的初始化等待仍可透過實際操作回饋觀察。
