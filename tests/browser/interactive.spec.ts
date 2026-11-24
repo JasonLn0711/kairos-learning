@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { search, type SearchEntry } from '../../src/lib/model.ts';
 
 const locales = [
   { lang: 'zh', path: '', htmlLang: 'zh-Hant', title: '一個網頁請求的旅程' },
@@ -67,7 +68,99 @@ for (const locale of locales) {
       }
     }
   });
+  test(`${locale.lang} search downloads only its localized, ordered index`, async ({ page, request }) => {
+    const indexPath = `/search-index-${locale.lang}.json`;
+    const combined: SearchEntry[] = await (await request.get('/search-index.json')).json();
+    const local: SearchEntry[] = await (await request.get(indexPath)).json();
+    expect(local).toEqual(combined.filter(entry => entry.lang === locale.lang));
+
+    const fetched: string[] = [];
+    page.on('request', (pending) => {
+      const path = new URL(pending.url()).pathname;
+      if (path.startsWith('/search-index')) fetched.push(path);
+    });
+    await page.goto(locale.path + '/search/');
+    expect(fetched).toEqual([]);
+    const input = page.getByRole('searchbox');
+    const query = locale.lang === 'zh' ? '資料洩漏' : 'data leakage';
+    const expected = search(combined, query, locale.lang).length;
+    expect(expected).toBeGreaterThan(0);
+    await input.fill(query);
+    await expect(page.getByRole('status')).toHaveText(
+      locale.lang === 'zh' ? `${expected} 個結果` : `${expected} ${expected === 1 ? 'result' : 'results'}`,
+    );
+    await input.fill('there-are-no-matching-kairos-lessons');
+    await expect(page.getByRole('status')).toHaveText(locale.lang === 'zh' ? '0 個結果' : '0 results');
+    expect(fetched).toEqual([indexPath]);
+  });
 }
+test('search times out, offers a catalog jump, and recovers from timeout and HTTP failure', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.clock.install();
+  await page.goto('/search/');
+  let releaseResponse: () => void = () => {};
+  const stalled = new Promise<void>((resolve) => { releaseResponse = resolve; });
+  let attempts = 0;
+  await page.route('**/search-index-zh.json', async (route) => {
+    attempts++;
+    if (attempts === 1) {
+      await stalled;
+      return;
+    }
+    if (attempts === 2) await route.fulfill({ status: 503 });
+    else await route.continue();
+  });
+
+  const input = page.getByRole('searchbox');
+  await input.fill('資料洩漏');
+  await expect(page.getByRole('status')).toHaveText('正在載入搜尋索引…');
+  await expect.poll(() => attempts).toBe(1);
+  await page.clock.runFor(8_000);
+  await expect(page.getByRole('status')).toContainText('搜尋索引載入逾時');
+  releaseResponse();
+  await page.getByRole('link', { name: '瀏覽教材目錄' }).press('Enter');
+  await expect(page.getByRole('heading', { name: '完整教材目錄' })).toBeFocused();
+
+  const retry = page.getByRole('button', { name: '重試搜尋' });
+  await retry.click();
+  await expect(page.getByRole('status')).toContainText('搜尋索引暫時無法載入');
+  await retry.click();
+  await expect(page.getByRole('status')).toHaveText(/^[1-9]\d* 個結果$/);
+  await expect(input).toHaveValue('資料洩漏');
+  expect(attempts).toBe(3);
+});
+
+test('search catalog remains reachable without JavaScript', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto('/en/search/');
+    await page.getByRole('link', { name: 'Browse the lesson catalog' }).press('Enter');
+    await expect(page).toHaveURL(/#search-catalog$/);
+    await expect(page.getByRole('heading', { name: 'Complete lesson catalog' })).toBeFocused();
+  } finally {
+    await context.close();
+  }
+});
+
+test('search resumes with text entered before the page becomes interactive', async ({ page }) => {
+  let allowStart: () => void = () => {};
+  const beforeHydration = new Promise<void>((resolve) => { allowStart = resolve; });
+  await page.route('**/_app/immutable/entry/start.*.js', async (route) => {
+    await beforeHydration;
+    await route.continue();
+  });
+  try {
+    await page.goto('/search/', { waitUntil: 'commit' });
+    await page.getByRole('searchbox').fill('資料洩漏');
+    await expect(page.getByRole('status')).toBeEmpty();
+  } finally {
+    allowStart();
+  }
+  await expect(page.getByRole('status')).toHaveText(/^[1-9]\d* 個結果$/);
+});
+
+
 test('search, language, lab, practice, cheatsheets and browser history',async({page})=>{
   await page.goto('/en/interactive/');
   await page.getByRole('button',{name:/Design Lab/}).click();

@@ -67,6 +67,17 @@ def main():
             pages[rel] = SimpleNamespace(**expected)
     if not pages: errors.append('No HTML output; run pnpm run build first.')
 
+    try:
+        combined_search = json.loads((BUILD / 'search-index.json').read_text())
+        for lang in ('zh', 'en'):
+            name = f'search-index-{lang}.json'
+            local_search = json.loads((BUILD / name).read_text())
+            expected = [entry for entry in combined_search if entry['lang'] == lang]
+            if local_search != expected:
+                errors.append(f'{name}: entries or order differ from the public search catalog')
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        errors.append(f'Search index validation failed: {error}')
+
     @cache
     def resolve_target(path):
         target = BUILD / path

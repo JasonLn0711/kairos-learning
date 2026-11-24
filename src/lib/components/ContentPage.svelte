@@ -130,7 +130,10 @@
       <p class="lead">{zh ? '用原創情境題檢查理解；每個選項都有判斷理由。這些分數不代表正式考試或實作驗收。' : 'Check understanding with original scenarios and a reason for every option. These answers do not establish exam or practical readiness.'}</p><h2>{zh ? '情境判斷題' : 'Scenario questions'}</h2>{#each questions as question (question.id)}<QuestionCard {question} {lang} directReading />{/each}<a href={modulePath(data.module!.id,lang)+'labs/'}>{zh ? '繼續安全練習' : 'Continue to safe practice'} →</a>
     {:else if kind === 'lab'}
       <p class="lead">{zh ? '本章只使用離線資料、自製輸入或紙上情境。依下列步驟完成，再核對自己留下的證據。' : 'This module uses offline data, self-created inputs or tabletop scenarios. Follow the steps and check the evidence you produce.'}</p>{#each data.selected as l}<Lab lab={l.text[lang].lab} {lang} anchor={'practice-'+l.id} />{/each}
-    {:else if kind === 'search'}<Search {lang} /><h2>{zh ? '完整教材目錄' : 'Complete lesson catalog'}</h2><ul class="reading-list compact">{#each data.index as l}<li><span class="eyebrow">{l.course} {l.module}</span><a href={l.href}>{l.title}</a></li>{/each}</ul>
+    {:else if kind === 'search'}
+      {#key lang}<Search {lang} />{/key}
+      <h2 id="search-catalog" tabindex="-1">{zh ? '完整教材目錄' : 'Complete lesson catalog'}</h2>
+      <ul class="reading-list compact">{#each data.index as l}<li><span class="eyebrow">{l.course} {l.module}</span><a href={l.href}>{l.title}</a></li>{/each}</ul>
     {:else if kind === 'glossary'}<p class="lead">{zh ? '把名詞放回使用情境。每個定義都連回實際教材，方便跨章回查。' : 'Put each term back in context. Every definition links to lessons where you can apply it.'}</p><dl class="glossary">{#each data.terms as term}<div id={term.id}><dt>{term.term[lang]} <span>{term.term[zh ? 'en' : 'zh']}</span></dt><dd><p>{term.definition[lang]}</p><ul>{#each term.lessons as id}<li><a href={data.index.find(l=>l.id===id)?.href}>{data.index.find(l=>l.id===id)?.title}</a></li>{/each}</ul></dd></div>{/each}</dl>
     {:else if kind === 'review'}<Review questions={data.questions} {lang} />
     {:else if kind === 'standards'}
@@ -148,6 +151,7 @@
   .course-home .course-row{grid-template-columns:minmax(45px,max-content) minmax(0,1fr) 25px}
   .course-home .home-intro .text-link, .atlas-entry{white-space:normal;overflow-wrap:anywhere}
   @media(max-width:540px){.course-home .course-row{grid-template-columns:minmax(0,1fr) max-content}.course-home .course-number{grid-column:1 / -1}}
+  #search-catalog:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .dns-lesson :global(pre) { font-size:1rem; line-height:1.8; }
   .new-route-lesson { overflow-wrap:anywhere; }
   .reading-enhanced{overflow-wrap:anywhere}
