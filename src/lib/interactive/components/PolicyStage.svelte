@@ -1,9 +1,11 @@
 <script lang="ts">
+  import ConceptFlow from '../visual/aase/ConceptFlow.svelte';
+  import type {TeachingScene} from '../aase/model.ts';
   import type { Locale } from '../model.ts';
   import type { PolicyDemo } from '../aase/model.ts';
   import { authorizeScope, governAction, missingApplicationFields, retryEffects, sandboxAction, type RetryOutcome } from '../aase/simulations.ts';
 
-  let { demo, lang, ready }: { demo: PolicyDemo; lang: Locale; ready: boolean } = $props();
+  let { slug, scene, demo, lang, ready }: { slug:string; scene:TeachingScene; demo: PolicyDemo; lang: Locale; ready: boolean } = $props();
   const zh = $derived(lang === 'zh');
   let action = $state<'test' | 'release'>('release');
   let inScope = $state(true);
@@ -37,9 +39,16 @@
     'read-only': { zh: '工作區為唯讀', en: 'Workspace is read-only' },
     network: { zh: '對外連線未授權', en: 'Outbound networking is disabled' }
   };
+  const flowValues=$derived.by(():Record<string,string>=>{
+    if(demo==='retry-policy')return {requestId:zh?'同一識別鍵':'Same key',effect:effects.before+' → '+effects.after,dedup:serviceDeduplicates?(zh?'啟用':'Enabled'):(zh?'關閉':'Off')};
+    if(demo==='required-field')return {form:'SYN-001',schema:missing.length?(zh?'不完整':'Incomplete'):(zh?'齊全':'Complete'),missing:missing.length?'documentType':'✓'};
+    const label=decision.executed?(zh?'允許':'Allow'):(zh?'拒絕':'Deny');
+    return {policy:label,decision:label,action:demo==='governed-policy'?action:demo==='scope-policy'?resource:operation};
+  });
 </script>
 
 <div class="policy-simulation" data-policy={demo}>
+  <ConceptFlow {slug} {scene} {lang} values={flowValues} active={demo==='retry-policy'?'effect':demo==='required-field'?'schema':decision.executed?'allow':'deny'}/>
   <fieldset disabled={!ready}>
     <legend>{zh ? '調整模擬條件' : 'Change simulation inputs'}</legend>
     {#if demo === 'governed-policy'}

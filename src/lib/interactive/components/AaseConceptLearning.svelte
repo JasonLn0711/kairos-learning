@@ -61,7 +61,7 @@
   {#snippet stage()}
     <div class="concept-stage">
       {#key concept.slug + ':' + scene.id + ':' + replay}
-        <LearningStage {scene} {lang} {ready} fixture={chapter === 'm02-06' ? 'm02-06' : 'm02-04'} />
+        <LearningStage {concept} slug={concept.slug} {scene} {lang} {ready} fixture={chapter === 'm02-06' ? 'm02-06' : 'm02-04'} />
       {/key}
     </div>
   {/snippet}

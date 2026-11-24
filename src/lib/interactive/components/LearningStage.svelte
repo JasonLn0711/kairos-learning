@@ -1,4 +1,11 @@
 <script lang="ts">
+  import CapacityTrack from '../visual/aase/CapacityTrack.svelte';
+  import TokenRibbon from '../visual/aase/TokenRibbon.svelte';
+  import SoftmaxFlow from '../visual/aase/SoftmaxFlow.svelte';
+  import EmbeddingLookup from '../visual/aase/EmbeddingLookup.svelte';
+  import type {Concept} from '../aase/model.ts';
+  import ConceptFlow from '../visual/aase/ConceptFlow.svelte';
+  import {chosenObject,lessonValues,scenarioValues} from '../visual/aase/scene-values.ts';
   import PolicyStage from './PolicyStage.svelte';
   import StageDiagram from './StageDiagram.svelte';
   import type { Locale } from '../model.ts';
@@ -7,7 +14,7 @@
 
   import {teachingStage} from '../visual/scene.ts';
 
-  let { scene, lang, ready, fixture }: { scene: TeachingScene; lang: Locale; ready: boolean; fixture: 'm02-04' | 'm02-06' } = $props();
+  let { concept, slug, scene, lang, ready, fixture }: { concept:Concept; slug:string; scene: TeachingScene; lang: Locale; ready: boolean; fixture: 'm02-04' | 'm02-06' } = $props();
   const stage=$derived(teachingStage(scene,lang));
   const zh = $derived(lang === 'zh');
   let choice = $state(0);
@@ -28,12 +35,44 @@
   const budgetLabels = $derived(zh ? ['規則', '需求與程式碼', '測試', '預留輸出', '額外日誌'] : ['Rules', 'Requirements and code', 'Tests', 'Output reserve', 'Extra logs']);
   const gateLabels = $derived(zh ? ['格式', '授權', '執行', '驗收'] : ['Schema', 'Authorization', 'Execution', 'Verification']);
   const gateStatus = $derived(zh ? { passed: '通過', failed: '失敗', skipped: '略過' } : { passed: 'Passed', failed: 'Failed', skipped: 'Skipped' });
+  const excerpt=$derived(cards.find(card=>card.value[lang].length<=(zh?35:76))??cards[0]);
+  const policyDemo=$derived(['governed-policy','sandbox-policy','scope-policy','retry-policy','required-field'].includes(scene.demo??''));
+  const gateKeys=['schema','authorization','execution','verification'];
+  const flowStates=$derived.by(():Record<string,string>=>{
+    if(scene.demo==='gates')return Object.fromEntries(gateKeys.map((key,i)=>[key,gates.stages[i]]));
+    if(slug==='attention-qkv' && scene.id==='02' && choice===1)return {valueB:'skipped'};
+    if(slug==='kv-cache' && scene.id==='02' && choice===1)return {keyCache:'skipped',valueCache:'skipped'};
+    return {};
+  });
+  const flowValues=$derived.by(()=>{
+    const values={...lessonValues(slug,scene,cards,lang),...scenarioValues(slug,scene,choice)};
+    if(scene.demo==='softmax'){
+      const shift=Math.max(first,second), a=Math.exp(first-shift), b=Math.exp(second-shift);
+      const [wa,wb]=attention.weights;
+      Object.assign(values,{expA:a.toFixed(3),expB:b.toFixed(3),sum:(a+b).toFixed(3),weights:wa.toFixed(3)+' / '+wb.toFixed(3),partA:(2*wa).toFixed(3),partB:(6*wb).toFixed(3),weighted:attention.value.toFixed(3)});
+    }
+    if(scene.demo==='gates')gateKeys.forEach((key,i)=>values[key]=gateStatus[gates.stages[i]]);
+    if(scene.demo==='budget')Object.assign(values,{fixed:String(budget.used-logs),logs:String(logs),used:budget.used+' / '+contextBudgetLimit});
+    if(scene.demo==='workflow')Object.assign(values,{day:day==='weekday'?(zh?'平日':'Weekday'):(zh?'週末':'Weekend'),subjects:String(subjects),decision:limit.accepted?(zh?'接受':'Accept'):(zh?'拒絕':'Reject')});
+    return values;
+  });
 </script>
 
 <section class="learning-stage" data-kind={scene.kind} data-renderer={stage.renderer} aria-label={scene.title[lang]}>
   <h2>{stage.caption}</h2>
+  {#if slug==='context-budget'}
+    <CapacityTrack {scene} {lang} {logs} labels={budgetLabels}/>
+  {:else if slug==='tokenization'}
+    <TokenRibbon {scene} {cards} {lang}/>
+  {:else if slug==='softmax-weighted-sum'}
+    <SoftmaxFlow a={first} b={second} {lang} {scene}/>
+  {:else if slug==='embeddings'}
+    <EmbeddingLookup {scene} lookup={concept.scenes[1]} {lang} {choice}/>
+  {:else if !policyDemo}
+    <ConceptFlow {slug} {scene} {lang} values={flowValues} states={flowStates} active={chosenObject(slug,scene,choice)}/>
+  {/if}
   {#if scene.demo === 'governed-policy' || scene.demo === 'sandbox-policy' || scene.demo === 'scope-policy' || scene.demo === 'retry-policy' || scene.demo === 'required-field'}
-    <PolicyStage demo={scene.demo} {lang} {ready} />
+    <PolicyStage {slug} {scene} demo={scene.demo} {lang} {ready} />
   {:else if stage.renderer === 'softmax'}
     <div class="inputs">
       <label>{zh ? '分數' : 'Score'} A <input type="range" min="-4" max="4" step=".25" bind:value={first} disabled={!ready} /> {first}</label>
@@ -85,13 +124,24 @@
     {#if scene.choices}
       <label class="choice">{zh ? '切換情境' : 'Choose scenario'} <select bind:value={choice} disabled={!ready}>{#each scene.choices as option, index}<option value={index}>{option.label[lang]}</option>{/each}</select></label>
     {/if}
-    <StageDiagram {scene} {cards} {lang} />
+    {#if scene.visual==='causal-mask'}
+      <StageDiagram {scene} {cards} {lang} />
+    {:else}
+      <details class="evidence"><summary><strong>{excerpt.label[lang]}</strong> · {excerpt.value[lang]}</summary>
+        <div class="evidence-body"><StageDiagram {scene} {cards} {lang} /></div>
+      </details>
+    {/if}
     {#if scene.choices}<output aria-live="polite">{scene.choices[choice].result[lang]}</output>{/if}
   {/if}
 </section>
 
 <style>
-  .weights.cards {grid-template-columns:1fr}
+  .evidence {min-width:0}
+  .evidence summary{cursor:pointer;color:var(--accent);font-weight:650;padding:.45rem 0}
+  .evidence-body{padding-block:.3rem}
+  .evidence:not([open]) .evidence-body{display:none}
+  @media(min-width:1120px) and (min-height:660px){.evidence[open] .evidence-body{max-height:9rem;overflow:auto}}
+  .weights.cards {grid-template-columns:repeat(auto-fit,minmax(min(12rem,100%),1fr))}
   .weights.cards > div {display:grid;grid-template-columns:minmax(5rem,.35fr) 1fr;align-items:center;border-top:0;border-inline-start:4px solid var(--accent)}
   .weights {container-type:inline-size}
   .weights dd {display:grid;grid-template-columns:1fr auto;gap:.1rem .65rem;align-items:center}
@@ -106,7 +156,7 @@
   .gates li[data-outcome='failed'] {outline:2px solid var(--ink);outline-offset:-2px}
   .gates li[data-outcome='skipped'] {border-style:dashed;background:transparent}
 
-  .learning-stage { min-width: 0; min-height: 0; flex: 1; display: grid; align-content: center; align-content: safe center; gap: .65rem; padding: clamp(.65rem, 2vw, 1.5rem); background: var(--soft); border: 1px solid var(--line); border-radius: .45rem; }
+  .learning-stage { min-width: 0; min-height: 0; flex: 1; display: grid; grid-template-columns:minmax(0,1fr); align-content: center; align-content: safe center; gap: .65rem; padding: clamp(.65rem, 2vw, 1.5rem); background: var(--soft); border: 1px solid var(--line); border-radius: .45rem; }
   h2 { margin: 0; font-size: clamp(1.15rem, 2vw, 1.65rem); }
   .inputs { display:flex; flex-wrap:wrap; gap:.4rem .8rem; }
   .inputs label, .choice { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; }
