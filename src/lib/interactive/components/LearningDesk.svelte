@@ -273,7 +273,7 @@
       <a
         class="desk-brand"
         href={localized("/interactive/", lang)}
-        aria-label={tr("互動學習首頁", "Interactive learning home")}
+        aria-labelledby="desk-brand-name desk-brand-home"
       >
         <svg width="32" height="32" viewBox="0 0 36 34" aria-hidden="true">
           {#each [[3, 16, "#a9c4e1"], [17, 16, "#b8c993"], [10, 4, "#e3c58c"]] as c}<g
@@ -286,7 +286,8 @@
                 fill="none"
               /></g
             >{/each}
-        </svg><span>System <b>Design</b></span>
+        </svg><span id="desk-brand-name">Kairos <b>Learn</b></span>
+        <span id="desk-brand-home" class="sr-only">{tr("互動學習首頁", "interactive learning home")}</span>
       </a>
       <nav class="desk-modes" aria-label={tr("學習模式", "Learning modes")}>
         {#each modes as m, i}<button aria-pressed={mode === m} onclick={() => setMode(m)}
