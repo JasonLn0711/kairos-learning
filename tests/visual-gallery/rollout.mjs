@@ -19,7 +19,7 @@ try{
   await p.goto(url);
   await p.locator('.chapter-svg').waitFor();
   for(const [i,scene] of unit.scenes.entries()){
-   await p.locator('.controls select').selectOption(String(unitIndex*3+i));
+   await p.goto(url+'#'+unit.slug+'-'+scene.id);
    const stage=p.locator('.learning-stage');await stage.waitFor();
    assert.equal(await stage.getAttribute('data-renderer'),scene.demo??scene.visual??scene.kind);
    assert.equal(await p.locator('[data-panel="'+unit.slug+'-'+scene.id+'"] [data-flow] > title').textContent(),scene.title[lang]);
@@ -30,7 +30,7 @@ try{
     await selector.selectOption('1');assert.equal(await stage.locator('output').textContent(),scene.choices[1].result[lang]);
    }
    const name=[id,unit.slug,lang,scene.id].join('-')+'.png';
-   const png=await p.locator('[data-panel="'+unit.slug+'-'+scene.id+'"]').screenshot({path:dir+'/'+name});
+   const png=await p.locator('.desk-art').screenshot({path:dir+'/'+name});
    receipts.push({name,url:p.url(),lang,scene:scene.id,slug:unit.slug,renderer:await stage.getAttribute('data-renderer'),utc:new Date().toISOString(),sha256:createHash('sha256').update(png).digest('hex')});
   }
  }

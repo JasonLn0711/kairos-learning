@@ -7,9 +7,9 @@
   import FlowPulse from './FlowPulse.svelte';
   import SceneLayer from './SceneLayer.svelte';
 
-  let {chapter,title,units,lang,mode,unitIndex,step,snapshot,paused,select}:{
+  let {chapter,title,units,lang,mode,unitIndex,step,snapshot,paused,select,diagramOnly=false}:{
     chapter:string;title:string;units:Concept[];lang:Locale;mode:'chapter'|'scene'|'poster';
-    unitIndex:number;step:number;snapshot?:Snapshot;paused:boolean;select:(index:number,step:number)=>void
+    diagramOnly?:boolean;unitIndex:number;step:number;snapshot?:Snapshot;paused:boolean;select:(index:number,step:number)=>void
   }=$props();
   let scroller:HTMLDivElement;
   $effect(()=>{void mode;void unitIndex;void step;if(scroller)scroller.scrollTop=0;});
@@ -79,7 +79,8 @@
     return {x:16+(j%columns)*(sceneW+16),y:bands[i].start+58+bands[i].offsets[j],height:bands[i].heights[j]};
   }
   const focus=$derived(box(unitIndex,step));
-  const view=$derived(mode==='scene'?[focus.x,focus.y,sceneW,focus.height]:[0,0,mode==='poster'?sheetWidth:canvas,mode==='poster'?totalHeight:overviewHeight]);
+  const sceneView=$derived(diagramOnly?[focus.x-6,focus.y+58,sceneW+12,drawingHeight+4]:[focus.x,focus.y,sceneW,focus.height]);
+  const view=$derived(mode==='scene'?sceneView:[0,0,mode==='poster'?sheetWidth:canvas,mode==='poster'?totalHeight:overviewHeight]);
   const frame=$derived({width:sceneW-20,height:drawingHeight});
   function go(event:MouseEvent,i:number,j:number){
     if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;

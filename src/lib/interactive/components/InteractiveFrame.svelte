@@ -3,7 +3,7 @@
   import { MAIN, SITE, localized } from '#lib/model.ts';
   import type { Locale } from '../model.ts';
 
-  let { lang, path, title, description, step, fragment="", immersive = false, children }: {
+  let { lang, path, title, description, step, fragment="", immersive = false, bare=false, children }: {
     lang: Locale;
     path: string;
     title: string;
@@ -11,6 +11,7 @@
     step?: number;
     fragment?:string;
     immersive?: boolean;
+    bare?:boolean;
     children: Snippet;
   } = $props();
   const zh = $derived(lang === 'zh');
@@ -33,6 +34,7 @@
 </svelte:head>
 
 <a class="skip" href="#main">{zh ? '跳至主要內容' : 'Skip to content'}</a>
+{#if bare}{@render children()}{:else}
 <div class="interactive-frame" class:immersive>
 <header class="site-header">
   <a class="brand" href={localized('/', lang)}>
@@ -57,6 +59,7 @@
 {/if}
 </div>
 
+{/if}
 <style>
   .immersive > .site-header { max-width: none; margin: 0; padding: .3rem clamp(.75rem, 2vw, 2rem); gap: .75rem; }
   @media (min-width: 1120px) and (min-height: 660px) {

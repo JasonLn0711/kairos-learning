@@ -7,7 +7,7 @@ try {
  const p=await browser.newPage({viewport:{width:1440,height:900}});
  await p.clock.install();
  await p.goto('http://127.0.0.1:4618/interactive/system-design/request-lifecycle/?step=5');
- await p.locator('.workspace[data-step="5"]').waitFor();
+ await p.locator('.learning-desk[data-step="5"]').waitFor();
  await p.clock.pauseAt(new Date(await p.evaluate(()=>Date.now()+1000)));
  await p.getByRole('button',{name:'重播',exact:true}).evaluate(b=>b.click());
  await p.clock.runFor(16);

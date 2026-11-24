@@ -1,6 +1,6 @@
 <script lang="ts">
-  import ChapterLesson from '#lib/interactive/chapter/ChapterLesson.svelte';
-  import type { PageProps } from './$types';
-  let {data}: PageProps = $props();
+  import LearningDesk from '#lib/interactive/components/LearningDesk.svelte';
+  import type {PageProps} from './$types';
+  let {data}:PageProps=$props();
 </script>
-{#key data.id}<ChapterLesson lang="en" chapter={data} />{/key}
+{#key data.id}<LearningDesk lang="en" directory={data.directory} chapter={data} />{/key}

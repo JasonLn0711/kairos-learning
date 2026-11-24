@@ -11,6 +11,7 @@ for(const engine of [chromium,webkit]){
     const open=async (path,step)=>{
       await page.goto(root+path+'/?step='+step);
       await page.locator('.chapter-svg[data-view=scene]').waitFor();
+      await page.getByRole('button',{name:'Step notes',exact:true}).click();
       figure=page.locator('[data-panel="'+path.split('/')[1]+'-0'+step+'"]');
     };
     await open('m02-01/tokenization',2);

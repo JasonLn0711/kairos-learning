@@ -22,12 +22,14 @@ try{
     for(const chapter of chapters){
       const path=(lang==='en'?'/en':'')+'/interactive/aase/m02/'+chapter.id+'/';
       await page.goto(root+path);
-      for(const [unitIndex,unit] of (await read(chapter.id)).entries()){
+      for(const unit of await read(chapter.id)){
       for(const [index,scene] of unit.scenes.entries()){
-        await page.locator('.controls select').selectOption(String(unitIndex*3+index));
+        await page.goto(root+path+'#'+unit.slug+'-'+scene.id);
         const diagram=page.locator('[data-panel="'+unit.slug+'-'+scene.id+'"]');
         await page.waitForURL(root+path+'#'+unit.slug+'-'+scene.id);
         await page.locator('[data-panel="'+unit.slug+'-'+scene.id+'"][aria-hidden=false]').waitFor();
+        const narrow=await page.locator('.pane-switch').isVisible();
+        if(narrow)await page.locator('.pane-switch button').nth(2).click();
         const stage=page.locator('.learning-stage');
         const label=await diagram.locator('[data-flow] > title').textContent();
         assert.equal(label,scene.title[lang]);
@@ -38,9 +40,12 @@ try{
             assert.equal(await stage.locator('output').innerText(),choice.result[lang]);
           }
         }
+        if(narrow)await page.locator('.pane-switch button').nth(1).click();
+        // Wait for the diagram pane to regain its measured width after the mobile inspector closes.
+        await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
         const bounds=await diagram.evaluate(panel=>{
-          const box=panel.querySelector('.panel').getBoundingClientRect();
-          const outside=[...panel.querySelectorAll('text,dt,dd,.observation,.panel-title')].filter(el=>{
+          const box=panel.closest('.desk-art').getBoundingClientRect();
+          const outside=[...panel.querySelectorAll('[data-flow] text')].filter(el=>{
             const rect=el.getBoundingClientRect();
             return rect.left<box.left-2 || rect.right>box.right+2 || rect.top<box.top-2 || rect.bottom>box.bottom+2;
           }).map(el=>el.textContent);
@@ -48,7 +53,7 @@ try{
         });
         if(bounds.page>width+1 || bounds.outside.length)failures.push({path,index,width,...bounds});
         const name=unit.slug+'-'+scene.id+'.png';
-        const image=await diagram.screenshot({path:folder+'/'+name});
+        const image=await page.locator('.desk-art').screenshot({path:folder+'/'+name});
         receipts.push({path,scene:scene.id,title:label,objects:await diagram.locator('[data-object]').count(),name,sha256:createHash('sha256').update(image).digest('hex')});
       }
     }

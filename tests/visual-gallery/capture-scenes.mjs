@@ -22,20 +22,25 @@ try {
  for(const [id,path,steps] of samples){
  const base=origin+(lang==='en'?'/en':'')+path;
  await page.goto(base);
- await page.locator(id==='request'?'.immersive-lesson.focus':'.chapter-svg[data-view=scene]').waitFor();
+ await page.locator(id==='request'?'.learning-desk':'.chapter-svg[data-view=scene]').waitFor();
  for(const step of steps){
- if(id==='request' && step!==1)await page.locator('.step-select select').evaluate((s,step)=>{s.value=String(step);s.dispatchEvent(new Event('change',{bubbles:true}));},step);
+ if(id==='request')await page.goto(base+'?step='+step);
  if(id!=='request'){
    const slug=path.split('/').filter(Boolean).at(-1);
    await page.goto(base.slice(0,-slug.length-1)+'#'+slug+'-0'+step);
    await page.locator('.chapter-svg[data-view=scene]').waitFor();
- }else await page.locator('.workspace[data-step="'+step+'"]').waitFor();
+ }else await page.locator('.learning-desk[data-step="'+step+'"]').waitFor();
  await page.evaluate(()=>document.fonts.ready);
  for(const variant of (id==='request' && (step===2||step===8))?['normal','alternate']:['normal']){
- if(variant==='alternate') await page.locator('.variation input').last().check();
+ if(variant==='alternate'){
+  const tabs=page.locator('.pane-switch');
+  if(await tabs.isVisible())await tabs.locator('button').nth(2).click();
+  await page.locator('.note-body input[type=checkbox]').check();
+  if(await tabs.isVisible())await tabs.locator('button').nth(1).click();
+ }
  const metric=await page.evaluate(()=>{
  const box=s=>{const r=document.querySelector(s)?.getBoundingClientRect();return r?[r.x,r.y,r.width,r.height].map(Math.round):null};
- return {doc:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],stage:box('.scene-body,.chart'),controls:box('.lesson-controls,.controls'),title:box('.explanation h2,aside h2'),step:document.querySelector('.workspace')?.getAttribute('data-step-id')??location.hash,output:document.querySelector('.learning-stage output')?.textContent,route:document.querySelector('svg:not(.compact-svg) desc')?.textContent};
+ return {doc:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],stage:box('.desk-art'),controls:box('.desk-side .desk-actions'),title:box('.desk-side h2'),step:document.querySelector('.workspace')?.getAttribute('data-step-id')??location.hash,output:document.querySelector('.learning-stage output')?.textContent,route:document.querySelector('svg:not(.compact-svg) desc')?.textContent};
  });
  assert.equal(metric.doc[0],width,JSON.stringify({id,lang,width,step,metric}));
  if(width>=1120 && id==='request'){

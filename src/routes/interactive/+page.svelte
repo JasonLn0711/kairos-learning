@@ -1,8 +1,6 @@
 <script lang="ts">
-  import InteractiveHub from '#lib/interactive/components/InteractiveHub.svelte';
-  import type { PageProps } from './$types';
-
-  let { data }: PageProps = $props();
+  import LearningDesk from '#lib/interactive/components/LearningDesk.svelte';
+  import type {PageProps} from './$types';
+  let {data}:PageProps=$props();
 </script>
-
-<InteractiveHub lang="zh" lessons={data.lessons} chapters={data.chapters} />
+<LearningDesk lang="zh" directory={data.directory} lesson={data.lesson} home />

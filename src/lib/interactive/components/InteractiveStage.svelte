@@ -11,8 +11,9 @@
   import {networkStage} from '../visual/scene.ts';
 
   let {
-    stepId, nodes, edges, scene, lang, playing, replay
+    stepId, nodes, edges, scene, lang, playing, replay,showNetwork=false
   }: {
+    showNetwork?:boolean;
     stepId: string;
     nodes: SceneNode[];
     edges: SceneEdge[];
@@ -23,9 +24,9 @@
   } = $props();
 
   const stageId = $props.id();
-  const wideStage = $derived(networkStage(stepId,nodes,edges,scene,lang,'wide'));
+  const wideStage = $derived(networkStage(stepId,nodes,edges,scene,lang,'wide',showNetwork));
   const wide = $derived(wideStage.layout);
-  const compactStage = $derived(networkStage(stepId,nodes,edges,scene,lang,'compact'));
+  const compactStage = $derived(networkStage(stepId,nodes,edges,scene,lang,'compact',showNetwork));
   const compact = $derived(compactStage.layout);
   const focusLabel = $derived(nodes.find(node => node.id === scene.focus)?.label[lang] ?? '');
   const routeLabel = $derived(scene.route.map(id => nodes.find(node => node.id === id)?.label[lang]).join(' → '));

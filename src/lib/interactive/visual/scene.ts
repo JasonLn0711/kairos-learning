@@ -20,8 +20,8 @@ export function teachingStage(scene:TeachingScene, lang:Locale):StageState<Famil
 // The catalog validates authored nodes and edges before this adapter is called.
 // Only the introductory and DNS frames use a closer camera. Later frames share
 // a chapter view so the return journey uses the same spatial landmarks.
-export function networkStage(stepId:string,nodes:SceneNode[],edges:SceneEdge[],scene:Scene,lang:Locale,mode:SceneLayout) {
-  const intro=stepId==='navigation' || stepId==='dns';
+export function networkStage(stepId:string,nodes:SceneNode[],edges:SceneEdge[],scene:Scene,lang:Locale,mode:SceneLayout,showNetwork=false) {
+  const intro=!showNetwork && (stepId==='navigation' || stepId==='dns');
   const participants=new Set(scene.route);
   const visible=intro?nodes.filter(n=>participants.has(n.id)):nodes;
   const ids=new Set(visible.map(n=>n.id));

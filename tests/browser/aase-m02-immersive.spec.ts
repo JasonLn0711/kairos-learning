@@ -37,7 +37,7 @@ for(const locale of ['', '/en']){
         }).map(node=>node.textContent?.slice(0,55)));
         expect(overflow,chapterPath+' at '+width).toEqual([]);
         expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
-        await page.locator('.tools button').first().click();
+        await page.locator('.canvas-tools button').first().click();
       }
     }
   });
@@ -47,10 +47,11 @@ test('scene navigation preserves the same drawing and adjacent buttons',async({p
   await openFocus(page,'/en'+root+'m02-01/tokenization/?step=3');
   const svg=page.locator('.chapter-svg');
   await svg.evaluate(el=>el.setAttribute('data-retained','yes'));
-  const [prev,next]=await Promise.all([page.getByRole('button',{name:'Previous'}).boundingBox(),page.getByRole('button',{name:'Next concept'}).boundingBox()]);
+  await page.getByRole('button',{name:'Step notes'}).click();
+  const [prev,next]=await Promise.all([page.getByRole('button',{name:/Back/}).boundingBox(),page.getByRole('button',{name:/Next concept/}).boundingBox()]);
   expect(prev!.y).toBe(next!.y);
   expect(next!.x-prev!.x-prev!.width).toBeLessThan(12);
-  await page.getByRole('button',{name:'Next concept'}).click();
+  await page.getByRole('button',{name:/Next concept/}).click();
   await expect(page).toHaveURL(/#embeddings-01$/);
   await expect(svg).toHaveAttribute('data-retained','yes');
   await page.goBack();
@@ -68,14 +69,14 @@ test('original lesson embeds the same working reader',async({page})=>{
 test('retired atlas opens the chapter entries',async({page})=>{
   await page.goto(root);
   await expect(page).toHaveURL(/interactive\/#aase$/);
-  await expect(page.locator('#aase a')).toHaveCount(chapters.length);
+  await expect(page.locator('#aase details').filter({has:page.locator('a[href*="/aase/m02/"]')})).toHaveCount(chapters.length);
 });
 test('scene evidence remains readable without JavaScript',async({browser,baseURL})=>{
   const context=await browser.newContext({javaScriptEnabled:false,baseURL});
   const page=await context.newPage();
   await page.goto(root+'m02-01/');
-  await page.locator('.transcript summary').click();
-  await expect(page.locator('.transcript article')).toHaveCount(24);
+  await page.locator('.static-open').click();
+  await expect(page.locator('#desk-reading article')).toHaveCount(24);
   await expect(page.locator('#embeddings-02')).toBeVisible();
   await context.close();
 });
@@ -85,7 +86,7 @@ test('flow animation loops, pauses and respects reduced motion',async({page})=>{
   await expect(pulse).toHaveAttribute('data-hold','true');
   const lap=Number(await pulse.getAttribute('data-lap'));
   await expect(pulse).toHaveAttribute('data-lap',String(lap+1));
-  await page.getByRole('button',{name:'Pause animation'}).click();
+  await page.getByRole('button',{name:/Pause/}).click();
   const x=await pulse.getAttribute('cx');
   await page.waitForTimeout(150);
   expect(await pulse.getAttribute('cx')).toBe(x);
@@ -255,7 +256,8 @@ test('language switching retains the scene and the quiz resets on navigation',as
   await openFocus(page,root+'m02-01/tokenization/?step=3');
   await page.locator('.language').click();
   await expect(page).toHaveURL('/en'+root+'m02-01/#tokenization-03');
-  const quiz=page.locator('aside fieldset');
+  await page.getByRole('button',{name:/Practice/}).click();
+  const quiz=page.locator('.desk-sheet');
   await quiz.getByRole('radio').first().check();
   await quiz.getByRole('button',{name:'Check answer'}).click();
   await expect(quiz.getByRole('status')).toBeVisible();

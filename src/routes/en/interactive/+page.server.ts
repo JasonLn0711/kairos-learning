@@ -1,4 +1,2 @@
-import { aaseAtlas } from '#lib/server/aase-interactive.ts';
-import { interactiveCatalog } from '#lib/server/interactive.ts';
-
-export const load = () => ({ lessons: interactiveCatalog.summaries, chapters: aaseAtlas('en').map(({id,title,href})=>({id,title,href})) });
+import {interactiveCatalog} from '#lib/server/interactive.ts';
+export const load=()=>({lesson:interactiveCatalog.lesson('request-lifecycle')??null});
