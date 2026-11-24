@@ -8,3 +8,8 @@
 - 正式 HTTPS 讀回 16 個中英文工作區入口，逐頁確認頂欄名稱、可及名稱、連結目的地及分鏡切換。
 - 中文首頁在 320、390、768、1280 CSS px 保持視窗寬高；英文首頁停用 JavaScript 仍呈現品牌。
 - 核對公開首頁、AASE 原課頁、MATLAB 入口、遺失頁面 404、下載檔 SHA-256 及互動頁樣式表位元組。
+
+
+## 後續追蹤
+
+教材結構、圖解來源與既有網址轉接由 Kairos Learning 維護。發布後的容量與工作優先順序由 Planning 管理。 [互動教材交付](../interactive/aase-m02-delivery.md) · [章節圖解設計](../interactive/reconstruction-v2/10-chapter-diagrams.md) · [Planning 專案狀態（需權限）](https://github.com/JasonLn0711/planning-everything-track/blob/main/data/projects/2026-05-public-website-v3-clean-slate-rebuild.md#kairos-learn-workspace-2026-11-24)

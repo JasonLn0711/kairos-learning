@@ -117,3 +117,8 @@ The [11/23 day note](https://github.com/JasonLn0711/planning-everything-track/bl
 The initial Pages run deployed `85e8bd0b`. Live inspection found 22 px of outer vertical scroll in the Chinese DNS step at 1280×720. Fix `e6495938` contained the status announcement within the scrollable focus pane. All 20 bilingual Request Lifecycle scenes fit 1280×720 locally after the fix, and the 13 Request Lifecycle browser tests passed.
 
 [GitHub Pages run 45158413361](https://github.com/JasonLn0711/kairos-learning/actions/runs/45158413361) deployed `e6495938d7b1e488668b43e85efd311d9a9d3fa4`. On November 23, 2026, Chromium verified 40 concept links per locale, Softmax and Request Lifecycle step 2 at 1280×720, and both canonical module links. Search and sitemap included both concept paths. A missing path returned 404, and all six published MATLAB ZIP files matched their SHA-256 checksums. These checks establish a production spot check.
+
+
+## 2026-11-24｜Kairos Learn 工作區
+
+現行入口使用滿版學習工作區。HTTP 與 AASE M02 共用課程目錄、圖解、分鏡與步驟說明。上方的 Kairos Learn 連回所選語系的互動首頁。 [中文入口](https://learn.cs-kairos.com/interactive/) · [英文入口](https://learn.cs-kairos.com/en/interactive/) · [現行正式發布與回讀](../releases/2026-11-24-kairos-learn.md) · [章節圖解與來源](reconstruction-v2/10-chapter-diagrams.md)
