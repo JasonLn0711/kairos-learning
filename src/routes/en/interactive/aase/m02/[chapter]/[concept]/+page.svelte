@@ -1,8 +1,6 @@
 <script lang="ts">
-  import AaseConceptLearning from '#lib/interactive/components/AaseConceptLearning.svelte';
-  import type { PageProps } from './$types';
-  let {data}: PageProps = $props();
+  import LegacyEntry from '#lib/interactive/chapter/LegacyEntry.svelte';
+  import type {PageProps} from './$types';
+  let {data}:PageProps=$props();
 </script>
-{#key data.concept.slug}
-  <AaseConceptLearning lang="en" {...data} />
-{/key}
+<LegacyEntry lang="en" target={data.target} slug={data.slug} count={data.count} title={data.title}/>

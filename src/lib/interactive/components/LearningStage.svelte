@@ -1,11 +1,6 @@
 <script lang="ts">
-  import CapacityTrack from '../visual/aase/CapacityTrack.svelte';
-  import TokenRibbon from '../visual/aase/TokenRibbon.svelte';
-  import SoftmaxFlow from '../visual/aase/SoftmaxFlow.svelte';
-  import EmbeddingLookup from '../visual/aase/EmbeddingLookup.svelte';
-  import type {Concept} from '../aase/model.ts';
-  import ConceptFlow from '../visual/aase/ConceptFlow.svelte';
-  import {chosenObject,lessonValues,scenarioValues} from '../visual/aase/scene-values.ts';
+  import type {Snapshot} from '../chapter/frame.ts';
+  import {chosenObject,lessonValues,scenarioStates,scenarioValues} from '../visual/aase/scene-values.ts';
   import PolicyStage from './PolicyStage.svelte';
   import StageDiagram from './StageDiagram.svelte';
   import type { Locale } from '../model.ts';
@@ -14,7 +9,7 @@
 
   import {teachingStage} from '../visual/scene.ts';
 
-  let { concept, slug, scene, lang, ready, fixture }: { concept:Concept; slug:string; scene: TeachingScene; lang: Locale; ready: boolean; fixture: 'm02-04' | 'm02-06' } = $props();
+  let { onchange, slug, scene, lang, ready, fixture }: { onchange?:(snapshot:Snapshot)=>void; slug:string; scene: TeachingScene; lang: Locale; ready: boolean; fixture: 'm02-04' | 'm02-06' } = $props();
   const stage=$derived(teachingStage(scene,lang));
   const zh = $derived(lang === 'zh');
   let choice = $state(0);
@@ -40,9 +35,7 @@
   const gateKeys=['schema','authorization','execution','verification'];
   const flowStates=$derived.by(():Record<string,string>=>{
     if(scene.demo==='gates')return Object.fromEntries(gateKeys.map((key,i)=>[key,gates.stages[i]]));
-    if(slug==='attention-qkv' && scene.id==='02' && choice===1)return {valueB:'skipped'};
-    if(slug==='kv-cache' && scene.id==='02' && choice===1)return {keyCache:'skipped',valueCache:'skipped'};
-    return {};
+    return scenarioStates(slug,scene,choice);
   });
   const flowValues=$derived.by(()=>{
     const values={...lessonValues(slug,scene,cards,lang),...scenarioValues(slug,scene,choice)};
@@ -56,23 +49,15 @@
     if(scene.demo==='workflow')Object.assign(values,{day:day==='weekday'?(zh?'平日':'Weekday'):(zh?'週末':'Weekend'),subjects:String(subjects),decision:limit.accepted?(zh?'接受':'Accept'):(zh?'拒絕':'Reject')});
     return values;
   });
+  $effect(()=>{
+    if(!policyDemo)onchange?.({choice,a:first,b:second,logs,values:flowValues,states:flowStates,active:chosenObject(slug,scene,choice)});
+  });
 </script>
 
 <section class="learning-stage" data-kind={scene.kind} data-renderer={stage.renderer} aria-label={scene.title[lang]}>
   <h2>{stage.caption}</h2>
-  {#if slug==='context-budget'}
-    <CapacityTrack {scene} {lang} {logs} labels={budgetLabels}/>
-  {:else if slug==='tokenization'}
-    <TokenRibbon {scene} {cards} {lang}/>
-  {:else if slug==='softmax-weighted-sum'}
-    <SoftmaxFlow a={first} b={second} {lang} {scene}/>
-  {:else if slug==='embeddings'}
-    <EmbeddingLookup {scene} lookup={concept.scenes[1]} {lang} {choice}/>
-  {:else if !policyDemo}
-    <ConceptFlow {slug} {scene} {lang} values={flowValues} states={flowStates} active={chosenObject(slug,scene,choice)}/>
-  {/if}
   {#if scene.demo === 'governed-policy' || scene.demo === 'sandbox-policy' || scene.demo === 'scope-policy' || scene.demo === 'retry-policy' || scene.demo === 'required-field'}
-    <PolicyStage {slug} {scene} demo={scene.demo} {lang} {ready} />
+    <PolicyStage {onchange} demo={scene.demo} {lang} {ready} />
   {:else if stage.renderer === 'softmax'}
     <div class="inputs">
       <label>{zh ? '分數' : 'Score'} A <input type="range" min="-4" max="4" step=".25" bind:value={first} disabled={!ready} /> {first}</label>
@@ -128,7 +113,7 @@
       <StageDiagram {scene} {cards} {lang} />
     {:else}
       <details class="evidence"><summary><strong>{excerpt.label[lang]}</strong> · {excerpt.value[lang]}</summary>
-        <div class="evidence-body"><StageDiagram {scene} {cards} {lang} /></div>
+        <dl class="evidence-body">{#each cards as card}<dt>{card.label[lang]}</dt><dd>{card.value[lang]}</dd>{/each}</dl>
       </details>
     {/if}
     {#if scene.choices}<output aria-live="polite">{scene.choices[choice].result[lang]}</output>{/if}

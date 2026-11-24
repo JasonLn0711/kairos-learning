@@ -60,14 +60,11 @@ export const aaseAtlas = (lang: Locale) => chapters.filter(chapter => chapter.pu
   href: localized(chapterPath(chapter.id), lang),
   sourceHref: aaseConceptPath('m02', chapter.sourceSlug, lang),
   concepts: chapter.published.map(({slug, title, objective}) => ({
-    slug, title, objective, href: localized(conceptPath(chapter.id, slug), lang)
+    slug, title, objective, href: localized(chapterPath(chapter.id), lang) + '#' + slug + '-01'
   }))
 }));
 
-export const aaseAtlasPaths = locales.flatMap(lang => [
-  localized(root, lang),
-  ...aaseAtlas(lang).flatMap(chapter => [chapter.href, ...chapter.concepts.map(concept => concept.href)])
-]);
+export const aaseAtlasPaths = locales.flatMap(lang => aaseAtlas(lang).map(chapter=>chapter.href));
 
 export const aaseChapterEntries = () => aaseAtlas('zh').map(({id}) => ({ chapter: id }));
 export const aaseConceptEntries = () => aaseAtlas('zh').flatMap(({id, concepts}) => concepts.map(({slug}) => ({chapter:id, concept:slug})));
@@ -75,7 +72,8 @@ export const aaseConceptEntries = () => aaseAtlas('zh').flatMap(({id, concepts})
 export function loadAaseChapter(chapter: string, lang: Locale) {
   const group = aaseAtlas(lang).find(item => item.id === chapter);
   if (!group) error(404, 'Interactive chapter not found');
-  return group;
+  return {...group,units:chapters.find(item=>item.id===chapter)!.published,
+    siblings:aaseAtlas(lang).map(({id,href,title})=>({id,href,title}))};
 }
 
 export function loadAaseConcept(chapter: string, slug: string, lang: Locale) {

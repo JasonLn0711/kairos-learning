@@ -19,16 +19,15 @@ try{
     const folder=dir+'/'+lang+'-'+width;
     await mkdir(folder,{recursive:true});
     const page=await browser.newPage({viewport:{width,height:width===768?1024:width<768?844:720},reducedMotion:'reduce'});
-    for(const chapter of chapters)for(const unit of await read(chapter.id)){
-      const path=(lang==='en'?'/en':'')+'/interactive/aase/m02/'+chapter.id+'/'+unit.slug+'/';
+    for(const chapter of chapters)for(const [unitIndex,unit] of (await read(chapter.id)).entries()){
+      const path=(lang==='en'?'/en':'')+'/interactive/aase/m02/'+chapter.id+'/';
       await page.goto(root+path);
-      await page.locator('main.focus').waitFor();
       for(const [index,scene] of unit.scenes.entries()){
-        await page.locator('.concept-controls select').selectOption(String(index+1));
-        const diagram=page.locator('figure[data-flow="'+unit.slug+'"][data-scene="'+scene.id+'"]');
-        await diagram.waitFor();
+        await page.locator('.controls select').selectOption(String(unitIndex*3+index));
+        const diagram=page.locator('[data-panel="'+unit.slug+'-'+scene.id+'"]');
+        await page.locator('.chapter-svg[data-view=scene]').waitFor();
         const stage=page.locator('.learning-stage');
-        const label=await diagram.locator('svg > title').textContent();
+        const label=await diagram.locator('[data-flow] > title').textContent();
         assert.equal(label,scene.title[lang]);
         const select=stage.locator('.choice select');
         if(await select.count()){
@@ -37,24 +36,15 @@ try{
             assert.equal(await stage.locator('output').innerText(),choice.result[lang]);
           }
         }
-        const bounds=await stage.evaluate(node=>{
-          const frame=node.getBoundingClientRect();
-          const figure=node.querySelector('figure[data-flow] svg');
-          const svgBounds=figure.getBoundingClientRect();
-          const outside=[...figure.querySelectorAll('text')].filter(text=>{
-            const b=text.getBoundingClientRect();
-            return b.left<svgBounds.left-1 || b.right>svgBounds.right+1 || b.top<svgBounds.top-1 || b.bottom>svgBounds.bottom+1;
-          }).map(text=>text.textContent);
-          return {
-            outside,page:document.documentElement.scrollWidth, height:document.documentElement.scrollHeight,
-            clipped:[...node.querySelectorAll('label,dt,dd,output,figure[data-flow]')].filter(el=>{
-              const b=el.getBoundingClientRect();return b.width>0&&(b.right>frame.right+2||b.left<frame.left-2||b.bottom>frame.bottom+2);
-            }).map(el=>el.tagName+':'+el.textContent.trim().slice(0,22))
-          };
+        const bounds=await diagram.evaluate(panel=>{
+          const box=panel.querySelector('.panel').getBoundingClientRect();
+          const outside=[...panel.querySelectorAll('text,dt,dd,.observation,.panel-title')].filter(el=>{
+            const rect=el.getBoundingClientRect();
+            return rect.left<box.left-2 || rect.right>box.right+2 || rect.top<box.top-2 || rect.bottom>box.bottom+2;
+          }).map(el=>el.textContent);
+          return {outside,page:document.documentElement.scrollWidth};
         });
-        if(bounds.page>width+1 || bounds.outside.length || bounds.clipped.length || (width===1280 && bounds.height>722)){
-          failures.push({path,index,width,...bounds});
-        }
+        if(bounds.page>width+1 || bounds.outside.length)failures.push({path,index,width,...bounds});
         const name=unit.slug+'-'+scene.id+'.png';
         const image=await diagram.screenshot({path:folder+'/'+name});
         receipts.push({path,scene:scene.id,title:label,objects:await diagram.locator('[data-object]').count(),name,sha256:createHash('sha256').update(image).digest('hex')});

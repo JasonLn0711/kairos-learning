@@ -41,7 +41,7 @@ export const outlines: Record<string, [Outline, Outline, Outline]> = {
   'agent-decision-loop': [compare('expected observed'),chain('evidence agent action observation'),split('decision','stop revise')],
   'build-agent-vs-runtime': [chain('agent patch artifact'),compare('agent workflow'),chain('fixture runtime tests')],
   'governed-autonomy': [compare('scope review'),scene('action policy allow,deny','action>policy policy>allow policy>deny'),merge('reviewer evidence','handoff')],
-  'hybrid-design': [chain('input schema policy'),chain('agent evidence policy'),compare('control verification')],
+  'hybrid-design': [chain('input schema policy'),chain('agent evidence policy verification'),compare('control verification')],
   'llm-vs-harness': [scene('context,tools,orchestration model runtime,security,telemetry','context~model tools~model orchestration~model runtime~model security~model telemetry~model'),compare('model harness'),chain('proposal policy runtime')],
   'context-and-tools': [compare('requirement tools'),compare('context tools'),merge('scope tools','write')],
   'orchestration-and-execution': [chain('plan action tests'),chain('workspace runtime tests'),merge('revision tests','receipt')],
@@ -53,7 +53,7 @@ export const outlines: Record<string, [Outline, Outline, Outline]> = {
   'four-gates': [chain('schema authorization'),chain('schema authorization execution verification'),compare('execution verification')],
   'sandbox-boundary': [compare('advertised capability'),chain('action sandbox decision'),chain('policy event evidence')],
   'observability-signals': [compare('logs metric trace'),merge('taskId requestId','trace'),compare('observed verification')],
-  'prompt-injection-boundary': [compare('task external'),merge('scope action','policy'),chain('deny event review')],
+  'prompt-injection-boundary': [scene('task,external policy allow,deny','task>policy external>policy policy>allow policy>deny'),scene('scope,action policy allow,deny','scope>policy action>policy policy>allow policy>deny'),chain('deny event review')],
   'timeout-retry-idempotency': [compare('observed unknown'),chain('timeout inspect decision'),chain('requestId dedup effect')],
   'partial-success-verification': [compare('observed missing'),merge('day subjects','decision'),merge('requirement tests','verification')]
 };

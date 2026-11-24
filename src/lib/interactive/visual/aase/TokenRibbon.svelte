@@ -1,7 +1,8 @@
 <script lang="ts">
+  import {fit,type Frame} from "../../chapter/frame.ts";
   import type {TeachingScene,Card} from '../../aase/model.ts';
   import type {Locale} from '../../model.ts';
-  let {scene,cards,lang}:{scene:TeachingScene;cards:Card[];lang:Locale}=$props();
+  let {frame,scene,cards,lang}:{frame:Frame;scene:TeachingScene;cards:Card[];lang:Locale}=$props();
   const id=$props.id();
   const rows=$derived(Object.fromEntries(cards.map(c=>[c.label.en,c.value[lang]])));
   const pieces=$derived((rows.Sequence??rows['Hypothetical split']??rows['Received text']).split(/\s*·\s*/u));
@@ -9,8 +10,7 @@
   const zh=$derived(lang==='zh');
   const tileWidth=$derived(pieces.length<3?125:72);
 </script>
-<figure data-flow="tokenization" data-scene={scene.id}>
-  <svg role="img" viewBox={'0 0 '+(pieces.length*tileWidth+22)+' '+(scene.id==='03'?136:86)} aria-labelledby={id+'-t '+id+'-d'}>
+<g transform={fit(frame,pieces.length*tileWidth+22,scene.id==='03'?136:86)} data-flow="tokenization" data-scene={scene.id}>
     <title id={id+'-t'}>{scene.title[lang]}</title><desc id={id+'-d'}>{scene.mechanism[lang]} {pieces.join(' · ')} {rows['IDs in order']??''}</desc>
     {#each pieces as piece,i}
       <g transform={'translate('+(11+i*tileWidth)+' 25)'} data-object="piece">
@@ -25,11 +25,10 @@
       </g>
     {/each}
     <text x={(pieces.length*tileWidth+22)/2} y={scene.id==='03'?127:79}>{scene.id==='01'?(zh?'原始文字':'Raw input'):scene.id==='03'?(zh?'依序查詞彙表':'Vocabulary lookup'):(zh?pieces.length+' 個詞元':pieces.length+' tokens')}</text>
-  </svg>
-</figure>
+</g>
 <style>
- figure{margin:0;background:var(--paper);border-block:1px solid var(--line);padding:.3rem}
- svg{height:8rem;width:100%;display:block}
+
+
  path,rect{stroke:#4c706a;stroke-width:1.25}
  text{font:600 13px system-ui,sans-serif;fill:var(--ink);text-anchor:middle}
 </style>

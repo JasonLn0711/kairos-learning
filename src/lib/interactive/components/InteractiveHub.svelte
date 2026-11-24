@@ -3,7 +3,7 @@
   import type { InteractiveSummary, Locale } from '../model.ts';
   import InteractiveFrame from './InteractiveFrame.svelte';
 
-  let { lang, lessons, hasAaseAtlas }: { lang: Locale; lessons: InteractiveSummary[]; hasAaseAtlas: boolean } = $props();
+  let { lang, lessons, chapters }: { lang: Locale; lessons: InteractiveSummary[]; chapters: {id:string;href:string;title:string}[] } = $props();
   const zh = $derived(lang === 'zh');
   const heading = $derived(zh ? '互動學習' : 'Interactive learning');
   const description = $derived(zh ? '沿著圖解看系統怎麼運作，改變條件，比較結果。' : 'Follow a system diagram, change a condition, and compare what happens.');
@@ -16,10 +16,10 @@
     </nav>
     <h1>{heading}</h1>
     <p class="intro">{description}</p>
-    {#if hasAaseAtlas}
-      <section class="m02-discovery">
-        <h2><a href={localized('/interactive/aase/m02/', lang)}>{zh ? 'AASE M02 互動概念圖譜' : 'AASE M02 interactive atlas'}</a></h2>
-        <p>{zh ? '從語言模型怎麼讀文字，到工具何時執行、如何驗收。' : 'From how a language model reads text to when tools execute and how to verify the result.'}</p>
+    {#if chapters.length}
+      <section class="m02-discovery" id="aase">
+        <h2>{zh?'AASE M02 章節圖解':'AASE M02 chapter diagrams'}</h2>
+        <ul>{#each chapters as chapter}<li><a href={chapter.href}>{chapter.id.toUpperCase()} · {chapter.title}</a></li>{/each}</ul>
       </section>
     {/if}
     {#each lessons as lesson (lesson.id)}

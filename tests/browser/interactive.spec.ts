@@ -70,9 +70,9 @@ for (const locale of locales) {
     const controls = diagram.getByRole('group', { name: zh ? '示意流程控制' : 'Diagram controls', exact: true });
     const explanation = page.locator('.explanation');
     const buttonNames = zh
-      ? ['上一步', '下一步', '重播', '動態播放完畢']
-      : ['Previous', 'Next', 'Replay', 'Motion complete'];
-    await expect(controls.getByRole('button', { name: buttonNames[3], exact: true })).toBeDisabled();
+      ? ['上一步', '下一步', '重播', '暫停動態']
+      : ['Previous', 'Next', 'Replay', 'Pause motion'];
+    await expect(controls.getByRole('button', { name: buttonNames[3], exact: true })).toBeEnabled();
     await expect(explanation.locator('.step-position')).toHaveText(zh ? '第 1 步，共 10 步' : 'Step 1 of 10');
     await expect(explanation.getByRole('progressbar')).toBeVisible();
 

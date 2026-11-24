@@ -12,286 +12,86 @@ const units = chapters.flatMap(chapter => {
   const sourcePath = '/courses/aase/v1/m02/concepts/' + chapter.sourceSlug + '/';
   return data.map(concept => ({ chapter: chapter.id, concept, sourcePath, path: root + chapter.id + '/' + concept.slug + '/' }));
 });
-const representative = new Map<string, { kind: string; path: string }>();
-const scenePaths = units.flatMap(unit => unit.concept.scenes.map((scene, index) => ({
-  scene, path: unit.path + '?step=' + (index + 1)
-})));
-for (const { scene, path } of scenePaths) {
-  if (!representative.has(scene.kind)) representative.set(scene.kind, { kind: scene.kind, path });
-  if (scene.demo && !representative.has('demo-' + scene.demo)) {
-    representative.set('demo-' + scene.demo, { kind: scene.kind, path });
-  }
-}
-
-const screenshots = '.local/aase-m02-after/';
-const desktop = [{ width: 1280, height: 720 }, { width: 1366, height: 768 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }];
-const mobile = [{ width: 1024, height: 768 }, { width: 768, height: 1024 }, { width: 390, height: 844 }, { width: 320, height: 568 }];
-const domain = 'https://learn.cs-kairos.com';
-
 async function openFocus(page: Page, path: string) {
-  const response = await page.goto(path);
-  expect(response?.status(), path).toBe(200);
-  await expect(page.locator('main.immersive-lesson.focus')).toBeVisible();
+  await page.goto(path);
+  await expect(page.locator('.chapter-svg')).toHaveAttribute('data-view','scene');
 }
 
-async function verifyOverflow(page: Page, path: string, focus: boolean) {
-  const area = await page.evaluate(() => ({
-    width: document.scrollingElement!.scrollWidth,
-    height: document.scrollingElement!.scrollHeight,
-    innerWidth, innerHeight
-  }));
-  expect(area.width, path).toBeLessThanOrEqual(area.innerWidth + 2);
-  if (focus) {
-    expect(area.height, path).toBeLessThanOrEqual(area.innerHeight + 2);
-    const stage = await page.locator('.scene-column').boundingBox();
-    const rail = await page.locator('.lesson-rail').boundingBox();
-    const explanation = await page.locator('.explanation').boundingBox();
-    expect(stage, path).not.toBeNull();
-    expect(rail, path).not.toBeNull();
-    expect(explanation, path).not.toBeNull();
-    expect(stage!.width, path).toBeGreaterThan(Math.max(rail!.width, explanation!.width));
-    const clipped = await page.locator('.learning-stage').evaluateAll(stages => stages.flatMap(stage => {
-      const bounds = stage.getBoundingClientRect();
-      return [...stage.querySelectorAll('h2, dt, dd, label, output')].filter(label => {
-        const box = label.getBoundingClientRect();
-        return box.width > 0 && (box.top < bounds.top - 2 || box.bottom > bounds.bottom + 2 ||
-          box.left < bounds.left - 2 || box.right > bounds.right + 2);
-      }).map(label => label.textContent?.trim());
-    }));
-    expect(clipped, path + ' stage labels').toEqual([]);
-    for (const button of await page.locator('.concept-controls :is(button, select, a), .lesson-controls button, .learning-stage :is(input, select, button)').all()) {
-      const rect = await button.boundingBox();
-      expect(rect, path).not.toBeNull();
-      expect(rect!.y, path).toBeGreaterThanOrEqual(0);
-      expect(rect!.y + rect!.height, path).toBeLessThanOrEqual(area.innerHeight + 2);
-      expect(rect!.x + rect!.width, path).toBeLessThanOrEqual(area.innerWidth + 2);
+for(const locale of ['', '/en']){
+  test(locale+' six original lessons enter their complete chapter drawings',async({page,request})=>{
+    for(const chapter of chapters){
+      const chapterPath=locale+root+chapter.id+'/';
+      const lesson=units.find(u=>u.chapter===chapter.id)!;
+      expect(await (await request.get(locale+lesson.sourcePath)).text()).toContain(chapterPath);
+      await page.goto(chapterPath);
+      await expect(page.locator('.chart svg')).toHaveCount(1);
+      await expect(page.locator('[data-band]')).toHaveCount(chapter.slugs.length);
+      await expect(page.locator('[data-panel]')).toHaveCount(chapter.slugs.length*3);
+      for(const width of [320,1280]){
+        await page.setViewportSize({width,height:800});
+        await page.getByRole('button',{name:locale?'Full diagram':'完整大圖'}).click();
+        await expect(page.locator('.chapter-svg')).toHaveAttribute('data-view','poster');
+        const overflow=await page.locator('.chapter-svg foreignObject').evaluateAll(nodes=>nodes.filter(node=>{
+          const child=node.lastElementChild;
+          return child && child.getBoundingClientRect().bottom>node.getBoundingClientRect().bottom+3;
+        }).map(node=>node.textContent?.slice(0,55)));
+        expect(overflow,chapterPath+' at '+width).toEqual([]);
+        expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+        await page.locator('.tools button').first().click();
+      }
     }
-  }
-}
-
-const localeData = [
-  { lang: 'zh', prefix: '', html: 'zh-Hant', read: '完整解說' },
-  { lang: 'en', prefix: '/en', html: 'en', read: 'Read details' }
-] as const;
-
-for (const locale of localeData) {
-  test.describe(locale.lang, () => {
-    test('atlas inventories all 40 concepts and both locale outputs are directly navigable', async ({ page, request }) => {
-      expect(units).toHaveLength(40);
-      for (const source of ['/interactive/', '/courses/aase/v1/m02/']) {
-        await page.goto(locale.prefix + source);
-        await expect(page.locator('main a[href="' + locale.prefix + root + '"]')).toBeVisible();
-      }
-      await page.goto(locale.prefix + root);
-      const links = await page.locator('main a[href]').evaluateAll(anchors => anchors.map(anchor => anchor.getAttribute('href')));
-      for (const unit of units) expect(links, unit.path).toContain(locale.prefix + unit.path);
-      expect(new Set(links.filter(href => href && units.some(unit => href === locale.prefix + unit.path))).size).toBe(40);
-      const [searchResponse, sitemapResponse] = await Promise.all([
-        request.get('/search-index.json'), request.get('/sitemap.xml')
-      ]);
-      expect(searchResponse.ok()).toBe(true);
-      expect(sitemapResponse.ok()).toBe(true);
-      const entries = await searchResponse.json() as { id: string; lang: string; href: string; title: string }[];
-      const sitemap = [...(await sitemapResponse.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-      const chapterUrls = chapters.map(chapter => root + chapter.id + '/');
-      for (const path of [root, ...chapterUrls, ...units.map(unit => unit.path)]) {
-        expect(sitemap.filter(loc => loc === domain + locale.prefix + path), 'sitemap ' + path).toHaveLength(1);
-      }
-      for (const chapter of chapters) {
-        const path = locale.prefix + root + chapter.id + '/';
-        expect(links).toContain(path);
-        await page.goto(path);
-        await expect(page.locator('main a[href="' + locale.prefix + '/courses/aase/v1/m02/concepts/' + chapter.sourceSlug + '/"]')).toBeVisible();
-      }
-      const sourceAnchors = new Map<string, string[]>();
-      for (const unit of units) {
-        const path = locale.prefix + unit.path;
-        const response = await request.get(path);
-        expect(response.status(), unit.path).toBe(200);
-        const metadata = await page.evaluate(html => {
-          const document = new DOMParser().parseFromString(html, 'text/html');
-          return {
-            lang: document.documentElement.lang,
-            title: document.title,
-            description: document.querySelector('head meta[name="description"]')?.getAttribute('content'),
-            canonical: document.querySelector('head link[rel="canonical"]')?.getAttribute('href'),
-            english: document.querySelector('head link[rel="alternate"][hreflang="en"]')?.getAttribute('href'),
-            chinese: document.querySelector('head link[rel="alternate"][hreflang="zh-Hant"]')?.getAttribute('href'),
-            fallback: [...document.querySelectorAll('.static-reading .concept-reading > section > h3')].map(heading => heading.textContent?.trim()),
-            links: [...document.querySelectorAll('.static-reading a[href]')].map(link => link.getAttribute('href'))
-          };
-        }, await response.text());
-        expect(metadata, unit.path).toMatchObject({
-          lang: locale.html, title: unit.concept.title[locale.lang] + ' | CS Kairos Learn',
-          description: unit.concept.objective[locale.lang], canonical: domain + path,
-          english: domain + '/en' + unit.path, chinese: domain + unit.path
-        });
-        expect(metadata.fallback.slice(0, -1), unit.path).toEqual(
-          unit.concept.scenes.map((scene, index) => (index + 1) + '. ' + scene.title[locale.lang])
-        );
-        expect(entries.filter(entry => entry.lang === locale.lang && entry.href === path), 'search ' + unit.path).toMatchObject([
-          { id: 'interactive-aase-' + unit.concept.slug, title: unit.concept.title[locale.lang] }
-        ]);
-
-        const sourcePath = locale.prefix + unit.sourcePath;
-        if (!sourceAnchors.has(sourcePath)) {
-          const article = await request.get(sourcePath);
-          expect(article.ok(), sourcePath).toBe(true);
-          sourceAnchors.set(sourcePath, await page.evaluate(html => {
-            const document = new DOMParser().parseFromString(html, 'text/html');
-            return [...document.querySelectorAll('[id]')].map(node => node.id);
-          }, await article.text()));
-        }
-        expect(metadata.links, unit.path).toContain(sourcePath);
-        for (const anchor of new Set(unit.concept.scenes.flatMap(scene => scene.sourceAnchors))) {
-          expect(metadata.links, unit.path).toContain(sourcePath + '#' + anchor);
-          expect(sourceAnchors.get(sourcePath), 'canonical anchor ' + sourcePath).toContain(anchor);
-        }
-      }
-    });
-
-    for (const viewport of desktop) {
-      test('focus geometry at ' + viewport.width + '×' + viewport.height, async ({ page }) => {
-        await page.setViewportSize(viewport);
-        await page.emulateMedia({ reducedMotion: 'reduce' });
-        for (const [sample, { kind, path }] of representative) {
-          await openFocus(page, locale.prefix + path);
-          await expect(page.locator('[data-kind="' + kind + '"]')).toBeVisible();
-          await verifyOverflow(page, path, true);
-          await page.screenshot({ path: screenshots + locale.lang + '-' + sample + '-' + viewport.width + '.png' });
-        }
-        const length = ({scene}: typeof scenePaths[number]) => [scene.title, scene.problem, scene.mechanism, scene.observe, scene.boundary]
-          .reduce((total, text) => total + text[locale.lang].length, 0);
-        const longScene = scenePaths.reduce((longest, scene) => length(scene) > length(longest) ? scene : longest);
-        await openFocus(page, locale.prefix + longScene.path);
-        await verifyOverflow(page, longScene.path, true);
-        if (viewport.width === 1440) {
-          await page.screenshot({ path: screenshots + locale.lang + '-longest-explanation-1440.png' });
-        }
-        const selected = new Set<string>();
-        for (const unit of units) if (!selected.has(unit.chapter)) {
-          selected.add(unit.chapter);
-          await openFocus(page, locale.prefix + unit.path);
-          await verifyOverflow(page, unit.path, true);
-          if (viewport.width === 1440) await page.screenshot({ path: screenshots + locale.lang + '-' + unit.chapter + '-1440.png' });
-        }
-        await openFocus(page, locale.prefix + requestLesson);
-        await verifyOverflow(page, requestLesson, true);
-        await expect(page.locator('.interactive-stage')).toBeVisible();
-        await page.screenshot({ path: screenshots + locale.lang + '-request-' + viewport.width + '.png' });
-      });
-    }
-
-    test('small widths and increased text retain reachable detail and controls', async ({ page }) => {
-      const path = locale.prefix + root + 'm02-01/softmax-weighted-sum/';
-      for (const viewport of mobile) {
-        await page.setViewportSize(viewport);
-        await openFocus(page, path);
-        await verifyOverflow(page, path, false);
-        await expect(page.locator('.concept-controls select')).toBeVisible();
-        const read = page.getByRole('button', { name: locale.read });
-        await read.click();
-        await expect(page.getByRole('dialog')).toBeVisible();
-        await page.keyboard.press('Escape');
-        await expect(read).toBeFocused();
-        if (viewport.width < 400) {
-          await page.screenshot({ path: screenshots + locale.lang + '-mobile-' + viewport.width + '.png', fullPage: true });
-          await openFocus(page, locale.prefix + requestLesson);
-          await verifyOverflow(page, requestLesson, false);
-          await page.screenshot({ path: screenshots + locale.lang + '-request-' + viewport.width + '.png' });
-          await openFocus(page, path);
-        }
-      }
-      await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-      await verifyOverflow(page, path + ' (200% text)', false);
-      await expect(page.locator('.concept-controls select')).toBeVisible();
-      await page.getByRole('button', { name: locale.read }).click();
-      await expect(page.getByRole('dialog')).toBeVisible();
-      await page.screenshot({ path: screenshots + locale.lang + '-text-zoom.png', fullPage: true });
-      await page.setViewportSize({ width: 1280, height: 720 });
-      await openFocus(page, path + '?step=2');
-      await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-      await verifyOverflow(page, path + ' (desktop 200% text)', false);
-      const controls = page.locator('.concept-controls select');
-      await expect(controls).toBeVisible();
-      await controls.selectOption('3');
-      await expect(page.locator('.workspace')).toHaveAttribute('data-step', '3');
-    });
-
-    test('all concept steps and article link remain readable without JavaScript', async ({ browser, baseURL }) => {
-      const context = await browser.newContext({ baseURL, javaScriptEnabled: false, viewport: { width: 320, height: 568 } });
-      try {
-        const page = await context.newPage();
-        const unit = units.find(unit => unit.concept.slug === 'softmax-weighted-sum')!;
-        await page.goto(locale.prefix + unit.path + '?step=2');
-        await expect(page.locator('.static-reading .concept-reading > section > h3')).toHaveCount(unit.concept.scenes.length + 1);
-        await expect(page.locator('.static-reading a[href*="/courses/aase/v1/m02/"]').first()).toBeVisible();
-        await expect(page.getByRole('button', { name: locale.read })).toHaveCount(0);
-        await verifyOverflow(page, unit.path, false);
-      } finally {
-        await context.close();
-      }
-    });
   });
 }
-
-test('step links, shortcuts, history, focus restoration and language preserve identity', async ({ page }) => {
-  const stem = root + 'm02-01/softmax-weighted-sum/';
-  await openFocus(page, '/en' + stem);
-  const workspace = page.locator('.workspace');
-  await expect(workspace).toHaveAttribute('data-step', '1');
-  await page.locator('main').focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(workspace).toHaveAttribute('data-step', '2');
-  await expect(page).toHaveURL(/\?step=2$/);
+test('scene navigation preserves the same drawing and adjacent buttons',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await openFocus(page,'/en'+root+'m02-01/tokenization/?step=3');
+  const svg=page.locator('.chapter-svg');
+  await svg.evaluate(el=>el.setAttribute('data-retained','yes'));
+  const [prev,next]=await Promise.all([page.getByRole('button',{name:'Previous'}).boundingBox(),page.getByRole('button',{name:'Next concept'}).boundingBox()]);
+  expect(prev!.y).toBe(next!.y);
+  expect(next!.x-prev!.x-prev!.width).toBeLessThan(12);
+  await page.getByRole('button',{name:'Next concept'}).click();
+  await expect(page).toHaveURL(/#embeddings-01$/);
+  await expect(svg).toHaveAttribute('data-retained','yes');
   await page.goBack();
-  await expect(workspace).toHaveAttribute('data-step', '1');
+  await expect(page).toHaveURL(/#tokenization-03$/);
   await page.goForward();
-  await expect(workspace).toHaveAttribute('data-step', '2');
-  const read = page.getByRole('button', { name: 'Read details' });
-  await read.click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
-  await page.keyboard.press('ArrowLeft');
-  await expect(workspace).toHaveAttribute('data-step', '2');
-  await dialog.getByRole('radio').first().check();
-  await dialog.getByRole('button', { name: 'Check answer' }).click();
-  await expect(dialog.getByRole('status')).toHaveText(/Correct|Try again/);
-  await page.keyboard.press('Escape');
-  await expect(read).toBeFocused();
-  await page.locator('a[hreflang="zh-Hant"]').click();
-  await expect(page).toHaveURL(new RegExp(stem + '\\?step=2$'));
-  await expect(workspace).toHaveAttribute('data-step', '2');
-  await page.reload();
-  await expect(workspace).toHaveAttribute('data-step', '2');
+  await expect(page).toHaveURL(/#embeddings-01$/);
 });
-
-test('adjacent concept navigation starts with fresh learner state', async ({ page }) => {
-  const first = '/en' + root + 'm02-01/tokenization/';
-  const second = '/en' + root + 'm02-01/embeddings/';
-  await openFocus(page, first + '?step=0');
-  const workspace = page.locator('.workspace');
-  await expect(workspace).toHaveAttribute('data-step', '1');
-  await page.getByRole('button', { name: 'Read details' }).click();
-  const dialog = page.getByRole('dialog');
-  await dialog.getByRole('radio').first().check();
-  await dialog.getByRole('button', { name: 'Check answer' }).click();
-  await expect(dialog.getByRole('status')).toContainText('Correct');
-  await page.keyboard.press('Escape');
-  await page.getByRole('combobox', { name: 'Go to step' }).selectOption('3');
-  await page.getByRole('link', { name: /Next concept/ }).click();
-  await expect(page).toHaveURL(second);
-  await expect(workspace).toHaveAttribute('data-step', '1');
-  await page.getByRole('button', { name: 'Read details' }).click();
-  await expect(dialog.getByRole('radio', { checked: true })).toHaveCount(0);
-  await expect(dialog.getByRole('status')).toHaveCount(0);
-  await page.keyboard.press('Escape');
-  await page.goBack();
-  await expect(workspace).toHaveAttribute('data-step', '3');
-  await page.goForward();
-  await expect(workspace).toHaveAttribute('data-step', '1');
+test('original lesson embeds the same working reader',async({page})=>{
+  await page.goto('/en'+units[0].sourcePath);
+  await page.getByText('Explore the diagram in this lesson',{exact:true}).click();
+  await page.locator('.step-pair .advance').click();
+  await expect(page.locator('.chapter-svg')).toHaveAttribute('data-view','scene');
+  await expect(page).toHaveURL('/en'+units[0].sourcePath);
 });
-
+test('retired atlas opens the chapter entries',async({page})=>{
+  await page.goto(root);
+  await expect(page).toHaveURL(/interactive\/#aase$/);
+  await expect(page.locator('#aase a')).toHaveCount(chapters.length);
+});
+test('scene evidence remains readable without JavaScript',async({browser,baseURL})=>{
+  const context=await browser.newContext({javaScriptEnabled:false,baseURL});
+  const page=await context.newPage();
+  await page.goto(root+'m02-01/');
+  await page.locator('.transcript summary').click();
+  await expect(page.locator('.transcript article')).toHaveCount(24);
+  await expect(page.locator('#embeddings-02')).toBeVisible();
+  await context.close();
+});
+test('flow animation loops, pauses and respects reduced motion',async({page})=>{
+  await openFocus(page,'/en'+root+'m02-06/tool-intent-and-result/?step=2');
+  const pulse=page.locator('[data-flow-pulse] circle');
+  await expect(pulse).toHaveAttribute('data-hold','true');
+  const lap=Number(await pulse.getAttribute('data-lap'));
+  await expect(pulse).toHaveAttribute('data-lap',String(lap+1));
+  await page.getByRole('button',{name:'Pause animation'}).click();
+  const x=await pulse.getAttribute('cx');
+  await page.waitForTimeout(150);
+  expect(await pulse.getAttribute('cx')).toBe(x);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await expect(pulse).toHaveCount(0);
+});
 function demoPath(slug: string, demo: string) {
   const unit = units.find(unit => unit.concept.slug === slug)!;
   const scene = unit.concept.scenes.findIndex(scene => scene.demo === demo);
@@ -299,35 +99,26 @@ function demoPath(slug: string, demo: string) {
   return '/en' + unit.path + '?step=' + (scene + 1);
 }
 
-test('scene diagrams encode segmentation, coordinates, causal visibility and parallel support', async ({ page }) => {
-  await openFocus(page, '/en' + root + 'm02-01/tokenization/?step=2');
-  const tokens = page.locator('.tokens li');
-  await expect(tokens).toHaveText(['application', 'form']);
-  await page.getByRole('combobox', { name: 'Choose scenario' }).selectOption({ label: 'Finer segmentation' });
-  await expect(tokens).toHaveText(['ap', 'pli', 'cation', 'form']);
-
-  await openFocus(page, '/en' + root + 'm02-01/embeddings/?step=2');
-  const coordinates = page.locator('.vector .coordinate');
-  await expect(coordinates).toHaveText(['0.4', '-0.2', '0.9', '0.1']);
-  await page.getByRole('combobox', { name: 'Choose scenario' }).selectOption({ label: 'Choose application #42' });
-  await expect(coordinates).toHaveText(['-0.1', '0.5', '0.2', '-0.4']);
-
-  await openFocus(page, '/en' + root + 'm02-01/attention-qkv/?step=3');
-  const mask = page.getByRole('table', { name: 'Illustrative causal mask' });
+test('segmentation, row lookup, mask and support use distinct graphical operations',async({page})=>{
+  await openFocus(page,'/en'+root+'m02-01/tokenization/?step=2');
+  const pieces=page.locator('[data-panel="tokenization-02"] [data-object="piece"]');
+  await expect(pieces).toHaveCount(2);
+  await page.getByRole('combobox',{name:'Choose scenario'}).selectOption({label:'Finer segmentation'});
+  await expect(pieces).toHaveCount(4);
+  await openFocus(page,'/en'+root+'m02-01/embeddings/?step=2');
+  await page.getByRole('combobox',{name:'Choose scenario'}).selectOption({label:'Choose application #42'});
+  await expect(page.locator('[data-panel="embeddings-02"] [data-row="42"]')).toHaveAttribute('data-selected','true');
+  await expect(page.locator('[data-panel="embeddings-02"] [data-object="vector"] text')).toHaveText(['Read row #42','-0.1','0.5','0.2','-0.4']);
+  await openFocus(page,'/en'+root+'m02-01/attention-qkv/?step=2');
+  await page.getByRole('combobox',{name:'Choose scenario'}).selectOption({index:1});
+  await expect(page.locator('[data-panel="attention-qkv-02"] [data-to="valueB"]')).toHaveAttribute('data-blocked','true');
+  await openFocus(page,'/en'+root+'m02-01/attention-qkv/?step=3');
+  const mask=page.getByRole('table',{name:'Illustrative causal mask'});
   await expect(mask.locator('[data-visible-key="true"]')).toHaveCount(6);
   await expect(mask.locator('[data-visible-key="false"]')).toHaveCount(3);
-  const maskRows = await mask.locator('tbody tr').evaluateAll(rows => rows.map(row =>
-    [...row.querySelectorAll('td')].map(cell => cell.getAttribute('data-visible-key'))
-  ));
-  expect(maskRows).toEqual([['true', 'false', 'false'], ['true', 'true', 'false'], ['true', 'true', 'true']]);
-
-  await openFocus(page, '/en' + root + 'm02-05/llm-vs-harness/');
-  const support = page.locator('[data-scene-view="support-network"]');
-  await expect(support.locator('[data-support-position]')).toHaveCount(7);
-  await expect(support.locator('[data-support-position="0"] dt')).toHaveText('LLM');
-  await expect(support.locator('svg line')).toHaveCount(6);
+  await openFocus(page,'/en'+root+'m02-05/llm-vs-harness/');
+  await expect(page.locator('[data-panel="llm-vs-harness-01"] .association')).toHaveCount(6);
 });
-
 test('softmax input updates the weighted output and reset restores defaults', async ({ page }) => {
   await openFocus(page, demoPath('softmax-weighted-sum', 'softmax'));
   const result = page.locator('.learning-stage output');
@@ -336,7 +127,7 @@ test('softmax input updates the weighted output and reset restores defaults', as
   await slider.focus();
   for (let i = 0; i < 4; i++) await slider.press('ArrowLeft');
   await expect(result).toContainText('4.000');
-  await page.getByRole('button', { name: 'Reset scene' }).click();
+  await page.getByRole('button', { name: 'Reset conditions' }).click();
   await expect(result).toContainText('3.076');
 });
 
@@ -460,40 +251,26 @@ test('scenario branches preserve version, scope, execution and evidence distinct
   await expect(page.locator('.learning-stage output')).toContainText('M02-06 · Limit 2 · Rejected');
 });
 
-test('mobile touch can advance, open details and return to the active stage', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ baseURL, hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
-  try {
-    const page = await context.newPage();
-    await openFocus(page, root + 'm02-03/rag/');
-    await page.getByRole('button', { name: '下一步' }).tap();
-    await expect(page.locator('.workspace')).toHaveAttribute('data-step', '2');
-    await page.getByRole('button', { name: '完整解說' }).tap();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible();
-    await dialog.getByRole('button', { name: '回到示意圖' }).tap();
-    await expect(dialog).not.toBeVisible();
-    await expect(page.locator('.workspace')).toHaveAttribute('data-step', '2');
-  } finally {
-    await context.close();
-  }
+test('language switching retains the scene and the quiz resets on navigation',async({page})=>{
+  await openFocus(page,root+'m02-01/tokenization/?step=3');
+  await page.locator('.language').click();
+  await expect(page).toHaveURL('/en'+root+'m02-01/#tokenization-03');
+  const quiz=page.locator('aside fieldset');
+  await quiz.getByRole('radio').first().check();
+  await quiz.getByRole('button',{name:'Check answer'}).click();
+  await expect(quiz.getByRole('status')).toBeVisible();
+  await page.locator('main').focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page).toHaveURL(/#tokenization-02$/);
+  await page.locator('main').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(quiz.getByRole('button',{name:'Check answer'})).toBeDisabled();
 });
-
-test('long focus explanations scroll by keyboard inside their pane', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await openFocus(page, '/en' + root + 'm02-01/transformer-block/?step=3');
-  const pane = page.getByRole('region', { name: 'Step explanation' });
-  await pane.focus();
-  await expect(pane).toBeFocused();
-  await page.keyboard.press('End');
-  await expect.poll(() => pane.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
-  await verifyOverflow(page, 'long keyboard-scroll explanation', true);
-});
-
-test('the expanded compaction result fits the stage at a compact desktop height', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await openFocus(page, '/en' + root + 'm02-03/compaction/?step=2');
-  await page.getByRole('combobox', { name: 'Choose scenario' }).selectOption({ label: 'Structured summary' });
-  const stage = page.locator('.scene-body');
-  expect(await stage.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(2);
-  await verifyOverflow(page, 'compaction with retained requirements', true);
+test('swapping actors crosses the tracks while word identity is preserved',async({page})=>{
+  await openFocus(page,'/en'+root+'m02-01/position-information/?step=2');
+  const words=page.locator('[data-panel="position-information-02"] [data-object="slot"]');
+  await page.getByRole('combobox',{name:'Choose scenario'}).selectOption({index:1});
+  await expect(words.locator('text')).toHaveText(['Ana','helps','Bo','Bo','helps','Ana']);
+  const original=await words.first().locator('rect').getAttribute('fill');
+  await expect(words.last().locator('rect')).toHaveAttribute('fill',original!);
 });

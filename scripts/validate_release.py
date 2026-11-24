@@ -83,14 +83,20 @@ def main():
             if page.lang != expected: errors.append(f'{rel}: expected lang={expected}, got {page.lang}')
             if page.h1 != 1: errors.append(f'{rel}: expected one h1, got {page.h1}')
             path = '/' + rel.removesuffix('index.html')
-            if page.canonical != 'https://learn.cs-kairos.com' + path: errors.append(f'{rel}: incorrect canonical')
+            # Retired atlas and concept URLs point to the hub or the containing chapter.
+            alias = re.fullmatch(r'/(en/)?interactive/aase/m02/(?:(m02-0[1-6])/[a-z0-9-]+/)?', path)
+            canonical_path = path
+            if alias:
+                prefix = '/' + (alias[1] or '')
+                canonical_path = prefix + ('interactive/aase/m02/' + alias[2] + '/' if alias[2] else 'interactive/')
+            if page.canonical != 'https://learn.cs-kairos.com' + canonical_path: errors.append(f'{rel}: incorrect canonical')
             # Only actual published pairs may advertise a language switch.
             is_aase = rel.startswith(('courses/aase/v1/', 'en/courses/aase/v1/'))
             counterpart = rel.removeprefix('en/') if rel.startswith('en/') else 'en/' + rel
             if (is_aase or rel in ('ceh-notes/m20-cryptography/index.html', 'ceh-notes/day01-b-cryptography/index.html', 'ceh-notes/day02-a-reconnaissance/index.html', 'ceh-notes/day02-b-network-scanning/index.html')) and counterpart not in pages:
                 if page.alternates: errors.append(f'{rel}: alternates point to an unavailable translation')
             else:
-                zh_rel = rel.removeprefix('en/')
+                zh_rel = canonical_path.lstrip('/').removeprefix('en/')
                 expected_alternates = {'zh-Hant': 'https://learn.cs-kairos.com/' + zh_rel.removesuffix('index.html'), 'en': 'https://learn.cs-kairos.com/en/' + zh_rel.removesuffix('index.html'), 'x-default': 'https://learn.cs-kairos.com/' + zh_rel.removesuffix('index.html')}
                 if page.alternates != expected_alternates: errors.append(f'{rel}: incorrect language alternates')
             if 'script-src' not in page.csp or 'sha256-' not in page.csp: errors.append(f'{rel}: missing hashed script CSP')

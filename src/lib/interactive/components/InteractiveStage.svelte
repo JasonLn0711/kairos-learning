@@ -11,7 +11,7 @@
   import {networkStage} from '../visual/scene.ts';
 
   let {
-    stepId, nodes, edges, scene, lang, playing, replay, onfinish
+    stepId, nodes, edges, scene, lang, playing, replay
   }: {
     stepId: string;
     nodes: SceneNode[];
@@ -20,7 +20,6 @@
     lang: Locale;
     playing: boolean;
     replay: number;
-    onfinish?: () => void;
   } = $props();
 
   const stageId = $props.id();
@@ -93,11 +92,10 @@
     playback.pause();
     let frame = requestAnimationFrame(draw);
     function draw(now: number) {
-      const state = playback.tick(now,plan);
+      const state = playback.tick(now,plan,true);
       const { x, y } = paths[state.leg].getPointAtLength(lengths[state.leg] * state.position);
       marker = { mode: layout, point: { x, y }, waiting: state.waiting, leg:state.leg, progress:state.position };
-      if (state.done) onfinish?.();
-      else frame = requestAnimationFrame(draw);
+      frame = requestAnimationFrame(draw);
     }
     return () => cancelAnimationFrame(frame);
   });

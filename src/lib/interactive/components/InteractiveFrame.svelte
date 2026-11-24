@@ -3,19 +3,20 @@
   import { MAIN, SITE, localized } from '#lib/model.ts';
   import type { Locale } from '../model.ts';
 
-  let { lang, path, title, description, step, immersive = false, children }: {
+  let { lang, path, title, description, step, fragment="", immersive = false, children }: {
     lang: Locale;
     path: string;
     title: string;
     description: string;
     step?: number;
+    fragment?:string;
     immersive?: boolean;
     children: Snippet;
   } = $props();
   const zh = $derived(lang === 'zh');
   const localePath = $derived(localized(path, lang));
   const alternate = $derived(localized(path, zh ? 'en' : 'zh'));
-  const switchPath = $derived(step && step > 1 ? alternate + '?step=' + step : alternate);
+  const switchPath = $derived(step && step > 1 ? alternate + '?step=' + step : alternate + fragment);
 </script>
 
 <svelte:head>

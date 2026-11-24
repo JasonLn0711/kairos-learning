@@ -1,6 +1,6 @@
 <script lang="ts">
-  import AaseAtlas from '#lib/interactive/components/AaseAtlas.svelte';
+  import ChapterLesson from '#lib/interactive/chapter/ChapterLesson.svelte';
   import type { PageProps } from './$types';
   let {data}: PageProps = $props();
 </script>
-<AaseAtlas lang="en" {...data} />
+{#key data.id}<ChapterLesson lang="en" chapter={data} />{/key}

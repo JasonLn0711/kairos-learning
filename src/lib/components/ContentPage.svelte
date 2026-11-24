@@ -3,6 +3,7 @@
   import CehDailyNote from './CehDailyNote.svelte';
   import {aaseConceptTitle} from '#lib/aase-labels.ts';
   import CourseRail from './CourseRail.svelte';
+  import ChapterLesson from '#lib/interactive/chapter/ChapterLesson.svelte';
   import AaseLesson from './AaseLesson.svelte';
   import AaseWorkshop from './AaseWorkshop.svelte';
   import AaseCourse from './AaseCourse.svelte';
@@ -19,6 +20,7 @@
   import Concept from './Concept.svelte';
   import InlineText from './InlineText.svelte';
   let { data }: { data: Page } = $props();
+  let diagramOpen=$state(false);
   const lang = $derived(data.route.lang);
   const zh = $derived(lang === 'zh');
   const kind = $derived(data.route.kind);
@@ -51,9 +53,9 @@
     {#if kind !== 'home'}<nav class="breadcrumbs" aria-label={zh ? '所在位置' : 'Breadcrumb'}><a href={localized('/',lang)}>{zh ? '首頁' : 'Home'}</a>{#if kind.startsWith('aase')}<span>/</span><a href={localized('/courses/aase/v1/',lang)}>AASE v1</a>{#if data.route.moduleId}<span>/</span><a href={localized('/courses/aase/v1/'+data.route.moduleId+'/',lang)}>{data.route.moduleId.toUpperCase()}</a>{/if}{/if}{#if kind==='ceh-note'||kind==='ceh-m20-review'}<span>/</span><a href={localized('/ceh-notes/',lang)}>{zh?'CEH 考古題知識筆記':'CEH Exam Study Notes'}</a>{/if}{#if kind==='perspective'}<span>/</span><a href={localized('/perspectives/',lang)}>{zh?'觀點':'Perspectives'}</a>{/if}{#if showRail && !kind.startsWith('aase')}<span>/</span><a href={localized('/courses/ceh/v13/',lang)}>CEH v13</a>{#if kind !== 'module' && data.module}<span>/</span><a href={modulePath(data.module.id,lang)}>{data.module.id.toUpperCase()}</a>{/if}{/if}</nav>{/if}
     <div class="eyebrow">{kind === 'home' ? 'RESEARCH → UNDERSTANDING → PRACTICE' : kind === 'lesson' ? `${lesson.course.toUpperCase()} · ${lesson.module.toUpperCase()}` : 'CS KAIROS · LEARNING LIBRARY'}</div>
     <h1 class:hero={kind === 'home'}>{title}</h1>
-    {#if kind === 'aase-concept'}<AaseLesson lesson={data.aaseConcept!.lesson!} sources={data.aaseSources} navigation={data.aaseNavigation} m02CourseLinks={data.aaseM02CourseLinks} {lang} indexHref={localized('/courses/aase/v1/'+data.route.moduleId+'/',lang)+'#one-concept'} />
+    {#if kind === 'aase-concept'}{#if data.aaseChapter}<details bind:open={diagramOpen}><summary>{zh?'在本頁閱讀章節流程圖':'Explore the diagram in this lesson'}</summary>{#if diagramOpen}<ChapterLesson chapter={data.aaseChapter} {lang} embedded/>{/if}<p><a class="atlas-entry" href={data.aaseChapter.href}>{zh?'開啟本章互動流程圖':'Open this chapter’s interactive diagram'}</a></p></details>{/if}<AaseLesson lesson={data.aaseConcept!.lesson!} sources={data.aaseSources} navigation={data.aaseNavigation} m02CourseLinks={data.aaseM02CourseLinks} {lang} indexHref={localized('/courses/aase/v1/'+data.route.moduleId+'/',lang)+'#one-concept'} />
     {:else if kind === 'aase-workshop'}<AaseWorkshop course={data.aaseCourse!} {lang} />
-    {:else if kind === 'aase'}{#if data.aaseM02InteractiveHref}<p><a class="text-link atlas-entry" href={data.aaseM02InteractiveHref}>{zh ? '探索 M02 互動概念圖譜' : 'Explore the M02 interactive atlas'}</a></p>{/if}<AaseCourse course={data.aaseCourse!} {lang} moduleId={data.route.moduleId} concepts={data.aaseConcepts} />
+    {:else if kind === 'aase'}{#if data.aaseM02InteractiveHref}<p><a class="text-link atlas-entry" href={data.aaseM02InteractiveHref}>{zh ? '選擇 M02 章節圖解' : 'Choose an M02 chapter diagram'}</a></p>{/if}<AaseCourse course={data.aaseCourse!} {lang} moduleId={data.route.moduleId} concepts={data.aaseConcepts} />
     {:else if kind === 'home'}
       <p class="lead">{zh ? '一次讀懂一個重要概念。從問題出發，沿著原理、例子與練習，建立可以自己解釋的技術知識。' : 'One meaningful concept at a time. Start with a question, follow the mechanism, and use an example and a small exercise to make the idea your own.'}</p>
       <div class="home-intro"><p>{zh ? '依課程與篇目提供繁體中文或英文教材；已完成對應翻譯的頁面可切換語言，閱讀、練習與複習各有清楚入口。' : 'Choose available Traditional Chinese or English materials. Completed language pairs include a language switch, with clear routes for reading, practice and review.'}</p><a class="text-link" href={localized('/courses/ceh/v13/m01/',lang)}>{zh ? '從 M01 開始' : 'Begin with M01'} <span aria-hidden="true">↗</span></a></div>

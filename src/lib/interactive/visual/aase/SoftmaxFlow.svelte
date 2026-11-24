@@ -1,9 +1,10 @@
 <script lang="ts">
+  import {fit,type Frame} from "../../chapter/frame.ts";
   import {attentionDemo} from '../../../attention-demo.ts';
   import type {Locale} from '../../model.ts';
   import type {TeachingScene} from '../../aase/model.ts';
-  let {a,b,lang,scene}:{a:number;b:number;lang:Locale;scene:TeachingScene}=$props();
-  let width=$state(640);
+  let {frame,a,b,lang,scene}:{frame:Frame;a:number;b:number;lang:Locale;scene:TeachingScene}=$props();
+  const width=$derived(frame.width);
   const small=$derived(width>0&&width<430);
   const uid=$props.id();
   const shift=$derived(Math.max(a,b));
@@ -26,8 +27,7 @@
   const normalize=$derived(scene.id==='02');
   const connections=$derived(firstStep?[]:normalize?[[0,2],[1,3],[2,4],[3,4],[2,5],[3,6],[4,5],[4,6]]:[[0,2],[1,3],[2,4],[3,4],[2,5],[3,6],[4,5],[4,6],[5,7],[6,7]]);
 </script>
-<figure bind:clientWidth={width} data-flow="softmax-weighted-sum" data-scene={scene.id}>
-  <svg viewBox={firstStep?'0 0 290 80':small?'0 0 290 '+(normalize?207:260):'0 0 '+(normalize?475:590)+' 114'} role="img" aria-labelledby={uid+'-t '+uid+'-d'}>
+<g transform={fit(frame,firstStep?290:small?290:normalize?475:590,firstStep?80:small?(normalize?207:260):114)} data-flow="softmax-weighted-sum" data-scene={scene.id}>
     <title id={uid+'-t'}>{scene.title[lang]}</title><desc id={uid+'-d'}>{scene.mechanism[lang]} m = max({a}, {b}). Σ = {(exp[0]+exp[1]).toFixed(3)}. {result.value.toFixed(3)}</desc>
     <defs><marker id={uid+'-arrow'} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="m1 1 6 3-6 3" fill="none" stroke="currentColor"/></marker></defs>
     {#each connections as [i,j]}
@@ -42,13 +42,12 @@
         <text y="-2">{box.label}</text><text class="number" y="12">{box.value}</text>
       </g>
     {/each}
-  </svg>
-</figure>
+</g>
 <style>
- figure{margin:0;padding:.4rem 0;border-block:1px solid var(--line);background:var(--paper)}
- svg{display:block;width:100%;max-width:650px;margin:auto;color:var(--ink)}
+
+
  line,path,rect{stroke:#4c6e72;stroke-width:1.2}
- svg[viewBox="0 0 290 80"]{max-width:370px}
+
  text{fill:#213e43;font:600 11px system-ui,sans-serif;text-anchor:middle}
  .number{font:600 12px ui-monospace,monospace}
 </style>

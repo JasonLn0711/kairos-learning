@@ -1,17 +1,19 @@
 <script lang="ts">
+  import {fit,type Frame} from "../../chapter/frame.ts";
+  import FlowPulse from '../../chapter/FlowPulse.svelte';
   import {boundEvidence} from './scene-values.ts';
   import {objects} from './objects.ts';
   import {storyboard,isAssociation,feedback} from './storyboards.ts';
-  import TeachingGlyph from './TeachingGlyph.svelte';
+  import ProcessObject from './ProcessObject.svelte';
   import type {Locale} from '../../model.ts';
   import type {TeachingScene} from '../../aase/model.ts';
 
-  let {slug,scene,lang,values={},active='',states={}}:{
+  let {frame,run=false,paused=false,slug,scene,lang,values={},active='',states={}}:{frame:Frame;run?:boolean;paused?:boolean;
     slug:string;scene:TeachingScene;lang:Locale;values?:Record<string,string>;
     active?:string;states?:Record<string,string>
   }=$props();
   const uid=$props.id();
-  let width=$state(680);
+  const width=$derived(frame.width);
   const graph=$derived(storyboard(slug,Number(scene.id)));
   const evidence=$derived(boundEvidence(slug,scene,lang));
   function datum(key:string){
@@ -24,11 +26,6 @@
     const split=lang==='en'?value.lastIndexOf(' ',limit):-1;
     const at=split>4?split:limit;
     return [value.slice(0,at).trim(),value.slice(at).trim()];
-  }
-  function begin(animation:SVGAnimationElement,delay:number){
-    if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof animation.beginElementAt==='function'){
-      animation.beginElementAt(delay);
-    }
   }
   const association=$derived(isAssociation(slug,Number(scene.id)));
   const compact=$derived(width>0 && width<430);
@@ -69,7 +66,8 @@
   function muted(from:string,to:string){
     if (states[from]==='failed' || states[from]==='skipped' || states[to]==='skipped') return true;
     const branches=graph.links.filter(([source])=>source===from).map(([,target])=>target);
-    return !association && branches.includes(active) && to!==active;
+    const exclusive=scene.demo==='governed-policy' || scene.demo==='scope-policy' || slug==='context-failure-diagnosis' || slug==='method-selection';
+    return exclusive && branches.includes(active) && to!==active;
   }
   function edge(source:string,target:string){
     const a=points[source],b=points[target];
@@ -84,47 +82,38 @@
     return 'M'+x1+' '+y1+' C'+((x1+x2)/2)+' '+y1+' '+((x1+x2)/2)+' '+y2+' '+x2+' '+y2;
   }
 </script>
-<figure class="flow" bind:clientWidth={width} data-flow={slug} data-scene={scene.id}>
-  <svg viewBox={'0 -8 '+span[0]+' '+(span[1]+18)} role="img" aria-labelledby={uid+'-title '+uid+'-description'} style={'--natural:'+span[0]+'px'}>
+<g transform={fit(frame,span[0],span[1]+18,-8)} data-flow="{slug}" data-scene={scene.id}>
     <title id={uid+'-title'}>{scene.title[lang]}</title><desc id={uid+'-description'}>{scene.mechanism[lang]} {scene.observe[lang]} {Object.keys(points).map(key=>[objects[key][lang],values[key]??evidence[key]].filter(Boolean).join(' · ')).join('；')}</desc>
     <defs><marker id={uid+'-arrow'} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="m1 1 6 3-6 3" fill="none" stroke="currentColor"/></marker></defs>
-    {#if loop}<path d={loopPath} class="wire" marker-end={'url(#'+uid+'-arrow)'}/><text class="value" x={canvasWidth/2} y={layout.height+20}>{loop[lang]}</text>{/if}
+    {#if loop}<path d={loopPath} class="wire" class:idle={muted(loop.from,loop.to)} marker-end={'url(#'+uid+'-arrow)'}/><text class="value" x={canvasWidth/2} y={layout.height+20}>{loop[lang]}</text>{/if}
     {#each graph.links as [from,to]}
-      <path d={edge(from,to)} class="wire" class:association class:idle={muted(from,to)} marker-end={association?undefined:'url(#'+uid+'-arrow)'} />
+      <path data-from={from} data-to={to} data-blocked={muted(from,to)} d={edge(from,to)} class="wire" class:association class:idle={muted(from,to)} marker-end={association?undefined:'url(#'+uid+'-arrow)'} />
     {/each}
-    {#key [slug,scene.id,active,JSON.stringify(values),JSON.stringify(states)].join('|')}
-      {#each graph.links as [from,to],index}
-        {#if !association && !muted(from,to) && (Object.keys(states).length || active===from || active===to)}
-          <circle class="transit" r="3" opacity="0" aria-hidden="true">
-            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.05;.94;1" dur=".65s" begin="indefinite" use:begin={index*.65}/>
-            <animateMotion path={edge(from,to)} dur=".65s" begin="indefinite" use:begin={index*.65}/>
-          </circle>
-        {/if}
-      {/each}
-    {/key}
+    {#if run && !association}
+      <FlowPulse {paused} paths={[...graph.links.filter(([from,to])=>!muted(from,to)).map(([from,to])=>edge(from,to)),...(loop && !muted(loop.from,loop.to)?[loopPath]:[])]}/>
+    {/if}
     {#each Object.entries(points) as [key,p]}
       <g transform={'translate('+p.x+' '+p.y+')'} data-object={key} data-state={states[key]??(active===key?'selected':undefined)} class:skipped={states[key]==='skipped'}>
         <title>{objects[key][lang]} · {values[key]??evidence[key]??scene.title[lang]}</title>
         {#if active===key || states[key]==='failed'}<ellipse cy="-6" rx="30" ry="21" class="highlight" class:failed={states[key]==='failed'} />{/if}
-        <g transform="translate(0 -6) scale(.84)"><TeachingGlyph kind={objects[key].glyph} selected={values.matrix==='#42'?2:1}/></g>
+        <g transform="translate(0 -6) scale(.84)"><ProcessObject name={key} selected={values.matrix==='#42'?2:1}/></g>
+        {#if states[key]==='skipped'}<circle cx="22" cy="-20" r="7" fill="#fff2e6" stroke="#82462b"/><path d="m19-23 6 6m0-6-6 6" stroke="#82462b" fill="none"/>{/if}
         <text y="26">{objects[key][lang]}</text>
         {#if datum(key)}<text class="value" y="41">{#each valueLines(key) as line,i}<tspan x="0" dy={i?12:0}>{line}</tspan>{/each}</text>{/if}
       </g>
     {/each}
-  </svg>
-  {#if association}<figcaption>{lang==='zh'?'虛線連接各項平行支援。':'Dashed lines connect parallel responsibilities.'}</figcaption>{/if}
-</figure>
+</g>
 <style>
- .flow {margin:0;min-inline-size:0;background:var(--paper);border-block:1px solid var(--line);color:var(--ink);padding:.35rem .15rem;}
- svg {display:block;inline-size:100%;max-inline-size:var(--natural);margin:auto;overflow:visible}
+
+
  text {text-anchor:middle;fill:var(--ink);font:600 14px system-ui,sans-serif}
  .value {fill:var(--accent);font:650 11px system-ui,sans-serif}
- figcaption{text-align:center;color:var(--muted);font-size:.9rem}
+
  .wire {stroke:var(--accent);stroke-width:1.8;fill:none}
  .association,.idle {stroke-dasharray:4 4}
  .idle {opacity:.38}
- .transit {fill:var(--accent)}
- @media(prefers-reduced-motion:reduce){.transit{display:none}}
+
+
  .highlight {fill:var(--soft);stroke:var(--accent);stroke-width:2}
  .failed {stroke-dasharray:4 2;stroke-width:3}
  .skipped {opacity:.66}

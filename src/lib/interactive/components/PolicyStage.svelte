@@ -1,11 +1,10 @@
 <script lang="ts">
-  import ConceptFlow from '../visual/aase/ConceptFlow.svelte';
-  import type {TeachingScene} from '../aase/model.ts';
+  import type {Snapshot} from '../chapter/frame.ts';
   import type { Locale } from '../model.ts';
   import type { PolicyDemo } from '../aase/model.ts';
   import { authorizeScope, governAction, missingApplicationFields, retryEffects, sandboxAction, type RetryOutcome } from '../aase/simulations.ts';
 
-  let { slug, scene, demo, lang, ready }: { slug:string; scene:TeachingScene; demo: PolicyDemo; lang: Locale; ready: boolean } = $props();
+  let { onchange, demo, lang, ready }: { onchange?:(snapshot:Snapshot)=>void; demo: PolicyDemo; lang: Locale; ready: boolean } = $props();
   const zh = $derived(lang === 'zh');
   let action = $state<'test' | 'release'>('release');
   let inScope = $state(true);
@@ -45,10 +44,11 @@
     const label=decision.executed?(zh?'允許':'Allow'):(zh?'拒絕':'Deny');
     return {policy:label,decision:label,action:demo==='governed-policy'?action:demo==='scope-policy'?resource:operation};
   });
+  $effect(()=>onchange?.({choice:0,a:1,b:0,logs:500,values:flowValues,states:{},active:demo==='retry-policy'?'effect':demo==='required-field'?'schema':decision.executed?'allow':'deny'}));
 </script>
 
 <div class="policy-simulation" data-policy={demo}>
-  <ConceptFlow {slug} {scene} {lang} values={flowValues} active={demo==='retry-policy'?'effect':demo==='required-field'?'schema':decision.executed?'allow':'deny'}/>
+
   <fieldset disabled={!ready}>
     <legend>{zh ? '調整模擬條件' : 'Change simulation inputs'}</legend>
     {#if demo === 'governed-policy'}

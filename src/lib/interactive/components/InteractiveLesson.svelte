@@ -19,7 +19,6 @@
   let ready = $state(false);
   let reducedMotion = $state(false);
   let playing = $state(false);
-  let finished = $state(false);
   let replay = $state(0);
   const query=$derived((page.shallow?.url??page.url).searchParams);
   let scenario=$state<Scenario>({dnsCached:false,dbSlow:false});
@@ -64,7 +63,6 @@
   $effect(() => {
     // Each scene change starts a fresh animation. Media preference can disable it.
     if (scene) {
-      finished = false;
       playing = ready && !reducedMotion;
     }
   });
@@ -85,7 +83,6 @@
 
   function restartMotion() {
     replay += 1;
-    finished = false;
     playing = true;
   }
 </script>
@@ -130,7 +127,7 @@
           <span>{zh ? 'HTTP/2 連線示意' : 'Illustrated HTTP/2 connection'}</span>
           <span>{zh ? '示意流程' : 'Illustration'}</span>
         </div>
-        <InteractiveStage stepId={step.id} nodes={lesson.nodes} edges={lesson.edges} {scene} {lang} {playing} {replay} onfinish={() => { finished = true; playing = false; }} />
+        <InteractiveStage stepId={step.id} nodes={lesson.nodes} edges={lesson.edges} {scene} {lang} {playing} {replay} />
   {/snippet}
   {#snippet controls()}
         {#if ready}
@@ -144,7 +141,7 @@
                 <p>{zh ? '依照裝置的減少動態效果設定，圖解以靜態路徑呈現。' : 'Your reduced-motion preference is on. The diagram shows a static path.'}</p>
               {:else}
                 <button type="button" class="secondary" onclick={restartMotion}>{zh ? '重播' : 'Replay'}</button>
-                <button type="button" class="secondary" disabled={finished} onclick={() => { playing = !playing; }}>{finished ? (zh ? '動態播放完畢' : 'Motion complete') : playing ? (zh ? '暫停動態' : 'Pause motion') : (zh ? '繼續動態' : 'Resume motion')}</button>
+                <button type="button" class="secondary" onclick={() => { playing = !playing; }}>{playing ? (zh ? '暫停動態' : 'Pause motion') : (zh ? '繼續動態' : 'Resume motion')}</button>
               {/if}
             </div>
           </div>
@@ -300,6 +297,7 @@
   .variation label { display: flex; gap: .4rem; align-items: center; min-height: 44px; font-size: .85rem; cursor: pointer; }
   .variation input { min-height: unset; margin: 0; width: 1.1rem; height: 1.1rem; accent-color: var(--accent); flex: 0 0 auto; }
   .lesson-controls { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; justify-content: space-between; padding: .8rem .85rem; }
+  .step-actions {flex-wrap:nowrap !important}
   .step-actions, .motion-controls { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: .6rem; }
   .motion-controls p { margin: 0; color: var(--muted); font-size: .85rem; }
   .lesson-controls button { font-size: .85rem; }

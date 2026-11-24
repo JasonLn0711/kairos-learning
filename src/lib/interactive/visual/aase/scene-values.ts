@@ -27,6 +27,26 @@ export function chosenObject(slug:string,scene:TeachingScene,choice:number){
   return choiceObjects[slug]?.[choice] ?? '';
 }
 
+// Only mark an operation skipped when the selected teaching case actually prevents it.
+export function scenarioStates(slug:string,scene:TeachingScene,choice:number):Record<string,string>{
+  if(!scene.choices)return {};
+  switch(slug){
+    case 'attention-qkv': return choice===1?{valueB:'skipped'}:{};
+    case 'kv-cache': return choice===1?{keyCache:'skipped',valueCache:'skipped'}:{};
+    case 'context-composition': return choice===0?{select:'skipped'}:{};
+    case 'cross-session-orchestration': return choice===0?{load:'skipped'}:{};
+    case 'memory': return choice===1?{load:'skipped'}:choice>=2?{load:'failed'}:{};
+    case 'mcp-harness-boundary': return choice===1?{policy:'failed',tool:'skipped'}:{};
+    case 'agent-decision-loop': return choice===1?{observation:'skipped'}:{};
+    case 'tool-intent-and-result': return choice===0?{runtime:'skipped'}:{stop:'skipped'};
+    case 'security-and-observability': return choice===0?{deny:'skipped'}:{allow:'skipped'};
+    case 'hybrid-design': return choice<2?{verification:'skipped'}:{};
+    case 'partial-success-verification': return choice===0?{verification:'skipped'}:{};
+    case 'prompt-injection-boundary': return choice===0?{deny:'skipped'}:{allow:'skipped'};
+    default: return {};
+  }
+}
+
 export function lessonValues(slug:string,scene:TeachingScene,cards:Card[],lang:Locale):Record<string,string>{
   const byLabel = Object.fromEntries(cards.map(c=>[c.label.en,c.value[lang]]));
   if(slug==='embeddings'){

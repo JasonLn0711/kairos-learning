@@ -7,11 +7,12 @@ for(const engine of [chromium,webkit]){
   const browser=await engine.launch();
   try{
     const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
+    let figure;
     const open=async (path,step)=>{
       await page.goto(root+path+'/?step='+step);
-      await page.locator('main.focus figure[data-scene="0'+step+'"]').waitFor();
+      await page.locator('.chapter-svg[data-view=scene]').waitFor();
+      figure=page.locator('[data-panel="'+path.split('/')[1]+'-0'+step+'"]');
     };
-    const figure=page.locator('figure[data-flow]');
     await open('m02-01/tokenization',2);
     await page.getByRole('combobox',{name:'Choose scenario'}).selectOption('1');
     assert.equal(await figure.locator('[data-object="piece"]').count(),4);

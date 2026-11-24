@@ -14,23 +14,23 @@ try{
  const receipts=[];
  for(const lang of ['zh','en']){
  const p=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:'reduce'});
- for(const unit of units){
-  const url=origin+(lang==='en'?'/en':'')+'/interactive/aase/m02/'+id+'/'+unit.slug+'/';
+ for(const [unitIndex,unit] of units.entries()){
+  const url=origin+(lang==='en'?'/en':'')+'/interactive/aase/m02/'+id+'/';
   await p.goto(url);
-  await p.locator('.immersive-lesson.focus').waitFor();
+  await p.locator('.chapter-svg').waitFor();
   for(const [i,scene] of unit.scenes.entries()){
-   await p.locator('.concept-controls select').selectOption(String(i+1));
-   const stage=p.locator('.workspace[data-step="'+(i+1)+'"] .learning-stage');await stage.waitFor();
+   await p.locator('.controls select').selectOption(String(unitIndex*3+i));
+   const stage=p.locator('.learning-stage');await stage.waitFor();
    assert.equal(await stage.getAttribute('data-renderer'),scene.demo??scene.visual??scene.kind);
-   assert.equal(await stage.getByRole('heading',{level:2}).textContent(),scene.title[lang]);
-   assert.equal(await p.locator('.explanation a').getAttribute('href').then(h=>h.split('#').at(-1)),scene.sourceAnchors[0]);
-   assert.equal(await p.evaluate(()=>document.documentElement.scrollHeight),720);
+   assert.equal(await p.locator('[data-panel="'+unit.slug+'-'+scene.id+'"] [data-flow] > title').textContent(),scene.title[lang]);
+   assert.equal(await p.locator('aside a').getAttribute('href').then(h=>h.split('#').at(-1)),scene.sourceAnchors[0]);
+   assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth),1280);
    const selector=stage.locator('.choice select');
    if(await selector.count() && scene.choices.length>1){
     await selector.selectOption('1');assert.equal(await stage.locator('output').textContent(),scene.choices[1].result[lang]);
    }
    const name=[id,unit.slug,lang,scene.id].join('-')+'.png';
-   const png=await stage.screenshot({path:dir+'/'+name});
+   const png=await p.locator('[data-panel="'+unit.slug+'-'+scene.id+'"]').screenshot({path:dir+'/'+name});
    receipts.push({name,url:p.url(),lang,scene:scene.id,slug:unit.slug,renderer:await stage.getAttribute('data-renderer'),utc:new Date().toISOString(),sha256:createHash('sha256').update(png).digest('hex')});
   }
  }

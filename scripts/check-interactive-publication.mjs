@@ -63,8 +63,8 @@ try {
     for (const path of atlasRoots) {
       const neighbor = path + '/m02-01/tokenization';
       assert(existsSync(join(build, neighbor, 'index.html')), 'Published control concept: ' + neighbor);
-      const payload = readFileSync(join(build, neighbor, '__data.json'), 'utf8');
-      assert(payload.includes(path + '/m02-01/position-information/'), 'Next published concept: ' + neighbor);
+      const payload = readFileSync(join(build, path, 'm02-01', 'index.html'), 'utf8');
+      assert(payload.includes('data-panel="position-information-01"') && !payload.includes('data-band="embeddings"'), 'Next published concept: ' + neighbor);
     }
     for (const file of readdirSync(build, { recursive: true, withFileTypes: true })) {
       if (file.isFile() && /\.(?:css|html|js|json|svg|xml)$/.test(file.name)) {

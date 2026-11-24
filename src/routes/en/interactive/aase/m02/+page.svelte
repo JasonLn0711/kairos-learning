@@ -1,6 +1,4 @@
 <script lang="ts">
-  import AaseAtlas from '#lib/interactive/components/AaseAtlas.svelte';
-  import type { PageProps } from './$types';
-  let {data}: PageProps = $props();
+  import LegacyEntry from '#lib/interactive/chapter/LegacyEntry.svelte';
 </script>
-<AaseAtlas lang="en" {...data} />
+<LegacyEntry lang="en" title="AASE M02 chapter diagrams" target="/en/interactive/#aase"/>
