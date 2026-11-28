@@ -39,3 +39,8 @@ Jason 指定先稽核再實作，採用 `modern-web-guidance` 確認網頁互動
 - 正式站缺頁回傳 404；六個 MATLAB 下載檔與公開 SHA-256 清單均相符。
 
 第一次瀏覽器探針在路由剛顯示時送出 Enter，清單未開啟。直接開啟 `?step=2` 核對到靜態畫面顯示第 1 步，初始化後切到第 2 步。待靜態資源請求穩定後重跑，兩語分鏡操作與焦點驗收通過。讀者端的初始化等待仍可透過實際操作回饋觀察。
+
+<a id="readback-fixture-2026-11-28"></a>
+## 回讀證據的後續使用
+
+11/28 選用練習以同次建置的原始檔、解壓後的正式回應和另一份舊副本做本機對照。預期同版檔相符、舊副本比對失敗。上述 Pages 第一次失敗發生在成品取得層，練習中的舊副本是另設的對照。練習執行與驗收另待學習紀錄。[W50 學習計畫（需權限）](https://github.com/JasonLn0711/planning-everything-track/blob/main/weeks/2026-W50/weekly-plan.md#kairos-readback-fixture-2026-11-28)
